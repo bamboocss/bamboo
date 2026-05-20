@@ -142,8 +142,10 @@ var fallbackCondition = {
   breakpoints: { keys: [] },
 }
 var sanitize = (value) => (typeof value === 'string' ? value.replaceAll(/[\n\s]+/g, ' ') : value)
+var ENTRY_SEP = ']___['
+var COND_SEP = '<___>'
 function createCss(context) {
-  const { utility, hash, conditions: conds = fallbackCondition } = context
+  const { utility, hash, grouped, conditions: conds = fallbackCondition } = context
   const formatClassName = (str) => [utility.prefix, str].filter(Boolean).join('-')
   const hashFn = (conditions, className) => {
     let result
@@ -155,6 +157,28 @@ function createCss(context) {
       result = baseArray.join(':')
     }
     return result
+  }
+  if (grouped) {
+    return memo(({ base, ...styles } = {}) => {
+      const styleObject = Object.assign(styles, base)
+      const normalizedObject = normalizeStyleObject(styleObject, context)
+      const hashes = []
+      walkObject(normalizedObject, (value, paths) => {
+        if (value == null) return
+        const [prop, ...allConditions] = conds.shift(paths)
+        const conditions = filterBaseConditions(allConditions)
+        const parts = [`${prop}${ENTRY_SEP}value:${value}`]
+        if (conditions.length) {
+          parts.push(`cond:${conditions.join(COND_SEP)}`)
+        }
+        hashes.push(parts.join(ENTRY_SEP))
+      })
+      if (hashes.length === 0) return ''
+      hashes.sort()
+      const groupId = hashes.join('|')
+      const shortHash = utility.toHash(['grouped', groupId], toHash)
+      return formatClassName(shortHash)
+    })
   }
   return memo(({ base, ...styles } = {}) => {
     const styleObject = Object.assign(styles, base)
