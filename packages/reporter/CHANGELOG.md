@@ -1,4 +1,4 @@
-# @pandacss/reporter
+# @bamboocss/reporter
 
 ## 1.11.3
 
@@ -33,11 +33,11 @@
 - Updated dependencies [2f29aa6]
 - Updated dependencies [1d781ff]
 - Updated dependencies [2ea9205]
-  - @pandacss/core@1.11.1
-  - @pandacss/generator@1.11.1
-  - @pandacss/types@1.11.1
-  - @pandacss/logger@1.11.1
-  - @pandacss/shared@1.11.1
+  - @bamboocss/core@1.11.1
+  - @bamboocss/generator@1.11.1
+  - @bamboocss/types@1.11.1
+  - @bamboocss/logger@1.11.1
+  - @bamboocss/shared@1.11.1
 
 ## 1.11.0
 
@@ -45,11 +45,11 @@
 
 - Updated dependencies [055e69c]
 - Updated dependencies [78869ae]
-  - @pandacss/core@1.11.0
-  - @pandacss/types@1.11.0
-  - @pandacss/generator@1.11.0
-  - @pandacss/logger@1.11.0
-  - @pandacss/shared@1.11.0
+  - @bamboocss/core@1.11.0
+  - @bamboocss/types@1.11.0
+  - @bamboocss/generator@1.11.0
+  - @bamboocss/logger@1.11.0
+  - @bamboocss/shared@1.11.0
 
 ## 1.10.0
 
@@ -59,22 +59,22 @@
 - Updated dependencies [bbaa8b3]
 - Updated dependencies [8d3b6f8]
 - Updated dependencies [44457bb]
-  - @pandacss/types@1.10.0
-  - @pandacss/logger@1.10.0
-  - @pandacss/shared@1.10.0
-  - @pandacss/core@1.10.0
-  - @pandacss/generator@1.10.0
+  - @bamboocss/types@1.10.0
+  - @bamboocss/logger@1.10.0
+  - @bamboocss/shared@1.10.0
+  - @bamboocss/core@1.10.0
+  - @bamboocss/generator@1.10.0
 
 ## 1.9.1
 
 ### Patch Changes
 
 - Updated dependencies [8fda1a5]
-  - @pandacss/core@1.9.1
-  - @pandacss/generator@1.9.1
-  - @pandacss/logger@1.9.1
-  - @pandacss/shared@1.9.1
-  - @pandacss/types@1.9.1
+  - @bamboocss/core@1.9.1
+  - @bamboocss/generator@1.9.1
+  - @bamboocss/logger@1.9.1
+  - @bamboocss/shared@1.9.1
+  - @bamboocss/types@1.9.1
 
 ## 1.9.0
 
@@ -82,11 +82,11 @@
 
 - Updated dependencies [3ca1f24]
 - Updated dependencies [7d66c0b]
-  - @pandacss/core@1.9.0
-  - @pandacss/generator@1.9.0
-  - @pandacss/logger@1.9.0
-  - @pandacss/shared@1.9.0
-  - @pandacss/types@1.9.0
+  - @bamboocss/core@1.9.0
+  - @bamboocss/generator@1.9.0
+  - @bamboocss/logger@1.9.0
+  - @bamboocss/shared@1.9.0
+  - @bamboocss/types@1.9.0
 
 ## 1.8.2
 
@@ -94,63 +94,63 @@
 
 - Updated dependencies [331d1a5]
 - Updated dependencies [82d23ab]
-  - @pandacss/types@1.8.2
-  - @pandacss/core@1.8.2
-  - @pandacss/generator@1.8.2
-  - @pandacss/logger@1.8.2
-  - @pandacss/shared@1.8.2
+  - @bamboocss/types@1.8.2
+  - @bamboocss/core@1.8.2
+  - @bamboocss/generator@1.8.2
+  - @bamboocss/logger@1.8.2
+  - @bamboocss/shared@1.8.2
 
 ## 1.8.1
 
 ### Patch Changes
 
 - Updated dependencies [3c86c29]
-  - @pandacss/types@1.8.1
-  - @pandacss/core@1.8.1
-  - @pandacss/generator@1.8.1
-  - @pandacss/logger@1.8.1
-  - @pandacss/shared@1.8.1
+  - @bamboocss/types@1.8.1
+  - @bamboocss/core@1.8.1
+  - @bamboocss/generator@1.8.1
+  - @bamboocss/logger@1.8.1
+  - @bamboocss/shared@1.8.1
 
 ## 1.8.0
 
 ### Patch Changes
 
-- @pandacss/core@1.8.0
-- @pandacss/generator@1.8.0
-- @pandacss/logger@1.8.0
-- @pandacss/shared@1.8.0
-- @pandacss/types@1.8.0
+- @bamboocss/core@1.8.0
+- @bamboocss/generator@1.8.0
+- @bamboocss/logger@1.8.0
+- @bamboocss/shared@1.8.0
+- @bamboocss/types@1.8.0
 
 ## 1.7.3
 
 ### Patch Changes
 
-- @pandacss/core@1.7.3
-- @pandacss/generator@1.7.3
-- @pandacss/logger@1.7.3
-- @pandacss/shared@1.7.3
-- @pandacss/types@1.7.3
+- @bamboocss/core@1.7.3
+- @bamboocss/generator@1.7.3
+- @bamboocss/logger@1.7.3
+- @bamboocss/shared@1.7.3
+- @bamboocss/types@1.7.3
 
 ## 1.7.2
 
 ### Patch Changes
 
-- @pandacss/core@1.7.2
-- @pandacss/generator@1.7.2
-- @pandacss/logger@1.7.2
-- @pandacss/shared@1.7.2
-- @pandacss/types@1.7.2
+- @bamboocss/core@1.7.2
+- @bamboocss/generator@1.7.2
+- @bamboocss/logger@1.7.2
+- @bamboocss/shared@1.7.2
+- @bamboocss/types@1.7.2
 
 ## 1.7.1
 
 ### Patch Changes
 
 - Updated dependencies [3f5fea2]
-  - @pandacss/generator@1.7.1
-  - @pandacss/core@1.7.1
-  - @pandacss/logger@1.7.1
-  - @pandacss/shared@1.7.1
-  - @pandacss/types@1.7.1
+  - @bamboocss/generator@1.7.1
+  - @bamboocss/core@1.7.1
+  - @bamboocss/logger@1.7.1
+  - @bamboocss/shared@1.7.1
+  - @bamboocss/types@1.7.1
 
 ## 1.7.0
 
@@ -158,33 +158,33 @@
 
 - Updated dependencies [86b30b1]
 - Updated dependencies [f37fd8d]
-  - @pandacss/generator@1.7.0
-  - @pandacss/types@1.7.0
-  - @pandacss/core@1.7.0
-  - @pandacss/logger@1.7.0
-  - @pandacss/shared@1.7.0
+  - @bamboocss/generator@1.7.0
+  - @bamboocss/types@1.7.0
+  - @bamboocss/core@1.7.0
+  - @bamboocss/logger@1.7.0
+  - @bamboocss/shared@1.7.0
 
 ## 1.6.1
 
 ### Patch Changes
 
 - Updated dependencies [8f43369]
-  - @pandacss/core@1.6.1
-  - @pandacss/generator@1.6.1
-  - @pandacss/logger@1.6.1
-  - @pandacss/shared@1.6.1
-  - @pandacss/types@1.6.1
+  - @bamboocss/core@1.6.1
+  - @bamboocss/generator@1.6.1
+  - @bamboocss/logger@1.6.1
+  - @bamboocss/shared@1.6.1
+  - @bamboocss/types@1.6.1
 
 ## 1.6.0
 
 ### Patch Changes
 
 - Updated dependencies [8aa3c64]
-  - @pandacss/generator@1.6.0
-  - @pandacss/core@1.6.0
-  - @pandacss/logger@1.6.0
-  - @pandacss/shared@1.6.0
-  - @pandacss/types@1.6.0
+  - @bamboocss/generator@1.6.0
+  - @bamboocss/core@1.6.0
+  - @bamboocss/logger@1.6.0
+  - @bamboocss/shared@1.6.0
+  - @bamboocss/types@1.6.0
 
 ## 1.5.1
 
@@ -192,11 +192,11 @@
 
 - Updated dependencies [bd2f8c9]
 - Updated dependencies [827566b]
-  - @pandacss/generator@1.5.1
-  - @pandacss/core@1.5.1
-  - @pandacss/logger@1.5.1
-  - @pandacss/shared@1.5.1
-  - @pandacss/types@1.5.1
+  - @bamboocss/generator@1.5.1
+  - @bamboocss/core@1.5.1
+  - @bamboocss/logger@1.5.1
+  - @bamboocss/shared@1.5.1
+  - @bamboocss/types@1.5.1
 
 ## 1.5.0
 
@@ -204,11 +204,11 @@
 
 - Updated dependencies [91c65ff]
 - Updated dependencies [52e2399]
-  - @pandacss/types@1.5.0
-  - @pandacss/core@1.5.0
-  - @pandacss/generator@1.5.0
-  - @pandacss/logger@1.5.0
-  - @pandacss/shared@1.5.0
+  - @bamboocss/types@1.5.0
+  - @bamboocss/core@1.5.0
+  - @bamboocss/generator@1.5.0
+  - @bamboocss/logger@1.5.0
+  - @bamboocss/shared@1.5.0
 
 ## 1.4.3
 
@@ -217,11 +217,11 @@
 - Updated dependencies [bb32028]
 - Updated dependencies [58f492a]
 - Updated dependencies [84a0de9]
-  - @pandacss/core@1.4.3
-  - @pandacss/generator@1.4.3
-  - @pandacss/logger@1.4.3
-  - @pandacss/shared@1.4.3
-  - @pandacss/types@1.4.3
+  - @bamboocss/core@1.4.3
+  - @bamboocss/generator@1.4.3
+  - @bamboocss/logger@1.4.3
+  - @bamboocss/shared@1.4.3
+  - @bamboocss/types@1.4.3
 
 ## 1.4.2
 
@@ -230,22 +230,22 @@
 - Updated dependencies [0679f6f]
 - Updated dependencies [1290a27]
 - Updated dependencies [70420dd]
-  - @pandacss/generator@1.4.2
-  - @pandacss/shared@1.4.2
-  - @pandacss/core@1.4.2
-  - @pandacss/types@1.4.2
-  - @pandacss/logger@1.4.2
+  - @bamboocss/generator@1.4.2
+  - @bamboocss/shared@1.4.2
+  - @bamboocss/core@1.4.2
+  - @bamboocss/types@1.4.2
+  - @bamboocss/logger@1.4.2
 
 ## 1.4.1
 
 ### Patch Changes
 
 - Updated dependencies [db237b6]
-  - @pandacss/core@1.4.1
-  - @pandacss/generator@1.4.1
-  - @pandacss/logger@1.4.1
-  - @pandacss/shared@1.4.1
-  - @pandacss/types@1.4.1
+  - @bamboocss/core@1.4.1
+  - @bamboocss/generator@1.4.1
+  - @bamboocss/logger@1.4.1
+  - @bamboocss/shared@1.4.1
+  - @bamboocss/types@1.4.1
 
 ## 1.4.0
 
@@ -253,11 +253,11 @@
 
 - Updated dependencies [4c291ca]
 - Updated dependencies [ce12373]
-  - @pandacss/core@1.4.0
-  - @pandacss/generator@1.4.0
-  - @pandacss/logger@1.4.0
-  - @pandacss/shared@1.4.0
-  - @pandacss/types@1.4.0
+  - @bamboocss/core@1.4.0
+  - @bamboocss/generator@1.4.0
+  - @bamboocss/logger@1.4.0
+  - @bamboocss/shared@1.4.0
+  - @bamboocss/types@1.4.0
 
 ## 1.3.1
 
@@ -267,11 +267,11 @@
 - Updated dependencies [ff9afbc]
 - Updated dependencies [7fcd100]
 - Updated dependencies [5bfaef3]
-  - @pandacss/generator@1.3.1
-  - @pandacss/core@1.3.1
-  - @pandacss/logger@1.3.1
-  - @pandacss/shared@1.3.1
-  - @pandacss/types@1.3.1
+  - @bamboocss/generator@1.3.1
+  - @bamboocss/core@1.3.1
+  - @bamboocss/logger@1.3.1
+  - @bamboocss/shared@1.3.1
+  - @bamboocss/types@1.3.1
 
 ## 1.3.0
 
@@ -281,22 +281,22 @@
 - Updated dependencies [70efd73]
 - Updated dependencies [2e683fa]
 - Updated dependencies [43be051]
-  - @pandacss/generator@1.3.0
-  - @pandacss/types@1.3.0
-  - @pandacss/core@1.3.0
-  - @pandacss/logger@1.3.0
-  - @pandacss/shared@1.3.0
+  - @bamboocss/generator@1.3.0
+  - @bamboocss/types@1.3.0
+  - @bamboocss/core@1.3.0
+  - @bamboocss/logger@1.3.0
+  - @bamboocss/shared@1.3.0
 
 ## 1.2.0
 
 ### Patch Changes
 
 - Updated dependencies [a1f5c64]
-  - @pandacss/generator@1.2.0
-  - @pandacss/core@1.2.0
-  - @pandacss/logger@1.2.0
-  - @pandacss/shared@1.2.0
-  - @pandacss/types@1.2.0
+  - @bamboocss/generator@1.2.0
+  - @bamboocss/core@1.2.0
+  - @bamboocss/logger@1.2.0
+  - @bamboocss/shared@1.2.0
+  - @bamboocss/types@1.2.0
 
 ## 1.1.0
 
@@ -304,22 +304,22 @@
 
 - Updated dependencies [47a0011]
 - Updated dependencies [e8ec0aa]
-  - @pandacss/types@1.1.0
-  - @pandacss/shared@1.1.0
-  - @pandacss/core@1.1.0
-  - @pandacss/generator@1.1.0
-  - @pandacss/logger@1.1.0
+  - @bamboocss/types@1.1.0
+  - @bamboocss/shared@1.1.0
+  - @bamboocss/core@1.1.0
+  - @bamboocss/generator@1.1.0
+  - @bamboocss/logger@1.1.0
 
 ## 1.0.1
 
 ### Patch Changes
 
 - Updated dependencies [d236e21]
-  - @pandacss/generator@1.0.1
-  - @pandacss/core@1.0.1
-  - @pandacss/logger@1.0.1
-  - @pandacss/shared@1.0.1
-  - @pandacss/types@1.0.1
+  - @bamboocss/generator@1.0.1
+  - @bamboocss/core@1.0.1
+  - @bamboocss/logger@1.0.1
+  - @bamboocss/shared@1.0.1
+  - @bamboocss/types@1.0.1
 
 ## 1.0.0
 
@@ -383,11 +383,11 @@
 
 - Updated dependencies [a3bcbea]
 - Updated dependencies [a20811c]
-  - @pandacss/core@1.0.0
-  - @pandacss/generator@1.0.0
-  - @pandacss/logger@1.0.0
-  - @pandacss/shared@1.0.0
-  - @pandacss/types@1.0.0
+  - @bamboocss/core@1.0.0
+  - @bamboocss/generator@1.0.0
+  - @bamboocss/logger@1.0.0
+  - @bamboocss/shared@1.0.0
+  - @bamboocss/types@1.0.0
 
 ## 0.54.0
 
@@ -397,11 +397,11 @@
 - Updated dependencies [941a208]
 - Updated dependencies [d2aede5]
 - Updated dependencies [fdf5142]
-  - @pandacss/shared@0.54.0
-  - @pandacss/generator@0.54.0
-  - @pandacss/core@0.54.0
-  - @pandacss/types@0.54.0
-  - @pandacss/logger@0.54.0
+  - @bamboocss/shared@0.54.0
+  - @bamboocss/generator@0.54.0
+  - @bamboocss/core@0.54.0
+  - @bamboocss/types@0.54.0
+  - @bamboocss/logger@0.54.0
 
 ## 0.53.7
 
@@ -410,33 +410,33 @@
 - Updated dependencies [5e5af6b]
 - Updated dependencies [9453c9b]
 - Updated dependencies [a67f920]
-  - @pandacss/core@0.53.7
-  - @pandacss/generator@0.53.7
-  - @pandacss/logger@0.53.7
-  - @pandacss/shared@0.53.7
-  - @pandacss/types@0.53.7
+  - @bamboocss/core@0.53.7
+  - @bamboocss/generator@0.53.7
+  - @bamboocss/logger@0.53.7
+  - @bamboocss/shared@0.53.7
+  - @bamboocss/types@0.53.7
 
 ## 0.53.6
 
 ### Patch Changes
 
 - Updated dependencies [a292e9a]
-  - @pandacss/generator@0.53.6
-  - @pandacss/core@0.53.6
-  - @pandacss/logger@0.53.6
-  - @pandacss/shared@0.53.6
-  - @pandacss/types@0.53.6
+  - @bamboocss/generator@0.53.6
+  - @bamboocss/core@0.53.6
+  - @bamboocss/logger@0.53.6
+  - @bamboocss/shared@0.53.6
+  - @bamboocss/types@0.53.6
 
 ## 0.53.5
 
 ### Patch Changes
 
 - Updated dependencies [fe3e943]
-  - @pandacss/generator@0.53.5
-  - @pandacss/core@0.53.5
-  - @pandacss/logger@0.53.5
-  - @pandacss/shared@0.53.5
-  - @pandacss/types@0.53.5
+  - @bamboocss/generator@0.53.5
+  - @bamboocss/core@0.53.5
+  - @bamboocss/logger@0.53.5
+  - @bamboocss/shared@0.53.5
+  - @bamboocss/types@0.53.5
 
 ## 0.53.4
 
@@ -444,63 +444,63 @@
 
 - Updated dependencies [57343c1]
 - Updated dependencies [a2bc49d]
-  - @pandacss/core@0.53.4
-  - @pandacss/generator@0.53.4
-  - @pandacss/logger@0.53.4
-  - @pandacss/shared@0.53.4
-  - @pandacss/types@0.53.4
+  - @bamboocss/core@0.53.4
+  - @bamboocss/generator@0.53.4
+  - @bamboocss/logger@0.53.4
+  - @bamboocss/shared@0.53.4
+  - @bamboocss/types@0.53.4
 
 ## 0.53.3
 
 ### Patch Changes
 
 - Updated dependencies [00aa868]
-  - @pandacss/generator@0.53.3
-  - @pandacss/core@0.53.3
-  - @pandacss/logger@0.53.3
-  - @pandacss/shared@0.53.3
-  - @pandacss/types@0.53.3
+  - @bamboocss/generator@0.53.3
+  - @bamboocss/core@0.53.3
+  - @bamboocss/logger@0.53.3
+  - @bamboocss/shared@0.53.3
+  - @bamboocss/types@0.53.3
 
 ## 0.53.2
 
 ### Patch Changes
 
-- @pandacss/core@0.53.2
-- @pandacss/generator@0.53.2
-- @pandacss/logger@0.53.2
-- @pandacss/shared@0.53.2
-- @pandacss/types@0.53.2
+- @bamboocss/core@0.53.2
+- @bamboocss/generator@0.53.2
+- @bamboocss/logger@0.53.2
+- @bamboocss/shared@0.53.2
+- @bamboocss/types@0.53.2
 
 ## 0.53.1
 
 ### Patch Changes
 
-- @pandacss/core@0.53.1
-- @pandacss/generator@0.53.1
-- @pandacss/logger@0.53.1
-- @pandacss/shared@0.53.1
-- @pandacss/types@0.53.1
+- @bamboocss/core@0.53.1
+- @bamboocss/generator@0.53.1
+- @bamboocss/logger@0.53.1
+- @bamboocss/shared@0.53.1
+- @bamboocss/types@0.53.1
 
 ## 0.53.0
 
 ### Patch Changes
 
 - Updated dependencies [5286731]
-  - @pandacss/generator@0.53.0
-  - @pandacss/types@0.53.0
-  - @pandacss/core@0.53.0
-  - @pandacss/logger@0.53.0
-  - @pandacss/shared@0.53.0
+  - @bamboocss/generator@0.53.0
+  - @bamboocss/types@0.53.0
+  - @bamboocss/core@0.53.0
+  - @bamboocss/logger@0.53.0
+  - @bamboocss/shared@0.53.0
 
 ## 0.52.0
 
 ### Patch Changes
 
-- @pandacss/core@0.52.0
-- @pandacss/generator@0.52.0
-- @pandacss/logger@0.52.0
-- @pandacss/shared@0.52.0
-- @pandacss/types@0.52.0
+- @bamboocss/core@0.52.0
+- @bamboocss/generator@0.52.0
+- @bamboocss/logger@0.52.0
+- @bamboocss/shared@0.52.0
+- @bamboocss/types@0.52.0
 
 ## 0.51.1
 
@@ -540,22 +540,22 @@
   ╚════════════════════════╧════════════════╧═══════════════════╧═══════════════════╧══════════╧═══════════╝
   ```
 
-  - @pandacss/core@0.51.1
-  - @pandacss/generator@0.51.1
-  - @pandacss/logger@0.51.1
-  - @pandacss/shared@0.51.1
-  - @pandacss/types@0.51.1
+  - @bamboocss/core@0.51.1
+  - @bamboocss/generator@0.51.1
+  - @bamboocss/logger@0.51.1
+  - @bamboocss/shared@0.51.1
+  - @bamboocss/types@0.51.1
 
 ## 0.51.0
 
 ### Patch Changes
 
 - Updated dependencies [d68ad1f]
-  - @pandacss/types@0.51.0
-  - @pandacss/core@0.51.0
-  - @pandacss/generator@0.51.0
-  - @pandacss/logger@0.51.0
-  - @pandacss/shared@0.51.0
+  - @bamboocss/types@0.51.0
+  - @bamboocss/core@0.51.0
+  - @bamboocss/generator@0.51.0
+  - @bamboocss/logger@0.51.0
+  - @bamboocss/shared@0.51.0
 
 ## 0.50.0
 
@@ -578,8 +578,8 @@
 - Updated dependencies [fea78c7]
 - Updated dependencies [ad89b90]
 - Updated dependencies [7c85ac7]
-  - @pandacss/types@0.50.0
-  - @pandacss/generator@0.50.0
-  - @pandacss/core@0.50.0
-  - @pandacss/logger@0.50.0
-  - @pandacss/shared@0.50.0
+  - @bamboocss/types@0.50.0
+  - @bamboocss/generator@0.50.0
+  - @bamboocss/core@0.50.0
+  - @bamboocss/logger@0.50.0
+  - @bamboocss/shared@0.50.0

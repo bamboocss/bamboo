@@ -1,4 +1,4 @@
-# @pandacss/extractor
+# @bamboocss/extractor
 
 ## 1.11.3
 
@@ -22,7 +22,7 @@
 
 ### Patch Changes
 
-- @pandacss/shared@1.11.1
+- @bamboocss/shared@1.11.1
 
 ## 1.11.0
 
@@ -30,7 +30,7 @@
 
 - b567ae6: Improve compiled JSX extraction so `css` props are recognized from framework runtime helper output, including
   React, Preact, Vue, Solid, and Qwik builds.
-  - @pandacss/shared@1.11.0
+  - @bamboocss/shared@1.11.0
 
 ## 1.10.0
 
@@ -40,79 +40,79 @@
   TypeScript 6.0.2.
 - Updated dependencies [c31f3a2]
 - Updated dependencies [44457bb]
-  - @pandacss/shared@1.10.0
+  - @bamboocss/shared@1.10.0
 
 ## 1.9.1
 
 ### Patch Changes
 
-- @pandacss/shared@1.9.1
+- @bamboocss/shared@1.9.1
 
 ## 1.9.0
 
 ### Patch Changes
 
-- @pandacss/shared@1.9.0
+- @bamboocss/shared@1.9.0
 
 ## 1.8.2
 
 ### Patch Changes
 
-- @pandacss/shared@1.8.2
+- @bamboocss/shared@1.8.2
 
 ## 1.8.1
 
 ### Patch Changes
 
-- @pandacss/shared@1.8.1
+- @bamboocss/shared@1.8.1
 
 ## 1.8.0
 
 ### Patch Changes
 
-- @pandacss/shared@1.8.0
+- @bamboocss/shared@1.8.0
 
 ## 1.7.3
 
 ### Patch Changes
 
-- @pandacss/shared@1.7.3
+- @bamboocss/shared@1.7.3
 
 ## 1.7.2
 
 ### Patch Changes
 
-- @pandacss/shared@1.7.2
+- @bamboocss/shared@1.7.2
 
 ## 1.7.1
 
 ### Patch Changes
 
-- @pandacss/shared@1.7.1
+- @bamboocss/shared@1.7.1
 
 ## 1.7.0
 
 ### Patch Changes
 
-- @pandacss/shared@1.7.0
+- @bamboocss/shared@1.7.0
 
 ## 1.6.1
 
 ### Patch Changes
 
-- @pandacss/shared@1.6.1
+- @bamboocss/shared@1.6.1
 
 ## 1.6.0
 
 ### Patch Changes
 
-- @pandacss/shared@1.6.0
+- @bamboocss/shared@1.6.0
 
 ## 1.5.1
 
 ### Patch Changes
 
-- @pandacss/shared@1.5.1
+- @bamboocss/shared@1.5.1
 
 ## 1.5.0
 
@@ -131,13 +131,13 @@
   files.
 
   Fixes #3407
-  - @pandacss/shared@1.5.0
+  - @bamboocss/shared@1.5.0
 
 ## 1.4.3
 
 ### Patch Changes
 
-- @pandacss/shared@1.4.3
+- @bamboocss/shared@1.4.3
 
 ## 1.4.2
 
@@ -146,50 +146,50 @@
 - 1290a27: Only log errors that are instances of `PandaError`, preventing test framework and other non-Panda errors from
   being logged during development.
 - Updated dependencies [1290a27]
-  - @pandacss/shared@1.4.2
+  - @bamboocss/shared@1.4.2
 
 ## 1.4.1
 
 ### Patch Changes
 
-- @pandacss/shared@1.4.1
+- @bamboocss/shared@1.4.1
 
 ## 1.4.0
 
 ### Patch Changes
 
-- @pandacss/shared@1.4.0
+- @bamboocss/shared@1.4.0
 
 ## 1.3.1
 
 ### Patch Changes
 
-- @pandacss/shared@1.3.1
+- @bamboocss/shared@1.3.1
 
 ## 1.3.0
 
 ### Patch Changes
 
-- @pandacss/shared@1.3.0
+- @bamboocss/shared@1.3.0
 
 ## 1.2.0
 
 ### Patch Changes
 
-- @pandacss/shared@1.2.0
+- @bamboocss/shared@1.2.0
 
 ## 1.1.0
 
 ### Patch Changes
 
 - Updated dependencies [e8ec0aa]
-  - @pandacss/shared@1.1.0
+  - @bamboocss/shared@1.1.0
 
 ## 1.0.1
 
 ### Patch Changes
 
-- @pandacss/shared@1.0.1
+- @bamboocss/shared@1.0.1
 
 ## 1.0.0
 
@@ -252,7 +252,7 @@
 ### Patch Changes
 
 - Updated dependencies [a3bcbea]
-  - @pandacss/shared@1.0.0
+  - @bamboocss/shared@1.0.0
 
 ## 0.54.0
 
@@ -260,67 +260,67 @@
 
 - Updated dependencies [efa060d]
 - Updated dependencies [d2aede5]
-  - @pandacss/shared@0.54.0
+  - @bamboocss/shared@0.54.0
 
 ## 0.53.7
 
 ### Patch Changes
 
-- @pandacss/shared@0.53.7
+- @bamboocss/shared@0.53.7
 
 ## 0.53.6
 
 ### Patch Changes
 
-- @pandacss/shared@0.53.6
+- @bamboocss/shared@0.53.6
 
 ## 0.53.5
 
 ### Patch Changes
 
-- @pandacss/shared@0.53.5
+- @bamboocss/shared@0.53.5
 
 ## 0.53.4
 
 ### Patch Changes
 
-- @pandacss/shared@0.53.4
+- @bamboocss/shared@0.53.4
 
 ## 0.53.3
 
 ### Patch Changes
 
-- @pandacss/shared@0.53.3
+- @bamboocss/shared@0.53.3
 
 ## 0.53.2
 
 ### Patch Changes
 
-- @pandacss/shared@0.53.2
+- @bamboocss/shared@0.53.2
 
 ## 0.53.1
 
 ### Patch Changes
 
-- @pandacss/shared@0.53.1
+- @bamboocss/shared@0.53.1
 
 ## 0.53.0
 
 ### Patch Changes
 
-- @pandacss/shared@0.53.0
+- @bamboocss/shared@0.53.0
 
 ## 0.52.0
 
 ### Patch Changes
 
-- @pandacss/shared@0.52.0
+- @bamboocss/shared@0.52.0
 
 ## 0.51.1
 
 ### Patch Changes
 
-- @pandacss/shared@0.51.1
+- @bamboocss/shared@0.51.1
 
 ## 0.51.0
 
@@ -333,94 +333,94 @@
 
 ### Patch Changes
 
-- @pandacss/shared@0.51.0
+- @bamboocss/shared@0.51.0
 
 ## 0.50.0
 
 ### Patch Changes
 
-- @pandacss/shared@0.50.0
+- @bamboocss/shared@0.50.0
 
 ## 0.49.0
 
 ### Patch Changes
 
-- @pandacss/shared@0.49.0
+- @bamboocss/shared@0.49.0
 
 ## 0.48.1
 
 ### Patch Changes
 
-- @pandacss/shared@0.48.1
+- @bamboocss/shared@0.48.1
 
 ## 0.48.0
 
 ### Patch Changes
 
-- @pandacss/shared@0.48.0
+- @bamboocss/shared@0.48.0
 
 ## 0.47.1
 
 ### Patch Changes
 
-- @pandacss/shared@0.47.1
+- @bamboocss/shared@0.47.1
 
 ## 0.47.0
 
 ### Patch Changes
 
-- @pandacss/shared@0.47.0
+- @bamboocss/shared@0.47.0
 
 ## 0.46.1
 
 ### Patch Changes
 
-- @pandacss/shared@0.46.1
+- @bamboocss/shared@0.46.1
 
 ## 0.46.0
 
 ### Patch Changes
 
 - Updated dependencies [54426a2]
-  - @pandacss/shared@0.46.0
+  - @bamboocss/shared@0.46.0
 
 ## 0.45.2
 
 ### Patch Changes
 
-- @pandacss/shared@0.45.2
+- @bamboocss/shared@0.45.2
 
 ## 0.45.1
 
 ### Patch Changes
 
-- @pandacss/shared@0.45.1
+- @bamboocss/shared@0.45.1
 
 ## 0.45.0
 
 ### Patch Changes
 
 - Updated dependencies [552dd4b]
-  - @pandacss/shared@0.45.0
+  - @bamboocss/shared@0.45.0
 
 ## 0.44.0
 
 ### Patch Changes
 
-- @pandacss/shared@0.44.0
+- @bamboocss/shared@0.44.0
 
 ## 0.43.0
 
 ### Patch Changes
 
-- @pandacss/shared@0.43.0
+- @bamboocss/shared@0.43.0
 
 ## 0.42.0
 
 ### Patch Changes
 
 - 19c3a2c: Minor changes to the format of the `panda analyze --output coverage.json` file
-  - @pandacss/shared@0.42.0
+  - @bamboocss/shared@0.42.0
 
 ## 0.41.0
 
@@ -443,90 +443,90 @@
   })
   ```
 
-  - @pandacss/shared@0.41.0
+  - @bamboocss/shared@0.41.0
 
 ## 0.40.1
 
 ### Patch Changes
 
-- @pandacss/shared@0.40.1
+- @bamboocss/shared@0.40.1
 
 ## 0.40.0
 
 ### Patch Changes
 
-- @pandacss/shared@0.40.0
+- @bamboocss/shared@0.40.0
 
 ## 0.39.2
 
 ### Patch Changes
 
 - Updated dependencies [1f636eb]
-  - @pandacss/shared@0.39.2
+  - @bamboocss/shared@0.39.2
 
 ## 0.39.1
 
 ### Patch Changes
 
-- @pandacss/shared@0.39.1
+- @bamboocss/shared@0.39.1
 
 ## 0.39.0
 
 ### Patch Changes
 
 - Updated dependencies [935ec86]
-  - @pandacss/shared@0.39.0
+  - @bamboocss/shared@0.39.0
 
 ## 0.38.0
 
 ### Patch Changes
 
 - Updated dependencies [2c8b933]
-  - @pandacss/shared@0.38.0
+  - @bamboocss/shared@0.38.0
 
 ## 0.37.2
 
 ### Patch Changes
 
-- @pandacss/shared@0.37.2
+- @bamboocss/shared@0.37.2
 
 ## 0.37.1
 
 ### Patch Changes
 
 - Updated dependencies [99870bb]
-  - @pandacss/shared@0.37.1
+  - @bamboocss/shared@0.37.1
 
 ## 0.37.0
 
 ### Patch Changes
 
 - Updated dependencies [7daf159]
-  - @pandacss/shared@0.37.0
+  - @bamboocss/shared@0.37.0
 
 ## 0.36.1
 
 ### Patch Changes
 
-- @pandacss/shared@0.36.1
+- @bamboocss/shared@0.36.1
 
 ## 0.36.0
 
 ### Patch Changes
 
-- @pandacss/shared@0.36.0
+- @bamboocss/shared@0.36.0
 
 ## 0.35.0
 
 ### Patch Changes
 
-- @pandacss/shared@0.35.0
+- @bamboocss/shared@0.35.0
 
 ## 0.34.3
 
 ### Patch Changes
 
-- @pandacss/shared@0.34.3
+- @bamboocss/shared@0.34.3
 
 ## 0.34.2
 
@@ -549,31 +549,31 @@
   panda.sva({ base: { root: { color: 'green' } } })
   ```
 
-  - @pandacss/shared@0.34.2
+  - @bamboocss/shared@0.34.2
 
 ## 0.34.1
 
 ### Patch Changes
 
-- @pandacss/shared@0.34.1
+- @bamboocss/shared@0.34.1
 
 ## 0.34.0
 
 ### Patch Changes
 
-- @pandacss/shared@0.34.0
+- @bamboocss/shared@0.34.0
 
 ## 0.33.0
 
 ### Patch Changes
 
-- @pandacss/shared@0.33.0
+- @bamboocss/shared@0.33.0
 
 ## 0.32.1
 
 ### Patch Changes
 
-- @pandacss/shared@0.32.1
+- @bamboocss/shared@0.32.1
 
 ## 0.32.0
 
@@ -581,26 +581,26 @@
 
 - 7e70b6b: Fix issue where `0` values doesn't get extracted when used in a condition
 - Updated dependencies [8cd8c19]
-  - @pandacss/shared@0.32.0
+  - @bamboocss/shared@0.32.0
 
 ## 0.31.0
 
 ### Patch Changes
 
 - Updated dependencies [f0296249]
-  - @pandacss/shared@0.31.0
+  - @bamboocss/shared@0.31.0
 
 ## 0.30.2
 
 ### Patch Changes
 
-- @pandacss/shared@0.30.2
+- @bamboocss/shared@0.30.2
 
 ## 0.30.1
 
 ### Patch Changes
 
-- @pandacss/shared@0.30.1
+- @bamboocss/shared@0.30.1
 
 ## 0.30.0
 
@@ -608,19 +608,19 @@
 
 - Updated dependencies [ab32d1d7]
 - Updated dependencies [49c760cd]
-  - @pandacss/shared@0.30.0
+  - @bamboocss/shared@0.30.0
 
 ## 0.29.1
 
 ### Patch Changes
 
-- @pandacss/shared@0.29.1
+- @bamboocss/shared@0.29.1
 
 ## 0.29.0
 
 ### Patch Changes
 
-- @pandacss/shared@0.29.0
+- @bamboocss/shared@0.29.0
 
 ## 0.28.0
 
@@ -1000,7 +1000,7 @@
 
 - 7bc69e4b: Fix issue where extraction does not work when the spread syntax is used or prop contains string that ends
   with ':'
-  - @pandacss/logger@0.7.0
+  - @bamboocss/logger@0.7.0
 
 ## 0.6.0
 
@@ -1016,7 +1016,7 @@
   )
   ```
 
-  - @pandacss/logger@0.6.0
+  - @bamboocss/logger@0.6.0
 
 ## 0.5.1
 
@@ -1145,7 +1145,7 @@
   ```
 
 - Updated dependencies [f9247e52]
-  - @pandacss/logger@0.5.1
+  - @bamboocss/logger@0.5.1
 
 ## 0.5.0
 
@@ -1179,19 +1179,19 @@
 
 ### Patch Changes
 
-- @pandacss/logger@0.5.0
+- @bamboocss/logger@0.5.0
 
 ## 0.4.0
 
 ### Patch Changes
 
-- @pandacss/logger@0.4.0
+- @bamboocss/logger@0.4.0
 
 ## 0.3.2
 
 ### Patch Changes
 
-- @pandacss/logger@0.3.2
+- @bamboocss/logger@0.3.2
 
 ## 0.3.1
 
@@ -1199,13 +1199,13 @@
 
 - efd79d83: Baseline release for the launch
 - Updated dependencies [efd79d83]
-  - @pandacss/logger@0.3.1
+  - @bamboocss/logger@0.3.1
 
 ## 0.3.0
 
 ### Patch Changes
 
-- @pandacss/logger@0.3.0
+- @bamboocss/logger@0.3.0
 
 ## 0.0.2
 
@@ -1219,4 +1219,4 @@
   - Add `jsxElement` option to patterns, to allow specifying the jsx element rendered by the patterns.
 
 - Updated dependencies [fb40fff2]
-  - @pandacss/logger@0.0.2
+  - @bamboocss/logger@0.0.2

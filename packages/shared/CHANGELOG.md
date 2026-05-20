@@ -1,4 +1,4 @@
-# @pandacss/shared
+# @bamboocss/shared
 
 ## 1.11.3
 
@@ -321,7 +321,7 @@
 - 99870bb: Fix issue where setting the pattern `jsx` option with dot notation didn't work.
 
   ```jsx
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     // ...

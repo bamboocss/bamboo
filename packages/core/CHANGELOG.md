@@ -1,4 +1,4 @@
-# @pandacss/core
+# @bamboocss/core
 
 ## 1.11.3
 
@@ -33,11 +33,11 @@
 - 2f29aa6: Bump `postcss` from `8.5.6` to `8.5.14` to address
   [CVE-2026-41305](https://www.cve.org/CVERecord?id=CVE-2026-41305).
 - Updated dependencies [2ea9205]
-  - @pandacss/types@1.11.1
-  - @pandacss/logger@1.11.1
-  - @pandacss/token-dictionary@1.11.1
-  - @pandacss/is-valid-prop@1.11.1
-  - @pandacss/shared@1.11.1
+  - @bamboocss/types@1.11.1
+  - @bamboocss/logger@1.11.1
+  - @bamboocss/token-dictionary@1.11.1
+  - @bamboocss/is-valid-prop@1.11.1
+  - @bamboocss/shared@1.11.1
 
 ## 1.11.0
 
@@ -54,7 +54,7 @@
   **Config:**
 
   ```ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     conditions: {
@@ -100,16 +100,16 @@
 - 055e69c: Pin `@csstools/postcss-cascade-layers` back to `5.0.2`.
 
   Version `6.0.0` dropped the CommonJS export and raised the engine requirement to Node `>=20.19.0`, which broke
-  `panda codegen` on Node 20.0–20.18 and Node 18 with `ERR_REQUIRE_ESM` (issue #3518). Since `@pandacss/core` ships a
+  `panda codegen` on Node 20.0–20.18 and Node 18 with `ERR_REQUIRE_ESM` (issue #3518). Since `@bamboocss/core` ships a
   CJS build that requires the package, we stay on the last dual-published version. The two releases are functionally
   equivalent — v6 only removed CJS support.
 
 - Updated dependencies [78869ae]
-  - @pandacss/types@1.11.0
-  - @pandacss/logger@1.11.0
-  - @pandacss/token-dictionary@1.11.0
-  - @pandacss/is-valid-prop@1.11.0
-  - @pandacss/shared@1.11.0
+  - @bamboocss/types@1.11.0
+  - @bamboocss/logger@1.11.0
+  - @bamboocss/token-dictionary@1.11.0
+  - @bamboocss/is-valid-prop@1.11.0
+  - @bamboocss/shared@1.11.0
 
 ## 1.10.0
 
@@ -126,11 +126,11 @@
 - Updated dependencies [bc2b8d7]
 - Updated dependencies [8d3b6f8]
 - Updated dependencies [44457bb]
-  - @pandacss/types@1.10.0
-  - @pandacss/logger@1.10.0
-  - @pandacss/shared@1.10.0
-  - @pandacss/token-dictionary@1.10.0
-  - @pandacss/is-valid-prop@1.10.0
+  - @bamboocss/types@1.10.0
+  - @bamboocss/logger@1.10.0
+  - @bamboocss/shared@1.10.0
+  - @bamboocss/token-dictionary@1.10.0
+  - @bamboocss/is-valid-prop@1.10.0
 
 ## 1.9.1
 
@@ -149,11 +149,11 @@
   requirement that pseudo-elements must appear at the end of a selector.
 
 - Updated dependencies [d02fcf6]
-  - @pandacss/token-dictionary@1.9.1
-  - @pandacss/is-valid-prop@1.9.1
-  - @pandacss/logger@1.9.1
-  - @pandacss/shared@1.9.1
-  - @pandacss/types@1.9.1
+  - @bamboocss/token-dictionary@1.9.1
+  - @bamboocss/is-valid-prop@1.9.1
+  - @bamboocss/logger@1.9.1
+  - @bamboocss/shared@1.9.1
+  - @bamboocss/types@1.9.1
 
 ## 1.9.0
 
@@ -185,11 +185,11 @@
 
 - 7d66c0b: Wrap enum pattern property types with `ConditionalValue` again so generated pattern typings remain
   conditional-safe.
-  - @pandacss/is-valid-prop@1.9.0
-  - @pandacss/logger@1.9.0
-  - @pandacss/shared@1.9.0
-  - @pandacss/token-dictionary@1.9.0
-  - @pandacss/types@1.9.0
+  - @bamboocss/is-valid-prop@1.9.0
+  - @bamboocss/logger@1.9.0
+  - @bamboocss/shared@1.9.0
+  - @bamboocss/token-dictionary@1.9.0
+  - @bamboocss/types@1.9.0
 
 ## 1.8.2
 
@@ -215,62 +215,62 @@
   This affects users who define conditions using the array format and combine them with arbitrary/nested selectors.
 
 - Updated dependencies [331d1a5]
-  - @pandacss/types@1.8.2
-  - @pandacss/is-valid-prop@1.8.2
-  - @pandacss/logger@1.8.2
-  - @pandacss/token-dictionary@1.8.2
-  - @pandacss/shared@1.8.2
+  - @bamboocss/types@1.8.2
+  - @bamboocss/is-valid-prop@1.8.2
+  - @bamboocss/logger@1.8.2
+  - @bamboocss/token-dictionary@1.8.2
+  - @bamboocss/shared@1.8.2
 
 ## 1.8.1
 
 ### Patch Changes
 
 - Updated dependencies [3c86c29]
-  - @pandacss/types@1.8.1
-  - @pandacss/logger@1.8.1
-  - @pandacss/token-dictionary@1.8.1
-  - @pandacss/is-valid-prop@1.8.1
-  - @pandacss/shared@1.8.1
+  - @bamboocss/types@1.8.1
+  - @bamboocss/logger@1.8.1
+  - @bamboocss/token-dictionary@1.8.1
+  - @bamboocss/is-valid-prop@1.8.1
+  - @bamboocss/shared@1.8.1
 
 ## 1.8.0
 
 ### Patch Changes
 
-- @pandacss/is-valid-prop@1.8.0
-- @pandacss/logger@1.8.0
-- @pandacss/shared@1.8.0
-- @pandacss/token-dictionary@1.8.0
-- @pandacss/types@1.8.0
+- @bamboocss/is-valid-prop@1.8.0
+- @bamboocss/logger@1.8.0
+- @bamboocss/shared@1.8.0
+- @bamboocss/token-dictionary@1.8.0
+- @bamboocss/types@1.8.0
 
 ## 1.7.3
 
 ### Patch Changes
 
-- @pandacss/is-valid-prop@1.7.3
-- @pandacss/logger@1.7.3
-- @pandacss/shared@1.7.3
-- @pandacss/token-dictionary@1.7.3
-- @pandacss/types@1.7.3
+- @bamboocss/is-valid-prop@1.7.3
+- @bamboocss/logger@1.7.3
+- @bamboocss/shared@1.7.3
+- @bamboocss/token-dictionary@1.7.3
+- @bamboocss/types@1.7.3
 
 ## 1.7.2
 
 ### Patch Changes
 
-- @pandacss/is-valid-prop@1.7.2
-- @pandacss/logger@1.7.2
-- @pandacss/shared@1.7.2
-- @pandacss/token-dictionary@1.7.2
-- @pandacss/types@1.7.2
+- @bamboocss/is-valid-prop@1.7.2
+- @bamboocss/logger@1.7.2
+- @bamboocss/shared@1.7.2
+- @bamboocss/token-dictionary@1.7.2
+- @bamboocss/types@1.7.2
 
 ## 1.7.1
 
 ### Patch Changes
 
-- @pandacss/is-valid-prop@1.7.1
-- @pandacss/logger@1.7.1
-- @pandacss/shared@1.7.1
-- @pandacss/token-dictionary@1.7.1
-- @pandacss/types@1.7.1
+- @bamboocss/is-valid-prop@1.7.1
+- @bamboocss/logger@1.7.1
+- @bamboocss/shared@1.7.1
+- @bamboocss/token-dictionary@1.7.1
+- @bamboocss/types@1.7.1
 
 ## 1.7.0
 
@@ -282,11 +282,11 @@
   - Split CSS generation was missing recipes that only have base styles (no variants).
 
 - Updated dependencies [86b30b1]
-  - @pandacss/types@1.7.0
-  - @pandacss/logger@1.7.0
-  - @pandacss/token-dictionary@1.7.0
-  - @pandacss/is-valid-prop@1.7.0
-  - @pandacss/shared@1.7.0
+  - @bamboocss/types@1.7.0
+  - @bamboocss/logger@1.7.0
+  - @bamboocss/token-dictionary@1.7.0
+  - @bamboocss/is-valid-prop@1.7.0
+  - @bamboocss/shared@1.7.0
 
 ## 1.6.1
 
@@ -325,31 +325,31 @@
   // xcss.raw now properly recognized
   ```
 
-  - @pandacss/is-valid-prop@1.6.1
-  - @pandacss/logger@1.6.1
-  - @pandacss/shared@1.6.1
-  - @pandacss/token-dictionary@1.6.1
-  - @pandacss/types@1.6.1
+  - @bamboocss/is-valid-prop@1.6.1
+  - @bamboocss/logger@1.6.1
+  - @bamboocss/shared@1.6.1
+  - @bamboocss/token-dictionary@1.6.1
+  - @bamboocss/types@1.6.1
 
 ## 1.6.0
 
 ### Patch Changes
 
-- @pandacss/is-valid-prop@1.6.0
-- @pandacss/logger@1.6.0
-- @pandacss/shared@1.6.0
-- @pandacss/token-dictionary@1.6.0
-- @pandacss/types@1.6.0
+- @bamboocss/is-valid-prop@1.6.0
+- @bamboocss/logger@1.6.0
+- @bamboocss/shared@1.6.0
+- @bamboocss/token-dictionary@1.6.0
+- @bamboocss/types@1.6.0
 
 ## 1.5.1
 
 ### Patch Changes
 
-- @pandacss/is-valid-prop@1.5.1
-- @pandacss/logger@1.5.1
-- @pandacss/shared@1.5.1
-- @pandacss/token-dictionary@1.5.1
-- @pandacss/types@1.5.1
+- @bamboocss/is-valid-prop@1.5.1
+- @bamboocss/logger@1.5.1
+- @bamboocss/shared@1.5.1
+- @bamboocss/token-dictionary@1.5.1
+- @bamboocss/types@1.5.1
 
 ## 1.5.0
 
@@ -389,11 +389,11 @@
 ### Patch Changes
 
 - Updated dependencies [91c65ff]
-  - @pandacss/types@1.5.0
-  - @pandacss/token-dictionary@1.5.0
-  - @pandacss/logger@1.5.0
-  - @pandacss/is-valid-prop@1.5.0
-  - @pandacss/shared@1.5.0
+  - @bamboocss/types@1.5.0
+  - @bamboocss/token-dictionary@1.5.0
+  - @bamboocss/logger@1.5.0
+  - @bamboocss/is-valid-prop@1.5.0
+  - @bamboocss/shared@1.5.0
 
 ## 1.4.3
 
@@ -411,11 +411,11 @@
 
 - 84a0de9: Improve static CSS generation performance with wildcard memoization. Token lookups for wildcard (`*`)
   expansions are now cached, providing ~32% faster processing for large configs with wildcards.
-  - @pandacss/is-valid-prop@1.4.3
-  - @pandacss/logger@1.4.3
-  - @pandacss/shared@1.4.3
-  - @pandacss/token-dictionary@1.4.3
-  - @pandacss/types@1.4.3
+  - @bamboocss/is-valid-prop@1.4.3
+  - @bamboocss/logger@1.4.3
+  - @bamboocss/shared@1.4.3
+  - @bamboocss/token-dictionary@1.4.3
+  - @bamboocss/types@1.4.3
 
 ## 1.4.2
 
@@ -447,22 +447,22 @@
 
 - Updated dependencies [1290a27]
 - Updated dependencies [70420dd]
-  - @pandacss/shared@1.4.2
-  - @pandacss/token-dictionary@1.4.2
-  - @pandacss/types@1.4.2
-  - @pandacss/is-valid-prop@1.4.2
-  - @pandacss/logger@1.4.2
+  - @bamboocss/shared@1.4.2
+  - @bamboocss/token-dictionary@1.4.2
+  - @bamboocss/types@1.4.2
+  - @bamboocss/is-valid-prop@1.4.2
+  - @bamboocss/logger@1.4.2
 
 ## 1.4.1
 
 ### Patch Changes
 
 - db237b6: Improve recipe variant props tracking in JSX
-  - @pandacss/is-valid-prop@1.4.1
-  - @pandacss/logger@1.4.1
-  - @pandacss/shared@1.4.1
-  - @pandacss/token-dictionary@1.4.1
-  - @pandacss/types@1.4.1
+  - @bamboocss/is-valid-prop@1.4.1
+  - @bamboocss/logger@1.4.1
+  - @bamboocss/shared@1.4.1
+  - @bamboocss/token-dictionary@1.4.1
+  - @bamboocss/types@1.4.1
 
 ## 1.4.0
 
@@ -470,11 +470,11 @@
 
 - 4c291ca: JSX: Always track the `<component>.Root` for recipe variant props. This is a generally resilient default and
   prevents the need for manual jsx hints.
-  - @pandacss/is-valid-prop@1.4.0
-  - @pandacss/logger@1.4.0
-  - @pandacss/shared@1.4.0
-  - @pandacss/token-dictionary@1.4.0
-  - @pandacss/types@1.4.0
+  - @bamboocss/is-valid-prop@1.4.0
+  - @bamboocss/logger@1.4.0
+  - @bamboocss/shared@1.4.0
+  - @bamboocss/token-dictionary@1.4.0
+  - @bamboocss/types@1.4.0
 
 ## 1.3.1
 
@@ -497,32 +497,32 @@
   more works in the compiler.
 
   This PR fixes this by only tracking recipe props in the `Tabs.Root` slot.
-  - @pandacss/is-valid-prop@1.3.1
-  - @pandacss/logger@1.3.1
-  - @pandacss/shared@1.3.1
-  - @pandacss/token-dictionary@1.3.1
-  - @pandacss/types@1.3.1
+  - @bamboocss/is-valid-prop@1.3.1
+  - @bamboocss/logger@1.3.1
+  - @bamboocss/shared@1.3.1
+  - @bamboocss/token-dictionary@1.3.1
+  - @bamboocss/types@1.3.1
 
 ## 1.3.0
 
 ### Patch Changes
 
 - Updated dependencies [70efd73]
-  - @pandacss/types@1.3.0
-  - @pandacss/logger@1.3.0
-  - @pandacss/token-dictionary@1.3.0
-  - @pandacss/is-valid-prop@1.3.0
-  - @pandacss/shared@1.3.0
+  - @bamboocss/types@1.3.0
+  - @bamboocss/logger@1.3.0
+  - @bamboocss/token-dictionary@1.3.0
+  - @bamboocss/is-valid-prop@1.3.0
+  - @bamboocss/shared@1.3.0
 
 ## 1.2.0
 
 ### Patch Changes
 
-- @pandacss/is-valid-prop@1.2.0
-- @pandacss/logger@1.2.0
-- @pandacss/shared@1.2.0
-- @pandacss/token-dictionary@1.2.0
-- @pandacss/types@1.2.0
+- @bamboocss/is-valid-prop@1.2.0
+- @bamboocss/logger@1.2.0
+- @bamboocss/shared@1.2.0
+- @bamboocss/token-dictionary@1.2.0
+- @bamboocss/types@1.2.0
 
 ## 1.1.0
 
@@ -530,21 +530,21 @@
 
 - Updated dependencies [47a0011]
 - Updated dependencies [e8ec0aa]
-  - @pandacss/types@1.1.0
-  - @pandacss/shared@1.1.0
-  - @pandacss/logger@1.1.0
-  - @pandacss/token-dictionary@1.1.0
-  - @pandacss/is-valid-prop@1.1.0
+  - @bamboocss/types@1.1.0
+  - @bamboocss/shared@1.1.0
+  - @bamboocss/logger@1.1.0
+  - @bamboocss/token-dictionary@1.1.0
+  - @bamboocss/is-valid-prop@1.1.0
 
 ## 1.0.1
 
 ### Patch Changes
 
-- @pandacss/is-valid-prop@1.0.1
-- @pandacss/logger@1.0.1
-- @pandacss/shared@1.0.1
-- @pandacss/token-dictionary@1.0.1
-- @pandacss/types@1.0.1
+- @bamboocss/is-valid-prop@1.0.1
+- @bamboocss/logger@1.0.1
+- @bamboocss/shared@1.0.1
+- @bamboocss/token-dictionary@1.0.1
+- @bamboocss/types@1.0.1
 
 ## 1.0.0
 
@@ -611,11 +611,11 @@
   - Sort `fieldSizing` property properly
 
 - Updated dependencies [a3bcbea]
-  - @pandacss/is-valid-prop@1.0.0
-  - @pandacss/logger@1.0.0
-  - @pandacss/shared@1.0.0
-  - @pandacss/token-dictionary@1.0.0
-  - @pandacss/types@1.0.0
+  - @bamboocss/is-valid-prop@1.0.0
+  - @bamboocss/logger@1.0.0
+  - @bamboocss/shared@1.0.0
+  - @bamboocss/token-dictionary@1.0.0
+  - @bamboocss/types@1.0.0
 
 ## 0.54.0
 
@@ -624,11 +624,11 @@
 - Updated dependencies [efa060d]
 - Updated dependencies [d2aede5]
 - Updated dependencies [fdf5142]
-  - @pandacss/shared@0.54.0
-  - @pandacss/token-dictionary@0.54.0
-  - @pandacss/types@0.54.0
-  - @pandacss/is-valid-prop@0.54.0
-  - @pandacss/logger@0.54.0
+  - @bamboocss/shared@0.54.0
+  - @bamboocss/token-dictionary@0.54.0
+  - @bamboocss/types@0.54.0
+  - @bamboocss/is-valid-prop@0.54.0
+  - @bamboocss/logger@0.54.0
 
 ## 0.53.7
 
@@ -636,31 +636,31 @@
 
 - 5e5af6b: Fix import detection in Windows
 - 9453c9b: Fix issue where `@breakpoint` from `hideBelow` or `hideFrom` might not be compiled to media query correctly
-  - @pandacss/is-valid-prop@0.53.7
-  - @pandacss/logger@0.53.7
-  - @pandacss/shared@0.53.7
-  - @pandacss/token-dictionary@0.53.7
-  - @pandacss/types@0.53.7
+  - @bamboocss/is-valid-prop@0.53.7
+  - @bamboocss/logger@0.53.7
+  - @bamboocss/shared@0.53.7
+  - @bamboocss/token-dictionary@0.53.7
+  - @bamboocss/types@0.53.7
 
 ## 0.53.6
 
 ### Patch Changes
 
-- @pandacss/is-valid-prop@0.53.6
-- @pandacss/logger@0.53.6
-- @pandacss/shared@0.53.6
-- @pandacss/token-dictionary@0.53.6
-- @pandacss/types@0.53.6
+- @bamboocss/is-valid-prop@0.53.6
+- @bamboocss/logger@0.53.6
+- @bamboocss/shared@0.53.6
+- @bamboocss/token-dictionary@0.53.6
+- @bamboocss/types@0.53.6
 
 ## 0.53.5
 
 ### Patch Changes
 
-- @pandacss/is-valid-prop@0.53.5
-- @pandacss/logger@0.53.5
-- @pandacss/shared@0.53.5
-- @pandacss/token-dictionary@0.53.5
-- @pandacss/types@0.53.5
+- @bamboocss/is-valid-prop@0.53.5
+- @bamboocss/logger@0.53.5
+- @bamboocss/shared@0.53.5
+- @bamboocss/token-dictionary@0.53.5
+- @bamboocss/types@0.53.5
 
 ## 0.53.4
 
@@ -669,83 +669,83 @@
 - 57343c1: - Fix issue where conditions generated from `themes` lead to incorrect css when used directly in style
   objects.
   - Improve handling of mixed conditions defined in the config.
-  - @pandacss/is-valid-prop@0.53.4
-  - @pandacss/logger@0.53.4
-  - @pandacss/shared@0.53.4
-  - @pandacss/token-dictionary@0.53.4
-  - @pandacss/types@0.53.4
+  - @bamboocss/is-valid-prop@0.53.4
+  - @bamboocss/logger@0.53.4
+  - @bamboocss/shared@0.53.4
+  - @bamboocss/token-dictionary@0.53.4
+  - @bamboocss/types@0.53.4
 
 ## 0.53.3
 
 ### Patch Changes
 
-- @pandacss/is-valid-prop@0.53.3
-- @pandacss/logger@0.53.3
-- @pandacss/shared@0.53.3
-- @pandacss/token-dictionary@0.53.3
-- @pandacss/types@0.53.3
+- @bamboocss/is-valid-prop@0.53.3
+- @bamboocss/logger@0.53.3
+- @bamboocss/shared@0.53.3
+- @bamboocss/token-dictionary@0.53.3
+- @bamboocss/types@0.53.3
 
 ## 0.53.2
 
 ### Patch Changes
 
-- @pandacss/is-valid-prop@0.53.2
-- @pandacss/logger@0.53.2
-- @pandacss/shared@0.53.2
-- @pandacss/token-dictionary@0.53.2
-- @pandacss/types@0.53.2
+- @bamboocss/is-valid-prop@0.53.2
+- @bamboocss/logger@0.53.2
+- @bamboocss/shared@0.53.2
+- @bamboocss/token-dictionary@0.53.2
+- @bamboocss/types@0.53.2
 
 ## 0.53.1
 
 ### Patch Changes
 
-- @pandacss/is-valid-prop@0.53.1
-- @pandacss/logger@0.53.1
-- @pandacss/shared@0.53.1
-- @pandacss/token-dictionary@0.53.1
-- @pandacss/types@0.53.1
+- @bamboocss/is-valid-prop@0.53.1
+- @bamboocss/logger@0.53.1
+- @bamboocss/shared@0.53.1
+- @bamboocss/token-dictionary@0.53.1
+- @bamboocss/types@0.53.1
 
 ## 0.53.0
 
 ### Patch Changes
 
 - Updated dependencies [5286731]
-  - @pandacss/is-valid-prop@0.53.0
-  - @pandacss/types@0.53.0
-  - @pandacss/logger@0.53.0
-  - @pandacss/token-dictionary@0.53.0
-  - @pandacss/shared@0.53.0
+  - @bamboocss/is-valid-prop@0.53.0
+  - @bamboocss/types@0.53.0
+  - @bamboocss/logger@0.53.0
+  - @bamboocss/token-dictionary@0.53.0
+  - @bamboocss/shared@0.53.0
 
 ## 0.52.0
 
 ### Patch Changes
 
-- @pandacss/is-valid-prop@0.52.0
-- @pandacss/logger@0.52.0
-- @pandacss/shared@0.52.0
-- @pandacss/token-dictionary@0.52.0
-- @pandacss/types@0.52.0
+- @bamboocss/is-valid-prop@0.52.0
+- @bamboocss/logger@0.52.0
+- @bamboocss/shared@0.52.0
+- @bamboocss/token-dictionary@0.52.0
+- @bamboocss/types@0.52.0
 
 ## 0.51.1
 
 ### Patch Changes
 
-- @pandacss/is-valid-prop@0.51.1
-- @pandacss/logger@0.51.1
-- @pandacss/shared@0.51.1
-- @pandacss/token-dictionary@0.51.1
-- @pandacss/types@0.51.1
+- @bamboocss/is-valid-prop@0.51.1
+- @bamboocss/logger@0.51.1
+- @bamboocss/shared@0.51.1
+- @bamboocss/token-dictionary@0.51.1
+- @bamboocss/types@0.51.1
 
 ## 0.51.0
 
 ### Patch Changes
 
 - Updated dependencies [d68ad1f]
-  - @pandacss/types@0.51.0
-  - @pandacss/logger@0.51.0
-  - @pandacss/token-dictionary@0.51.0
-  - @pandacss/is-valid-prop@0.51.0
-  - @pandacss/shared@0.51.0
+  - @bamboocss/types@0.51.0
+  - @bamboocss/logger@0.51.0
+  - @bamboocss/token-dictionary@0.51.0
+  - @bamboocss/is-valid-prop@0.51.0
+  - @bamboocss/shared@0.51.0
 
 ## 0.50.0
 
@@ -766,11 +766,11 @@
 
 - Updated dependencies [fea78c7]
 - Updated dependencies [ad89b90]
-  - @pandacss/types@0.50.0
-  - @pandacss/token-dictionary@0.50.0
-  - @pandacss/logger@0.50.0
-  - @pandacss/is-valid-prop@0.50.0
-  - @pandacss/shared@0.50.0
+  - @bamboocss/types@0.50.0
+  - @bamboocss/token-dictionary@0.50.0
+  - @bamboocss/logger@0.50.0
+  - @bamboocss/is-valid-prop@0.50.0
+  - @bamboocss/shared@0.50.0
 
 ## 0.49.0
 
@@ -784,7 +784,7 @@
   Here's an example of this:
 
   ```jsx
-  import { defineAnimationStyles } from '@pandacss/dev'
+  import { defineAnimationStyles } from '@bamboocss/dev'
 
   export const animationStyles = defineAnimationStyles({
     'slide-fade-in': {
@@ -832,64 +832,64 @@
 ### Patch Changes
 
 - Updated dependencies [97a0e4d]
-  - @pandacss/types@0.49.0
-  - @pandacss/logger@0.49.0
-  - @pandacss/token-dictionary@0.49.0
-  - @pandacss/is-valid-prop@0.49.0
-  - @pandacss/shared@0.49.0
+  - @bamboocss/types@0.49.0
+  - @bamboocss/logger@0.49.0
+  - @bamboocss/token-dictionary@0.49.0
+  - @bamboocss/is-valid-prop@0.49.0
+  - @bamboocss/shared@0.49.0
 
 ## 0.48.1
 
 ### Patch Changes
 
-- @pandacss/is-valid-prop@0.48.1
-- @pandacss/logger@0.48.1
-- @pandacss/shared@0.48.1
-- @pandacss/token-dictionary@0.48.1
-- @pandacss/types@0.48.1
+- @bamboocss/is-valid-prop@0.48.1
+- @bamboocss/logger@0.48.1
+- @bamboocss/shared@0.48.1
+- @bamboocss/token-dictionary@0.48.1
+- @bamboocss/types@0.48.1
 
 ## 0.48.0
 
 ### Patch Changes
 
-- @pandacss/is-valid-prop@0.48.0
-- @pandacss/logger@0.48.0
-- @pandacss/shared@0.48.0
-- @pandacss/token-dictionary@0.48.0
-- @pandacss/types@0.48.0
+- @bamboocss/is-valid-prop@0.48.0
+- @bamboocss/logger@0.48.0
+- @bamboocss/shared@0.48.0
+- @bamboocss/token-dictionary@0.48.0
+- @bamboocss/types@0.48.0
 
 ## 0.47.1
 
 ### Patch Changes
 
 - Updated dependencies [144113f]
-  - @pandacss/token-dictionary@0.47.1
-  - @pandacss/is-valid-prop@0.47.1
-  - @pandacss/logger@0.47.1
-  - @pandacss/shared@0.47.1
-  - @pandacss/types@0.47.1
+  - @bamboocss/token-dictionary@0.47.1
+  - @bamboocss/is-valid-prop@0.47.1
+  - @bamboocss/logger@0.47.1
+  - @bamboocss/shared@0.47.1
+  - @bamboocss/types@0.47.1
 
 ## 0.47.0
 
 ### Patch Changes
 
 - Updated dependencies [5e683ee]
-  - @pandacss/token-dictionary@0.47.0
-  - @pandacss/types@0.47.0
-  - @pandacss/logger@0.47.0
-  - @pandacss/is-valid-prop@0.47.0
-  - @pandacss/shared@0.47.0
+  - @bamboocss/token-dictionary@0.47.0
+  - @bamboocss/types@0.47.0
+  - @bamboocss/logger@0.47.0
+  - @bamboocss/is-valid-prop@0.47.0
+  - @bamboocss/shared@0.47.0
 
 ## 0.46.1
 
 ### Patch Changes
 
 - 9fbd2d8: Fix issue where using container query in static css results in empty styles.
-  - @pandacss/is-valid-prop@0.46.1
-  - @pandacss/logger@0.46.1
-  - @pandacss/shared@0.46.1
-  - @pandacss/token-dictionary@0.46.1
-  - @pandacss/types@0.46.1
+  - @bamboocss/is-valid-prop@0.46.1
+  - @bamboocss/logger@0.46.1
+  - @bamboocss/shared@0.46.1
+  - @bamboocss/token-dictionary@0.46.1
+  - @bamboocss/types@0.46.1
 
 ## 0.46.0
 
@@ -924,32 +924,32 @@
 
 - 54426a2: Fix issue where nesting `@scope` rule that use the `&` don't expand correctly
 - Updated dependencies [54426a2]
-  - @pandacss/shared@0.46.0
-  - @pandacss/token-dictionary@0.46.0
-  - @pandacss/types@0.46.0
-  - @pandacss/is-valid-prop@0.46.0
-  - @pandacss/logger@0.46.0
+  - @bamboocss/shared@0.46.0
+  - @bamboocss/token-dictionary@0.46.0
+  - @bamboocss/types@0.46.0
+  - @bamboocss/is-valid-prop@0.46.0
+  - @bamboocss/logger@0.46.0
 
 ## 0.45.2
 
 ### Patch Changes
 
-- @pandacss/is-valid-prop@0.45.2
-- @pandacss/logger@0.45.2
-- @pandacss/shared@0.45.2
-- @pandacss/token-dictionary@0.45.2
-- @pandacss/types@0.45.2
+- @bamboocss/is-valid-prop@0.45.2
+- @bamboocss/logger@0.45.2
+- @bamboocss/shared@0.45.2
+- @bamboocss/token-dictionary@0.45.2
+- @bamboocss/types@0.45.2
 
 ## 0.45.1
 
 ### Patch Changes
 
 - Updated dependencies [3439ecf]
-  - @pandacss/token-dictionary@0.45.1
-  - @pandacss/is-valid-prop@0.45.1
-  - @pandacss/logger@0.45.1
-  - @pandacss/shared@0.45.1
-  - @pandacss/types@0.45.1
+  - @bamboocss/token-dictionary@0.45.1
+  - @bamboocss/is-valid-prop@0.45.1
+  - @bamboocss/logger@0.45.1
+  - @bamboocss/shared@0.45.1
+  - @bamboocss/types@0.45.1
 
 ## 0.45.0
 
@@ -995,22 +995,22 @@
 - Updated dependencies [dcc9053]
 - Updated dependencies [a21fcfe]
 - Updated dependencies [552dd4b]
-  - @pandacss/types@0.45.0
-  - @pandacss/token-dictionary@0.45.0
-  - @pandacss/shared@0.45.0
-  - @pandacss/logger@0.45.0
-  - @pandacss/is-valid-prop@0.45.0
+  - @bamboocss/types@0.45.0
+  - @bamboocss/token-dictionary@0.45.0
+  - @bamboocss/shared@0.45.0
+  - @bamboocss/logger@0.45.0
+  - @bamboocss/is-valid-prop@0.45.0
 
 ## 0.44.0
 
 ### Patch Changes
 
 - Updated dependencies [c99cb75]
-  - @pandacss/types@0.44.0
-  - @pandacss/logger@0.44.0
-  - @pandacss/token-dictionary@0.44.0
-  - @pandacss/is-valid-prop@0.44.0
-  - @pandacss/shared@0.44.0
+  - @bamboocss/types@0.44.0
+  - @bamboocss/logger@0.44.0
+  - @bamboocss/token-dictionary@0.44.0
+  - @bamboocss/is-valid-prop@0.44.0
+  - @bamboocss/shared@0.44.0
 
 ## 0.43.0
 
@@ -1019,7 +1019,7 @@
 - e952f82: Add support for defining global font face in config and preset
 
   ```ts
-  // pandacss.config.js
+  // bamboocss.config.js
   export default defineConfig({
     globalFontface: {
       Roboto: {
@@ -1034,7 +1034,7 @@
   You can also add multiple font `src` for the same weight
 
   ```ts
-  // pandacss.config.js
+  // bamboocss.config.js
 
   export default defineConfig({
     globalFontface: {
@@ -1051,7 +1051,7 @@
   You can also define multiple font weights
 
   ```ts
-  // pandacss.config.js
+  // bamboocss.config.js
 
   export default defineConfig({
     globalFontface: {
@@ -1075,11 +1075,11 @@
 ### Patch Changes
 
 - Updated dependencies [e952f82]
-  - @pandacss/types@0.43.0
-  - @pandacss/logger@0.43.0
-  - @pandacss/token-dictionary@0.43.0
-  - @pandacss/is-valid-prop@0.43.0
-  - @pandacss/shared@0.43.0
+  - @bamboocss/types@0.43.0
+  - @bamboocss/logger@0.43.0
+  - @bamboocss/token-dictionary@0.43.0
+  - @bamboocss/is-valid-prop@0.43.0
+  - @bamboocss/shared@0.43.0
 
 ## 0.42.0
 
@@ -1111,7 +1111,7 @@
 - ec64819: Change recipes `className` to be optional, both for `recipes` and `slotRecipes`, with a fallback to its name.
 
   ```ts
-  import { defineConfig } from '@pandacss/core'
+  import { defineConfig } from '@bamboocss/core'
 
   export default defineConfig({
     recipes: {
@@ -1134,11 +1134,11 @@
 - Updated dependencies [19c3a2c]
 - Updated dependencies [f00ff88]
 - Updated dependencies [17a1932]
-  - @pandacss/types@0.42.0
-  - @pandacss/logger@0.42.0
-  - @pandacss/token-dictionary@0.42.0
-  - @pandacss/is-valid-prop@0.42.0
-  - @pandacss/shared@0.42.0
+  - @bamboocss/types@0.42.0
+  - @bamboocss/logger@0.42.0
+  - @bamboocss/token-dictionary@0.42.0
+  - @bamboocss/is-valid-prop@0.42.0
+  - @bamboocss/shared@0.42.0
 
 ## 0.41.0
 
@@ -1161,11 +1161,11 @@
   })
   ```
 
-  - @pandacss/types@0.41.0
-  - @pandacss/is-valid-prop@0.41.0
-  - @pandacss/logger@0.41.0
-  - @pandacss/shared@0.41.0
-  - @pandacss/token-dictionary@0.41.0
+  - @bamboocss/types@0.41.0
+  - @bamboocss/is-valid-prop@0.41.0
+  - @bamboocss/logger@0.41.0
+  - @bamboocss/shared@0.41.0
+  - @bamboocss/token-dictionary@0.41.0
 
 ## 0.40.1
 
@@ -1173,11 +1173,11 @@
 
 - d2cc156: Fix issue where using `jsxStyleProps: none` with the generated jsx patterns, lead to unoptimized code that
   causes the component to be recreated on every render.
-  - @pandacss/is-valid-prop@0.40.1
-  - @pandacss/logger@0.40.1
-  - @pandacss/shared@0.40.1
-  - @pandacss/token-dictionary@0.40.1
-  - @pandacss/types@0.40.1
+  - @bamboocss/is-valid-prop@0.40.1
+  - @bamboocss/logger@0.40.1
+  - @bamboocss/shared@0.40.1
+  - @bamboocss/token-dictionary@0.40.1
+  - @bamboocss/types@0.40.1
 
 ## 0.40.0
 
@@ -1195,11 +1195,11 @@
 
 ### Patch Changes
 
-- @pandacss/is-valid-prop@0.40.0
-- @pandacss/logger@0.40.0
-- @pandacss/shared@0.40.0
-- @pandacss/token-dictionary@0.40.0
-- @pandacss/types@0.40.0
+- @bamboocss/is-valid-prop@0.40.0
+- @bamboocss/logger@0.40.0
+- @bamboocss/shared@0.40.0
+- @bamboocss/token-dictionary@0.40.0
+- @bamboocss/types@0.40.0
 
 ## 0.39.2
 
@@ -1210,21 +1210,21 @@
   fallback argument would be mistakenly escaped
 - Updated dependencies [1f636eb]
 - Updated dependencies [8b07cdf]
-  - @pandacss/shared@0.39.2
-  - @pandacss/token-dictionary@0.39.2
-  - @pandacss/types@0.39.2
-  - @pandacss/is-valid-prop@0.39.2
-  - @pandacss/logger@0.39.2
+  - @bamboocss/shared@0.39.2
+  - @bamboocss/token-dictionary@0.39.2
+  - @bamboocss/types@0.39.2
+  - @bamboocss/is-valid-prop@0.39.2
+  - @bamboocss/logger@0.39.2
 
 ## 0.39.1
 
 ### Patch Changes
 
-- @pandacss/is-valid-prop@0.39.1
-- @pandacss/logger@0.39.1
-- @pandacss/shared@0.39.1
-- @pandacss/token-dictionary@0.39.1
-- @pandacss/types@0.39.1
+- @bamboocss/is-valid-prop@0.39.1
+- @bamboocss/logger@0.39.1
+- @bamboocss/shared@0.39.1
+- @bamboocss/token-dictionary@0.39.1
+- @bamboocss/types@0.39.1
 
 ## 0.39.0
 
@@ -1235,11 +1235,11 @@
 - Updated dependencies [221c9a2]
 - Updated dependencies [c3e797e]
 - Updated dependencies [935ec86]
-  - @pandacss/types@0.39.0
-  - @pandacss/shared@0.39.0
-  - @pandacss/logger@0.39.0
-  - @pandacss/token-dictionary@0.39.0
-  - @pandacss/is-valid-prop@0.39.0
+  - @bamboocss/types@0.39.0
+  - @bamboocss/shared@0.39.0
+  - @bamboocss/logger@0.39.0
+  - @bamboocss/token-dictionary@0.39.0
+  - @bamboocss/is-valid-prop@0.39.0
 
 ## 0.38.0
 
@@ -1359,22 +1359,22 @@
 - Updated dependencies [96b47b3]
 - Updated dependencies [bc09d89]
 - Updated dependencies [2c8b933]
-  - @pandacss/types@0.38.0
-  - @pandacss/token-dictionary@0.38.0
-  - @pandacss/shared@0.38.0
-  - @pandacss/logger@0.38.0
-  - @pandacss/is-valid-prop@0.38.0
+  - @bamboocss/types@0.38.0
+  - @bamboocss/token-dictionary@0.38.0
+  - @bamboocss/shared@0.38.0
+  - @bamboocss/logger@0.38.0
+  - @bamboocss/is-valid-prop@0.38.0
 
 ## 0.37.2
 
 ### Patch Changes
 
 - Updated dependencies [74dfb3e]
-  - @pandacss/types@0.37.2
-  - @pandacss/logger@0.37.2
-  - @pandacss/token-dictionary@0.37.2
-  - @pandacss/is-valid-prop@0.37.2
-  - @pandacss/shared@0.37.2
+  - @bamboocss/types@0.37.2
+  - @bamboocss/logger@0.37.2
+  - @bamboocss/token-dictionary@0.37.2
+  - @bamboocss/is-valid-prop@0.37.2
+  - @bamboocss/shared@0.37.2
 
 ## 0.37.1
 
@@ -1383,7 +1383,7 @@
 - 99870bb: Fix issue where setting the pattern `jsx` option with dot notation didn't work.
 
   ```jsx
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     // ...
@@ -1403,11 +1403,11 @@
 - Updated dependencies [93dc9f5]
 - Updated dependencies [885963c]
 - Updated dependencies [99870bb]
-  - @pandacss/token-dictionary@0.37.1
-  - @pandacss/types@0.37.1
-  - @pandacss/shared@0.37.1
-  - @pandacss/logger@0.37.1
-  - @pandacss/is-valid-prop@0.37.1
+  - @bamboocss/token-dictionary@0.37.1
+  - @bamboocss/types@0.37.1
+  - @bamboocss/shared@0.37.1
+  - @bamboocss/logger@0.37.1
+  - @bamboocss/is-valid-prop@0.37.1
 
 ## 0.37.0
 
@@ -1466,7 +1466,7 @@
   It can be useful to use a component library's `styled-system` while also using your own `styled-system` in your app.
 
   ```ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     importMap: ['@acme/styled-system', '@ui-lib/styled-system', 'styled-system'],
@@ -1486,22 +1486,22 @@
 - Updated dependencies [7daf159]
 - Updated dependencies [bcfb5c5]
 - Updated dependencies [6247dfb]
-  - @pandacss/shared@0.37.0
-  - @pandacss/types@0.37.0
-  - @pandacss/token-dictionary@0.37.0
-  - @pandacss/logger@0.37.0
-  - @pandacss/is-valid-prop@0.37.0
+  - @bamboocss/shared@0.37.0
+  - @bamboocss/types@0.37.0
+  - @bamboocss/token-dictionary@0.37.0
+  - @bamboocss/logger@0.37.0
+  - @bamboocss/is-valid-prop@0.37.0
 
 ## 0.36.1
 
 ### Patch Changes
 
 - Updated dependencies [bd0cb07]
-  - @pandacss/types@0.36.1
-  - @pandacss/logger@0.36.1
-  - @pandacss/token-dictionary@0.36.1
-  - @pandacss/is-valid-prop@0.36.1
-  - @pandacss/shared@0.36.1
+  - @bamboocss/types@0.36.1
+  - @bamboocss/logger@0.36.1
+  - @bamboocss/token-dictionary@0.36.1
+  - @bamboocss/is-valid-prop@0.36.1
+  - @bamboocss/shared@0.36.1
 
 ## 0.36.0
 
@@ -1517,7 +1517,7 @@
 
   ```ts
   // panda.config.ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     // ...
@@ -1590,7 +1590,7 @@
 
   ```ts
   // panda.config.ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     // ...
@@ -1732,7 +1732,7 @@
   Finally, you can create a theme contract to ensure that all themes have the same structure:
 
   ```ts
-  import { defineThemeContract } from '@pandacss/dev'
+  import { defineThemeContract } from '@bamboocss/dev'
 
   const defineTheme = defineThemeContract({
     tokens: {
@@ -1813,11 +1813,11 @@
 - Updated dependencies [2691f16]
 - Updated dependencies [340f4f1]
 - Updated dependencies [fabdabe]
-  - @pandacss/token-dictionary@0.36.0
-  - @pandacss/types@0.36.0
-  - @pandacss/is-valid-prop@0.36.0
-  - @pandacss/logger@0.36.0
-  - @pandacss/shared@0.36.0
+  - @bamboocss/token-dictionary@0.36.0
+  - @bamboocss/types@0.36.0
+  - @bamboocss/is-valid-prop@0.36.0
+  - @bamboocss/logger@0.36.0
+  - @bamboocss/shared@0.36.0
 
 ## 0.35.0
 
@@ -1837,21 +1837,21 @@
 - Updated dependencies [50db354]
 - Updated dependencies [f6befbf]
 - Updated dependencies [a0c4d27]
-  - @pandacss/token-dictionary@0.35.0
-  - @pandacss/types@0.35.0
-  - @pandacss/logger@0.35.0
-  - @pandacss/is-valid-prop@0.35.0
-  - @pandacss/shared@0.35.0
+  - @bamboocss/token-dictionary@0.35.0
+  - @bamboocss/types@0.35.0
+  - @bamboocss/logger@0.35.0
+  - @bamboocss/is-valid-prop@0.35.0
+  - @bamboocss/shared@0.35.0
 
 ## 0.34.3
 
 ### Patch Changes
 
-- @pandacss/is-valid-prop@0.34.3
-- @pandacss/logger@0.34.3
-- @pandacss/shared@0.34.3
-- @pandacss/token-dictionary@0.34.3
-- @pandacss/types@0.34.3
+- @bamboocss/is-valid-prop@0.34.3
+- @bamboocss/logger@0.34.3
+- @bamboocss/shared@0.34.3
+- @bamboocss/token-dictionary@0.34.3
+- @bamboocss/types@0.34.3
 
 ## 0.34.2
 
@@ -1874,22 +1874,22 @@
   panda.sva({ base: { root: { color: 'green' } } })
   ```
 
-  - @pandacss/types@0.34.2
-  - @pandacss/is-valid-prop@0.34.2
-  - @pandacss/logger@0.34.2
-  - @pandacss/shared@0.34.2
-  - @pandacss/token-dictionary@0.34.2
+  - @bamboocss/types@0.34.2
+  - @bamboocss/is-valid-prop@0.34.2
+  - @bamboocss/logger@0.34.2
+  - @bamboocss/shared@0.34.2
+  - @bamboocss/token-dictionary@0.34.2
 
 ## 0.34.1
 
 ### Patch Changes
 
 - Updated dependencies [d4942e0]
-  - @pandacss/token-dictionary@0.34.1
-  - @pandacss/is-valid-prop@0.34.1
-  - @pandacss/logger@0.34.1
-  - @pandacss/shared@0.34.1
-  - @pandacss/types@0.34.1
+  - @bamboocss/token-dictionary@0.34.1
+  - @bamboocss/is-valid-prop@0.34.1
+  - @bamboocss/logger@0.34.1
+  - @bamboocss/shared@0.34.1
+  - @bamboocss/types@0.34.1
 
 ## 0.34.0
 
@@ -1923,7 +1923,7 @@
 
   ```ts
   // build-time usage
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     theme: {
@@ -1956,11 +1956,11 @@
 
 - Updated dependencies [64d5144]
 - Updated dependencies [d1516c8]
-  - @pandacss/token-dictionary@0.34.0
-  - @pandacss/types@0.34.0
-  - @pandacss/logger@0.34.0
-  - @pandacss/is-valid-prop@0.34.0
-  - @pandacss/shared@0.34.0
+  - @bamboocss/token-dictionary@0.34.0
+  - @bamboocss/types@0.34.0
+  - @bamboocss/logger@0.34.0
+  - @bamboocss/is-valid-prop@0.34.0
+  - @bamboocss/shared@0.34.0
 
 ## 0.33.0
 
@@ -1971,7 +1971,7 @@
   Example with the following config:
 
   ```ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     hooks: {
@@ -2019,7 +2019,7 @@
 - 31071ba: Fix an issue for token names starting with '0'
 
   ```ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     theme: {
@@ -2058,11 +2058,11 @@
 - Updated dependencies [5184771]
 - Updated dependencies [6d8c884]
 - Updated dependencies [89ffb6b]
-  - @pandacss/types@0.32.1
-  - @pandacss/token-dictionary@0.32.1
-  - @pandacss/logger@0.32.1
-  - @pandacss/is-valid-prop@0.32.1
-  - @pandacss/shared@0.32.1
+  - @bamboocss/types@0.32.1
+  - @bamboocss/token-dictionary@0.32.1
+  - @bamboocss/logger@0.32.1
+  - @bamboocss/is-valid-prop@0.32.1
+  - @bamboocss/shared@0.32.1
 
 ## 0.32.0
 
@@ -2076,11 +2076,11 @@
 - Updated dependencies [8cd8c19]
 - Updated dependencies [60cace3]
 - Updated dependencies [de4d9ef]
-  - @pandacss/shared@0.32.0
-  - @pandacss/types@0.32.0
-  - @pandacss/token-dictionary@0.32.0
-  - @pandacss/logger@0.32.0
-  - @pandacss/is-valid-prop@0.32.0
+  - @bamboocss/shared@0.32.0
+  - @bamboocss/types@0.32.0
+  - @bamboocss/token-dictionary@0.32.0
+  - @bamboocss/logger@0.32.0
+  - @bamboocss/is-valid-prop@0.32.0
 
 ## 0.31.0
 
@@ -2128,11 +2128,11 @@
 - Updated dependencies [f0296249]
 - Updated dependencies [a17fe387]
 - Updated dependencies [2d69b340]
-  - @pandacss/types@0.31.0
-  - @pandacss/shared@0.31.0
-  - @pandacss/logger@0.31.0
-  - @pandacss/token-dictionary@0.31.0
-  - @pandacss/is-valid-prop@0.31.0
+  - @bamboocss/types@0.31.0
+  - @bamboocss/shared@0.31.0
+  - @bamboocss/logger@0.31.0
+  - @bamboocss/token-dictionary@0.31.0
+  - @bamboocss/is-valid-prop@0.31.0
 
 ## 0.30.2
 
@@ -2171,21 +2171,21 @@
   ```
 
 - Updated dependencies [6b829cab]
-  - @pandacss/types@0.30.2
-  - @pandacss/logger@0.30.2
-  - @pandacss/token-dictionary@0.30.2
-  - @pandacss/is-valid-prop@0.30.2
-  - @pandacss/shared@0.30.2
+  - @bamboocss/types@0.30.2
+  - @bamboocss/logger@0.30.2
+  - @bamboocss/token-dictionary@0.30.2
+  - @bamboocss/is-valid-prop@0.30.2
+  - @bamboocss/shared@0.30.2
 
 ## 0.30.1
 
 ### Patch Changes
 
-- @pandacss/is-valid-prop@0.30.1
-- @pandacss/logger@0.30.1
-- @pandacss/shared@0.30.1
-- @pandacss/token-dictionary@0.30.1
-- @pandacss/types@0.30.1
+- @bamboocss/is-valid-prop@0.30.1
+- @bamboocss/logger@0.30.1
+- @bamboocss/shared@0.30.1
+- @bamboocss/token-dictionary@0.30.1
+- @bamboocss/types@0.30.1
 
 ## 0.30.0
 
@@ -2215,18 +2215,19 @@
 
 - a5c75607: Fix an issue (introduced in v0.29) with `panda init` and add an assert on the new `colorMix` utility
   function
-  - @pandacss/is-valid-prop@0.29.1
-  - @pandacss/logger@0.29.1
-  - @pandacss/shared@0.29.1
-  - @pandacss/token-dictionary@0.29.1
-  - @pandacss/types@0.29.1
+  - @bamboocss/is-valid-prop@0.29.1
+  - @bamboocss/logger@0.29.1
+  - @bamboocss/shared@0.29.1
+  - @bamboocss/token-dictionary@0.29.1
+  - @bamboocss/types@0.29.1
 
 ## 0.29.0
 
 ### Minor Changes
 
-- 5fcdeb75: Update every utilities connected to the `colors` tokens in the `@pandacss/preset-base` (included by default)
-  to use the [`color-mix`](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/color-mix) CSS function.
+- 5fcdeb75: Update every utilities connected to the `colors` tokens in the `@bamboocss/preset-base` (included by
+  default) to use the [`color-mix`](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/color-mix) CSS
+  function.
 
   This function allows you to mix two colors together, and we use it to change the opacity of a color using the
   `{color}/{opacity}` syntax.
@@ -2292,7 +2293,7 @@
   property:
 
   ```ts
-  import type { PropertyTransform } from '@pandacss/types'
+  import type { PropertyTransform } from '@bamboocss/types'
 
   export const createColorMixTransform =
     (prop: string): PropertyTransform =>
@@ -2374,7 +2375,7 @@
   })
   ```
 
-  The default container sizes in the `@pandacss/preset-panda` preset are shown below:
+  The default container sizes in the `@bamboocss/preset-panda` preset are shown below:
 
   ```ts
   export const containerSizes = {
@@ -2429,7 +2430,7 @@
 
   ### Container Query Pattern
 
-  To make it easier to use container queries, we've added a new `cq` pattern to `@pandacss/preset-base`.
+  To make it easier to use container queries, we've added a new `cq` pattern to `@bamboocss/preset-base`.
 
   ```ts
   import { cq } from "styled-system/patterns";
@@ -2486,11 +2487,11 @@
 - Updated dependencies [7c7340ec]
 - Updated dependencies [250b4d11]
 - Updated dependencies [a2fb5cc6]
-  - @pandacss/types@0.29.0
-  - @pandacss/token-dictionary@0.29.0
-  - @pandacss/is-valid-prop@0.29.0
-  - @pandacss/logger@0.29.0
-  - @pandacss/shared@0.29.0
+  - @bamboocss/types@0.29.0
+  - @bamboocss/token-dictionary@0.29.0
+  - @bamboocss/is-valid-prop@0.29.0
+  - @bamboocss/logger@0.29.0
+  - @bamboocss/shared@0.29.0
 
 ## 0.28.0
 
@@ -2630,12 +2631,12 @@
 - Updated dependencies [f58f6df2]
 - Updated dependencies [770c7aa4]
 - Updated dependencies [d4fa5de9]
-  - @pandacss/types@0.28.0
-  - @pandacss/shared@0.28.0
-  - @pandacss/token-dictionary@0.28.0
-  - @pandacss/error@0.28.0
-  - @pandacss/is-valid-prop@0.28.0
-  - @pandacss/logger@0.28.0
+  - @bamboocss/types@0.28.0
+  - @bamboocss/shared@0.28.0
+  - @bamboocss/token-dictionary@0.28.0
+  - @bamboocss/error@0.28.0
+  - @bamboocss/is-valid-prop@0.28.0
+  - @bamboocss/logger@0.28.0
 
 ## 0.27.3
 
@@ -2643,35 +2644,35 @@
 
 - 1ed4df77: Fix issue where HMR doesn't work when tsconfig paths is used.
 - Updated dependencies [1ed4df77]
-  - @pandacss/types@0.27.3
-  - @pandacss/token-dictionary@0.27.3
-  - @pandacss/error@0.27.3
-  - @pandacss/is-valid-prop@0.27.3
-  - @pandacss/logger@0.27.3
-  - @pandacss/shared@0.27.3
+  - @bamboocss/types@0.27.3
+  - @bamboocss/token-dictionary@0.27.3
+  - @bamboocss/error@0.27.3
+  - @bamboocss/is-valid-prop@0.27.3
+  - @bamboocss/logger@0.27.3
+  - @bamboocss/shared@0.27.3
 
 ## 0.27.2
 
 ### Patch Changes
 
-- @pandacss/error@0.27.2
-- @pandacss/is-valid-prop@0.27.2
-- @pandacss/logger@0.27.2
-- @pandacss/shared@0.27.2
-- @pandacss/token-dictionary@0.27.2
-- @pandacss/types@0.27.2
+- @bamboocss/error@0.27.2
+- @bamboocss/is-valid-prop@0.27.2
+- @bamboocss/logger@0.27.2
+- @bamboocss/shared@0.27.2
+- @bamboocss/token-dictionary@0.27.2
+- @bamboocss/types@0.27.2
 
 ## 0.27.1
 
 ### Patch Changes
 
 - Updated dependencies [ee9341db]
-  - @pandacss/types@0.27.1
-  - @pandacss/token-dictionary@0.27.1
-  - @pandacss/error@0.27.1
-  - @pandacss/is-valid-prop@0.27.1
-  - @pandacss/logger@0.27.1
-  - @pandacss/shared@0.27.1
+  - @bamboocss/types@0.27.1
+  - @bamboocss/token-dictionary@0.27.1
+  - @bamboocss/error@0.27.1
+  - @bamboocss/is-valid-prop@0.27.1
+  - @bamboocss/logger@0.27.1
+  - @bamboocss/shared@0.27.1
 
 ## 0.27.0
 
@@ -2699,34 +2700,34 @@
 - Updated dependencies [84304901]
 - Updated dependencies [bee3ec85]
 - Updated dependencies [74ac0d9d]
-  - @pandacss/token-dictionary@0.27.0
-  - @pandacss/is-valid-prop@0.27.0
-  - @pandacss/logger@0.27.0
-  - @pandacss/shared@0.27.0
-  - @pandacss/error@0.27.0
-  - @pandacss/types@0.27.0
+  - @bamboocss/token-dictionary@0.27.0
+  - @bamboocss/is-valid-prop@0.27.0
+  - @bamboocss/logger@0.27.0
+  - @bamboocss/shared@0.27.0
+  - @bamboocss/error@0.27.0
+  - @bamboocss/types@0.27.0
 
 ## 0.26.2
 
 ### Patch Changes
 
-- @pandacss/error@0.26.2
-- @pandacss/is-valid-prop@0.26.2
-- @pandacss/logger@0.26.2
-- @pandacss/shared@0.26.2
-- @pandacss/token-dictionary@0.26.2
-- @pandacss/types@0.26.2
+- @bamboocss/error@0.26.2
+- @bamboocss/is-valid-prop@0.26.2
+- @bamboocss/logger@0.26.2
+- @bamboocss/shared@0.26.2
+- @bamboocss/token-dictionary@0.26.2
+- @bamboocss/types@0.26.2
 
 ## 0.26.1
 
 ### Patch Changes
 
-- @pandacss/error@0.26.1
-- @pandacss/is-valid-prop@0.26.1
-- @pandacss/logger@0.26.1
-- @pandacss/shared@0.26.1
-- @pandacss/token-dictionary@0.26.1
-- @pandacss/types@0.26.1
+- @bamboocss/error@0.26.1
+- @bamboocss/is-valid-prop@0.26.1
+- @bamboocss/logger@0.26.1
+- @bamboocss/shared@0.26.1
+- @bamboocss/token-dictionary@0.26.1
+- @bamboocss/types@0.26.1
 
 ## 0.26.0
 
@@ -2738,12 +2739,12 @@
 - Updated dependencies [657ca5da]
 - Updated dependencies [b5cf6ee6]
 - Updated dependencies [58df7d74]
-  - @pandacss/shared@0.26.0
-  - @pandacss/types@0.26.0
-  - @pandacss/token-dictionary@0.26.0
-  - @pandacss/error@0.26.0
-  - @pandacss/is-valid-prop@0.26.0
-  - @pandacss/logger@0.26.0
+  - @bamboocss/shared@0.26.0
+  - @bamboocss/types@0.26.0
+  - @bamboocss/token-dictionary@0.26.0
+  - @bamboocss/error@0.26.0
+  - @bamboocss/is-valid-prop@0.26.0
+  - @bamboocss/logger@0.26.0
 
 ## 0.25.0
 
@@ -2804,12 +2805,12 @@
 
 - Updated dependencies [59fd291c]
 - Updated dependencies [de282f60]
-  - @pandacss/types@0.25.0
-  - @pandacss/token-dictionary@0.25.0
-  - @pandacss/error@0.25.0
-  - @pandacss/is-valid-prop@0.25.0
-  - @pandacss/logger@0.25.0
-  - @pandacss/shared@0.25.0
+  - @bamboocss/types@0.25.0
+  - @bamboocss/token-dictionary@0.25.0
+  - @bamboocss/error@0.25.0
+  - @bamboocss/is-valid-prop@0.25.0
+  - @bamboocss/logger@0.25.0
+  - @bamboocss/shared@0.25.0
 
 ## 0.24.2
 
@@ -2819,23 +2820,23 @@
   seen as a truthy value
 - 61ebf3d2: Fix issue where config slot recipes with compound variants were not processed correctly
 - Updated dependencies [71e82a4e]
-  - @pandacss/shared@0.24.2
-  - @pandacss/types@0.24.2
-  - @pandacss/token-dictionary@0.24.2
-  - @pandacss/error@0.24.2
-  - @pandacss/is-valid-prop@0.24.2
-  - @pandacss/logger@0.24.2
+  - @bamboocss/shared@0.24.2
+  - @bamboocss/types@0.24.2
+  - @bamboocss/token-dictionary@0.24.2
+  - @bamboocss/error@0.24.2
+  - @bamboocss/is-valid-prop@0.24.2
+  - @bamboocss/logger@0.24.2
 
 ## 0.24.1
 
 ### Patch Changes
 
-- @pandacss/error@0.24.1
-- @pandacss/is-valid-prop@0.24.1
-- @pandacss/logger@0.24.1
-- @pandacss/shared@0.24.1
-- @pandacss/token-dictionary@0.24.1
-- @pandacss/types@0.24.1
+- @bamboocss/error@0.24.1
+- @bamboocss/is-valid-prop@0.24.1
+- @bamboocss/logger@0.24.1
+- @bamboocss/shared@0.24.1
+- @bamboocss/token-dictionary@0.24.1
+- @bamboocss/types@0.24.1
 
 ## 0.24.0
 
@@ -2996,12 +2997,12 @@
   ```
 
 - Updated dependencies [f6881022]
-  - @pandacss/types@0.24.0
-  - @pandacss/token-dictionary@0.24.0
-  - @pandacss/error@0.24.0
-  - @pandacss/is-valid-prop@0.24.0
-  - @pandacss/logger@0.24.0
-  - @pandacss/shared@0.24.0
+  - @bamboocss/types@0.24.0
+  - @bamboocss/token-dictionary@0.24.0
+  - @bamboocss/error@0.24.0
+  - @bamboocss/is-valid-prop@0.24.0
+  - @bamboocss/logger@0.24.0
+  - @bamboocss/shared@0.24.0
 
 ## 0.23.0
 
@@ -3043,11 +3044,11 @@
 
 - 840ed66b: Fix an issue with config change detection when using a custom `config.slotRecipes[xxx].jsx` array
 - Updated dependencies [bd552b1f]
-  - @pandacss/logger@0.23.0
-  - @pandacss/error@0.23.0
-  - @pandacss/shared@0.23.0
-  - @pandacss/token-dictionary@0.23.0
-  - @pandacss/types@0.23.0
+  - @bamboocss/logger@0.23.0
+  - @bamboocss/error@0.23.0
+  - @bamboocss/shared@0.23.0
+  - @bamboocss/token-dictionary@0.23.0
+  - @bamboocss/types@0.23.0
 
 ## 0.22.1
 
@@ -3055,11 +3056,11 @@
 
 - Updated dependencies [8f4ce97c]
 - Updated dependencies [647f05c9]
-  - @pandacss/types@0.22.1
-  - @pandacss/shared@0.22.1
-  - @pandacss/token-dictionary@0.22.1
-  - @pandacss/error@0.22.1
-  - @pandacss/logger@0.22.1
+  - @bamboocss/types@0.22.1
+  - @bamboocss/shared@0.22.1
+  - @bamboocss/token-dictionary@0.22.1
+  - @bamboocss/error@0.22.1
+  - @bamboocss/logger@0.22.1
 
 ## 0.22.0
 
@@ -3080,11 +3081,11 @@
 
 - Updated dependencies [526c6e34]
 - Updated dependencies [8db47ec6]
-  - @pandacss/types@0.22.0
-  - @pandacss/shared@0.22.0
-  - @pandacss/token-dictionary@0.22.0
-  - @pandacss/error@0.22.0
-  - @pandacss/logger@0.22.0
+  - @bamboocss/types@0.22.0
+  - @bamboocss/shared@0.22.0
+  - @bamboocss/token-dictionary@0.22.0
+  - @bamboocss/error@0.22.0
+  - @bamboocss/logger@0.22.0
 
 ## 0.21.0
 
@@ -3128,7 +3129,7 @@
 - 105f74ce: Add a way to specify a recipe's `staticCss` options from inside a recipe config, e.g.:
 
   ```js
-  import { defineRecipe } from '@pandacss/dev'
+  import { defineRecipe } from '@bamboocss/dev'
 
   const card = defineRecipe({
     className: 'card',
@@ -3146,7 +3147,7 @@
   would be the equivalent of defining it inside the main config:
 
   ```js
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     // ...
@@ -3163,21 +3164,21 @@
 - Updated dependencies [26e6051a]
 - Updated dependencies [5b061615]
 - Updated dependencies [105f74ce]
-  - @pandacss/shared@0.21.0
-  - @pandacss/types@0.21.0
-  - @pandacss/token-dictionary@0.21.0
-  - @pandacss/error@0.21.0
-  - @pandacss/logger@0.21.0
+  - @bamboocss/shared@0.21.0
+  - @bamboocss/types@0.21.0
+  - @bamboocss/token-dictionary@0.21.0
+  - @bamboocss/error@0.21.0
+  - @bamboocss/logger@0.21.0
 
 ## 0.20.1
 
 ### Patch Changes
 
-- @pandacss/token-dictionary@0.20.1
-- @pandacss/error@0.20.1
-- @pandacss/logger@0.20.1
-- @pandacss/shared@0.20.1
-- @pandacss/types@0.20.1
+- @bamboocss/token-dictionary@0.20.1
+- @bamboocss/error@0.20.1
+- @bamboocss/logger@0.20.1
+- @bamboocss/shared@0.20.1
+- @bamboocss/types@0.20.1
 
 ## 0.20.0
 
@@ -3200,11 +3201,11 @@
 
 - Updated dependencies [24ee49a5]
 - Updated dependencies [904aec7b]
-  - @pandacss/types@0.20.0
-  - @pandacss/token-dictionary@0.20.0
-  - @pandacss/error@0.20.0
-  - @pandacss/logger@0.20.0
-  - @pandacss/shared@0.20.0
+  - @bamboocss/types@0.20.0
+  - @bamboocss/token-dictionary@0.20.0
+  - @bamboocss/error@0.20.0
+  - @bamboocss/logger@0.20.0
+  - @bamboocss/shared@0.20.0
 
 ## 0.19.0
 
@@ -3214,31 +3215,31 @@
   not being cleared as needed.
 - Updated dependencies [61831040]
 - Updated dependencies [89f86923]
-  - @pandacss/types@0.19.0
-  - @pandacss/token-dictionary@0.19.0
-  - @pandacss/error@0.19.0
-  - @pandacss/logger@0.19.0
-  - @pandacss/shared@0.19.0
+  - @bamboocss/types@0.19.0
+  - @bamboocss/token-dictionary@0.19.0
+  - @bamboocss/error@0.19.0
+  - @bamboocss/logger@0.19.0
+  - @bamboocss/shared@0.19.0
 
 ## 0.18.3
 
 ### Patch Changes
 
-- @pandacss/error@0.18.3
-- @pandacss/logger@0.18.3
-- @pandacss/shared@0.18.3
-- @pandacss/token-dictionary@0.18.3
-- @pandacss/types@0.18.3
+- @bamboocss/error@0.18.3
+- @bamboocss/logger@0.18.3
+- @bamboocss/shared@0.18.3
+- @bamboocss/token-dictionary@0.18.3
+- @bamboocss/types@0.18.3
 
 ## 0.18.2
 
 ### Patch Changes
 
-- @pandacss/token-dictionary@0.18.2
-- @pandacss/error@0.18.2
-- @pandacss/logger@0.18.2
-- @pandacss/shared@0.18.2
-- @pandacss/types@0.18.2
+- @bamboocss/token-dictionary@0.18.2
+- @bamboocss/error@0.18.2
+- @bamboocss/logger@0.18.2
+- @bamboocss/shared@0.18.2
+- @bamboocss/types@0.18.2
 
 ## 0.18.1
 
@@ -3260,65 +3261,65 @@
 
 - Updated dependencies [566fd28a]
 - Updated dependencies [43bfa510]
-  - @pandacss/token-dictionary@0.18.1
-  - @pandacss/error@0.18.1
-  - @pandacss/logger@0.18.1
-  - @pandacss/shared@0.18.1
-  - @pandacss/types@0.18.1
+  - @bamboocss/token-dictionary@0.18.1
+  - @bamboocss/error@0.18.1
+  - @bamboocss/logger@0.18.1
+  - @bamboocss/shared@0.18.1
+  - @bamboocss/types@0.18.1
 
 ## 0.18.0
 
 ### Patch Changes
 
 - Updated dependencies [ba9e32fa]
-  - @pandacss/shared@0.18.0
-  - @pandacss/token-dictionary@0.18.0
-  - @pandacss/types@0.18.0
-  - @pandacss/error@0.18.0
-  - @pandacss/logger@0.18.0
+  - @bamboocss/shared@0.18.0
+  - @bamboocss/token-dictionary@0.18.0
+  - @bamboocss/types@0.18.0
+  - @bamboocss/error@0.18.0
+  - @bamboocss/logger@0.18.0
 
 ## 0.17.5
 
 ### Patch Changes
 
 - a6dfc944: Fix issue where using array syntax in config recipe generates invalid css
-  - @pandacss/error@0.17.5
-  - @pandacss/logger@0.17.5
-  - @pandacss/shared@0.17.5
-  - @pandacss/token-dictionary@0.17.5
-  - @pandacss/types@0.17.5
+  - @bamboocss/error@0.17.5
+  - @bamboocss/logger@0.17.5
+  - @bamboocss/shared@0.17.5
+  - @bamboocss/token-dictionary@0.17.5
+  - @bamboocss/types@0.17.5
 
 ## 0.17.4
 
 ### Patch Changes
 
 - Updated dependencies [fa77080a]
-  - @pandacss/types@0.17.4
-  - @pandacss/token-dictionary@0.17.4
-  - @pandacss/error@0.17.4
-  - @pandacss/logger@0.17.4
-  - @pandacss/shared@0.17.4
+  - @bamboocss/types@0.17.4
+  - @bamboocss/token-dictionary@0.17.4
+  - @bamboocss/error@0.17.4
+  - @bamboocss/logger@0.17.4
+  - @bamboocss/shared@0.17.4
 
 ## 0.17.3
 
 ### Patch Changes
 
 - Updated dependencies [529a262e]
-  - @pandacss/types@0.17.3
-  - @pandacss/token-dictionary@0.17.3
-  - @pandacss/error@0.17.3
-  - @pandacss/logger@0.17.3
-  - @pandacss/shared@0.17.3
+  - @bamboocss/types@0.17.3
+  - @bamboocss/token-dictionary@0.17.3
+  - @bamboocss/error@0.17.3
+  - @bamboocss/logger@0.17.3
+  - @bamboocss/shared@0.17.3
 
 ## 0.17.2
 
 ### Patch Changes
 
-- @pandacss/error@0.17.2
-- @pandacss/logger@0.17.2
-- @pandacss/shared@0.17.2
-- @pandacss/token-dictionary@0.17.2
-- @pandacss/types@0.17.2
+- @bamboocss/error@0.17.2
+- @bamboocss/logger@0.17.2
+- @bamboocss/shared@0.17.2
+- @bamboocss/token-dictionary@0.17.2
+- @bamboocss/types@0.17.2
 
 ## 0.17.1
 
@@ -3326,11 +3327,11 @@
 
 - aea28c9f: Fix issue where using scale css property adds an additional 'px'
 - Updated dependencies [5ce359f6]
-  - @pandacss/shared@0.17.1
-  - @pandacss/types@0.17.1
-  - @pandacss/token-dictionary@0.17.1
-  - @pandacss/error@0.17.1
-  - @pandacss/logger@0.17.1
+  - @bamboocss/shared@0.17.1
+  - @bamboocss/types@0.17.1
+  - @bamboocss/token-dictionary@0.17.1
+  - @bamboocss/error@0.17.1
+  - @bamboocss/logger@0.17.1
 
 ## 0.17.0
 
@@ -3350,42 +3351,42 @@
 
 - Updated dependencies [12281ff8]
 - Updated dependencies [fc4688e6]
-  - @pandacss/shared@0.17.0
-  - @pandacss/types@0.17.0
-  - @pandacss/token-dictionary@0.17.0
-  - @pandacss/error@0.17.0
-  - @pandacss/logger@0.17.0
+  - @bamboocss/shared@0.17.0
+  - @bamboocss/types@0.17.0
+  - @bamboocss/token-dictionary@0.17.0
+  - @bamboocss/error@0.17.0
+  - @bamboocss/logger@0.17.0
 
 ## 0.16.0
 
 ### Patch Changes
 
 - 20f4e204: Apply a few optmizations on the resulting CSS generated from `panda cssgen` command
-  - @pandacss/token-dictionary@0.16.0
-  - @pandacss/error@0.16.0
-  - @pandacss/logger@0.16.0
-  - @pandacss/shared@0.16.0
-  - @pandacss/types@0.16.0
+  - @bamboocss/token-dictionary@0.16.0
+  - @bamboocss/error@0.16.0
+  - @bamboocss/logger@0.16.0
+  - @bamboocss/shared@0.16.0
+  - @bamboocss/types@0.16.0
 
 ## 0.15.5
 
 ### Patch Changes
 
-- @pandacss/error@0.15.5
-- @pandacss/logger@0.15.5
-- @pandacss/shared@0.15.5
-- @pandacss/token-dictionary@0.15.5
-- @pandacss/types@0.15.5
+- @bamboocss/error@0.15.5
+- @bamboocss/logger@0.15.5
+- @bamboocss/shared@0.15.5
+- @bamboocss/token-dictionary@0.15.5
+- @bamboocss/types@0.15.5
 
 ## 0.15.4
 
 ### Patch Changes
 
-- @pandacss/types@0.15.4
-- @pandacss/error@0.15.4
-- @pandacss/logger@0.15.4
-- @pandacss/shared@0.15.4
-- @pandacss/token-dictionary@0.15.4
+- @bamboocss/types@0.15.4
+- @bamboocss/error@0.15.4
+- @bamboocss/logger@0.15.4
+- @bamboocss/shared@0.15.4
+- @bamboocss/token-dictionary@0.15.4
 
 ## 0.15.3
 
@@ -3441,22 +3442,22 @@
 - Updated dependencies [95b06bb1]
 - Updated dependencies [1ac2011b]
 - Updated dependencies [58743bc4]
-  - @pandacss/shared@0.15.3
-  - @pandacss/types@0.15.3
-  - @pandacss/token-dictionary@0.15.3
-  - @pandacss/error@0.15.3
-  - @pandacss/logger@0.15.3
+  - @bamboocss/shared@0.15.3
+  - @bamboocss/types@0.15.3
+  - @bamboocss/token-dictionary@0.15.3
+  - @bamboocss/error@0.15.3
+  - @bamboocss/logger@0.15.3
 
 ## 0.15.2
 
 ### Patch Changes
 
 - Updated dependencies [26a788c0]
-  - @pandacss/types@0.15.2
-  - @pandacss/token-dictionary@0.15.2
-  - @pandacss/error@0.15.2
-  - @pandacss/logger@0.15.2
-  - @pandacss/shared@0.15.2
+  - @bamboocss/types@0.15.2
+  - @bamboocss/token-dictionary@0.15.2
+  - @bamboocss/error@0.15.2
+  - @bamboocss/logger@0.15.2
+  - @bamboocss/shared@0.15.2
 
 ## 0.15.1
 
@@ -3476,11 +3477,11 @@
 
 - Updated dependencies [26f6982c]
 - Updated dependencies [4e003bfb]
-  - @pandacss/shared@0.15.1
-  - @pandacss/token-dictionary@0.15.1
-  - @pandacss/types@0.15.1
-  - @pandacss/error@0.15.1
-  - @pandacss/logger@0.15.1
+  - @bamboocss/shared@0.15.1
+  - @bamboocss/token-dictionary@0.15.1
+  - @bamboocss/types@0.15.1
+  - @bamboocss/error@0.15.1
+  - @bamboocss/logger@0.15.1
 
 ## 0.15.0
 
@@ -3496,11 +3497,11 @@
 - Updated dependencies [9f429d35]
 - Updated dependencies [39298609]
 - Updated dependencies [f27146d6]
-  - @pandacss/types@0.15.0
-  - @pandacss/shared@0.15.0
-  - @pandacss/token-dictionary@0.15.0
-  - @pandacss/error@0.15.0
-  - @pandacss/logger@0.15.0
+  - @bamboocss/types@0.15.0
+  - @bamboocss/shared@0.15.0
+  - @bamboocss/token-dictionary@0.15.0
+  - @bamboocss/error@0.15.0
+  - @bamboocss/logger@0.15.0
 
 ## 0.14.0
 
@@ -3533,22 +3534,22 @@
 - Updated dependencies [9e799554]
 - Updated dependencies [e6459a59]
 - Updated dependencies [6f7ee198]
-  - @pandacss/token-dictionary@0.14.0
-  - @pandacss/types@0.14.0
-  - @pandacss/error@0.14.0
-  - @pandacss/logger@0.14.0
-  - @pandacss/shared@0.14.0
+  - @bamboocss/token-dictionary@0.14.0
+  - @bamboocss/types@0.14.0
+  - @bamboocss/error@0.14.0
+  - @bamboocss/logger@0.14.0
+  - @bamboocss/shared@0.14.0
 
 ## 0.13.1
 
 ### Patch Changes
 
 - Updated dependencies [d0fbc7cc]
-  - @pandacss/error@0.13.1
-  - @pandacss/logger@0.13.1
-  - @pandacss/shared@0.13.1
-  - @pandacss/token-dictionary@0.13.1
-  - @pandacss/types@0.13.1
+  - @bamboocss/error@0.13.1
+  - @bamboocss/logger@0.13.1
+  - @bamboocss/shared@0.13.1
+  - @bamboocss/token-dictionary@0.13.1
+  - @bamboocss/types@0.13.1
 
 ## 0.13.0
 
@@ -3559,41 +3560,41 @@
 
 ### Patch Changes
 
-- @pandacss/error@0.13.0
-- @pandacss/logger@0.13.0
-- @pandacss/shared@0.13.0
-- @pandacss/token-dictionary@0.13.0
-- @pandacss/types@0.13.0
+- @bamboocss/error@0.13.0
+- @bamboocss/logger@0.13.0
+- @bamboocss/shared@0.13.0
+- @bamboocss/token-dictionary@0.13.0
+- @bamboocss/types@0.13.0
 
 ## 0.12.2
 
 ### Patch Changes
 
-- @pandacss/error@0.12.2
-- @pandacss/logger@0.12.2
-- @pandacss/shared@0.12.2
-- @pandacss/token-dictionary@0.12.2
-- @pandacss/types@0.12.2
+- @bamboocss/error@0.12.2
+- @bamboocss/logger@0.12.2
+- @bamboocss/shared@0.12.2
+- @bamboocss/token-dictionary@0.12.2
+- @bamboocss/types@0.12.2
 
 ## 0.12.1
 
 ### Patch Changes
 
-- @pandacss/error@0.12.1
-- @pandacss/logger@0.12.1
-- @pandacss/shared@0.12.1
-- @pandacss/token-dictionary@0.12.1
-- @pandacss/types@0.12.1
+- @bamboocss/error@0.12.1
+- @bamboocss/logger@0.12.1
+- @bamboocss/shared@0.12.1
+- @bamboocss/token-dictionary@0.12.1
+- @bamboocss/types@0.12.1
 
 ## 0.12.0
 
 ### Patch Changes
 
-- @pandacss/token-dictionary@0.12.0
-- @pandacss/error@0.12.0
-- @pandacss/logger@0.12.0
-- @pandacss/shared@0.12.0
-- @pandacss/types@0.12.0
+- @bamboocss/token-dictionary@0.12.0
+- @bamboocss/error@0.12.0
+- @bamboocss/logger@0.12.0
+- @bamboocss/shared@0.12.0
+- @bamboocss/types@0.12.0
 
 ## 0.11.1
 
@@ -3602,22 +3603,22 @@
 - 23b516f4: Make layers customizable
 - Updated dependencies [c07e1beb]
 - Updated dependencies [23b516f4]
-  - @pandacss/shared@0.11.1
-  - @pandacss/types@0.11.1
-  - @pandacss/token-dictionary@0.11.1
-  - @pandacss/error@0.11.1
-  - @pandacss/logger@0.11.1
+  - @bamboocss/shared@0.11.1
+  - @bamboocss/types@0.11.1
+  - @bamboocss/token-dictionary@0.11.1
+  - @bamboocss/error@0.11.1
+  - @bamboocss/logger@0.11.1
 
 ## 0.11.0
 
 ### Patch Changes
 
 - Updated dependencies [5b95caf5]
-  - @pandacss/types@0.11.0
-  - @pandacss/token-dictionary@0.11.0
-  - @pandacss/error@0.11.0
-  - @pandacss/logger@0.11.0
-  - @pandacss/shared@0.11.0
+  - @bamboocss/types@0.11.0
+  - @bamboocss/token-dictionary@0.11.0
+  - @bamboocss/error@0.11.0
+  - @bamboocss/logger@0.11.0
+  - @bamboocss/shared@0.11.0
 
 ## 0.10.0
 
@@ -3682,11 +3683,11 @@
 - Updated dependencies [9d4aa918]
 - Updated dependencies [386e5098]
 - Updated dependencies [a669f4d5]
-  - @pandacss/shared@0.10.0
-  - @pandacss/types@0.10.0
-  - @pandacss/token-dictionary@0.10.0
-  - @pandacss/error@0.10.0
-  - @pandacss/logger@0.10.0
+  - @bamboocss/shared@0.10.0
+  - @bamboocss/types@0.10.0
+  - @bamboocss/token-dictionary@0.10.0
+  - @bamboocss/error@0.10.0
+  - @bamboocss/logger@0.10.0
 
 ## 0.9.0
 
@@ -3728,7 +3729,7 @@
   To track the `CustomCircle` component, you can now use the `jsx` property.
 
   ```js
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     patterns: {
@@ -3744,11 +3745,11 @@
 ### Patch Changes
 
 - Updated dependencies [c08de87f]
-  - @pandacss/types@0.9.0
-  - @pandacss/token-dictionary@0.9.0
-  - @pandacss/error@0.9.0
-  - @pandacss/logger@0.9.0
-  - @pandacss/shared@0.9.0
+  - @bamboocss/types@0.9.0
+  - @bamboocss/token-dictionary@0.9.0
+  - @bamboocss/error@0.9.0
+  - @bamboocss/logger@0.9.0
+  - @bamboocss/shared@0.9.0
 
 ## 0.8.0
 
@@ -3774,11 +3775,11 @@
   separate unnamed block for the custom dark condition.
 - Updated dependencies [ac078416]
 - Updated dependencies [be0ad578]
-  - @pandacss/token-dictionary@0.8.0
-  - @pandacss/types@0.8.0
-  - @pandacss/error@0.8.0
-  - @pandacss/logger@0.8.0
-  - @pandacss/shared@0.8.0
+  - @bamboocss/token-dictionary@0.8.0
+  - @bamboocss/types@0.8.0
+  - @bamboocss/error@0.8.0
+  - @bamboocss/logger@0.8.0
+  - @bamboocss/shared@0.8.0
 
 ## 0.7.0
 
@@ -3786,11 +3787,11 @@
 
 - Updated dependencies [f59154fb]
 - Updated dependencies [a9c189b7]
-  - @pandacss/shared@0.7.0
-  - @pandacss/types@0.7.0
-  - @pandacss/token-dictionary@0.7.0
-  - @pandacss/error@0.7.0
-  - @pandacss/logger@0.7.0
+  - @bamboocss/shared@0.7.0
+  - @bamboocss/types@0.7.0
+  - @bamboocss/token-dictionary@0.7.0
+  - @bamboocss/error@0.7.0
+  - @bamboocss/logger@0.7.0
 
 ## 0.6.0
 
@@ -3849,11 +3850,11 @@
 
 - ef1dd676: Fix issue where `staticCss` did not generate all variants in the array of `css` rules
 - b50675ca: Refactor parser to support extracting `css` prop in JSX elements correctly.
-  - @pandacss/types@0.6.0
-  - @pandacss/token-dictionary@0.6.0
-  - @pandacss/error@0.6.0
-  - @pandacss/logger@0.6.0
-  - @pandacss/shared@0.6.0
+  - @bamboocss/types@0.6.0
+  - @bamboocss/token-dictionary@0.6.0
+  - @bamboocss/error@0.6.0
+  - @bamboocss/logger@0.6.0
+  - @bamboocss/shared@0.6.0
 
 ## 0.5.1
 
@@ -3891,11 +3892,11 @@
 - Updated dependencies [f9247e52]
 - Updated dependencies [1ed239cd]
 - Updated dependencies [78ed6ed4]
-  - @pandacss/types@0.5.1
-  - @pandacss/shared@0.5.1
-  - @pandacss/logger@0.5.1
-  - @pandacss/token-dictionary@0.5.1
-  - @pandacss/error@0.5.1
+  - @bamboocss/types@0.5.1
+  - @bamboocss/shared@0.5.1
+  - @bamboocss/logger@0.5.1
+  - @bamboocss/token-dictionary@0.5.1
+  - @bamboocss/error@0.5.1
 
 ## 0.5.0
 
@@ -3903,11 +3904,11 @@
 
 - Updated dependencies [60df9bd1]
 - Updated dependencies [ead9eaa3]
-  - @pandacss/shared@0.5.0
-  - @pandacss/types@0.5.0
-  - @pandacss/token-dictionary@0.5.0
-  - @pandacss/error@0.5.0
-  - @pandacss/logger@0.5.0
+  - @bamboocss/shared@0.5.0
+  - @bamboocss/types@0.5.0
+  - @bamboocss/token-dictionary@0.5.0
+  - @bamboocss/error@0.5.0
+  - @bamboocss/logger@0.5.0
 
 ## 0.4.0
 
@@ -3916,7 +3917,7 @@
 - 5b344b9c: Add support for disabling shorthand props
 
   ```ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     // ...
@@ -3929,21 +3930,21 @@
 - 2a1e9386: Fix issue where aspect ratio css property adds `px`
 - Updated dependencies [c7b42325]
 - Updated dependencies [5b344b9c]
-  - @pandacss/types@0.4.0
-  - @pandacss/token-dictionary@0.4.0
-  - @pandacss/error@0.4.0
-  - @pandacss/logger@0.4.0
-  - @pandacss/shared@0.4.0
+  - @bamboocss/types@0.4.0
+  - @bamboocss/token-dictionary@0.4.0
+  - @bamboocss/error@0.4.0
+  - @bamboocss/logger@0.4.0
+  - @bamboocss/shared@0.4.0
 
 ## 0.3.2
 
 ### Patch Changes
 
-- @pandacss/error@0.3.2
-- @pandacss/logger@0.3.2
-- @pandacss/shared@0.3.2
-- @pandacss/token-dictionary@0.3.2
-- @pandacss/types@0.3.2
+- @bamboocss/error@0.3.2
+- @bamboocss/logger@0.3.2
+- @bamboocss/shared@0.3.2
+- @bamboocss/token-dictionary@0.3.2
+- @bamboocss/types@0.3.2
 
 ## 0.3.1
 
@@ -3951,22 +3952,22 @@
 
 - efd79d83: Baseline release for the launch
 - Updated dependencies [efd79d83]
-  - @pandacss/error@0.3.1
-  - @pandacss/logger@0.3.1
-  - @pandacss/shared@0.3.1
-  - @pandacss/token-dictionary@0.3.1
-  - @pandacss/types@0.3.1
+  - @bamboocss/error@0.3.1
+  - @bamboocss/logger@0.3.1
+  - @bamboocss/shared@0.3.1
+  - @bamboocss/token-dictionary@0.3.1
+  - @bamboocss/types@0.3.1
 
 ## 0.3.0
 
 ### Patch Changes
 
 - Updated dependencies [6d81ee9e]
-  - @pandacss/types@0.3.0
-  - @pandacss/token-dictionary@0.3.0
-  - @pandacss/error@0.3.0
-  - @pandacss/logger@0.3.0
-  - @pandacss/shared@0.3.0
+  - @bamboocss/types@0.3.0
+  - @bamboocss/token-dictionary@0.3.0
+  - @bamboocss/error@0.3.0
+  - @bamboocss/logger@0.3.0
+  - @bamboocss/shared@0.3.0
 
 ## 0.0.2
 
@@ -3981,11 +3982,11 @@
 
 - Updated dependencies [c308e8be]
 - Updated dependencies [fb40fff2]
-  - @pandacss/types@0.0.2
-  - @pandacss/error@0.0.2
-  - @pandacss/logger@0.0.2
-  - @pandacss/shared@0.0.2
-  - @pandacss/token-dictionary@0.0.2
+  - @bamboocss/types@0.0.2
+  - @bamboocss/error@0.0.2
+  - @bamboocss/logger@0.0.2
+  - @bamboocss/shared@0.0.2
+  - @bamboocss/token-dictionary@0.0.2
 
 * path.join('-'), }) }, }, })
 
@@ -4042,7 +4043,7 @@ export default defineConfig({
   ```js
   module.exports = {
     plugins: {
-      '@pandacss/dev/postcss': {
+      '@bamboocss/dev/postcss': {
         logfile: './logs/panda.log',
       },
     },
@@ -4053,11 +4054,11 @@ export default defineConfig({
 - Updated dependencies [ab32d1d7]
 - Updated dependencies [49c760cd]
 - Updated dependencies [d5977c24]
-  - @pandacss/types@0.30.0
-  - @pandacss/token-dictionary@0.30.0
-  - @pandacss/shared@0.30.0
-  - @pandacss/logger@0.30.0
-  - @pandacss/is-valid-prop@0.30.0
+  - @bamboocss/types@0.30.0
+  - @bamboocss/token-dictionary@0.30.0
+  - @bamboocss/shared@0.30.0
+  - @bamboocss/logger@0.30.0
+  - @bamboocss/is-valid-prop@0.30.0
 
 ## 0.29.1
 
@@ -4065,18 +4066,19 @@ export default defineConfig({
 
 - a5c75607: Fix an issue (introduced in v0.29) with `panda init` and add an assert on the new `colorMix` utility
   function
-  - @pandacss/is-valid-prop@0.29.1
-  - @pandacss/logger@0.29.1
-  - @pandacss/shared@0.29.1
-  - @pandacss/token-dictionary@0.29.1
-  - @pandacss/types@0.29.1
+  - @bamboocss/is-valid-prop@0.29.1
+  - @bamboocss/logger@0.29.1
+  - @bamboocss/shared@0.29.1
+  - @bamboocss/token-dictionary@0.29.1
+  - @bamboocss/types@0.29.1
 
 ## 0.29.0
 
 ### Minor Changes
 
-- 5fcdeb75: Update every utilities connected to the `colors` tokens in the `@pandacss/preset-base` (included by default)
-  to use the [`color-mix`](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/color-mix) CSS function.
+- 5fcdeb75: Update every utilities connected to the `colors` tokens in the `@bamboocss/preset-base` (included by
+  default) to use the [`color-mix`](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/color-mix) CSS
+  function.
 
   This function allows you to mix two colors together, and we use it to change the opacity of a color using the
   `{color}/{opacity}` syntax.
@@ -4142,7 +4144,7 @@ export default defineConfig({
   property:
 
   ```ts
-  import type { PropertyTransform } from '@pandacss/types'
+  import type { PropertyTransform } from '@bamboocss/types'
 
   export const createColorMixTransform =
     (prop: string): PropertyTransform =>
@@ -4224,7 +4226,7 @@ export default defineConfig({
   })
   ```
 
-  The default container sizes in the `@pandacss/preset-panda` preset are shown below:
+  The default container sizes in the `@bamboocss/preset-panda` preset are shown below:
 
   ```ts
   export const containerSizes = {
@@ -4279,7 +4281,7 @@ export default defineConfig({
 
   ### Container Query Pattern
 
-  To make it easier to use container queries, we've added a new `cq` pattern to `@pandacss/preset-base`.
+  To make it easier to use container queries, we've added a new `cq` pattern to `@bamboocss/preset-base`.
 
   ```ts
   import { cq } from "styled-system/patterns";
@@ -4336,11 +4338,11 @@ export default defineConfig({
 - Updated dependencies [7c7340ec]
 - Updated dependencies [250b4d11]
 - Updated dependencies [a2fb5cc6]
-  - @pandacss/types@0.29.0
-  - @pandacss/token-dictionary@0.29.0
-  - @pandacss/is-valid-prop@0.29.0
-  - @pandacss/logger@0.29.0
-  - @pandacss/shared@0.29.0
+  - @bamboocss/types@0.29.0
+  - @bamboocss/token-dictionary@0.29.0
+  - @bamboocss/is-valid-prop@0.29.0
+  - @bamboocss/logger@0.29.0
+  - @bamboocss/shared@0.29.0
 
 ## 0.28.0
 
@@ -4480,12 +4482,12 @@ export default defineConfig({
 - Updated dependencies [f58f6df2]
 - Updated dependencies [770c7aa4]
 - Updated dependencies [d4fa5de9]
-  - @pandacss/types@0.28.0
-  - @pandacss/shared@0.28.0
-  - @pandacss/token-dictionary@0.28.0
-  - @pandacss/error@0.28.0
-  - @pandacss/is-valid-prop@0.28.0
-  - @pandacss/logger@0.28.0
+  - @bamboocss/types@0.28.0
+  - @bamboocss/shared@0.28.0
+  - @bamboocss/token-dictionary@0.28.0
+  - @bamboocss/error@0.28.0
+  - @bamboocss/is-valid-prop@0.28.0
+  - @bamboocss/logger@0.28.0
 
 ## 0.27.3
 
@@ -4493,35 +4495,35 @@ export default defineConfig({
 
 - 1ed4df77: Fix issue where HMR doesn't work when tsconfig paths is used.
 - Updated dependencies [1ed4df77]
-  - @pandacss/types@0.27.3
-  - @pandacss/token-dictionary@0.27.3
-  - @pandacss/error@0.27.3
-  - @pandacss/is-valid-prop@0.27.3
-  - @pandacss/logger@0.27.3
-  - @pandacss/shared@0.27.3
+  - @bamboocss/types@0.27.3
+  - @bamboocss/token-dictionary@0.27.3
+  - @bamboocss/error@0.27.3
+  - @bamboocss/is-valid-prop@0.27.3
+  - @bamboocss/logger@0.27.3
+  - @bamboocss/shared@0.27.3
 
 ## 0.27.2
 
 ### Patch Changes
 
-- @pandacss/error@0.27.2
-- @pandacss/is-valid-prop@0.27.2
-- @pandacss/logger@0.27.2
-- @pandacss/shared@0.27.2
-- @pandacss/token-dictionary@0.27.2
-- @pandacss/types@0.27.2
+- @bamboocss/error@0.27.2
+- @bamboocss/is-valid-prop@0.27.2
+- @bamboocss/logger@0.27.2
+- @bamboocss/shared@0.27.2
+- @bamboocss/token-dictionary@0.27.2
+- @bamboocss/types@0.27.2
 
 ## 0.27.1
 
 ### Patch Changes
 
 - Updated dependencies [ee9341db]
-  - @pandacss/types@0.27.1
-  - @pandacss/token-dictionary@0.27.1
-  - @pandacss/error@0.27.1
-  - @pandacss/is-valid-prop@0.27.1
-  - @pandacss/logger@0.27.1
-  - @pandacss/shared@0.27.1
+  - @bamboocss/types@0.27.1
+  - @bamboocss/token-dictionary@0.27.1
+  - @bamboocss/error@0.27.1
+  - @bamboocss/is-valid-prop@0.27.1
+  - @bamboocss/logger@0.27.1
+  - @bamboocss/shared@0.27.1
 
 ## 0.27.0
 
@@ -4549,34 +4551,34 @@ export default defineConfig({
 - Updated dependencies [84304901]
 - Updated dependencies [bee3ec85]
 - Updated dependencies [74ac0d9d]
-  - @pandacss/token-dictionary@0.27.0
-  - @pandacss/is-valid-prop@0.27.0
-  - @pandacss/logger@0.27.0
-  - @pandacss/shared@0.27.0
-  - @pandacss/error@0.27.0
-  - @pandacss/types@0.27.0
+  - @bamboocss/token-dictionary@0.27.0
+  - @bamboocss/is-valid-prop@0.27.0
+  - @bamboocss/logger@0.27.0
+  - @bamboocss/shared@0.27.0
+  - @bamboocss/error@0.27.0
+  - @bamboocss/types@0.27.0
 
 ## 0.26.2
 
 ### Patch Changes
 
-- @pandacss/error@0.26.2
-- @pandacss/is-valid-prop@0.26.2
-- @pandacss/logger@0.26.2
-- @pandacss/shared@0.26.2
-- @pandacss/token-dictionary@0.26.2
-- @pandacss/types@0.26.2
+- @bamboocss/error@0.26.2
+- @bamboocss/is-valid-prop@0.26.2
+- @bamboocss/logger@0.26.2
+- @bamboocss/shared@0.26.2
+- @bamboocss/token-dictionary@0.26.2
+- @bamboocss/types@0.26.2
 
 ## 0.26.1
 
 ### Patch Changes
 
-- @pandacss/error@0.26.1
-- @pandacss/is-valid-prop@0.26.1
-- @pandacss/logger@0.26.1
-- @pandacss/shared@0.26.1
-- @pandacss/token-dictionary@0.26.1
-- @pandacss/types@0.26.1
+- @bamboocss/error@0.26.1
+- @bamboocss/is-valid-prop@0.26.1
+- @bamboocss/logger@0.26.1
+- @bamboocss/shared@0.26.1
+- @bamboocss/token-dictionary@0.26.1
+- @bamboocss/types@0.26.1
 
 ## 0.26.0
 
@@ -4588,12 +4590,12 @@ export default defineConfig({
 - Updated dependencies [657ca5da]
 - Updated dependencies [b5cf6ee6]
 - Updated dependencies [58df7d74]
-  - @pandacss/shared@0.26.0
-  - @pandacss/types@0.26.0
-  - @pandacss/token-dictionary@0.26.0
-  - @pandacss/error@0.26.0
-  - @pandacss/is-valid-prop@0.26.0
-  - @pandacss/logger@0.26.0
+  - @bamboocss/shared@0.26.0
+  - @bamboocss/types@0.26.0
+  - @bamboocss/token-dictionary@0.26.0
+  - @bamboocss/error@0.26.0
+  - @bamboocss/is-valid-prop@0.26.0
+  - @bamboocss/logger@0.26.0
 
 ## 0.25.0
 
@@ -4654,12 +4656,12 @@ export default defineConfig({
 
 - Updated dependencies [59fd291c]
 - Updated dependencies [de282f60]
-  - @pandacss/types@0.25.0
-  - @pandacss/token-dictionary@0.25.0
-  - @pandacss/error@0.25.0
-  - @pandacss/is-valid-prop@0.25.0
-  - @pandacss/logger@0.25.0
-  - @pandacss/shared@0.25.0
+  - @bamboocss/types@0.25.0
+  - @bamboocss/token-dictionary@0.25.0
+  - @bamboocss/error@0.25.0
+  - @bamboocss/is-valid-prop@0.25.0
+  - @bamboocss/logger@0.25.0
+  - @bamboocss/shared@0.25.0
 
 ## 0.24.2
 
@@ -4669,23 +4671,23 @@ export default defineConfig({
   seen as a truthy value
 - 61ebf3d2: Fix issue where config slot recipes with compound variants were not processed correctly
 - Updated dependencies [71e82a4e]
-  - @pandacss/shared@0.24.2
-  - @pandacss/types@0.24.2
-  - @pandacss/token-dictionary@0.24.2
-  - @pandacss/error@0.24.2
-  - @pandacss/is-valid-prop@0.24.2
-  - @pandacss/logger@0.24.2
+  - @bamboocss/shared@0.24.2
+  - @bamboocss/types@0.24.2
+  - @bamboocss/token-dictionary@0.24.2
+  - @bamboocss/error@0.24.2
+  - @bamboocss/is-valid-prop@0.24.2
+  - @bamboocss/logger@0.24.2
 
 ## 0.24.1
 
 ### Patch Changes
 
-- @pandacss/error@0.24.1
-- @pandacss/is-valid-prop@0.24.1
-- @pandacss/logger@0.24.1
-- @pandacss/shared@0.24.1
-- @pandacss/token-dictionary@0.24.1
-- @pandacss/types@0.24.1
+- @bamboocss/error@0.24.1
+- @bamboocss/is-valid-prop@0.24.1
+- @bamboocss/logger@0.24.1
+- @bamboocss/shared@0.24.1
+- @bamboocss/token-dictionary@0.24.1
+- @bamboocss/types@0.24.1
 
 ## 0.24.0
 
@@ -4846,12 +4848,12 @@ export default defineConfig({
   ```
 
 - Updated dependencies [f6881022]
-  - @pandacss/types@0.24.0
-  - @pandacss/token-dictionary@0.24.0
-  - @pandacss/error@0.24.0
-  - @pandacss/is-valid-prop@0.24.0
-  - @pandacss/logger@0.24.0
-  - @pandacss/shared@0.24.0
+  - @bamboocss/types@0.24.0
+  - @bamboocss/token-dictionary@0.24.0
+  - @bamboocss/error@0.24.0
+  - @bamboocss/is-valid-prop@0.24.0
+  - @bamboocss/logger@0.24.0
+  - @bamboocss/shared@0.24.0
 
 ## 0.23.0
 
@@ -4893,11 +4895,11 @@ export default defineConfig({
 
 - 840ed66b: Fix an issue with config change detection when using a custom `config.slotRecipes[xxx].jsx` array
 - Updated dependencies [bd552b1f]
-  - @pandacss/logger@0.23.0
-  - @pandacss/error@0.23.0
-  - @pandacss/shared@0.23.0
-  - @pandacss/token-dictionary@0.23.0
-  - @pandacss/types@0.23.0
+  - @bamboocss/logger@0.23.0
+  - @bamboocss/error@0.23.0
+  - @bamboocss/shared@0.23.0
+  - @bamboocss/token-dictionary@0.23.0
+  - @bamboocss/types@0.23.0
 
 ## 0.22.1
 
@@ -4905,11 +4907,11 @@ export default defineConfig({
 
 - Updated dependencies [8f4ce97c]
 - Updated dependencies [647f05c9]
-  - @pandacss/types@0.22.1
-  - @pandacss/shared@0.22.1
-  - @pandacss/token-dictionary@0.22.1
-  - @pandacss/error@0.22.1
-  - @pandacss/logger@0.22.1
+  - @bamboocss/types@0.22.1
+  - @bamboocss/shared@0.22.1
+  - @bamboocss/token-dictionary@0.22.1
+  - @bamboocss/error@0.22.1
+  - @bamboocss/logger@0.22.1
 
 ## 0.22.0
 
@@ -4930,11 +4932,11 @@ export default defineConfig({
 
 - Updated dependencies [526c6e34]
 - Updated dependencies [8db47ec6]
-  - @pandacss/types@0.22.0
-  - @pandacss/shared@0.22.0
-  - @pandacss/token-dictionary@0.22.0
-  - @pandacss/error@0.22.0
-  - @pandacss/logger@0.22.0
+  - @bamboocss/types@0.22.0
+  - @bamboocss/shared@0.22.0
+  - @bamboocss/token-dictionary@0.22.0
+  - @bamboocss/error@0.22.0
+  - @bamboocss/logger@0.22.0
 
 ## 0.21.0
 
@@ -4978,7 +4980,7 @@ export default defineConfig({
 - 105f74ce: Add a way to specify a recipe's `staticCss` options from inside a recipe config, e.g.:
 
   ```js
-  import { defineRecipe } from '@pandacss/dev'
+  import { defineRecipe } from '@bamboocss/dev'
 
   const card = defineRecipe({
     className: 'card',
@@ -4996,7 +4998,7 @@ export default defineConfig({
   would be the equivalent of defining it inside the main config:
 
   ```js
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     // ...
@@ -5013,21 +5015,21 @@ export default defineConfig({
 - Updated dependencies [26e6051a]
 - Updated dependencies [5b061615]
 - Updated dependencies [105f74ce]
-  - @pandacss/shared@0.21.0
-  - @pandacss/types@0.21.0
-  - @pandacss/token-dictionary@0.21.0
-  - @pandacss/error@0.21.0
-  - @pandacss/logger@0.21.0
+  - @bamboocss/shared@0.21.0
+  - @bamboocss/types@0.21.0
+  - @bamboocss/token-dictionary@0.21.0
+  - @bamboocss/error@0.21.0
+  - @bamboocss/logger@0.21.0
 
 ## 0.20.1
 
 ### Patch Changes
 
-- @pandacss/token-dictionary@0.20.1
-- @pandacss/error@0.20.1
-- @pandacss/logger@0.20.1
-- @pandacss/shared@0.20.1
-- @pandacss/types@0.20.1
+- @bamboocss/token-dictionary@0.20.1
+- @bamboocss/error@0.20.1
+- @bamboocss/logger@0.20.1
+- @bamboocss/shared@0.20.1
+- @bamboocss/types@0.20.1
 
 ## 0.20.0
 
@@ -5050,11 +5052,11 @@ export default defineConfig({
 
 - Updated dependencies [24ee49a5]
 - Updated dependencies [904aec7b]
-  - @pandacss/types@0.20.0
-  - @pandacss/token-dictionary@0.20.0
-  - @pandacss/error@0.20.0
-  - @pandacss/logger@0.20.0
-  - @pandacss/shared@0.20.0
+  - @bamboocss/types@0.20.0
+  - @bamboocss/token-dictionary@0.20.0
+  - @bamboocss/error@0.20.0
+  - @bamboocss/logger@0.20.0
+  - @bamboocss/shared@0.20.0
 
 ## 0.19.0
 
@@ -5064,31 +5066,31 @@ export default defineConfig({
   not being cleared as needed.
 - Updated dependencies [61831040]
 - Updated dependencies [89f86923]
-  - @pandacss/types@0.19.0
-  - @pandacss/token-dictionary@0.19.0
-  - @pandacss/error@0.19.0
-  - @pandacss/logger@0.19.0
-  - @pandacss/shared@0.19.0
+  - @bamboocss/types@0.19.0
+  - @bamboocss/token-dictionary@0.19.0
+  - @bamboocss/error@0.19.0
+  - @bamboocss/logger@0.19.0
+  - @bamboocss/shared@0.19.0
 
 ## 0.18.3
 
 ### Patch Changes
 
-- @pandacss/error@0.18.3
-- @pandacss/logger@0.18.3
-- @pandacss/shared@0.18.3
-- @pandacss/token-dictionary@0.18.3
-- @pandacss/types@0.18.3
+- @bamboocss/error@0.18.3
+- @bamboocss/logger@0.18.3
+- @bamboocss/shared@0.18.3
+- @bamboocss/token-dictionary@0.18.3
+- @bamboocss/types@0.18.3
 
 ## 0.18.2
 
 ### Patch Changes
 
-- @pandacss/token-dictionary@0.18.2
-- @pandacss/error@0.18.2
-- @pandacss/logger@0.18.2
-- @pandacss/shared@0.18.2
-- @pandacss/types@0.18.2
+- @bamboocss/token-dictionary@0.18.2
+- @bamboocss/error@0.18.2
+- @bamboocss/logger@0.18.2
+- @bamboocss/shared@0.18.2
+- @bamboocss/types@0.18.2
 
 ## 0.18.1
 
@@ -5110,65 +5112,65 @@ export default defineConfig({
 
 - Updated dependencies [566fd28a]
 - Updated dependencies [43bfa510]
-  - @pandacss/token-dictionary@0.18.1
-  - @pandacss/error@0.18.1
-  - @pandacss/logger@0.18.1
-  - @pandacss/shared@0.18.1
-  - @pandacss/types@0.18.1
+  - @bamboocss/token-dictionary@0.18.1
+  - @bamboocss/error@0.18.1
+  - @bamboocss/logger@0.18.1
+  - @bamboocss/shared@0.18.1
+  - @bamboocss/types@0.18.1
 
 ## 0.18.0
 
 ### Patch Changes
 
 - Updated dependencies [ba9e32fa]
-  - @pandacss/shared@0.18.0
-  - @pandacss/token-dictionary@0.18.0
-  - @pandacss/types@0.18.0
-  - @pandacss/error@0.18.0
-  - @pandacss/logger@0.18.0
+  - @bamboocss/shared@0.18.0
+  - @bamboocss/token-dictionary@0.18.0
+  - @bamboocss/types@0.18.0
+  - @bamboocss/error@0.18.0
+  - @bamboocss/logger@0.18.0
 
 ## 0.17.5
 
 ### Patch Changes
 
 - a6dfc944: Fix issue where using array syntax in config recipe generates invalid css
-  - @pandacss/error@0.17.5
-  - @pandacss/logger@0.17.5
-  - @pandacss/shared@0.17.5
-  - @pandacss/token-dictionary@0.17.5
-  - @pandacss/types@0.17.5
+  - @bamboocss/error@0.17.5
+  - @bamboocss/logger@0.17.5
+  - @bamboocss/shared@0.17.5
+  - @bamboocss/token-dictionary@0.17.5
+  - @bamboocss/types@0.17.5
 
 ## 0.17.4
 
 ### Patch Changes
 
 - Updated dependencies [fa77080a]
-  - @pandacss/types@0.17.4
-  - @pandacss/token-dictionary@0.17.4
-  - @pandacss/error@0.17.4
-  - @pandacss/logger@0.17.4
-  - @pandacss/shared@0.17.4
+  - @bamboocss/types@0.17.4
+  - @bamboocss/token-dictionary@0.17.4
+  - @bamboocss/error@0.17.4
+  - @bamboocss/logger@0.17.4
+  - @bamboocss/shared@0.17.4
 
 ## 0.17.3
 
 ### Patch Changes
 
 - Updated dependencies [529a262e]
-  - @pandacss/types@0.17.3
-  - @pandacss/token-dictionary@0.17.3
-  - @pandacss/error@0.17.3
-  - @pandacss/logger@0.17.3
-  - @pandacss/shared@0.17.3
+  - @bamboocss/types@0.17.3
+  - @bamboocss/token-dictionary@0.17.3
+  - @bamboocss/error@0.17.3
+  - @bamboocss/logger@0.17.3
+  - @bamboocss/shared@0.17.3
 
 ## 0.17.2
 
 ### Patch Changes
 
-- @pandacss/error@0.17.2
-- @pandacss/logger@0.17.2
-- @pandacss/shared@0.17.2
-- @pandacss/token-dictionary@0.17.2
-- @pandacss/types@0.17.2
+- @bamboocss/error@0.17.2
+- @bamboocss/logger@0.17.2
+- @bamboocss/shared@0.17.2
+- @bamboocss/token-dictionary@0.17.2
+- @bamboocss/types@0.17.2
 
 ## 0.17.1
 
@@ -5176,11 +5178,11 @@ export default defineConfig({
 
 - aea28c9f: Fix issue where using scale css property adds an additional 'px'
 - Updated dependencies [5ce359f6]
-  - @pandacss/shared@0.17.1
-  - @pandacss/types@0.17.1
-  - @pandacss/token-dictionary@0.17.1
-  - @pandacss/error@0.17.1
-  - @pandacss/logger@0.17.1
+  - @bamboocss/shared@0.17.1
+  - @bamboocss/types@0.17.1
+  - @bamboocss/token-dictionary@0.17.1
+  - @bamboocss/error@0.17.1
+  - @bamboocss/logger@0.17.1
 
 ## 0.17.0
 
@@ -5200,42 +5202,42 @@ export default defineConfig({
 
 - Updated dependencies [12281ff8]
 - Updated dependencies [fc4688e6]
-  - @pandacss/shared@0.17.0
-  - @pandacss/types@0.17.0
-  - @pandacss/token-dictionary@0.17.0
-  - @pandacss/error@0.17.0
-  - @pandacss/logger@0.17.0
+  - @bamboocss/shared@0.17.0
+  - @bamboocss/types@0.17.0
+  - @bamboocss/token-dictionary@0.17.0
+  - @bamboocss/error@0.17.0
+  - @bamboocss/logger@0.17.0
 
 ## 0.16.0
 
 ### Patch Changes
 
 - 20f4e204: Apply a few optmizations on the resulting CSS generated from `panda cssgen` command
-  - @pandacss/token-dictionary@0.16.0
-  - @pandacss/error@0.16.0
-  - @pandacss/logger@0.16.0
-  - @pandacss/shared@0.16.0
-  - @pandacss/types@0.16.0
+  - @bamboocss/token-dictionary@0.16.0
+  - @bamboocss/error@0.16.0
+  - @bamboocss/logger@0.16.0
+  - @bamboocss/shared@0.16.0
+  - @bamboocss/types@0.16.0
 
 ## 0.15.5
 
 ### Patch Changes
 
-- @pandacss/error@0.15.5
-- @pandacss/logger@0.15.5
-- @pandacss/shared@0.15.5
-- @pandacss/token-dictionary@0.15.5
-- @pandacss/types@0.15.5
+- @bamboocss/error@0.15.5
+- @bamboocss/logger@0.15.5
+- @bamboocss/shared@0.15.5
+- @bamboocss/token-dictionary@0.15.5
+- @bamboocss/types@0.15.5
 
 ## 0.15.4
 
 ### Patch Changes
 
-- @pandacss/types@0.15.4
-- @pandacss/error@0.15.4
-- @pandacss/logger@0.15.4
-- @pandacss/shared@0.15.4
-- @pandacss/token-dictionary@0.15.4
+- @bamboocss/types@0.15.4
+- @bamboocss/error@0.15.4
+- @bamboocss/logger@0.15.4
+- @bamboocss/shared@0.15.4
+- @bamboocss/token-dictionary@0.15.4
 
 ## 0.15.3
 
@@ -5291,22 +5293,22 @@ export default defineConfig({
 - Updated dependencies [95b06bb1]
 - Updated dependencies [1ac2011b]
 - Updated dependencies [58743bc4]
-  - @pandacss/shared@0.15.3
-  - @pandacss/types@0.15.3
-  - @pandacss/token-dictionary@0.15.3
-  - @pandacss/error@0.15.3
-  - @pandacss/logger@0.15.3
+  - @bamboocss/shared@0.15.3
+  - @bamboocss/types@0.15.3
+  - @bamboocss/token-dictionary@0.15.3
+  - @bamboocss/error@0.15.3
+  - @bamboocss/logger@0.15.3
 
 ## 0.15.2
 
 ### Patch Changes
 
 - Updated dependencies [26a788c0]
-  - @pandacss/types@0.15.2
-  - @pandacss/token-dictionary@0.15.2
-  - @pandacss/error@0.15.2
-  - @pandacss/logger@0.15.2
-  - @pandacss/shared@0.15.2
+  - @bamboocss/types@0.15.2
+  - @bamboocss/token-dictionary@0.15.2
+  - @bamboocss/error@0.15.2
+  - @bamboocss/logger@0.15.2
+  - @bamboocss/shared@0.15.2
 
 ## 0.15.1
 
@@ -5326,11 +5328,11 @@ export default defineConfig({
 
 - Updated dependencies [26f6982c]
 - Updated dependencies [4e003bfb]
-  - @pandacss/shared@0.15.1
-  - @pandacss/token-dictionary@0.15.1
-  - @pandacss/types@0.15.1
-  - @pandacss/error@0.15.1
-  - @pandacss/logger@0.15.1
+  - @bamboocss/shared@0.15.1
+  - @bamboocss/token-dictionary@0.15.1
+  - @bamboocss/types@0.15.1
+  - @bamboocss/error@0.15.1
+  - @bamboocss/logger@0.15.1
 
 ## 0.15.0
 
@@ -5346,11 +5348,11 @@ export default defineConfig({
 - Updated dependencies [9f429d35]
 - Updated dependencies [39298609]
 - Updated dependencies [f27146d6]
-  - @pandacss/types@0.15.0
-  - @pandacss/shared@0.15.0
-  - @pandacss/token-dictionary@0.15.0
-  - @pandacss/error@0.15.0
-  - @pandacss/logger@0.15.0
+  - @bamboocss/types@0.15.0
+  - @bamboocss/shared@0.15.0
+  - @bamboocss/token-dictionary@0.15.0
+  - @bamboocss/error@0.15.0
+  - @bamboocss/logger@0.15.0
 
 ## 0.14.0
 
@@ -5383,22 +5385,22 @@ export default defineConfig({
 - Updated dependencies [9e799554]
 - Updated dependencies [e6459a59]
 - Updated dependencies [6f7ee198]
-  - @pandacss/token-dictionary@0.14.0
-  - @pandacss/types@0.14.0
-  - @pandacss/error@0.14.0
-  - @pandacss/logger@0.14.0
-  - @pandacss/shared@0.14.0
+  - @bamboocss/token-dictionary@0.14.0
+  - @bamboocss/types@0.14.0
+  - @bamboocss/error@0.14.0
+  - @bamboocss/logger@0.14.0
+  - @bamboocss/shared@0.14.0
 
 ## 0.13.1
 
 ### Patch Changes
 
 - Updated dependencies [d0fbc7cc]
-  - @pandacss/error@0.13.1
-  - @pandacss/logger@0.13.1
-  - @pandacss/shared@0.13.1
-  - @pandacss/token-dictionary@0.13.1
-  - @pandacss/types@0.13.1
+  - @bamboocss/error@0.13.1
+  - @bamboocss/logger@0.13.1
+  - @bamboocss/shared@0.13.1
+  - @bamboocss/token-dictionary@0.13.1
+  - @bamboocss/types@0.13.1
 
 ## 0.13.0
 
@@ -5409,41 +5411,41 @@ export default defineConfig({
 
 ### Patch Changes
 
-- @pandacss/error@0.13.0
-- @pandacss/logger@0.13.0
-- @pandacss/shared@0.13.0
-- @pandacss/token-dictionary@0.13.0
-- @pandacss/types@0.13.0
+- @bamboocss/error@0.13.0
+- @bamboocss/logger@0.13.0
+- @bamboocss/shared@0.13.0
+- @bamboocss/token-dictionary@0.13.0
+- @bamboocss/types@0.13.0
 
 ## 0.12.2
 
 ### Patch Changes
 
-- @pandacss/error@0.12.2
-- @pandacss/logger@0.12.2
-- @pandacss/shared@0.12.2
-- @pandacss/token-dictionary@0.12.2
-- @pandacss/types@0.12.2
+- @bamboocss/error@0.12.2
+- @bamboocss/logger@0.12.2
+- @bamboocss/shared@0.12.2
+- @bamboocss/token-dictionary@0.12.2
+- @bamboocss/types@0.12.2
 
 ## 0.12.1
 
 ### Patch Changes
 
-- @pandacss/error@0.12.1
-- @pandacss/logger@0.12.1
-- @pandacss/shared@0.12.1
-- @pandacss/token-dictionary@0.12.1
-- @pandacss/types@0.12.1
+- @bamboocss/error@0.12.1
+- @bamboocss/logger@0.12.1
+- @bamboocss/shared@0.12.1
+- @bamboocss/token-dictionary@0.12.1
+- @bamboocss/types@0.12.1
 
 ## 0.12.0
 
 ### Patch Changes
 
-- @pandacss/token-dictionary@0.12.0
-- @pandacss/error@0.12.0
-- @pandacss/logger@0.12.0
-- @pandacss/shared@0.12.0
-- @pandacss/types@0.12.0
+- @bamboocss/token-dictionary@0.12.0
+- @bamboocss/error@0.12.0
+- @bamboocss/logger@0.12.0
+- @bamboocss/shared@0.12.0
+- @bamboocss/types@0.12.0
 
 ## 0.11.1
 
@@ -5452,22 +5454,22 @@ export default defineConfig({
 - 23b516f4: Make layers customizable
 - Updated dependencies [c07e1beb]
 - Updated dependencies [23b516f4]
-  - @pandacss/shared@0.11.1
-  - @pandacss/types@0.11.1
-  - @pandacss/token-dictionary@0.11.1
-  - @pandacss/error@0.11.1
-  - @pandacss/logger@0.11.1
+  - @bamboocss/shared@0.11.1
+  - @bamboocss/types@0.11.1
+  - @bamboocss/token-dictionary@0.11.1
+  - @bamboocss/error@0.11.1
+  - @bamboocss/logger@0.11.1
 
 ## 0.11.0
 
 ### Patch Changes
 
 - Updated dependencies [5b95caf5]
-  - @pandacss/types@0.11.0
-  - @pandacss/token-dictionary@0.11.0
-  - @pandacss/error@0.11.0
-  - @pandacss/logger@0.11.0
-  - @pandacss/shared@0.11.0
+  - @bamboocss/types@0.11.0
+  - @bamboocss/token-dictionary@0.11.0
+  - @bamboocss/error@0.11.0
+  - @bamboocss/logger@0.11.0
+  - @bamboocss/shared@0.11.0
 
 ## 0.10.0
 
@@ -5532,11 +5534,11 @@ export default defineConfig({
 - Updated dependencies [9d4aa918]
 - Updated dependencies [386e5098]
 - Updated dependencies [a669f4d5]
-  - @pandacss/shared@0.10.0
-  - @pandacss/types@0.10.0
-  - @pandacss/token-dictionary@0.10.0
-  - @pandacss/error@0.10.0
-  - @pandacss/logger@0.10.0
+  - @bamboocss/shared@0.10.0
+  - @bamboocss/types@0.10.0
+  - @bamboocss/token-dictionary@0.10.0
+  - @bamboocss/error@0.10.0
+  - @bamboocss/logger@0.10.0
 
 ## 0.9.0
 
@@ -5578,7 +5580,7 @@ export default defineConfig({
   To track the `CustomCircle` component, you can now use the `jsx` property.
 
   ```js
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     patterns: {
@@ -5594,11 +5596,11 @@ export default defineConfig({
 ### Patch Changes
 
 - Updated dependencies [c08de87f]
-  - @pandacss/types@0.9.0
-  - @pandacss/token-dictionary@0.9.0
-  - @pandacss/error@0.9.0
-  - @pandacss/logger@0.9.0
-  - @pandacss/shared@0.9.0
+  - @bamboocss/types@0.9.0
+  - @bamboocss/token-dictionary@0.9.0
+  - @bamboocss/error@0.9.0
+  - @bamboocss/logger@0.9.0
+  - @bamboocss/shared@0.9.0
 
 ## 0.8.0
 
@@ -5624,11 +5626,11 @@ export default defineConfig({
   separate unnamed block for the custom dark condition.
 - Updated dependencies [ac078416]
 - Updated dependencies [be0ad578]
-  - @pandacss/token-dictionary@0.8.0
-  - @pandacss/types@0.8.0
-  - @pandacss/error@0.8.0
-  - @pandacss/logger@0.8.0
-  - @pandacss/shared@0.8.0
+  - @bamboocss/token-dictionary@0.8.0
+  - @bamboocss/types@0.8.0
+  - @bamboocss/error@0.8.0
+  - @bamboocss/logger@0.8.0
+  - @bamboocss/shared@0.8.0
 
 ## 0.7.0
 
@@ -5636,11 +5638,11 @@ export default defineConfig({
 
 - Updated dependencies [f59154fb]
 - Updated dependencies [a9c189b7]
-  - @pandacss/shared@0.7.0
-  - @pandacss/types@0.7.0
-  - @pandacss/token-dictionary@0.7.0
-  - @pandacss/error@0.7.0
-  - @pandacss/logger@0.7.0
+  - @bamboocss/shared@0.7.0
+  - @bamboocss/types@0.7.0
+  - @bamboocss/token-dictionary@0.7.0
+  - @bamboocss/error@0.7.0
+  - @bamboocss/logger@0.7.0
 
 ## 0.6.0
 
@@ -5699,11 +5701,11 @@ export default defineConfig({
 
 - ef1dd676: Fix issue where `staticCss` did not generate all variants in the array of `css` rules
 - b50675ca: Refactor parser to support extracting `css` prop in JSX elements correctly.
-  - @pandacss/types@0.6.0
-  - @pandacss/token-dictionary@0.6.0
-  - @pandacss/error@0.6.0
-  - @pandacss/logger@0.6.0
-  - @pandacss/shared@0.6.0
+  - @bamboocss/types@0.6.0
+  - @bamboocss/token-dictionary@0.6.0
+  - @bamboocss/error@0.6.0
+  - @bamboocss/logger@0.6.0
+  - @bamboocss/shared@0.6.0
 
 ## 0.5.1
 
@@ -5741,11 +5743,11 @@ export default defineConfig({
 - Updated dependencies [f9247e52]
 - Updated dependencies [1ed239cd]
 - Updated dependencies [78ed6ed4]
-  - @pandacss/types@0.5.1
-  - @pandacss/shared@0.5.1
-  - @pandacss/logger@0.5.1
-  - @pandacss/token-dictionary@0.5.1
-  - @pandacss/error@0.5.1
+  - @bamboocss/types@0.5.1
+  - @bamboocss/shared@0.5.1
+  - @bamboocss/logger@0.5.1
+  - @bamboocss/token-dictionary@0.5.1
+  - @bamboocss/error@0.5.1
 
 ## 0.5.0
 
@@ -5753,11 +5755,11 @@ export default defineConfig({
 
 - Updated dependencies [60df9bd1]
 - Updated dependencies [ead9eaa3]
-  - @pandacss/shared@0.5.0
-  - @pandacss/types@0.5.0
-  - @pandacss/token-dictionary@0.5.0
-  - @pandacss/error@0.5.0
-  - @pandacss/logger@0.5.0
+  - @bamboocss/shared@0.5.0
+  - @bamboocss/types@0.5.0
+  - @bamboocss/token-dictionary@0.5.0
+  - @bamboocss/error@0.5.0
+  - @bamboocss/logger@0.5.0
 
 ## 0.4.0
 
@@ -5766,7 +5768,7 @@ export default defineConfig({
 - 5b344b9c: Add support for disabling shorthand props
 
   ```ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     // ...
@@ -5779,21 +5781,21 @@ export default defineConfig({
 - 2a1e9386: Fix issue where aspect ratio css property adds `px`
 - Updated dependencies [c7b42325]
 - Updated dependencies [5b344b9c]
-  - @pandacss/types@0.4.0
-  - @pandacss/token-dictionary@0.4.0
-  - @pandacss/error@0.4.0
-  - @pandacss/logger@0.4.0
-  - @pandacss/shared@0.4.0
+  - @bamboocss/types@0.4.0
+  - @bamboocss/token-dictionary@0.4.0
+  - @bamboocss/error@0.4.0
+  - @bamboocss/logger@0.4.0
+  - @bamboocss/shared@0.4.0
 
 ## 0.3.2
 
 ### Patch Changes
 
-- @pandacss/error@0.3.2
-- @pandacss/logger@0.3.2
-- @pandacss/shared@0.3.2
-- @pandacss/token-dictionary@0.3.2
-- @pandacss/types@0.3.2
+- @bamboocss/error@0.3.2
+- @bamboocss/logger@0.3.2
+- @bamboocss/shared@0.3.2
+- @bamboocss/token-dictionary@0.3.2
+- @bamboocss/types@0.3.2
 
 ## 0.3.1
 
@@ -5801,22 +5803,22 @@ export default defineConfig({
 
 - efd79d83: Baseline release for the launch
 - Updated dependencies [efd79d83]
-  - @pandacss/error@0.3.1
-  - @pandacss/logger@0.3.1
-  - @pandacss/shared@0.3.1
-  - @pandacss/token-dictionary@0.3.1
-  - @pandacss/types@0.3.1
+  - @bamboocss/error@0.3.1
+  - @bamboocss/logger@0.3.1
+  - @bamboocss/shared@0.3.1
+  - @bamboocss/token-dictionary@0.3.1
+  - @bamboocss/types@0.3.1
 
 ## 0.3.0
 
 ### Patch Changes
 
 - Updated dependencies [6d81ee9e]
-  - @pandacss/types@0.3.0
-  - @pandacss/token-dictionary@0.3.0
-  - @pandacss/error@0.3.0
-  - @pandacss/logger@0.3.0
-  - @pandacss/shared@0.3.0
+  - @bamboocss/types@0.3.0
+  - @bamboocss/token-dictionary@0.3.0
+  - @bamboocss/error@0.3.0
+  - @bamboocss/logger@0.3.0
+  - @bamboocss/shared@0.3.0
 
 ## 0.0.2
 
@@ -5831,11 +5833,11 @@ export default defineConfig({
 
 - Updated dependencies [c308e8be]
 - Updated dependencies [fb40fff2]
-  - @pandacss/types@0.0.2
-  - @pandacss/error@0.0.2
-  - @pandacss/logger@0.0.2
-  - @pandacss/shared@0.0.2
-  - @pandacss/token-dictionary@0.0.2
+  - @bamboocss/types@0.0.2
+  - @bamboocss/error@0.0.2
+  - @bamboocss/logger@0.0.2
+  - @bamboocss/shared@0.0.2
+  - @bamboocss/token-dictionary@0.0.2
 
 * path.join('-'), }) }, }, })
 
@@ -5858,11 +5860,11 @@ Will now allow you to use the following syntax for token path:
 - Updated dependencies [e855c64]
 - Updated dependencies [cca50d5]
 - Updated dependencies [fde37d8]
-  - @pandacss/token-dictionary@0.33.0
-  - @pandacss/types@0.33.0
-  - @pandacss/logger@0.33.0
-  - @pandacss/is-valid-prop@0.33.0
-  - @pandacss/shared@0.33.0
+  - @bamboocss/token-dictionary@0.33.0
+  - @bamboocss/types@0.33.0
+  - @bamboocss/logger@0.33.0
+  - @bamboocss/is-valid-prop@0.33.0
+  - @bamboocss/shared@0.33.0
 
 ## 0.32.1
 
@@ -5903,7 +5905,7 @@ Will now allow you to use the following syntax for token path:
 - 31071ba: Fix an issue for token names starting with '0'
 
   ```ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     theme: {
@@ -5942,11 +5944,11 @@ Will now allow you to use the following syntax for token path:
 - Updated dependencies [5184771]
 - Updated dependencies [6d8c884]
 - Updated dependencies [89ffb6b]
-  - @pandacss/types@0.32.1
-  - @pandacss/token-dictionary@0.32.1
-  - @pandacss/logger@0.32.1
-  - @pandacss/is-valid-prop@0.32.1
-  - @pandacss/shared@0.32.1
+  - @bamboocss/types@0.32.1
+  - @bamboocss/token-dictionary@0.32.1
+  - @bamboocss/logger@0.32.1
+  - @bamboocss/is-valid-prop@0.32.1
+  - @bamboocss/shared@0.32.1
 
 ## 0.32.0
 
@@ -5960,11 +5962,11 @@ Will now allow you to use the following syntax for token path:
 - Updated dependencies [8cd8c19]
 - Updated dependencies [60cace3]
 - Updated dependencies [de4d9ef]
-  - @pandacss/shared@0.32.0
-  - @pandacss/types@0.32.0
-  - @pandacss/token-dictionary@0.32.0
-  - @pandacss/logger@0.32.0
-  - @pandacss/is-valid-prop@0.32.0
+  - @bamboocss/shared@0.32.0
+  - @bamboocss/types@0.32.0
+  - @bamboocss/token-dictionary@0.32.0
+  - @bamboocss/logger@0.32.0
+  - @bamboocss/is-valid-prop@0.32.0
 
 ## 0.31.0
 
@@ -6012,11 +6014,11 @@ Will now allow you to use the following syntax for token path:
 - Updated dependencies [f0296249]
 - Updated dependencies [a17fe387]
 - Updated dependencies [2d69b340]
-  - @pandacss/types@0.31.0
-  - @pandacss/shared@0.31.0
-  - @pandacss/logger@0.31.0
-  - @pandacss/token-dictionary@0.31.0
-  - @pandacss/is-valid-prop@0.31.0
+  - @bamboocss/types@0.31.0
+  - @bamboocss/shared@0.31.0
+  - @bamboocss/logger@0.31.0
+  - @bamboocss/token-dictionary@0.31.0
+  - @bamboocss/is-valid-prop@0.31.0
 
 ## 0.30.2
 
@@ -6055,21 +6057,21 @@ Will now allow you to use the following syntax for token path:
   ```
 
 - Updated dependencies [6b829cab]
-  - @pandacss/types@0.30.2
-  - @pandacss/logger@0.30.2
-  - @pandacss/token-dictionary@0.30.2
-  - @pandacss/is-valid-prop@0.30.2
-  - @pandacss/shared@0.30.2
+  - @bamboocss/types@0.30.2
+  - @bamboocss/logger@0.30.2
+  - @bamboocss/token-dictionary@0.30.2
+  - @bamboocss/is-valid-prop@0.30.2
+  - @bamboocss/shared@0.30.2
 
 ## 0.30.1
 
 ### Patch Changes
 
-- @pandacss/is-valid-prop@0.30.1
-- @pandacss/logger@0.30.1
-- @pandacss/shared@0.30.1
-- @pandacss/token-dictionary@0.30.1
-- @pandacss/types@0.30.1
+- @bamboocss/is-valid-prop@0.30.1
+- @bamboocss/logger@0.30.1
+- @bamboocss/shared@0.30.1
+- @bamboocss/token-dictionary@0.30.1
+- @bamboocss/types@0.30.1
 
 ## 0.30.0
 
@@ -6099,18 +6101,19 @@ Will now allow you to use the following syntax for token path:
 
 - a5c75607: Fix an issue (introduced in v0.29) with `panda init` and add an assert on the new `colorMix` utility
   function
-  - @pandacss/is-valid-prop@0.29.1
-  - @pandacss/logger@0.29.1
-  - @pandacss/shared@0.29.1
-  - @pandacss/token-dictionary@0.29.1
-  - @pandacss/types@0.29.1
+  - @bamboocss/is-valid-prop@0.29.1
+  - @bamboocss/logger@0.29.1
+  - @bamboocss/shared@0.29.1
+  - @bamboocss/token-dictionary@0.29.1
+  - @bamboocss/types@0.29.1
 
 ## 0.29.0
 
 ### Minor Changes
 
-- 5fcdeb75: Update every utilities connected to the `colors` tokens in the `@pandacss/preset-base` (included by default)
-  to use the [`color-mix`](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/color-mix) CSS function.
+- 5fcdeb75: Update every utilities connected to the `colors` tokens in the `@bamboocss/preset-base` (included by
+  default) to use the [`color-mix`](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/color-mix) CSS
+  function.
 
   This function allows you to mix two colors together, and we use it to change the opacity of a color using the
   `{color}/{opacity}` syntax.
@@ -6176,7 +6179,7 @@ Will now allow you to use the following syntax for token path:
   property:
 
   ```ts
-  import type { PropertyTransform } from '@pandacss/types'
+  import type { PropertyTransform } from '@bamboocss/types'
 
   export const createColorMixTransform =
     (prop: string): PropertyTransform =>
@@ -6258,7 +6261,7 @@ Will now allow you to use the following syntax for token path:
   })
   ```
 
-  The default container sizes in the `@pandacss/preset-panda` preset are shown below:
+  The default container sizes in the `@bamboocss/preset-panda` preset are shown below:
 
   ```ts
   export const containerSizes = {
@@ -6313,7 +6316,7 @@ Will now allow you to use the following syntax for token path:
 
   ### Container Query Pattern
 
-  To make it easier to use container queries, we've added a new `cq` pattern to `@pandacss/preset-base`.
+  To make it easier to use container queries, we've added a new `cq` pattern to `@bamboocss/preset-base`.
 
   ```ts
   import { cq } from "styled-system/patterns";
@@ -6370,11 +6373,11 @@ Will now allow you to use the following syntax for token path:
 - Updated dependencies [7c7340ec]
 - Updated dependencies [250b4d11]
 - Updated dependencies [a2fb5cc6]
-  - @pandacss/types@0.29.0
-  - @pandacss/token-dictionary@0.29.0
-  - @pandacss/is-valid-prop@0.29.0
-  - @pandacss/logger@0.29.0
-  - @pandacss/shared@0.29.0
+  - @bamboocss/types@0.29.0
+  - @bamboocss/token-dictionary@0.29.0
+  - @bamboocss/is-valid-prop@0.29.0
+  - @bamboocss/logger@0.29.0
+  - @bamboocss/shared@0.29.0
 
 ## 0.28.0
 
@@ -6514,12 +6517,12 @@ Will now allow you to use the following syntax for token path:
 - Updated dependencies [f58f6df2]
 - Updated dependencies [770c7aa4]
 - Updated dependencies [d4fa5de9]
-  - @pandacss/types@0.28.0
-  - @pandacss/shared@0.28.0
-  - @pandacss/token-dictionary@0.28.0
-  - @pandacss/error@0.28.0
-  - @pandacss/is-valid-prop@0.28.0
-  - @pandacss/logger@0.28.0
+  - @bamboocss/types@0.28.0
+  - @bamboocss/shared@0.28.0
+  - @bamboocss/token-dictionary@0.28.0
+  - @bamboocss/error@0.28.0
+  - @bamboocss/is-valid-prop@0.28.0
+  - @bamboocss/logger@0.28.0
 
 ## 0.27.3
 
@@ -6527,35 +6530,35 @@ Will now allow you to use the following syntax for token path:
 
 - 1ed4df77: Fix issue where HMR doesn't work when tsconfig paths is used.
 - Updated dependencies [1ed4df77]
-  - @pandacss/types@0.27.3
-  - @pandacss/token-dictionary@0.27.3
-  - @pandacss/error@0.27.3
-  - @pandacss/is-valid-prop@0.27.3
-  - @pandacss/logger@0.27.3
-  - @pandacss/shared@0.27.3
+  - @bamboocss/types@0.27.3
+  - @bamboocss/token-dictionary@0.27.3
+  - @bamboocss/error@0.27.3
+  - @bamboocss/is-valid-prop@0.27.3
+  - @bamboocss/logger@0.27.3
+  - @bamboocss/shared@0.27.3
 
 ## 0.27.2
 
 ### Patch Changes
 
-- @pandacss/error@0.27.2
-- @pandacss/is-valid-prop@0.27.2
-- @pandacss/logger@0.27.2
-- @pandacss/shared@0.27.2
-- @pandacss/token-dictionary@0.27.2
-- @pandacss/types@0.27.2
+- @bamboocss/error@0.27.2
+- @bamboocss/is-valid-prop@0.27.2
+- @bamboocss/logger@0.27.2
+- @bamboocss/shared@0.27.2
+- @bamboocss/token-dictionary@0.27.2
+- @bamboocss/types@0.27.2
 
 ## 0.27.1
 
 ### Patch Changes
 
 - Updated dependencies [ee9341db]
-  - @pandacss/types@0.27.1
-  - @pandacss/token-dictionary@0.27.1
-  - @pandacss/error@0.27.1
-  - @pandacss/is-valid-prop@0.27.1
-  - @pandacss/logger@0.27.1
-  - @pandacss/shared@0.27.1
+  - @bamboocss/types@0.27.1
+  - @bamboocss/token-dictionary@0.27.1
+  - @bamboocss/error@0.27.1
+  - @bamboocss/is-valid-prop@0.27.1
+  - @bamboocss/logger@0.27.1
+  - @bamboocss/shared@0.27.1
 
 ## 0.27.0
 
@@ -6583,34 +6586,34 @@ Will now allow you to use the following syntax for token path:
 - Updated dependencies [84304901]
 - Updated dependencies [bee3ec85]
 - Updated dependencies [74ac0d9d]
-  - @pandacss/token-dictionary@0.27.0
-  - @pandacss/is-valid-prop@0.27.0
-  - @pandacss/logger@0.27.0
-  - @pandacss/shared@0.27.0
-  - @pandacss/error@0.27.0
-  - @pandacss/types@0.27.0
+  - @bamboocss/token-dictionary@0.27.0
+  - @bamboocss/is-valid-prop@0.27.0
+  - @bamboocss/logger@0.27.0
+  - @bamboocss/shared@0.27.0
+  - @bamboocss/error@0.27.0
+  - @bamboocss/types@0.27.0
 
 ## 0.26.2
 
 ### Patch Changes
 
-- @pandacss/error@0.26.2
-- @pandacss/is-valid-prop@0.26.2
-- @pandacss/logger@0.26.2
-- @pandacss/shared@0.26.2
-- @pandacss/token-dictionary@0.26.2
-- @pandacss/types@0.26.2
+- @bamboocss/error@0.26.2
+- @bamboocss/is-valid-prop@0.26.2
+- @bamboocss/logger@0.26.2
+- @bamboocss/shared@0.26.2
+- @bamboocss/token-dictionary@0.26.2
+- @bamboocss/types@0.26.2
 
 ## 0.26.1
 
 ### Patch Changes
 
-- @pandacss/error@0.26.1
-- @pandacss/is-valid-prop@0.26.1
-- @pandacss/logger@0.26.1
-- @pandacss/shared@0.26.1
-- @pandacss/token-dictionary@0.26.1
-- @pandacss/types@0.26.1
+- @bamboocss/error@0.26.1
+- @bamboocss/is-valid-prop@0.26.1
+- @bamboocss/logger@0.26.1
+- @bamboocss/shared@0.26.1
+- @bamboocss/token-dictionary@0.26.1
+- @bamboocss/types@0.26.1
 
 ## 0.26.0
 
@@ -6622,12 +6625,12 @@ Will now allow you to use the following syntax for token path:
 - Updated dependencies [657ca5da]
 - Updated dependencies [b5cf6ee6]
 - Updated dependencies [58df7d74]
-  - @pandacss/shared@0.26.0
-  - @pandacss/types@0.26.0
-  - @pandacss/token-dictionary@0.26.0
-  - @pandacss/error@0.26.0
-  - @pandacss/is-valid-prop@0.26.0
-  - @pandacss/logger@0.26.0
+  - @bamboocss/shared@0.26.0
+  - @bamboocss/types@0.26.0
+  - @bamboocss/token-dictionary@0.26.0
+  - @bamboocss/error@0.26.0
+  - @bamboocss/is-valid-prop@0.26.0
+  - @bamboocss/logger@0.26.0
 
 ## 0.25.0
 
@@ -6688,12 +6691,12 @@ Will now allow you to use the following syntax for token path:
 
 - Updated dependencies [59fd291c]
 - Updated dependencies [de282f60]
-  - @pandacss/types@0.25.0
-  - @pandacss/token-dictionary@0.25.0
-  - @pandacss/error@0.25.0
-  - @pandacss/is-valid-prop@0.25.0
-  - @pandacss/logger@0.25.0
-  - @pandacss/shared@0.25.0
+  - @bamboocss/types@0.25.0
+  - @bamboocss/token-dictionary@0.25.0
+  - @bamboocss/error@0.25.0
+  - @bamboocss/is-valid-prop@0.25.0
+  - @bamboocss/logger@0.25.0
+  - @bamboocss/shared@0.25.0
 
 ## 0.24.2
 
@@ -6703,23 +6706,23 @@ Will now allow you to use the following syntax for token path:
   seen as a truthy value
 - 61ebf3d2: Fix issue where config slot recipes with compound variants were not processed correctly
 - Updated dependencies [71e82a4e]
-  - @pandacss/shared@0.24.2
-  - @pandacss/types@0.24.2
-  - @pandacss/token-dictionary@0.24.2
-  - @pandacss/error@0.24.2
-  - @pandacss/is-valid-prop@0.24.2
-  - @pandacss/logger@0.24.2
+  - @bamboocss/shared@0.24.2
+  - @bamboocss/types@0.24.2
+  - @bamboocss/token-dictionary@0.24.2
+  - @bamboocss/error@0.24.2
+  - @bamboocss/is-valid-prop@0.24.2
+  - @bamboocss/logger@0.24.2
 
 ## 0.24.1
 
 ### Patch Changes
 
-- @pandacss/error@0.24.1
-- @pandacss/is-valid-prop@0.24.1
-- @pandacss/logger@0.24.1
-- @pandacss/shared@0.24.1
-- @pandacss/token-dictionary@0.24.1
-- @pandacss/types@0.24.1
+- @bamboocss/error@0.24.1
+- @bamboocss/is-valid-prop@0.24.1
+- @bamboocss/logger@0.24.1
+- @bamboocss/shared@0.24.1
+- @bamboocss/token-dictionary@0.24.1
+- @bamboocss/types@0.24.1
 
 ## 0.24.0
 
@@ -6880,12 +6883,12 @@ Will now allow you to use the following syntax for token path:
   ```
 
 - Updated dependencies [f6881022]
-  - @pandacss/types@0.24.0
-  - @pandacss/token-dictionary@0.24.0
-  - @pandacss/error@0.24.0
-  - @pandacss/is-valid-prop@0.24.0
-  - @pandacss/logger@0.24.0
-  - @pandacss/shared@0.24.0
+  - @bamboocss/types@0.24.0
+  - @bamboocss/token-dictionary@0.24.0
+  - @bamboocss/error@0.24.0
+  - @bamboocss/is-valid-prop@0.24.0
+  - @bamboocss/logger@0.24.0
+  - @bamboocss/shared@0.24.0
 
 ## 0.23.0
 
@@ -6927,11 +6930,11 @@ Will now allow you to use the following syntax for token path:
 
 - 840ed66b: Fix an issue with config change detection when using a custom `config.slotRecipes[xxx].jsx` array
 - Updated dependencies [bd552b1f]
-  - @pandacss/logger@0.23.0
-  - @pandacss/error@0.23.0
-  - @pandacss/shared@0.23.0
-  - @pandacss/token-dictionary@0.23.0
-  - @pandacss/types@0.23.0
+  - @bamboocss/logger@0.23.0
+  - @bamboocss/error@0.23.0
+  - @bamboocss/shared@0.23.0
+  - @bamboocss/token-dictionary@0.23.0
+  - @bamboocss/types@0.23.0
 
 ## 0.22.1
 
@@ -6939,11 +6942,11 @@ Will now allow you to use the following syntax for token path:
 
 - Updated dependencies [8f4ce97c]
 - Updated dependencies [647f05c9]
-  - @pandacss/types@0.22.1
-  - @pandacss/shared@0.22.1
-  - @pandacss/token-dictionary@0.22.1
-  - @pandacss/error@0.22.1
-  - @pandacss/logger@0.22.1
+  - @bamboocss/types@0.22.1
+  - @bamboocss/shared@0.22.1
+  - @bamboocss/token-dictionary@0.22.1
+  - @bamboocss/error@0.22.1
+  - @bamboocss/logger@0.22.1
 
 ## 0.22.0
 
@@ -6964,11 +6967,11 @@ Will now allow you to use the following syntax for token path:
 
 - Updated dependencies [526c6e34]
 - Updated dependencies [8db47ec6]
-  - @pandacss/types@0.22.0
-  - @pandacss/shared@0.22.0
-  - @pandacss/token-dictionary@0.22.0
-  - @pandacss/error@0.22.0
-  - @pandacss/logger@0.22.0
+  - @bamboocss/types@0.22.0
+  - @bamboocss/shared@0.22.0
+  - @bamboocss/token-dictionary@0.22.0
+  - @bamboocss/error@0.22.0
+  - @bamboocss/logger@0.22.0
 
 ## 0.21.0
 
@@ -7012,7 +7015,7 @@ Will now allow you to use the following syntax for token path:
 - 105f74ce: Add a way to specify a recipe's `staticCss` options from inside a recipe config, e.g.:
 
   ```js
-  import { defineRecipe } from '@pandacss/dev'
+  import { defineRecipe } from '@bamboocss/dev'
 
   const card = defineRecipe({
     className: 'card',
@@ -7030,7 +7033,7 @@ Will now allow you to use the following syntax for token path:
   would be the equivalent of defining it inside the main config:
 
   ```js
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     // ...
@@ -7047,21 +7050,21 @@ Will now allow you to use the following syntax for token path:
 - Updated dependencies [26e6051a]
 - Updated dependencies [5b061615]
 - Updated dependencies [105f74ce]
-  - @pandacss/shared@0.21.0
-  - @pandacss/types@0.21.0
-  - @pandacss/token-dictionary@0.21.0
-  - @pandacss/error@0.21.0
-  - @pandacss/logger@0.21.0
+  - @bamboocss/shared@0.21.0
+  - @bamboocss/types@0.21.0
+  - @bamboocss/token-dictionary@0.21.0
+  - @bamboocss/error@0.21.0
+  - @bamboocss/logger@0.21.0
 
 ## 0.20.1
 
 ### Patch Changes
 
-- @pandacss/token-dictionary@0.20.1
-- @pandacss/error@0.20.1
-- @pandacss/logger@0.20.1
-- @pandacss/shared@0.20.1
-- @pandacss/types@0.20.1
+- @bamboocss/token-dictionary@0.20.1
+- @bamboocss/error@0.20.1
+- @bamboocss/logger@0.20.1
+- @bamboocss/shared@0.20.1
+- @bamboocss/types@0.20.1
 
 ## 0.20.0
 
@@ -7084,11 +7087,11 @@ Will now allow you to use the following syntax for token path:
 
 - Updated dependencies [24ee49a5]
 - Updated dependencies [904aec7b]
-  - @pandacss/types@0.20.0
-  - @pandacss/token-dictionary@0.20.0
-  - @pandacss/error@0.20.0
-  - @pandacss/logger@0.20.0
-  - @pandacss/shared@0.20.0
+  - @bamboocss/types@0.20.0
+  - @bamboocss/token-dictionary@0.20.0
+  - @bamboocss/error@0.20.0
+  - @bamboocss/logger@0.20.0
+  - @bamboocss/shared@0.20.0
 
 ## 0.19.0
 
@@ -7098,31 +7101,31 @@ Will now allow you to use the following syntax for token path:
   not being cleared as needed.
 - Updated dependencies [61831040]
 - Updated dependencies [89f86923]
-  - @pandacss/types@0.19.0
-  - @pandacss/token-dictionary@0.19.0
-  - @pandacss/error@0.19.0
-  - @pandacss/logger@0.19.0
-  - @pandacss/shared@0.19.0
+  - @bamboocss/types@0.19.0
+  - @bamboocss/token-dictionary@0.19.0
+  - @bamboocss/error@0.19.0
+  - @bamboocss/logger@0.19.0
+  - @bamboocss/shared@0.19.0
 
 ## 0.18.3
 
 ### Patch Changes
 
-- @pandacss/error@0.18.3
-- @pandacss/logger@0.18.3
-- @pandacss/shared@0.18.3
-- @pandacss/token-dictionary@0.18.3
-- @pandacss/types@0.18.3
+- @bamboocss/error@0.18.3
+- @bamboocss/logger@0.18.3
+- @bamboocss/shared@0.18.3
+- @bamboocss/token-dictionary@0.18.3
+- @bamboocss/types@0.18.3
 
 ## 0.18.2
 
 ### Patch Changes
 
-- @pandacss/token-dictionary@0.18.2
-- @pandacss/error@0.18.2
-- @pandacss/logger@0.18.2
-- @pandacss/shared@0.18.2
-- @pandacss/types@0.18.2
+- @bamboocss/token-dictionary@0.18.2
+- @bamboocss/error@0.18.2
+- @bamboocss/logger@0.18.2
+- @bamboocss/shared@0.18.2
+- @bamboocss/types@0.18.2
 
 ## 0.18.1
 
@@ -7144,65 +7147,65 @@ Will now allow you to use the following syntax for token path:
 
 - Updated dependencies [566fd28a]
 - Updated dependencies [43bfa510]
-  - @pandacss/token-dictionary@0.18.1
-  - @pandacss/error@0.18.1
-  - @pandacss/logger@0.18.1
-  - @pandacss/shared@0.18.1
-  - @pandacss/types@0.18.1
+  - @bamboocss/token-dictionary@0.18.1
+  - @bamboocss/error@0.18.1
+  - @bamboocss/logger@0.18.1
+  - @bamboocss/shared@0.18.1
+  - @bamboocss/types@0.18.1
 
 ## 0.18.0
 
 ### Patch Changes
 
 - Updated dependencies [ba9e32fa]
-  - @pandacss/shared@0.18.0
-  - @pandacss/token-dictionary@0.18.0
-  - @pandacss/types@0.18.0
-  - @pandacss/error@0.18.0
-  - @pandacss/logger@0.18.0
+  - @bamboocss/shared@0.18.0
+  - @bamboocss/token-dictionary@0.18.0
+  - @bamboocss/types@0.18.0
+  - @bamboocss/error@0.18.0
+  - @bamboocss/logger@0.18.0
 
 ## 0.17.5
 
 ### Patch Changes
 
 - a6dfc944: Fix issue where using array syntax in config recipe generates invalid css
-  - @pandacss/error@0.17.5
-  - @pandacss/logger@0.17.5
-  - @pandacss/shared@0.17.5
-  - @pandacss/token-dictionary@0.17.5
-  - @pandacss/types@0.17.5
+  - @bamboocss/error@0.17.5
+  - @bamboocss/logger@0.17.5
+  - @bamboocss/shared@0.17.5
+  - @bamboocss/token-dictionary@0.17.5
+  - @bamboocss/types@0.17.5
 
 ## 0.17.4
 
 ### Patch Changes
 
 - Updated dependencies [fa77080a]
-  - @pandacss/types@0.17.4
-  - @pandacss/token-dictionary@0.17.4
-  - @pandacss/error@0.17.4
-  - @pandacss/logger@0.17.4
-  - @pandacss/shared@0.17.4
+  - @bamboocss/types@0.17.4
+  - @bamboocss/token-dictionary@0.17.4
+  - @bamboocss/error@0.17.4
+  - @bamboocss/logger@0.17.4
+  - @bamboocss/shared@0.17.4
 
 ## 0.17.3
 
 ### Patch Changes
 
 - Updated dependencies [529a262e]
-  - @pandacss/types@0.17.3
-  - @pandacss/token-dictionary@0.17.3
-  - @pandacss/error@0.17.3
-  - @pandacss/logger@0.17.3
-  - @pandacss/shared@0.17.3
+  - @bamboocss/types@0.17.3
+  - @bamboocss/token-dictionary@0.17.3
+  - @bamboocss/error@0.17.3
+  - @bamboocss/logger@0.17.3
+  - @bamboocss/shared@0.17.3
 
 ## 0.17.2
 
 ### Patch Changes
 
-- @pandacss/error@0.17.2
-- @pandacss/logger@0.17.2
-- @pandacss/shared@0.17.2
-- @pandacss/token-dictionary@0.17.2
-- @pandacss/types@0.17.2
+- @bamboocss/error@0.17.2
+- @bamboocss/logger@0.17.2
+- @bamboocss/shared@0.17.2
+- @bamboocss/token-dictionary@0.17.2
+- @bamboocss/types@0.17.2
 
 ## 0.17.1
 
@@ -7210,11 +7213,11 @@ Will now allow you to use the following syntax for token path:
 
 - aea28c9f: Fix issue where using scale css property adds an additional 'px'
 - Updated dependencies [5ce359f6]
-  - @pandacss/shared@0.17.1
-  - @pandacss/types@0.17.1
-  - @pandacss/token-dictionary@0.17.1
-  - @pandacss/error@0.17.1
-  - @pandacss/logger@0.17.1
+  - @bamboocss/shared@0.17.1
+  - @bamboocss/types@0.17.1
+  - @bamboocss/token-dictionary@0.17.1
+  - @bamboocss/error@0.17.1
+  - @bamboocss/logger@0.17.1
 
 ## 0.17.0
 
@@ -7234,42 +7237,42 @@ Will now allow you to use the following syntax for token path:
 
 - Updated dependencies [12281ff8]
 - Updated dependencies [fc4688e6]
-  - @pandacss/shared@0.17.0
-  - @pandacss/types@0.17.0
-  - @pandacss/token-dictionary@0.17.0
-  - @pandacss/error@0.17.0
-  - @pandacss/logger@0.17.0
+  - @bamboocss/shared@0.17.0
+  - @bamboocss/types@0.17.0
+  - @bamboocss/token-dictionary@0.17.0
+  - @bamboocss/error@0.17.0
+  - @bamboocss/logger@0.17.0
 
 ## 0.16.0
 
 ### Patch Changes
 
 - 20f4e204: Apply a few optmizations on the resulting CSS generated from `panda cssgen` command
-  - @pandacss/token-dictionary@0.16.0
-  - @pandacss/error@0.16.0
-  - @pandacss/logger@0.16.0
-  - @pandacss/shared@0.16.0
-  - @pandacss/types@0.16.0
+  - @bamboocss/token-dictionary@0.16.0
+  - @bamboocss/error@0.16.0
+  - @bamboocss/logger@0.16.0
+  - @bamboocss/shared@0.16.0
+  - @bamboocss/types@0.16.0
 
 ## 0.15.5
 
 ### Patch Changes
 
-- @pandacss/error@0.15.5
-- @pandacss/logger@0.15.5
-- @pandacss/shared@0.15.5
-- @pandacss/token-dictionary@0.15.5
-- @pandacss/types@0.15.5
+- @bamboocss/error@0.15.5
+- @bamboocss/logger@0.15.5
+- @bamboocss/shared@0.15.5
+- @bamboocss/token-dictionary@0.15.5
+- @bamboocss/types@0.15.5
 
 ## 0.15.4
 
 ### Patch Changes
 
-- @pandacss/types@0.15.4
-- @pandacss/error@0.15.4
-- @pandacss/logger@0.15.4
-- @pandacss/shared@0.15.4
-- @pandacss/token-dictionary@0.15.4
+- @bamboocss/types@0.15.4
+- @bamboocss/error@0.15.4
+- @bamboocss/logger@0.15.4
+- @bamboocss/shared@0.15.4
+- @bamboocss/token-dictionary@0.15.4
 
 ## 0.15.3
 
@@ -7325,22 +7328,22 @@ Will now allow you to use the following syntax for token path:
 - Updated dependencies [95b06bb1]
 - Updated dependencies [1ac2011b]
 - Updated dependencies [58743bc4]
-  - @pandacss/shared@0.15.3
-  - @pandacss/types@0.15.3
-  - @pandacss/token-dictionary@0.15.3
-  - @pandacss/error@0.15.3
-  - @pandacss/logger@0.15.3
+  - @bamboocss/shared@0.15.3
+  - @bamboocss/types@0.15.3
+  - @bamboocss/token-dictionary@0.15.3
+  - @bamboocss/error@0.15.3
+  - @bamboocss/logger@0.15.3
 
 ## 0.15.2
 
 ### Patch Changes
 
 - Updated dependencies [26a788c0]
-  - @pandacss/types@0.15.2
-  - @pandacss/token-dictionary@0.15.2
-  - @pandacss/error@0.15.2
-  - @pandacss/logger@0.15.2
-  - @pandacss/shared@0.15.2
+  - @bamboocss/types@0.15.2
+  - @bamboocss/token-dictionary@0.15.2
+  - @bamboocss/error@0.15.2
+  - @bamboocss/logger@0.15.2
+  - @bamboocss/shared@0.15.2
 
 ## 0.15.1
 
@@ -7360,11 +7363,11 @@ Will now allow you to use the following syntax for token path:
 
 - Updated dependencies [26f6982c]
 - Updated dependencies [4e003bfb]
-  - @pandacss/shared@0.15.1
-  - @pandacss/token-dictionary@0.15.1
-  - @pandacss/types@0.15.1
-  - @pandacss/error@0.15.1
-  - @pandacss/logger@0.15.1
+  - @bamboocss/shared@0.15.1
+  - @bamboocss/token-dictionary@0.15.1
+  - @bamboocss/types@0.15.1
+  - @bamboocss/error@0.15.1
+  - @bamboocss/logger@0.15.1
 
 ## 0.15.0
 
@@ -7380,11 +7383,11 @@ Will now allow you to use the following syntax for token path:
 - Updated dependencies [9f429d35]
 - Updated dependencies [39298609]
 - Updated dependencies [f27146d6]
-  - @pandacss/types@0.15.0
-  - @pandacss/shared@0.15.0
-  - @pandacss/token-dictionary@0.15.0
-  - @pandacss/error@0.15.0
-  - @pandacss/logger@0.15.0
+  - @bamboocss/types@0.15.0
+  - @bamboocss/shared@0.15.0
+  - @bamboocss/token-dictionary@0.15.0
+  - @bamboocss/error@0.15.0
+  - @bamboocss/logger@0.15.0
 
 ## 0.14.0
 
@@ -7417,22 +7420,22 @@ Will now allow you to use the following syntax for token path:
 - Updated dependencies [9e799554]
 - Updated dependencies [e6459a59]
 - Updated dependencies [6f7ee198]
-  - @pandacss/token-dictionary@0.14.0
-  - @pandacss/types@0.14.0
-  - @pandacss/error@0.14.0
-  - @pandacss/logger@0.14.0
-  - @pandacss/shared@0.14.0
+  - @bamboocss/token-dictionary@0.14.0
+  - @bamboocss/types@0.14.0
+  - @bamboocss/error@0.14.0
+  - @bamboocss/logger@0.14.0
+  - @bamboocss/shared@0.14.0
 
 ## 0.13.1
 
 ### Patch Changes
 
 - Updated dependencies [d0fbc7cc]
-  - @pandacss/error@0.13.1
-  - @pandacss/logger@0.13.1
-  - @pandacss/shared@0.13.1
-  - @pandacss/token-dictionary@0.13.1
-  - @pandacss/types@0.13.1
+  - @bamboocss/error@0.13.1
+  - @bamboocss/logger@0.13.1
+  - @bamboocss/shared@0.13.1
+  - @bamboocss/token-dictionary@0.13.1
+  - @bamboocss/types@0.13.1
 
 ## 0.13.0
 
@@ -7443,41 +7446,41 @@ Will now allow you to use the following syntax for token path:
 
 ### Patch Changes
 
-- @pandacss/error@0.13.0
-- @pandacss/logger@0.13.0
-- @pandacss/shared@0.13.0
-- @pandacss/token-dictionary@0.13.0
-- @pandacss/types@0.13.0
+- @bamboocss/error@0.13.0
+- @bamboocss/logger@0.13.0
+- @bamboocss/shared@0.13.0
+- @bamboocss/token-dictionary@0.13.0
+- @bamboocss/types@0.13.0
 
 ## 0.12.2
 
 ### Patch Changes
 
-- @pandacss/error@0.12.2
-- @pandacss/logger@0.12.2
-- @pandacss/shared@0.12.2
-- @pandacss/token-dictionary@0.12.2
-- @pandacss/types@0.12.2
+- @bamboocss/error@0.12.2
+- @bamboocss/logger@0.12.2
+- @bamboocss/shared@0.12.2
+- @bamboocss/token-dictionary@0.12.2
+- @bamboocss/types@0.12.2
 
 ## 0.12.1
 
 ### Patch Changes
 
-- @pandacss/error@0.12.1
-- @pandacss/logger@0.12.1
-- @pandacss/shared@0.12.1
-- @pandacss/token-dictionary@0.12.1
-- @pandacss/types@0.12.1
+- @bamboocss/error@0.12.1
+- @bamboocss/logger@0.12.1
+- @bamboocss/shared@0.12.1
+- @bamboocss/token-dictionary@0.12.1
+- @bamboocss/types@0.12.1
 
 ## 0.12.0
 
 ### Patch Changes
 
-- @pandacss/token-dictionary@0.12.0
-- @pandacss/error@0.12.0
-- @pandacss/logger@0.12.0
-- @pandacss/shared@0.12.0
-- @pandacss/types@0.12.0
+- @bamboocss/token-dictionary@0.12.0
+- @bamboocss/error@0.12.0
+- @bamboocss/logger@0.12.0
+- @bamboocss/shared@0.12.0
+- @bamboocss/types@0.12.0
 
 ## 0.11.1
 
@@ -7486,22 +7489,22 @@ Will now allow you to use the following syntax for token path:
 - 23b516f4: Make layers customizable
 - Updated dependencies [c07e1beb]
 - Updated dependencies [23b516f4]
-  - @pandacss/shared@0.11.1
-  - @pandacss/types@0.11.1
-  - @pandacss/token-dictionary@0.11.1
-  - @pandacss/error@0.11.1
-  - @pandacss/logger@0.11.1
+  - @bamboocss/shared@0.11.1
+  - @bamboocss/types@0.11.1
+  - @bamboocss/token-dictionary@0.11.1
+  - @bamboocss/error@0.11.1
+  - @bamboocss/logger@0.11.1
 
 ## 0.11.0
 
 ### Patch Changes
 
 - Updated dependencies [5b95caf5]
-  - @pandacss/types@0.11.0
-  - @pandacss/token-dictionary@0.11.0
-  - @pandacss/error@0.11.0
-  - @pandacss/logger@0.11.0
-  - @pandacss/shared@0.11.0
+  - @bamboocss/types@0.11.0
+  - @bamboocss/token-dictionary@0.11.0
+  - @bamboocss/error@0.11.0
+  - @bamboocss/logger@0.11.0
+  - @bamboocss/shared@0.11.0
 
 ## 0.10.0
 
@@ -7566,11 +7569,11 @@ Will now allow you to use the following syntax for token path:
 - Updated dependencies [9d4aa918]
 - Updated dependencies [386e5098]
 - Updated dependencies [a669f4d5]
-  - @pandacss/shared@0.10.0
-  - @pandacss/types@0.10.0
-  - @pandacss/token-dictionary@0.10.0
-  - @pandacss/error@0.10.0
-  - @pandacss/logger@0.10.0
+  - @bamboocss/shared@0.10.0
+  - @bamboocss/types@0.10.0
+  - @bamboocss/token-dictionary@0.10.0
+  - @bamboocss/error@0.10.0
+  - @bamboocss/logger@0.10.0
 
 ## 0.9.0
 
@@ -7612,7 +7615,7 @@ Will now allow you to use the following syntax for token path:
   To track the `CustomCircle` component, you can now use the `jsx` property.
 
   ```js
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     patterns: {
@@ -7628,11 +7631,11 @@ Will now allow you to use the following syntax for token path:
 ### Patch Changes
 
 - Updated dependencies [c08de87f]
-  - @pandacss/types@0.9.0
-  - @pandacss/token-dictionary@0.9.0
-  - @pandacss/error@0.9.0
-  - @pandacss/logger@0.9.0
-  - @pandacss/shared@0.9.0
+  - @bamboocss/types@0.9.0
+  - @bamboocss/token-dictionary@0.9.0
+  - @bamboocss/error@0.9.0
+  - @bamboocss/logger@0.9.0
+  - @bamboocss/shared@0.9.0
 
 ## 0.8.0
 
@@ -7658,11 +7661,11 @@ Will now allow you to use the following syntax for token path:
   separate unnamed block for the custom dark condition.
 - Updated dependencies [ac078416]
 - Updated dependencies [be0ad578]
-  - @pandacss/token-dictionary@0.8.0
-  - @pandacss/types@0.8.0
-  - @pandacss/error@0.8.0
-  - @pandacss/logger@0.8.0
-  - @pandacss/shared@0.8.0
+  - @bamboocss/token-dictionary@0.8.0
+  - @bamboocss/types@0.8.0
+  - @bamboocss/error@0.8.0
+  - @bamboocss/logger@0.8.0
+  - @bamboocss/shared@0.8.0
 
 ## 0.7.0
 
@@ -7670,11 +7673,11 @@ Will now allow you to use the following syntax for token path:
 
 - Updated dependencies [f59154fb]
 - Updated dependencies [a9c189b7]
-  - @pandacss/shared@0.7.0
-  - @pandacss/types@0.7.0
-  - @pandacss/token-dictionary@0.7.0
-  - @pandacss/error@0.7.0
-  - @pandacss/logger@0.7.0
+  - @bamboocss/shared@0.7.0
+  - @bamboocss/types@0.7.0
+  - @bamboocss/token-dictionary@0.7.0
+  - @bamboocss/error@0.7.0
+  - @bamboocss/logger@0.7.0
 
 ## 0.6.0
 
@@ -7733,11 +7736,11 @@ Will now allow you to use the following syntax for token path:
 
 - ef1dd676: Fix issue where `staticCss` did not generate all variants in the array of `css` rules
 - b50675ca: Refactor parser to support extracting `css` prop in JSX elements correctly.
-  - @pandacss/types@0.6.0
-  - @pandacss/token-dictionary@0.6.0
-  - @pandacss/error@0.6.0
-  - @pandacss/logger@0.6.0
-  - @pandacss/shared@0.6.0
+  - @bamboocss/types@0.6.0
+  - @bamboocss/token-dictionary@0.6.0
+  - @bamboocss/error@0.6.0
+  - @bamboocss/logger@0.6.0
+  - @bamboocss/shared@0.6.0
 
 ## 0.5.1
 
@@ -7775,11 +7778,11 @@ Will now allow you to use the following syntax for token path:
 - Updated dependencies [f9247e52]
 - Updated dependencies [1ed239cd]
 - Updated dependencies [78ed6ed4]
-  - @pandacss/types@0.5.1
-  - @pandacss/shared@0.5.1
-  - @pandacss/logger@0.5.1
-  - @pandacss/token-dictionary@0.5.1
-  - @pandacss/error@0.5.1
+  - @bamboocss/types@0.5.1
+  - @bamboocss/shared@0.5.1
+  - @bamboocss/logger@0.5.1
+  - @bamboocss/token-dictionary@0.5.1
+  - @bamboocss/error@0.5.1
 
 ## 0.5.0
 
@@ -7787,11 +7790,11 @@ Will now allow you to use the following syntax for token path:
 
 - Updated dependencies [60df9bd1]
 - Updated dependencies [ead9eaa3]
-  - @pandacss/shared@0.5.0
-  - @pandacss/types@0.5.0
-  - @pandacss/token-dictionary@0.5.0
-  - @pandacss/error@0.5.0
-  - @pandacss/logger@0.5.0
+  - @bamboocss/shared@0.5.0
+  - @bamboocss/types@0.5.0
+  - @bamboocss/token-dictionary@0.5.0
+  - @bamboocss/error@0.5.0
+  - @bamboocss/logger@0.5.0
 
 ## 0.4.0
 
@@ -7800,7 +7803,7 @@ Will now allow you to use the following syntax for token path:
 - 5b344b9c: Add support for disabling shorthand props
 
   ```ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     // ...
@@ -7813,21 +7816,21 @@ Will now allow you to use the following syntax for token path:
 - 2a1e9386: Fix issue where aspect ratio css property adds `px`
 - Updated dependencies [c7b42325]
 - Updated dependencies [5b344b9c]
-  - @pandacss/types@0.4.0
-  - @pandacss/token-dictionary@0.4.0
-  - @pandacss/error@0.4.0
-  - @pandacss/logger@0.4.0
-  - @pandacss/shared@0.4.0
+  - @bamboocss/types@0.4.0
+  - @bamboocss/token-dictionary@0.4.0
+  - @bamboocss/error@0.4.0
+  - @bamboocss/logger@0.4.0
+  - @bamboocss/shared@0.4.0
 
 ## 0.3.2
 
 ### Patch Changes
 
-- @pandacss/error@0.3.2
-- @pandacss/logger@0.3.2
-- @pandacss/shared@0.3.2
-- @pandacss/token-dictionary@0.3.2
-- @pandacss/types@0.3.2
+- @bamboocss/error@0.3.2
+- @bamboocss/logger@0.3.2
+- @bamboocss/shared@0.3.2
+- @bamboocss/token-dictionary@0.3.2
+- @bamboocss/types@0.3.2
 
 ## 0.3.1
 
@@ -7835,22 +7838,22 @@ Will now allow you to use the following syntax for token path:
 
 - efd79d83: Baseline release for the launch
 - Updated dependencies [efd79d83]
-  - @pandacss/error@0.3.1
-  - @pandacss/logger@0.3.1
-  - @pandacss/shared@0.3.1
-  - @pandacss/token-dictionary@0.3.1
-  - @pandacss/types@0.3.1
+  - @bamboocss/error@0.3.1
+  - @bamboocss/logger@0.3.1
+  - @bamboocss/shared@0.3.1
+  - @bamboocss/token-dictionary@0.3.1
+  - @bamboocss/types@0.3.1
 
 ## 0.3.0
 
 ### Patch Changes
 
 - Updated dependencies [6d81ee9e]
-  - @pandacss/types@0.3.0
-  - @pandacss/token-dictionary@0.3.0
-  - @pandacss/error@0.3.0
-  - @pandacss/logger@0.3.0
-  - @pandacss/shared@0.3.0
+  - @bamboocss/types@0.3.0
+  - @bamboocss/token-dictionary@0.3.0
+  - @bamboocss/error@0.3.0
+  - @bamboocss/logger@0.3.0
+  - @bamboocss/shared@0.3.0
 
 ## 0.0.2
 
@@ -7865,11 +7868,11 @@ Will now allow you to use the following syntax for token path:
 
 - Updated dependencies [c308e8be]
 - Updated dependencies [fb40fff2]
-  - @pandacss/types@0.0.2
-  - @pandacss/error@0.0.2
-  - @pandacss/logger@0.0.2
-  - @pandacss/shared@0.0.2
-  - @pandacss/token-dictionary@0.0.2
+  - @bamboocss/types@0.0.2
+  - @bamboocss/error@0.0.2
+  - @bamboocss/logger@0.0.2
+  - @bamboocss/shared@0.0.2
+  - @bamboocss/token-dictionary@0.0.2
 
 * path.join('-'), }) }, }, })
 
@@ -7926,7 +7929,7 @@ export default defineConfig({
   ```js
   module.exports = {
     plugins: {
-      '@pandacss/dev/postcss': {
+      '@bamboocss/dev/postcss': {
         logfile: './logs/panda.log',
       },
     },
@@ -7937,11 +7940,11 @@ export default defineConfig({
 - Updated dependencies [ab32d1d7]
 - Updated dependencies [49c760cd]
 - Updated dependencies [d5977c24]
-  - @pandacss/types@0.30.0
-  - @pandacss/token-dictionary@0.30.0
-  - @pandacss/shared@0.30.0
-  - @pandacss/logger@0.30.0
-  - @pandacss/is-valid-prop@0.30.0
+  - @bamboocss/types@0.30.0
+  - @bamboocss/token-dictionary@0.30.0
+  - @bamboocss/shared@0.30.0
+  - @bamboocss/logger@0.30.0
+  - @bamboocss/is-valid-prop@0.30.0
 
 ## 0.29.1
 
@@ -7949,18 +7952,19 @@ export default defineConfig({
 
 - a5c75607: Fix an issue (introduced in v0.29) with `panda init` and add an assert on the new `colorMix` utility
   function
-  - @pandacss/is-valid-prop@0.29.1
-  - @pandacss/logger@0.29.1
-  - @pandacss/shared@0.29.1
-  - @pandacss/token-dictionary@0.29.1
-  - @pandacss/types@0.29.1
+  - @bamboocss/is-valid-prop@0.29.1
+  - @bamboocss/logger@0.29.1
+  - @bamboocss/shared@0.29.1
+  - @bamboocss/token-dictionary@0.29.1
+  - @bamboocss/types@0.29.1
 
 ## 0.29.0
 
 ### Minor Changes
 
-- 5fcdeb75: Update every utilities connected to the `colors` tokens in the `@pandacss/preset-base` (included by default)
-  to use the [`color-mix`](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/color-mix) CSS function.
+- 5fcdeb75: Update every utilities connected to the `colors` tokens in the `@bamboocss/preset-base` (included by
+  default) to use the [`color-mix`](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/color-mix) CSS
+  function.
 
   This function allows you to mix two colors together, and we use it to change the opacity of a color using the
   `{color}/{opacity}` syntax.
@@ -8026,7 +8030,7 @@ export default defineConfig({
   property:
 
   ```ts
-  import type { PropertyTransform } from '@pandacss/types'
+  import type { PropertyTransform } from '@bamboocss/types'
 
   export const createColorMixTransform =
     (prop: string): PropertyTransform =>
@@ -8108,7 +8112,7 @@ export default defineConfig({
   })
   ```
 
-  The default container sizes in the `@pandacss/preset-panda` preset are shown below:
+  The default container sizes in the `@bamboocss/preset-panda` preset are shown below:
 
   ```ts
   export const containerSizes = {
@@ -8163,7 +8167,7 @@ export default defineConfig({
 
   ### Container Query Pattern
 
-  To make it easier to use container queries, we've added a new `cq` pattern to `@pandacss/preset-base`.
+  To make it easier to use container queries, we've added a new `cq` pattern to `@bamboocss/preset-base`.
 
   ```ts
   import { cq } from "styled-system/patterns";
@@ -8220,11 +8224,11 @@ export default defineConfig({
 - Updated dependencies [7c7340ec]
 - Updated dependencies [250b4d11]
 - Updated dependencies [a2fb5cc6]
-  - @pandacss/types@0.29.0
-  - @pandacss/token-dictionary@0.29.0
-  - @pandacss/is-valid-prop@0.29.0
-  - @pandacss/logger@0.29.0
-  - @pandacss/shared@0.29.0
+  - @bamboocss/types@0.29.0
+  - @bamboocss/token-dictionary@0.29.0
+  - @bamboocss/is-valid-prop@0.29.0
+  - @bamboocss/logger@0.29.0
+  - @bamboocss/shared@0.29.0
 
 ## 0.28.0
 
@@ -8364,12 +8368,12 @@ export default defineConfig({
 - Updated dependencies [f58f6df2]
 - Updated dependencies [770c7aa4]
 - Updated dependencies [d4fa5de9]
-  - @pandacss/types@0.28.0
-  - @pandacss/shared@0.28.0
-  - @pandacss/token-dictionary@0.28.0
-  - @pandacss/error@0.28.0
-  - @pandacss/is-valid-prop@0.28.0
-  - @pandacss/logger@0.28.0
+  - @bamboocss/types@0.28.0
+  - @bamboocss/shared@0.28.0
+  - @bamboocss/token-dictionary@0.28.0
+  - @bamboocss/error@0.28.0
+  - @bamboocss/is-valid-prop@0.28.0
+  - @bamboocss/logger@0.28.0
 
 ## 0.27.3
 
@@ -8377,35 +8381,35 @@ export default defineConfig({
 
 - 1ed4df77: Fix issue where HMR doesn't work when tsconfig paths is used.
 - Updated dependencies [1ed4df77]
-  - @pandacss/types@0.27.3
-  - @pandacss/token-dictionary@0.27.3
-  - @pandacss/error@0.27.3
-  - @pandacss/is-valid-prop@0.27.3
-  - @pandacss/logger@0.27.3
-  - @pandacss/shared@0.27.3
+  - @bamboocss/types@0.27.3
+  - @bamboocss/token-dictionary@0.27.3
+  - @bamboocss/error@0.27.3
+  - @bamboocss/is-valid-prop@0.27.3
+  - @bamboocss/logger@0.27.3
+  - @bamboocss/shared@0.27.3
 
 ## 0.27.2
 
 ### Patch Changes
 
-- @pandacss/error@0.27.2
-- @pandacss/is-valid-prop@0.27.2
-- @pandacss/logger@0.27.2
-- @pandacss/shared@0.27.2
-- @pandacss/token-dictionary@0.27.2
-- @pandacss/types@0.27.2
+- @bamboocss/error@0.27.2
+- @bamboocss/is-valid-prop@0.27.2
+- @bamboocss/logger@0.27.2
+- @bamboocss/shared@0.27.2
+- @bamboocss/token-dictionary@0.27.2
+- @bamboocss/types@0.27.2
 
 ## 0.27.1
 
 ### Patch Changes
 
 - Updated dependencies [ee9341db]
-  - @pandacss/types@0.27.1
-  - @pandacss/token-dictionary@0.27.1
-  - @pandacss/error@0.27.1
-  - @pandacss/is-valid-prop@0.27.1
-  - @pandacss/logger@0.27.1
-  - @pandacss/shared@0.27.1
+  - @bamboocss/types@0.27.1
+  - @bamboocss/token-dictionary@0.27.1
+  - @bamboocss/error@0.27.1
+  - @bamboocss/is-valid-prop@0.27.1
+  - @bamboocss/logger@0.27.1
+  - @bamboocss/shared@0.27.1
 
 ## 0.27.0
 
@@ -8433,34 +8437,34 @@ export default defineConfig({
 - Updated dependencies [84304901]
 - Updated dependencies [bee3ec85]
 - Updated dependencies [74ac0d9d]
-  - @pandacss/token-dictionary@0.27.0
-  - @pandacss/is-valid-prop@0.27.0
-  - @pandacss/logger@0.27.0
-  - @pandacss/shared@0.27.0
-  - @pandacss/error@0.27.0
-  - @pandacss/types@0.27.0
+  - @bamboocss/token-dictionary@0.27.0
+  - @bamboocss/is-valid-prop@0.27.0
+  - @bamboocss/logger@0.27.0
+  - @bamboocss/shared@0.27.0
+  - @bamboocss/error@0.27.0
+  - @bamboocss/types@0.27.0
 
 ## 0.26.2
 
 ### Patch Changes
 
-- @pandacss/error@0.26.2
-- @pandacss/is-valid-prop@0.26.2
-- @pandacss/logger@0.26.2
-- @pandacss/shared@0.26.2
-- @pandacss/token-dictionary@0.26.2
-- @pandacss/types@0.26.2
+- @bamboocss/error@0.26.2
+- @bamboocss/is-valid-prop@0.26.2
+- @bamboocss/logger@0.26.2
+- @bamboocss/shared@0.26.2
+- @bamboocss/token-dictionary@0.26.2
+- @bamboocss/types@0.26.2
 
 ## 0.26.1
 
 ### Patch Changes
 
-- @pandacss/error@0.26.1
-- @pandacss/is-valid-prop@0.26.1
-- @pandacss/logger@0.26.1
-- @pandacss/shared@0.26.1
-- @pandacss/token-dictionary@0.26.1
-- @pandacss/types@0.26.1
+- @bamboocss/error@0.26.1
+- @bamboocss/is-valid-prop@0.26.1
+- @bamboocss/logger@0.26.1
+- @bamboocss/shared@0.26.1
+- @bamboocss/token-dictionary@0.26.1
+- @bamboocss/types@0.26.1
 
 ## 0.26.0
 
@@ -8472,12 +8476,12 @@ export default defineConfig({
 - Updated dependencies [657ca5da]
 - Updated dependencies [b5cf6ee6]
 - Updated dependencies [58df7d74]
-  - @pandacss/shared@0.26.0
-  - @pandacss/types@0.26.0
-  - @pandacss/token-dictionary@0.26.0
-  - @pandacss/error@0.26.0
-  - @pandacss/is-valid-prop@0.26.0
-  - @pandacss/logger@0.26.0
+  - @bamboocss/shared@0.26.0
+  - @bamboocss/types@0.26.0
+  - @bamboocss/token-dictionary@0.26.0
+  - @bamboocss/error@0.26.0
+  - @bamboocss/is-valid-prop@0.26.0
+  - @bamboocss/logger@0.26.0
 
 ## 0.25.0
 
@@ -8538,12 +8542,12 @@ export default defineConfig({
 
 - Updated dependencies [59fd291c]
 - Updated dependencies [de282f60]
-  - @pandacss/types@0.25.0
-  - @pandacss/token-dictionary@0.25.0
-  - @pandacss/error@0.25.0
-  - @pandacss/is-valid-prop@0.25.0
-  - @pandacss/logger@0.25.0
-  - @pandacss/shared@0.25.0
+  - @bamboocss/types@0.25.0
+  - @bamboocss/token-dictionary@0.25.0
+  - @bamboocss/error@0.25.0
+  - @bamboocss/is-valid-prop@0.25.0
+  - @bamboocss/logger@0.25.0
+  - @bamboocss/shared@0.25.0
 
 ## 0.24.2
 
@@ -8553,23 +8557,23 @@ export default defineConfig({
   seen as a truthy value
 - 61ebf3d2: Fix issue where config slot recipes with compound variants were not processed correctly
 - Updated dependencies [71e82a4e]
-  - @pandacss/shared@0.24.2
-  - @pandacss/types@0.24.2
-  - @pandacss/token-dictionary@0.24.2
-  - @pandacss/error@0.24.2
-  - @pandacss/is-valid-prop@0.24.2
-  - @pandacss/logger@0.24.2
+  - @bamboocss/shared@0.24.2
+  - @bamboocss/types@0.24.2
+  - @bamboocss/token-dictionary@0.24.2
+  - @bamboocss/error@0.24.2
+  - @bamboocss/is-valid-prop@0.24.2
+  - @bamboocss/logger@0.24.2
 
 ## 0.24.1
 
 ### Patch Changes
 
-- @pandacss/error@0.24.1
-- @pandacss/is-valid-prop@0.24.1
-- @pandacss/logger@0.24.1
-- @pandacss/shared@0.24.1
-- @pandacss/token-dictionary@0.24.1
-- @pandacss/types@0.24.1
+- @bamboocss/error@0.24.1
+- @bamboocss/is-valid-prop@0.24.1
+- @bamboocss/logger@0.24.1
+- @bamboocss/shared@0.24.1
+- @bamboocss/token-dictionary@0.24.1
+- @bamboocss/types@0.24.1
 
 ## 0.24.0
 
@@ -8730,12 +8734,12 @@ export default defineConfig({
   ```
 
 - Updated dependencies [f6881022]
-  - @pandacss/types@0.24.0
-  - @pandacss/token-dictionary@0.24.0
-  - @pandacss/error@0.24.0
-  - @pandacss/is-valid-prop@0.24.0
-  - @pandacss/logger@0.24.0
-  - @pandacss/shared@0.24.0
+  - @bamboocss/types@0.24.0
+  - @bamboocss/token-dictionary@0.24.0
+  - @bamboocss/error@0.24.0
+  - @bamboocss/is-valid-prop@0.24.0
+  - @bamboocss/logger@0.24.0
+  - @bamboocss/shared@0.24.0
 
 ## 0.23.0
 
@@ -8777,11 +8781,11 @@ export default defineConfig({
 
 - 840ed66b: Fix an issue with config change detection when using a custom `config.slotRecipes[xxx].jsx` array
 - Updated dependencies [bd552b1f]
-  - @pandacss/logger@0.23.0
-  - @pandacss/error@0.23.0
-  - @pandacss/shared@0.23.0
-  - @pandacss/token-dictionary@0.23.0
-  - @pandacss/types@0.23.0
+  - @bamboocss/logger@0.23.0
+  - @bamboocss/error@0.23.0
+  - @bamboocss/shared@0.23.0
+  - @bamboocss/token-dictionary@0.23.0
+  - @bamboocss/types@0.23.0
 
 ## 0.22.1
 
@@ -8789,11 +8793,11 @@ export default defineConfig({
 
 - Updated dependencies [8f4ce97c]
 - Updated dependencies [647f05c9]
-  - @pandacss/types@0.22.1
-  - @pandacss/shared@0.22.1
-  - @pandacss/token-dictionary@0.22.1
-  - @pandacss/error@0.22.1
-  - @pandacss/logger@0.22.1
+  - @bamboocss/types@0.22.1
+  - @bamboocss/shared@0.22.1
+  - @bamboocss/token-dictionary@0.22.1
+  - @bamboocss/error@0.22.1
+  - @bamboocss/logger@0.22.1
 
 ## 0.22.0
 
@@ -8814,11 +8818,11 @@ export default defineConfig({
 
 - Updated dependencies [526c6e34]
 - Updated dependencies [8db47ec6]
-  - @pandacss/types@0.22.0
-  - @pandacss/shared@0.22.0
-  - @pandacss/token-dictionary@0.22.0
-  - @pandacss/error@0.22.0
-  - @pandacss/logger@0.22.0
+  - @bamboocss/types@0.22.0
+  - @bamboocss/shared@0.22.0
+  - @bamboocss/token-dictionary@0.22.0
+  - @bamboocss/error@0.22.0
+  - @bamboocss/logger@0.22.0
 
 ## 0.21.0
 
@@ -8862,7 +8866,7 @@ export default defineConfig({
 - 105f74ce: Add a way to specify a recipe's `staticCss` options from inside a recipe config, e.g.:
 
   ```js
-  import { defineRecipe } from '@pandacss/dev'
+  import { defineRecipe } from '@bamboocss/dev'
 
   const card = defineRecipe({
     className: 'card',
@@ -8880,7 +8884,7 @@ export default defineConfig({
   would be the equivalent of defining it inside the main config:
 
   ```js
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     // ...
@@ -8897,21 +8901,21 @@ export default defineConfig({
 - Updated dependencies [26e6051a]
 - Updated dependencies [5b061615]
 - Updated dependencies [105f74ce]
-  - @pandacss/shared@0.21.0
-  - @pandacss/types@0.21.0
-  - @pandacss/token-dictionary@0.21.0
-  - @pandacss/error@0.21.0
-  - @pandacss/logger@0.21.0
+  - @bamboocss/shared@0.21.0
+  - @bamboocss/types@0.21.0
+  - @bamboocss/token-dictionary@0.21.0
+  - @bamboocss/error@0.21.0
+  - @bamboocss/logger@0.21.0
 
 ## 0.20.1
 
 ### Patch Changes
 
-- @pandacss/token-dictionary@0.20.1
-- @pandacss/error@0.20.1
-- @pandacss/logger@0.20.1
-- @pandacss/shared@0.20.1
-- @pandacss/types@0.20.1
+- @bamboocss/token-dictionary@0.20.1
+- @bamboocss/error@0.20.1
+- @bamboocss/logger@0.20.1
+- @bamboocss/shared@0.20.1
+- @bamboocss/types@0.20.1
 
 ## 0.20.0
 
@@ -8934,11 +8938,11 @@ export default defineConfig({
 
 - Updated dependencies [24ee49a5]
 - Updated dependencies [904aec7b]
-  - @pandacss/types@0.20.0
-  - @pandacss/token-dictionary@0.20.0
-  - @pandacss/error@0.20.0
-  - @pandacss/logger@0.20.0
-  - @pandacss/shared@0.20.0
+  - @bamboocss/types@0.20.0
+  - @bamboocss/token-dictionary@0.20.0
+  - @bamboocss/error@0.20.0
+  - @bamboocss/logger@0.20.0
+  - @bamboocss/shared@0.20.0
 
 ## 0.19.0
 
@@ -8948,31 +8952,31 @@ export default defineConfig({
   not being cleared as needed.
 - Updated dependencies [61831040]
 - Updated dependencies [89f86923]
-  - @pandacss/types@0.19.0
-  - @pandacss/token-dictionary@0.19.0
-  - @pandacss/error@0.19.0
-  - @pandacss/logger@0.19.0
-  - @pandacss/shared@0.19.0
+  - @bamboocss/types@0.19.0
+  - @bamboocss/token-dictionary@0.19.0
+  - @bamboocss/error@0.19.0
+  - @bamboocss/logger@0.19.0
+  - @bamboocss/shared@0.19.0
 
 ## 0.18.3
 
 ### Patch Changes
 
-- @pandacss/error@0.18.3
-- @pandacss/logger@0.18.3
-- @pandacss/shared@0.18.3
-- @pandacss/token-dictionary@0.18.3
-- @pandacss/types@0.18.3
+- @bamboocss/error@0.18.3
+- @bamboocss/logger@0.18.3
+- @bamboocss/shared@0.18.3
+- @bamboocss/token-dictionary@0.18.3
+- @bamboocss/types@0.18.3
 
 ## 0.18.2
 
 ### Patch Changes
 
-- @pandacss/token-dictionary@0.18.2
-- @pandacss/error@0.18.2
-- @pandacss/logger@0.18.2
-- @pandacss/shared@0.18.2
-- @pandacss/types@0.18.2
+- @bamboocss/token-dictionary@0.18.2
+- @bamboocss/error@0.18.2
+- @bamboocss/logger@0.18.2
+- @bamboocss/shared@0.18.2
+- @bamboocss/types@0.18.2
 
 ## 0.18.1
 
@@ -8994,65 +8998,65 @@ export default defineConfig({
 
 - Updated dependencies [566fd28a]
 - Updated dependencies [43bfa510]
-  - @pandacss/token-dictionary@0.18.1
-  - @pandacss/error@0.18.1
-  - @pandacss/logger@0.18.1
-  - @pandacss/shared@0.18.1
-  - @pandacss/types@0.18.1
+  - @bamboocss/token-dictionary@0.18.1
+  - @bamboocss/error@0.18.1
+  - @bamboocss/logger@0.18.1
+  - @bamboocss/shared@0.18.1
+  - @bamboocss/types@0.18.1
 
 ## 0.18.0
 
 ### Patch Changes
 
 - Updated dependencies [ba9e32fa]
-  - @pandacss/shared@0.18.0
-  - @pandacss/token-dictionary@0.18.0
-  - @pandacss/types@0.18.0
-  - @pandacss/error@0.18.0
-  - @pandacss/logger@0.18.0
+  - @bamboocss/shared@0.18.0
+  - @bamboocss/token-dictionary@0.18.0
+  - @bamboocss/types@0.18.0
+  - @bamboocss/error@0.18.0
+  - @bamboocss/logger@0.18.0
 
 ## 0.17.5
 
 ### Patch Changes
 
 - a6dfc944: Fix issue where using array syntax in config recipe generates invalid css
-  - @pandacss/error@0.17.5
-  - @pandacss/logger@0.17.5
-  - @pandacss/shared@0.17.5
-  - @pandacss/token-dictionary@0.17.5
-  - @pandacss/types@0.17.5
+  - @bamboocss/error@0.17.5
+  - @bamboocss/logger@0.17.5
+  - @bamboocss/shared@0.17.5
+  - @bamboocss/token-dictionary@0.17.5
+  - @bamboocss/types@0.17.5
 
 ## 0.17.4
 
 ### Patch Changes
 
 - Updated dependencies [fa77080a]
-  - @pandacss/types@0.17.4
-  - @pandacss/token-dictionary@0.17.4
-  - @pandacss/error@0.17.4
-  - @pandacss/logger@0.17.4
-  - @pandacss/shared@0.17.4
+  - @bamboocss/types@0.17.4
+  - @bamboocss/token-dictionary@0.17.4
+  - @bamboocss/error@0.17.4
+  - @bamboocss/logger@0.17.4
+  - @bamboocss/shared@0.17.4
 
 ## 0.17.3
 
 ### Patch Changes
 
 - Updated dependencies [529a262e]
-  - @pandacss/types@0.17.3
-  - @pandacss/token-dictionary@0.17.3
-  - @pandacss/error@0.17.3
-  - @pandacss/logger@0.17.3
-  - @pandacss/shared@0.17.3
+  - @bamboocss/types@0.17.3
+  - @bamboocss/token-dictionary@0.17.3
+  - @bamboocss/error@0.17.3
+  - @bamboocss/logger@0.17.3
+  - @bamboocss/shared@0.17.3
 
 ## 0.17.2
 
 ### Patch Changes
 
-- @pandacss/error@0.17.2
-- @pandacss/logger@0.17.2
-- @pandacss/shared@0.17.2
-- @pandacss/token-dictionary@0.17.2
-- @pandacss/types@0.17.2
+- @bamboocss/error@0.17.2
+- @bamboocss/logger@0.17.2
+- @bamboocss/shared@0.17.2
+- @bamboocss/token-dictionary@0.17.2
+- @bamboocss/types@0.17.2
 
 ## 0.17.1
 
@@ -9060,11 +9064,11 @@ export default defineConfig({
 
 - aea28c9f: Fix issue where using scale css property adds an additional 'px'
 - Updated dependencies [5ce359f6]
-  - @pandacss/shared@0.17.1
-  - @pandacss/types@0.17.1
-  - @pandacss/token-dictionary@0.17.1
-  - @pandacss/error@0.17.1
-  - @pandacss/logger@0.17.1
+  - @bamboocss/shared@0.17.1
+  - @bamboocss/types@0.17.1
+  - @bamboocss/token-dictionary@0.17.1
+  - @bamboocss/error@0.17.1
+  - @bamboocss/logger@0.17.1
 
 ## 0.17.0
 
@@ -9084,42 +9088,42 @@ export default defineConfig({
 
 - Updated dependencies [12281ff8]
 - Updated dependencies [fc4688e6]
-  - @pandacss/shared@0.17.0
-  - @pandacss/types@0.17.0
-  - @pandacss/token-dictionary@0.17.0
-  - @pandacss/error@0.17.0
-  - @pandacss/logger@0.17.0
+  - @bamboocss/shared@0.17.0
+  - @bamboocss/types@0.17.0
+  - @bamboocss/token-dictionary@0.17.0
+  - @bamboocss/error@0.17.0
+  - @bamboocss/logger@0.17.0
 
 ## 0.16.0
 
 ### Patch Changes
 
 - 20f4e204: Apply a few optmizations on the resulting CSS generated from `panda cssgen` command
-  - @pandacss/token-dictionary@0.16.0
-  - @pandacss/error@0.16.0
-  - @pandacss/logger@0.16.0
-  - @pandacss/shared@0.16.0
-  - @pandacss/types@0.16.0
+  - @bamboocss/token-dictionary@0.16.0
+  - @bamboocss/error@0.16.0
+  - @bamboocss/logger@0.16.0
+  - @bamboocss/shared@0.16.0
+  - @bamboocss/types@0.16.0
 
 ## 0.15.5
 
 ### Patch Changes
 
-- @pandacss/error@0.15.5
-- @pandacss/logger@0.15.5
-- @pandacss/shared@0.15.5
-- @pandacss/token-dictionary@0.15.5
-- @pandacss/types@0.15.5
+- @bamboocss/error@0.15.5
+- @bamboocss/logger@0.15.5
+- @bamboocss/shared@0.15.5
+- @bamboocss/token-dictionary@0.15.5
+- @bamboocss/types@0.15.5
 
 ## 0.15.4
 
 ### Patch Changes
 
-- @pandacss/types@0.15.4
-- @pandacss/error@0.15.4
-- @pandacss/logger@0.15.4
-- @pandacss/shared@0.15.4
-- @pandacss/token-dictionary@0.15.4
+- @bamboocss/types@0.15.4
+- @bamboocss/error@0.15.4
+- @bamboocss/logger@0.15.4
+- @bamboocss/shared@0.15.4
+- @bamboocss/token-dictionary@0.15.4
 
 ## 0.15.3
 
@@ -9175,22 +9179,22 @@ export default defineConfig({
 - Updated dependencies [95b06bb1]
 - Updated dependencies [1ac2011b]
 - Updated dependencies [58743bc4]
-  - @pandacss/shared@0.15.3
-  - @pandacss/types@0.15.3
-  - @pandacss/token-dictionary@0.15.3
-  - @pandacss/error@0.15.3
-  - @pandacss/logger@0.15.3
+  - @bamboocss/shared@0.15.3
+  - @bamboocss/types@0.15.3
+  - @bamboocss/token-dictionary@0.15.3
+  - @bamboocss/error@0.15.3
+  - @bamboocss/logger@0.15.3
 
 ## 0.15.2
 
 ### Patch Changes
 
 - Updated dependencies [26a788c0]
-  - @pandacss/types@0.15.2
-  - @pandacss/token-dictionary@0.15.2
-  - @pandacss/error@0.15.2
-  - @pandacss/logger@0.15.2
-  - @pandacss/shared@0.15.2
+  - @bamboocss/types@0.15.2
+  - @bamboocss/token-dictionary@0.15.2
+  - @bamboocss/error@0.15.2
+  - @bamboocss/logger@0.15.2
+  - @bamboocss/shared@0.15.2
 
 ## 0.15.1
 
@@ -9210,11 +9214,11 @@ export default defineConfig({
 
 - Updated dependencies [26f6982c]
 - Updated dependencies [4e003bfb]
-  - @pandacss/shared@0.15.1
-  - @pandacss/token-dictionary@0.15.1
-  - @pandacss/types@0.15.1
-  - @pandacss/error@0.15.1
-  - @pandacss/logger@0.15.1
+  - @bamboocss/shared@0.15.1
+  - @bamboocss/token-dictionary@0.15.1
+  - @bamboocss/types@0.15.1
+  - @bamboocss/error@0.15.1
+  - @bamboocss/logger@0.15.1
 
 ## 0.15.0
 
@@ -9230,11 +9234,11 @@ export default defineConfig({
 - Updated dependencies [9f429d35]
 - Updated dependencies [39298609]
 - Updated dependencies [f27146d6]
-  - @pandacss/types@0.15.0
-  - @pandacss/shared@0.15.0
-  - @pandacss/token-dictionary@0.15.0
-  - @pandacss/error@0.15.0
-  - @pandacss/logger@0.15.0
+  - @bamboocss/types@0.15.0
+  - @bamboocss/shared@0.15.0
+  - @bamboocss/token-dictionary@0.15.0
+  - @bamboocss/error@0.15.0
+  - @bamboocss/logger@0.15.0
 
 ## 0.14.0
 
@@ -9267,22 +9271,22 @@ export default defineConfig({
 - Updated dependencies [9e799554]
 - Updated dependencies [e6459a59]
 - Updated dependencies [6f7ee198]
-  - @pandacss/token-dictionary@0.14.0
-  - @pandacss/types@0.14.0
-  - @pandacss/error@0.14.0
-  - @pandacss/logger@0.14.0
-  - @pandacss/shared@0.14.0
+  - @bamboocss/token-dictionary@0.14.0
+  - @bamboocss/types@0.14.0
+  - @bamboocss/error@0.14.0
+  - @bamboocss/logger@0.14.0
+  - @bamboocss/shared@0.14.0
 
 ## 0.13.1
 
 ### Patch Changes
 
 - Updated dependencies [d0fbc7cc]
-  - @pandacss/error@0.13.1
-  - @pandacss/logger@0.13.1
-  - @pandacss/shared@0.13.1
-  - @pandacss/token-dictionary@0.13.1
-  - @pandacss/types@0.13.1
+  - @bamboocss/error@0.13.1
+  - @bamboocss/logger@0.13.1
+  - @bamboocss/shared@0.13.1
+  - @bamboocss/token-dictionary@0.13.1
+  - @bamboocss/types@0.13.1
 
 ## 0.13.0
 
@@ -9293,41 +9297,41 @@ export default defineConfig({
 
 ### Patch Changes
 
-- @pandacss/error@0.13.0
-- @pandacss/logger@0.13.0
-- @pandacss/shared@0.13.0
-- @pandacss/token-dictionary@0.13.0
-- @pandacss/types@0.13.0
+- @bamboocss/error@0.13.0
+- @bamboocss/logger@0.13.0
+- @bamboocss/shared@0.13.0
+- @bamboocss/token-dictionary@0.13.0
+- @bamboocss/types@0.13.0
 
 ## 0.12.2
 
 ### Patch Changes
 
-- @pandacss/error@0.12.2
-- @pandacss/logger@0.12.2
-- @pandacss/shared@0.12.2
-- @pandacss/token-dictionary@0.12.2
-- @pandacss/types@0.12.2
+- @bamboocss/error@0.12.2
+- @bamboocss/logger@0.12.2
+- @bamboocss/shared@0.12.2
+- @bamboocss/token-dictionary@0.12.2
+- @bamboocss/types@0.12.2
 
 ## 0.12.1
 
 ### Patch Changes
 
-- @pandacss/error@0.12.1
-- @pandacss/logger@0.12.1
-- @pandacss/shared@0.12.1
-- @pandacss/token-dictionary@0.12.1
-- @pandacss/types@0.12.1
+- @bamboocss/error@0.12.1
+- @bamboocss/logger@0.12.1
+- @bamboocss/shared@0.12.1
+- @bamboocss/token-dictionary@0.12.1
+- @bamboocss/types@0.12.1
 
 ## 0.12.0
 
 ### Patch Changes
 
-- @pandacss/token-dictionary@0.12.0
-- @pandacss/error@0.12.0
-- @pandacss/logger@0.12.0
-- @pandacss/shared@0.12.0
-- @pandacss/types@0.12.0
+- @bamboocss/token-dictionary@0.12.0
+- @bamboocss/error@0.12.0
+- @bamboocss/logger@0.12.0
+- @bamboocss/shared@0.12.0
+- @bamboocss/types@0.12.0
 
 ## 0.11.1
 
@@ -9336,22 +9340,22 @@ export default defineConfig({
 - 23b516f4: Make layers customizable
 - Updated dependencies [c07e1beb]
 - Updated dependencies [23b516f4]
-  - @pandacss/shared@0.11.1
-  - @pandacss/types@0.11.1
-  - @pandacss/token-dictionary@0.11.1
-  - @pandacss/error@0.11.1
-  - @pandacss/logger@0.11.1
+  - @bamboocss/shared@0.11.1
+  - @bamboocss/types@0.11.1
+  - @bamboocss/token-dictionary@0.11.1
+  - @bamboocss/error@0.11.1
+  - @bamboocss/logger@0.11.1
 
 ## 0.11.0
 
 ### Patch Changes
 
 - Updated dependencies [5b95caf5]
-  - @pandacss/types@0.11.0
-  - @pandacss/token-dictionary@0.11.0
-  - @pandacss/error@0.11.0
-  - @pandacss/logger@0.11.0
-  - @pandacss/shared@0.11.0
+  - @bamboocss/types@0.11.0
+  - @bamboocss/token-dictionary@0.11.0
+  - @bamboocss/error@0.11.0
+  - @bamboocss/logger@0.11.0
+  - @bamboocss/shared@0.11.0
 
 ## 0.10.0
 
@@ -9416,11 +9420,11 @@ export default defineConfig({
 - Updated dependencies [9d4aa918]
 - Updated dependencies [386e5098]
 - Updated dependencies [a669f4d5]
-  - @pandacss/shared@0.10.0
-  - @pandacss/types@0.10.0
-  - @pandacss/token-dictionary@0.10.0
-  - @pandacss/error@0.10.0
-  - @pandacss/logger@0.10.0
+  - @bamboocss/shared@0.10.0
+  - @bamboocss/types@0.10.0
+  - @bamboocss/token-dictionary@0.10.0
+  - @bamboocss/error@0.10.0
+  - @bamboocss/logger@0.10.0
 
 ## 0.9.0
 
@@ -9462,7 +9466,7 @@ export default defineConfig({
   To track the `CustomCircle` component, you can now use the `jsx` property.
 
   ```js
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     patterns: {
@@ -9478,11 +9482,11 @@ export default defineConfig({
 ### Patch Changes
 
 - Updated dependencies [c08de87f]
-  - @pandacss/types@0.9.0
-  - @pandacss/token-dictionary@0.9.0
-  - @pandacss/error@0.9.0
-  - @pandacss/logger@0.9.0
-  - @pandacss/shared@0.9.0
+  - @bamboocss/types@0.9.0
+  - @bamboocss/token-dictionary@0.9.0
+  - @bamboocss/error@0.9.0
+  - @bamboocss/logger@0.9.0
+  - @bamboocss/shared@0.9.0
 
 ## 0.8.0
 
@@ -9508,11 +9512,11 @@ export default defineConfig({
   separate unnamed block for the custom dark condition.
 - Updated dependencies [ac078416]
 - Updated dependencies [be0ad578]
-  - @pandacss/token-dictionary@0.8.0
-  - @pandacss/types@0.8.0
-  - @pandacss/error@0.8.0
-  - @pandacss/logger@0.8.0
-  - @pandacss/shared@0.8.0
+  - @bamboocss/token-dictionary@0.8.0
+  - @bamboocss/types@0.8.0
+  - @bamboocss/error@0.8.0
+  - @bamboocss/logger@0.8.0
+  - @bamboocss/shared@0.8.0
 
 ## 0.7.0
 
@@ -9520,11 +9524,11 @@ export default defineConfig({
 
 - Updated dependencies [f59154fb]
 - Updated dependencies [a9c189b7]
-  - @pandacss/shared@0.7.0
-  - @pandacss/types@0.7.0
-  - @pandacss/token-dictionary@0.7.0
-  - @pandacss/error@0.7.0
-  - @pandacss/logger@0.7.0
+  - @bamboocss/shared@0.7.0
+  - @bamboocss/types@0.7.0
+  - @bamboocss/token-dictionary@0.7.0
+  - @bamboocss/error@0.7.0
+  - @bamboocss/logger@0.7.0
 
 ## 0.6.0
 
@@ -9583,11 +9587,11 @@ export default defineConfig({
 
 - ef1dd676: Fix issue where `staticCss` did not generate all variants in the array of `css` rules
 - b50675ca: Refactor parser to support extracting `css` prop in JSX elements correctly.
-  - @pandacss/types@0.6.0
-  - @pandacss/token-dictionary@0.6.0
-  - @pandacss/error@0.6.0
-  - @pandacss/logger@0.6.0
-  - @pandacss/shared@0.6.0
+  - @bamboocss/types@0.6.0
+  - @bamboocss/token-dictionary@0.6.0
+  - @bamboocss/error@0.6.0
+  - @bamboocss/logger@0.6.0
+  - @bamboocss/shared@0.6.0
 
 ## 0.5.1
 
@@ -9625,11 +9629,11 @@ export default defineConfig({
 - Updated dependencies [f9247e52]
 - Updated dependencies [1ed239cd]
 - Updated dependencies [78ed6ed4]
-  - @pandacss/types@0.5.1
-  - @pandacss/shared@0.5.1
-  - @pandacss/logger@0.5.1
-  - @pandacss/token-dictionary@0.5.1
-  - @pandacss/error@0.5.1
+  - @bamboocss/types@0.5.1
+  - @bamboocss/shared@0.5.1
+  - @bamboocss/logger@0.5.1
+  - @bamboocss/token-dictionary@0.5.1
+  - @bamboocss/error@0.5.1
 
 ## 0.5.0
 
@@ -9637,11 +9641,11 @@ export default defineConfig({
 
 - Updated dependencies [60df9bd1]
 - Updated dependencies [ead9eaa3]
-  - @pandacss/shared@0.5.0
-  - @pandacss/types@0.5.0
-  - @pandacss/token-dictionary@0.5.0
-  - @pandacss/error@0.5.0
-  - @pandacss/logger@0.5.0
+  - @bamboocss/shared@0.5.0
+  - @bamboocss/types@0.5.0
+  - @bamboocss/token-dictionary@0.5.0
+  - @bamboocss/error@0.5.0
+  - @bamboocss/logger@0.5.0
 
 ## 0.4.0
 
@@ -9650,7 +9654,7 @@ export default defineConfig({
 - 5b344b9c: Add support for disabling shorthand props
 
   ```ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     // ...
@@ -9663,21 +9667,21 @@ export default defineConfig({
 - 2a1e9386: Fix issue where aspect ratio css property adds `px`
 - Updated dependencies [c7b42325]
 - Updated dependencies [5b344b9c]
-  - @pandacss/types@0.4.0
-  - @pandacss/token-dictionary@0.4.0
-  - @pandacss/error@0.4.0
-  - @pandacss/logger@0.4.0
-  - @pandacss/shared@0.4.0
+  - @bamboocss/types@0.4.0
+  - @bamboocss/token-dictionary@0.4.0
+  - @bamboocss/error@0.4.0
+  - @bamboocss/logger@0.4.0
+  - @bamboocss/shared@0.4.0
 
 ## 0.3.2
 
 ### Patch Changes
 
-- @pandacss/error@0.3.2
-- @pandacss/logger@0.3.2
-- @pandacss/shared@0.3.2
-- @pandacss/token-dictionary@0.3.2
-- @pandacss/types@0.3.2
+- @bamboocss/error@0.3.2
+- @bamboocss/logger@0.3.2
+- @bamboocss/shared@0.3.2
+- @bamboocss/token-dictionary@0.3.2
+- @bamboocss/types@0.3.2
 
 ## 0.3.1
 
@@ -9685,22 +9689,22 @@ export default defineConfig({
 
 - efd79d83: Baseline release for the launch
 - Updated dependencies [efd79d83]
-  - @pandacss/error@0.3.1
-  - @pandacss/logger@0.3.1
-  - @pandacss/shared@0.3.1
-  - @pandacss/token-dictionary@0.3.1
-  - @pandacss/types@0.3.1
+  - @bamboocss/error@0.3.1
+  - @bamboocss/logger@0.3.1
+  - @bamboocss/shared@0.3.1
+  - @bamboocss/token-dictionary@0.3.1
+  - @bamboocss/types@0.3.1
 
 ## 0.3.0
 
 ### Patch Changes
 
 - Updated dependencies [6d81ee9e]
-  - @pandacss/types@0.3.0
-  - @pandacss/token-dictionary@0.3.0
-  - @pandacss/error@0.3.0
-  - @pandacss/logger@0.3.0
-  - @pandacss/shared@0.3.0
+  - @bamboocss/types@0.3.0
+  - @bamboocss/token-dictionary@0.3.0
+  - @bamboocss/error@0.3.0
+  - @bamboocss/logger@0.3.0
+  - @bamboocss/shared@0.3.0
 
 ## 0.0.2
 
@@ -9715,8 +9719,8 @@ export default defineConfig({
 
 - Updated dependencies [c308e8be]
 - Updated dependencies [fb40fff2]
-  - @pandacss/types@0.0.2
-  - @pandacss/error@0.0.2
-  - @pandacss/logger@0.0.2
-  - @pandacss/shared@0.0.2
-  - @pandacss/token-dictionary@0.0.2
+  - @bamboocss/types@0.0.2
+  - @bamboocss/error@0.0.2
+  - @bamboocss/logger@0.0.2
+  - @bamboocss/shared@0.0.2
+  - @bamboocss/token-dictionary@0.0.2

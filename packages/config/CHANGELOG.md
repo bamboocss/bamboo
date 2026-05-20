@@ -1,4 +1,4 @@
-# @pandacss/config
+# @bamboocss/config
 
 ## 1.11.3
 
@@ -31,11 +31,11 @@
 ### Patch Changes
 
 - Updated dependencies [2ea9205]
-  - @pandacss/types@1.11.1
-  - @pandacss/logger@1.11.1
-  - @pandacss/preset-base@1.11.1
-  - @pandacss/preset-panda@1.11.1
-  - @pandacss/shared@1.11.1
+  - @bamboocss/types@1.11.1
+  - @bamboocss/logger@1.11.1
+  - @bamboocss/preset-base@1.11.1
+  - @bamboocss/preset-panda@1.11.1
+  - @bamboocss/shared@1.11.1
 
 ## 1.11.0
 
@@ -52,7 +52,7 @@
   **Config:**
 
   ```ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     conditions: {
@@ -96,11 +96,11 @@
 ### Patch Changes
 
 - Updated dependencies [78869ae]
-  - @pandacss/types@1.11.0
-  - @pandacss/logger@1.11.0
-  - @pandacss/preset-base@1.11.0
-  - @pandacss/preset-panda@1.11.0
-  - @pandacss/shared@1.11.0
+  - @bamboocss/types@1.11.0
+  - @bamboocss/logger@1.11.0
+  - @bamboocss/preset-base@1.11.0
+  - @bamboocss/preset-panda@1.11.0
+  - @bamboocss/shared@1.11.0
 
 ## 1.10.0
 
@@ -118,138 +118,138 @@
 - Updated dependencies [bbaa8b3]
 - Updated dependencies [8d3b6f8]
 - Updated dependencies [44457bb]
-  - @pandacss/types@1.10.0
-  - @pandacss/logger@1.10.0
-  - @pandacss/shared@1.10.0
-  - @pandacss/preset-base@1.10.0
-  - @pandacss/preset-panda@1.10.0
+  - @bamboocss/types@1.10.0
+  - @bamboocss/logger@1.10.0
+  - @bamboocss/shared@1.10.0
+  - @bamboocss/preset-base@1.10.0
+  - @bamboocss/preset-panda@1.10.0
 
 ## 1.9.1
 
 ### Patch Changes
 
 - Updated dependencies [028e755]
-  - @pandacss/preset-base@1.9.1
-  - @pandacss/logger@1.9.1
-  - @pandacss/preset-panda@1.9.1
-  - @pandacss/shared@1.9.1
-  - @pandacss/types@1.9.1
+  - @bamboocss/preset-base@1.9.1
+  - @bamboocss/logger@1.9.1
+  - @bamboocss/preset-panda@1.9.1
+  - @bamboocss/shared@1.9.1
+  - @bamboocss/types@1.9.1
 
 ## 1.9.0
 
 ### Patch Changes
 
-- @pandacss/logger@1.9.0
-- @pandacss/preset-base@1.9.0
-- @pandacss/preset-panda@1.9.0
-- @pandacss/shared@1.9.0
-- @pandacss/types@1.9.0
+- @bamboocss/logger@1.9.0
+- @bamboocss/preset-base@1.9.0
+- @bamboocss/preset-panda@1.9.0
+- @bamboocss/shared@1.9.0
+- @bamboocss/types@1.9.0
 
 ## 1.8.2
 
 ### Patch Changes
 
 - Updated dependencies [331d1a5]
-  - @pandacss/types@1.8.2
-  - @pandacss/logger@1.8.2
-  - @pandacss/preset-base@1.8.2
-  - @pandacss/preset-panda@1.8.2
-  - @pandacss/shared@1.8.2
+  - @bamboocss/types@1.8.2
+  - @bamboocss/logger@1.8.2
+  - @bamboocss/preset-base@1.8.2
+  - @bamboocss/preset-panda@1.8.2
+  - @bamboocss/shared@1.8.2
 
 ## 1.8.1
 
 ### Patch Changes
 
 - Updated dependencies [3c86c29]
-  - @pandacss/types@1.8.1
-  - @pandacss/logger@1.8.1
-  - @pandacss/preset-base@1.8.1
-  - @pandacss/preset-panda@1.8.1
-  - @pandacss/shared@1.8.1
+  - @bamboocss/types@1.8.1
+  - @bamboocss/logger@1.8.1
+  - @bamboocss/preset-base@1.8.1
+  - @bamboocss/preset-panda@1.8.1
+  - @bamboocss/shared@1.8.1
 
 ## 1.8.0
 
 ### Patch Changes
 
-- @pandacss/logger@1.8.0
-- @pandacss/preset-base@1.8.0
-- @pandacss/preset-panda@1.8.0
-- @pandacss/shared@1.8.0
-- @pandacss/types@1.8.0
+- @bamboocss/logger@1.8.0
+- @bamboocss/preset-base@1.8.0
+- @bamboocss/preset-panda@1.8.0
+- @bamboocss/shared@1.8.0
+- @bamboocss/types@1.8.0
 
 ## 1.7.3
 
 ### Patch Changes
 
 - Updated dependencies [ac2fb5c]
-  - @pandacss/preset-base@1.7.3
-  - @pandacss/logger@1.7.3
-  - @pandacss/preset-panda@1.7.3
-  - @pandacss/shared@1.7.3
-  - @pandacss/types@1.7.3
+  - @bamboocss/preset-base@1.7.3
+  - @bamboocss/logger@1.7.3
+  - @bamboocss/preset-panda@1.7.3
+  - @bamboocss/shared@1.7.3
+  - @bamboocss/types@1.7.3
 
 ## 1.7.2
 
 ### Patch Changes
 
-- @pandacss/logger@1.7.2
-- @pandacss/preset-base@1.7.2
-- @pandacss/preset-panda@1.7.2
-- @pandacss/shared@1.7.2
-- @pandacss/types@1.7.2
+- @bamboocss/logger@1.7.2
+- @bamboocss/preset-base@1.7.2
+- @bamboocss/preset-panda@1.7.2
+- @bamboocss/shared@1.7.2
+- @bamboocss/types@1.7.2
 
 ## 1.7.1
 
 ### Patch Changes
 
-- cc04ebf: Fix issue where `@pandacss/config` CJS entrypoint is broken due to `merge-anything` ESM-only dependency.
+- cc04ebf: Fix issue where `@bamboocss/config` CJS entrypoint is broken due to `merge-anything` ESM-only dependency.
 - Updated dependencies [b6e9646]
-  - @pandacss/preset-base@1.7.1
-  - @pandacss/logger@1.7.1
-  - @pandacss/preset-panda@1.7.1
-  - @pandacss/shared@1.7.1
-  - @pandacss/types@1.7.1
+  - @bamboocss/preset-base@1.7.1
+  - @bamboocss/logger@1.7.1
+  - @bamboocss/preset-panda@1.7.1
+  - @bamboocss/shared@1.7.1
+  - @bamboocss/types@1.7.1
 
 ## 1.7.0
 
 ### Patch Changes
 
 - Updated dependencies [86b30b1]
-  - @pandacss/types@1.7.0
-  - @pandacss/logger@1.7.0
-  - @pandacss/preset-base@1.7.0
-  - @pandacss/preset-panda@1.7.0
-  - @pandacss/shared@1.7.0
+  - @bamboocss/types@1.7.0
+  - @bamboocss/logger@1.7.0
+  - @bamboocss/preset-base@1.7.0
+  - @bamboocss/preset-panda@1.7.0
+  - @bamboocss/shared@1.7.0
 
 ## 1.6.1
 
 ### Patch Changes
 
-- @pandacss/logger@1.6.1
-- @pandacss/preset-base@1.6.1
-- @pandacss/preset-panda@1.6.1
-- @pandacss/shared@1.6.1
-- @pandacss/types@1.6.1
+- @bamboocss/logger@1.6.1
+- @bamboocss/preset-base@1.6.1
+- @bamboocss/preset-panda@1.6.1
+- @bamboocss/shared@1.6.1
+- @bamboocss/types@1.6.1
 
 ## 1.6.0
 
 ### Patch Changes
 
-- @pandacss/logger@1.6.0
-- @pandacss/preset-base@1.6.0
-- @pandacss/preset-panda@1.6.0
-- @pandacss/shared@1.6.0
-- @pandacss/types@1.6.0
+- @bamboocss/logger@1.6.0
+- @bamboocss/preset-base@1.6.0
+- @bamboocss/preset-panda@1.6.0
+- @bamboocss/shared@1.6.0
+- @bamboocss/types@1.6.0
 
 ## 1.5.1
 
 ### Patch Changes
 
-- @pandacss/logger@1.5.1
-- @pandacss/preset-base@1.5.1
-- @pandacss/preset-panda@1.5.1
-- @pandacss/shared@1.5.1
-- @pandacss/types@1.5.1
+- @bamboocss/logger@1.5.1
+- @bamboocss/preset-base@1.5.1
+- @bamboocss/preset-panda@1.5.1
+- @bamboocss/shared@1.5.1
+- @bamboocss/types@1.5.1
 
 ## 1.5.0
 
@@ -289,11 +289,11 @@
 ### Patch Changes
 
 - Updated dependencies [91c65ff]
-  - @pandacss/types@1.5.0
-  - @pandacss/logger@1.5.0
-  - @pandacss/preset-base@1.5.0
-  - @pandacss/preset-panda@1.5.0
-  - @pandacss/shared@1.5.0
+  - @bamboocss/types@1.5.0
+  - @bamboocss/logger@1.5.0
+  - @bamboocss/preset-base@1.5.0
+  - @bamboocss/preset-panda@1.5.0
+  - @bamboocss/shared@1.5.0
 
 ## 1.4.3
 
@@ -301,11 +301,11 @@
 
 - 84a0de9: Improve static CSS generation performance with wildcard memoization. Token lookups for wildcard (`*`)
   expansions are now cached, providing ~32% faster processing for large configs with wildcards.
-  - @pandacss/logger@1.4.3
-  - @pandacss/preset-base@1.4.3
-  - @pandacss/preset-panda@1.4.3
-  - @pandacss/shared@1.4.3
-  - @pandacss/types@1.4.3
+  - @bamboocss/logger@1.4.3
+  - @bamboocss/preset-base@1.4.3
+  - @bamboocss/preset-panda@1.4.3
+  - @bamboocss/shared@1.4.3
+  - @bamboocss/types@1.4.3
 
 ## 1.4.2
 
@@ -314,21 +314,21 @@
 - 0679f6f: Fix issue where `create-recipe.mjs` helper was not generated when adding the first recipe to a project that
   previously had no recipes.
 - Updated dependencies [1290a27]
-  - @pandacss/shared@1.4.2
-  - @pandacss/types@1.4.2
-  - @pandacss/logger@1.4.2
-  - @pandacss/preset-base@1.4.2
-  - @pandacss/preset-panda@1.4.2
+  - @bamboocss/shared@1.4.2
+  - @bamboocss/types@1.4.2
+  - @bamboocss/logger@1.4.2
+  - @bamboocss/preset-base@1.4.2
+  - @bamboocss/preset-panda@1.4.2
 
 ## 1.4.1
 
 ### Patch Changes
 
-- @pandacss/logger@1.4.1
-- @pandacss/preset-base@1.4.1
-- @pandacss/preset-panda@1.4.1
-- @pandacss/shared@1.4.1
-- @pandacss/types@1.4.1
+- @bamboocss/logger@1.4.1
+- @bamboocss/preset-base@1.4.1
+- @bamboocss/preset-panda@1.4.1
+- @bamboocss/shared@1.4.1
+- @bamboocss/types@1.4.1
 
 ## 1.4.0
 
@@ -336,21 +336,21 @@
 
 - Updated dependencies [1bca361]
 - Updated dependencies [29cf719]
-  - @pandacss/preset-base@1.4.0
-  - @pandacss/preset-panda@1.4.0
-  - @pandacss/logger@1.4.0
-  - @pandacss/shared@1.4.0
-  - @pandacss/types@1.4.0
+  - @bamboocss/preset-base@1.4.0
+  - @bamboocss/preset-panda@1.4.0
+  - @bamboocss/logger@1.4.0
+  - @bamboocss/shared@1.4.0
+  - @bamboocss/types@1.4.0
 
 ## 1.3.1
 
 ### Patch Changes
 
-- @pandacss/logger@1.3.1
-- @pandacss/preset-base@1.3.1
-- @pandacss/preset-panda@1.3.1
-- @pandacss/shared@1.3.1
-- @pandacss/types@1.3.1
+- @bamboocss/logger@1.3.1
+- @bamboocss/preset-base@1.3.1
+- @bamboocss/preset-panda@1.3.1
+- @bamboocss/shared@1.3.1
+- @bamboocss/types@1.3.1
 
 ## 1.3.0
 
@@ -358,11 +358,11 @@
 
 - Updated dependencies [70efd73]
 - Updated dependencies [1c36121]
-  - @pandacss/types@1.3.0
-  - @pandacss/preset-base@1.3.0
-  - @pandacss/logger@1.3.0
-  - @pandacss/preset-panda@1.3.0
-  - @pandacss/shared@1.3.0
+  - @bamboocss/types@1.3.0
+  - @bamboocss/preset-base@1.3.0
+  - @bamboocss/logger@1.3.0
+  - @bamboocss/preset-panda@1.3.0
+  - @bamboocss/shared@1.3.0
 
 ## 1.2.0
 
@@ -370,11 +370,11 @@
 
 - Updated dependencies [ae7cc8d]
 - Updated dependencies [9964772]
-  - @pandacss/preset-panda@1.2.0
-  - @pandacss/preset-base@1.2.0
-  - @pandacss/logger@1.2.0
-  - @pandacss/shared@1.2.0
-  - @pandacss/types@1.2.0
+  - @bamboocss/preset-panda@1.2.0
+  - @bamboocss/preset-base@1.2.0
+  - @bamboocss/logger@1.2.0
+  - @bamboocss/shared@1.2.0
+  - @bamboocss/types@1.2.0
 
 ## 1.1.0
 
@@ -386,22 +386,22 @@
 
 - Updated dependencies [47a0011]
 - Updated dependencies [e8ec0aa]
-  - @pandacss/types@1.1.0
-  - @pandacss/shared@1.1.0
-  - @pandacss/logger@1.1.0
-  - @pandacss/preset-base@1.1.0
-  - @pandacss/preset-panda@1.1.0
+  - @bamboocss/types@1.1.0
+  - @bamboocss/shared@1.1.0
+  - @bamboocss/logger@1.1.0
+  - @bamboocss/preset-base@1.1.0
+  - @bamboocss/preset-panda@1.1.0
 
 ## 1.0.1
 
 ### Patch Changes
 
 - Updated dependencies [0019184]
-  - @pandacss/preset-base@1.0.1
-  - @pandacss/logger@1.0.1
-  - @pandacss/preset-panda@1.0.1
-  - @pandacss/shared@1.0.1
-  - @pandacss/types@1.0.1
+  - @bamboocss/preset-base@1.0.1
+  - @bamboocss/logger@1.0.1
+  - @bamboocss/preset-panda@1.0.1
+  - @bamboocss/shared@1.0.1
+  - @bamboocss/types@1.0.1
 
 ## 1.0.0
 
@@ -466,11 +466,11 @@
 - Updated dependencies [860cc7d]
 - Updated dependencies [a20811c]
 - Updated dependencies [a3bcbea]
-  - @pandacss/preset-base@1.0.0
-  - @pandacss/logger@1.0.0
-  - @pandacss/preset-panda@1.0.0
-  - @pandacss/shared@1.0.0
-  - @pandacss/types@1.0.0
+  - @bamboocss/preset-base@1.0.0
+  - @bamboocss/logger@1.0.0
+  - @bamboocss/preset-panda@1.0.0
+  - @bamboocss/shared@1.0.0
+  - @bamboocss/types@1.0.0
 
 ## 0.54.0
 
@@ -479,63 +479,63 @@
 - Updated dependencies [efa060d]
 - Updated dependencies [654ed5c]
 - Updated dependencies [d2aede5]
-  - @pandacss/shared@0.54.0
-  - @pandacss/preset-base@0.54.0
-  - @pandacss/types@0.54.0
-  - @pandacss/logger@0.54.0
-  - @pandacss/preset-panda@0.54.0
+  - @bamboocss/shared@0.54.0
+  - @bamboocss/preset-base@0.54.0
+  - @bamboocss/types@0.54.0
+  - @bamboocss/logger@0.54.0
+  - @bamboocss/preset-panda@0.54.0
 
 ## 0.53.7
 
 ### Patch Changes
 
-- @pandacss/logger@0.53.7
-- @pandacss/preset-base@0.53.7
-- @pandacss/preset-panda@0.53.7
-- @pandacss/shared@0.53.7
-- @pandacss/types@0.53.7
+- @bamboocss/logger@0.53.7
+- @bamboocss/preset-base@0.53.7
+- @bamboocss/preset-panda@0.53.7
+- @bamboocss/shared@0.53.7
+- @bamboocss/types@0.53.7
 
 ## 0.53.6
 
 ### Patch Changes
 
-- @pandacss/logger@0.53.6
-- @pandacss/preset-base@0.53.6
-- @pandacss/preset-panda@0.53.6
-- @pandacss/shared@0.53.6
-- @pandacss/types@0.53.6
+- @bamboocss/logger@0.53.6
+- @bamboocss/preset-base@0.53.6
+- @bamboocss/preset-panda@0.53.6
+- @bamboocss/shared@0.53.6
+- @bamboocss/types@0.53.6
 
 ## 0.53.5
 
 ### Patch Changes
 
 - Updated dependencies [6fb83a8]
-  - @pandacss/preset-base@0.53.5
-  - @pandacss/logger@0.53.5
-  - @pandacss/preset-panda@0.53.5
-  - @pandacss/shared@0.53.5
-  - @pandacss/types@0.53.5
+  - @bamboocss/preset-base@0.53.5
+  - @bamboocss/logger@0.53.5
+  - @bamboocss/preset-panda@0.53.5
+  - @bamboocss/shared@0.53.5
+  - @bamboocss/types@0.53.5
 
 ## 0.53.4
 
 ### Patch Changes
 
-- @pandacss/logger@0.53.4
-- @pandacss/preset-base@0.53.4
-- @pandacss/preset-panda@0.53.4
-- @pandacss/shared@0.53.4
-- @pandacss/types@0.53.4
+- @bamboocss/logger@0.53.4
+- @bamboocss/preset-base@0.53.4
+- @bamboocss/preset-panda@0.53.4
+- @bamboocss/shared@0.53.4
+- @bamboocss/types@0.53.4
 
 ## 0.53.3
 
 ### Patch Changes
 
 - Updated dependencies [00aa868]
-  - @pandacss/preset-base@0.53.3
-  - @pandacss/logger@0.53.3
-  - @pandacss/preset-panda@0.53.3
-  - @pandacss/shared@0.53.3
-  - @pandacss/types@0.53.3
+  - @bamboocss/preset-base@0.53.3
+  - @bamboocss/logger@0.53.3
+  - @bamboocss/preset-panda@0.53.3
+  - @bamboocss/shared@0.53.3
+  - @bamboocss/types@0.53.3
 
 ## 0.53.2
 
@@ -543,53 +543,53 @@
 
 - cde9a0b: - Fix security issue due to stale version of `esbuild` used in `bundle-n-require`
 - Updated dependencies [01d72ad]
-  - @pandacss/preset-base@0.53.2
-  - @pandacss/logger@0.53.2
-  - @pandacss/preset-panda@0.53.2
-  - @pandacss/shared@0.53.2
-  - @pandacss/types@0.53.2
+  - @bamboocss/preset-base@0.53.2
+  - @bamboocss/logger@0.53.2
+  - @bamboocss/preset-panda@0.53.2
+  - @bamboocss/shared@0.53.2
+  - @bamboocss/types@0.53.2
 
 ## 0.53.1
 
 ### Patch Changes
 
-- @pandacss/logger@0.53.1
-- @pandacss/preset-base@0.53.1
-- @pandacss/preset-panda@0.53.1
-- @pandacss/shared@0.53.1
-- @pandacss/types@0.53.1
+- @bamboocss/logger@0.53.1
+- @bamboocss/preset-base@0.53.1
+- @bamboocss/preset-panda@0.53.1
+- @bamboocss/shared@0.53.1
+- @bamboocss/types@0.53.1
 
 ## 0.53.0
 
 ### Patch Changes
 
 - Updated dependencies [5286731]
-  - @pandacss/types@0.53.0
-  - @pandacss/logger@0.53.0
-  - @pandacss/preset-base@0.53.0
-  - @pandacss/preset-panda@0.53.0
-  - @pandacss/shared@0.53.0
+  - @bamboocss/types@0.53.0
+  - @bamboocss/logger@0.53.0
+  - @bamboocss/preset-base@0.53.0
+  - @bamboocss/preset-panda@0.53.0
+  - @bamboocss/shared@0.53.0
 
 ## 0.52.0
 
 ### Patch Changes
 
 - Updated dependencies [bb37d2b]
-  - @pandacss/preset-base@0.52.0
-  - @pandacss/logger@0.52.0
-  - @pandacss/preset-panda@0.52.0
-  - @pandacss/shared@0.52.0
-  - @pandacss/types@0.52.0
+  - @bamboocss/preset-base@0.52.0
+  - @bamboocss/logger@0.52.0
+  - @bamboocss/preset-panda@0.52.0
+  - @bamboocss/shared@0.52.0
+  - @bamboocss/types@0.52.0
 
 ## 0.51.1
 
 ### Patch Changes
 
-- @pandacss/logger@0.51.1
-- @pandacss/preset-base@0.51.1
-- @pandacss/preset-panda@0.51.1
-- @pandacss/shared@0.51.1
-- @pandacss/types@0.51.1
+- @bamboocss/logger@0.51.1
+- @bamboocss/preset-base@0.51.1
+- @bamboocss/preset-panda@0.51.1
+- @bamboocss/shared@0.51.1
+- @bamboocss/types@0.51.1
 
 ## 0.51.0
 
@@ -603,11 +603,11 @@
 ### Patch Changes
 
 - Updated dependencies [d68ad1f]
-  - @pandacss/types@0.51.0
-  - @pandacss/logger@0.51.0
-  - @pandacss/preset-base@0.51.0
-  - @pandacss/preset-panda@0.51.0
-  - @pandacss/shared@0.51.0
+  - @bamboocss/types@0.51.0
+  - @bamboocss/logger@0.51.0
+  - @bamboocss/preset-base@0.51.0
+  - @bamboocss/preset-panda@0.51.0
+  - @bamboocss/shared@0.51.0
 
 ## 0.50.0
 
@@ -615,75 +615,75 @@
 
 - Updated dependencies [fea78c7]
 - Updated dependencies [ad89b90]
-  - @pandacss/types@0.50.0
-  - @pandacss/logger@0.50.0
-  - @pandacss/preset-base@0.50.0
-  - @pandacss/preset-panda@0.50.0
-  - @pandacss/shared@0.50.0
+  - @bamboocss/types@0.50.0
+  - @bamboocss/logger@0.50.0
+  - @bamboocss/preset-base@0.50.0
+  - @bamboocss/preset-panda@0.50.0
+  - @bamboocss/shared@0.50.0
 
 ## 0.49.0
 
 ### Patch Changes
 
 - Updated dependencies [97a0e4d]
-  - @pandacss/preset-panda@0.49.0
-  - @pandacss/types@0.49.0
-  - @pandacss/logger@0.49.0
-  - @pandacss/preset-base@0.49.0
-  - @pandacss/shared@0.49.0
+  - @bamboocss/preset-panda@0.49.0
+  - @bamboocss/types@0.49.0
+  - @bamboocss/logger@0.49.0
+  - @bamboocss/preset-base@0.49.0
+  - @bamboocss/shared@0.49.0
 
 ## 0.48.1
 
 ### Patch Changes
 
 - Updated dependencies [af9715a]
-  - @pandacss/preset-base@0.48.1
-  - @pandacss/logger@0.48.1
-  - @pandacss/preset-panda@0.48.1
-  - @pandacss/shared@0.48.1
-  - @pandacss/types@0.48.1
+  - @bamboocss/preset-base@0.48.1
+  - @bamboocss/logger@0.48.1
+  - @bamboocss/preset-panda@0.48.1
+  - @bamboocss/shared@0.48.1
+  - @bamboocss/types@0.48.1
 
 ## 0.48.0
 
 ### Patch Changes
 
 - Updated dependencies [cff19aa]
-  - @pandacss/preset-base@0.48.0
-  - @pandacss/logger@0.48.0
-  - @pandacss/preset-panda@0.48.0
-  - @pandacss/shared@0.48.0
-  - @pandacss/types@0.48.0
+  - @bamboocss/preset-base@0.48.0
+  - @bamboocss/logger@0.48.0
+  - @bamboocss/preset-panda@0.48.0
+  - @bamboocss/shared@0.48.0
+  - @bamboocss/types@0.48.0
 
 ## 0.47.1
 
 ### Patch Changes
 
-- @pandacss/logger@0.47.1
-- @pandacss/preset-base@0.47.1
-- @pandacss/preset-panda@0.47.1
-- @pandacss/shared@0.47.1
-- @pandacss/types@0.47.1
+- @bamboocss/logger@0.47.1
+- @bamboocss/preset-base@0.47.1
+- @bamboocss/preset-panda@0.47.1
+- @bamboocss/shared@0.47.1
+- @bamboocss/types@0.47.1
 
 ## 0.47.0
 
 ### Patch Changes
 
 - Updated dependencies [5e683ee]
-  - @pandacss/types@0.47.0
-  - @pandacss/logger@0.47.0
-  - @pandacss/preset-base@0.47.0
-  - @pandacss/preset-panda@0.47.0
-  - @pandacss/shared@0.47.0
+  - @bamboocss/types@0.47.0
+  - @bamboocss/logger@0.47.0
+  - @bamboocss/preset-base@0.47.0
+  - @bamboocss/preset-panda@0.47.0
+  - @bamboocss/shared@0.47.0
 
 ## 0.46.1
 
 ### Patch Changes
 
-- @pandacss/logger@0.46.1
-- @pandacss/preset-base@0.46.1
-- @pandacss/preset-panda@0.46.1
-- @pandacss/shared@0.46.1
-- @pandacss/types@0.46.1
+- @bamboocss/logger@0.46.1
+- @bamboocss/preset-base@0.46.1
+- @bamboocss/preset-panda@0.46.1
+- @bamboocss/shared@0.46.1
+- @bamboocss/types@0.46.1
 
 ## 0.46.0
 
@@ -691,31 +691,31 @@
 
 - Updated dependencies [b7ed157]
 - Updated dependencies [54426a2]
-  - @pandacss/preset-base@0.46.0
-  - @pandacss/shared@0.46.0
-  - @pandacss/types@0.46.0
-  - @pandacss/logger@0.46.0
-  - @pandacss/preset-panda@0.46.0
+  - @bamboocss/preset-base@0.46.0
+  - @bamboocss/shared@0.46.0
+  - @bamboocss/types@0.46.0
+  - @bamboocss/logger@0.46.0
+  - @bamboocss/preset-panda@0.46.0
 
 ## 0.45.2
 
 ### Patch Changes
 
-- @pandacss/logger@0.45.2
-- @pandacss/preset-base@0.45.2
-- @pandacss/preset-panda@0.45.2
-- @pandacss/shared@0.45.2
-- @pandacss/types@0.45.2
+- @bamboocss/logger@0.45.2
+- @bamboocss/preset-base@0.45.2
+- @bamboocss/preset-panda@0.45.2
+- @bamboocss/shared@0.45.2
+- @bamboocss/types@0.45.2
 
 ## 0.45.1
 
 ### Patch Changes
 
-- @pandacss/logger@0.45.1
-- @pandacss/preset-base@0.45.1
-- @pandacss/preset-panda@0.45.1
-- @pandacss/shared@0.45.1
-- @pandacss/types@0.45.1
+- @bamboocss/logger@0.45.1
+- @bamboocss/preset-base@0.45.1
+- @bamboocss/preset-panda@0.45.1
+- @bamboocss/shared@0.45.1
+- @bamboocss/types@0.45.1
 
 ## 0.45.0
 
@@ -723,11 +723,11 @@
 
 - Updated dependencies [dcc9053]
 - Updated dependencies [552dd4b]
-  - @pandacss/types@0.45.0
-  - @pandacss/shared@0.45.0
-  - @pandacss/logger@0.45.0
-  - @pandacss/preset-base@0.45.0
-  - @pandacss/preset-panda@0.45.0
+  - @bamboocss/types@0.45.0
+  - @bamboocss/shared@0.45.0
+  - @bamboocss/logger@0.45.0
+  - @bamboocss/preset-base@0.45.0
+  - @bamboocss/preset-panda@0.45.0
 
 ## 0.44.0
 
@@ -735,22 +735,22 @@
 
 - d7f5cab: Ensure `globalFontface` definitions are merged correctly
 - Updated dependencies [c99cb75]
-  - @pandacss/types@0.44.0
-  - @pandacss/logger@0.44.0
-  - @pandacss/preset-base@0.44.0
-  - @pandacss/preset-panda@0.44.0
-  - @pandacss/shared@0.44.0
+  - @bamboocss/types@0.44.0
+  - @bamboocss/logger@0.44.0
+  - @bamboocss/preset-base@0.44.0
+  - @bamboocss/preset-panda@0.44.0
+  - @bamboocss/shared@0.44.0
 
 ## 0.43.0
 
 ### Patch Changes
 
 - Updated dependencies [e952f82]
-  - @pandacss/types@0.43.0
-  - @pandacss/logger@0.43.0
-  - @pandacss/preset-base@0.43.0
-  - @pandacss/preset-panda@0.43.0
-  - @pandacss/shared@0.43.0
+  - @bamboocss/types@0.43.0
+  - @bamboocss/logger@0.43.0
+  - @bamboocss/preset-base@0.43.0
+  - @bamboocss/preset-panda@0.43.0
+  - @bamboocss/shared@0.43.0
 
 ## 0.42.0
 
@@ -781,41 +781,41 @@
 - Updated dependencies [19c3a2c]
 - Updated dependencies [f00ff88]
 - Updated dependencies [17a1932]
-  - @pandacss/preset-base@0.42.0
-  - @pandacss/preset-panda@0.42.0
-  - @pandacss/types@0.42.0
-  - @pandacss/logger@0.42.0
-  - @pandacss/shared@0.42.0
+  - @bamboocss/preset-base@0.42.0
+  - @bamboocss/preset-panda@0.42.0
+  - @bamboocss/types@0.42.0
+  - @bamboocss/logger@0.42.0
+  - @bamboocss/shared@0.42.0
 
 ## 0.41.0
 
 ### Patch Changes
 
-- @pandacss/types@0.41.0
-- @pandacss/logger@0.41.0
-- @pandacss/preset-base@0.41.0
-- @pandacss/preset-panda@0.41.0
-- @pandacss/shared@0.41.0
+- @bamboocss/types@0.41.0
+- @bamboocss/logger@0.41.0
+- @bamboocss/preset-base@0.41.0
+- @bamboocss/preset-panda@0.41.0
+- @bamboocss/shared@0.41.0
 
 ## 0.40.1
 
 ### Patch Changes
 
-- @pandacss/logger@0.40.1
-- @pandacss/preset-base@0.40.1
-- @pandacss/preset-panda@0.40.1
-- @pandacss/shared@0.40.1
-- @pandacss/types@0.40.1
+- @bamboocss/logger@0.40.1
+- @bamboocss/preset-base@0.40.1
+- @bamboocss/preset-panda@0.40.1
+- @bamboocss/shared@0.40.1
+- @bamboocss/types@0.40.1
 
 ## 0.40.0
 
 ### Patch Changes
 
-- @pandacss/logger@0.40.0
-- @pandacss/preset-base@0.40.0
-- @pandacss/preset-panda@0.40.0
-- @pandacss/shared@0.40.0
-- @pandacss/types@0.40.0
+- @bamboocss/logger@0.40.0
+- @bamboocss/preset-base@0.40.0
+- @bamboocss/preset-panda@0.40.0
+- @bamboocss/shared@0.40.0
+- @bamboocss/types@0.40.0
 
 ## 0.39.2
 
@@ -824,21 +824,21 @@
 - 2f63a4c: Fix issue where panda could load unrelated config files that look like a config e.g.
   `theming-panda.config.ts`
 - Updated dependencies [1f636eb]
-  - @pandacss/shared@0.39.2
-  - @pandacss/types@0.39.2
-  - @pandacss/logger@0.39.2
-  - @pandacss/preset-base@0.39.2
-  - @pandacss/preset-panda@0.39.2
+  - @bamboocss/shared@0.39.2
+  - @bamboocss/types@0.39.2
+  - @bamboocss/logger@0.39.2
+  - @bamboocss/preset-base@0.39.2
+  - @bamboocss/preset-panda@0.39.2
 
 ## 0.39.1
 
 ### Patch Changes
 
-- @pandacss/logger@0.39.1
-- @pandacss/preset-base@0.39.1
-- @pandacss/preset-panda@0.39.1
-- @pandacss/shared@0.39.1
-- @pandacss/types@0.39.1
+- @bamboocss/logger@0.39.1
+- @bamboocss/preset-base@0.39.1
+- @bamboocss/preset-panda@0.39.1
+- @bamboocss/shared@0.39.1
+- @bamboocss/types@0.39.1
 
 ## 0.39.0
 
@@ -849,11 +849,11 @@
 - Updated dependencies [2116abe]
 - Updated dependencies [c3e797e]
 - Updated dependencies [935ec86]
-  - @pandacss/preset-base@0.39.0
-  - @pandacss/types@0.39.0
-  - @pandacss/shared@0.39.0
-  - @pandacss/logger@0.39.0
-  - @pandacss/preset-panda@0.39.0
+  - @bamboocss/preset-base@0.39.0
+  - @bamboocss/types@0.39.0
+  - @bamboocss/shared@0.39.0
+  - @bamboocss/logger@0.39.0
+  - @bamboocss/preset-panda@0.39.0
 
 ## 0.38.0
 
@@ -862,22 +862,22 @@
 - Updated dependencies [96b47b3]
 - Updated dependencies [bc09d89]
 - Updated dependencies [2c8b933]
-  - @pandacss/types@0.38.0
-  - @pandacss/shared@0.38.0
-  - @pandacss/logger@0.38.0
-  - @pandacss/preset-base@0.38.0
-  - @pandacss/preset-panda@0.38.0
+  - @bamboocss/types@0.38.0
+  - @bamboocss/shared@0.38.0
+  - @bamboocss/logger@0.38.0
+  - @bamboocss/preset-base@0.38.0
+  - @bamboocss/preset-panda@0.38.0
 
 ## 0.37.2
 
 ### Patch Changes
 
 - Updated dependencies [74dfb3e]
-  - @pandacss/types@0.37.2
-  - @pandacss/logger@0.37.2
-  - @pandacss/preset-base@0.37.2
-  - @pandacss/preset-panda@0.37.2
-  - @pandacss/shared@0.37.2
+  - @bamboocss/types@0.37.2
+  - @bamboocss/logger@0.37.2
+  - @bamboocss/preset-base@0.37.2
+  - @bamboocss/preset-panda@0.37.2
+  - @bamboocss/shared@0.37.2
 
 ## 0.37.1
 
@@ -887,11 +887,11 @@
   `shadows` which could be objects.
 - Updated dependencies [885963c]
 - Updated dependencies [99870bb]
-  - @pandacss/types@0.37.1
-  - @pandacss/shared@0.37.1
-  - @pandacss/logger@0.37.1
-  - @pandacss/preset-base@0.37.1
-  - @pandacss/preset-panda@0.37.1
+  - @bamboocss/types@0.37.1
+  - @bamboocss/shared@0.37.1
+  - @bamboocss/logger@0.37.1
+  - @bamboocss/preset-base@0.37.1
+  - @bamboocss/preset-panda@0.37.1
 
 ## 0.37.0
 
@@ -900,22 +900,22 @@
 - Updated dependencies [7daf159]
 - Updated dependencies [bcfb5c5]
 - Updated dependencies [6247dfb]
-  - @pandacss/shared@0.37.0
-  - @pandacss/preset-base@0.37.0
-  - @pandacss/types@0.37.0
-  - @pandacss/logger@0.37.0
-  - @pandacss/preset-panda@0.37.0
+  - @bamboocss/shared@0.37.0
+  - @bamboocss/preset-base@0.37.0
+  - @bamboocss/types@0.37.0
+  - @bamboocss/logger@0.37.0
+  - @bamboocss/preset-panda@0.37.0
 
 ## 0.36.1
 
 ### Patch Changes
 
 - Updated dependencies [bd0cb07]
-  - @pandacss/types@0.36.1
-  - @pandacss/logger@0.36.1
-  - @pandacss/preset-base@0.36.1
-  - @pandacss/preset-panda@0.36.1
-  - @pandacss/shared@0.36.1
+  - @bamboocss/types@0.36.1
+  - @bamboocss/logger@0.36.1
+  - @bamboocss/preset-base@0.36.1
+  - @bamboocss/preset-panda@0.36.1
+  - @bamboocss/shared@0.36.1
 
 ## 0.36.0
 
@@ -931,7 +931,7 @@
 
   ```ts
   // panda.config.ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     // ...
@@ -1004,7 +1004,7 @@
 
   ```ts
   // panda.config.ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     // ...
@@ -1146,7 +1146,7 @@
   Finally, you can create a theme contract to ensure that all themes have the same structure:
 
   ```ts
-  import { defineThemeContract } from '@pandacss/dev'
+  import { defineThemeContract } from '@bamboocss/dev'
 
   const defineTheme = defineThemeContract({
     tokens: {
@@ -1175,7 +1175,7 @@
   config)
 
   ```ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   const userConfig = defineConfig({
     presets: [
@@ -1252,7 +1252,7 @@
   Example:
 
   ```ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     // ...
@@ -1286,11 +1286,11 @@
 - Updated dependencies [2691f16]
 - Updated dependencies [340f4f1]
 - Updated dependencies [fabdabe]
-  - @pandacss/types@0.36.0
-  - @pandacss/logger@0.36.0
-  - @pandacss/preset-base@0.36.0
-  - @pandacss/preset-panda@0.36.0
-  - @pandacss/shared@0.36.0
+  - @bamboocss/types@0.36.0
+  - @bamboocss/logger@0.36.0
+  - @bamboocss/preset-base@0.36.0
+  - @bamboocss/preset-panda@0.36.0
+  - @bamboocss/shared@0.36.0
 
 ## 0.35.0
 
@@ -1300,21 +1300,21 @@
 - Updated dependencies [50db354]
 - Updated dependencies [f6befbf]
 - Updated dependencies [a0c4d27]
-  - @pandacss/types@0.35.0
-  - @pandacss/logger@0.35.0
-  - @pandacss/preset-base@0.35.0
-  - @pandacss/preset-panda@0.35.0
-  - @pandacss/shared@0.35.0
+  - @bamboocss/types@0.35.0
+  - @bamboocss/logger@0.35.0
+  - @bamboocss/preset-base@0.35.0
+  - @bamboocss/preset-panda@0.35.0
+  - @bamboocss/shared@0.35.0
 
 ## 0.34.3
 
 ### Patch Changes
 
-- @pandacss/logger@0.34.3
-- @pandacss/preset-base@0.34.3
-- @pandacss/preset-panda@0.34.3
-- @pandacss/shared@0.34.3
-- @pandacss/types@0.34.3
+- @bamboocss/logger@0.34.3
+- @bamboocss/preset-base@0.34.3
+- @bamboocss/preset-panda@0.34.3
+- @bamboocss/shared@0.34.3
+- @bamboocss/types@0.34.3
 
 ## 0.34.2
 
@@ -1324,7 +1324,7 @@
   modifier in config `tokens` or `semanticTokens`
 
   ```ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     validation: 'warn',
@@ -1360,21 +1360,21 @@
   Would incorrectly report:
   - [tokens] Missing token: `colors.green.500/half` used in `config.semanticTokens.colors.secondary`
   - [tokens] Missing token: `colors.blue.500/32` used in `config.semanticTokens.colors.secondary`
-  - @pandacss/types@0.34.2
-  - @pandacss/logger@0.34.2
-  - @pandacss/preset-base@0.34.2
-  - @pandacss/preset-panda@0.34.2
-  - @pandacss/shared@0.34.2
+  - @bamboocss/types@0.34.2
+  - @bamboocss/logger@0.34.2
+  - @bamboocss/preset-base@0.34.2
+  - @bamboocss/preset-panda@0.34.2
+  - @bamboocss/shared@0.34.2
 
 ## 0.34.1
 
 ### Patch Changes
 
-- @pandacss/logger@0.34.1
-- @pandacss/preset-base@0.34.1
-- @pandacss/preset-panda@0.34.1
-- @pandacss/shared@0.34.1
-- @pandacss/types@0.34.1
+- @bamboocss/logger@0.34.1
+- @bamboocss/preset-base@0.34.1
+- @bamboocss/preset-panda@0.34.1
+- @bamboocss/shared@0.34.1
+- @bamboocss/types@0.34.1
 
 ## 0.34.0
 
@@ -1385,7 +1385,7 @@
 - 9f04427: Fix "missing token" warning when using DEFAULT in tokens path
 
   ```ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     validation: 'error',
@@ -1409,7 +1409,7 @@
   Add a warning when using `value` twice
 
   ```ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     validation: 'error',
@@ -1431,11 +1431,11 @@
   ```
 
 - Updated dependencies [d1516c8]
-  - @pandacss/types@0.34.0
-  - @pandacss/logger@0.34.0
-  - @pandacss/preset-base@0.34.0
-  - @pandacss/preset-panda@0.34.0
-  - @pandacss/shared@0.34.0
+  - @bamboocss/types@0.34.0
+  - @bamboocss/logger@0.34.0
+  - @bamboocss/preset-base@0.34.0
+  - @bamboocss/preset-panda@0.34.0
+  - @bamboocss/shared@0.34.0
 
 ## 0.33.0
 
@@ -1445,11 +1445,11 @@
   dependencies to trigger a config reload on `plugins` change
 - Updated dependencies [cca50d5]
 - Updated dependencies [fde37d8]
-  - @pandacss/preset-base@0.33.0
-  - @pandacss/types@0.33.0
-  - @pandacss/logger@0.33.0
-  - @pandacss/preset-panda@0.33.0
-  - @pandacss/shared@0.33.0
+  - @bamboocss/preset-base@0.33.0
+  - @bamboocss/types@0.33.0
+  - @bamboocss/logger@0.33.0
+  - @bamboocss/preset-panda@0.33.0
+  - @bamboocss/shared@0.33.0
 
 ## 0.32.1
 
@@ -1490,11 +1490,11 @@
 - 89ffb6b: Add missing config dependencies for some `styled-system/types` files
 - Updated dependencies [a032375]
 - Updated dependencies [89ffb6b]
-  - @pandacss/types@0.32.1
-  - @pandacss/logger@0.32.1
-  - @pandacss/preset-base@0.32.1
-  - @pandacss/preset-panda@0.32.1
-  - @pandacss/shared@0.32.1
+  - @bamboocss/types@0.32.1
+  - @bamboocss/logger@0.32.1
+  - @bamboocss/preset-base@0.32.1
+  - @bamboocss/preset-panda@0.32.1
+  - @bamboocss/shared@0.32.1
 
 ## 0.32.0
 
@@ -1511,11 +1511,11 @@
 - Updated dependencies [8cd8c19]
 - Updated dependencies [60cace3]
 - Updated dependencies [de4d9ef]
-  - @pandacss/shared@0.32.0
-  - @pandacss/types@0.32.0
-  - @pandacss/logger@0.32.0
-  - @pandacss/preset-base@0.32.0
-  - @pandacss/preset-panda@0.32.0
+  - @bamboocss/shared@0.32.0
+  - @bamboocss/types@0.32.0
+  - @bamboocss/logger@0.32.0
+  - @bamboocss/preset-base@0.32.0
+  - @bamboocss/preset-panda@0.32.0
 
 ## 0.31.0
 
@@ -1559,40 +1559,40 @@
   considered invalid.
   - When `validation` is set to `error`, show all config errors at once instead of stopping at the first error.
 - 2d69b340: Fix `styled` factory nested composition with `cva`
-- ddeda8ac: Add missing log with the `panda -w` CLI, expose `resolveConfig` from `@pandacss/config`
+- ddeda8ac: Add missing log with the `panda -w` CLI, expose `resolveConfig` from `@bamboocss/config`
 - Updated dependencies [8f36f9af]
 - Updated dependencies [f0296249]
 - Updated dependencies [a17fe387]
 - Updated dependencies [2d69b340]
 - Updated dependencies [40cb30b9]
-  - @pandacss/types@0.31.0
-  - @pandacss/shared@0.31.0
-  - @pandacss/preset-base@0.31.0
-  - @pandacss/logger@0.31.0
-  - @pandacss/preset-panda@0.31.0
+  - @bamboocss/types@0.31.0
+  - @bamboocss/shared@0.31.0
+  - @bamboocss/preset-base@0.31.0
+  - @bamboocss/logger@0.31.0
+  - @bamboocss/preset-panda@0.31.0
 
 ## 0.30.2
 
 ### Patch Changes
 
 - Updated dependencies [6b829cab]
-  - @pandacss/types@0.30.2
-  - @pandacss/logger@0.30.2
-  - @pandacss/preset-base@0.30.2
-  - @pandacss/preset-panda@0.30.2
-  - @pandacss/shared@0.30.2
+  - @bamboocss/types@0.30.2
+  - @bamboocss/logger@0.30.2
+  - @bamboocss/preset-base@0.30.2
+  - @bamboocss/preset-panda@0.30.2
+  - @bamboocss/shared@0.30.2
 
 ## 0.30.1
 
 ### Patch Changes
 
 - ffe177fd: Fix the regression caused by the downstream bundle-n-require package, which tries to load custom conditions
-  first. This led to a `could not resolve @pandacss/dev` error
-  - @pandacss/logger@0.30.1
-  - @pandacss/preset-base@0.30.1
-  - @pandacss/preset-panda@0.30.1
-  - @pandacss/shared@0.30.1
-  - @pandacss/types@0.30.1
+  first. This led to a `could not resolve @bamboocss/dev` error
+  - @bamboocss/logger@0.30.1
+  - @bamboocss/preset-base@0.30.1
+  - @bamboocss/preset-panda@0.30.1
+  - @bamboocss/shared@0.30.1
+  - @bamboocss/types@0.30.1
 
 ## 0.30.0
 
@@ -1607,10 +1607,10 @@
   presets have been merged.
 
   For example, this could be used if you want to use most of a preset but want to completely omit a few things, while
-  keeping the rest. Let's say we want to remove the `stack` pattern from the built-in `@pandacss/preset-base`:
+  keeping the rest. Let's say we want to remove the `stack` pattern from the built-in `@bamboocss/preset-base`:
 
   ```ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     // ...
@@ -1636,7 +1636,7 @@
   ```js
   module.exports = {
     plugins: {
-      '@pandacss/dev/postcss': {
+      '@bamboocss/dev/postcss': {
         logfile: './logs/panda.log',
       },
     },
@@ -1647,21 +1647,21 @@
 - Updated dependencies [ab32d1d7]
 - Updated dependencies [49c760cd]
 - Updated dependencies [d5977c24]
-  - @pandacss/types@0.30.0
-  - @pandacss/shared@0.30.0
-  - @pandacss/logger@0.30.0
-  - @pandacss/preset-base@0.30.0
-  - @pandacss/preset-panda@0.30.0
+  - @bamboocss/types@0.30.0
+  - @bamboocss/shared@0.30.0
+  - @bamboocss/logger@0.30.0
+  - @bamboocss/preset-base@0.30.0
+  - @bamboocss/preset-panda@0.30.0
 
 ## 0.29.1
 
 ### Patch Changes
 
-- @pandacss/logger@0.29.1
-- @pandacss/preset-base@0.29.1
-- @pandacss/preset-panda@0.29.1
-- @pandacss/shared@0.29.1
-- @pandacss/types@0.29.1
+- @bamboocss/logger@0.29.1
+- @bamboocss/preset-base@0.29.1
+- @bamboocss/preset-panda@0.29.1
+- @bamboocss/shared@0.29.1
+- @bamboocss/types@0.29.1
 
 ## 0.29.0
 
@@ -1705,11 +1705,11 @@
 - Updated dependencies [250b4d11]
 - Updated dependencies [f778d3e5]
 - Updated dependencies [a2fb5cc6]
-  - @pandacss/preset-base@0.29.0
-  - @pandacss/types@0.29.0
-  - @pandacss/preset-panda@0.29.0
-  - @pandacss/logger@0.29.0
-  - @pandacss/shared@0.29.0
+  - @bamboocss/preset-base@0.29.0
+  - @bamboocss/types@0.29.0
+  - @bamboocss/preset-panda@0.29.0
+  - @bamboocss/logger@0.29.0
+  - @bamboocss/shared@0.29.0
 
 ## 0.28.0
 
@@ -1774,47 +1774,47 @@
 
 - Updated dependencies [f58f6df2]
 - Updated dependencies [770c7aa4]
-  - @pandacss/types@0.28.0
-  - @pandacss/shared@0.28.0
-  - @pandacss/preset-base@0.28.0
-  - @pandacss/preset-panda@0.28.0
-  - @pandacss/error@0.28.0
-  - @pandacss/logger@0.28.0
+  - @bamboocss/types@0.28.0
+  - @bamboocss/shared@0.28.0
+  - @bamboocss/preset-base@0.28.0
+  - @bamboocss/preset-panda@0.28.0
+  - @bamboocss/error@0.28.0
+  - @bamboocss/logger@0.28.0
 
 ## 0.27.3
 
 ### Patch Changes
 
 - Updated dependencies [1ed4df77]
-  - @pandacss/types@0.27.3
-  - @pandacss/preset-base@0.27.3
-  - @pandacss/preset-panda@0.27.3
-  - @pandacss/error@0.27.3
-  - @pandacss/logger@0.27.3
-  - @pandacss/shared@0.27.3
+  - @bamboocss/types@0.27.3
+  - @bamboocss/preset-base@0.27.3
+  - @bamboocss/preset-panda@0.27.3
+  - @bamboocss/error@0.27.3
+  - @bamboocss/logger@0.27.3
+  - @bamboocss/shared@0.27.3
 
 ## 0.27.2
 
 ### Patch Changes
 
-- @pandacss/error@0.27.2
-- @pandacss/logger@0.27.2
-- @pandacss/preset-base@0.27.2
-- @pandacss/preset-panda@0.27.2
-- @pandacss/shared@0.27.2
-- @pandacss/types@0.27.2
+- @bamboocss/error@0.27.2
+- @bamboocss/logger@0.27.2
+- @bamboocss/preset-base@0.27.2
+- @bamboocss/preset-panda@0.27.2
+- @bamboocss/shared@0.27.2
+- @bamboocss/types@0.27.2
 
 ## 0.27.1
 
 ### Patch Changes
 
 - Updated dependencies [ee9341db]
-  - @pandacss/types@0.27.1
-  - @pandacss/preset-base@0.27.1
-  - @pandacss/preset-panda@0.27.1
-  - @pandacss/error@0.27.1
-  - @pandacss/logger@0.27.1
-  - @pandacss/shared@0.27.1
+  - @bamboocss/types@0.27.1
+  - @bamboocss/preset-base@0.27.1
+  - @bamboocss/preset-panda@0.27.1
+  - @bamboocss/error@0.27.1
+  - @bamboocss/logger@0.27.1
+  - @bamboocss/shared@0.27.1
 
 ## 0.27.0
 
@@ -1856,7 +1856,7 @@
 
   ```ts
   // apps/storybook/panda.config.ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
   import preset from '@acme/preset'
 
   export default defineConfig({
@@ -1899,35 +1899,35 @@
 - Updated dependencies [84304901]
 - Updated dependencies [bee3ec85]
 - Updated dependencies [74ac0d9d]
-  - @pandacss/preset-panda@0.27.0
-  - @pandacss/preset-base@0.27.0
-  - @pandacss/logger@0.27.0
-  - @pandacss/shared@0.27.0
-  - @pandacss/error@0.27.0
-  - @pandacss/types@0.27.0
+  - @bamboocss/preset-panda@0.27.0
+  - @bamboocss/preset-base@0.27.0
+  - @bamboocss/logger@0.27.0
+  - @bamboocss/shared@0.27.0
+  - @bamboocss/error@0.27.0
+  - @bamboocss/types@0.27.0
 
 ## 0.26.2
 
 ### Patch Changes
 
 - Updated dependencies [f823a8c5]
-  - @pandacss/preset-base@0.26.2
-  - @pandacss/error@0.26.2
-  - @pandacss/logger@0.26.2
-  - @pandacss/preset-panda@0.26.2
-  - @pandacss/shared@0.26.2
-  - @pandacss/types@0.26.2
+  - @bamboocss/preset-base@0.26.2
+  - @bamboocss/error@0.26.2
+  - @bamboocss/logger@0.26.2
+  - @bamboocss/preset-panda@0.26.2
+  - @bamboocss/shared@0.26.2
+  - @bamboocss/types@0.26.2
 
 ## 0.26.1
 
 ### Patch Changes
 
-- @pandacss/error@0.26.1
-- @pandacss/logger@0.26.1
-- @pandacss/preset-base@0.26.1
-- @pandacss/preset-panda@0.26.1
-- @pandacss/shared@0.26.1
-- @pandacss/types@0.26.1
+- @bamboocss/error@0.26.1
+- @bamboocss/logger@0.26.1
+- @bamboocss/preset-base@0.26.1
+- @bamboocss/preset-panda@0.26.1
+- @bamboocss/shared@0.26.1
+- @bamboocss/types@0.26.1
 
 ## 0.26.0
 
@@ -1943,71 +1943,71 @@
 - Updated dependencies [657ca5da]
 - Updated dependencies [b5cf6ee6]
 - Updated dependencies [58df7d74]
-  - @pandacss/preset-base@0.26.0
-  - @pandacss/shared@0.26.0
-  - @pandacss/types@0.26.0
-  - @pandacss/preset-panda@0.26.0
-  - @pandacss/error@0.26.0
-  - @pandacss/logger@0.26.0
+  - @bamboocss/preset-base@0.26.0
+  - @bamboocss/shared@0.26.0
+  - @bamboocss/types@0.26.0
+  - @bamboocss/preset-panda@0.26.0
+  - @bamboocss/error@0.26.0
+  - @bamboocss/logger@0.26.0
 
 ## 0.25.0
 
 ### Patch Changes
 
 - Updated dependencies [59fd291c]
-  - @pandacss/types@0.25.0
-  - @pandacss/preset-base@0.25.0
-  - @pandacss/preset-panda@0.25.0
-  - @pandacss/error@0.25.0
-  - @pandacss/logger@0.25.0
-  - @pandacss/shared@0.25.0
+  - @bamboocss/types@0.25.0
+  - @bamboocss/preset-base@0.25.0
+  - @bamboocss/preset-panda@0.25.0
+  - @bamboocss/error@0.25.0
+  - @bamboocss/logger@0.25.0
+  - @bamboocss/shared@0.25.0
 
 ## 0.24.2
 
 ### Patch Changes
 
 - Updated dependencies [71e82a4e]
-  - @pandacss/shared@0.24.2
-  - @pandacss/types@0.24.2
-  - @pandacss/preset-base@0.24.2
-  - @pandacss/preset-panda@0.24.2
-  - @pandacss/error@0.24.2
-  - @pandacss/logger@0.24.2
+  - @bamboocss/shared@0.24.2
+  - @bamboocss/types@0.24.2
+  - @bamboocss/preset-base@0.24.2
+  - @bamboocss/preset-panda@0.24.2
+  - @bamboocss/error@0.24.2
+  - @bamboocss/logger@0.24.2
 
 ## 0.24.1
 
 ### Patch Changes
 
-- @pandacss/error@0.24.1
-- @pandacss/logger@0.24.1
-- @pandacss/preset-base@0.24.1
-- @pandacss/preset-panda@0.24.1
-- @pandacss/shared@0.24.1
-- @pandacss/types@0.24.1
+- @bamboocss/error@0.24.1
+- @bamboocss/logger@0.24.1
+- @bamboocss/preset-base@0.24.1
+- @bamboocss/preset-panda@0.24.1
+- @bamboocss/shared@0.24.1
+- @bamboocss/types@0.24.1
 
 ## 0.24.0
 
 ### Patch Changes
 
 - Updated dependencies [f6881022]
-  - @pandacss/types@0.24.0
-  - @pandacss/preset-base@0.24.0
-  - @pandacss/preset-panda@0.24.0
-  - @pandacss/error@0.24.0
-  - @pandacss/logger@0.24.0
-  - @pandacss/shared@0.24.0
+  - @bamboocss/types@0.24.0
+  - @bamboocss/preset-base@0.24.0
+  - @bamboocss/preset-panda@0.24.0
+  - @bamboocss/error@0.24.0
+  - @bamboocss/logger@0.24.0
+  - @bamboocss/shared@0.24.0
 
 ## 0.23.0
 
 ### Patch Changes
 
 - Updated dependencies [bd552b1f]
-  - @pandacss/logger@0.23.0
-  - @pandacss/error@0.23.0
-  - @pandacss/preset-base@0.23.0
-  - @pandacss/preset-panda@0.23.0
-  - @pandacss/shared@0.23.0
-  - @pandacss/types@0.23.0
+  - @bamboocss/logger@0.23.0
+  - @bamboocss/error@0.23.0
+  - @bamboocss/preset-base@0.23.0
+  - @bamboocss/preset-panda@0.23.0
+  - @bamboocss/shared@0.23.0
+  - @bamboocss/types@0.23.0
 
 ## 0.22.1
 
@@ -2015,12 +2015,12 @@
 
 - Updated dependencies [8f4ce97c]
 - Updated dependencies [647f05c9]
-  - @pandacss/types@0.22.1
-  - @pandacss/shared@0.22.1
-  - @pandacss/preset-base@0.22.1
-  - @pandacss/preset-panda@0.22.1
-  - @pandacss/error@0.22.1
-  - @pandacss/logger@0.22.1
+  - @bamboocss/types@0.22.1
+  - @bamboocss/shared@0.22.1
+  - @bamboocss/preset-base@0.22.1
+  - @bamboocss/preset-panda@0.22.1
+  - @bamboocss/error@0.22.1
+  - @bamboocss/logger@0.22.1
 
 ## 0.22.0
 
@@ -2029,12 +2029,12 @@
 - Updated dependencies [526c6e34]
 - Updated dependencies [8db47ec6]
 - Updated dependencies [1cc8fcff]
-  - @pandacss/types@0.22.0
-  - @pandacss/shared@0.22.0
-  - @pandacss/preset-base@0.22.0
-  - @pandacss/preset-panda@0.22.0
-  - @pandacss/error@0.22.0
-  - @pandacss/logger@0.22.0
+  - @bamboocss/types@0.22.0
+  - @bamboocss/shared@0.22.0
+  - @bamboocss/preset-base@0.22.0
+  - @bamboocss/preset-panda@0.22.0
+  - @bamboocss/error@0.22.0
+  - @bamboocss/logger@0.22.0
 
 ## 0.21.0
 
@@ -2043,24 +2043,24 @@
 - Updated dependencies [26e6051a]
 - Updated dependencies [5b061615]
 - Updated dependencies [105f74ce]
-  - @pandacss/shared@0.21.0
-  - @pandacss/types@0.21.0
-  - @pandacss/preset-base@0.21.0
-  - @pandacss/preset-panda@0.21.0
-  - @pandacss/error@0.21.0
-  - @pandacss/logger@0.21.0
+  - @bamboocss/shared@0.21.0
+  - @bamboocss/types@0.21.0
+  - @bamboocss/preset-base@0.21.0
+  - @bamboocss/preset-panda@0.21.0
+  - @bamboocss/error@0.21.0
+  - @bamboocss/logger@0.21.0
 
 ## 0.20.1
 
 ### Patch Changes
 
 - Updated dependencies [428e5401]
-  - @pandacss/preset-base@0.20.1
-  - @pandacss/error@0.20.1
-  - @pandacss/logger@0.20.1
-  - @pandacss/preset-panda@0.20.1
-  - @pandacss/shared@0.20.1
-  - @pandacss/types@0.20.1
+  - @bamboocss/preset-base@0.20.1
+  - @bamboocss/error@0.20.1
+  - @bamboocss/logger@0.20.1
+  - @bamboocss/preset-panda@0.20.1
+  - @bamboocss/shared@0.20.1
+  - @bamboocss/types@0.20.1
 
 ## 0.20.0
 
@@ -2098,12 +2098,12 @@
   - Improve the `codegen` experience by only rewriting files affecteds by a config change
 - Updated dependencies [24ee49a5]
 - Updated dependencies [904aec7b]
-  - @pandacss/types@0.20.0
-  - @pandacss/preset-base@0.20.0
-  - @pandacss/preset-panda@0.20.0
-  - @pandacss/error@0.20.0
-  - @pandacss/logger@0.20.0
-  - @pandacss/shared@0.20.0
+  - @bamboocss/types@0.20.0
+  - @bamboocss/preset-base@0.20.0
+  - @bamboocss/preset-panda@0.20.0
+  - @bamboocss/error@0.20.0
+  - @bamboocss/logger@0.20.0
+  - @bamboocss/shared@0.20.0
 
 ## 0.19.0
 
@@ -2111,32 +2111,32 @@
 
 - Updated dependencies [61831040]
 - Updated dependencies [89f86923]
-  - @pandacss/types@0.19.0
-  - @pandacss/preset-base@0.19.0
-  - @pandacss/preset-panda@0.19.0
-  - @pandacss/error@0.19.0
-  - @pandacss/logger@0.19.0
+  - @bamboocss/types@0.19.0
+  - @bamboocss/preset-base@0.19.0
+  - @bamboocss/preset-panda@0.19.0
+  - @bamboocss/error@0.19.0
+  - @bamboocss/logger@0.19.0
 
 ## 0.18.3
 
 ### Patch Changes
 
-- @pandacss/error@0.18.3
-- @pandacss/logger@0.18.3
-- @pandacss/preset-base@0.18.3
-- @pandacss/preset-panda@0.18.3
-- @pandacss/types@0.18.3
+- @bamboocss/error@0.18.3
+- @bamboocss/logger@0.18.3
+- @bamboocss/preset-base@0.18.3
+- @bamboocss/preset-panda@0.18.3
+- @bamboocss/types@0.18.3
 
 ## 0.18.2
 
 ### Patch Changes
 
 - Updated dependencies [3e1ea626]
-  - @pandacss/preset-base@0.18.2
-  - @pandacss/error@0.18.2
-  - @pandacss/logger@0.18.2
-  - @pandacss/preset-panda@0.18.2
-  - @pandacss/types@0.18.2
+  - @bamboocss/preset-base@0.18.2
+  - @bamboocss/error@0.18.2
+  - @bamboocss/logger@0.18.2
+  - @bamboocss/preset-panda@0.18.2
+  - @bamboocss/types@0.18.2
 
 ## 0.18.1
 
@@ -2144,116 +2144,116 @@
 
 - Updated dependencies [ce34ea45]
 - Updated dependencies [aac7b379]
-  - @pandacss/preset-base@0.18.1
-  - @pandacss/error@0.18.1
-  - @pandacss/logger@0.18.1
-  - @pandacss/preset-panda@0.18.1
-  - @pandacss/types@0.18.1
+  - @bamboocss/preset-base@0.18.1
+  - @bamboocss/error@0.18.1
+  - @bamboocss/logger@0.18.1
+  - @bamboocss/preset-panda@0.18.1
+  - @bamboocss/types@0.18.1
 
 ## 0.18.0
 
 ### Patch Changes
 
-- @pandacss/types@0.18.0
-- @pandacss/error@0.18.0
-- @pandacss/logger@0.18.0
-- @pandacss/preset-base@0.18.0
-- @pandacss/preset-panda@0.18.0
+- @bamboocss/types@0.18.0
+- @bamboocss/error@0.18.0
+- @bamboocss/logger@0.18.0
+- @bamboocss/preset-base@0.18.0
+- @bamboocss/preset-panda@0.18.0
 
 ## 0.17.5
 
 ### Patch Changes
 
-- @pandacss/error@0.17.5
-- @pandacss/logger@0.17.5
-- @pandacss/preset-base@0.17.5
-- @pandacss/preset-panda@0.17.5
-- @pandacss/types@0.17.5
+- @bamboocss/error@0.17.5
+- @bamboocss/logger@0.17.5
+- @bamboocss/preset-base@0.17.5
+- @bamboocss/preset-panda@0.17.5
+- @bamboocss/types@0.17.5
 
 ## 0.17.4
 
 ### Patch Changes
 
 - Updated dependencies [fa77080a]
-  - @pandacss/types@0.17.4
-  - @pandacss/preset-base@0.17.4
-  - @pandacss/preset-panda@0.17.4
-  - @pandacss/error@0.17.4
-  - @pandacss/logger@0.17.4
+  - @bamboocss/types@0.17.4
+  - @bamboocss/preset-base@0.17.4
+  - @bamboocss/preset-panda@0.17.4
+  - @bamboocss/error@0.17.4
+  - @bamboocss/logger@0.17.4
 
 ## 0.17.3
 
 ### Patch Changes
 
 - Updated dependencies [529a262e]
-  - @pandacss/types@0.17.3
-  - @pandacss/preset-base@0.17.3
-  - @pandacss/preset-panda@0.17.3
-  - @pandacss/error@0.17.3
-  - @pandacss/logger@0.17.3
+  - @bamboocss/types@0.17.3
+  - @bamboocss/preset-base@0.17.3
+  - @bamboocss/preset-panda@0.17.3
+  - @bamboocss/error@0.17.3
+  - @bamboocss/logger@0.17.3
 
 ## 0.17.2
 
 ### Patch Changes
 
-- @pandacss/error@0.17.2
-- @pandacss/logger@0.17.2
-- @pandacss/preset-base@0.17.2
-- @pandacss/preset-panda@0.17.2
-- @pandacss/types@0.17.2
+- @bamboocss/error@0.17.2
+- @bamboocss/logger@0.17.2
+- @bamboocss/preset-base@0.17.2
+- @bamboocss/preset-panda@0.17.2
+- @bamboocss/types@0.17.2
 
 ## 0.17.1
 
 ### Patch Changes
 
-- @pandacss/types@0.17.1
-- @pandacss/error@0.17.1
-- @pandacss/logger@0.17.1
-- @pandacss/preset-base@0.17.1
-- @pandacss/preset-panda@0.17.1
+- @bamboocss/types@0.17.1
+- @bamboocss/error@0.17.1
+- @bamboocss/logger@0.17.1
+- @bamboocss/preset-base@0.17.1
+- @bamboocss/preset-panda@0.17.1
 
 ## 0.17.0
 
 ### Patch Changes
 
 - Updated dependencies [fc4688e6]
-  - @pandacss/types@0.17.0
-  - @pandacss/preset-base@0.17.0
-  - @pandacss/preset-panda@0.17.0
-  - @pandacss/error@0.17.0
-  - @pandacss/logger@0.17.0
+  - @bamboocss/types@0.17.0
+  - @bamboocss/preset-base@0.17.0
+  - @bamboocss/preset-panda@0.17.0
+  - @bamboocss/error@0.17.0
+  - @bamboocss/logger@0.17.0
 
 ## 0.16.0
 
 ### Patch Changes
 
 - Updated dependencies [0f3bede5]
-  - @pandacss/preset-base@0.16.0
-  - @pandacss/error@0.16.0
-  - @pandacss/logger@0.16.0
-  - @pandacss/preset-panda@0.16.0
-  - @pandacss/types@0.16.0
+  - @bamboocss/preset-base@0.16.0
+  - @bamboocss/error@0.16.0
+  - @bamboocss/logger@0.16.0
+  - @bamboocss/preset-panda@0.16.0
+  - @bamboocss/types@0.16.0
 
 ## 0.15.5
 
 ### Patch Changes
 
-- @pandacss/error@0.15.5
-- @pandacss/logger@0.15.5
-- @pandacss/preset-base@0.15.5
-- @pandacss/preset-panda@0.15.5
-- @pandacss/types@0.15.5
+- @bamboocss/error@0.15.5
+- @bamboocss/logger@0.15.5
+- @bamboocss/preset-base@0.15.5
+- @bamboocss/preset-panda@0.15.5
+- @bamboocss/types@0.15.5
 
 ## 0.15.4
 
 ### Patch Changes
 
 - abd7c47a: Fix preset merging, config wins over presets.
-  - @pandacss/types@0.15.4
-  - @pandacss/error@0.15.4
-  - @pandacss/logger@0.15.4
-  - @pandacss/preset-base@0.15.4
-  - @pandacss/preset-panda@0.15.4
+  - @bamboocss/types@0.15.4
+  - @bamboocss/error@0.15.4
+  - @bamboocss/logger@0.15.4
+  - @bamboocss/preset-base@0.15.4
+  - @bamboocss/preset-panda@0.15.4
 
 ## 0.15.3
 
@@ -2261,11 +2261,11 @@
 
 - Updated dependencies [1ac2011b]
 - Updated dependencies [58743bc4]
-  - @pandacss/types@0.15.3
-  - @pandacss/preset-base@0.15.3
-  - @pandacss/preset-panda@0.15.3
-  - @pandacss/error@0.15.3
-  - @pandacss/logger@0.15.3
+  - @bamboocss/types@0.15.3
+  - @bamboocss/preset-base@0.15.3
+  - @bamboocss/preset-panda@0.15.3
+  - @bamboocss/error@0.15.3
+  - @bamboocss/logger@0.15.3
 
 ## 0.15.2
 
@@ -2352,21 +2352,21 @@
   ```
 
 - Updated dependencies [26a788c0]
-  - @pandacss/types@0.15.2
-  - @pandacss/preset-base@0.15.2
-  - @pandacss/preset-panda@0.15.2
-  - @pandacss/error@0.15.2
-  - @pandacss/logger@0.15.2
+  - @bamboocss/types@0.15.2
+  - @bamboocss/preset-base@0.15.2
+  - @bamboocss/preset-panda@0.15.2
+  - @bamboocss/error@0.15.2
+  - @bamboocss/logger@0.15.2
 
 ## 0.15.1
 
 ### Patch Changes
 
-- @pandacss/types@0.15.1
-- @pandacss/error@0.15.1
-- @pandacss/logger@0.15.1
-- @pandacss/preset-base@0.15.1
-- @pandacss/preset-panda@0.15.1
+- @bamboocss/types@0.15.1
+- @bamboocss/error@0.15.1
+- @bamboocss/logger@0.15.1
+- @bamboocss/preset-base@0.15.1
+- @bamboocss/preset-panda@0.15.1
 
 ## 0.15.0
 
@@ -2374,11 +2374,11 @@
 
 - Updated dependencies [4bc515ea]
 - Updated dependencies [39298609]
-  - @pandacss/types@0.15.0
-  - @pandacss/preset-base@0.15.0
-  - @pandacss/preset-panda@0.15.0
-  - @pandacss/error@0.15.0
-  - @pandacss/logger@0.15.0
+  - @bamboocss/types@0.15.0
+  - @bamboocss/preset-base@0.15.0
+  - @bamboocss/preset-panda@0.15.0
+  - @bamboocss/error@0.15.0
+  - @bamboocss/logger@0.15.0
 
 ## 0.14.0
 
@@ -2387,11 +2387,11 @@
 - Updated dependencies [8106b411]
 - Updated dependencies [e6459a59]
 - Updated dependencies [6f7ee198]
-  - @pandacss/types@0.14.0
-  - @pandacss/preset-base@0.14.0
-  - @pandacss/preset-panda@0.14.0
-  - @pandacss/error@0.14.0
-  - @pandacss/logger@0.14.0
+  - @bamboocss/types@0.14.0
+  - @bamboocss/preset-base@0.14.0
+  - @bamboocss/preset-panda@0.14.0
+  - @bamboocss/error@0.14.0
+  - @bamboocss/logger@0.14.0
 
 ## 0.13.1
 
@@ -2399,63 +2399,63 @@
 
 - d0fbc7cc: Allow `.mts` and `.cts` panda config extension
 - Updated dependencies [d0fbc7cc]
-  - @pandacss/error@0.13.1
-  - @pandacss/logger@0.13.1
-  - @pandacss/preset-base@0.13.1
-  - @pandacss/preset-panda@0.13.1
-  - @pandacss/types@0.13.1
+  - @bamboocss/error@0.13.1
+  - @bamboocss/logger@0.13.1
+  - @bamboocss/preset-base@0.13.1
+  - @bamboocss/preset-panda@0.13.1
+  - @bamboocss/types@0.13.1
 
 ## 0.13.0
 
 ### Patch Changes
 
-- @pandacss/error@0.13.0
-- @pandacss/logger@0.13.0
-- @pandacss/preset-base@0.13.0
-- @pandacss/preset-panda@0.13.0
-- @pandacss/types@0.13.0
+- @bamboocss/error@0.13.0
+- @bamboocss/logger@0.13.0
+- @bamboocss/preset-base@0.13.0
+- @bamboocss/preset-panda@0.13.0
+- @bamboocss/types@0.13.0
 
 ## 0.12.2
 
 ### Patch Changes
 
-- @pandacss/error@0.12.2
-- @pandacss/logger@0.12.2
-- @pandacss/preset-base@0.12.2
-- @pandacss/preset-panda@0.12.2
-- @pandacss/types@0.12.2
+- @bamboocss/error@0.12.2
+- @bamboocss/logger@0.12.2
+- @bamboocss/preset-base@0.12.2
+- @bamboocss/preset-panda@0.12.2
+- @bamboocss/types@0.12.2
 
 ## 0.12.1
 
 ### Patch Changes
 
-- @pandacss/error@0.12.1
-- @pandacss/logger@0.12.1
-- @pandacss/preset-base@0.12.1
-- @pandacss/preset-panda@0.12.1
-- @pandacss/types@0.12.1
+- @bamboocss/error@0.12.1
+- @bamboocss/logger@0.12.1
+- @bamboocss/preset-base@0.12.1
+- @bamboocss/preset-panda@0.12.1
+- @bamboocss/types@0.12.1
 
 ## 0.12.0
 
 ### Patch Changes
 
 - Updated dependencies [bf2ff391]
-  - @pandacss/preset-base@0.12.0
-  - @pandacss/error@0.12.0
-  - @pandacss/logger@0.12.0
-  - @pandacss/preset-panda@0.12.0
-  - @pandacss/types@0.12.0
+  - @bamboocss/preset-base@0.12.0
+  - @bamboocss/error@0.12.0
+  - @bamboocss/logger@0.12.0
+  - @bamboocss/preset-panda@0.12.0
+  - @bamboocss/types@0.12.0
 
 ## 0.11.1
 
 ### Patch Changes
 
 - Updated dependencies [23b516f4]
-  - @pandacss/types@0.11.1
-  - @pandacss/preset-base@0.11.1
-  - @pandacss/preset-panda@0.11.1
-  - @pandacss/error@0.11.1
-  - @pandacss/logger@0.11.1
+  - @bamboocss/types@0.11.1
+  - @bamboocss/preset-base@0.11.1
+  - @bamboocss/preset-panda@0.11.1
+  - @bamboocss/error@0.11.1
+  - @bamboocss/logger@0.11.1
 
 ## 0.11.0
 
@@ -2467,11 +2467,11 @@
 
 - Updated dependencies [5b95caf5]
 - Updated dependencies [811f4fb1]
-  - @pandacss/types@0.11.0
-  - @pandacss/preset-base@0.11.0
-  - @pandacss/preset-panda@0.11.0
-  - @pandacss/error@0.11.0
-  - @pandacss/logger@0.11.0
+  - @bamboocss/types@0.11.0
+  - @bamboocss/preset-base@0.11.0
+  - @bamboocss/preset-panda@0.11.0
+  - @bamboocss/error@0.11.0
+  - @bamboocss/logger@0.11.0
 
 ## 0.10.0
 
@@ -2482,22 +2482,22 @@
 - Updated dependencies [1972b4fa]
 - Updated dependencies [386e5098]
 - Updated dependencies [a669f4d5]
-  - @pandacss/types@0.10.0
-  - @pandacss/preset-base@0.10.0
-  - @pandacss/preset-panda@0.10.0
-  - @pandacss/error@0.10.0
-  - @pandacss/logger@0.10.0
+  - @bamboocss/types@0.10.0
+  - @bamboocss/preset-base@0.10.0
+  - @bamboocss/preset-panda@0.10.0
+  - @bamboocss/error@0.10.0
+  - @bamboocss/logger@0.10.0
 
 ## 0.9.0
 
 ### Patch Changes
 
 - Updated dependencies [c08de87f]
-  - @pandacss/preset-base@0.9.0
-  - @pandacss/types@0.9.0
-  - @pandacss/preset-panda@0.9.0
-  - @pandacss/error@0.9.0
-  - @pandacss/logger@0.9.0
+  - @bamboocss/preset-base@0.9.0
+  - @bamboocss/types@0.9.0
+  - @bamboocss/preset-panda@0.9.0
+  - @bamboocss/error@0.9.0
+  - @bamboocss/logger@0.9.0
 
 ## 0.8.0
 
@@ -2506,11 +2506,11 @@
 - e1f6318a: Fix module resolution issue when using panda from a browser environment
 - be0ad578: Fix parser issue with TS path mappings
 - Updated dependencies [be0ad578]
-  - @pandacss/preset-base@0.8.0
-  - @pandacss/types@0.8.0
-  - @pandacss/preset-panda@0.8.0
-  - @pandacss/error@0.8.0
-  - @pandacss/logger@0.8.0
+  - @bamboocss/preset-base@0.8.0
+  - @bamboocss/types@0.8.0
+  - @bamboocss/preset-panda@0.8.0
+  - @bamboocss/error@0.8.0
+  - @bamboocss/logger@0.8.0
 
 ## 0.7.0
 
@@ -2521,11 +2521,11 @@
 - Updated dependencies [60a77841]
 - Updated dependencies [a9c189b7]
 - Updated dependencies [d9eeba60]
-  - @pandacss/preset-base@0.7.0
-  - @pandacss/types@0.7.0
-  - @pandacss/preset-panda@0.7.0
-  - @pandacss/error@0.7.0
-  - @pandacss/logger@0.7.0
+  - @bamboocss/preset-base@0.7.0
+  - @bamboocss/types@0.7.0
+  - @bamboocss/preset-panda@0.7.0
+  - @bamboocss/error@0.7.0
+  - @bamboocss/logger@0.7.0
 
 ## 0.6.0
 
@@ -2534,11 +2534,11 @@
 - Updated dependencies [97fbe63f]
 - Updated dependencies [08d33e0f]
 - Updated dependencies [f7aff8eb]
-  - @pandacss/preset-base@0.6.0
-  - @pandacss/types@0.6.0
-  - @pandacss/error@0.6.0
-  - @pandacss/logger@0.6.0
-  - @pandacss/preset-panda@0.6.0
+  - @bamboocss/preset-base@0.6.0
+  - @bamboocss/types@0.6.0
+  - @bamboocss/error@0.6.0
+  - @bamboocss/logger@0.6.0
+  - @bamboocss/preset-panda@0.6.0
 
 ## 0.5.1
 
@@ -2547,7 +2547,7 @@
 - 33198907: Create separate entrypoint for merge configs
 
   ```ts
-  import { mergeConfigs } from '@pandacss/config/merge'
+  import { mergeConfigs } from '@bamboocss/config/merge'
   ```
 
 - 1a2c0e2b: Fix `panda.config.xxx` file dependencies detection when using the builder (= with PostCSS or with the VSCode
@@ -2556,11 +2556,11 @@
 - Updated dependencies [f9247e52]
 - Updated dependencies [1ed239cd]
 - Updated dependencies [78ed6ed4]
-  - @pandacss/types@0.5.1
-  - @pandacss/logger@0.5.1
-  - @pandacss/preset-base@0.5.1
-  - @pandacss/preset-panda@0.5.1
-  - @pandacss/error@0.5.1
+  - @bamboocss/types@0.5.1
+  - @bamboocss/logger@0.5.1
+  - @bamboocss/preset-base@0.5.1
+  - @bamboocss/preset-panda@0.5.1
+  - @bamboocss/error@0.5.1
 
 ## 0.5.0
 
@@ -2568,11 +2568,11 @@
 
 - Updated dependencies [ead9eaa3]
 - Updated dependencies [3a87cff8]
-  - @pandacss/types@0.5.0
-  - @pandacss/preset-panda@0.5.0
-  - @pandacss/preset-base@0.5.0
-  - @pandacss/error@0.5.0
-  - @pandacss/logger@0.5.0
+  - @bamboocss/types@0.5.0
+  - @bamboocss/preset-panda@0.5.0
+  - @bamboocss/preset-base@0.5.0
+  - @bamboocss/error@0.5.0
+  - @bamboocss/logger@0.5.0
 
 ## 0.4.0
 
@@ -2585,22 +2585,22 @@
 - Updated dependencies [0f36ebad]
 - Updated dependencies [c7b42325]
 - Updated dependencies [5b344b9c]
-  - @pandacss/preset-base@0.4.0
-  - @pandacss/types@0.4.0
-  - @pandacss/preset-panda@0.4.0
-  - @pandacss/error@0.4.0
-  - @pandacss/logger@0.4.0
+  - @bamboocss/preset-base@0.4.0
+  - @bamboocss/types@0.4.0
+  - @bamboocss/preset-panda@0.4.0
+  - @bamboocss/error@0.4.0
+  - @bamboocss/logger@0.4.0
 
 ## 0.3.2
 
 ### Patch Changes
 
 - 9822d79a: Remove `bundledDependencies` from `package.json` to fix NPM resolution
-  - @pandacss/error@0.3.2
-  - @pandacss/logger@0.3.2
-  - @pandacss/preset-base@0.3.2
-  - @pandacss/preset-panda@0.3.2
-  - @pandacss/types@0.3.2
+  - @bamboocss/error@0.3.2
+  - @bamboocss/logger@0.3.2
+  - @bamboocss/preset-base@0.3.2
+  - @bamboocss/preset-panda@0.3.2
+  - @bamboocss/types@0.3.2
 
 ## 0.3.1
 
@@ -2608,11 +2608,11 @@
 
 - efd79d83: Baseline release for the launch
 - Updated dependencies [efd79d83]
-  - @pandacss/error@0.3.1
-  - @pandacss/logger@0.3.1
-  - @pandacss/preset-base@0.3.1
-  - @pandacss/preset-panda@0.3.1
-  - @pandacss/types@0.3.1
+  - @bamboocss/error@0.3.1
+  - @bamboocss/logger@0.3.1
+  - @bamboocss/preset-base@0.3.1
+  - @bamboocss/preset-panda@0.3.1
+  - @bamboocss/types@0.3.1
 
 ## 0.3.0
 
@@ -2620,11 +2620,11 @@
 
 - Updated dependencies [bd5c049b]
 - Updated dependencies [6d81ee9e]
-  - @pandacss/preset-base@0.3.0
-  - @pandacss/preset-panda@0.3.0
-  - @pandacss/types@0.3.0
-  - @pandacss/error@0.3.0
-  - @pandacss/logger@0.3.0
+  - @bamboocss/preset-base@0.3.0
+  - @bamboocss/preset-panda@0.3.0
+  - @bamboocss/types@0.3.0
+  - @bamboocss/error@0.3.0
+  - @bamboocss/logger@0.3.0
 
 ## 0.0.2
 
@@ -2640,6 +2640,6 @@
 
 - Updated dependencies [c308e8be]
 - Updated dependencies [fb40fff2]
-  - @pandacss/types@0.0.2
-  - @pandacss/error@0.0.2
-  - @pandacss/logger@0.0.2
+  - @bamboocss/types@0.0.2
+  - @bamboocss/error@0.0.2
+  - @bamboocss/logger@0.0.2

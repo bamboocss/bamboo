@@ -1,4 +1,4 @@
-# @pandacss/types
+# @bamboocss/types
 
 ## 1.11.3
 
@@ -47,7 +47,7 @@
   **Config:**
 
   ```ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     conditions: {
@@ -428,7 +428,7 @@
   Here's an example of this:
 
   ```jsx
-  import { defineAnimationStyles } from '@pandacss/dev'
+  import { defineAnimationStyles } from '@bamboocss/dev'
 
   export const animationStyles = defineAnimationStyles({
     'slide-fade-in': {
@@ -565,7 +565,7 @@
 - e952f82: Add support for defining global font face in config and preset
 
   ```ts
-  // pandacss.config.js
+  // bamboocss.config.js
   export default defineConfig({
     globalFontface: {
       Roboto: {
@@ -580,7 +580,7 @@
   You can also add multiple font `src` for the same weight
 
   ```ts
-  // pandacss.config.js
+  // bamboocss.config.js
 
   export default defineConfig({
     globalFontface: {
@@ -597,7 +597,7 @@
   You can also define multiple font weights
 
   ```ts
-  // pandacss.config.js
+  // bamboocss.config.js
 
   export default defineConfig({
     globalFontface: {
@@ -835,7 +835,7 @@
 
   ```ts
   // panda.config.ts
-  import { defineConfig } from "@pandacss/dev";
+  import { defineConfig } from "@bamboocss/dev";
 
   export default defineConfig({
     theme: {
@@ -970,7 +970,7 @@
   It can be useful to use a component library's `styled-system` while also using your own `styled-system` in your app.
 
   ```ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     importMap: ['@acme/styled-system', '@ui-lib/styled-system', 'styled-system'],
@@ -1005,7 +1005,7 @@
 
   ```ts
   // panda.config.ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     // ...
@@ -1078,7 +1078,7 @@
 
   ```ts
   // panda.config.ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     // ...
@@ -1220,7 +1220,7 @@
   Finally, you can create a theme contract to ensure that all themes have the same structure:
 
   ```ts
-  import { defineThemeContract } from '@pandacss/dev'
+  import { defineThemeContract } from '@bamboocss/dev'
 
   const defineTheme = defineThemeContract({
     tokens: {
@@ -1303,7 +1303,7 @@
   Example:
 
   ```ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     // ...
@@ -1416,7 +1416,7 @@
   class assigned.
 
   ```js
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     preflight: {
@@ -1442,7 +1442,7 @@
 
 ### Patch Changes
 
-- cca50d5: Add a `group` to every utility in the `@pandacss/preset-base`, this helps Panda tooling organize utilities.
+- cca50d5: Add a `group` to every utility in the `@bamboocss/preset-base`, this helps Panda tooling organize utilities.
 
 ## 0.32.1
 
@@ -1566,10 +1566,10 @@
   presets have been merged.
 
   For example, this could be used if you want to use most of a preset but want to completely omit a few things, while
-  keeping the rest. Let's say we want to remove the `stack` pattern from the built-in `@pandacss/preset-base`:
+  keeping the rest. Let's say we want to remove the `stack` pattern from the built-in `@bamboocss/preset-base`:
 
   ```ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     // ...
@@ -1605,8 +1605,9 @@
 
 ### Minor Changes
 
-- 5fcdeb75: Update every utilities connected to the `colors` tokens in the `@pandacss/preset-base` (included by default)
-  to use the [`color-mix`](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/color-mix) CSS function.
+- 5fcdeb75: Update every utilities connected to the `colors` tokens in the `@bamboocss/preset-base` (included by
+  default) to use the [`color-mix`](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/color-mix) CSS
+  function.
 
   This function allows you to mix two colors together, and we use it to change the opacity of a color using the
   `{color}/{opacity}` syntax.
@@ -1672,7 +1673,7 @@
   property:
 
   ```ts
-  import type { PropertyTransform } from '@pandacss/types'
+  import type { PropertyTransform } from '@bamboocss/types'
 
   export const createColorMixTransform =
     (prop: string): PropertyTransform =>
@@ -1725,7 +1726,7 @@
   })
   ```
 
-  The default container sizes in the `@pandacss/preset-panda` preset are shown below:
+  The default container sizes in the `@bamboocss/preset-panda` preset are shown below:
 
   ```ts
   export const containerSizes = {
@@ -1780,7 +1781,7 @@
 
   ### Container Query Pattern
 
-  To make it easier to use container queries, we've added a new `cq` pattern to `@pandacss/preset-base`.
+  To make it easier to use container queries, we've added a new `cq` pattern to `@bamboocss/preset-base`.
 
   ```ts
   import { cq } from "styled-system/patterns";
@@ -2152,7 +2153,7 @@
 - 105f74ce: Add a way to specify a recipe's `staticCss` options from inside a recipe config, e.g.:
 
   ```js
-  import { defineRecipe } from '@pandacss/dev'
+  import { defineRecipe } from '@bamboocss/dev'
 
   const card = defineRecipe({
     className: 'card',
@@ -2170,7 +2171,7 @@
   would be the equivalent of defining it inside the main config:
 
   ```js
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     // ...
@@ -2261,7 +2262,7 @@
 
 ### Patch Changes
 
-- fc4688e6: Export all types from @pandacss/types, which will also export all types exposed in the outdir/types
+- fc4688e6: Export all types from @bamboocss/types, which will also export all types exposed in the outdir/types
 
   Also make the `config.prefix` object Partial so that each key is optional.
 
@@ -2488,7 +2489,7 @@
   To track the `CustomCircle` component, you can now use the `jsx` property.
 
   ```js
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     patterns: {
@@ -2583,7 +2584,7 @@
 - 5b344b9c: Add support for disabling shorthand props
 
   ```ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     // ...
@@ -2623,7 +2624,7 @@
   - Add `jsxElement` option to patterns, to allow specifying the jsx element rendered by the patterns.
 
 - Updated dependencies [fb40fff2]
-  - @pandacss/extractor@0.0.2
+  - @bamboocss/extractor@0.0.2
 
 * path.join('-'), }) }, }, })
 
@@ -2680,7 +2681,7 @@ export default defineConfig({
   ```js
   module.exports = {
     plugins: {
-      '@pandacss/dev/postcss': {
+      '@bamboocss/dev/postcss': {
         logfile: './logs/panda.log',
       },
     },
@@ -2693,8 +2694,9 @@ export default defineConfig({
 
 ### Minor Changes
 
-- 5fcdeb75: Update every utilities connected to the `colors` tokens in the `@pandacss/preset-base` (included by default)
-  to use the [`color-mix`](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/color-mix) CSS function.
+- 5fcdeb75: Update every utilities connected to the `colors` tokens in the `@bamboocss/preset-base` (included by
+  default) to use the [`color-mix`](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/color-mix) CSS
+  function.
 
   This function allows you to mix two colors together, and we use it to change the opacity of a color using the
   `{color}/{opacity}` syntax.
@@ -2760,7 +2762,7 @@ export default defineConfig({
   property:
 
   ```ts
-  import type { PropertyTransform } from '@pandacss/types'
+  import type { PropertyTransform } from '@bamboocss/types'
 
   export const createColorMixTransform =
     (prop: string): PropertyTransform =>
@@ -2813,7 +2815,7 @@ export default defineConfig({
   })
   ```
 
-  The default container sizes in the `@pandacss/preset-panda` preset are shown below:
+  The default container sizes in the `@bamboocss/preset-panda` preset are shown below:
 
   ```ts
   export const containerSizes = {
@@ -2868,7 +2870,7 @@ export default defineConfig({
 
   ### Container Query Pattern
 
-  To make it easier to use container queries, we've added a new `cq` pattern to `@pandacss/preset-base`.
+  To make it easier to use container queries, we've added a new `cq` pattern to `@bamboocss/preset-base`.
 
   ```ts
   import { cq } from "styled-system/patterns";
@@ -3240,7 +3242,7 @@ export default defineConfig({
 - 105f74ce: Add a way to specify a recipe's `staticCss` options from inside a recipe config, e.g.:
 
   ```js
-  import { defineRecipe } from '@pandacss/dev'
+  import { defineRecipe } from '@bamboocss/dev'
 
   const card = defineRecipe({
     className: 'card',
@@ -3258,7 +3260,7 @@ export default defineConfig({
   would be the equivalent of defining it inside the main config:
 
   ```js
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     // ...
@@ -3349,7 +3351,7 @@ export default defineConfig({
 
 ### Patch Changes
 
-- fc4688e6: Export all types from @pandacss/types, which will also export all types exposed in the outdir/types
+- fc4688e6: Export all types from @bamboocss/types, which will also export all types exposed in the outdir/types
 
   Also make the `config.prefix` object Partial so that each key is optional.
 
@@ -3576,7 +3578,7 @@ export default defineConfig({
   To track the `CustomCircle` component, you can now use the `jsx` property.
 
   ```js
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     patterns: {
@@ -3671,7 +3673,7 @@ export default defineConfig({
 - 5b344b9c: Add support for disabling shorthand props
 
   ```ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     // ...
@@ -3711,4 +3713,4 @@ export default defineConfig({
   - Add `jsxElement` option to patterns, to allow specifying the jsx element rendered by the patterns.
 
 - Updated dependencies [fb40fff2]
-  - @pandacss/extractor@0.0.2
+  - @bamboocss/extractor@0.0.2

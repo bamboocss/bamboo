@@ -1,4 +1,4 @@
-# @pandacss/is-valid-prop
+# @bamboocss/is-valid-prop
 
 ## 1.11.3
 

@@ -1,4 +1,4 @@
-# @pandacss/astro-plugin-studio
+# @bamboocss/astro-plugin-studio
 
 ## 1.11.3
 
@@ -28,8 +28,8 @@
   fixes (XSS in `astro` `define:vars` [CVE-2026-41067], path traversal and `server.fs.deny` bypass in `vite`
   [CVE-2026-39365, CVE-2026-39364], and SVGO Billion-Laughs DoS [CVE-2026-29074]).
 - Updated dependencies [2f29aa6]
-  - @pandacss/core@1.11.1
-  - @pandacss/node@1.11.1
+  - @bamboocss/core@1.11.1
+  - @bamboocss/node@1.11.1
 
 ## 1.11.0
 
@@ -37,35 +37,35 @@
 
 - Updated dependencies [055e69c]
 - Updated dependencies [78869ae]
-  - @pandacss/core@1.11.0
-  - @pandacss/node@1.11.0
+  - @bamboocss/core@1.11.0
+  - @bamboocss/node@1.11.0
 
 ## 1.10.0
 
 ### Patch Changes
 
 - bc2b8d7: Dependency updates for reported security advisories.
-  - **@pandacss/node** / **@pandacss/token-dictionary**: bump `picomatch` to 4.0.4
+  - **@bamboocss/node** / **@bamboocss/token-dictionary**: bump `picomatch` to 4.0.4
     ([GHSA-3v7f-55p6-f55p](https://github.com/advisories/GHSA-3v7f-55p6-f55p),
     [GHSA-c2c7-rcm5-vvqj](https://github.com/advisories/GHSA-c2c7-rcm5-vvqj)).
-  - **@pandacss/mcp**: bump `@modelcontextprotocol/sdk` to ^1.25.2.
-  - **@pandacss/astro-plugin-studio**: bump `astro` (dev) to 5.18.1.
+  - **@bamboocss/mcp**: bump `@modelcontextprotocol/sdk` to ^1.25.2.
+  - **@bamboocss/astro-plugin-studio**: bump `astro` (dev) to 5.18.1.
 
 - Updated dependencies [c31f3a2]
 - Updated dependencies [bbaa8b3]
 - Updated dependencies [22b444d]
 - Updated dependencies [bc2b8d7]
 - Updated dependencies [44457bb]
-  - @pandacss/core@1.10.0
-  - @pandacss/node@1.10.0
+  - @bamboocss/core@1.10.0
+  - @bamboocss/node@1.10.0
 
 ## 1.9.1
 
 ### Patch Changes
 
 - Updated dependencies [8fda1a5]
-  - @pandacss/core@1.9.1
-  - @pandacss/node@1.9.1
+  - @bamboocss/core@1.9.1
+  - @bamboocss/node@1.9.1
 
 ## 1.9.0
 
@@ -73,30 +73,30 @@
 
 - Updated dependencies [3ca1f24]
 - Updated dependencies [7d66c0b]
-  - @pandacss/core@1.9.0
-  - @pandacss/node@1.9.0
+  - @bamboocss/core@1.9.0
+  - @bamboocss/node@1.9.0
 
 ## 1.8.2
 
 ### Patch Changes
 
 - Updated dependencies [82d23ab]
-  - @pandacss/core@1.8.2
-  - @pandacss/node@1.8.2
+  - @bamboocss/core@1.8.2
+  - @bamboocss/node@1.8.2
 
 ## 1.8.1
 
 ### Patch Changes
 
-- @pandacss/core@1.8.1
-- @pandacss/node@1.8.1
+- @bamboocss/core@1.8.1
+- @bamboocss/node@1.8.1
 
 ## 1.8.0
 
 ### Patch Changes
 
-- @pandacss/core@1.8.0
-- @pandacss/node@1.8.0
+- @bamboocss/core@1.8.0
+- @bamboocss/node@1.8.0
 
 ## 1.7.3
 
@@ -105,23 +105,23 @@
 - 4627837: **Studio**: Fix React SSR errors when running Panda Studio.
   - `ReferenceError: module is not defined` - React's CJS entry point was loaded in an ESM context
   - `TypeError: dispatcher.getOwner is not a function` - React development/production builds were mixed during SSR
-  - @pandacss/node@1.7.3
-  - @pandacss/core@1.7.3
+  - @bamboocss/node@1.7.3
+  - @bamboocss/core@1.7.3
 
 ## 1.7.2
 
 ### Patch Changes
 
 - Updated dependencies [af2d06b]
-  - @pandacss/node@1.7.2
-  - @pandacss/core@1.7.2
+  - @bamboocss/node@1.7.2
+  - @bamboocss/core@1.7.2
 
 ## 1.7.1
 
 ### Patch Changes
 
-- @pandacss/node@1.7.1
-- @pandacss/core@1.7.1
+- @bamboocss/node@1.7.1
+- @bamboocss/core@1.7.1
 
 ## 1.7.0
 
@@ -129,39 +129,39 @@
 
 - Updated dependencies [86b30b1]
 - Updated dependencies [f37fd8d]
-  - @pandacss/node@1.7.0
-  - @pandacss/core@1.7.0
+  - @bamboocss/node@1.7.0
+  - @bamboocss/core@1.7.0
 
 ## 1.6.1
 
 ### Patch Changes
 
 - Updated dependencies [8f43369]
-  - @pandacss/core@1.6.1
-  - @pandacss/node@1.6.1
+  - @bamboocss/core@1.6.1
+  - @bamboocss/node@1.6.1
 
 ## 1.6.0
 
 ### Patch Changes
 
 - Updated dependencies [8aa3c64]
-  - @pandacss/node@1.6.0
-  - @pandacss/core@1.6.0
+  - @bamboocss/node@1.6.0
+  - @bamboocss/core@1.6.0
 
 ## 1.5.1
 
 ### Patch Changes
 
-- @pandacss/node@1.5.1
-- @pandacss/core@1.5.1
+- @bamboocss/node@1.5.1
+- @bamboocss/core@1.5.1
 
 ## 1.5.0
 
 ### Patch Changes
 
 - Updated dependencies [91c65ff]
-  - @pandacss/core@1.5.0
-  - @pandacss/node@1.5.0
+  - @bamboocss/core@1.5.0
+  - @bamboocss/node@1.5.0
 
 ## 1.4.3
 
@@ -169,68 +169,68 @@
 
 - Updated dependencies [bb32028]
 - Updated dependencies [84a0de9]
-  - @pandacss/core@1.4.3
-  - @pandacss/node@1.4.3
+  - @bamboocss/core@1.4.3
+  - @bamboocss/node@1.4.3
 
 ## 1.4.2
 
 ### Patch Changes
 
 - Updated dependencies [70420dd]
-  - @pandacss/core@1.4.2
-  - @pandacss/node@1.4.2
+  - @bamboocss/core@1.4.2
+  - @bamboocss/node@1.4.2
 
 ## 1.4.1
 
 ### Patch Changes
 
 - Updated dependencies [db237b6]
-  - @pandacss/core@1.4.1
-  - @pandacss/node@1.4.1
+  - @bamboocss/core@1.4.1
+  - @bamboocss/node@1.4.1
 
 ## 1.4.0
 
 ### Patch Changes
 
 - Updated dependencies [4c291ca]
-  - @pandacss/core@1.4.0
-  - @pandacss/node@1.4.0
+  - @bamboocss/core@1.4.0
+  - @bamboocss/node@1.4.0
 
 ## 1.3.1
 
 ### Patch Changes
 
 - Updated dependencies [7fcd100]
-  - @pandacss/core@1.3.1
-  - @pandacss/node@1.3.1
+  - @bamboocss/core@1.3.1
+  - @bamboocss/node@1.3.1
 
 ## 1.3.0
 
 ### Patch Changes
 
-- @pandacss/node@1.3.0
-- @pandacss/core@1.3.0
+- @bamboocss/node@1.3.0
+- @bamboocss/core@1.3.0
 
 ## 1.2.0
 
 ### Patch Changes
 
-- @pandacss/node@1.2.0
-- @pandacss/core@1.2.0
+- @bamboocss/node@1.2.0
+- @bamboocss/core@1.2.0
 
 ## 1.1.0
 
 ### Patch Changes
 
-- @pandacss/core@1.1.0
-- @pandacss/node@1.1.0
+- @bamboocss/core@1.1.0
+- @bamboocss/node@1.1.0
 
 ## 1.0.1
 
 ### Patch Changes
 
-- @pandacss/node@1.0.1
-- @pandacss/core@1.0.1
+- @bamboocss/node@1.0.1
+- @bamboocss/core@1.0.1
 
 ## 1.0.0
 
@@ -294,8 +294,8 @@
 
 - Updated dependencies [a3bcbea]
 - Updated dependencies [a20811c]
-  - @pandacss/core@1.0.0
-  - @pandacss/node@1.0.0
+  - @bamboocss/core@1.0.0
+  - @bamboocss/node@1.0.0
 
 ## 0.54.0
 
@@ -303,158 +303,158 @@
 
 - cd9361e: Fix issue where text (or layer) styles that use conditions don't render correctly.
 - Updated dependencies [76c4e61]
-  - @pandacss/node@0.54.0
-  - @pandacss/core@0.54.0
+  - @bamboocss/node@0.54.0
+  - @bamboocss/core@0.54.0
 
 ## 0.53.7
 
 ### Patch Changes
 
-- @pandacss/node@0.53.7
+- @bamboocss/node@0.53.7
 
 ## 0.53.6
 
 ### Patch Changes
 
-- @pandacss/node@0.53.6
+- @bamboocss/node@0.53.6
 
 ## 0.53.5
 
 ### Patch Changes
 
-- @pandacss/node@0.53.5
+- @bamboocss/node@0.53.5
 
 ## 0.53.4
 
 ### Patch Changes
 
-- @pandacss/node@0.53.4
+- @bamboocss/node@0.53.4
 
 ## 0.53.3
 
 ### Patch Changes
 
-- @pandacss/node@0.53.3
+- @bamboocss/node@0.53.3
 
 ## 0.53.2
 
 ### Patch Changes
 
-- @pandacss/node@0.53.2
+- @bamboocss/node@0.53.2
 
 ## 0.53.1
 
 ### Patch Changes
 
 - Updated dependencies [b67a2a5]
-  - @pandacss/node@0.53.1
+  - @bamboocss/node@0.53.1
 
 ## 0.53.0
 
 ### Patch Changes
 
-- @pandacss/node@0.53.0
+- @bamboocss/node@0.53.0
 
 ## 0.52.0
 
 ### Patch Changes
 
 - Updated dependencies [2f1165c]
-  - @pandacss/node@0.52.0
+  - @bamboocss/node@0.52.0
 
 ## 0.51.1
 
 ### Patch Changes
 
-- @pandacss/node@0.51.1
+- @bamboocss/node@0.51.1
 
 ## 0.51.0
 
 ### Patch Changes
 
 - Updated dependencies [d68ad1f]
-  - @pandacss/node@0.51.0
+  - @bamboocss/node@0.51.0
 
 ## 0.50.0
 
 ### Patch Changes
 
 - Updated dependencies [fea78c7]
-  - @pandacss/node@0.50.0
+  - @bamboocss/node@0.50.0
 
 ## 0.49.0
 
 ### Patch Changes
 
-- @pandacss/node@0.49.0
+- @bamboocss/node@0.49.0
 
 ## 0.48.1
 
 ### Patch Changes
 
 - Updated dependencies [fd87f3a]
-  - @pandacss/node@0.48.1
+  - @bamboocss/node@0.48.1
 
 ## 0.48.0
 
 ### Patch Changes
 
-- @pandacss/node@0.48.0
+- @bamboocss/node@0.48.0
 
 ## 0.47.1
 
 ### Patch Changes
 
-- @pandacss/node@0.47.1
+- @bamboocss/node@0.47.1
 
 ## 0.47.0
 
 ### Patch Changes
 
-- @pandacss/node@0.47.0
+- @bamboocss/node@0.47.0
 
 ## 0.46.1
 
 ### Patch Changes
 
-- @pandacss/node@0.46.1
+- @bamboocss/node@0.46.1
 
 ## 0.46.0
 
 ### Patch Changes
 
-- @pandacss/node@0.46.0
+- @bamboocss/node@0.46.0
 
 ## 0.45.2
 
 ### Patch Changes
 
-- @pandacss/node@0.45.2
+- @bamboocss/node@0.45.2
 
 ## 0.45.1
 
 ### Patch Changes
 
 - Updated dependencies [26924c7]
-  - @pandacss/node@0.45.1
+  - @bamboocss/node@0.45.1
 
 ## 0.45.0
 
 ### Patch Changes
 
-- @pandacss/node@0.45.0
+- @bamboocss/node@0.45.0
 
 ## 0.44.0
 
 ### Patch Changes
 
-- @pandacss/node@0.44.0
+- @bamboocss/node@0.44.0
 
 ## 0.43.0
 
 ### Patch Changes
 
-- @pandacss/node@0.43.0
+- @bamboocss/node@0.43.0
 
 ## 0.42.0
 
@@ -463,27 +463,27 @@
 - Updated dependencies [19c3a2c]
 - Updated dependencies [ec64819]
 - Updated dependencies [17a1932]
-  - @pandacss/node@0.42.0
+  - @bamboocss/node@0.42.0
 
 ## 0.41.0
 
 ### Patch Changes
 
-- @pandacss/node@0.41.0
+- @bamboocss/node@0.41.0
 
 ## 0.40.1
 
 ### Patch Changes
 
 - Updated dependencies [48ff2b8]
-  - @pandacss/node@0.40.1
+  - @bamboocss/node@0.40.1
 
 ## 0.40.0
 
 ### Patch Changes
 
 - Updated dependencies [5dcdae4]
-  - @pandacss/node@0.40.0
+  - @bamboocss/node@0.40.0
 
 ## 0.39.2
 
@@ -491,108 +491,108 @@
 
 - Updated dependencies [1f636eb]
 - Updated dependencies [af15ae9]
-  - @pandacss/node@0.39.2
+  - @bamboocss/node@0.39.2
 
 ## 0.39.1
 
 ### Patch Changes
 
-- @pandacss/node@0.39.1
+- @bamboocss/node@0.39.1
 
 ## 0.39.0
 
 ### Patch Changes
 
-- @pandacss/node@0.39.0
+- @bamboocss/node@0.39.0
 
 ## 0.38.0
 
 ### Patch Changes
 
 - Updated dependencies [2c8b933]
-  - @pandacss/node@0.38.0
+  - @bamboocss/node@0.38.0
 
 ## 0.37.2
 
 ### Patch Changes
 
 - Updated dependencies [84edd38]
-  - @pandacss/node@0.37.2
+  - @bamboocss/node@0.37.2
 
 ## 0.37.1
 
 ### Patch Changes
 
-- @pandacss/node@0.37.1
+- @bamboocss/node@0.37.1
 
 ## 0.37.0
 
 ### Patch Changes
 
-- @pandacss/node@0.37.0
+- @bamboocss/node@0.37.0
 
 ## 0.36.1
 
 ### Patch Changes
 
-- @pandacss/node@0.36.1
+- @bamboocss/node@0.36.1
 
 ## 0.36.0
 
 ### Patch Changes
 
-- @pandacss/node@0.36.0
+- @bamboocss/node@0.36.0
 
 ## 0.35.0
 
 ### Patch Changes
 
-- @pandacss/node@0.35.0
+- @bamboocss/node@0.35.0
 
 ## 0.34.3
 
 ### Patch Changes
 
-- @pandacss/node@0.34.3
+- @bamboocss/node@0.34.3
 
 ## 0.34.2
 
 ### Patch Changes
 
-- @pandacss/node@0.34.2
+- @bamboocss/node@0.34.2
 
 ## 0.34.1
 
 ### Patch Changes
 
-- @pandacss/node@0.34.1
+- @bamboocss/node@0.34.1
 
 ## 0.34.0
 
 ### Patch Changes
 
-- @pandacss/node@0.34.0
+- @bamboocss/node@0.34.0
 
 ## 0.33.0
 
 ### Patch Changes
 
 - Updated dependencies [1968da5]
-  - @pandacss/node@0.33.0
+  - @bamboocss/node@0.33.0
 
 ## 0.32.1
 
 ### Patch Changes
 
 - Updated dependencies [89ffb6b]
-  - @pandacss/node@0.32.1
+  - @bamboocss/node@0.32.1
 
 ## 0.32.0
 
 ### Patch Changes
 
 - Updated dependencies [de4d9ef]
-  - @pandacss/node@0.32.0
+  - @bamboocss/node@0.32.0
 
 ## 0.31.0
 
@@ -601,19 +601,19 @@
 - Updated dependencies [f0296249]
 - Updated dependencies [2d69b340]
 - Updated dependencies [ddeda8ac]
-  - @pandacss/node@0.31.0
+  - @bamboocss/node@0.31.0
 
 ## 0.30.2
 
 ### Patch Changes
 
-- @pandacss/node@0.30.2
+- @bamboocss/node@0.30.2
 
 ## 0.30.1
 
 ### Patch Changes
 
-- @pandacss/node@0.30.1
+- @bamboocss/node@0.30.1
 
 ## 0.30.0
 
@@ -632,7 +632,7 @@
   ```js
   module.exports = {
     plugins: {
-      '@pandacss/dev/postcss': {
+      '@bamboocss/dev/postcss': {
         logfile: './logs/panda.log',
       },
     },
@@ -642,21 +642,21 @@
 - Updated dependencies [05686b9d]
 - Updated dependencies [ab32d1d7]
 - Updated dependencies [d5977c24]
-  - @pandacss/node@0.30.0
+  - @bamboocss/node@0.30.0
 
 ## 0.29.1
 
 ### Patch Changes
 
 - Updated dependencies [a5c75607]
-  - @pandacss/node@0.29.1
+  - @bamboocss/node@0.29.1
 
 ## 0.29.0
 
 ### Patch Changes
 
 - Updated dependencies [a2fb5cc6]
-  - @pandacss/node@0.29.0
+  - @bamboocss/node@0.29.0
 
 ## 0.28.0
 
@@ -664,7 +664,7 @@
 
 - Updated dependencies [f58f6df2]
 - Updated dependencies [f255342f]
-  - @pandacss/node@0.28.0
+  - @bamboocss/node@0.28.0
 
 ## 0.27.3
 
@@ -672,21 +672,21 @@
 
 - Updated dependencies [1ed4df77]
 - Updated dependencies [39d10c79]
-  - @pandacss/node@0.27.3
+  - @bamboocss/node@0.27.3
 
 ## 0.27.2
 
 ### Patch Changes
 
 - Updated dependencies [bfa8b1ee]
-  - @pandacss/node@0.27.2
+  - @bamboocss/node@0.27.2
 
 ## 0.27.1
 
 ### Patch Changes
 
 - Updated dependencies [ee9341db]
-  - @pandacss/node@0.27.1
+  - @bamboocss/node@0.27.1
 
 ## 0.27.0
 
@@ -712,19 +712,19 @@
 ### Patch Changes
 
 - Updated dependencies [84304901]
-  - @pandacss/node@0.27.0
+  - @bamboocss/node@0.27.0
 
 ## 0.26.2
 
 ### Patch Changes
 
-- @pandacss/node@0.26.2
+- @bamboocss/node@0.26.2
 
 ## 0.26.1
 
 ### Patch Changes
 
-- @pandacss/node@0.26.1
+- @bamboocss/node@0.26.1
 
 ## 0.26.0
 
@@ -732,34 +732,34 @@
 
 - Updated dependencies [1bd7fbb7]
 - Updated dependencies [1bd7fbb7]
-  - @pandacss/node@0.26.0
+  - @bamboocss/node@0.26.0
 
 ## 0.25.0
 
 ### Patch Changes
 
 - Updated dependencies [bc154358]
-  - @pandacss/node@0.25.0
+  - @bamboocss/node@0.25.0
 
 ## 0.24.2
 
 ### Patch Changes
 
-- @pandacss/node@0.24.2
+- @bamboocss/node@0.24.2
 
 ## 0.24.1
 
 ### Patch Changes
 
 - Updated dependencies [10e74428]
-  - @pandacss/node@0.24.1
+  - @bamboocss/node@0.24.1
 
 ## 0.24.0
 
 ### Patch Changes
 
 - Updated dependencies [63b3f1f2]
-  - @pandacss/node@0.24.0
+  - @bamboocss/node@0.24.0
 
 ## 0.23.0
 
@@ -768,13 +768,13 @@
 - Updated dependencies [1ea7459c]
 - Updated dependencies [383b6d1b]
 - Updated dependencies [840ed66b]
-  - @pandacss/node@0.23.0
+  - @bamboocss/node@0.23.0
 
 ## 0.22.1
 
 ### Patch Changes
 
-- @pandacss/node@0.22.1
+- @bamboocss/node@0.22.1
 
 ## 0.22.0
 
@@ -782,4 +782,4 @@
 
 - Updated dependencies [a2f6c2c8]
 - Updated dependencies [11753fea]
-  - @pandacss/node@0.22.0
+  - @bamboocss/node@0.22.0
