@@ -1,0 +1,104 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    ".": {
+      "ignoreDependencies": ["@changesets/changelog-github", "@projectwallace/format-css"],
+      "ignoreBinaries": ["serve"]
+    },
+    "packages/cli": {
+      "entry": ["src/cli-default.ts!"],
+      "project": ["src/**/*.ts"],
+      "ignoreDependencies": ["@bamboocss/preset-base", "@bamboocss/token-dictionary"]
+    },
+    "packages/config": {
+      "project": ["src/**/*.ts"],
+      "ignore": ["__tests__/**"]
+    },
+    "packages/core": {
+      "project": ["src/**/*.ts"],
+      "ignoreDependencies": ["browserslist"]
+    },
+    "packages/extractor": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/fixture": {
+      "project": ["src/**/*.ts"],
+      "ignoreDependencies": ["@bamboocss/token-dictionary", "postcss"]
+    },
+    "packages/generator": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/is-valid-prop": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/logger": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/mcp": {
+      "project": ["src/**/*.ts"],
+      "ignoreDependencies": ["@bamboocss/types"]
+    },
+    "packages/node": {
+      "project": ["src/**/*.ts"],
+      "ignoreDependencies": [
+        "@bamboocss/token-dictionary",
+        "lodash.merge",
+        "pkg-types",
+        "pluralize",
+        "ts-morph",
+        "ts-pattern"
+      ]
+    },
+    "packages/parser": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/postcss": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/preset-atlaskit": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/preset-bamboo": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/preset-base": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/preset-open-props": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/reporter": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/shared": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/token-dictionary": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/types": {
+      "project": ["src/**/*.ts"],
+      "ignoreDependencies": ["csstype", "ts-morph"]
+    },
+    "packages/astro-plugin-studio": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/plugin-lightningcss": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/plugin-svelte": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/plugin-vue": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/studio": {
+      "entry": ["src/**/*.astro", "src/**/*.tsx", "src/**/*.ts", "bamboo.config.ts"],
+      "ignore": ["styled-system/**"],
+      "ignoreDependencies": ["@bamboocss/config", "vite"]
+    }
+  },
+  "ignoreWorkspaces": ["sandbox/*", "sandbox/component-lib/**", "playground", "website"],
+  "ignore": ["**/__tests__/**", "**/styled-system/**"],
+  "exclude": ["duplicates", "exports", "nsExports", "types", "nsTypes", "enumMembers"]
+}

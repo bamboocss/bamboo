@@ -52,6 +52,19 @@ jobs:
       - name: Run oxlint
         run: pnpm lint
 
+  knip:
+    name: Knip
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install
+        uses: ./.github/composite-actions/install
+
+      - name: Run knip
+        run: pnpm knip
+
   types:
     name: TypeScript
     runs-on: ubuntu-latest
