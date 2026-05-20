@@ -16,11 +16,7 @@
 - 🎨 High-level design tokens support for simultaneous themes
 - 💪 Type-safe styles and autocomplete (via codegen)
 
-<br/>
-
 ---
-
-<br/>
 
 ## Install
 
