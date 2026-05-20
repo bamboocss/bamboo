@@ -1,9 +1,9 @@
-import { defineConfig } from '@pandacss/dev'
+import { defineConfig } from '@bamboocss/dev'
 import { tokens } from '../common/tokens'
 
 export default defineConfig({
   preflight: true,
-  presets: ['@pandacss/dev/presets'],
+  presets: ['@bamboocss/dev/presets'],
   include: ['./src/**/*.{ts,tsx,jsx}'],
   exclude: [],
   hash: false,
