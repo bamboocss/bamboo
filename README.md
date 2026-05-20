@@ -2,13 +2,9 @@
 
 <p align="center">
   <br/>
-  <a href="https://bamboo-css.com">Bamboo</a> is a universal styling solution for the modern web &mdash;
+  Bamboo is a universal styling solution for the modern web &mdash;
   <br/>
-  build time, type safe, and scalable CSS-in-JS
-  <br/><br/>
-  <img alt="NPM Downloads" src="https://img.shields.io/npm/dm/%40bamboocss%2Fdev"> <img alt="NPM Version" src="https://img.shields.io/npm/v/%40bamboocss%2Fdev"> <img alt="X (formerly Twitter) Follow" src="https://img.shields.io/twitter/follow/bamboo__css">
-  
-  <br/><br/>
+  build time, type-safe, and scalable CSS-in-JS
 </p>
 
 ## Features
@@ -103,33 +99,15 @@ function Example() {
 ## Contributing
 
 Feel like contributing? That's awesome! We have a
-[contributing guide](https://github.com/chakra-ui/bamboo/blob/main/CONTRIBUTING.md) to help guide you.
+[contributing guide](https://github.com/bamboo-css/bamboo/blob/main/CONTRIBUTING.md) to help guide you.
 
 ### Want to help improve the docs?
 
 Our docsite lives in the [monorepo](./website/pages/docs/).
 
 If you're interested in contributing to the documentation, check out the
-[contributing guide](https://github.com/chakra-ui/bamboo/blob/main/CONTRIBUTING.md).
-
-## Support
-
-Having trouble? Get help in the official [Bamboo Discord](https://discord.gg/VQrkpsgSx7).
+[contributing guide](https://github.com/bamboo-css/bamboo/blob/main/CONTRIBUTING.md).
 
 ## Acknowledgement
 
-The development of Bamboo was only possible due to the inspiration and ideas from these amazing projects.
-
-- [Chakra UI](https://chakra-ui.com/) - where it all started
-- [Vanilla Extract](https://vanilla-extract.style/) - for inspiring the utilities API
-- [Stitches](https://stitches.dev/) - for inspiring the recipes and variants API
-- [Tailwind CSS](https://tailwindcss.com/) - for inspiring the JIT compiler and strategy
-- [Class Variance Authority](https://cva.style/) - for inspiring the `cva` name
-- [Styled System](https://github.com/styled-system/styled-system) - for the initial idea of Styled Props
-- [Linaria](https://linaria.dev/) - for inspiring the initial atomic css strategy
-- [Uno CSS](https://unocss.dev) - for inspiring the studio and astro integration
-- [Goober](https://goober.rocks/) - for tiny and performant js functions in template literal styles
-
-## License
-
-MIT License © 2023-Present [Segun Adebayo](https://github.com/segunadebayo)
+The development of Bamboo started as a fork of [Panda CSS](https://panda-css.com/).
