@@ -1,6 +1,6 @@
 import { ConfigConditions, createTheme, defineProperties } from '@box-extractor/vanilla-wind'
 
-// https://github.com/chakra-ui/chakra-ui/blob/05b19899b02e17b4ee16045c9e5065fa835f0159/packages/components/theme/src/foundations/colors.ts#L1-L240
+// https://github.com/bamboocss/bamboocss/blob/05b19899b02e17b4ee16045c9e5065fa835f0159/packages/components/theme/src/foundations/colors.ts#L1-L240
 export const colorPalette = {
   transparent: 'transparent',
   current: 'currentColor',
@@ -429,7 +429,7 @@ export const flatColors = {
   'telegram.900': '#003F5E !important',
 } as const
 
-// https://github.com/chakra-ui/chakra-ui/blob/05b19899b02e17b4ee16045c9e5065fa835f0159/packages/components/theme/src/foundations/typography.ts#L1-L64
+// https://github.com/bamboocss/bamboocss/blob/05b19899b02e17b4ee16045c9e5065fa835f0159/packages/components/theme/src/foundations/typography.ts#L1-L64
 const typography = {
   letterSpacings: {
     tighter: '-0.05em',
@@ -496,7 +496,7 @@ const typography = {
   },
 } as const
 
-// https://github.com/chakra-ui/chakra-ui/blob/05b19899b02e17b4ee16045c9e5065fa835f0159/packages/components/theme/src/foundations/z-index.ts#L1-L15
+// https://github.com/bamboocss/bamboocss/blob/05b19899b02e17b4ee16045c9e5065fa835f0159/packages/components/theme/src/foundations/z-index.ts#L1-L15
 const zIndices = {
   hide: '-1',
   auto: 'auto',
@@ -513,7 +513,7 @@ const zIndices = {
   tooltip: '1800',
 } as const
 
-// https://github.com/chakra-ui/chakra-ui/blob/05b19899b02e17b4ee16045c9e5065fa835f0159/packages/components/theme/src/foundations/shadows.ts#L17
+// https://github.com/bamboocss/bamboocss/blob/05b19899b02e17b4ee16045c9e5065fa835f0159/packages/components/theme/src/foundations/shadows.ts#L17
 const shadows = {
   xs: '0 0 0 1px rgba(0, 0, 0, 0.05)',
   sm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
@@ -528,7 +528,7 @@ const shadows = {
   'dark-lg': 'rgba(0, 0, 0, 0.1) 0px 0px 0px 1px, rgba(0, 0, 0, 0.2) 0px 5px 10px, rgba(0, 0, 0, 0.4) 0px 15px 40px',
 } as const
 
-// https://github.com/chakra-ui/chakra-ui/blob/05b19899b02e17b4ee16045c9e5065fa835f0159/packages/components/theme/src/foundations/spacing.ts#L22
+// https://github.com/bamboocss/bamboocss/blob/05b19899b02e17b4ee16045c9e5065fa835f0159/packages/components/theme/src/foundations/spacing.ts#L22
 const space = {
   auto: 'auto',
   none: 'none',
@@ -568,7 +568,7 @@ const space = {
   96: '24rem',
 } as const
 
-// https://github.com/chakra-ui/chakra-ui/blob/05b19899b02e17b4ee16045c9e5065fa835f0159/packages/components/theme/src/foundations/borders.ts#L1-L7
+// https://github.com/bamboocss/bamboocss/blob/05b19899b02e17b4ee16045c9e5065fa835f0159/packages/components/theme/src/foundations/borders.ts#L1-L7
 const borders = {
   none: '0',
   '1px': '1px',
@@ -577,7 +577,7 @@ const borders = {
   '8px': '8px',
 } as const
 
-// https://github.com/chakra-ui/chakra-ui/blob/05b19899b02e17b4ee16045c9e5065fa835f0159/packages/components/theme/src/foundations/radius.ts#L1-L12
+// https://github.com/bamboocss/bamboocss/blob/05b19899b02e17b4ee16045c9e5065fa835f0159/packages/components/theme/src/foundations/radius.ts#L1-L12
 const radii = {
   none: '0',
   sm: '0.125rem',
@@ -590,7 +590,7 @@ const radii = {
   full: '9999px',
 } as const
 
-// https://github.com/chakra-ui/chakra-ui/blob/05b19899b02e17b4ee16045c9e5065fa835f0159/packages/components/theme/src/foundations/sizes.ts#L3-L36
+// https://github.com/bamboocss/bamboocss/blob/05b19899b02e17b4ee16045c9e5065fa835f0159/packages/components/theme/src/foundations/sizes.ts#L3-L36
 const largeSizes = {
   max: 'max-content',
   min: 'min-content',

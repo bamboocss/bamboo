@@ -571,7 +571,7 @@ describe('generator', () => {
     `)
   })
 
-  // https://github.com/chakra-ui/bamboo/issues/769
+  // https://github.com/bamboocss/bamboo/issues/769
   describe('issue 769: Invalid CSS when extending theme with semanticTokens', () => {
     test('should not extract nested tokens as `color-palette` css variables', () => {
       const css = tokenCss({

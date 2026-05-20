@@ -7,7 +7,7 @@ guidelines that should help you as you prepare your contribution.
 
 The following steps will get you up and running to contribute to Bamboo CSS:
 
-1. Fork the repo (click the <kbd>Fork</kbd> button at the top right of [this page](https://github.com/chakra-ui/bamboo))
+1. Fork the repo (click the <kbd>Fork</kbd> button at the top right of [this page](https://github.com/bamboocss/bamboo))
 
 2. Clone your fork locally
 
@@ -109,7 +109,7 @@ If you are interested in the detailed specification you can visit https://www.co
    conventional commit type. `scope` is just a short id that describes the scope of work.
 
 3. Make and commit your changes following the
-   [commit convention](https://github.com/chakra-ui/bamboo/blob/main/CONTRIBUTING.md#commit-convention). As you develop,
+   [commit convention](https://github.com/bamboocss/bamboo/blob/main/CONTRIBUTING.md#commit-convention). As you develop,
    you can run `pnpm pkg <module> build` and `pnpm pkg <module> test` to make sure everything works as expected. Please
    note that you might have to run `pnpm boot` first in order to build all dependencies.
 

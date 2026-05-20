@@ -278,7 +278,7 @@
 - 935ec86: Allow passing arrays of `SystemStyleObject` to the `css(xxx, [aaa, bbb, ccc], yyy)` fn
 
   This is useful when you are creating your own styled component and want to benefit
-  [from the recent `css` array property support](https://github.com/chakra-ui/panda/pull/2515).
+  [from the recent `css` array property support](https://github.com/bamboocss/panda/pull/2515).
 
   ```diff
   import { css } from 'styled-system/css'
@@ -466,7 +466,7 @@
   recipe/slot recipe, patterns)
 
   > See detailed breakdown of the performance improvements
-  > [here](https://github.com/chakra-ui/panda/pull/1986#issuecomment-1887459483) based on the React Profiler.
+  > [here](https://github.com/bamboocss/panda/pull/1986#issuecomment-1887459483) based on the React Profiler.
 
 ## 0.26.2
 
@@ -634,7 +634,7 @@
 - f27146d6: Fix an issue where some JSX components wouldn't get matched to their corresponding recipes/patterns when
   using `Regex` in the `jsx` field of a config, resulting in some style props missing.
 
-  issue: https://github.com/chakra-ui/panda/issues/1315
+  issue: https://github.com/bamboocss/panda/issues/1315
 
 ## 0.14.0
 
@@ -923,7 +923,7 @@ export default defineConfig({
   recipe/slot recipe, patterns)
 
   > See detailed breakdown of the performance improvements
-  > [here](https://github.com/chakra-ui/panda/pull/1986#issuecomment-1887459483) based on the React Profiler.
+  > [here](https://github.com/bamboocss/panda/pull/1986#issuecomment-1887459483) based on the React Profiler.
 
 ## 0.26.2
 
@@ -1091,7 +1091,7 @@ export default defineConfig({
 - f27146d6: Fix an issue where some JSX components wouldn't get matched to their corresponding recipes/patterns when
   using `Regex` in the `jsx` field of a config, resulting in some style props missing.
 
-  issue: https://github.com/chakra-ui/panda/issues/1315
+  issue: https://github.com/bamboocss/panda/issues/1315
 
 ## 0.14.0
 

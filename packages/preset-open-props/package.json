@@ -7,7 +7,7 @@
   "author": "Abraham Aremu <anubra266@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chakra-ui/bamboo.git",
+    "url": "git+https://github.com/bamboocss/bamboo.git",
     "directory": "packages/preset-open-props"
   },
   "files": [

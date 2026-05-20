@@ -1332,7 +1332,7 @@
 
 ### Patch Changes
 
-- 99be6f1: Fix `css.raw` typings after recent ([0.39.0](https://github.com/chakra-ui/panda/discussions/2560)) changes
+- 99be6f1: Fix `css.raw` typings after recent ([0.39.0](https://github.com/bamboocss/panda/discussions/2560)) changes
   allowing arrays of `SystemStyleObject`
   - @pandacss/core@0.39.1
   - @pandacss/is-valid-prop@0.39.1
@@ -1396,7 +1396,7 @@
 - 935ec86: Allow passing arrays of `SystemStyleObject` to the `css(xxx, [aaa, bbb, ccc], yyy)` fn
 
   This is useful when you are creating your own styled component and want to benefit
-  [from the recent `css` array property support](https://github.com/chakra-ui/panda/pull/2515).
+  [from the recent `css` array property support](https://github.com/bamboocss/panda/pull/2515).
 
   ```diff
   import { css } from 'styled-system/css'
@@ -2518,7 +2518,7 @@
 ### Minor Changes
 
 - fde37d8: Add support for element level css reset via `preflight.level`. Learn more
-  [here](https://github.com/chakra-ui/panda/discussions/1992).
+  [here](https://github.com/bamboocss/panda/discussions/1992).
 
   Setting `preflight.level` to `'element'` applies the reset directly to the individual elements that have the scope
   class assigned.
@@ -2945,7 +2945,7 @@
   recipe/slot recipe, patterns)
 
   > See detailed breakdown of the performance improvements
-  > [here](https://github.com/chakra-ui/panda/pull/1986#issuecomment-1887459483) based on the React Profiler.
+  > [here](https://github.com/bamboocss/panda/pull/1986#issuecomment-1887459483) based on the React Profiler.
 
 - Updated dependencies [84304901]
 - Updated dependencies [bee3ec85]
@@ -2993,7 +2993,7 @@
   ***
 
   In version
-  [0.19.0 we changed `config.strictTokens`](https://github.com/chakra-ui/panda/blob/main/CHANGELOG.md#0190---2023-11-24)
+  [0.19.0 we changed `config.strictTokens`](https://github.com/bamboocss/panda/blob/main/CHANGELOG.md#0190---2023-11-24)
   typings a bit so that the only property values allowed were the config tokens OR the predefined CSS values, ex: `flex`
   for the property `display`, which prevented typos such as `display: 'aaa'`.
 
@@ -3341,7 +3341,7 @@
 ### Patch Changes
 
 - 8f4ce97c: Fix `slotRecipes` typings,
-  [the recently added `recipe.staticCss`](https://github.com/chakra-ui/panda/pull/1765) added to `config.recipes`
+  [the recently added `recipe.staticCss`](https://github.com/bamboocss/panda/pull/1765) added to `config.recipes`
   weren't added to `config.slotRecipes`
 - 647f05c9: Fix a typing issue with `config.strictTokens` when using the `[xxx]` escape-hatch syntax with property-based
   conditionals
@@ -3553,7 +3553,7 @@
 
 - 61831040: Fix issue where typescript error is shown in recipes when `exactOptionalPropertyTypes` is set.
 
-  > To learn more about this issue, see [this issue](https://github.com/chakra-ui/panda/issues/1688)
+  > To learn more about this issue, see [this issue](https://github.com/bamboocss/panda/issues/1688)
 
 - 92a7fbe5: Fix issue in preflight where monospace fallback pointed to the wrong variable
 - 89f86923: Fix issue where css variables were not supported in layer styles and text styles types.
@@ -3720,7 +3720,7 @@
 
 - 296d62b1: Change `OmittedHTMLProps` to be empty when using `config.jsxStyleProps` as `minimal` or `none`
 
-  Fixes https://github.com/chakra-ui/panda/issues/1549
+  Fixes https://github.com/bamboocss/panda/issues/1549
 
 - 42520626: Fix issue where conditions don't work in semantic tokens when using template literal syntax.
 - 7b981422: Fix issue in reset styles where button does not inherit color style
@@ -4123,7 +4123,7 @@
 - f27146d6: Fix an issue where some JSX components wouldn't get matched to their corresponding recipes/patterns when
   using `Regex` in the `jsx` field of a config, resulting in some style props missing.
 
-  issue: https://github.com/chakra-ui/panda/issues/1315
+  issue: https://github.com/bamboocss/panda/issues/1315
 
 - Updated dependencies [4bc515ea]
 - Updated dependencies [9f429d35]
@@ -4156,7 +4156,7 @@
   use it like `css({ ... }, cssProps)`
 
 - 39b20797: Change the `css.raw` function signature to match the one from
-  [`css()`](https://github.com/chakra-ui/panda/pull/1264), to allow passing multiple style objects that will be smartly
+  [`css()`](https://github.com/bamboocss/panda/pull/1264), to allow passing multiple style objects that will be smartly
   merged.
 - Updated dependencies [b1c31fdd]
 - Updated dependencies [8106b411]
@@ -5157,7 +5157,7 @@ export default defineConfig({
   recipe/slot recipe, patterns)
 
   > See detailed breakdown of the performance improvements
-  > [here](https://github.com/chakra-ui/panda/pull/1986#issuecomment-1887459483) based on the React Profiler.
+  > [here](https://github.com/bamboocss/panda/pull/1986#issuecomment-1887459483) based on the React Profiler.
 
 - Updated dependencies [84304901]
 - Updated dependencies [bee3ec85]
@@ -5205,7 +5205,7 @@ export default defineConfig({
   ***
 
   In version
-  [0.19.0 we changed `config.strictTokens`](https://github.com/chakra-ui/panda/blob/main/CHANGELOG.md#0190---2023-11-24)
+  [0.19.0 we changed `config.strictTokens`](https://github.com/bamboocss/panda/blob/main/CHANGELOG.md#0190---2023-11-24)
   typings a bit so that the only property values allowed were the config tokens OR the predefined CSS values, ex: `flex`
   for the property `display`, which prevented typos such as `display: 'aaa'`.
 
@@ -5553,7 +5553,7 @@ export default defineConfig({
 ### Patch Changes
 
 - 8f4ce97c: Fix `slotRecipes` typings,
-  [the recently added `recipe.staticCss`](https://github.com/chakra-ui/panda/pull/1765) added to `config.recipes`
+  [the recently added `recipe.staticCss`](https://github.com/bamboocss/panda/pull/1765) added to `config.recipes`
   weren't added to `config.slotRecipes`
 - 647f05c9: Fix a typing issue with `config.strictTokens` when using the `[xxx]` escape-hatch syntax with property-based
   conditionals
@@ -5765,7 +5765,7 @@ export default defineConfig({
 
 - 61831040: Fix issue where typescript error is shown in recipes when `exactOptionalPropertyTypes` is set.
 
-  > To learn more about this issue, see [this issue](https://github.com/chakra-ui/panda/issues/1688)
+  > To learn more about this issue, see [this issue](https://github.com/bamboocss/panda/issues/1688)
 
 - 92a7fbe5: Fix issue in preflight where monospace fallback pointed to the wrong variable
 - 89f86923: Fix issue where css variables were not supported in layer styles and text styles types.
@@ -5932,7 +5932,7 @@ export default defineConfig({
 
 - 296d62b1: Change `OmittedHTMLProps` to be empty when using `config.jsxStyleProps` as `minimal` or `none`
 
-  Fixes https://github.com/chakra-ui/panda/issues/1549
+  Fixes https://github.com/bamboocss/panda/issues/1549
 
 - 42520626: Fix issue where conditions don't work in semantic tokens when using template literal syntax.
 - 7b981422: Fix issue in reset styles where button does not inherit color style
@@ -6335,7 +6335,7 @@ export default defineConfig({
 - f27146d6: Fix an issue where some JSX components wouldn't get matched to their corresponding recipes/patterns when
   using `Regex` in the `jsx` field of a config, resulting in some style props missing.
 
-  issue: https://github.com/chakra-ui/panda/issues/1315
+  issue: https://github.com/bamboocss/panda/issues/1315
 
 - Updated dependencies [4bc515ea]
 - Updated dependencies [9f429d35]
@@ -6368,7 +6368,7 @@ export default defineConfig({
   use it like `css({ ... }, cssProps)`
 
 - 39b20797: Change the `css.raw` function signature to match the one from
-  [`css()`](https://github.com/chakra-ui/panda/pull/1264), to allow passing multiple style objects that will be smartly
+  [`css()`](https://github.com/bamboocss/panda/pull/1264), to allow passing multiple style objects that will be smartly
   merged.
 - Updated dependencies [b1c31fdd]
 - Updated dependencies [8106b411]
@@ -7504,7 +7504,7 @@ Will now allow you to use the following syntax for token path:
   recipe/slot recipe, patterns)
 
   > See detailed breakdown of the performance improvements
-  > [here](https://github.com/chakra-ui/panda/pull/1986#issuecomment-1887459483) based on the React Profiler.
+  > [here](https://github.com/bamboocss/panda/pull/1986#issuecomment-1887459483) based on the React Profiler.
 
 - Updated dependencies [84304901]
 - Updated dependencies [bee3ec85]
@@ -7552,7 +7552,7 @@ Will now allow you to use the following syntax for token path:
   ***
 
   In version
-  [0.19.0 we changed `config.strictTokens`](https://github.com/chakra-ui/panda/blob/main/CHANGELOG.md#0190---2023-11-24)
+  [0.19.0 we changed `config.strictTokens`](https://github.com/bamboocss/panda/blob/main/CHANGELOG.md#0190---2023-11-24)
   typings a bit so that the only property values allowed were the config tokens OR the predefined CSS values, ex: `flex`
   for the property `display`, which prevented typos such as `display: 'aaa'`.
 
@@ -7900,7 +7900,7 @@ Will now allow you to use the following syntax for token path:
 ### Patch Changes
 
 - 8f4ce97c: Fix `slotRecipes` typings,
-  [the recently added `recipe.staticCss`](https://github.com/chakra-ui/panda/pull/1765) added to `config.recipes`
+  [the recently added `recipe.staticCss`](https://github.com/bamboocss/panda/pull/1765) added to `config.recipes`
   weren't added to `config.slotRecipes`
 - 647f05c9: Fix a typing issue with `config.strictTokens` when using the `[xxx]` escape-hatch syntax with property-based
   conditionals
@@ -8112,7 +8112,7 @@ Will now allow you to use the following syntax for token path:
 
 - 61831040: Fix issue where typescript error is shown in recipes when `exactOptionalPropertyTypes` is set.
 
-  > To learn more about this issue, see [this issue](https://github.com/chakra-ui/panda/issues/1688)
+  > To learn more about this issue, see [this issue](https://github.com/bamboocss/panda/issues/1688)
 
 - 92a7fbe5: Fix issue in preflight where monospace fallback pointed to the wrong variable
 - 89f86923: Fix issue where css variables were not supported in layer styles and text styles types.
@@ -8279,7 +8279,7 @@ Will now allow you to use the following syntax for token path:
 
 - 296d62b1: Change `OmittedHTMLProps` to be empty when using `config.jsxStyleProps` as `minimal` or `none`
 
-  Fixes https://github.com/chakra-ui/panda/issues/1549
+  Fixes https://github.com/bamboocss/panda/issues/1549
 
 - 42520626: Fix issue where conditions don't work in semantic tokens when using template literal syntax.
 - 7b981422: Fix issue in reset styles where button does not inherit color style
@@ -8682,7 +8682,7 @@ Will now allow you to use the following syntax for token path:
 - f27146d6: Fix an issue where some JSX components wouldn't get matched to their corresponding recipes/patterns when
   using `Regex` in the `jsx` field of a config, resulting in some style props missing.
 
-  issue: https://github.com/chakra-ui/panda/issues/1315
+  issue: https://github.com/bamboocss/panda/issues/1315
 
 - Updated dependencies [4bc515ea]
 - Updated dependencies [9f429d35]
@@ -8715,7 +8715,7 @@ Will now allow you to use the following syntax for token path:
   use it like `css({ ... }, cssProps)`
 
 - 39b20797: Change the `css.raw` function signature to match the one from
-  [`css()`](https://github.com/chakra-ui/panda/pull/1264), to allow passing multiple style objects that will be smartly
+  [`css()`](https://github.com/bamboocss/panda/pull/1264), to allow passing multiple style objects that will be smartly
   merged.
 - Updated dependencies [b1c31fdd]
 - Updated dependencies [8106b411]
@@ -9716,7 +9716,7 @@ export default defineConfig({
   recipe/slot recipe, patterns)
 
   > See detailed breakdown of the performance improvements
-  > [here](https://github.com/chakra-ui/panda/pull/1986#issuecomment-1887459483) based on the React Profiler.
+  > [here](https://github.com/bamboocss/panda/pull/1986#issuecomment-1887459483) based on the React Profiler.
 
 - Updated dependencies [84304901]
 - Updated dependencies [bee3ec85]
@@ -9764,7 +9764,7 @@ export default defineConfig({
   ***
 
   In version
-  [0.19.0 we changed `config.strictTokens`](https://github.com/chakra-ui/panda/blob/main/CHANGELOG.md#0190---2023-11-24)
+  [0.19.0 we changed `config.strictTokens`](https://github.com/bamboocss/panda/blob/main/CHANGELOG.md#0190---2023-11-24)
   typings a bit so that the only property values allowed were the config tokens OR the predefined CSS values, ex: `flex`
   for the property `display`, which prevented typos such as `display: 'aaa'`.
 
@@ -10112,7 +10112,7 @@ export default defineConfig({
 ### Patch Changes
 
 - 8f4ce97c: Fix `slotRecipes` typings,
-  [the recently added `recipe.staticCss`](https://github.com/chakra-ui/panda/pull/1765) added to `config.recipes`
+  [the recently added `recipe.staticCss`](https://github.com/bamboocss/panda/pull/1765) added to `config.recipes`
   weren't added to `config.slotRecipes`
 - 647f05c9: Fix a typing issue with `config.strictTokens` when using the `[xxx]` escape-hatch syntax with property-based
   conditionals
@@ -10324,7 +10324,7 @@ export default defineConfig({
 
 - 61831040: Fix issue where typescript error is shown in recipes when `exactOptionalPropertyTypes` is set.
 
-  > To learn more about this issue, see [this issue](https://github.com/chakra-ui/panda/issues/1688)
+  > To learn more about this issue, see [this issue](https://github.com/bamboocss/panda/issues/1688)
 
 - 92a7fbe5: Fix issue in preflight where monospace fallback pointed to the wrong variable
 - 89f86923: Fix issue where css variables were not supported in layer styles and text styles types.
@@ -10491,7 +10491,7 @@ export default defineConfig({
 
 - 296d62b1: Change `OmittedHTMLProps` to be empty when using `config.jsxStyleProps` as `minimal` or `none`
 
-  Fixes https://github.com/chakra-ui/panda/issues/1549
+  Fixes https://github.com/bamboocss/panda/issues/1549
 
 - 42520626: Fix issue where conditions don't work in semantic tokens when using template literal syntax.
 - 7b981422: Fix issue in reset styles where button does not inherit color style
@@ -10894,7 +10894,7 @@ export default defineConfig({
 - f27146d6: Fix an issue where some JSX components wouldn't get matched to their corresponding recipes/patterns when
   using `Regex` in the `jsx` field of a config, resulting in some style props missing.
 
-  issue: https://github.com/chakra-ui/panda/issues/1315
+  issue: https://github.com/bamboocss/panda/issues/1315
 
 - Updated dependencies [4bc515ea]
 - Updated dependencies [9f429d35]
@@ -10927,7 +10927,7 @@ export default defineConfig({
   use it like `css({ ... }, cssProps)`
 
 - 39b20797: Change the `css.raw` function signature to match the one from
-  [`css()`](https://github.com/chakra-ui/panda/pull/1264), to allow passing multiple style objects that will be smartly
+  [`css()`](https://github.com/bamboocss/panda/pull/1264), to allow passing multiple style objects that will be smartly
   merged.
 - Updated dependencies [b1c31fdd]
 - Updated dependencies [8106b411]

@@ -1864,7 +1864,7 @@
 - f27146d6: Fix an issue where some JSX components wouldn't get matched to their corresponding recipes/patterns when
   using `Regex` in the `jsx` field of a config, resulting in some style props missing.
 
-  issue: https://github.com/chakra-ui/panda/issues/1315
+  issue: https://github.com/bamboocss/panda/issues/1315
 
 - Updated dependencies [4bc515ea]
 - Updated dependencies [9f429d35]
@@ -2688,7 +2688,7 @@ export default defineConfig({
 - f27146d6: Fix an issue where some JSX components wouldn't get matched to their corresponding recipes/patterns when
   using `Regex` in the `jsx` field of a config, resulting in some style props missing.
 
-  issue: https://github.com/chakra-ui/panda/issues/1315
+  issue: https://github.com/bamboocss/panda/issues/1315
 
 - Updated dependencies [4bc515ea]
 - Updated dependencies [9f429d35]

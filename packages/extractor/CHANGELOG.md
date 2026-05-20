@@ -877,7 +877,7 @@
 
 ### Patch Changes
 
-- be24d1a0: Fix issue (https://github.com/chakra-ui/panda/issues/1365) with the `unbox` fn that removed nullish values,
+- be24d1a0: Fix issue (https://github.com/bamboocss/panda/issues/1365) with the `unbox` fn that removed nullish values,
   which could be useful for the [Array Syntax](https://panda-css.com/docs/concepts/responsive-design#the-array-syntax)
 
   ```ts

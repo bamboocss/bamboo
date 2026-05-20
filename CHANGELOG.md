@@ -1692,7 +1692,7 @@ Improve monorepo setup DX by exposing some cli flags
 
 ### Fixed
 
-Fix `css.raw` typings after recent ([0.39.0](https://github.com/chakra-ui/bamboo/discussions/2560)) changes allowing
+Fix `css.raw` typings after recent ([0.39.0](https://github.com/bamboocss/bamboo/discussions/2560)) changes allowing
 arrays of `SystemStyleObject`
 
 ## [0.39.0](#0.39.0) - 2024-04-29
@@ -1710,7 +1710,7 @@ arrays of `SystemStyleObject`
 - Allow passing arrays of `SystemStyleObject` to the `css(xxx, [aaa, bbb, ccc], yyy)` fn
 
 This is useful when you are creating your own styled component and want to benefit
-[from the recent `css` array property support](https://github.com/chakra-ui/bamboo/pull/2515).
+[from the recent `css` array property support](https://github.com/bamboocss/bamboo/pull/2515).
 
 ```diff
 import { css } from 'styled-system/css'
@@ -2180,9 +2180,9 @@ const App = () => {
 }
 ```
 
-We introduced a bug in [v0.34.2](https://github.com/chakra-ui/bamboo/blob/main/CHANGELOG.md#0342---2024-03-08) where the
+We introduced a bug in [v0.34.2](https://github.com/bamboocss/bamboo/blob/main/CHANGELOG.md#0342---2024-03-08) where the
 `Tabs.Trigger` component was not being matched to the `tabs` slot recipe, due to the
-[new namespace import feature](https://github.com/chakra-ui/bamboo/pull/2371).
+[new namespace import feature](https://github.com/bamboocss/bamboo/pull/2371).
 
 ## [0.36.0](#0.36.0) - 2024-03-19
 
@@ -3135,7 +3135,7 @@ It's known for causing several issues:
   trigger a config reload on `plugins` change
 - Add a `group` to every utility in the `@bamboocss/preset-base`, this helps Bamboo tooling organize utilities.
 - Add support for element level css reset via `preflight.level`. Learn more
-  [here](https://github.com/chakra-ui/bamboo/discussions/1992).
+  [here](https://github.com/bamboocss/bamboo/discussions/1992).
 
 Setting `preflight.level` to `'element'` applies the reset directly to the individual elements that have the scope class
 assigned.
@@ -4119,7 +4119,7 @@ might need to update it to include the new aspect ratio tokens.
   recipe, patterns)
 
 > See detailed breakdown of the performance improvements
-> [here](https://github.com/chakra-ui/bamboo/pull/1986#issuecomment-1887459483) based on the React Profiler.
+> [here](https://github.com/bamboocss/bamboo/pull/1986#issuecomment-1887459483) based on the React Profiler.
 
 - Change the config dependencies (files that are transitively imported) detection a bit more permissive to make it work
   by default in more scenarios.
@@ -4215,7 +4215,7 @@ fixes this issue.
   `display`, `content`, `willChange`, etc. when the value is not a predefined CSS value.
 
 In version
-[0.19.0 we changed `config.strictTokens`](https://github.com/chakra-ui/bamboo/blob/main/CHANGELOG.md#0190---2023-11-24)
+[0.19.0 we changed `config.strictTokens`](https://github.com/bamboocss/bamboo/blob/main/CHANGELOG.md#0190---2023-11-24)
 typings a bit so that the only property values allowed were the config tokens OR the predefined CSS values, ex: `flex`
 for the property `display`, which prevented typos such as `display: 'aaa'`.
 
@@ -4647,7 +4647,7 @@ const card = sva({
 
 ### Fixed
 
-- Fix `slotRecipes` typings, [the recently added `recipe.staticCss`](https://github.com/chakra-ui/bamboo/pull/1765)
+- Fix `slotRecipes` typings, [the recently added `recipe.staticCss`](https://github.com/bamboocss/bamboo/pull/1765)
   added to `config.recipes` weren't added to `config.slotRecipes`
 - Fix a typing issue with `config.strictTokens` when using the `[xxx]` escape-hatch syntax with property-based
   conditionals
@@ -4913,7 +4913,7 @@ export default defineConfig({
 ### Fixed
 
 - Fix issue where typescript error is shown in recipes when `exactOptionalPropertyTypes` is set.
-  > To learn more about this issue, see [this issue](https://github.com/chakra-ui/bamboo/issues/1688)
+  > To learn more about this issue, see [this issue](https://github.com/bamboocss/bamboo/issues/1688)
 - Fix issue in preflight where monospace fallback pointed to the wrong variable
 - Fix issue where css variables were not supported in layer styles and text styles types.
 - Fix issue where recipe artifacts might not match the recipes defined in the theme due to the internal cache not being
@@ -5191,7 +5191,7 @@ const ExtendedButton = styled(Button, {
 - Export all types from @bamboocss/types, which will also export all types exposed in the outdir/types. Also make the
   `config.prefix` object Partial so that each key is optional.
 - Apply `config.logLevel` from the Bamboo config to the logger in every context. Fixes
-  https://github.com/chakra-ui/bamboo/issues/1451
+  https://github.com/bamboocss/bamboo/issues/1451
 - Automatically add each recipe slots to the `jsx` property, with a dot notation
 
 ```ts
@@ -5431,7 +5431,7 @@ const StyledMotion = styled(
 - Fix issue where HMR does not work for Vue JSX factory and patterns
 - Fix issue in template literal mode where media queries doesn't work
 - Fix `ExtendableUtilityConfig` typings after a regression in 0.15.2 (due to
-  https://github.com/chakra-ui/bamboo/pull/1410)
+  https://github.com/bamboocss/bamboo/pull/1410)
 - Fix `ExtendableTheme` (specifically make the `RecipeConfig` Partial inside the `theme: { extend: { ... } }` object),
   same for slotRecipes
 
@@ -5724,7 +5724,7 @@ const baseStyle = cva({
 
 ### Fixed
 
-- Fix issue (https://github.com/chakra-ui/bamboo/issues/1365) with the `unbox` fn that removed nullish values, which
+- Fix issue (https://github.com/bamboocss/bamboo/issues/1365) with the `unbox` fn that removed nullish values, which
   could be useful for the [Array Syntax](https://bamboo-css.com/docs/concepts/responsive-design#the-array-syntax)
 
 ```ts
@@ -5874,7 +5874,7 @@ export const App = () => {
   mostly intended for component props that have optional values like `cssProps?: SystemStyleObject` and would use it
   like `css({ ... }, cssProps)`
 - Change the `css.raw` function signature to match the one from
-  [`css()`](https://github.com/chakra-ui/bamboo/pull/1264), to allow passing multiple style objects that will be smartly
+  [`css()`](https://github.com/bamboocss/bamboo/pull/1264), to allow passing multiple style objects that will be smartly
   merged.
 
 ## [0.13.1](#0.13.1) - 2023-08-29
@@ -6035,7 +6035,7 @@ export const Button = ({ css: cssProp = {}, children }) => {
 bamboo init -i
 ```
 
-![bamboo init interactive mode](https://github.com/chakra-ui/bamboo/assets/30869823/0ae28a54-bfce-44dc-a314-c0f795c1da3b)
+![bamboo init interactive mode](https://github.com/bamboocss/bamboo/assets/30869823/0ae28a54-bfce-44dc-a314-c0f795c1da3b)
 
 - Add `defineUtility` method. This method allows you to define custom utilities in your config.
 
@@ -6207,7 +6207,7 @@ export function Page() {
 ### Fixed
 
 - Reduce the size of the generated JS code by ~30% by optimizing the generated code.
-  > Check [this PR](https://github.com/chakra-ui/bamboo/pull/1115) to see the details.
+  > Check [this PR](https://github.com/bamboocss/bamboo/pull/1115) to see the details.
 - Fix issue in `staticCss` where recipe css generation does not work when recipe includes only `base` (no `variants`)
 - Fix issue where `opacity` property is not connected to the `opacity` tokens
 
@@ -6372,7 +6372,7 @@ export default defineConfig({
 })
 ```
 
-> Check [this PR](https://github.com/chakra-ui/bamboo/pull/1115) to see the details.
+> Check [this PR](https://github.com/bamboocss/bamboo/pull/1115) to see the details.
 
 ### Changed
 

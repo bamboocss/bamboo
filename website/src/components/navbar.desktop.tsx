@@ -35,7 +35,7 @@ export const DesktopNavBar = () => {
         <NavLink href="https://play.bamboo-css.com/" isExternal>
           Playground
         </NavLink>
-        <NavLink href="https://github.com/chakra-ui/bamboo" isExternal>
+        <NavLink href="https://github.com/bamboocss/bamboo" isExternal>
           <FaGithub className={css({ fontSize: '2xl' })} />
         </NavLink>
         <ThemeSwitchIconButton />

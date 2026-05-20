@@ -41,7 +41,7 @@ export const docsConfig: DocsConfig = {
   description: 'Build modern websites using build-time and type-safe CSS-in-JS',
   url: 'https://bamboo-css.com',
   logoUrl: '/',
-  docsRepositoryBase: 'https://github.com/chakra-ui/bamboo',
+  docsRepositoryBase: 'https://github.com/bamboocss/bamboo',
   gitTimestamp: 'Last updated on',
   twitterUrl: 'https://twitter.com/bamboo__css',
   discordUrl: 'https://discord.gg/VQrkpsgSx7',
@@ -90,7 +90,7 @@ export const docsNavigation: NavItem = {
         },
         {
           title: 'Changelog',
-          href: 'https://github.com/chakra-ui/bamboo/blob/main/CHANGELOG.md',
+          href: 'https://github.com/bamboocss/bamboo/blob/main/CHANGELOG.md',
           external: true
         }
       ]

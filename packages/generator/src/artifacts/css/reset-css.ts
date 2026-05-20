@@ -71,7 +71,7 @@ export function generateResetCss(ctx: Context, sheet: Stylesheet) {
       opacity: 1,
       '--placeholder-fallback': 'rgba(0, 0, 0, 0.5)',
       color: 'var(--global-color-placeholder, var(--placeholder-fallback))',
-      // Safari issues with color-mix(...) https://github.com/chakra-ui/bamboo/issues/3194
+      // Safari issues with color-mix(...) https://github.com/bamboocss/bamboo/issues/3194
       '@supports (not (-webkit-appearance: -apple-pay-button)) or (contain-intrinsic-size: 1px)': {
         '--placeholder-fallback': 'color-mix(in oklab, currentcolor 50%, transparent)',
       },

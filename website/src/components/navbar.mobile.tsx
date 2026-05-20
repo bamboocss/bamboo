@@ -46,7 +46,7 @@ export const MobileNavBar = () => {
                 <ButtonIcon icon="ExternalLink" />
               </HStack>
             </NavLink>
-            <NavLink href="https://github.com/chakra-ui/bamboo" isExternal>
+            <NavLink href="https://github.com/bamboocss/bamboo" isExternal>
               <HStack>
                 <span>Github</span>
                 <ButtonIcon icon="ExternalLink" />

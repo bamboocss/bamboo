@@ -153,7 +153,7 @@ describe('extract to css output pipeline', () => {
                 position,
                 inset: aliasedInset,
                 color: "blue.100",
-                backgroundImage: \`url("https://raw.githubusercontent.com/chakra-ui/chakra-ui/main/media/logo-colored@2x.png?raw=true")\`,
+                backgroundImage: \`url("https://raw.githubusercontent.com/bamboocss/bamboocss/main/media/logo-colored@2x.png?raw=true")\`,
                 border: "1px solid token(colors.yellow.100)",
                 "--shadow": {
                   base: "colors.orange.100",
@@ -191,7 +191,7 @@ describe('extract to css output pipeline', () => {
                 "_dark": "colors.gray.800",
                 "base": "colors.orange.100",
               },
-              "backgroundImage": "url("https://raw.githubusercontent.com/chakra-ui/chakra-ui/main/media/logo-colored@2x.png?raw=true")",
+              "backgroundImage": "url("https://raw.githubusercontent.com/bamboocss/bamboocss/main/media/logo-colored@2x.png?raw=true")",
               "border": "1px solid token(colors.yellow.100)",
               "boxShadow": "0 0 0 4px var(--shadow)",
               "color": "blue.100",
@@ -263,8 +263,8 @@ describe('extract to css output pipeline', () => {
           color: var(--colors-blue-100);
       }
 
-        .bg-i_url\\(\\"https\\:\\/\\/raw\\.githubusercontent\\.com\\/chakra-ui\\/chakra-ui\\/main\\/media\\/logo-colored\\@2x\\.png\\?raw\\=true\\"\\) {
-          background-image: url("https://raw.githubusercontent.com/chakra-ui/chakra-ui/main/media/logo-colored@2x.png?raw=true");
+        .bg-i_url\\(\\"https\\:\\/\\/raw\\.githubusercontent\\.com\\/bamboocss\\/bamboocss\\/main\\/media\\/logo-colored\\@2x\\.png\\?raw\\=true\\"\\) {
+          background-image: url("https://raw.githubusercontent.com/bamboocss/bamboocss/main/media/logo-colored@2x.png?raw=true");
       }
 
         .bx-sh_0_0_0_4px_var\\(--shadow\\) {
@@ -1154,7 +1154,7 @@ describe('extract to css output pipeline', () => {
     `)
   })
 
-  // https://github.com/chakra-ui/bamboo/issues/1062
+  // https://github.com/bamboocss/bamboo/issues/1062
   describe('issue 1062: expand colorPalette flexibility', () => {
     test('should extract color palette with more than one level of nesting', () => {
       const code = `

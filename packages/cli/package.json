@@ -7,7 +7,7 @@
   "author": "Segun Adebayo <joseshegs@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chakra-ui/bamboo.git",
+    "url": "git+https://github.com/bamboocss/bamboo.git",
     "directory": "packages/cli"
   },
   "bin": {

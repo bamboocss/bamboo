@@ -1,4 +1,4 @@
-// https://github.com/chakra-ui/zag/blob/215df8c66e953de02904c8419c1650f344e28faa/packages/anatomy/src/create-anatomy.ts
+// https://github.com/bamboocss/zag/blob/215df8c66e953de02904c8419c1650f344e28faa/packages/anatomy/src/create-anatomy.ts
 
 export interface AnatomyPart {
   selector: string
