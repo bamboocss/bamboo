@@ -1,5 +1,5 @@
 ---
-"@bamboocss/postcss": minor
+'@bamboocss/postcss': minor
 ---
 
 add cssMode=grouped
