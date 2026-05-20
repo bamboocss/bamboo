@@ -387,7 +387,9 @@ describe('styled factory - button recipe', () => {
       </InputStructure>,
     )
 
-    expect(container.innerHTML).toMatchInlineSnapshot(`"<div css="[object Object]" class=""><input css="[object Object]" class="">compound</div>"`)
+    expect(container.innerHTML).toMatchInlineSnapshot(
+      `"<div css="[object Object]" class=""><input css="[object Object]" class="">compound</div>"`,
+    )
   })
 
   test('array css prop', () => {
