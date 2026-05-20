@@ -1,4 +1,4 @@
-![Write typesafe styles with Bamboo](.github/assets/banner.png 'Write typesafe styles with Bamboo')
+![Write type-safe styles with Bamboo](.github/assets/banner.png 'Write type-safe styles with Bamboo')
 
 <p align="center">
   <br/>
@@ -20,20 +20,7 @@
 
 ---
 
-<p align="center">
-<b>
-🐼 Get a taste of Bamboo. Try it out for yourself in&nbsp;
- <a href="https://stackblitz.com/edit/vitejs-vite-lfwyue?file=src%2FApp.tsx&terminal=dev">StackBlitz</a>
-</b>
-</p>
-
----
-
 <br/>
-
-## Documentation
-
-Visit our [official documentation](https://bamboo-css.com/).
 
 ## Install
 
