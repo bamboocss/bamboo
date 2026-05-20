@@ -1,3 +1,3 @@
 #!/usr/bin/env node
 
-require(`./dist/cli-default.js`)
+require(`./dist/cli-default.cjs`)

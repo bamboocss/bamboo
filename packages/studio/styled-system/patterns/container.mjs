@@ -7,7 +7,11 @@ const containerConfig = {
       position: 'relative',
       maxWidth: '8xl',
       mx: 'auto',
-      px: { base: '4', md: '6', lg: '8' },
+      px: {
+        base: '4',
+        md: '6',
+        lg: '8',
+      },
       ...props,
     }
   },

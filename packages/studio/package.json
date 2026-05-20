@@ -26,13 +26,13 @@
     "*.mjs"
   ],
   "sideEffects": false,
-  "main": "dist/studio.js",
+  "main": "dist/studio.cjs",
   "module": "dist/studio.mjs",
-  "types": "dist/studio.d.ts",
+  "types": "dist/studio.d.cts",
   "exports": {
     ".": {
-      "types": "./dist/studio.d.ts",
-      "require": "./dist/studio.js",
+      "types": "./dist/studio.d.cts",
+      "require": "./dist/studio.cjs",
       "import": {
         "types": "./dist/studio.d.mts",
         "default": "./dist/studio.mjs"
@@ -45,9 +45,9 @@
   "scripts": {
     "bamboo": "node ../cli/bin.js",
     "codegen": "node ../cli/bin.js codegen",
-    "build": "tsup",
+    "build": "tsdown",
     "postbuild": "pnpm bamboo",
-    "build-fast": "tsup --no-dts",
+    "build-fast": "tsdown --dts=false",
     "dev": "pnpm build-fast --watch",
     "dev:bamboo": "node ../cli/bin.js --clean --watch",
     "dev:astro": "astro dev",

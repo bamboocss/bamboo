@@ -44,7 +44,7 @@ following structure:
 ### Tooling
 
 - [PNPM](https://pnpm.io/) to manage packages and dependencies
-- [Tsup](https://tsup.egoist.dev/) to bundle packages
+- [tsdown](https://tsdown.dev/) to bundle packages
 - [Vitest](https://vitest.dev/) for testing, mostly using snapshots
 - [Changeset](https://github.com/atlassian/changesets) for changes documentation, changelog generation, and release
   management.
@@ -54,7 +54,7 @@ following structure:
 **`pnpm install`**: bootstraps the entire project, symlinks all dependencies for cross-component development and builds
 all components.
 
-**`pnpm dev`**: starts tsup with watch mode for all packages.
+**`pnpm dev`**: starts tsdown with watch mode for all packages.
 
 **`pnpm build`**: run build for all packages.
 

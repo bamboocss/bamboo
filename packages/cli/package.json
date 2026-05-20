@@ -23,14 +23,14 @@
     "postcss.js"
   ],
   "sideEffects": false,
-  "main": "dist/index.js",
+  "main": "dist/index.cjs",
   "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "types": "dist/index.d.cts",
   "exports": {
     ".": {
       "source": "./src/index.ts",
-      "types": "./dist/index.d.ts",
-      "require": "./dist/index.js",
+      "types": "./dist/index.d.cts",
+      "require": "./dist/index.cjs",
       "import": {
         "types": "./dist/index.d.mts",
         "default": "./dist/index.mjs"
@@ -38,8 +38,8 @@
     },
     "./presets": {
       "source": "./src/presets.ts",
-      "types": "./dist/presets.d.ts",
-      "require": "./dist/presets.js",
+      "types": "./dist/presets.d.cts",
+      "require": "./dist/presets.cjs",
       "import": {
         "types": "./dist/presets.d.mts",
         "default": "./dist/presets.mjs"
@@ -52,8 +52,8 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup src --format=esm,cjs --dts --no-splitting --shims",
-    "build-fast": "tsup src --format=esm,cjs --no-dts --no-splitting --shims",
+    "build": "tsdown 'src/*.ts' --format=esm,cjs --dts --shims",
+    "build-fast": "tsdown --dts=false 'src/*.ts' --format=esm,cjs --shims",
     "dev": "pnpm build-fast --watch src"
   },
   "dependencies": {

@@ -9,8 +9,7 @@ const spacerConfig = {
       justifySelf: 'stretch',
       flex: map(size, (v) => {
         if (v == null) return '1'
-        const val = isCssUnit(v) || isCssVar(v) ? v : `token(spacing.${v}, ${v})`
-        return `0 0 ${val}`
+        return `0 0 ${isCssUnit(v) || isCssVar(v) ? v : `token(spacing.${v}, ${v})`}`
       }),
       ...rest,
     }

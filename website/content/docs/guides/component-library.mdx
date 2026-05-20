@@ -11,7 +11,7 @@ options:
 3. Use Bamboo as external package, and ship the src files
 4. Use Bamboo as external package, and ship the build info file
 
-> In the examples below, we use `tsup` as the build tool. You can use any other build tool.
+> In the examples below, we use `tsdown` as the build tool. You can use any other build tool.
 
 ## Recommendations
 
@@ -49,7 +49,7 @@ export const acmePreset = definePreset({
 Build the preset code
 
 ```bash
-pnpm tsup src/index.ts
+pnpm tsdown src/index.ts
 ```
 
 **App code**
@@ -90,7 +90,7 @@ Then you can build the library code and generate the static CSS file:
 
 ```bash
 # build the library code
-tsup src/index.tsx
+tsdown src/index.tsx
 
 # generate the static CSS file
 bamboo cssgen --outfile dist/styles.css
@@ -249,7 +249,7 @@ Mark the `@acme-org/styled-system` as an external package in your library build 
 runtime code is imported only once, avoiding duplication.
 
 ```bash
-tsup src/index.tsx --external @acme-org/styled-system
+tsdown src/index.tsx --external @acme-org/styled-system
 ```
 
 ### Include the src files
@@ -413,7 +413,7 @@ export default defineConfig({
 
 ## Troubleshooting
 
-- When using `tsup` or any other build tool for your component library, if you run into a module resolution error that
+- When using `tsdown` or any other build tool for your component library, if you run into a module resolution error that
   looks similar to `ERROR: Could not resolve "../styled-system/xxx"`. Consider setting the `outExtension`in the bamboo
   config to`js`
 

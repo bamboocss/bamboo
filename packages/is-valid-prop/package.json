@@ -14,14 +14,14 @@
     "dist"
   ],
   "sideEffects": false,
-  "main": "dist/index.js",
+  "main": "dist/index.cjs",
   "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "types": "dist/index.d.cts",
   "exports": {
     ".": {
       "source": "./src/index.ts",
-      "types": "./dist/index.d.ts",
-      "require": "./dist/index.js",
+      "types": "./dist/index.d.cts",
+      "require": "./dist/index.cjs",
       "import": {
         "types": "./dist/index.d.mts",
         "default": "./dist/index.mjs"
@@ -34,9 +34,9 @@
   },
   "scripts": {
     "mdn": "tsx scripts/prepare.ts",
-    "build": "tsup src/index.ts --format=esm,cjs --dts && tsx scripts/postbuild.ts",
-    "build-fast": "tsup src/index.ts --format=esm,cjs --no-dts",
-    "dev": "tsup src/index.ts --watch --format=esm,cjs --no-dts --onSuccess=\"tsx scripts/postbuild.ts\""
+    "build": "tsdown src/index.ts --format=esm,cjs --dts && tsx scripts/postbuild.ts",
+    "build-fast": "tsdown --dts=false src/index.ts --format=esm,cjs",
+    "dev": "tsdown --dts=false src/index.ts --watch --format=esm,cjs --on-success=\"tsx scripts/postbuild.ts\""
   },
   "devDependencies": {
     "mdn-data": "^2.15.0"

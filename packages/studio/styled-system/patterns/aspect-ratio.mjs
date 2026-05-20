@@ -22,9 +22,7 @@ const aspectRatioConfig = {
         width: '100%',
         height: '100%',
       },
-      '&>img, &>video': {
-        objectFit: 'cover',
-      },
+      '&>img, &>video': { objectFit: 'cover' },
       ...rest,
     }
   },

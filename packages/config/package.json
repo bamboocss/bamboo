@@ -14,14 +14,14 @@
     "dist"
   ],
   "sideEffects": false,
-  "main": "dist/index.js",
+  "main": "dist/index.cjs",
   "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "types": "dist/index.d.cts",
   "exports": {
     ".": {
       "source": "./src/index.ts",
-      "types": "./dist/index.d.ts",
-      "require": "./dist/index.js",
+      "types": "./dist/index.d.cts",
+      "require": "./dist/index.cjs",
       "import": {
         "types": "./dist/index.d.mts",
         "default": "./dist/index.mjs"
@@ -29,8 +29,8 @@
     },
     "./merge": {
       "source": "./src/merge-config.ts",
-      "types": "./dist/merge-config.d.ts",
-      "require": "./dist/merge-config.js",
+      "types": "./dist/merge-config.d.cts",
+      "require": "./dist/merge-config.cjs",
       "import": {
         "types": "./dist/merge-config.d.mts",
         "default": "./dist/merge-config.mjs"
@@ -38,8 +38,8 @@
     },
     "./diff": {
       "source": "./src/diff-config.ts",
-      "types": "./dist/diff-config.d.ts",
-      "require": "./dist/diff-config.js",
+      "types": "./dist/diff-config.d.cts",
+      "require": "./dist/diff-config.cjs",
       "import": {
         "types": "./dist/diff-config.d.mts",
         "default": "./dist/diff-config.mjs"
@@ -47,8 +47,8 @@
     },
     "./ts-path": {
       "source": "./src/resolve-ts-path-pattern.ts",
-      "types": "./dist/resolve-ts-path-pattern.d.ts",
-      "require": "./dist/resolve-ts-path-pattern.js",
+      "types": "./dist/resolve-ts-path-pattern.d.cts",
+      "require": "./dist/resolve-ts-path-pattern.cjs",
       "import": {
         "types": "./dist/resolve-ts-path-pattern.d.mts",
         "default": "./dist/resolve-ts-path-pattern.mjs"
@@ -60,8 +60,8 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup --tsconfig tsconfig.build.json --dts",
-    "build-fast": "tsup --no-dts",
+    "build": "tsdown --tsconfig tsconfig.build.json --dts",
+    "build-fast": "tsdown --dts=false",
     "dev": "pnpm build-fast --watch"
   },
   "dependencies": {

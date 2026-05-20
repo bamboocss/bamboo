@@ -39,6 +39,8 @@ describe('bundle config', () => {
           },
         },
         "dependencies": [
+          "packages/shared/dist/uniq-DRfJ796t.mjs",
+          "packages/shared/dist/astish.mjs",
           "packages/shared/dist/index.mjs",
           "packages/cli/dist/index.mjs",
           "packages/config/__tests__/samples/with-tsconfig-paths/src/theme/tokens.ts",
@@ -78,6 +80,8 @@ describe('bundle config', () => {
           },
         },
         "dependencies": [
+          "packages/shared/dist/uniq-DRfJ796t.mjs",
+          "packages/shared/dist/astish.mjs",
           "packages/shared/dist/index.mjs",
           "packages/cli/dist/index.mjs",
           "packages/config/__tests__/samples/nested-files/src/theme/colors.ts",
@@ -170,6 +174,8 @@ describe('bundle config', () => {
           },
         },
         "dependencies": [
+          "packages/shared/dist/uniq-DRfJ796t.mjs",
+          "packages/shared/dist/astish.mjs",
           "packages/shared/dist/index.mjs",
           "packages/cli/dist/index.mjs",
           "packages/config/__tests__/samples/with-preset/src/ts-import-preset.ts",
@@ -213,6 +219,8 @@ describe('bundle config', () => {
           },
         },
         "dependencies": [
+          "packages/shared/dist/uniq-DRfJ796t.mjs",
+          "packages/shared/dist/astish.mjs",
           "packages/shared/dist/index.mjs",
           "packages/cli/dist/index.mjs",
           "packages/config/__tests__/samples/common/tokens.ts",
@@ -255,6 +263,8 @@ describe('bundle config', () => {
           },
         },
         "dependencies": [
+          "packages/shared/dist/uniq-DRfJ796t.mjs",
+          "packages/shared/dist/astish.mjs",
           "packages/shared/dist/index.mjs",
           "packages/cli/dist/index.mjs",
           "packages/config/__tests__/samples/common/tokens.ts",
@@ -297,6 +307,8 @@ describe('bundle config', () => {
           },
         },
         "dependencies": [
+          "packages/shared/dist/uniq-DRfJ796t.mjs",
+          "packages/shared/dist/astish.mjs",
           "packages/shared/dist/index.mjs",
           "packages/cli/dist/index.mjs",
           "packages/config/__tests__/samples/common/tokens.ts",
@@ -339,6 +351,8 @@ describe('bundle config', () => {
           },
         },
         "dependencies": [
+          "packages/shared/dist/uniq-DRfJ796t.mjs",
+          "packages/shared/dist/astish.mjs",
           "packages/shared/dist/index.mjs",
           "packages/cli/dist/index.mjs",
           "packages/config/__tests__/samples/common/tokens.ts",
@@ -381,8 +395,11 @@ describe('bundle config', () => {
           },
         },
         "dependencies": [
-          "packages/shared/dist/index.js",
-          "packages/cli/dist/index.js",
+          "packages/cli/dist/chunk-C2EiDwsr.cjs",
+          "packages/shared/dist/uniq-xizdZz1Z.cjs",
+          "packages/shared/dist/astish.cjs",
+          "packages/shared/dist/index.cjs",
+          "packages/cli/dist/index.cjs",
           "packages/config/__tests__/samples/common/tokens.ts",
           "packages/config/__tests__/samples/cjs/bamboo.config.cjs",
         ],
@@ -423,6 +440,8 @@ describe('bundle config', () => {
           },
         },
         "dependencies": [
+          "packages/shared/dist/uniq-DRfJ796t.mjs",
+          "packages/shared/dist/astish.mjs",
           "packages/shared/dist/index.mjs",
           "packages/cli/dist/index.mjs",
           "packages/config/__tests__/samples/common/tokens.ts",
