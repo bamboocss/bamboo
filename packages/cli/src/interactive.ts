@@ -2,7 +2,7 @@ import * as p from '@clack/prompts'
 import { version } from '../package.json'
 
 export const interactive = async () => {
-  p.intro(`panda v${version}`)
+  p.intro(`bamboo v${version}`)
 
   const initFlags = await p.group(
     {

@@ -1,5 +1,5 @@
-import { createGeneratorContext } from '@pandacss/fixture'
-import type { SystemStyleObject } from '@pandacss/types'
+import { createGeneratorContext } from '@bamboocss/fixture'
+import type { SystemStyleObject } from '@bamboocss/types'
 import { describe, expect, test } from 'vitest'
 import { createRuleProcessor } from './fixture'
 

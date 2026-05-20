@@ -1,4 +1,4 @@
-import type { Preset } from '@pandacss/types'
+import type { Preset } from '@bamboocss/types'
 import { keyframes, semanticAnimations } from './keyframes'
 import { breakpoints } from './breakpoints'
 import { tokens } from './tokens'
@@ -8,7 +8,7 @@ import { semanticShadows } from './shadows'
 const definePreset = <T extends Preset>(config: T) => config
 
 export const preset = definePreset({
-  name: '@pandacss/open-props',
+  name: '@bamboocss/open-props',
   theme: {
     keyframes,
     tokens,

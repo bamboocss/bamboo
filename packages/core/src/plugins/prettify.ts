@@ -19,4 +19,4 @@ export default function prettify(): TransformCallback {
   }
 }
 
-prettify.postcssPlugin = 'panda-prettify'
+prettify.postcssPlugin = 'bamboo-prettify'

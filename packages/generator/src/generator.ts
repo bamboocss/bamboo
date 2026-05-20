@@ -1,6 +1,6 @@
-import { Context, type StyleDecoder, type Stylesheet } from '@pandacss/core'
-import { dashCase, PandaError } from '@pandacss/shared'
-import type { ArtifactId, CssArtifactType, LoadConfigResult, SpecFile, SpecType, SpecTypeMap } from '@pandacss/types'
+import { Context, type StyleDecoder, type Stylesheet } from '@bamboocss/core'
+import { dashCase, BambooError } from '@bamboocss/shared'
+import type { ArtifactId, CssArtifactType, LoadConfigResult, SpecFile, SpecType, SpecTypeMap } from '@bamboocss/types'
 import { match } from 'ts-pattern'
 import { generateArtifacts } from './artifacts'
 import { generateGlobalCss } from './artifacts/css/global-css'
@@ -60,7 +60,7 @@ export class Generator extends Context {
       .with('global', () => generateGlobalCss(this, sheet))
       .with('keyframes', () => generateKeyframeCss(this, sheet))
       .otherwise(() => {
-        throw new PandaError(
+        throw new BambooError(
           'UNKNOWN_ARTIFACT',
           `Unknown CSS artifact type: "${type}". Expected one of: preflight, tokens, static, global, keyframes`,
         )

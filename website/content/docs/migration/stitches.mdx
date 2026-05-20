@@ -1,20 +1,20 @@
 ---
 title: Migrating from Stitches
-description: Migrate your project from Stitches to Panda.
+description: Migrate your project from Stitches to Bamboo.
 ---
 
-This guide helps you migrate from Stitches to Panda and understand the design differences between the libraries.
+This guide helps you migrate from Stitches to Bamboo and understand the design differences between the libraries.
 
-> **Disclaimer:** This isn't about comparing which one is best. Panda and Stitches are two different CSS-in-JS solutions
+> **Disclaimer:** This isn't about comparing which one is best. Bamboo and Stitches are two different CSS-in-JS solutions
 > with design decisions.
 
 Here are some similarities between the two libraries.
 
-- Panda uses the object literal syntax to define styles. It also supports the shorthand syntax for the `margin` and
+- Bamboo uses the object literal syntax to define styles. It also supports the shorthand syntax for the `margin` and
   `padding` properties.
-- Panda supports the `variants`, `defaultVariants` and `compoundVariants` APIs.
-- Panda supports design tokens and themes.
-- Panda supports all the variants of nested selectors (attribute, class, pseudo, descendant, child, sibling selectors
+- Bamboo supports the `variants`, `defaultVariants` and `compoundVariants` APIs.
+- Bamboo supports design tokens and themes.
+- Bamboo supports all the variants of nested selectors (attribute, class, pseudo, descendant, child, sibling selectors
   and more). It also requires the use of the `&` to chain selectors.
 
 Below are some of the differences between the two libraries.
@@ -42,7 +42,7 @@ const styles = css({
 <button className={styles({ variant: 'primary' })} />
 ```
 
-In Panda, the `css` function is only used to author atomic styles, and the `cva` function to create variant style
+In Bamboo, the `css` function is only used to author atomic styles, and the `cva` function to create variant style
 objects.
 
 **The css function**
@@ -101,7 +101,7 @@ const Button = styled('button', {
 })
 ```
 
-In Panda, the base styles object needs to added to the `base` key.
+In Bamboo, the base styles object needs to added to the `base` key.
 
 ```tsx
 import { styled } from '../styled-system/jsx'
@@ -127,7 +127,7 @@ const Button = styled('button', {})
 // => <button class="c-coNKBW c-coNKBW-dnSdJM-variant-primary">Button</button>
 ```
 
-In Panda, you can decide if you want unique classNames for the recipe or you want atomic classNames.
+In Bamboo, you can decide if you want unique classNames for the recipe or you want atomic classNames.
 
 - **Atomic classes** using the `cva` function or defining the recipe inline in the `styled` function
 
@@ -143,11 +143,11 @@ const Button = styled('button', {
 // => <button class="bg_gainsboro rounded_999px">Button</button>
 ```
 
-- **Selector classes** by defining the recipe in the `panda.config.ts` file. This approach only generates the classes
+- **Selector classes** by defining the recipe in the `bamboo.config.ts` file. This approach only generates the classes
   and css for the variants that are used in the project.
 
 ```ts
-import { defineConfig, defineRecipe } from '@pandacss/dev'
+import { defineConfig, defineRecipe } from '@bamboocss/dev'
 
 const buttonStyle = defineRecipe({
   className: 'button',
@@ -171,7 +171,7 @@ export default defineConfig({
 })
 ```
 
-> You might need to run `panda codegen --clean` to generate the recipe functions.
+> You might need to run `bamboo codegen --clean` to generate the recipe functions.
 
 ```tsx
 import { styled } from '../styled-system/jsx'
@@ -211,10 +211,10 @@ const styles = css({
 })
 ```
 
-In Panda, you configure breakpoints in the `theme.breakpoints` key of the `panda.config` function
+In Bamboo, you configure breakpoints in the `theme.breakpoints` key of the `bamboo.config` function
 
 ```ts
-import { defineConfig } from '@pandacss/dev'
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   theme: {
@@ -240,7 +240,7 @@ const styles = css({
 
 In Stitches, you use the `@initial` keyword to target the base styles.
 
-In Panda, you use the `base` key to target the base styles.
+In Bamboo, you use the `base` key to target the base styles.
 
 ## Tokens and Theme
 
@@ -268,10 +268,10 @@ const styles = css({
 })
 ```
 
-In Panda, tokens are defined in the `theme` key of the `panda.config` function.
+In Bamboo, tokens are defined in the `theme` key of the `bamboo.config` function.
 
 ```ts
-import { defineConfig } from '@pandacss/dev'
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   theme: {
@@ -297,7 +297,7 @@ const styles = css({
 })
 ```
 
-Notice that in Panda, you don't need to use the `$` prefix to access the tokens. If you really want to use the `$`
+Notice that in Bamboo, you don't need to use the `$` prefix to access the tokens. If you really want to use the `$`
 prefix, you can either update the name of the token:
 
 ```diff
@@ -314,7 +314,7 @@ export default defineConfig({
 Or you can tweak the token engine to format them with the `$` prefix:
 
 ```ts
-import { defineConfig } from '@pandacss/dev'
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   // ...
@@ -351,11 +351,11 @@ const darkTheme = createTheme({
 </div>
 ```
 
-In Panda, themes are designed as semantic tokens. You can define the semantic tokens in the `semanticTokens` key of the
-`panda.config` function.
+In Bamboo, themes are designed as semantic tokens. You can define the semantic tokens in the `semanticTokens` key of the
+`bamboo.config` function.
 
 ```ts
-import { defineConfig } from '@pandacss/dev'
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   theme: {
@@ -386,7 +386,7 @@ const Button = styled('button', {
 })
 ```
 
-In Panda, there's no special syntax, you need to use the css variable syntax. CSS variables are able to query the theme
+In Bamboo, there's no special syntax, you need to use the css variable syntax. CSS variables are able to query the theme
 tokens directly using dot notation
 
 ```ts
@@ -420,10 +420,10 @@ const Button = styled('button', {
 })
 ```
 
-In Panda, you define keyframes in the `theme.keyframes` key of the `panda.config` function.
+In Bamboo, you define keyframes in the `theme.keyframes` key of the `bamboo.config` function.
 
 ```ts
-import { defineConfig } from '@pandacss/dev'
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   theme: {
@@ -464,13 +464,13 @@ const { styled, css } = createStitches({
 })
 ```
 
-In Panda, you get a lot of built-in utilities (like mx, marginX, my, py, etc.) that you can use out of the box. You can
-also create custom utilites using the `utilities` key in the `panda.config` function.
+In Bamboo, you get a lot of built-in utilities (like mx, marginX, my, py, etc.) that you can use out of the box. You can
+also create custom utilites using the `utilities` key in the `bamboo.config` function.
 
 The utilities API allows you define the connected token scale, generated className, and transform function.
 
 ```ts
-import { defineConfig } from '@pandacss/dev'
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   utilities: {
@@ -492,7 +492,7 @@ export default defineConfig({
 })
 ```
 
-> Running `panda codegen` will update the typings for the utilities, allowing for a type-safe developer experience.
+> Running `bamboo codegen` will update the typings for the utilities, allowing for a type-safe developer experience.
 
 Then you can use the utility in your styles.
 
@@ -519,12 +519,12 @@ const globalStyles = globalCss({
 globalStyles()
 ```
 
-In Panda, you define the global styles in the `panda.config.ts` using the `globalCss` function.
+In Bamboo, you define the global styles in the `bamboo.config.ts` using the `globalCss` function.
 
 > The styles be injected automatically under the `base` cascade layer via PostCSS
 
 ```ts {3-5}
-import { defineConfig, defineGlobalStyles } from '@pandacss/dev'
+import { defineConfig, defineGlobalStyles } from '@bamboocss/dev'
 
 const globalCss = defineGlobalStyles({
   '*': { margin: 0, padding: 0 }
@@ -557,7 +557,7 @@ const buttonClass = css({
 })
 ```
 
-In Panda, you need to use the native selector directly. This is largely due to the static nature of Panda
+In Bamboo, you need to use the native selector directly. This is largely due to the static nature of Bamboo
 
 ```tsx
 import { css } from '../styled-system/css'
@@ -601,10 +601,10 @@ export default class Document extends NextDocument {
 }
 ```
 
-In Panda, you don't need to configure anything. Panda automatically extracts the styles and injects them at build time
+In Bamboo, you don't need to configure anything. Bamboo automatically extracts the styles and injects them at build time
 using PostCSS.
 
 ## Conclusion
 
 Before choosing your preferred CSS-in-JS library, be sure to consider your engineering and design goals. Both Stitches
-and Panda are capable of achieving many of the same styling goals, but they have different approaches.
+and Bamboo are capable of achieving many of the same styling goals, but they have different approaches.

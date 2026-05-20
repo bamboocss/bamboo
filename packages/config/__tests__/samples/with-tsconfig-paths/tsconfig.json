@@ -1,5 +1,5 @@
 {
-  "include": ["src", "panda.config.ts"],
+  "include": ["src", "bamboo.config.ts"],
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {

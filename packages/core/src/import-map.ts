@@ -1,5 +1,5 @@
-import { isString } from '@pandacss/shared'
-import type { ImportMapInput, ImportMapOutput, UserConfig } from '@pandacss/types'
+import { isString } from '@bamboocss/shared'
+import type { ImportMapInput, ImportMapOutput, UserConfig } from '@bamboocss/types'
 import type { Context } from './context'
 import { FileMatcher, type ImportResult } from './file-matcher'
 

@@ -1,31 +1,31 @@
 ---
-title: Using Panda in a Component Library
-description: How to set up Panda in a component library
+title: Using Bamboo in a Component Library
+description: How to set up Bamboo in a component library
 ---
 
-When creating a component library that uses Panda which can be used in a variety of different projects, you have four
+When creating a component library that uses Bamboo which can be used in a variety of different projects, you have four
 options:
 
-1. Ship a Panda [preset](/docs/customization/presets)
+1. Ship a Bamboo [preset](/docs/customization/presets)
 2. Ship a static CSS file
-3. Use Panda as external package, and ship the src files
-4. Use Panda as external package, and ship the build info file
+3. Use Bamboo as external package, and ship the src files
+4. Use Bamboo as external package, and ship the build info file
 
 > In the examples below, we use `tsup` as the build tool. You can use any other build tool.
 
 ## Recommendations
 
-- If your library code shouldn't be published on npm and App code uses Panda, use
+- If your library code shouldn't be published on npm and App code uses Bamboo, use
   [ship build info](#ship-the-build-info-file) approach
-- If your app code doesn't use Panda, use the [static css](#ship-a-static-css-file) file approach
+- If your app code doesn't use Bamboo, use the [static css](#ship-a-static-css-file) file approach
 - If your app code lives in a monorepo, use the [include src files](#include-the-src-files) approach
 - If your library code doesn't ship components but only ships tokens, patterns or recipes, use the
-  [ship preset](#ship-a-panda-preset) approach
+  [ship preset](#ship-a-bamboo-preset) approach
 
 > ⚠️ If you use the `include src files` or `ship build info` approach, you might also need to ship a `preset` if your
 > library code has any custom tokens, patterns or recipes.
 
-## Ship a Panda Preset
+## Ship a Bamboo Preset
 
 This is the simplest approach. You can include the token, semantic tokens, text styles, etc. within a preset and consume
 them in your projects.
@@ -33,7 +33,7 @@ them in your projects.
 **Library code**
 
 ```tsx filename="src/index.ts"
-import { definePreset } from '@pandacss/dev'
+import { definePreset } from '@bamboocss/dev'
 
 export const acmePreset = definePreset({
   theme: {
@@ -54,18 +54,18 @@ pnpm tsup src/index.ts
 
 **App code**
 
-```tsx filename="panda.config.ts"
-import { acmePreset } from '@acme-org/panda-preset'
-import { defineConfig } from '@pandacss/dev'
+```tsx filename="bamboo.config.ts"
+import { acmePreset } from '@acme-org/bamboo-preset'
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   //...
-  presets: ['@pandacss/dev/presets', acmePreset]
+  presets: ['@bamboocss/dev/presets', acmePreset]
 })
 ```
 
-> Adding a preset will remove the default theme from Panda. To add it back, you need to include the
-> `@pandacss/dev/presets` preset.
+> Adding a preset will remove the default theme from Bamboo. To add it back, you need to include the
+> `@bamboocss/dev/presets` preset.
 
 ## Ship a Static CSS File
 
@@ -93,7 +93,7 @@ Then you can build the library code and generate the static CSS file:
 tsup src/index.tsx
 
 # generate the static CSS file
-panda cssgen --outfile dist/styles.css
+bamboo cssgen --outfile dist/styles.css
 ```
 
 Finally, don't forget to include the [cascade layers](/docs/concepts/cascade-layers) as well in your app code:
@@ -123,8 +123,8 @@ This approach comes with a few downsides:
 - You can't customize the styles since the css is already generated
 - You might need add the [prefix](/docs/references/config#prefix) option to avoid className conflicts
 
-  ```tsx filename="panda.config.ts"
-  import { defineConfig } from '@pandacss/dev'
+  ```tsx filename="bamboo.config.ts"
+  import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
     //...
@@ -134,11 +134,11 @@ This approach comes with a few downsides:
 
 - You might have duplicate CSS classes when using multiple atomic css libraries
 
-## Use Panda as external package
+## Use Bamboo as external package
 
 ### Summary
 
-- create a Panda [preset](/docs/customization/presets) so that you (and your users) can share the same design system
+- create a Bamboo [preset](/docs/customization/presets) so that you (and your users) can share the same design system
   tokens
 - create a workspace package for your outdir (`@acme-org/styled-system`) and use that package name as the `importMap` in
   your app code
@@ -149,12 +149,12 @@ This approach comes with a few downsides:
 Let's make a dedicated workspace package for your `outdir`:
 
 1. Create a new directory `packages/styled-system` (or any other name)
-2. Install `@pandacss/dev` as a dev dependency
-3. Run the `panda init` command in there to generate a `panda.config.ts` file, don't forget to set the `jsxFramework` if
+2. Install `@bamboocss/dev` as a dev dependency
+3. Run the `bamboo init` command in there to generate a `bamboo.config.ts` file, don't forget to set the `jsxFramework` if
    needed
-4. [optional] you might want to install and import your [preset](/docs/customization/presets) in this `panda.config.ts`
+4. [optional] you might want to install and import your [preset](/docs/customization/presets) in this `bamboo.config.ts`
    file as well
-5. Run the [`panda emit-pkg`](/docs/references/cli#emit-pkg) command to set the entrypoints in
+5. Run the [`bamboo emit-pkg`](/docs/references/cli#emit-pkg) command to set the entrypoints in
    [`exports`](https://nodejs.org/api/packages.html#exports)
 
 This should look similar to this:
@@ -197,7 +197,7 @@ This should look similar to this:
     "./styles.css": "./styles.css"
   },
   "devDependencies": {
-    "@pandacss/dev": "^1.4.2",
+    "@bamboocss/dev": "^1.4.2",
     "@types/react": "19.2.2",
     "react": "^19.2.0"
   },
@@ -232,11 +232,11 @@ Install the newly created `@acme-org/styled-system` package in your app code.
 pnpm add @acme-org/styled-system
 ```
 
-Configure the `importMap` in your `panda.config.ts` to match the `name` field of your outdir `package.json`. This will
-inform Panda which imports belong to the `styled-system`.
+Configure the `importMap` in your `bamboo.config.ts` to match the `name` field of your outdir `package.json`. This will
+inform Bamboo which imports belong to the `styled-system`.
 
-```tsx filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```tsx filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   //...
@@ -254,10 +254,10 @@ tsup src/index.tsx --external @acme-org/styled-system
 
 ### Include the src files
 
-Include the `src` directory from the library code in the panda config.
+Include the `src` directory from the library code in the bamboo config.
 
-```tsx {6} filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```tsx {6} filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   //...
@@ -269,18 +269,18 @@ export default defineConfig({
 
 ### Ship the build info file
 
-This approach is similar to the previous one, but instead of shipping the source code, you ship the Panda build info
+This approach is similar to the previous one, but instead of shipping the source code, you ship the Bamboo build info
 file. This will have **the exact same end-result** as adding the sources files in the `include`, but it will allow you
 not to ship the source code.
 
 The build info file is a JSON file that **only** contains the information about the static extraction result, you still
-need to ship your app build/dist by yourself. It can be used by Panda to generate CSS classes without the need for
+need to ship your app build/dist by yourself. It can be used by Bamboo to generate CSS classes without the need for
 parsing the source code.
 
 Generate the build info file:
 
 ```bash
-panda ship --outfile dist/panda.buildinfo.json
+panda ship --outfile dist/bamboo.buildinfo.json
 ```
 
 **App code**
@@ -291,11 +291,11 @@ Install the newly created `@acme-org/styled-system` package in your app code.
 pnpm add @acme-org/styled-system
 ```
 
-Configure the `importMap` in your `panda.config.ts` to match the `name` field of your outdir `package.json`. This will
-inform Panda which imports belong to the `styled-system`.
+Configure the `importMap` in your `bamboo.config.ts` to match the `name` field of your outdir `package.json`. This will
+inform Bamboo which imports belong to the `styled-system`.
 
-```tsx filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```tsx filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   //...
@@ -311,14 +311,14 @@ import { css } from '@acme-org/styled-system/css'
 import { button } from '@acme-org/styled-system/recipes'
 ```
 
-Next, you need to include the build info file from the library code in the panda config.
+Next, you need to include the build info file from the library code in the bamboo config.
 
-```tsx {6} filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```tsx {6} filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   //...
-  include: ['./node_modules/@acme-org/design-system/dist/panda.buildinfo.json', './src/**/*.{ts,tsx}'],
+  include: ['./node_modules/@acme-org/design-system/dist/bamboo.buildinfo.json', './src/**/*.{ts,tsx}'],
   importMap: '@acme-org/styled-system',
   outdir: 'styled-system'
 })
@@ -364,11 +364,11 @@ component library code.
 pnpm add @acme-org/styled-system
 ```
 
-Set the `importMap` in your `panda.config.ts` to that same package name. This will inform Panda which imports belong to
+Set the `importMap` in your `bamboo.config.ts` to that same package name. This will inform Bamboo which imports belong to
 the `styled-system`.
 
-```tsx filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```tsx filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   //...
@@ -393,10 +393,10 @@ export function Button({ children }) {
 ### How to override tokens used by the `@acme-org/styled-system` package?
 
 You can override the tokens used by the `@acme-org/styled-system` package by extending the `theme` in your
-`panda.config.ts` file.
+`bamboo.config.ts` file.
 
-```tsx filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```tsx filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   //...
@@ -414,7 +414,7 @@ export default defineConfig({
 ## Troubleshooting
 
 - When using `tsup` or any other build tool for your component library, if you run into a module resolution error that
-  looks similar to `ERROR: Could not resolve "../styled-system/xxx"`. Consider setting the `outExtension`in the panda
+  looks similar to `ERROR: Could not resolve "../styled-system/xxx"`. Consider setting the `outExtension`in the bamboo
   config to`js`
 
 - If you use Yarn PnP, you might need to set the `nodeLinker: node-modules` in the `.yarnrc.yml` file.

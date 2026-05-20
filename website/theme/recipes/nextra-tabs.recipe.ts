@@ -1,5 +1,5 @@
 import { tabsAnatomy } from '@ark-ui/react/tabs'
-import { defineParts, defineRecipe } from '@pandacss/dev'
+import { defineParts, defineRecipe } from '@bamboocss/dev'
 
 const parts = defineParts(tabsAnatomy.build())
 

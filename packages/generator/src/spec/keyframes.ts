@@ -1,5 +1,5 @@
-import type { Context } from '@pandacss/core'
-import type { KeyframeSpec } from '@pandacss/types'
+import type { Context } from '@bamboocss/core'
+import type { KeyframeSpec } from '@bamboocss/types'
 import { generateJsxExample, type JsxStyleProps } from '../shared'
 
 const generateKeyframeJsxExamples = (name: string, jsxStyleProps: JsxStyleProps = 'all'): string[] => {

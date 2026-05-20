@@ -1,9 +1,9 @@
-import { colors, logger } from '@pandacss/logger'
-import type { PandaContext } from './create-context'
+import { colors, logger } from '@bamboocss/logger'
+import type { BambooContext } from './create-context'
 
-export async function buildInfo(ctx: PandaContext, outfile: string) {
+export async function buildInfo(ctx: BambooContext, outfile: string) {
   const { filesWithCss, files } = ctx.parseFiles()
-  logger.info('cli', `Found ${colors.bold(`${filesWithCss.length}/${files.length}`)} files using Panda`)
+  logger.info('cli', `Found ${colors.bold(`${filesWithCss.length}/${files.length}`)} files using Bamboo`)
 
   const { minify, staticCss } = ctx.config
   logger.info('cli', `Writing ${minify ? '[min] ' : ' '}${colors.bold(outfile)}`)

@@ -1,7 +1,7 @@
 import Animations from 'open-props/src/animations'
 import Easings from 'open-props/src/easing'
 import { cssKeyframesToObj, transformOpenPropsObj } from './utils'
-import type { Dict } from '@pandacss/types'
+import type { Dict } from '@bamboocss/types'
 
 export const easings = transformOpenPropsObj(
   Easings,

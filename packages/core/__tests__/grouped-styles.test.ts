@@ -1,6 +1,6 @@
-import type { Config, Dict } from '@pandacss/types'
-import { createCss } from '@pandacss/shared'
-import { createContext } from '@pandacss/fixture'
+import type { Config, Dict } from '@bamboocss/types'
+import { createCss } from '@bamboocss/shared'
+import { createContext } from '@bamboocss/fixture'
 import { describe, expect, test } from 'vitest'
 import { createRuleProcessor } from './fixture'
 

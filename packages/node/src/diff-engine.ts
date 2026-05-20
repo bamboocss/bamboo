@@ -1,6 +1,6 @@
-import { diffConfigs, loadConfig } from '@pandacss/config'
-import { Generator } from '@pandacss/generator'
-import type { Config, LoadConfigResult } from '@pandacss/types'
+import { diffConfigs, loadConfig } from '@bamboocss/config'
+import { Generator } from '@bamboocss/generator'
+import type { Config, LoadConfigResult } from '@bamboocss/types'
 
 export class DiffEngine {
   private prevConfig: Config | undefined

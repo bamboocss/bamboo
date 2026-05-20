@@ -1,8 +1,8 @@
 import { ASTViewer } from '@/src/components/ASTViewer'
 import { GeneratedCss } from '@/src/components/GeneratedCss'
-import { usePanda } from '@/src/hooks/usePanda'
+import { useBamboo } from '@/src/hooks/useBamboo'
 import { css, cva, cx } from '@/styled-system/css'
-import { Flex, panda } from '@/styled-system/jsx'
+import { Flex, bamboo } from '@/styled-system/jsx'
 import { segmentGroup } from '@/styled-system/recipes'
 import { SegmentGroup } from '@ark-ui/react/segment-group'
 import { Splitter } from '@ark-ui/react/splitter'
@@ -10,7 +10,7 @@ import * as React from 'react'
 import { ChevronUpIcon } from './icons'
 
 type ArtifactsPanelType = {
-  panda: ReturnType<typeof usePanda>
+  bamboo: ReturnType<typeof useBamboo>
 }
 
 const tabs = [
@@ -99,18 +99,18 @@ export const ArtifactsPanel = React.memo(function ArtifactsPanel(props: Artifact
               </SegmentGroup.Item>
             ))}
           </SegmentGroup.Root>
-          <panda.span
+          <bamboo.span
             data-expanded={open ? '' : undefined}
             transform={{ _expanded: 'rotate(180deg)' }}
             transition="all .2s ease"
             color={{ _expanded: { _dark: 'primary' } }}
           >
             <ChevronUpIcon />
-          </panda.span>
+          </bamboo.span>
         </Flex>
-        {activeTab === 'ast' && <ASTViewer parserResult={props.panda.parserResult} />}
+        {activeTab === 'ast' && <ASTViewer parserResult={props.bamboo.parserResult} />}
         {/* Using visible cause it's better to let the monaco editor be loaded with the others */}
-        <GeneratedCss cssArtifacts={props.panda.cssArtifacts} visible={activeTab === 'generated' && open} />
+        <GeneratedCss cssArtifacts={props.bamboo.cssArtifacts} visible={activeTab === 'generated' && open} />
       </Splitter.Panel>
     </>
   )

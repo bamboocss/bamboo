@@ -2,13 +2,13 @@ import { join } from 'path'
 import postcss from 'postcss'
 import { existsSync } from 'fs'
 import { rm } from 'fs/promises'
-import { logger } from '@pandacss/logger'
+import { logger } from '@bamboocss/logger'
 import { describe, expect, test, vi } from 'vitest'
 
-import pandacss, { builder, type PluginOptions } from '../src/index'
+import bamboocss, { builder, type PluginOptions } from '../src/index'
 
 async function run(input: string, options: PluginOptions, from?: string) {
-  const result = await postcss([pandacss(options)]).process(input, { from: from || '/foo.css' })
+  const result = await postcss([bamboocss(options)]).process(input, { from: from || '/foo.css' })
   return result
 }
 
@@ -29,8 +29,8 @@ describe('PostCSS plugin', () => {
 
   test('use configured log file', async () => {
     const input = '@layer reset, base, tokens, recipes, utilities;'
-    const configPath = join(__dirname, 'samples', 'panda.config.cjs')
-    const logFilePath = join(__dirname, 'samples', 'panda.log')
+    const configPath = join(__dirname, 'samples', 'bamboo.config.cjs')
+    const logFilePath = join(__dirname, 'samples', 'bamboo.log')
 
     await run(input, { logfile: logFilePath, configPath })
 
@@ -42,7 +42,7 @@ describe('PostCSS plugin', () => {
 
   test('process correctly css file', async () => {
     const input = '@layer reset, base, tokens, recipes, utilities;'
-    const configPath = join(__dirname, 'samples', 'panda.config.cjs')
+    const configPath = join(__dirname, 'samples', 'bamboo.config.cjs')
 
     const result = await run(input, { configPath })
 
@@ -51,7 +51,7 @@ describe('PostCSS plugin', () => {
 
   test('register `include` as dependencies', async () => {
     const input = '@layer reset, base, tokens, recipes, utilities;'
-    const configPath = join(__dirname, 'samples', 'panda.config.cjs')
+    const configPath = join(__dirname, 'samples', 'bamboo.config.cjs')
 
     const result = await run(input, { configPath })
 
@@ -60,22 +60,22 @@ describe('PostCSS plugin', () => {
         expect.objectContaining({
           type: 'dir-dependency',
           glob: '**/*.{ts,tsx,jsx}',
-          plugin: 'pandacss',
+          plugin: 'bamboocss',
           parent: '/foo.css',
         }),
         expect.objectContaining({
           type: 'dir-dependency',
           glob: '**/*.{css,pcss}',
-          plugin: 'pandacss',
+          plugin: 'bamboocss',
           parent: '/foo.css',
         }),
       ]),
     )
   })
 
-  test('register panda config as dependency', async () => {
+  test('register bamboo config as dependency', async () => {
     const input = '@layer reset, base, tokens, recipes, utilities;'
-    const configPath = join(__dirname, 'samples', 'panda.config.cjs')
+    const configPath = join(__dirname, 'samples', 'bamboo.config.cjs')
 
     const result = await run(input, { configPath })
 
@@ -83,8 +83,8 @@ describe('PostCSS plugin', () => {
       expect.arrayContaining([
         expect.objectContaining({
           type: 'dependency',
-          file: expect.stringContaining('panda.config.cjs'),
-          plugin: 'pandacss',
+          file: expect.stringContaining('bamboo.config.cjs'),
+          plugin: 'bamboocss',
           parent: '/foo.css',
         }),
       ]),
@@ -92,7 +92,7 @@ describe('PostCSS plugin', () => {
   })
 
   test.sequential(
-    '`Builder` instance race condition when postcss invokes panda processing simultaneously',
+    '`Builder` instance race condition when postcss invokes bamboo processing simultaneously',
     async () => {
       builder.context = undefined
       const setupContextSpy = vi.spyOn(builder, 'setupContext')
@@ -106,7 +106,7 @@ describe('PostCSS plugin', () => {
 
       try {
         const input = '@layer reset, base, tokens, recipes, utilities;'
-        const configPath = join(__dirname, 'samples', 'panda.config.cjs')
+        const configPath = join(__dirname, 'samples', 'bamboo.config.cjs')
 
         await Promise.all([1, 2, 3, 4].map(() => run(input, { configPath })))
 

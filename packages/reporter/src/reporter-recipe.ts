@@ -1,5 +1,5 @@
-import type { ParserOptions } from '@pandacss/core'
-import type { AnalysisReport, ComponentReportItem } from '@pandacss/types'
+import type { ParserOptions } from '@bamboocss/core'
+import type { AnalysisReport, ComponentReportItem } from '@bamboocss/types'
 
 export interface RecipeReportEntry {
   recipeName: string

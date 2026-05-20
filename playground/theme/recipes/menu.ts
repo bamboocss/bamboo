@@ -1,4 +1,4 @@
-import { defineParts, defineRecipe } from '@pandacss/dev'
+import { defineParts, defineRecipe } from '@bamboocss/dev'
 import { menuAnatomy } from '@ark-ui/react/menu'
 
 const parts = defineParts(menuAnatomy.build())

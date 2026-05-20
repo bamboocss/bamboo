@@ -1,6 +1,6 @@
-import { panda } from '../../styled-system/jsx'
+import { bamboo } from '../../styled-system/jsx'
 
-export const StickyTop = panda('div', {
+export const StickyTop = bamboo('div', {
   base: {
     position: 'sticky',
     top: '6',

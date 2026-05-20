@@ -1,9 +1,9 @@
 ---
 title: Using Vite
-description: Easily use Panda with Vite, React and Typescript with our dedicated integration.
+description: Easily use Bamboo with Vite, React and Typescript with our dedicated integration.
 ---
 
-This guide will show you how to set up Panda CSS in a Vite project using PostCSS.
+This guide will show you how to set up Bamboo CSS in a Vite project using PostCSS.
 
 ## Start a new project
 
@@ -46,34 +46,34 @@ To get started, we will need to create a new Vite project using `react-ts` templ
   {/* <!-- prettier-ignore-end --> */}
 </Tabs>
 
-### Install Panda
+### Install Bamboo
 
-Install panda and create your `panda.config.ts` file.
+Install bamboo and create your `bamboo.config.ts` file.
 
 <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
   {/* <!-- prettier-ignore-start --> */}
   <Tab>
     ```bash
-    pnpm install -D @pandacss/dev
-    pnpm panda init --postcss
+    pnpm install -D @bamboocss/dev
+    pnpm bamboo init --postcss
     ```
   </Tab>
   <Tab>
     ```bash
-    npm install -D @pandacss/dev
-    npx panda init --postcss
+    npm install -D @bamboocss/dev
+    npx bamboo init --postcss
     ```
   </Tab>
   <Tab>
     ```bash
-    yarn add -D @pandacss/dev
-    yarn panda init --postcss
+    yarn add -D @bamboocss/dev
+    yarn bamboo init --postcss
     ```
   </Tab>
   <Tab>
     ```bash
-    bun add -D @pandacss/dev
-    bun panda init --postcss
+    bun add -D @bamboocss/dev
+    bun bamboo init --postcss
     ```
   </Tab>
   {/* <!-- prettier-ignore-end --> */}
@@ -86,7 +86,7 @@ Open your `package.json` file and update the `scripts` section as follows:
 ```diff {3} filename="package.json"
 {
   "scripts": {
-+    "prepare": "panda codegen",
++    "prepare": "bamboo codegen",
     "dev": "vite",
     "build": "tsc && vite build",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
@@ -95,19 +95,19 @@ Open your `package.json` file and update the `scripts` section as follows:
 }
 ```
 
-- `"prepare"` - script that will run Panda CSS CLI codegen before each build. Read more about
-  [codegen](/docs/references/cli#panda-codegen) in the CLI section.
+- `"prepare"` - script that will run Bamboo CSS CLI codegen before each build. Read more about
+  [codegen](/docs/references/cli#bamboo-codegen) in the CLI section.
 
-> This step ensures that the panda output directory is regenerated after each dependency installation. So you can add
+> This step ensures that the bamboo output directory is regenerated after each dependency installation. So you can add
 > the output directory to your `.gitignore` file and not worry about it.
 
 ### Configure the content
 
-Make sure that all of the paths of your React components are included in the `include` section of the `panda.config.ts`
+Make sure that all of the paths of your React components are included in the `include` section of the `bamboo.config.ts`
 file.
 
-```js {8} filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```js {8} filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   // Whether to use css reset
@@ -167,16 +167,16 @@ Run the following command to start your development server.
   {/* <!-- prettier-ignore-end --> */}
 </Tabs>
 
-### Start using Panda
+### Start using Bamboo
 
-Now you can start using Panda CSS in your project. Here is the snippet of code that you can use in your `src/App.tsx`
+Now you can start using Bamboo CSS in your project. Here is the snippet of code that you can use in your `src/App.tsx`
 file.
 
 ```tsx filename="src/App.tsx"
 import { css } from '../styled-system/css'
 
 function App() {
-  return <div className={css({ fontSize: '2xl', fontWeight: 'bold' })}>Hello 🐼!</div>
+  return <div className={css({ fontSize: '2xl', fontWeight: 'bold' })}>Hello 🎋!</div>
 }
 
 export default App

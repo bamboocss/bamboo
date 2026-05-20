@@ -4,15 +4,15 @@ import virtual from 'vite-plugin-virtual'
 
 const resolve = (val: string) => new URL(val, import.meta.url).pathname
 
-function virtualPanda() {
+function virtualBamboo() {
   return virtual({
-    'virtual:panda': 'export const config = {}',
+    'virtual:bamboo': 'export const config = {}',
   })
 }
 
 export default defineConfig({
   root: process.cwd(),
-  plugins: [tsconfigPaths(), virtualPanda()],
+  plugins: [tsconfigPaths(), virtualBamboo()],
   test: {
     globals: true,
     testTimeout: 15_000,
@@ -32,15 +32,15 @@ export default defineConfig({
   resolve: {
     alias: [
       {
-        find: '@pandacss/config/ts-path',
+        find: '@bamboocss/config/ts-path',
         replacement: resolve('./packages/config/src/resolve-ts-path-pattern.ts'),
       },
       {
-        find: '@pandacss/dev',
+        find: '@bamboocss/dev',
         replacement: resolve('./packages/cli/src'),
       },
       {
-        find: /^@pandacss\/(.*)$/,
+        find: /^@bamboocss\/(.*)$/,
         replacement: resolve('./packages/$1/src'),
       },
     ],

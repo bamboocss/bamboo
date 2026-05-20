@@ -1,4 +1,4 @@
-import type { PropertyTransform } from '@pandacss/types'
+import type { PropertyTransform } from '@bamboocss/types'
 
 export const createColorMixTransform =
   (prop: string): PropertyTransform =>

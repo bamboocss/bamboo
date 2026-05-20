@@ -1,11 +1,11 @@
 ---
 title: Customizing Patterns
 description:
-  Panda provides the ability to customize the built-in patterns, as well as creating your own custom patterns. This is
+  Bamboo provides the ability to customize the built-in patterns, as well as creating your own custom patterns. This is
   useful to create your own layout pattern abstractions that can be used in your application.
 ---
 
-Panda allows you to customize built-in patterns and create custom patterns for reusable layout abstractions.
+Bamboo allows you to customize built-in patterns and create custom patterns for reusable layout abstractions.
 
 A pattern accepts the following parameters:
 
@@ -70,22 +70,22 @@ Then you can run the following command to generate the pattern JS code:
   {/* <!-- prettier-ignore-start --> */}
   <Tab>
     ```bash
-    pnpm panda codegen
+    pnpm bamboo codegen
     ```
   </Tab>
   <Tab>
     ```bash
-    npm panda codegen
+    npm bamboo codegen
     ```
   </Tab>
   <Tab>
     ```bash
-    yarn panda codegen
+    yarn bamboo codegen
     ```
   </Tab>
   <Tab>
     ```bash
-    bun panda codegen
+    bun bamboo codegen
     ```
   </Tab>
   {/* <!-- prettier-ignore-end --> */}
@@ -110,8 +110,8 @@ const App = () => {
 You can extend the [default patterns](/docs/concepts/patterns#predefined-patterns) by using the `patterns.extend`
 property in the config.
 
-```ts filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```ts filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   patterns: {
@@ -135,22 +135,22 @@ Then you can run the following command to update the pattern JS code:
   {/* <!-- prettier-ignore-start --> */}
   <Tab>
     ```bash
-    pnpm panda codegen
+    pnpm bamboo codegen
     ```
   </Tab>
   <Tab>
     ```bash
-    npm panda codegen
+    npm bamboo codegen
     ```
   </Tab>
   <Tab>
     ```bash
-    yarn panda codegen
+    yarn bamboo codegen
     ```
   </Tab>
   <Tab>
     ```bash
-    bun panda codegen
+    bun bamboo codegen
     ```
   </Tab>
   {/* <!-- prettier-ignore-end --> */}
@@ -158,5 +158,5 @@ Then you can run the following command to update the pattern JS code:
 
 ## Minimal setup
 
-If you want to use Panda with the bare minimum, without any of the defaults, you can read more about it
+If you want to use Bamboo with the bare minimum, without any of the defaults, you can read more about it
 [here](/docs/guides/minimal-setup)

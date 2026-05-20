@@ -1,4 +1,4 @@
-import { toPx } from '@pandacss/shared'
+import { toPx } from '@bamboocss/shared'
 
 const num = (v: string | undefined) => parseFloat(toPx(v) ?? '-1')
 

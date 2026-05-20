@@ -1,4 +1,4 @@
-import type { RecipeDefinition } from '@pandacss/types'
+import type { RecipeDefinition } from '@bamboocss/types'
 import { describe, expect, test } from 'vitest'
 import { createRuleProcessor } from './fixture'
 

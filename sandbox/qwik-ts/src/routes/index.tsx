@@ -11,7 +11,7 @@ export default component$(() => {
         padding: '8',
       })}
     >
-      Welcome to Panda's Qwik City
+      Welcome to Bamboo's Qwik City
     </div>
   )
 })

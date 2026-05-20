@@ -1,4 +1,4 @@
-import type { CssPropertyDefinition, GlobalVarsDefinition } from '@pandacss/types'
+import type { CssPropertyDefinition, GlobalVarsDefinition } from '@bamboocss/types'
 import { outdent } from 'outdent'
 import { stringify } from './stringify'
 

@@ -1,12 +1,12 @@
 import {
-  PandaError,
+  BambooError,
   deepSet,
   esc,
   getOrCreateSet,
   isImportant,
   markImportant,
   withoutImportant,
-} from '@pandacss/shared'
+} from '@bamboocss/shared'
 import type {
   AtomicStyleResult,
   ConditionDetails,
@@ -17,7 +17,7 @@ import type {
   RecipeBaseResult,
   StyleEntry,
   StyleResultObject,
-} from '@pandacss/types'
+} from '@bamboocss/types'
 import type { Context } from './context'
 import { sortStyleRules } from './sort-style-rules'
 import { StyleEncoder } from './style-encoder'
@@ -403,7 +403,7 @@ export class StyleDecoder {
     const recipeConfig = this.context.recipes.getConfigOrThrow(recipeName)
 
     if (!Recipes.isSlotRecipeConfig(recipeConfig)) {
-      throw new PandaError('UNKNOWN_RECIPE', `Recipe "${recipeName}" is not a slot recipe`)
+      throw new BambooError('UNKNOWN_RECIPE', `Recipe "${recipeName}" is not a slot recipe`)
     }
 
     const base: Dict = {}

@@ -37,10 +37,10 @@ export const showcases: Showcase[] = [
     image: '/showcase/visio.png'
   },
   {
-    name: 'Panda Mastery',
-    description: 'An advanced course to learn Panda CSS',
-    url: 'https://www.pandamastery.com/',
-    image: '/showcase/panda-mastery.png'
+    name: 'Bamboo Mastery',
+    description: 'An advanced course to learn Bamboo CSS',
+    url: 'https://www.bamboomastery.com/',
+    image: '/showcase/bamboo-mastery.png'
   },
 
   {
@@ -51,7 +51,7 @@ export const showcases: Showcase[] = [
   },
   {
     name: 'Park UI',
-    description: 'Build design systems with Panda and Ark UI',
+    description: 'Build design systems with Bamboo and Ark UI',
     url: 'https://park-ui.com',
     image: '/showcase/park-ui.png'
   },

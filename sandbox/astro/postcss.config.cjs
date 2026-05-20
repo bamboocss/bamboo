@@ -1,3 +1,3 @@
 module.exports = {
-  plugins: [require('@pandacss/dev/postcss')()],
+  plugins: [require('@bamboocss/dev/postcss')()],
 }

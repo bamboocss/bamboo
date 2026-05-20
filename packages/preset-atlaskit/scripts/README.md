@@ -1,14 +1,14 @@
 # Atlaskit Preset Generation Scripts
 
-This directory contains scripts to automatically generate the Panda CSS preset from the official `@atlaskit/tokens`
+This directory contains scripts to automatically generate the Bamboo CSS preset from the official `@atlaskit/tokens`
 package.
 
 ## Scripts
 
 ### `generate-theme.mjs`
 
-Autogenerates the Panda CSS theme from `@atlaskit/tokens` package. This script reads the token data and converts it to
-Panda CSS format.
+Autogenerates the Bamboo CSS theme from `@atlaskit/tokens` package. This script reads the token data and converts it to
+Bamboo CSS format.
 
 **Usage:**
 
@@ -85,7 +85,7 @@ When a new version of `@atlaskit/tokens` or `@atlaskit/motion` is released:
    pnpm build
    ```
 
-5. Test the preset in a Panda CSS project
+5. Test the preset in a Bamboo CSS project
 
 6. Commit the changes
 

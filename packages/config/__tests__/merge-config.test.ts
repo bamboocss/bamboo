@@ -1,10 +1,10 @@
-import { PANDA_CONFIG_NAME } from '@pandacss/shared'
-import type { Config, Preset } from '@pandacss/types'
+import { BAMBOO_CONFIG_NAME } from '@bamboocss/shared'
+import type { Config, Preset } from '@bamboocss/types'
 import { describe, expect, test } from 'vitest'
 import { getResolvedConfig } from '../src/get-resolved-config'
 import { mergeConfigs } from '../src/merge-config'
 
-const defineConfig = <T extends Config>(config: T) => Object.assign(config, { name: PANDA_CONFIG_NAME })
+const defineConfig = <T extends Config>(config: T) => Object.assign(config, { name: BAMBOO_CONFIG_NAME })
 const definePreset = <T extends Preset>(preset: T) => preset
 
 describe('mergeConfigs / theme', () => {
@@ -38,7 +38,7 @@ describe('mergeConfigs / theme', () => {
 
     expect(result).toMatchInlineSnapshot(`
       {
-        "name": "__panda.config__",
+        "name": "__bamboo.config__",
         "theme": {
           "tokens": {
             "colors": {
@@ -111,7 +111,7 @@ describe('mergeConfigs / theme', () => {
 
     expect(result).toMatchInlineSnapshot(`
       {
-        "name": "__panda.config__",
+        "name": "__bamboo.config__",
         "theme": {
           "tokens": {
             "colors": {
@@ -155,7 +155,7 @@ describe('mergeConfigs / theme', () => {
 
     expect(result).toMatchInlineSnapshot(`
       {
-        "name": "__panda.config__",
+        "name": "__bamboo.config__",
         "theme": {
           "tokens": {
             "colors": {
@@ -211,7 +211,7 @@ describe('mergeConfigs / theme', () => {
 
     expect(result).toMatchInlineSnapshot(`
       {
-        "name": "__panda.config__",
+        "name": "__bamboo.config__",
         "theme": {
           "tokens": {
             "colors": {
@@ -258,7 +258,7 @@ describe('mergeConfigs / theme', () => {
 
     expect(result).toMatchInlineSnapshot(`
       {
-        "name": "__panda.config__",
+        "name": "__bamboo.config__",
         "theme": {
           "tokens": {
             "colors": {
@@ -299,7 +299,7 @@ describe('mergeConfigs / theme', () => {
 
     expect(result).toMatchInlineSnapshot(`
       {
-        "name": "__panda.config__",
+        "name": "__bamboo.config__",
         "theme": {
           "tokens": {
             "colors": {
@@ -452,7 +452,7 @@ describe('mergeConfigs / theme', () => {
 
     expect(result).toMatchInlineSnapshot(`
       {
-        "name": "__panda.config__",
+        "name": "__bamboo.config__",
         "presets": [
           {
             "name": "preset1",
@@ -739,7 +739,7 @@ describe('mergeConfigs / theme', () => {
 
     expect(result).toMatchInlineSnapshot(`
       {
-        "name": "__panda.config__",
+        "name": "__bamboo.config__",
         "theme": {
           "tokens": {
             "colors": {
@@ -821,7 +821,7 @@ describe('mergeConfigs / theme', () => {
     // opposite order
     expect(mergeConfigs([preset, userConfig])).toMatchInlineSnapshot(`
       {
-        "name": "__panda.config__",
+        "name": "__bamboo.config__",
         "theme": {
           "tokens": {
             "colors": {
@@ -913,7 +913,7 @@ describe('mergeConfigs / theme', () => {
     // opposite order
     expect(mergeConfigs([preset, userConfig])).toMatchInlineSnapshot(`
       {
-        "name": "__panda.config__",
+        "name": "__bamboo.config__",
         "theme": {
           "tokens": {
             "colors": {

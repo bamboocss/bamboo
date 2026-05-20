@@ -1,15 +1,15 @@
 {
-  "name": "@pandacss/dev",
+  "name": "@bamboocss/dev",
   "version": "1.11.1",
-  "description": "The user facing package for panda css",
+  "description": "The user facing package for bamboo css",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "author": "Segun Adebayo <joseshegs@gmail.com>",
   "license": "MIT",
   "bin": {
-    "panda": "bin.js",
-    "pandacss": "bin.js"
+    "bamboo": "bin.js",
+    "bamboocss": "bin.js"
   },
   "exports": {
     ".": {
@@ -34,10 +34,10 @@
     "./package.json": "./package.json"
   },
   "sideEffects": false,
-  "homepage": "https://panda-css.com",
+  "homepage": "https://bamboo-css.com",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chakra-ui/panda.git",
+    "url": "git+https://github.com/chakra-ui/bamboo.git",
     "directory": "packages/cli"
   },
   "publishConfig": {
@@ -58,16 +58,16 @@
   ],
   "dependencies": {
     "@clack/prompts": "0.11.0",
-    "@pandacss/config": "workspace:*",
-    "@pandacss/logger": "workspace:*",
-    "@pandacss/mcp": "workspace:*",
-    "@pandacss/node": "workspace:*",
-    "@pandacss/postcss": "workspace:*",
-    "@pandacss/preset-base": "workspace:*",
-    "@pandacss/preset-panda": "workspace:*",
-    "@pandacss/shared": "workspace:*",
-    "@pandacss/token-dictionary": "workspace:*",
-    "@pandacss/types": "workspace:*",
+    "@bamboocss/config": "workspace:*",
+    "@bamboocss/logger": "workspace:*",
+    "@bamboocss/mcp": "workspace:*",
+    "@bamboocss/node": "workspace:*",
+    "@bamboocss/postcss": "workspace:*",
+    "@bamboocss/preset-base": "workspace:*",
+    "@bamboocss/preset-bamboo": "workspace:*",
+    "@bamboocss/shared": "workspace:*",
+    "@bamboocss/token-dictionary": "workspace:*",
+    "@bamboocss/types": "workspace:*",
     "cac": "6.7.14"
   },
   "devDependencies": {

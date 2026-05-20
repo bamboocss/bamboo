@@ -183,7 +183,7 @@ const className = cx(
 
 Using these techniques, you can apply them to a component by exposing a `css` prop and merge with local styles.
 
-> **Note:** For this to work, Panda requires that you set `jsxFramework` config option to `react`
+> **Note:** For this to work, Bamboo requires that you set `jsxFramework` config option to `react`
 
 ```jsx
 const cardStyles = css.raw({
@@ -207,7 +207,7 @@ function Demo() {
 }
 ```
 
-If you use any other prop name other than `css`, then you must use the `css.raw(...)` function to ensure Panda extracts
+If you use any other prop name other than `css`, then you must use the `css.raw(...)` function to ensure Bamboo extracts
 the style object.
 
 ```jsx
@@ -232,7 +232,7 @@ function Demo() {
     <Card
       title="Hello World"
       description="This is a card component"
-      // use `css.raw(...)` to ensure Panda extracts the style object
+      // use `css.raw(...)` to ensure Bamboo extracts the style object
       style={css.raw({ bg: 'blue' })}
     />
   )

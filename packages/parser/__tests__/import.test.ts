@@ -4,17 +4,17 @@ import { importParser } from './fixture'
 describe('extract imports', () => {
   test('should work', () => {
     const code = `
-    import { css as nCss } from "@panda/css"
+    import { css as nCss } from "@bamboo/css"
 
     css({ bg: "red" })
     `
 
-    expect(importParser(code, { importMap: '@panda' })).toMatchInlineSnapshot(`
+    expect(importParser(code, { importMap: '@bamboo' })).toMatchInlineSnapshot(`
       [
         {
           "alias": "nCss",
           "kind": "named",
-          "mod": "@panda/css",
+          "mod": "@bamboo/css",
           "name": "css",
         },
       ]

@@ -8,7 +8,7 @@
 
 ## Adding a scenario
 
-- Create a `panda.{scenario}.config.ts` with your specific options
+- Create a `bamboo.{scenario}.config.ts` with your specific options
 - Add it in the `scenarioList` inside `cli.ts`
 - Add it in the `options` inside `vitest.config.ts` with the `test.include` to match specific tests files
 - You're done ! You can run `bun cli.ts codegen {scenario}` and `bun cli.ts test {scenario}`

@@ -3,10 +3,10 @@ title: Style props
 description: Build UIs quickly by passing css properties as "props" to your components.
 ---
 
-While you can get very far by using the `className` prop and function from Panda, style props provide a more ergonomic
+While you can get very far by using the `className` prop and function from Bamboo, style props provide a more ergonomic
 way of expressing styles.
 
-Panda will extract the style props through static analysis and generate the CSS at build time.
+Bamboo will extract the style props through static analysis and generate the CSS at build time.
 
 > If you use Chakra UI, Styled System, or Theme UI, you'll feel right at home right away 😊
 
@@ -39,19 +39,19 @@ const Button = ({ children }) => (
 
 ## Configure JSX
 
-Using JSX style props is turned off by default in Panda, but you can opt-in to this feature by using the `jsxFramework`
-property in the panda config.
+Using JSX style props is turned off by default in Bamboo, but you can opt-in to this feature by using the `jsxFramework`
+property in the bamboo config.
 
-> ⚠️ Panda will not extract style props from JSX elements if you don't set the `jsxFramework` property. This is to avoid
+> ⚠️ Bamboo will not extract style props from JSX elements if you don't set the `jsxFramework` property. This is to avoid
 > unnecessary work for projects that don't use JSX.
 
 ### Choose Framework
 
 JSX is a JavaScript syntax extension that allows you to write HTML-like code directly within your JavaScript code and is
-supported by most popular frameworks. Panda supports JSX style props in React, Preact, Vue 3, Qwik and Solid.js.
+supported by most popular frameworks. Bamboo supports JSX style props in React, Preact, Vue 3, Qwik and Solid.js.
 
-```js filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```js filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   // ...
@@ -61,28 +61,28 @@ export default defineConfig({
 
 ### Generate JSX runtime
 
-Next, you need to run `panda codegen` to generate the JSX runtime for your framework.
+Next, you need to run `bamboo codegen` to generate the JSX runtime for your framework.
 
 <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
   {/* <!-- prettier-ignore-start --> */}
   <Tab>
   ```bash
-  pnpm panda codegen --clean
+  pnpm bamboo codegen --clean
   ```
   </Tab>
   <Tab>
   ```bash
-  npm panda codegen --clean
+  npm bamboo codegen --clean
   ```
   </Tab>
   <Tab>
   ```bash
-  yarn panda codegen --clean
+  yarn bamboo codegen --clean
   ```
   </Tab>
   <Tab>
   ```bash
-  bun panda codegen --clean
+  bun bamboo codegen --clean
   ```
   </Tab>
   {/* <!-- prettier-ignore-end --> */}
@@ -109,7 +109,7 @@ const Button = ({ children }) => (
 
 ### Property Renaming
 
-<Callout type="warning">Due to the static nature of Panda, you can't rename properties at runtime.</Callout>
+<Callout type="warning">Due to the static nature of Bamboo, you can't rename properties at runtime.</Callout>
 
 ```tsx filename="App.tsx"
 import { Circle, CircleProps } from '../styled-system/jsx'
@@ -122,7 +122,7 @@ const CustomCircle = (props: Props) => {
   const { circleSize = '3' } = props
   return (
     <Circle
-      // ❌ Avoid: Panda can't know that you're mapping `circleSize` to `size`
+      // ❌ Avoid: Bamboo can't know that you're mapping `circleSize` to `size`
       size={circleSize}
     />
   )
@@ -327,7 +327,7 @@ You can reduce the allowed JSX properties on the factory using
 Patterns are common layout patterns like `stack`, `grid`, `circle` that can be used to speed up your css. Think of them
 as a way to avoid repetitive layout styles.
 
-All the patterns provided by Panda are available as JSX components.
+All the patterns provided by Bamboo are available as JSX components.
 
 > Learn more about the [patterns](/docs/customization/patterns) we provide.
 
@@ -349,7 +349,7 @@ const App = () => (
 To make a custom JSX component that accepts style props, Use the `splitCssProps` function to split style props from
 other component props.
 
-> For this to work correctly, set the `jsxFramework` to the framework you're using in your panda config.
+> For this to work correctly, set the `jsxFramework` to the framework you're using in your bamboo config.
 
 ```tsx
 import { splitCssProps } from '../styled-system/jsx'
@@ -372,7 +372,7 @@ function App() {
 
 ## TypeScript
 
-Panda provides type definitions for all the style props that are supported by the JSX runtime.
+Bamboo provides type definitions for all the style props that are supported by the JSX runtime.
 
 You can use these types to get type safety in your components.
 
@@ -432,7 +432,7 @@ type ButtonVariantProps = StyledVariantProps<typeof Button>
 
 ### Patterns
 
-Every pattern provided by Panda has a corresponding type that you can use to get type safety in your components.
+Every pattern provided by Bamboo has a corresponding type that you can use to get type safety in your components.
 
 ```tsx {2}
 import { Stack } from '../styled-system/jsx'

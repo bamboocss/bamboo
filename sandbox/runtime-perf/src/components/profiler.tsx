@@ -40,7 +40,7 @@ export const Profiler = ({ children, id, name, onRerender }) => {
 
   return (
     <Fragment>
-      <h1>Panda</h1>
+      <h1>Bamboo</h1>
       <button onClick={onClick}>Force Rerender</button>
       <hr style={{ margin: "24px 0" }} />
       <ReactProfiler onRender={profilerResults} id={id}>

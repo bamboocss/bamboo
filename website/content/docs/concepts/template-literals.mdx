@@ -1,22 +1,22 @@
 ---
 title: Template Literals
-description: Panda allows you to write styles using template literals.
+description: Bamboo allows you to write styles using template literals.
 ---
 
 Writing styles using template literals provides a similar experience to
-[styled-components](https://styled-components.com/) and [emotion](https://emotion.sh/), except that Panda generates
+[styled-components](https://styled-components.com/) and [emotion](https://emotion.sh/), except that Bamboo generates
 atomic class names instead of a single unique class name.
 
-> Emitting atomic class names allows Panda to generate smaller CSS bundles.
+> Emitting atomic class names allows Bamboo to generate smaller CSS bundles.
 
-Panda provides two functions to write template literal styles: `css` and `styled`.
+Bamboo provides two functions to write template literal styles: `css` and `styled`.
 
 ## Getting started
 
-To use template literals, you need to set the `syntax` option in your `panda.config.ts` file to `templateLiteral`:
+To use template literals, you need to set the `syntax` option in your `bamboo.config.ts` file to `templateLiteral`:
 
 ```ts
-// panda.config.ts
+// bamboo.config.ts
 export default defineConfig({
   // ...
   syntax: 'template-literal', // required
@@ -27,7 +27,7 @@ export default defineConfig({
 Then run the codegen command to generate the functions:
 
 ```sh
-panda codegen --clean
+bamboo codegen --clean
 ```
 
 ## The `css` function
@@ -117,7 +117,7 @@ const Demo = styled.div`
   color: black;
 
   &::after {
-    content: '🐼';
+    content: '🎋';
   }
 
   & + & {
@@ -153,12 +153,12 @@ const Demo = styled.div`
 ## Hashing class names
 
 In some cases, it might be useful to shorten the class names by hashing them. Set the `hash: true` option in your
-`panda.config.ts` file to enable this. This will generate shorter class names but will make it harder to debug.
+`bamboo.config.ts` file to enable this. This will generate shorter class names but will make it harder to debug.
 
-To achieve this, set the `hash` option in your `panda.config.ts` file to `true`:
+To achieve this, set the `hash` option in your `bamboo.config.ts` file to `true`:
 
 ```ts
-// panda.config.ts
+// bamboo.config.ts
 
 export default defineConfig({
   // ...
@@ -194,7 +194,7 @@ To a unique six character hash regardless of the length of the selector or the n
 
 ## Using tokens
 
-Use the `token()` function or `{}` syntax in your template literals to reference design tokens in your styles. Panda
+Use the `token()` function or `{}` syntax in your template literals to reference design tokens in your styles. Bamboo
 will automatically generate the corresponding CSS variables.
 
 ```js
@@ -214,6 +214,6 @@ there are some caveats to be aware of:
 - Patterns and recipes are not generated
 - Dynamic interpolation or component targeting is not supported
 - Lack of autocompletion for tokens within the template literal Our
-  [Eslint plugin](https://github.com/chakra-ui/eslint-plugin-panda/blob/main/docs/rules/no-invalid-token-paths.md) can
+  [Eslint plugin](https://github.com/chakra-ui/eslint-plugin-bamboo/blob/main/docs/rules/no-invalid-token-paths.md) can
   help you overcome this by detecting invalid tokens
 - JSX Style props are not supported

@@ -1,42 +1,42 @@
 ---
-title: Using Panda Studio
-description: Document your design system visually using Panda Studio.
+title: Using Bamboo Studio
+description: Document your design system visually using Bamboo Studio.
 ---
 
-### Panda Studio
+### Bamboo Studio
 
-Panda Studio is a visual interface for exploring and understanding your entire design system. It provides a read-only
+Bamboo Studio is a visual interface for exploring and understanding your entire design system. It provides a read-only
 view of your tokens, semantic tokens, recipes, patterns, conditions, and more.
 
-![Panda Studio UI](/panda-studio.png)
+![Bamboo Studio UI](/bamboo-studio.png)
 
-If you don't want to manually generate spec files or build a documentation website, Panda Studio is the easiest option.
+If you don't want to manually generate spec files or build a documentation website, Bamboo Studio is the easiest option.
 
-- Studio does not require you to run pnpm panda spec.
+- Studio does not require you to run pnpm bamboo spec.
 
 - Studio generates and visualizes your design system automatically.
 
 - Studio acts as a fully-featured documentation tool without writing any documentation code.
 
-> Spec files are primarily for custom documentation setups and Storybook integrations. Panda Studio is for teams who
+> Spec files are primarily for custom documentation setups and Storybook integrations. Bamboo Studio is for teams who
 > want instant documentation.
 
-## Panda Studio Setup
+## Bamboo Studio Setup
 
-To use panda studio, first install it:
+To use bamboo studio, first install it:
 
 ```bash
-pnpm i @pandacss/studio
+pnpm i @bamboocss/studio
 ```
 
 Next, launch it locally using:
 
 ```bash
-pnpm panda studio
+pnpm bamboo studio
 ```
 
 This starts a local server and launches an interactive dashboard showing all your design system elements. Since Studio
-reads your theme configuration directly, any changes to your `panda.config.ts` will appear automatically the next time
+reads your theme configuration directly, any changes to your `bamboo.config.ts` will appear automatically the next time
 you run it.
 
 You can also deploy the studio as a standalone design system portal for your team.

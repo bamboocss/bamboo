@@ -4,14 +4,14 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "prepare": "panda codegen",
+    "prepare": "bamboo codegen",
     "dev": "astro dev",
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "css": "DEBUG=ast:* panda --clean",
-    "css:dev": "panda -w"
+    "css": "DEBUG=ast:* bamboo --clean",
+    "css:dev": "bamboo -w"
   },
   "dependencies": {
     "@astrojs/solid-js": "5.1.3",
@@ -19,6 +19,6 @@
     "solid-js": "1.9.10"
   },
   "devDependencies": {
-    "@pandacss/dev": "workspace:*"
+    "@bamboocss/dev": "workspace:*"
   }
 }

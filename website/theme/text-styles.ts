@@ -1,7 +1,7 @@
-import { defineTextStyles } from '@pandacss/dev'
+import { defineTextStyles } from '@bamboocss/dev'
 
 export const textStyles = defineTextStyles({
-  panda: {
+  bamboo: {
     h1: {
       value: {
         fontSize: '14.5rem',

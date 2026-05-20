@@ -1,5 +1,5 @@
 import css from 'css'
-import type { Dict } from '@pandacss/types'
+import type { Dict } from '@bamboocss/types'
 
 export const camelize = (text: string) => {
   return text

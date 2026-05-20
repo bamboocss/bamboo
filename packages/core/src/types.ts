@@ -1,4 +1,4 @@
-import type { TokenDictionary } from '@pandacss/token-dictionary'
+import type { TokenDictionary } from '@bamboocss/token-dictionary'
 import type {
   Config,
   Dict,
@@ -9,7 +9,7 @@ import type {
   SlotRecipeConfig,
   TSConfig,
   UserConfig,
-} from '@pandacss/types'
+} from '@bamboocss/types'
 import type { Conditions } from './conditions'
 import type { Context } from './context'
 import type { ImportMap } from './import-map'

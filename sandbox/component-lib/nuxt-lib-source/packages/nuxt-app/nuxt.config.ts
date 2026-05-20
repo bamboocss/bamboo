@@ -2,7 +2,7 @@
 export default defineNuxtConfig({
   telemetry: false,
   postcss: {
-    plugins: { '@pandacss/dev/postcss': {} },
+    plugins: { '@bamboocss/dev/postcss': {} },
   },
   css: ['~/assets/main.css'],
 })

@@ -7,7 +7,7 @@ import { format } from '@projectwallace/format-css'
 import * as React from 'react'
 import { useState } from 'react'
 import { useReadLocalStorage } from 'usehooks-ts'
-import type { CssFileArtifact } from '../hooks/usePanda'
+import type { CssFileArtifact } from '../hooks/useBamboo'
 
 export const GeneratedCss = React.memo(function GeneratedCss({
   cssArtifacts,

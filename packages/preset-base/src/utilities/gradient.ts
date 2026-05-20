@@ -1,4 +1,4 @@
-import type { PropertyValues, UtilityConfig } from '@pandacss/types'
+import type { PropertyValues, UtilityConfig } from '@bamboocss/types'
 import { createColorMixTransform } from '../color-mix-transform'
 
 const gradientVia = createColorMixTransform('--gradient-via')

@@ -1,5 +1,5 @@
-import type { Context } from '@pandacss/core'
-import type { TextStyleSpec } from '@pandacss/types'
+import type { Context } from '@bamboocss/core'
+import type { TextStyleSpec } from '@bamboocss/types'
 import { generateCompositionStyleSpec } from '../shared'
 
 export const generateTextStylesSpec = (ctx: Context): TextStyleSpec => {

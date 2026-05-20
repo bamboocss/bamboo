@@ -1,5 +1,5 @@
-import type { Context } from '@pandacss/core'
-import type { RecipeSpec } from '@pandacss/types'
+import type { Context } from '@bamboocss/core'
+import type { RecipeSpec } from '@bamboocss/types'
 import { buildFunctionProps, buildJsxProps, formatFunctionValue, formatJsxValue } from '../shared'
 
 const getFirstVariantValue = (variantKeyMap: Record<string, string[]>, key: string): string | null => {

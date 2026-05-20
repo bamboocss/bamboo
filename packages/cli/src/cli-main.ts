@@ -1,7 +1,7 @@
-import { findConfig } from '@pandacss/config'
-import { colors, logger } from '@pandacss/logger'
+import { findConfig } from '@bamboocss/config'
+import { colors, logger } from '@bamboocss/logger'
 import {
-  PandaContext,
+  BambooContext,
   analyze,
   buildInfo,
   codegen,
@@ -16,9 +16,9 @@ import {
   spec,
   startProfiling,
   type CssGenOptions,
-} from '@pandacss/node'
-import { PandaError, compact } from '@pandacss/shared'
-import type { CssArtifactType } from '@pandacss/types'
+} from '@bamboocss/node'
+import { BambooError, compact } from '@bamboocss/shared'
+import type { CssArtifactType } from '@bamboocss/types'
 import { cac } from 'cac'
 import { join, resolve } from 'path'
 import { version } from '../package.json'
@@ -39,16 +39,16 @@ import type {
 } from './types'
 
 export async function main() {
-  const cli = cac('panda')
+  const cli = cac('bamboo')
 
   const cwd = process.cwd()
 
   cli
-    .command('init', "Initialize the panda's config file")
+    .command('init', "Initialize the bamboo config file")
     .option('-i, --interactive', 'Run in interactive mode', { default: false })
     .option('-f, --force', 'Force overwrite existing config file')
     .option('-p, --postcss', 'Emit postcss config file')
-    .option('-c, --config <path>', 'Path to panda config file')
+    .option('-c, --config <path>', 'Path to bamboo config file')
     .option('--cwd <cwd>', 'Current working directory', { default: cwd })
     .option('--silent', 'Suppress all messages except errors')
     .option('--no-gitignore', "Don't update the .gitignore")
@@ -78,9 +78,9 @@ export async function main() {
 
       const stream = setLogStream({ cwd, logfile: flags.logfile })
 
-      logger.info('cli', `Panda v${version}\n`)
+      logger.info('cli', `Bamboo v${version}\n`)
 
-      const done = logger.time.info('✨ Panda initialized')
+      const done = logger.time.info('✨ Bamboo initialized')
 
       if (postcss) {
         await setupPostcss(cwd)
@@ -120,10 +120,10 @@ export async function main() {
     })
 
   cli
-    .command('codegen', 'Generate the panda system')
+    .command('codegen', 'Generate the bamboo system')
     .option('--silent', "Don't print any logs")
     .option('--clean', 'Clean the output directory before generating')
-    .option('-c, --config <path>', 'Path to panda config file')
+    .option('-c, --config <path>', 'Path to bamboo config file')
     .option('-w, --watch', 'Watch files and rebuild')
     .option('-p, --poll', 'Use polling instead of filesystem events when watching')
     .option('--cwd <cwd>', 'Current working directory', { default: cwd })
@@ -158,7 +158,7 @@ export async function main() {
         ctx.watchConfig(
           async () => {
             const affecteds = await ctx.diff.reloadConfigAndRefreshContext((conf) => {
-              ctx = new PandaContext(conf)
+              ctx = new BambooContext(conf)
             })
 
             await ctx.hooks['config:change']?.({ config: ctx.config, changes: affecteds })
@@ -182,7 +182,7 @@ export async function main() {
     .option('--silent', "Don't print any logs")
     .option('-m, --minify', 'Minify generated code')
     .option('--clean', 'Clean the output before generating')
-    .option('-c, --config <path>', 'Path to panda config file')
+    .option('-c, --config <path>', 'Path to bamboo config file')
     .option('-w, --watch', 'Watch files and rebuild')
     .option('--minimal', 'Do not include CSS generation for theme tokens, preflight, keyframes, static and global css')
     .option('--lightningcss', 'Use `lightningcss` instead of `postcss` for css optimization.')
@@ -240,7 +240,7 @@ export async function main() {
         ctx.watchConfig(
           async () => {
             const affecteds = await ctx.diff.reloadConfigAndRefreshContext((conf) => {
-              ctx = new PandaContext(conf)
+              ctx = new BambooContext(conf)
             })
 
             await ctx.hooks['config:change']?.({ config: ctx.config, changes: affecteds })
@@ -273,7 +273,7 @@ export async function main() {
     .option('-m, --minify', 'Minify generated code')
     .option('-w, --watch', 'Watch files and rebuild')
     .option('-p, --poll', 'Use polling instead of filesystem events when watching')
-    .option('-c, --config <path>', 'Path to panda config file')
+    .option('-c, --config <path>', 'Path to bamboo config file')
     .option('--cwd <cwd>', 'Current working directory', { default: cwd })
     .option('--preflight', 'Enable css reset')
     .option('--silent', 'Suppress all messages except errors')
@@ -314,7 +314,7 @@ export async function main() {
     .command('spec', 'Generate spec files for your theme (useful for documentation)')
     .option('--silent', "Don't print any logs")
     .option('--outdir <dir>', 'Output directory for spec files')
-    .option('-c, --config <path>', 'Path to panda config file')
+    .option('-c, --config <path>', 'Path to bamboo config file')
     .option('--cwd <cwd>', 'Current working directory', { default: cwd })
     .action(async (flags: SpecCommandFlags) => {
       const { silent, config: configPath, outdir } = flags
@@ -339,7 +339,7 @@ export async function main() {
     .option('--preview', 'Preview')
     .option('--port <port>', 'Port')
     .option('--host', 'Host')
-    .option('-c, --config <path>', 'Path to panda config file')
+    .option('-c, --config <path>', 'Path to bamboo config file')
     .option('--cwd <cwd>', 'Current working directory', { default: cwd })
     .option('--outdir <dir>', 'Output directory for static files')
     .option('--base <path>', 'Base path of project')
@@ -364,10 +364,10 @@ export async function main() {
       let studio: any
 
       try {
-        const studioPath = require.resolve('@pandacss/studio', { paths: [cwd] })
+        const studioPath = require.resolve('@bamboocss/studio', { paths: [cwd] })
         studio = require(studioPath)
       } catch (error) {
-        throw new PandaError('MISSING_STUDIO', "You need to install '@pandacss/studio' to use this command", {
+        throw new BambooError('MISSING_STUDIO', "You need to install '@bamboocss/studio' to use this command", {
           cause: error,
         })
       }
@@ -391,7 +391,7 @@ export async function main() {
     .option('--outfile [filepath]', 'Output analyze report in JSON')
     .option('--silent', "Don't print any logs")
     .option('--scope <type>', 'Select analysis scope (token or recipe)')
-    .option('-c, --config <path>', 'Path to panda config file')
+    .option('-c, --config <path>', 'Path to bamboo config file')
     .option('--cwd <cwd>', 'Current working directory', { default: cwd })
     .action(async (maybeGlob?: string, flags: AnalyzeCommandFlags = {}) => {
       const { silent, config: configPath, scope } = flags
@@ -444,7 +444,7 @@ export async function main() {
     .option('--dry', 'Output debug files in stdout without writing to disk')
     .option('--outdir [dir]', "Output directory for debug files, default to './styled-system/debug'")
     .option('--only-config', "Should only output the config file, default to 'false'")
-    .option('-c, --config <path>', 'Path to panda config file')
+    .option('-c, --config <path>', 'Path to bamboo config file')
     .option('--cwd <cwd>', 'Current working directory', { default: cwd })
     .option('--cpu-prof', 'Generates a `.cpuprofile` to help debug performance issues')
     .option('--logfile <file>', 'Outputs logs to a file')
@@ -482,10 +482,10 @@ export async function main() {
     .option('--silent', "Don't print any logs")
     .option(
       '--o, --outfile [file]',
-      "Output path for the build info file, default to './styled-system/panda.buildinfo.json'",
+      "Output path for the build info file, default to './styled-system/bamboo.buildinfo.json'",
     )
     .option('-m, --minify', 'Minify generated JSON file')
-    .option('-c, --config <path>', 'Path to panda config file')
+    .option('-c, --config <path>', 'Path to bamboo config file')
     .option('--cwd <cwd>', 'Current working directory', { default: cwd })
     .option('-w, --watch', 'Watch files and rebuild')
     .option('-p, --poll', 'Use polling instead of filesystem events when watching')
@@ -504,7 +504,7 @@ export async function main() {
         configPath,
       })
 
-      const outfile = outfileFlag ?? join(...ctx.paths.root, 'panda.buildinfo.json')
+      const outfile = outfileFlag ?? join(...ctx.paths.root, 'bamboo.buildinfo.json')
 
       if (minify) {
         ctx.config.minify = true
@@ -516,7 +516,7 @@ export async function main() {
         ctx.watchConfig(
           async () => {
             const affecteds = await ctx.diff.reloadConfigAndRefreshContext((conf) => {
-              ctx = new PandaContext(conf)
+              ctx = new BambooContext(conf)
             })
 
             await ctx.hooks['config:change']?.({ config: ctx.config, changes: affecteds })
@@ -603,17 +603,17 @@ export async function main() {
         //
         const content = {
           name: outdir,
-          description: 'This package is auto-generated by Panda CSS',
+          description: 'This package is auto-generated by Bamboo CSS',
           version: '0.1.0',
           type: 'module',
-          keywords: ['pandacss', 'styled-system', 'codegen'],
+          keywords: ['bamboocss', 'styled-system', 'codegen'],
           license: 'ISC',
           exports: {
             ...Object.fromEntries(exports),
             './styles.css': stylesDir,
           },
           scripts: {
-            prepare: 'panda codegen --clean',
+            prepare: 'bamboo codegen --clean',
           },
         }
 
@@ -636,10 +636,10 @@ export async function main() {
 
   cli
     .command('mcp', 'Start MCP server for AI assistants')
-    .option('-c, --config <path>', 'Path to panda config file')
+    .option('-c, --config <path>', 'Path to bamboo config file')
     .option('--cwd <cwd>', 'Current working directory', { default: cwd })
     .action(async (mcpFlags: McpCommandFlags) => {
-      const { startMcpServer } = await import('@pandacss/mcp')
+      const { startMcpServer } = await import('@bamboocss/mcp')
       await startMcpServer(mcpFlags)
     })
 
@@ -648,7 +648,7 @@ export async function main() {
     .option('--cwd <cwd>', 'Current working directory', { default: cwd })
     .option('--client <clients>', 'AI clients to configure (claude, cursor, vscode, windsurf, codex)')
     .action(async (mcpInitFlags: McpInitCommandFlags) => {
-      const { initMcpConfig } = await import('@pandacss/mcp')
+      const { initMcpConfig } = await import('@bamboocss/mcp')
       const resolvedCwd = resolve(mcpInitFlags.cwd ?? cwd)
 
       // Parse comma-separated clients if provided

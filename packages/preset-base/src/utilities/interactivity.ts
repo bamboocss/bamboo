@@ -1,4 +1,4 @@
-import type { UtilityConfig } from '@pandacss/types'
+import type { UtilityConfig } from '@bamboocss/types'
 import { createColorMixTransform } from '../color-mix-transform'
 
 export const interactivity: UtilityConfig = {

@@ -1,7 +1,7 @@
 ---
 import '../../styled-system/styles.css'
 import Head from '../components/head.astro'
-import * as context from '../lib/panda-context'
+import * as context from '../lib/bamboo-context'
 ---
 
 <!DOCTYPE html>
@@ -10,7 +10,7 @@ import * as context from '../lib/panda-context'
     <Head />
     <Fragment set:html={context.inject.head} />
     <meta name="generator" content={Astro.generator} />
-    <title>Panda Studio</title>
+    <title>Bamboo Studio</title>
   </head>
   <body>
     <Fragment set:html={context.inject.body} />

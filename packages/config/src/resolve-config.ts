@@ -1,7 +1,7 @@
-import { logger } from '@pandacss/logger'
-import { PANDA_CONFIG_NAME, omit, parseJson, pick, stringifyJson, traverse } from '@pandacss/shared'
-import type { LoadConfigResult, UserConfig } from '@pandacss/types'
-import { getBundledPreset, presetBase, presetPanda } from './bundled-preset'
+import { logger } from '@bamboocss/logger'
+import { BAMBOO_CONFIG_NAME, omit, parseJson, pick, stringifyJson, traverse } from '@bamboocss/shared'
+import type { LoadConfigResult, UserConfig } from '@bamboocss/types'
+import { getBundledPreset, presetBase, presetBamboo } from './bundled-preset'
 import { getResolvedConfig } from './get-resolved-config'
 import { mergeHooks } from './merge-hooks'
 import type { BundleConfigResult } from './types'
@@ -15,8 +15,8 @@ const hookUtils = {
 
 /**
  * Resolve the final config (including presets)
- * @pandacss/preset-base: ALWAYS included if NOT using eject: true
- * @pandacss/preset-panda: only included by default if no presets
+ * @bamboocss/preset-base: ALWAYS included if NOT using eject: true
+ * @bamboocss/preset-bamboo: only included by default if no presets
  */
 export async function resolveConfig(result: BundleConfigResult, cwd: string): Promise<LoadConfigResult> {
   const presets = new Set<any>()
@@ -32,7 +32,7 @@ export async function resolveConfig(result: BundleConfigResult, cwd: string): Pr
     })
     //
   } else if (!result.config.eject) {
-    presets.add(presetPanda)
+    presets.add(presetBamboo)
   }
 
   result.config.presets = Array.from(presets)
@@ -41,7 +41,7 @@ export async function resolveConfig(result: BundleConfigResult, cwd: string): Pr
   const userConfig = result.config
   const pluginHooks = userConfig.plugins ?? []
   if (userConfig.hooks) {
-    pluginHooks.push({ name: PANDA_CONFIG_NAME, hooks: userConfig.hooks })
+    pluginHooks.push({ name: BAMBOO_CONFIG_NAME, hooks: userConfig.hooks })
   }
 
   // Import mergeHooks to get hooks before merging
@@ -75,7 +75,7 @@ export async function resolveConfig(result: BundleConfigResult, cwd: string): Pr
     }
   }
 
-  const serialized = stringifyJson(Object.assign({}, loadConfigResult.config, { name: PANDA_CONFIG_NAME, presets: [] }))
+  const serialized = stringifyJson(Object.assign({}, loadConfigResult.config, { name: BAMBOO_CONFIG_NAME, presets: [] }))
   const deserialize = () => parseJson(serialized)
 
   return { ...loadConfigResult, serialized, deserialize, hooks }

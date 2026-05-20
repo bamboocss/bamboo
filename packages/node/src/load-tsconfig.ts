@@ -1,5 +1,5 @@
-import { convertTsPathsToRegexes } from '@pandacss/config'
-import type { LoadConfigResult, LoadTsConfigResult } from '@pandacss/types'
+import { convertTsPathsToRegexes } from '@bamboocss/config'
+import type { LoadConfigResult, LoadTsConfigResult } from '@bamboocss/types'
 import path from 'node:path'
 
 import {

@@ -1,6 +1,6 @@
-import type { Token } from '@pandacss/token-dictionary'
+import type { Token } from '@bamboocss/token-dictionary'
 import * as React from 'react'
-import { Grid, HStack, Stack, panda } from '../../styled-system/jsx'
+import { Grid, HStack, Stack, bamboo } from '../../styled-system/jsx'
 import { ColorWrapper } from '../components/color-wrapper'
 import { TokenContent } from '../components/token-content'
 import { TokenGroup } from '../components/token-group'
@@ -61,7 +61,7 @@ export function SemanticToken(props: SemanticTokenProps) {
           />
         ))}
       </HStack>
-      <panda.span fontWeight="semibold">{name}</panda.span>
+      <bamboo.span fontWeight="semibold">{name}</bamboo.span>
     </Stack>
   )
 }
@@ -114,10 +114,10 @@ function PrimitiveColors(props: { values?: Token[] }) {
       <Stack gap="1" key={i}>
         <ColorWrapper style={{ background: color.value }} />
         <Stack mt="2" gap="0.5">
-          <panda.div fontWeight="medium">{color.extensions.prop}</panda.div>
-          <panda.div opacity="0.7" fontSize="sm" textTransform="uppercase">
+          <bamboo.div fontWeight="medium">{color.extensions.prop}</bamboo.div>
+          <bamboo.div opacity="0.7" fontSize="sm" textTransform="uppercase">
             {color.value}
-          </panda.div>
+          </bamboo.div>
         </Stack>
       </Stack>
     )
@@ -133,9 +133,9 @@ function ColorGroup(props: { colors?: Token[]; title: string; children?: React.R
 
   return (
     <div>
-      <panda.span fontWeight="medium" textTransform="capitalize" fontSize="xl">
+      <bamboo.span fontWeight="medium" textTransform="capitalize" fontSize="xl">
         {title}
-      </panda.span>
+      </bamboo.span>
       {children ? (
         <Stack gap="10" mt="10">
           {children}

@@ -1,4 +1,4 @@
-import type { Theme } from '@pandacss/types'
+import type { Theme } from '@bamboocss/types'
 
 export const textStyles: Theme['textStyles'] = {
   heading: {

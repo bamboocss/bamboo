@@ -1,4 +1,4 @@
-import type { RecipeConfig } from '@pandacss/types'
+import type { RecipeConfig } from '@bamboocss/types'
 
 export const recipes: Record<string, RecipeConfig> = {
   textStyle: {

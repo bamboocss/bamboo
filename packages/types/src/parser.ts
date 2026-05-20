@@ -1,4 +1,4 @@
-import type { BoxNodeArray, BoxNodeLiteral, BoxNodeMap, Unboxed } from '@pandacss/extractor'
+import type { BoxNodeArray, BoxNodeLiteral, BoxNodeMap, Unboxed } from '@bamboocss/extractor'
 
 export interface ResultItem {
   name?: string

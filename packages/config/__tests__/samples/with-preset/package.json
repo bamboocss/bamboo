@@ -2,6 +2,6 @@
   "name": "sandbox-config-test-nested-files",
   "private": true,
   "devDependencies": {
-    "@pandacss/dev": "workspace:^"
+    "@bamboocss/dev": "workspace:^"
   }
 }

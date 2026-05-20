@@ -7,12 +7,12 @@ When multiple CSS rules apply
 to the same element, the browser uses the cascade to determine which rule should take precedence. See the
 [MDN article](https://developer.mozilla.org/en-US/docs/Web/CSS/@layer) to learn more.
 
-Panda takes advantage of the cascade to provide a more efficient and flexible way to organize styles. This allows you to
+Bamboo takes advantage of the cascade to provide a more efficient and flexible way to organize styles. This allows you to
 define styles in a modular way, using CSS rules that are scoped to specific components or elements.
 
 ## Layer Types
 
-Panda supports five types of cascade layers out of the box:
+Bamboo supports five types of cascade layers out of the box:
 
 - `@layer reset` - The reset layer is used to reset the default styles of HTML elements. This is used when
   `preflight: true` is set in the config. You can also use this layer to add your own reset styles.
@@ -98,7 +98,7 @@ This means that styles defined in the `@layer utilities` will take precedence ov
 
 ## Layer CSS
 
-The generated CSS in Panda is organized into layers. This allows you to define styles in a modular way, using CSS rules
+The generated CSS in Bamboo is organized into layers. This allows you to define styles in a modular way, using CSS rules
 that are scoped to specific components or elements.
 
 Here's what the first line of the generated CSS looks like:
@@ -112,7 +112,7 @@ exciting feature of CSS cascade layers.
 
 ## Customize layers
 
-Panda lets you customize the cascade layers, so your project can coexist with other solutions. Learn more about customizing layers [here](/docs/references/config#layers).
+Bamboo lets you customize the cascade layers, so your project can coexist with other solutions. Learn more about customizing layers [here](/docs/references/config#layers).
 
 ## Polyfills
 
@@ -124,7 +124,7 @@ Here is an example of a `postcss.config.js` file that uses these polyfills:
 
 ```js
 module.exports = {
-  plugins: ['@pandacss/dev/postcss', '@csstools/postcss-cascade-layers']
+  plugins: ['@bamboocss/dev/postcss', '@csstools/postcss-cascade-layers']
 }
 ```
 

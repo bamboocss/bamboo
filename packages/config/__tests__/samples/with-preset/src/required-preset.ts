@@ -1,4 +1,4 @@
-import { definePreset, defineSemanticTokens } from '@pandacss/dev'
+import { definePreset, defineSemanticTokens } from '@bamboocss/dev'
 
 export const requiredPreset = definePreset({
   name: 'required-preset',

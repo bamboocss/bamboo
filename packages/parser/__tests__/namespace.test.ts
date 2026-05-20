@@ -78,11 +78,11 @@ describe('extract namespace', () => {
 
   test('TS namespaces - css', () => {
     const code = `
-        import * as panda from "styled-system/css"
+        import * as bamboo from "styled-system/css"
     
-        panda.css({ color: "red" })
-        panda.cva({ base: { color: "blue" } })
-        panda.sva({ base: { root: { color: "green" } } })
+        bamboo.css({ color: "red" })
+        bamboo.cva({ base: { color: "blue" } })
+        bamboo.sva({ base: { root: { color: "green" } } })
          `
     const result = parseAndExtract(code)
     expect(result.json).toMatchInlineSnapshot(`
@@ -221,13 +221,13 @@ describe('extract namespace', () => {
     `)
   })
 
-  test('TS namespaces - ignore not from panda', () => {
+  test('TS namespaces - ignore not from bamboo', () => {
     const code = `
-        import * as panda from "not-panda"
+        import * as bamboo from "not-bamboo"
     
-        panda.css({ color: "red" })
-        panda.cva({ base: { color: "blue" } })
-        panda.sva({ base: { root: { color: "green" } } })
+        bamboo.css({ color: "red" })
+        bamboo.cva({ base: { color: "blue" } })
+        bamboo.sva({ base: { root: { color: "green" } } })
          `
     const result = parseAndExtract(code)
     expect(result.json).toMatchInlineSnapshot(`[]`)
@@ -237,10 +237,10 @@ describe('extract namespace', () => {
 
   test('TS namespaces - JSX factory', () => {
     const code = `
-        import * as pandaJsx from '../styled-system/jsx';
+        import * as bambooJsx from '../styled-system/jsx';
     
-        pandaJsx.styled('div', { base: { color: 'red' } })
-        const App = () => <pandaJsx.styled.span color="blue">Hello</pandaJsx.styled.span>
+        bambooJsx.styled('div', { base: { color: 'red' } })
+        const App = () => <bambooJsx.styled.span color="blue">Hello</bambooJsx.styled.span>
          `
     const result = parseAndExtract(code)
     expect(result.json).toMatchInlineSnapshot(`
@@ -281,13 +281,13 @@ describe('extract namespace', () => {
     `)
   })
 
-  test('TS namespaces - ignore not from panda', () => {
+  test('TS namespaces - ignore not from bamboo', () => {
     const code = `
-        import * as panda from "not-panda"
+        import * as bamboo from "not-bamboo"
     
-        panda.css({ color: "red" })
-        panda.cva({ base: { color: "blue" } })
-        panda.sva({ base: { root: { color: "green" } } })
+        bamboo.css({ color: "red" })
+        bamboo.cva({ base: { color: "blue" } })
+        bamboo.sva({ base: { root: { color: "green" } } })
          `
     const result = parseAndExtract(code)
     expect(result.json).toMatchInlineSnapshot(`[]`)

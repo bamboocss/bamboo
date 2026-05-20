@@ -7,7 +7,7 @@
   "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prepare": "panda codegen",
+    "prepare": "bamboo codegen",
     "dev": "storybook dev -p 6006",
     "build": "storybook build"
   },
@@ -15,7 +15,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@pandacss/dev": "workspace:*",
+    "@bamboocss/dev": "workspace:*",
     "@storybook/addon-docs": "10.1.2",
     "@storybook/addon-links": "10.1.2",
     "@storybook/react": "^10.1.2",

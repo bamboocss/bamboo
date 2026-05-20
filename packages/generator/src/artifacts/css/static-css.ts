@@ -1,5 +1,5 @@
-import type { Context } from '@pandacss/core'
-import type { Stylesheet } from '@pandacss/core'
+import type { Context } from '@bamboocss/core'
+import type { Stylesheet } from '@bamboocss/core'
 
 export const generateStaticCss = (ctx: Context, sheet?: Stylesheet) => {
   const { config, staticCss } = ctx

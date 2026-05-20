@@ -1,7 +1,7 @@
-import type { Conditions, Context } from '@pandacss/core'
-import { Stylesheet, expandNestedCss, extractParentSelectors, stringify } from '@pandacss/core'
-import { logger } from '@pandacss/logger'
-import type { ConditionQuery } from '@pandacss/types'
+import type { Conditions, Context } from '@bamboocss/core'
+import { Stylesheet, expandNestedCss, extractParentSelectors, stringify } from '@bamboocss/core'
+import { logger } from '@bamboocss/logger'
+import type { ConditionQuery } from '@bamboocss/types'
 import postcss, { AtRule, CssSyntaxError, Rule } from 'postcss'
 
 export function generateTokenCss(ctx: Context, sheet: Stylesheet) {

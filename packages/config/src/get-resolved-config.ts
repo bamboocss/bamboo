@@ -1,5 +1,5 @@
-import { omit, pick, traverse } from '@pandacss/shared'
-import type { Config, PandaHooks, Preset } from '@pandacss/types'
+import { omit, pick, traverse } from '@bamboocss/shared'
+import type { Config, BambooHooks, Preset } from '@bamboocss/types'
 import { bundle } from './bundle-config'
 import { mergeConfigs } from './merge-config'
 
@@ -15,7 +15,7 @@ const hookUtils = {
 /**
  * Recursively merge all presets into a single config (depth-first using stack)
  */
-export async function getResolvedConfig(config: ExtendableConfig, cwd: string, hooks?: Partial<PandaHooks>) {
+export async function getResolvedConfig(config: ExtendableConfig, cwd: string, hooks?: Partial<BambooHooks>) {
   const stack: ExtendableConfig[] = [config]
   const configs: ExtendableConfig[] = []
 

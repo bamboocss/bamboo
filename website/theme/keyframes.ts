@@ -1,4 +1,4 @@
-import { defineKeyframes } from '@pandacss/dev'
+import { defineKeyframes } from '@bamboocss/dev'
 
 export const keyframes = defineKeyframes({
   'fade-in': {

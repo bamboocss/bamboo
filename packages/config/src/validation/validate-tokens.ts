@@ -1,5 +1,5 @@
-import { isObject, walkObject } from '@pandacss/shared'
-import type { Config } from '@pandacss/types'
+import { isObject, walkObject } from '@bamboocss/shared'
+import type { Config } from '@bamboocss/types'
 import type { AddError, TokensData } from '../types'
 import { SEP, formatPath, getReferences, isTokenReference, isValidToken, serializeTokenValue } from './utils'
 import { validateTokenReferences } from './validate-token-references'

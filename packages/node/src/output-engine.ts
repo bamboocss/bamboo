@@ -1,10 +1,10 @@
-import type { Generator } from '@pandacss/generator'
-import { logger } from '@pandacss/logger'
-import type { Artifact, PandaHooks, Runtime } from '@pandacss/types'
+import type { Generator } from '@bamboocss/generator'
+import { logger } from '@bamboocss/logger'
+import type { Artifact, BambooHooks, Runtime } from '@bamboocss/types'
 
 interface OutputEngineOptions extends Generator {
   runtime: Runtime
-  hooks: Partial<PandaHooks>
+  hooks: Partial<BambooHooks>
 }
 
 export class OutputEngine {

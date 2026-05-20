@@ -1,17 +1,17 @@
 {
-  "name": "@pandacss/preset-base",
+  "name": "@bamboocss/preset-base",
   "version": "1.11.1",
-  "description": "The base preset for Panda CSS that contains the conditions and utilities",
+  "description": "The base preset for Bamboo CSS that contains the conditions and utilities",
   "author": "Segun Adebayo <joseshegs@gmail.com>",
   "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "sideEffects": false,
-  "homepage": "https://panda-css.com",
+  "homepage": "https://bamboo-css.com",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chakra-ui/panda.git",
+    "url": "git+https://github.com/chakra-ui/bamboo.git",
     "directory": "packages/preset-base"
   },
   "publishConfig": {
@@ -38,6 +38,6 @@
     "dist"
   ],
   "dependencies": {
-    "@pandacss/types": "workspace:*"
+    "@bamboocss/types": "workspace:*"
   }
 }

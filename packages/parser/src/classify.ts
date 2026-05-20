@@ -1,6 +1,6 @@
-import type { ParserOptions } from '@pandacss/core'
-import { BoxNodeMap, box, type BoxNode } from '@pandacss/extractor'
-import { compact, patternFns } from '@pandacss/shared'
+import type { ParserOptions } from '@bamboocss/core'
+import { BoxNodeMap, box, type BoxNode } from '@bamboocss/extractor'
+import { compact, patternFns } from '@bamboocss/shared'
 import type {
   ClassifyReport,
   ComponentReportItem,
@@ -10,7 +10,7 @@ import type {
   ReportDerivedMaps,
   ResultItem,
   SlotRecipeConfig,
-} from '@pandacss/types'
+} from '@bamboocss/types'
 
 type ParserResultMap = Map<string, ParserResultInterface>
 

@@ -1,5 +1,5 @@
-import type { Context } from '@pandacss/core'
-import type { ConditionSpec } from '@pandacss/types'
+import type { Context } from '@bamboocss/core'
+import type { ConditionSpec } from '@bamboocss/types'
 import type { JsxStyleProps } from '../shared'
 
 const generateConditionJsxExamples = (conditionName: string, jsxStyleProps: JsxStyleProps = 'all'): string[] => {

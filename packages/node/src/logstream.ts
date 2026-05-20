@@ -1,4 +1,4 @@
-import { logger } from '@pandacss/logger'
+import { logger } from '@bamboocss/logger'
 import fs from 'node:fs'
 import path from 'node:path'
 

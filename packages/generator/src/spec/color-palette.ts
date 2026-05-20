@@ -1,5 +1,5 @@
-import type { Context } from '@pandacss/core'
-import type { ColorPaletteSpec } from '@pandacss/types'
+import type { Context } from '@bamboocss/core'
+import type { ColorPaletteSpec } from '@bamboocss/types'
 import { formatProps, generateJsxExample } from '../shared'
 
 const getColorPaletteExampleValues = (ctx: Context, paletteValues: string[]) => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { createContext } from '@pandacss/fixture'
+import { createContext } from '@bamboocss/fixture'
 import { Reporter } from '../src'
 
 const ctx = createContext({

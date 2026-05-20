@@ -1,5 +1,5 @@
-import { PANDA_CONFIG_NAME, assign, mergeWith, mergeAndConcat, walkObject } from '@pandacss/shared'
-import type { Config } from '@pandacss/types'
+import { BAMBOO_CONFIG_NAME, assign, mergeWith, mergeAndConcat, walkObject } from '@bamboocss/shared'
+import type { Config } from '@bamboocss/types'
 import { mergeHooks } from './merge-hooks'
 export { mergeHooks }
 import { isValidToken } from './validation/utils'
@@ -76,7 +76,7 @@ export function mergeConfigs(configs: ExtendableConfig[]) {
   const userConfig = configs.at(-1)!
   const pluginHooks = userConfig.plugins ?? []
   if (userConfig.hooks) {
-    pluginHooks.push({ name: PANDA_CONFIG_NAME, hooks: userConfig.hooks })
+    pluginHooks.push({ name: BAMBOO_CONFIG_NAME, hooks: userConfig.hooks })
   }
 
   const reversed = Array.from(configs).reverse()

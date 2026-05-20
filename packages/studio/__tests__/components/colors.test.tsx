@@ -1,7 +1,7 @@
 import React from 'react'
 import { describe, expect, it } from 'vitest'
 import { render } from '@testing-library/react'
-import type { TokenExtensions } from '@pandacss/token-dictionary'
+import type { TokenExtensions } from '@bamboocss/token-dictionary'
 import { SemanticToken, sortSemanticTokens } from '../../src/components/colors'
 import rawSemanticTokens from '../fixtures/semantic-tokens-park-ui.json'
 

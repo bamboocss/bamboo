@@ -1,5 +1,5 @@
-import { createRuleProcessor, createColorMixTransform } from '@pandacss/fixture'
-import type { Dict } from '@pandacss/types'
+import { createRuleProcessor, createColorMixTransform } from '@bamboocss/fixture'
+import type { Dict } from '@bamboocss/types'
 import { describe, expect, test } from 'vitest'
 
 describe('color-mix', () => {

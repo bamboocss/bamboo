@@ -1,10 +1,10 @@
-import { loadConfig, mergeHooks } from '@pandacss/config'
-import type { Config, PandaPlugin } from '@pandacss/types'
-import { pluginLightningcss } from '@pandacss/plugin-lightningcss'
-import { pluginSvelte } from '@pandacss/plugin-svelte'
-import { pluginVue } from '@pandacss/plugin-vue'
+import { loadConfig, mergeHooks } from '@bamboocss/config'
+import type { Config, BambooPlugin } from '@bamboocss/types'
+import { pluginLightningcss } from '@bamboocss/plugin-lightningcss'
+import { pluginSvelte } from '@bamboocss/plugin-svelte'
+import { pluginVue } from '@bamboocss/plugin-vue'
 import browserslist from 'browserslist'
-import { PandaContext } from './create-context'
+import { BambooContext } from './create-context'
 import { loadTsConfig } from './load-tsconfig'
 
 const RESOLVED_HOOKS_NAME = '__resolved__'
@@ -13,8 +13,8 @@ const RESOLVED_HOOKS_NAME = '__resolved__'
  * Built-in plugins that are auto-injected when using the CLI or PostCSS plugin.
  * These provide Vue/Svelte file support and LightningCSS optimization.
  */
-function getAutoPlugins(config: Config): PandaPlugin[] {
-  const plugins: PandaPlugin[] = [pluginVue(), pluginSvelte()]
+function getAutoPlugins(config: Config): BambooPlugin[] {
+  const plugins: BambooPlugin[] = [pluginVue(), pluginSvelte()]
 
   if (config.lightningcss) {
     plugins.push(pluginLightningcss())
@@ -60,5 +60,5 @@ export async function loadConfigAndCreateContext(options: { cwd?: string; config
     Object.assign(conf, tsConfResult)
   }
 
-  return new PandaContext(conf)
+  return new BambooContext(conf)
 }

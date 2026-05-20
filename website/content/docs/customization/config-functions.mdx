@@ -14,8 +14,8 @@ To help defining config in a type-safe way, you can use the following helpers:
 
 Function for [config](/docs/references/config) definitions.
 
-```ts filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```ts filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   theme: {},
@@ -28,7 +28,7 @@ export default defineConfig({
 Function for [recipe](/docs/concepts/recipes#config-recipe) definitions.
 
 ```ts
-import { defineRecipe } from '@pandacss/dev'
+import { defineRecipe } from '@bamboocss/dev'
 
 export const buttonRecipe = defineRecipe({
   className: 'button',
@@ -54,7 +54,7 @@ export const buttonRecipe = defineRecipe({
 Function for [slot recipe](/docs/concepts/slot-recipes#config-slot-recipe) definitions.
 
 ```ts
-import { defineSlotRecipe } from '@pandacss/dev'
+import { defineSlotRecipe } from '@bamboocss/dev'
 
 export const checkboxRecipe = defineSlotRecipe({
   className: 'checkbox',
@@ -93,7 +93,7 @@ It pairs well with [ZagJs](https://zagjs.com/) and [Ark-UI](https://ark-ui.com/)
 Let's refactor the previous example to use parts instead of slots:
 
 ```ts
-import { defineParts, definetRecipe } from '@pandacss/dev'
+import { defineParts, definetRecipe } from '@bamboocss/dev'
 
 const parts = defineParts({
   root: { selector: '& [data-part="root"]' },
@@ -132,7 +132,7 @@ export const checkboxRecipe = defineRecipe({
 Function for [pattern](/docs/customization/patterns) definitions.
 
 ```ts
-import { definePattern } from '@pandacss/dev'
+import { definePattern } from '@bamboocss/dev'
 
 const visuallyHidden = definePattern({
   transform(props) {
@@ -149,9 +149,9 @@ const visuallyHidden = definePattern({
 Function for [preset](/docs/customization/presets#creating-a-preset) definitions.
 
 ```ts
-import { definePreset } from '@pandacss/dev'
+import { definePreset } from '@bamboocss/dev'
 
-export const pandaPreset = definePreset({
+export const bambooPreset = definePreset({
   theme: {
     extend: {
       tokens: {
@@ -167,7 +167,7 @@ export const pandaPreset = definePreset({
 Function for [plugin](/docs/references/config#plugins) definitions.
 
 ```ts
-import { definePlugin } from '@pandacss/dev'
+import { definePlugin } from '@bamboocss/dev'
 
 export const plugin = definePlugin({
   name: 'token-format',
@@ -186,7 +186,7 @@ export const plugin = definePlugin({
 Function for [keyframes](/docs/customization/theme#keyframes) definitions.
 
 ```ts
-import { defineKeyframes } from '@pandacss/dev'
+import { defineKeyframes } from '@bamboocss/dev'
 
 export const keyframes = defineKeyframes({
   fadeIn: {
@@ -201,7 +201,7 @@ export const keyframes = defineKeyframes({
 Function for [global styles](/docs/concepts/writing-styles#global-styles) definitions.
 
 ```ts
-import { defineGlobalStyles } from '@pandacss/dev'
+import { defineGlobalStyles } from '@bamboocss/dev'
 
 const globalCss = defineGlobalStyles({
   'html, body': {
@@ -216,7 +216,7 @@ const globalCss = defineGlobalStyles({
 Function for [utility](/docs/customization/utilities) definitions.
 
 ```ts
-import { defineUtility } from '@pandacss/dev'
+import { defineUtility } from '@bamboocss/dev'
 
 export const br = defineUtility({
   className: 'rounded',
@@ -232,7 +232,7 @@ export const br = defineUtility({
 Function for [text styles](/docs/theming/text-styles) definitions.
 
 ```ts
-import { defineTextStyles } from '@pandacss/dev'
+import { defineTextStyles } from '@bamboocss/dev'
 
 export const textStyles = defineTextStyles({
   body: {
@@ -255,7 +255,7 @@ export const textStyles = defineTextStyles({
 Function for [layer styles](/docs/theming/layer-styles) definitions.
 
 ```ts
-import { defineLayerStyles } from '@pandacss/dev'
+import { defineLayerStyles } from '@bamboocss/dev'
 
 const layerStyles = defineLayerStyles({
   container: {
@@ -278,7 +278,7 @@ This comes in handy when you want to define reusable styles in the config.
 E.g. a set of styles to be used in multiple variants within a [recipe](/docs/concepts/recipes#config-recipe).
 
 ```ts {3, 14, 18} filename="recipes/button.ts"
-import { defineRecipe, defineStyles } from '@pandacss/dev'
+import { defineRecipe, defineStyles } from '@bamboocss/dev'
 
 const buttonVisualStyles = defineStyles({
   borderRadius: 'lg',
@@ -310,7 +310,7 @@ To help defining tokens in a type-safe way, you can use the following helpers:
 ### `defineTokens`
 
 ```ts
-import { defineTokens } from '@pandacss/dev'
+import { defineTokens } from '@bamboocss/dev'
 
 const theme = {
   tokens: defineTokens({
@@ -324,7 +324,7 @@ const theme = {
 You can also use this function to define tokens in a separate file:
 
 ```ts filename="tokens/colors.ts"
-import { defineTokens } from '@pandacss/dev'
+import { defineTokens } from '@bamboocss/dev'
 
 export const colors = defineTokens.colors({
   primary: { value: '#ff0000' }
@@ -334,7 +334,7 @@ export const colors = defineTokens.colors({
 ### `defineSemanticTokens`
 
 ```ts
-import { defineSemanticTokens } from '@pandacss/dev'
+import { defineSemanticTokens } from '@bamboocss/dev'
 
 const theme = {
   semanticTokens: defineSemanticTokens({
@@ -350,7 +350,7 @@ const theme = {
 You can also use this function to define tokens in a separate file:
 
 ```ts filename="tokens/colors.semantic.ts"
-import { defineSemanticTokens } from '@pandacss/dev'
+import { defineSemanticTokens } from '@bamboocss/dev'
 
 export const colors = defineSemanticTokens.colors({
   primary: {

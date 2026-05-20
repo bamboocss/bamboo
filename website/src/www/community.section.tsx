@@ -1,12 +1,12 @@
 import { ButtonLink } from '@/components/ui/button'
-import { Container, Stack, panda } from '@/styled-system/jsx'
+import { Container, Stack, bamboo } from '@/styled-system/jsx'
 import { Icon } from '@/theme/icons'
 import Image from 'next/image'
 
 export const CommunitySection = () => {
   return (
-    <panda.section position="relative" bg="bg" overflow="hidden">
-      <panda.div
+    <bamboo.section position="relative" bg="bg" overflow="hidden">
+      <bamboo.div
         display={{ base: 'none', md: 'block' }}
         position="absolute"
         top="2%"
@@ -20,22 +20,22 @@ export const CommunitySection = () => {
           src="/community.png"
           style={{ height: '100%', width: '800px' }}
         />
-      </panda.div>
+      </bamboo.div>
 
       <Container pt="32" pb="40">
         <Stack gap="10" align="flex-start" maxWidth="580px">
           <Stack gap="6" bg="bg">
-            <panda.h3 textStyle="panda.h3" fontWeight="bold">
+            <bamboo.h3 textStyle="bamboo.h3" fontWeight="bold">
               Join our community
-            </panda.h3>
-            <panda.span
+            </bamboo.h3>
+            <bamboo.span
               textStyle="2xl"
               letterSpacing="tight"
               fontWeight="medium"
             >
               Get support, get involved and join our community of developers -
               Hop into our Discord
-            </panda.span>
+            </bamboo.span>
           </Stack>
 
           <ButtonLink
@@ -49,6 +49,6 @@ export const CommunitySection = () => {
           </ButtonLink>
         </Stack>
       </Container>
-    </panda.section>
+    </bamboo.section>
   )
 }

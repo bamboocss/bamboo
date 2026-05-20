@@ -1,4 +1,4 @@
-import { createContext } from '@pandacss/fixture'
+import { createContext } from '@bamboocss/fixture'
 import { describe, expect, test } from 'vitest'
 import type { ImportResult } from '../src/file-matcher'
 
@@ -291,7 +291,7 @@ describe('import map - outdir', () => {
 
   test('relative outdir', () => {
     const ctx = createContext({
-      cwd: '/Users/astahmer/dev/open-source/panda-app',
+      cwd: '/Users/astahmer/dev/open-source/bamboo-app',
       outdir: './styled-system',
     })
     expect(ctx.imports.outdir).toMatchInlineSnapshot(`"styled-system"`)
@@ -299,7 +299,7 @@ describe('import map - outdir', () => {
 
   test('with baseUrl', () => {
     const ctx = createContext({
-      cwd: '/Users/astahmer/dev/open-source/panda-app',
+      cwd: '/Users/astahmer/dev/open-source/bamboo-app',
       outdir: 'styled-system',
       tsconfig: {
         compilerOptions: {
@@ -312,7 +312,7 @@ describe('import map - outdir', () => {
 
   test('with baseUrl - relative outdir', () => {
     const ctx = createContext({
-      cwd: '/Users/astahmer/dev/open-source/panda-app',
+      cwd: '/Users/astahmer/dev/open-source/bamboo-app',
       outdir: '../styled-system',
       tsconfig: {
         compilerOptions: {
@@ -325,7 +325,7 @@ describe('import map - outdir', () => {
 
   test('with baseUrl - parent outdir', () => {
     const ctx = createContext({
-      cwd: '/Users/astahmer/dev/open-source/panda-app',
+      cwd: '/Users/astahmer/dev/open-source/bamboo-app',
       outdir: '../styled-system',
       tsconfig: {
         compilerOptions: {
@@ -338,7 +338,7 @@ describe('import map - outdir', () => {
 
   test('with baseUrl - nested parent outdir', () => {
     const ctx = createContext({
-      cwd: '/Users/astahmer/dev/open-source/panda-app',
+      cwd: '/Users/astahmer/dev/open-source/bamboo-app',
       outdir: '../../../styled-system',
       tsconfig: {
         compilerOptions: {
@@ -351,7 +351,7 @@ describe('import map - outdir', () => {
 
   test('with baseUrl - ./src', () => {
     const ctx = createContext({
-      cwd: '/Users/astahmer/dev/open-source/panda-app',
+      cwd: '/Users/astahmer/dev/open-source/bamboo-app',
       outdir: 'styled-system',
       tsconfig: {
         compilerOptions: {
@@ -364,7 +364,7 @@ describe('import map - outdir', () => {
 
   test('with baseUrl - ./src - relative outdir', () => {
     const ctx = createContext({
-      cwd: '/Users/astahmer/dev/open-source/panda-app',
+      cwd: '/Users/astahmer/dev/open-source/bamboo-app',
       outdir: '../styled-system',
       tsconfig: {
         compilerOptions: {
@@ -377,7 +377,7 @@ describe('import map - outdir', () => {
 
   test('with baseUrl - ./src - parent outdir', () => {
     const ctx = createContext({
-      cwd: '/Users/astahmer/dev/open-source/panda-app',
+      cwd: '/Users/astahmer/dev/open-source/bamboo-app',
       outdir: '../styled-system',
       tsconfig: {
         compilerOptions: {
@@ -390,7 +390,7 @@ describe('import map - outdir', () => {
 
   test('with baseUrl - ./src - nested parent outdir', () => {
     const ctx = createContext({
-      cwd: '/Users/astahmer/dev/open-source/panda-app',
+      cwd: '/Users/astahmer/dev/open-source/bamboo-app',
       outdir: '../../../styled-system',
       tsconfig: {
         compilerOptions: {

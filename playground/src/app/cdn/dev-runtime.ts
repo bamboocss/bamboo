@@ -1,6 +1,6 @@
-import { Generator } from '@pandacss/generator'
-import { Project } from '@pandacss/parser'
-import { UserConfig } from '@pandacss/types'
+import { Generator } from '@bamboocss/generator'
+import { Project } from '@bamboocss/parser'
+import { UserConfig } from '@bamboocss/types'
 
 function getConfig(config?: UserConfig) {
   return {

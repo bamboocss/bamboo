@@ -1,5 +1,5 @@
-import { getUnit } from '@pandacss/shared'
-import type { Theme } from '@pandacss/types'
+import { getUnit } from '@bamboocss/shared'
+import type { Theme } from '@bamboocss/types'
 import type { AddError } from '../types'
 
 export const validateBreakpoints = (breakpoints: Theme['breakpoints'], addError: AddError) => {

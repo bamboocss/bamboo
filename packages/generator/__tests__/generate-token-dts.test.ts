@@ -1,4 +1,4 @@
-import { createContext } from '@pandacss/fixture'
+import { createContext } from '@bamboocss/fixture'
 import { expect, test } from 'vitest'
 import { generateTokenTypes } from '../src/artifacts/types/token-types'
 

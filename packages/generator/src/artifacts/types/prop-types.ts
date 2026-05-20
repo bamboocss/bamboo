@@ -1,4 +1,4 @@
-import type { Context } from '@pandacss/core'
+import type { Context } from '@bamboocss/core'
 import { outdent } from 'outdent'
 
 export function generatePropTypes(ctx: Context) {
@@ -44,8 +44,8 @@ export function generatePropTypes(ctx: Context) {
    *   fontSize: '[123px]', // ⚠️ will not throw even if you haven't defined 123px as a token
    * })
    *
-   * @see https://panda-css.com/docs/concepts/writing-styles#stricttokens
-   * @see https://panda-css.com/docs/concepts/writing-styles#strictpropertyvalues
+   * @see https://bamboo-css.com/docs/concepts/writing-styles#stricttokens
+   * @see https://bamboo-css.com/docs/concepts/writing-styles#strictpropertyvalues
    */
   export type WithEscapeHatch<T> = T | \`[\${string}]\` | WithColorOpacityModifier<T> | WithImportant<T>
 
@@ -57,7 +57,7 @@ export function generatePropTypes(ctx: Context) {
    *   display: 'abc', // ❌ will throw
    * })
    *
-   * @see https://panda-css.com/docs/concepts/writing-styles#strictpropertyvalues
+   * @see https://bamboo-css.com/docs/concepts/writing-styles#strictpropertyvalues
    */
   export type OnlyKnown<Key, Value> = Value extends boolean
     ? Value

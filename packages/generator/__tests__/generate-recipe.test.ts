@@ -1,8 +1,8 @@
-import type { LoadConfigResult } from '@pandacss/types'
+import type { LoadConfigResult } from '@bamboocss/types'
 import { describe, expect, test } from 'vitest'
 import { Generator } from '../src'
 import { generateCreateRecipe, generateRecipes } from '../src/artifacts/js/recipe'
-import { fixtureDefaults } from '@pandacss/fixture'
+import { fixtureDefaults } from '@bamboocss/fixture'
 
 const createRecipeJs = (config: LoadConfigResult) => {
   const generator = new Generator(config)

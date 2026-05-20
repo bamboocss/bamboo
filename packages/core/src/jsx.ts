@@ -1,4 +1,4 @@
-import { capitalize, memo } from '@pandacss/shared'
+import { capitalize, memo } from '@bamboocss/shared'
 import type { Context } from './context'
 import type { PatternNode } from './patterns'
 import type { RecipeNode } from './types'
@@ -97,7 +97,7 @@ export class JsxEngine {
     const isFactory = name === this.factoryName
     if (isFactory) return true
 
-    // `pandaJsx.styled` -> true
+    // `bambooJsx.styled` -> true
     const [_namespace, identifier] = name.split('.')
     return identifier === this.factoryName
   }

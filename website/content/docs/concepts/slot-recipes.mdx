@@ -77,7 +77,7 @@ const Checkbox = () => {
 }
 ```
 
-When a slot recipe is created, Panda will pre-generate the css of all the possible combinations of variants and compound
+When a slot recipe is created, Bamboo will pre-generate the css of all the possible combinations of variants and compound
 variants as atomic classes.
 
 ```css
@@ -184,12 +184,12 @@ const button = sva({
 })
 ```
 
-> Note: This doesn't work when you have the `hash: true` option in your panda config. We recommend using `data-x`
+> Note: This doesn't work when you have the `hash: true` option in your bamboo config. We recommend using `data-x`
 > selectors to target slots.
 
 ### TypeScript Guide
 
-Panda provides a `RecipeVariantProps` type utility that can be used to infer the variant properties of a slot recipe.
+Bamboo provides a `RecipeVariantProps` type utility that can be used to infer the variant properties of a slot recipe.
 
 This is useful when you want to use the recipe in JSX and want to get type safety for the variants.
 
@@ -321,7 +321,7 @@ The config slot recipe takes the following additional properties:
 To define a config slot recipe, import the `defineSlotRecipe` function
 
 ```jsx filename="checkbox.recipe.ts"
-import { defineSlotRecipe } from '@pandacss/dev'
+import { defineSlotRecipe } from '@bamboocss/dev'
 
 export const checkboxRecipe = defineSlotRecipe({
   className: 'checkbox',
@@ -354,8 +354,8 @@ export const checkboxRecipe = defineSlotRecipe({
 
 To add the recipe to the config, you’d need to add it to the `slotRecipes` property of the `theme`
 
-```jsx filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```jsx filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 import { checkboxRecipe } from './checkbox.recipe'
 
 export default defineConfig({
@@ -373,14 +373,14 @@ export default defineConfig({
 
 ### Generate JS code
 
-This generates a recipes folder the specified `outdir` which is `styled-system` by default. If Panda doesn’t
-automatically generate your CSS file, you can run the `panda codegen` command.
+This generates a recipes folder the specified `outdir` which is `styled-system` by default. If Bamboo doesn’t
+automatically generate your CSS file, you can run the `bamboo codegen` command.
 
 You only need to import the recipes into the component files where you need to use them.
 
 ### Using the recipe
 
-To use the recipe, you can import the recipe from the `<outdir>/recipes` entrypoint and use it in your component. Panda
+To use the recipe, you can import the recipe from the `<outdir>/recipes` entrypoint and use it in your component. Bamboo
 tracks the usage of the recipe and only generates CSS of the variants used in your application.
 
 ```js
@@ -469,7 +469,7 @@ It pairs well with [ZagJs](https://zagjs.com/) and [Ark-UI](https://ark-ui.com/)
 Let's refactor the previous example to use parts instead of slots:
 
 ```ts
-import { defineParts, definetRecipe } from '@pandacss/dev'
+import { defineParts, definetRecipe } from '@bamboocss/dev'
 
 const parts = defineParts({
   root: { selector: '& [data-part="root"]' },

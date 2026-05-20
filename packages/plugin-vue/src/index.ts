@@ -1,11 +1,11 @@
-import type { PandaPlugin } from '@pandacss/types'
+import type { BambooPlugin } from '@bamboocss/types'
 import { vueToTsx } from './vue-to-tsx'
 
 export { vueToTsx }
 
-export function pluginVue(): PandaPlugin {
+export function pluginVue(): BambooPlugin {
   return {
-    name: '@pandacss/plugin-vue',
+    name: '@bamboocss/plugin-vue',
     hooks: {
       'parser:before': ({ filePath, content }) => {
         if (filePath.endsWith('.vue')) {

@@ -1,7 +1,7 @@
 'use client'
 
 import { cx, css, sva } from '../css/index.mjs';
-import { panda } from './factory.mjs';
+import { bamboo } from './factory.mjs';
 import { getDisplayName } from './factory-helper.mjs';
 import { createContext, useContext, createElement, forwardRef } from 'react'
 
@@ -63,7 +63,7 @@ export function createStyleContext(recipe) {
   }
 
   const withProvider = (Component, slot, options) => {
-    const StyledComponent = panda(Component, {}, options)
+    const StyledComponent = bamboo(Component, {}, options)
     
     const WithProvider = forwardRef((props, ref) => {
       const [variantProps, restProps] = svaFn.splitVariantProps(props)
@@ -90,7 +90,7 @@ export function createStyleContext(recipe) {
   }
 
   const withContext = (Component, slot, options) => {
-    const StyledComponent = panda(Component, {}, options)
+    const StyledComponent = bamboo(Component, {}, options)
     const componentName = getDisplayName(Component)
     
     const WithContext = forwardRef((props, ref) => {

@@ -1,4 +1,4 @@
-import { defineGlobalStyles } from '@pandacss/dev'
+import { defineGlobalStyles } from '@bamboocss/dev'
 
 export const globalCss = defineGlobalStyles({
   '*, *::before, *::after': {

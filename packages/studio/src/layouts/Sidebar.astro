@@ -1,5 +1,5 @@
 ---
-import { Container, panda, Stack } from '../../styled-system/jsx'
+import { Container, bamboo, Stack } from '../../styled-system/jsx'
 import '../../styled-system/styles.css'
 import SideNav from '../components/side-nav.astro'
 import ThemeToggle from '../components/theme-toggle.astro'
@@ -13,27 +13,27 @@ interface Props {
 const { title } = Astro.props
 ---
 
-<panda.main display="flex" height="calc(100vh - env(safe-area-inset-bottom))">
+<bamboo.main display="flex" height="calc(100vh - env(safe-area-inset-bottom))">
   <Stack height="full" minW="60" overflow="auto" px="12" py="8">
-    <panda.a aria-label="Token documentation" fontWeight="bold" fontSize="2xl" href="/" display="flex" gap="2">
+    <bamboo.a aria-label="Token documentation" fontWeight="bold" fontSize="2xl" href="/" display="flex" gap="2">
       <Logo />
-    </panda.a>
-    <panda.div mt="4">
+    </bamboo.a>
+    <bamboo.div mt="4">
       <ThemeToggle />
-    </panda.div>
-    <panda.div mt="4">
+    </bamboo.div>
+    <bamboo.div mt="4">
       <ThemeSelector client:load />
-    </panda.div>
+    </bamboo.div>
     <SideNav />
   </Stack>
 
   <Container width="full" overflow="auto" pb="10">
-    <panda.div px="4" pt="10" pb="8">
-      <panda.h1 fontSize="3xl" fontWeight="semibold" mb="8" letterSpacing="tight">
+    <bamboo.div px="4" pt="10" pb="8">
+      <bamboo.h1 fontSize="3xl" fontWeight="semibold" mb="8" letterSpacing="tight">
         {title}
-      </panda.h1>
+      </bamboo.h1>
       <slot />
-    </panda.div>
+    </bamboo.div>
   </Container>
-</panda.main>
+</bamboo.main>
 

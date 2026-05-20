@@ -21,7 +21,7 @@ body:
     attributes:
       label: "Problem Statement/Justification"
       description: |
-        Please provide valid reason(s) why this should be added to Panda
+        Please provide valid reason(s) why this should be added to Bamboo
 
         If this feature is related to a problem you've noticed, mention it as
         well.

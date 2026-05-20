@@ -3,15 +3,15 @@ title: Theme
 description: Customizing the default theme
 ---
 
-Panda comes with a default theme that is used to generate the utilities for your project. You can customize this theme
+Bamboo comes with a default theme that is used to generate the utilities for your project. You can customize this theme
 to match your design requirements.
 
 ## Breakpoints
 
-Use the `breakpoints` key in the `theme` section of your Panda config file to customize the default breakpoints.
+Use the `breakpoints` key in the `theme` section of your Bamboo config file to customize the default breakpoints.
 
-```ts filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```ts filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   theme: {
@@ -24,7 +24,7 @@ export default defineConfig({
 })
 ```
 
-Panda ships with the following breakpoints by default:
+Bamboo ships with the following breakpoints by default:
 
 <TokenDocs type="breakpoints" />
 
@@ -32,12 +32,12 @@ Panda ships with the following breakpoints by default:
 
 ### Colors
 
-Use the `colors` key in the `token` section of your Panda config file to customize the default color values.
+Use the `colors` key in the `token` section of your Bamboo config file to customize the default color values.
 
 > We recommend using numeric ranges from `50` to `900`
 
-```ts filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```ts filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   theme: {
@@ -52,16 +52,16 @@ export default defineConfig({
 })
 ```
 
-Panda comes with a handful of colors picked from the amazing Tailwind color palette
+Bamboo comes with a handful of colors picked from the amazing Tailwind color palette
 
 <TokenDocs type="colors" />
 
 ### Spacing
 
-Use the `spacing` key in the theme section of your Panda config file to customize the default spacing values.
+Use the `spacing` key in the theme section of your Bamboo config file to customize the default spacing values.
 
-```ts filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```ts filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   theme: {
@@ -76,30 +76,30 @@ export default defineConfig({
 })
 ```
 
-Panda ships with the following spacing tokens by default:
+Bamboo ships with the following spacing tokens by default:
 
 <TokenDocs type="spacing" />
 
 ### Border Radius
 
-Use the `radii` key in the theme section of your Panda config file to customize the default border radius values.
+Use the `radii` key in the theme section of your Bamboo config file to customize the default border radius values.
 
 <TokenDocs type="radii" />
 
 ### Shadows
 
-Use the `shadows` key in the theme section of your Panda config file to customize the default box shadows values.
+Use the `shadows` key in the theme section of your Bamboo config file to customize the default box shadows values.
 
-Panda ships with the following shadows by default:
+Bamboo ships with the following shadows by default:
 
 <TokenDocs type="shadows" />
 
 ### Sizing
 
-Use the `sizes` key in the theme section of your Panda config file to customize the default sizing values.
+Use the `sizes` key in the theme section of your Bamboo config file to customize the default sizing values.
 
-```ts filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```ts filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   theme: {
@@ -114,7 +114,7 @@ export default defineConfig({
 })
 ```
 
-Panda ships with the following sizing tokens by default, in addition with the values from the default Panda
+Bamboo ships with the following sizing tokens by default, in addition with the values from the default Bamboo
 [spacing](#spacing) tokens:
 
 <TokenDocs type="sizing" />
@@ -123,8 +123,8 @@ Panda ships with the following sizing tokens by default, in addition with the va
 
 Use the `fonts` key in the theme object to customize the default font families.
 
-```ts filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```ts filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   theme: {
@@ -139,7 +139,7 @@ export default defineConfig({
 })
 ```
 
-Panda ships with the following font families tokens by default:
+Bamboo ships with the following font families tokens by default:
 
 <TokenDocs type="fonts" />
 
@@ -147,8 +147,8 @@ Panda ships with the following font families tokens by default:
 
 Use the `fontSizes` key in the theme object to customize the default font sizes.
 
-```ts filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```ts filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   theme: {
@@ -163,16 +163,16 @@ export default defineConfig({
 })
 ```
 
-Panda ships with the following font size tokens by default:
+Bamboo ships with the following font size tokens by default:
 
 <TokenDocs type="fontSizes" />
 
 ## Keyframes
 
-Use the `keyframes` key in the `theme` section of your Panda config file to customize the default keyframes.
+Use the `keyframes` key in the `theme` section of your Bamboo config file to customize the default keyframes.
 
-```ts filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```ts filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   theme: {
@@ -192,11 +192,11 @@ export default defineConfig({
 })
 ```
 
-Panda ships with the following keyframes by default:
+Bamboo ships with the following keyframes by default:
 
 <TokenDocs type="keyframes" />
 
 ## Minimal setup
 
-If you want to use Panda with the bare minimum, without any of the defaults, you can read more about it
+If you want to use Bamboo with the bare minimum, without any of the defaults, you can read more about it
 [here](/docs/guides/minimal-setup)

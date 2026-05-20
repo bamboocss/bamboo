@@ -1,10 +1,10 @@
-import { logger } from '@pandacss/logger'
-import type { ArtifactId, Config } from '@pandacss/types'
+import { logger } from '@bamboocss/logger'
+import type { ArtifactId, Config } from '@bamboocss/types'
 import { codegen } from './codegen'
 import { loadConfigAndCreateContext } from './config'
-import { PandaContext } from './create-context'
+import { BambooContext } from './create-context'
 
-async function build(ctx: PandaContext, artifactIds?: ArtifactId[]) {
+async function build(ctx: BambooContext, artifactIds?: ArtifactId[]) {
   await codegen(ctx, artifactIds)
 
   if (ctx.config.emitTokensOnly) {
@@ -34,7 +34,7 @@ export async function generate(config: Config, configPath?: string) {
     ctx.watchConfig(
       async () => {
         const affecteds = await ctx.diff.reloadConfigAndRefreshContext((conf) => {
-          ctx = new PandaContext(conf)
+          ctx = new BambooContext(conf)
         })
 
         logger.info('ctx:updated', 'config rebuilt ✅')
@@ -44,7 +44,7 @@ export async function generate(config: Config, configPath?: string) {
       { cwd, poll },
     )
 
-    const bundleStyles = async (ctx: PandaContext, changedFilePath: string) => {
+    const bundleStyles = async (ctx: BambooContext, changedFilePath: string) => {
       const outfile = ctx.runtime.path.join(...ctx.paths.root, 'styles.css')
       const parserResult = ctx.project.parseSourceFile(changedFilePath)
 

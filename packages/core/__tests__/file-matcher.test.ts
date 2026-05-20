@@ -1,4 +1,4 @@
-import { createContext } from '@pandacss/fixture'
+import { createContext } from '@bamboocss/fixture'
 import { describe, expect, test } from 'vitest'
 
 describe('file matcher', () => {
@@ -50,7 +50,7 @@ describe('file matcher', () => {
     expect(file.matchFn('stackWrong')).toMatchInlineSnapshot(`false`)
   })
 
-  test('isPandaComponent', () => {
+  test('isBambooComponent', () => {
     const ctx = createContext()
 
     const file = ctx.imports.file([
@@ -58,10 +58,10 @@ describe('file matcher', () => {
       { mod: 'styled-system/jsx', name: 'VStack', alias: '__VStack' },
     ])
 
-    expect(file.isPandaComponent('Stack')).toMatchInlineSnapshot('true')
+    expect(file.isBambooComponent('Stack')).toMatchInlineSnapshot('true')
     // should match arbitrary tag names (so we can track style props)
-    expect(file.isPandaComponent('RandomJsx')).toMatchInlineSnapshot(`false`)
-    expect(file.isPandaComponent('random')).toMatchInlineSnapshot('false')
+    expect(file.isBambooComponent('RandomJsx')).toMatchInlineSnapshot(`false`)
+    expect(file.isBambooComponent('random')).toMatchInlineSnapshot('false')
   })
 
   test('match tag', () => {

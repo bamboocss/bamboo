@@ -44,7 +44,7 @@ export interface PropertyReportItem {
 
 /**
  * An component is either a component usage or a function usage
- * @example an component name could be 'Button', 'css', 'panda.div', 'vstack', ...
+ * @example an component name could be 'Button', 'css', 'bamboo.div', 'vstack', ...
  */
 export interface ComponentReportItem extends Pick<PropertyReportItem, 'filepath'> {
   componentIndex: string

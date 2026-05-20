@@ -1,6 +1,6 @@
-import { logger } from '@pandacss/logger'
-import { PandaError, esc, isObject } from '@pandacss/shared'
-import type { Token } from '@pandacss/types'
+import { logger } from '@bamboocss/logger'
+import { BambooError, esc, isObject } from '@bamboocss/shared'
+import type { Token } from '@bamboocss/types'
 
 /* -----------------------------------------------------------------------------
  * Token references
@@ -107,6 +107,6 @@ export const isToken = (value: any): value is Token => {
 
 export function assertTokenFormat(token: any): asserts token is Token {
   if (!isToken(token)) {
-    throw new PandaError('INVALID_TOKEN', `Invalid token format: ${JSON.stringify(token)}`)
+    throw new BambooError('INVALID_TOKEN', `Invalid token format: ${JSON.stringify(token)}`)
   }
 }

@@ -1,4 +1,4 @@
-import type { Tokens } from '@pandacss/types'
+import type { Tokens } from '@bamboocss/types'
 
 export const opacity: Tokens['opacity'] = {
   disabled: { value: '0.4' },

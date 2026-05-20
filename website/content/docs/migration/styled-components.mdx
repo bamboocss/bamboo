@@ -1,12 +1,12 @@
 ---
 title: Migrating from Styled Components
-description: Migrate your project from Styled Components to Panda.
+description: Migrate your project from Styled Components to Bamboo.
 ---
 
-This guide outlines the steps needed to migrate your project from Styled Components to Panda and highlights key design
+This guide outlines the steps needed to migrate your project from Styled Components to Bamboo and highlights key design
 differences between the two libraries.
 
-> **Disclaimer:** This isn't about comparing which one is best. Panda and Styled Components are two different CSS-in-JS
+> **Disclaimer:** This isn't about comparing which one is best. Bamboo and Styled Components are two different CSS-in-JS
 > solutions with design decisions.
 
 Here are some similarities between the two libraries.
@@ -21,19 +21,19 @@ Below are some differences between the two libraries.
 
 In styled-components, you can use both tagged template literals and object syntax to style components.
 
-In Panda, you need to decide which syntax you want to use. Panda recommends using the object syntax, but provides a way
+In Bamboo, you need to decide which syntax you want to use. Bamboo recommends using the object syntax, but provides a way
 to opt-in to tagged template literals.
 
 To initialize a project with the object syntax, run the following command.
 
 ```bash
-panda init -p --jsx-framework react
+bamboo init -p --jsx-framework react
 ```
 
 To initialize a project with the tagged template literal syntax, run the following command.
 
 ```bash
-panda init -p --syntax template-literal --jsx-framework react
+bamboo init -p --syntax template-literal --jsx-framework react
 ```
 
 Then you need to add the cascade layers to the global styles of your project.
@@ -57,9 +57,9 @@ const Button = styled.button`
 `
 ```
 
-In Panda, you will use the autogenerate code in the `styled-system` directory at the root of your project.
+In Bamboo, you will use the autogenerate code in the `styled-system` directory at the root of your project.
 
-> Remember to initialize your project with the `--syntax template-literal` flag or update the panda.config.ts file.
+> Remember to initialize your project with the `--syntax template-literal` flag or update the bamboo.config.ts file.
 
 ```jsx
 import { styled } from '../styled-system/jsx'
@@ -87,7 +87,7 @@ const Button = styled.button({
 })
 ```
 
-In Panda, you add the style object to the `base` key of the style object. The `styled` factory allows you define base
+In Bamboo, you add the style object to the `base` key of the style object. The `styled` factory allows you define base
 styles, variants and compound variants of your component.
 
 ```jsx
@@ -123,7 +123,7 @@ const Button = styled.button`
 `
 ```
 
-In Panda, we model interpolations using the variants API. This allows define style groups or recipes that can be applied
+In Bamboo, we model interpolations using the variants API. This allows define style groups or recipes that can be applied
 to components.
 
 ```jsx
@@ -168,12 +168,12 @@ const App = () => (
 )
 ````
 
-In Panda, you define tokens in the `theme` key of the `panda.config.ts` file. This allows you to access the tokens in
+In Bamboo, you define tokens in the `theme` key of the `bamboo.config.ts` file. This allows you to access the tokens in
 your styles without the need for React's context API.
 
 ```tsx
-// panda.config.ts
-import { defineConfig } from '@pandacss/dev'
+// bamboo.config.ts
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   theme: {
@@ -215,12 +215,12 @@ declare module 'styled-components' {
 }
 ```
 
-In Panda, the tokens are automatically available in your styles and connected to each css property, removing the need
+In Bamboo, the tokens are automatically available in your styles and connected to each css property, removing the need
 for an interpolation function.
 
 ```tsx
-// panda.config.ts
-import { defineConfig } from '@pandacss/dev'
+// bamboo.config.ts
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   theme: {
@@ -271,8 +271,8 @@ const Button = styled.button`
 `
 ```
 
-In Panda, it's pretty much the same thing except that you can't do any interpolation in the media query styles due the
-static nature of Panda.
+In Bamboo, it's pretty much the same thing except that you can't do any interpolation in the media query styles due the
+static nature of Bamboo.
 
 ```tsx
 import { styled } from '../styled-system/jsx'
@@ -309,7 +309,7 @@ const Button = styled.button({
 })
 ```
 
-In Panda, you can use the pseudo props API to define responsive styles.
+In Bamboo, you can use the pseudo props API to define responsive styles.
 
 ```tsx
 import { styled } from '../styled-system/jsx'
@@ -339,12 +339,12 @@ const GlobalStyle = createGlobalStyle`
 `
 ```
 
-In Panda, you can use the `globalCss` key of the `panda.config.ts` file to define global styles. This will automatically
+In Bamboo, you can use the `globalCss` key of the `bamboo.config.ts` file to define global styles. This will automatically
 add styles to the project via PostCSS.
 
 ```tsx
-// panda.config.ts
-import { defineConfig } from '@pandacss/dev'
+// bamboo.config.ts
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   globalCss: {
@@ -378,7 +378,7 @@ const Icon = styled.svg`
 `
 ```
 
-In Panda, you need to use the native selector directly. This is largely due to the static nature of Panda
+In Bamboo, you need to use the native selector directly. This is largely due to the static nature of Bamboo
 
 ```tsx
 import { styled } from '../styled-system/jsx'
@@ -429,10 +429,10 @@ const Button = styled.button`
 `
 ```
 
-In Panda, you define keyframes in the `theme.keyframes` key of the `panda.config` function.
+In Bamboo, you define keyframes in the `theme.keyframes` key of the `bamboo.config` function.
 
 ```ts
-import { defineConfig } from '@pandacss/dev'
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   theme: {
@@ -481,10 +481,10 @@ try {
 }
 ```
 
-In Panda, you don't need to configure anything. Panda automatically extracts the styles and injects them at build time
+In Bamboo, you don't need to configure anything. Bamboo automatically extracts the styles and injects them at build time
 using PostCSS.
 
 ## Conclusion
 
 Before choosing your preferred CSS-in-JS library, be sure to consider your engineering and design goals. Both Styled
-components and Panda are capable of achieving many of the same styling goals, but they have different approaches.
+components and Bamboo are capable of achieving many of the same styling goals, but they have different approaches.

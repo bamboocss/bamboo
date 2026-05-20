@@ -1,8 +1,8 @@
-import { Reporter, formatRecipeReport, formatTokenReport, type ReportFormat } from '@pandacss/reporter'
-import type { AnalysisOptions } from '@pandacss/types'
-import type { PandaContext } from './create-context'
+import { Reporter, formatRecipeReport, formatTokenReport, type ReportFormat } from '@bamboocss/reporter'
+import type { AnalysisOptions } from '@bamboocss/types'
+import type { BambooContext } from './create-context'
 
-export function analyze(ctx: PandaContext, options: AnalysisOptions = {}) {
+export function analyze(ctx: BambooContext, options: AnalysisOptions = {}) {
   const reporter = new Reporter(ctx, {
     project: ctx.project,
     getRelativePath: ctx.runtime.path.relative,

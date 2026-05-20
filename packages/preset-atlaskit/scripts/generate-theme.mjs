@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
 /**
- * Script to autogenerate Panda CSS theme from @atlaskit/tokens
+ * Script to autogenerate Bamboo CSS theme from @atlaskit/tokens
  *
  * This script reads the token data from @atlaskit/tokens package and converts it
- * to Panda CSS token format, generating TypeScript files for each category.
+ * to Bamboo CSS token format, generating TypeScript files for each category.
  *
  * Usage:
  *   node scripts/generate-theme.mjs          # Generate theme (keeps existing files)
@@ -183,7 +183,7 @@ function setNestedValue(obj, path, value) {
 }
 
 /**
- * Processes tokens and organizes them into Panda CSS format
+ * Processes tokens and organizes them into Bamboo CSS format
  */
 function processTokens(lightTokens, darkTokens = []) {
   const tokens = {}
@@ -582,7 +582,7 @@ function generateFile(filename, exportName, content, importType = '') {
   let typeAnnotation = ''
 
   if (importType) {
-    imports = `import type { ${importType} } from '@pandacss/types'\n\n`
+    imports = `import type { ${importType} } from '@bamboocss/types'\n\n`
     // Add type annotation based on import type
     if (importType === 'SemanticTokens') {
       typeAnnotation = `: ${importType}['${exportName.replace('semantic', '').replace('Semantic', '').toLowerCase()}']`
@@ -606,7 +606,7 @@ function generateFile(filename, exportName, content, importType = '') {
  * Main generation function
  */
 function generateTheme() {
-  console.log('🚀 Generating Panda CSS theme from @atlaskit/tokens...\n')
+  console.log('🚀 Generating Bamboo CSS theme from @atlaskit/tokens...\n')
 
   // Check version compatibility
   checkVersionCompatibility()
@@ -699,7 +699,7 @@ function generateTheme() {
 
   // Build imports based on what was generated
   const imports = [
-    `import type { Preset } from '@pandacss/types'`,
+    `import type { Preset } from '@bamboocss/types'`,
     `import { breakpoints } from './breakpoints'`,
     `import { colors } from './colors/core'`,
     `import { semanticColors } from './colors/semantic'`,
@@ -737,7 +737,7 @@ function generateTheme() {
 const definePreset = <T extends Preset>(config: T) => config
 
 export const preset = definePreset({
-  name: '@pandacss/preset-atlaskit',
+  name: '@bamboocss/preset-atlaskit',
   theme: {
     breakpoints: breakpoints,
     tokens: {

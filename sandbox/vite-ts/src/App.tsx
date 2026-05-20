@@ -1,15 +1,15 @@
 import { useState } from 'react'
 import { css, cx } from '../styled-system/css'
-import { Circle, HStack, Stack, panda } from '../styled-system/jsx'
+import { Circle, HStack, Stack, bamboo } from '../styled-system/jsx'
 import { circle as circleLike, stack, vstack } from '../styled-system/patterns'
 import { button, someRecipe } from '../styled-system/recipes'
 import { Badge, badge } from './Badge'
 import { AnotherButtonWithRegex, Button, ListedButton } from './Button'
 import { Card } from './Card'
 
-const SomeRecipe = panda('div', someRecipe)
+const SomeRecipe = bamboo('div', someRecipe)
 
-const PrimaryButtonLike = panda('span', button, {
+const PrimaryButtonLike = bamboo('span', button, {
   dataAttr: true,
   defaultProps: {
     variant: 'purple',
@@ -103,9 +103,9 @@ function App() {
           </Circle>
           <HStack gap="40px" debug>
             <div className={className}>Element 1</div>
-            <panda.div color="red" fontWeight="bold" fontSize="50px">
+            <bamboo.div color="red" fontWeight="bold" fontSize="50px">
               Element 2
-            </panda.div>
+            </bamboo.div>
           </HStack>
         </Stack>
       </section>

@@ -1,4 +1,4 @@
-import type { PropertyConfig, UtilityConfig } from '@pandacss/types'
+import type { PropertyConfig, UtilityConfig } from '@bamboocss/types'
 
 function createFocusRing(selector: any, className: string): PropertyConfig {
   return {

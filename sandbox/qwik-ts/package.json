@@ -23,7 +23,7 @@
   "devDependencies": {
     "@builder.io/qwik": "1.17.2",
     "@builder.io/qwik-city": "1.17.2",
-    "@pandacss/dev": "workspace:*",
+    "@bamboocss/dev": "workspace:*",
     "eslint-plugin-qwik": "1.17.2",
     "typescript": "6.0.2",
     "undici": "7.7.0",

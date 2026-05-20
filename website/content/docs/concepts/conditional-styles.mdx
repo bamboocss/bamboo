@@ -1,12 +1,12 @@
 ---
 title: Conditional Styles
-description: Learn how to use conditional and responsive styles in Panda.
+description: Learn how to use conditional and responsive styles in Bamboo.
 ---
 
 When writing styles, you might need to apply specific changes depending on a specific condition, whether it's based on
 breakpoint, css pseudo state, media query or custom data attributes.
 
-Panda allows you to write conditional styles, and provides common condition shortcuts to make your life easier. Let's
+Bamboo allows you to write conditional styles, and provides common condition shortcuts to make your life easier. Let's
 say you want to change the background color of a button when it's hovered. You can do it like this:
 
 ```jsx
@@ -43,7 +43,7 @@ leading to a more concise syntax:
 
 ### Nested condition
 
-Conditions in Panda can be nested, which means you can apply multiple conditions to a single property or another
+Conditions in Bamboo can be nested, which means you can apply multiple conditions to a single property or another
 condition.
 
 Let's say you want to change the background color of a button when it's focused and hovered. You can do it like this:
@@ -60,7 +60,7 @@ Let's say you want to change the background color of a button when it's focused 
 
 ### Built-in conditions
 
-Panda includes a set of common pseudo states that you can use to style your components:
+Bamboo includes a set of common pseudo states that you can use to style your components:
 
 - Pseudo Class: `_hover`, `_active`, `_focus`, `_focusVisible`, `_focusWithin`, `_disabled`
 - Pseudo Element: `_before`, `_after`
@@ -459,7 +459,7 @@ export default defineConfig({
 })
 ```
 
-The default container sizes in the `@pandacss/preset-panda` preset are shown below:
+The default container sizes in the `@bamboocss/preset-bamboo` preset are shown below:
 
 ```ts
 export const containerSizes = {
@@ -532,7 +532,7 @@ function Demo() {
 
 ## Reference
 
-Here's a list of all the condition shortcuts you can use in Panda:
+Here's a list of all the condition shortcuts you can use in Bamboo:
 
 | Condition name         | Selector                                                                                         |
 | ---------------------- | -------------------------------------------------------------------------------------------------|
@@ -646,5 +646,5 @@ Here's a list of all the condition shortcuts you can use in Panda:
 
 ## Custom conditions
 
-Panda lets you create your own conditions, so you're not limited to the ones in the default preset. Learn more about
+Bamboo lets you create your own conditions, so you're not limited to the ones in the default preset. Learn more about
 customizing conditions [here](/docs/customization/conditions).

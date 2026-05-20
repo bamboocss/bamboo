@@ -5,7 +5,7 @@
 
 import { editor } from 'monaco-editor'
 
-export const pandaTheme: editor.IStandaloneThemeData = {
+export const bambooTheme: editor.IStandaloneThemeData = {
   inherit: true,
   base: 'vs-dark',
   colors: {

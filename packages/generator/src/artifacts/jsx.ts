@@ -1,5 +1,5 @@
-import type { Context } from '@pandacss/core'
-import type { ArtifactFilters, JsxFramework } from '@pandacss/types'
+import type { Context } from '@bamboocss/core'
+import type { ArtifactFilters, JsxFramework } from '@bamboocss/types'
 import {
   generatePreactJsxFactory,
   generatePreactJsxPattern,

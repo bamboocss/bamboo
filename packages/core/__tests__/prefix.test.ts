@@ -1,9 +1,9 @@
-import { createCss } from '@pandacss/shared'
+import { createCss } from '@bamboocss/shared'
 import { describe, expect, test } from 'vitest'
 
-import type { SystemStyleObject } from '@pandacss/types'
+import type { SystemStyleObject } from '@bamboocss/types'
 import { createRuleProcessor } from './fixture'
-import { createGeneratorContext } from '@pandacss/fixture'
+import { createGeneratorContext } from '@bamboocss/fixture'
 
 const config = { prefix: 'tw', hash: { className: true, cssVar: true } }
 const backend = (styles: SystemStyleObject) => createRuleProcessor(config).css(styles).toCss()

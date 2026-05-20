@@ -1,5 +1,5 @@
 ---
-import { panda } from '../../styled-system/jsx'
+import { bamboo } from '../../styled-system/jsx'
 
 interface Props {
   href: string
@@ -10,7 +10,7 @@ const isActive = Astro.url.pathname.startsWith(href)
 ---
 
 <li>
-  <panda.a
+  <bamboo.a
     display="block"
     href={href}
     py="1.5"
@@ -21,5 +21,5 @@ const isActive = Astro.url.pathname.startsWith(href)
     color={{ _hover: 'accent', _currentPage: 'accent' }}
   >
     <slot />
-  </panda.a>
+  </bamboo.a>
 </li>

@@ -1,5 +1,5 @@
-import { capitalize, toPx, toRem } from '@pandacss/shared'
-import type { AtRuleCondition, ConditionDetails } from '@pandacss/types'
+import { capitalize, toPx, toRem } from '@bamboocss/shared'
+import type { AtRuleCondition, ConditionDetails } from '@bamboocss/types'
 import type { Root } from 'postcss'
 
 export class Breakpoints {

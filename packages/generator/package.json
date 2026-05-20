@@ -1,17 +1,17 @@
 {
-  "name": "@pandacss/generator",
+  "name": "@bamboocss/generator",
   "version": "1.11.1",
-  "description": "The css generator for css panda",
+  "description": "The css generator for css bamboo",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "author": "Segun Adebayo <joseshegs@gmail.com>",
   "license": "MIT",
   "sideEffects": false,
-  "homepage": "https://panda-css.com",
+  "homepage": "https://bamboo-css.com",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chakra-ui/panda.git",
+    "url": "git+https://github.com/chakra-ui/bamboo.git",
     "directory": "packages/generator"
   },
   "publishConfig": {
@@ -38,12 +38,12 @@
     "dist"
   ],
   "dependencies": {
-    "@pandacss/core": "workspace:*",
-    "@pandacss/is-valid-prop": "workspace:^",
-    "@pandacss/logger": "workspace:*",
-    "@pandacss/shared": "workspace:*",
-    "@pandacss/token-dictionary": "workspace:*",
-    "@pandacss/types": "workspace:*",
+    "@bamboocss/core": "workspace:*",
+    "@bamboocss/is-valid-prop": "workspace:^",
+    "@bamboocss/logger": "workspace:*",
+    "@bamboocss/shared": "workspace:*",
+    "@bamboocss/token-dictionary": "workspace:*",
+    "@bamboocss/types": "workspace:*",
     "javascript-stringify": "2.1.0",
     "outdent": " ^0.8.0",
     "pluralize": "8.0.0",

@@ -1,6 +1,6 @@
 import * as React from 'react'
-import { toPx } from '@pandacss/shared'
-import { Grid, panda, Stack } from '../../styled-system/jsx'
+import { toPx } from '@bamboocss/shared'
+import { Grid, bamboo, Stack } from '../../styled-system/jsx'
 import { getSortedSizes } from '../lib/sizes-sort'
 import { TokenGroup } from './token-group'
 import { EmptyState } from './empty-state'
@@ -17,7 +17,7 @@ export function Radii({ radii }: RadiiProps) {
   if (radii.length === 0) {
     return (
       <EmptyState title="No Tokens" icon={<SizesIcon />}>
-        The panda config does not contain any `radii` tokens
+        The bamboo config does not contain any `radii` tokens
       </EmptyState>
     )
   }
@@ -29,7 +29,7 @@ export function Radii({ radii }: RadiiProps) {
           .sort((a, b) => parseFloat(toPx(a.value)!) - parseFloat(toPx(b.value)!))
           .map((size, index) => (
             <Stack direction="column" key={index}>
-              <panda.div
+              <bamboo.div
                 width="80px"
                 height="80px"
                 background="rgba(255, 192, 203, 0.5)"
@@ -37,7 +37,7 @@ export function Radii({ radii }: RadiiProps) {
               />
               <Stack gap="1">
                 <b>{size.extensions.prop}</b>
-                <panda.span opacity="0.7">{size.value}</panda.span>
+                <bamboo.span opacity="0.7">{size.value}</bamboo.span>
               </Stack>
             </Stack>
           ))}

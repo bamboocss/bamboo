@@ -2,6 +2,6 @@
   "name": "sandbox-config-test-mjs",
   "private": true,
   "devDependencies": {
-    "@pandacss/dev": "workspace:^"
+    "@bamboocss/dev": "workspace:^"
   }
 }

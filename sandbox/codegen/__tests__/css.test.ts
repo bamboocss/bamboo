@@ -51,9 +51,9 @@ describe('css', () => {
   })
 
   test('arbitrary selector', () => {
-    const className = css({ ['&:data-panda']: { display: 'flex' } })
+    const className = css({ ['&:data-bamboo']: { display: 'flex' } })
 
-    expect(className).toMatchInlineSnapshot('"[&:data-panda]:d_flex"')
+    expect(className).toMatchInlineSnapshot('"[&:data-bamboo]:d_flex"')
   })
 
   test('responsive condition', () => {
@@ -214,11 +214,11 @@ describe('css.raw', () => {
   })
 
   test('arbitrary selector', () => {
-    const styles = css.raw({ ['&:data-panda']: { display: 'flex' } })
+    const styles = css.raw({ ['&:data-bamboo']: { display: 'flex' } })
 
     expect(styles).toMatchInlineSnapshot(`
       {
-        "&:data-panda": {
+        "&:data-bamboo": {
           "display": "flex",
         },
       }

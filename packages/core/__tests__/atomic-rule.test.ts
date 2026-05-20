@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { createRuleProcessor } from './fixture'
-import type { Config, SystemStyleObject } from '@pandacss/types'
+import type { Config, SystemStyleObject } from '@bamboocss/types'
 
 const css = (styles: SystemStyleObject, config?: Config) => {
   return createRuleProcessor(config).css(styles).toCss()

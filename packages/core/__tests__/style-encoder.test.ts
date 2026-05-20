@@ -1,5 +1,5 @@
-import { createGeneratorContext } from '@pandacss/fixture'
-import type { Dict, SlotRecipeDefinition, SystemStyleObject } from '@pandacss/types'
+import { createGeneratorContext } from '@bamboocss/fixture'
+import type { Dict, SlotRecipeDefinition, SystemStyleObject } from '@bamboocss/types'
 import { describe, expect, test, vi } from 'vitest'
 import { createAnatomy } from './create-anatomy'
 import { createRuleProcessor } from './fixture'
@@ -454,7 +454,7 @@ describe('style encoder', () => {
     `)
 
     // TODO CHECK this is fixed after deterministic sorting without postcss from next PR
-    // https://github.com/chakra-ui/panda/pull/1544/commits/845c80b643835187b8b2eb71e30648254c510fa9#diff-7d68ca7544b231a589614aba6161eb58fbe12f599544f40b6419e5eb5988729aR158-R176
+    // https://github.com/chakra-ui/bamboo/pull/1544/commits/845c80b643835187b8b2eb71e30648254c510fa9#diff-7d68ca7544b231a589614aba6161eb58fbe12f599544f40b6419e5eb5988729aR158-R176
     expect(result.toCss()).toMatchInlineSnapshot(`
       "@layer recipes {
         @layer _base {

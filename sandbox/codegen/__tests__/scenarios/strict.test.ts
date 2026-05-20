@@ -110,7 +110,7 @@ describe('css', () => {
   })
 
   test('arbitrary selector', () => {
-    assertType(css({ ['&:data-panda']: { display: 'flex' } }))
+    assertType(css({ ['&:data-bamboo']: { display: 'flex' } }))
   })
 
   test('important', () => {
@@ -295,7 +295,7 @@ describe('css.raw', () => {
   })
 
   test('arbitrary selector', () => {
-    assertType(css.raw({ ['&:data-panda']: { display: 'flex' } }))
+    assertType(css.raw({ ['&:data-bamboo']: { display: 'flex' } }))
   })
 
   test('important', () => {

@@ -1,4 +1,4 @@
-import type { Token } from '@pandacss/token-dictionary'
+import type { Token } from '@bamboocss/token-dictionary'
 import { generateJsxExample, type JsxStyleProps } from '../shared'
 
 const CATEGORY_PROPERTY_MAP: Record<string, string> = {

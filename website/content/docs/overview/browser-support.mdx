@@ -1,10 +1,10 @@
 ---
 title: Browser Support
-description: Learn about the browser support for Panda
+description: Learn about the browser support for Bamboo
 ---
 
-Panda CSS is built with modern CSS features and uses [PostCSS](https://postcss.org/) to add support for older browsers.
-Panda supports the latest, stable releases of major browsers that support the following features:
+Bamboo CSS is built with modern CSS features and uses [PostCSS](https://postcss.org/) to add support for older browsers.
+Bamboo supports the latest, stable releases of major browsers that support the following features:
 
 - [CSS Variables](https://caniuse.com/css-variables)
 - [CSS Cascade Layers](https://caniuse.com/css-cascade-layers)
@@ -41,6 +41,6 @@ Here is an example of a `postcss.config.js` file that uses these polyfills:
 
 ```js
 module.exports = {
-  plugins: ['@pandacss/dev/postcss', 'autoprefixer', '@csstools/postcss-cascade-layers']
+  plugins: ['@bamboocss/dev/postcss', 'autoprefixer', '@csstools/postcss-cascade-layers']
 }
 ```

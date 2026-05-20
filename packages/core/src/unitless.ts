@@ -1,4 +1,4 @@
-import { hypenateProperty } from '@pandacss/shared'
+import { hypenateProperty } from '@bamboocss/shared'
 
 const keys: Record<string, true> = {
   animationIterationCount: true,

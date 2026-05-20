@@ -2,7 +2,7 @@ import { createElement, forwardRef } from 'react'
 
 import { splitProps } from '../helpers.mjs';
 import { getBleedStyle } from '../patterns/bleed.mjs';
-import { panda } from './factory.mjs';
+import { bamboo } from './factory.mjs';
 
 export const Bleed = /* @__PURE__ */ forwardRef(function Bleed(props, ref) {
   const [patternProps, restProps] = splitProps(props, ["inline","block"])
@@ -10,5 +10,5 @@ export const Bleed = /* @__PURE__ */ forwardRef(function Bleed(props, ref) {
 const styleProps = getBleedStyle(patternProps)
 const mergedProps = { ref, ...styleProps, ...restProps }
 
-return createElement(panda.div, mergedProps)
+return createElement(bamboo.div, mergedProps)
   })

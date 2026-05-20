@@ -1,4 +1,4 @@
-import { createContext } from '@pandacss/fixture'
+import { createContext } from '@bamboocss/fixture'
 import { describe, expect, test } from 'vitest'
 import { generateSemanticTokensSpec, generateTokensSpec } from '../src/spec/tokens'
 

@@ -2,7 +2,7 @@ import { createElement, forwardRef } from 'react'
 
 import { splitProps } from '../helpers.mjs';
 import { getStackStyle } from '../patterns/stack.mjs';
-import { panda } from './factory.mjs';
+import { bamboo } from './factory.mjs';
 
 export const Stack = /* @__PURE__ */ forwardRef(function Stack(props, ref) {
   const [patternProps, restProps] = splitProps(props, ["align","justify","direction","gap"])
@@ -10,5 +10,5 @@ export const Stack = /* @__PURE__ */ forwardRef(function Stack(props, ref) {
 const styleProps = getStackStyle(patternProps)
 const mergedProps = { ref, ...styleProps, ...restProps }
 
-return createElement(panda.div, mergedProps)
+return createElement(bamboo.div, mergedProps)
   })

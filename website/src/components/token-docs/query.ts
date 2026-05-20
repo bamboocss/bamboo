@@ -1,5 +1,5 @@
-import preset from '@pandacss/preset-panda'
-import { TokenDictionary } from '@pandacss/token-dictionary'
+import preset from '@bamboocss/preset-bamboo'
+import { TokenDictionary } from '@bamboocss/token-dictionary'
 
 const dictionary = new TokenDictionary({
   tokens: preset.theme.tokens

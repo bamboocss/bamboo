@@ -40,8 +40,8 @@ jobs:
           webhook-type: webhook-trigger
           payload: |
             {
-              "package_name": "@pandacss/dev",
-              "changelog_url": "https://github.com/chakra-ui/panda/blob/main/CHANGELOG.md"
+              "package_name": "@bamboocss/dev",
+              "changelog_url": "https://github.com/chakra-ui/bamboo/blob/main/CHANGELOG.md"
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

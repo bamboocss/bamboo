@@ -18,7 +18,7 @@ Text styles are defined in the `textStyles` property of the theme.
 Here's an example of a text style:
 
 ```js filename="text-styles.ts"
-import { defineTextStyles } from '@pandacss/dev'
+import { defineTextStyles } from '@bamboocss/dev'
 
 export const textStyles = defineTextStyles({
   body: {
@@ -40,10 +40,10 @@ export const textStyles = defineTextStyles({
 
 ## Update the config
 
-To use the text styles, we need to update the `config` object in the `panda.config.ts` file.
+To use the text styles, we need to update the `config` object in the `bamboo.config.ts` file.
 
-```js filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```js filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 import { textStyles } from './text-styles'
 
 export default defineConfig({
@@ -56,7 +56,7 @@ export default defineConfig({
 ```
 
 This should automatically update the generated theme the specified `textStyles`. If this doesn't happen, you can run the
-`panda codegen` command.
+`bamboo codegen` command.
 
 ## Using text styles
 
@@ -66,7 +66,7 @@ Now we can use `textStyle` property in our components.
 import { css } from '../styled-system/css'
 
 function App() {
-  return <p className={css({ textStyle: 'body' })}>This is a paragraph from Panda with the body text style.</p>
+  return <p className={css({ textStyle: 'body' })}>This is a paragraph from Bamboo with the body text style.</p>
 }
 ```
 
@@ -78,7 +78,7 @@ while having a default fallback.
 When you define a `DEFAULT` key within a nested text style, you can reference the parent key directly to use the default
 value.
 
-```js filename="panda.config.ts"
+```js filename="bamboo.config.ts"
 export default defineConfig({
   theme: {
     extend: {

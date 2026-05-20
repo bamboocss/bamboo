@@ -1,13 +1,13 @@
-import { isCssProperty } from '@pandacss/is-valid-prop'
-import { logger } from '@pandacss/logger'
-import { compact, flatten, isBoolean, isString, memo, patternFns } from '@pandacss/shared'
-import { TokenDictionary } from '@pandacss/token-dictionary'
+import { isCssProperty } from '@bamboocss/is-valid-prop'
+import { logger } from '@bamboocss/logger'
+import { compact, flatten, isBoolean, isString, memo, patternFns } from '@bamboocss/shared'
+import { TokenDictionary } from '@bamboocss/token-dictionary'
 import type {
   CascadeLayers,
   GlobalVarsDefinition,
   HashOptions,
   LoadConfigResult,
-  PandaHooks,
+  BambooHooks,
   PrefixOptions,
   PropertyConfig,
   RequiredBy,
@@ -15,7 +15,7 @@ import type {
   Theme,
   ThemeVariantsMap,
   UserConfig,
-} from '@pandacss/types'
+} from '@bamboocss/types'
 import { Conditions } from './conditions'
 import { FileEngine } from './file'
 import { GlobalFontface } from './global-fontface'
@@ -229,7 +229,7 @@ export class Context {
   }
 
   get hooks() {
-    return this.conf.hooks ?? ({} as PandaHooks)
+    return this.conf.hooks ?? ({} as BambooHooks)
   }
 
   get isTemplateLiteralSyntax() {

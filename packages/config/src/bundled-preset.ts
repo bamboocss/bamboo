@@ -1,10 +1,10 @@
-import { preset as presetBase } from '@pandacss/preset-base'
-import { preset as presetPanda } from '@pandacss/preset-panda'
+import { preset as presetBase } from '@bamboocss/preset-base'
+import { preset as presetBamboo } from '@bamboocss/preset-bamboo'
 
 const bundledPresets = {
-  '@pandacss/preset-base': presetBase,
-  '@pandacss/preset-panda': presetPanda,
-  '@pandacss/dev/presets': presetPanda,
+  '@bamboocss/preset-base': presetBase,
+  '@bamboocss/preset-bamboo': presetBamboo,
+  '@bamboocss/dev/presets': presetBamboo,
 }
 
 const bundledPresetsNames = Object.keys(bundledPresets)
@@ -16,4 +16,4 @@ export const getBundledPreset = (preset: unknown) => {
   return typeof preset === 'string' && isBundledPreset(preset) ? bundledPresets[preset] : undefined
 }
 
-export { presetBase, presetPanda }
+export { presetBase, presetBamboo }

@@ -1,4 +1,4 @@
-import { fixturePreset } from '@pandacss/fixture'
+import { fixturePreset } from '@bamboocss/fixture'
 import { expect, test } from 'vitest'
 import { TokenDictionary } from '../src'
 

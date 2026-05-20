@@ -11,7 +11,7 @@ import { ModernCssSection } from '@/www/modern-css.section'
 import { RecipesSection } from '@/www/recipes.section'
 import { StartBuildingSection } from '@/www/start-building.section'
 import { TestimonialsSection } from '@/www/testimonials.section'
-import { TryPandaSection } from '@/www/try-panda.section'
+import { TryBambooSection } from '@/www/try-bamboo.section'
 import { WorksEverywhereSection } from '@/www/works-everywhere.section'
 
 export default function Page() {
@@ -27,7 +27,7 @@ export default function Page() {
         <DesignTokensSection />
         <RecipesSection />
         <TestimonialsSection />
-        <TryPandaSection />
+        <TryBambooSection />
         <WorksEverywhereSection />
         <StartBuildingSection />
         <CommunitySection />

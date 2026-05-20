@@ -12,7 +12,7 @@ Animation styles are defined in the `animationStyles` property of the theme.
 Here's an example of an animation style:
 
 ```js filename="animation-styles.ts"
-import { defineAnimationStyles } from '@pandacss/dev'
+import { defineAnimationStyles } from '@bamboocss/dev'
 
 export const animationStyles = defineAnimationStyles({
   'slide-fade-in': {
@@ -40,10 +40,10 @@ export const animationStyles = defineAnimationStyles({
 
 ## Update the Config
 
-To use the animation styles, we need to update the `config` object in the `panda.config.ts` file.
+To use the animation styles, we need to update the `config` object in the `bamboo.config.ts` file.
 
-```js filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```js filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 import { animationStyles } from './animation-styles'
 
 export default defineConfig({
@@ -56,7 +56,7 @@ export default defineConfig({
 ```
 
 This should automatically update the generated theme with the specified `animationStyles`. If this doesn't happen, you
-can run the `panda codegen` command.
+can run the `bamboo codegen` command.
 
 ## Using Animation Styles
 
@@ -100,7 +100,7 @@ animation style while having a default fallback.
 When you define a `DEFAULT` key within a nested animation style, you can reference the parent key directly to use the
 default value.
 
-```js filename="panda.config.ts"
+```js filename="bamboo.config.ts"
 export default defineConfig({
   theme: {
     extend: {

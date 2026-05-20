@@ -36,10 +36,10 @@ describe('CLI', () => {
 
   const testsCwd = path.resolve(cwd, _dirname, './samples')
   const paths = {
-    config: path.resolve(testsCwd, 'panda.config.ts'),
+    config: path.resolve(testsCwd, 'bamboo.config.ts'),
     postcssConfig: path.resolve(testsCwd, 'postcss.config.cjs'),
     styledSystem: path.resolve(testsCwd, 'styled-system'),
-    logFile: path.resolve(testsCwd, 'panda.log'),
+    logFile: path.resolve(testsCwd, 'bamboo.log'),
     studio: path.resolve(testsCwd, 'styled-system-studio'),
     pkgJson: path.resolve(testsCwd, 'package.json'),
   }
@@ -76,7 +76,7 @@ describe('CLI', () => {
     // init
     const output = runCommand(cmd, { cwd: testsCwd })
     // Check for either "Thanks" (new config) or existing config message
-    expect(output.includes('Thanks') || output.includes('It looks like you already have panda created')).toBe(true)
+    expect(output.includes('Thanks') || output.includes('It looks like you already have bamboo created')).toBe(true)
 
     // Check if the config file was created
     const configFileExists = await fs.access(paths.config)
@@ -84,11 +84,11 @@ describe('CLI', () => {
 
     // init on existing project
     const output2 = runCommand(cmd, { cwd: testsCwd })
-    expect(output2.includes('It looks like you already have panda created')).toBe(true)
+    expect(output2.includes('It looks like you already have bamboo created')).toBe(true)
 
     // init with --force
-    const output3 = runCommand(cmd + ' --force --postcss --logfile="./panda.log"', { cwd: testsCwd })
-    expect(output3.includes('Panda initialized')).toBe(true)
+    const output3 = runCommand(cmd + ' --force --postcss --logfile="./bamboo.log"', { cwd: testsCwd })
+    expect(output3.includes('Bamboo initialized')).toBe(true)
 
     // Check if the postcss config file was created
     const postcssConfigFileExists = await fs.access(paths.postcssConfig)
@@ -180,7 +180,7 @@ describe('CLI', () => {
 
     // debug
     const output = runCommand(cmd, { cwd: testsCwd })
-    expect(output.includes('files using Panda')).toBe(true)
+    expect(output.includes('files using Bamboo')).toBe(true)
 
     // Check that the `styled-system/debug` folder was created
     const debugExists = await fs.access(path.resolve(paths.styledSystem, 'debug'))
@@ -196,10 +196,10 @@ describe('CLI', () => {
 
     // ship
     const output = runCommand(cmd, { cwd: testsCwd })
-    expect(output.includes('files using Panda')).toBe(true)
+    expect(output.includes('files using Bamboo')).toBe(true)
 
-    // Check that the `styled-system/panda.buildinfo.json` file was created
-    const buildInfoExists = await fs.access(path.resolve(paths.styledSystem, 'panda.buildinfo.json'))
+    // Check that the `styled-system/bamboo.buildinfo.json` file was created
+    const buildInfoExists = await fs.access(path.resolve(paths.styledSystem, 'bamboo.buildinfo.json'))
     expect(buildInfoExists).toBeUndefined()
   })
 

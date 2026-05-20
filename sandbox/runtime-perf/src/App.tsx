@@ -16,7 +16,7 @@ export default function App() {
 const CvaButtonProfiler = () => {
   const [key, setKey] = useState(null)
   return (
-    <Profiler name="panda" id="panda" onRerender={(newKey: any) => setKey(newKey)}>
+    <Profiler name="bamboo" id="bamboo" onRerender={(newKey: any) => setKey(newKey)}>
       <RandomizedButtons key={key} instances={instances} />
     </Profiler>
   )

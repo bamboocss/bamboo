@@ -1,5 +1,5 @@
 import { css, cx } from '@/styled-system/css'
-import { HStack, Stack, panda } from '@/styled-system/jsx'
+import { HStack, Stack, bamboo } from '@/styled-system/jsx'
 import { grid } from '@/styled-system/patterns'
 import { LuChevronRight } from 'react-icons/lu'
 import { Anchor } from '../components/ui/anchor'
@@ -30,27 +30,27 @@ export const Card = (props: Props) => {
   const animatedArrow = arrow ? <Arrow /> : null
 
   return (
-    <panda.div borderWidth="1px" px="6" py="4" rounded="lg">
+    <bamboo.div borderWidth="1px" px="6" py="4" rounded="lg">
       <Anchor className="group" href={href}>
         {image || children}
         {icon}
         <span>
           <Stack gap="1">
-            <panda.span textStyle="lg" fontWeight="semibold">
+            <bamboo.span textStyle="lg" fontWeight="semibold">
               <HStack>
                 {title}
                 {animatedArrow}
               </HStack>
-            </panda.span>
+            </bamboo.span>
             {description && (
-              <panda.span color={{ base: 'neutral.700', _dark: 'neutral.400' }}>
+              <bamboo.span color={{ base: 'neutral.700', _dark: 'neutral.400' }}>
                 {description}
-              </panda.span>
+              </bamboo.span>
             )}
           </Stack>
         </span>
       </Anchor>
-    </panda.div>
+    </bamboo.div>
   )
 }
 

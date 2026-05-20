@@ -1,32 +1,32 @@
 import { ButtonLink } from '@/components/ui/button'
 import { docsConfig } from '@/docs.config'
-import { Container, Flex, Wrap, panda } from '@/styled-system/jsx'
+import { Container, Flex, Wrap, bamboo } from '@/styled-system/jsx'
 import { Icon } from '@/theme/icons'
 import Image from 'next/image'
 
 export const FooterSection = () => {
   const { twitterUrl, discordUrl, docsRepositoryBase } = docsConfig
   return (
-    <panda.footer bg="bg.inverted">
+    <bamboo.footer bg="bg.inverted">
       <Container py="10">
         <Flex
           gap="6"
           direction={{ base: 'column', md: 'row' }}
           align={{ base: 'center', md: 'unset' }}
         >
-          <panda.p
+          <bamboo.p
             color="yellow.300"
-            textStyle={{ base: '8xl', md: 'panda.h1' }}
+            textStyle={{ base: '8xl', md: 'bamboo.h1' }}
             letterSpacing="tighter"
             fontWeight="bold"
           >
-            panda
-          </panda.p>
+            bamboo
+          </bamboo.p>
           <Image
-            src="/panda-hello.svg"
+            src="/bamboo-hello.svg"
             width={196}
             height={261}
-            alt="Yums the panda waving"
+            alt="Yums the bamboo waving"
           />
         </Flex>
 
@@ -48,6 +48,6 @@ export const FooterSection = () => {
           </ButtonLink>
         </Wrap>
       </Container>
-    </panda.footer>
+    </bamboo.footer>
   )
 }

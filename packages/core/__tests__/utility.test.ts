@@ -1,5 +1,5 @@
-import { fixturePreset } from '@pandacss/fixture'
-import { TokenDictionary } from '@pandacss/token-dictionary'
+import { fixturePreset } from '@bamboocss/fixture'
+import { TokenDictionary } from '@bamboocss/token-dictionary'
 import { describe, expect, test } from 'vitest'
 import { Utility } from '../src/utility'
 

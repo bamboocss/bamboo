@@ -1,17 +1,17 @@
 {
-  "name": "@pandacss/plugin-lightningcss",
+  "name": "@bamboocss/plugin-lightningcss",
   "version": "1.11.1",
-  "description": "Panda CSS plugin for LightningCSS optimization",
+  "description": "Bamboo CSS plugin for LightningCSS optimization",
   "author": "Segun Adebayo <joseshegs@gmail.com>",
   "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "sideEffects": false,
-  "homepage": "https://panda-css.com",
+  "homepage": "https://bamboo-css.com",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chakra-ui/panda.git",
+    "url": "git+https://github.com/chakra-ui/bamboo.git",
     "directory": "packages/plugin-lightningcss"
   },
   "publishConfig": {
@@ -38,8 +38,8 @@
     "dist"
   ],
   "dependencies": {
-    "@pandacss/logger": "workspace:*",
-    "@pandacss/types": "workspace:*",
+    "@bamboocss/logger": "workspace:*",
+    "@bamboocss/types": "workspace:*",
     "browserslist": "4.28.1",
     "lightningcss": "1.31.1"
   }

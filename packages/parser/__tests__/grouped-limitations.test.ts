@@ -1,5 +1,5 @@
-import { createCss } from '@pandacss/shared'
-import { createContext } from '@pandacss/fixture'
+import { createCss } from '@bamboocss/shared'
+import { createContext } from '@bamboocss/fixture'
 import { describe, test, expect } from 'vitest'
 import { parseAndExtract } from './fixture'
 

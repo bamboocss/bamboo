@@ -1,5 +1,5 @@
-import { isObject, walkObject } from '@pandacss/shared'
-import type { Dict } from '@pandacss/types'
+import { isObject, walkObject } from '@bamboocss/shared'
+import type { Dict } from '@bamboocss/types'
 import merge from 'lodash.merge'
 import type { StylesheetContext } from '.'
 import { parseSelectors } from './stringify'

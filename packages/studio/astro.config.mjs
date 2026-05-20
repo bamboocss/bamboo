@@ -1,4 +1,4 @@
-import studio from '@pandacss/astro-plugin-studio'
+import studio from '@bamboocss/astro-plugin-studio'
 import { defineConfig } from 'astro/config'
 
 // https://astro.build/config

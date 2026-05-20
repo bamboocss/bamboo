@@ -2,7 +2,7 @@ import { HStack, Flex } from '@/styled-system/jsx'
 import { PropsWithChildren } from 'react'
 import { Logo } from './Logo'
 import { css } from '@/styled-system/css'
-import pkgJson from '@pandacss/dev/package.json'
+import pkgJson from '@bamboocss/dev/package.json'
 import { ColorModeSwitch } from '@/src/components/ColorModeSwitch'
 
 export const Toolbar = (props: PropsWithChildren) => (

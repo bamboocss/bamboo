@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Flex, HStack, Square, Stack, panda } from '../../styled-system/jsx'
+import { Flex, HStack, Square, Stack, bamboo } from '../../styled-system/jsx'
 import { EmptyState } from './empty-state'
 import { TypographyIcon } from './icons'
 import type { useThemeTokens } from '../lib/use-theme-tokens'
@@ -18,7 +18,7 @@ export function FontFamily({ fonts }: FontFamilyProps) {
   if (fonts.length === 0) {
     return (
       <EmptyState title="No Tokens" icon={<TypographyIcon />}>
-        The panda config does not contain any font family
+        The bamboo config does not contain any font family
       </EmptyState>
     )
   }
@@ -28,9 +28,9 @@ export function FontFamily({ fonts }: FontFamilyProps) {
       {fonts.map((font) => (
         <Stack key={font.name} gap="8">
           <HStack gap="10" style={{ fontFamily: font.value }}>
-            <panda.p fontSize="100px" fontWeight="bold" lineHeight="1">
+            <bamboo.p fontSize="100px" fontWeight="bold" lineHeight="1">
               Ag
-            </panda.p>
+            </bamboo.p>
 
             <Flex wrap="wrap" fontSize="24px" mt="8">
               {letters.map((letter) => (
@@ -57,10 +57,10 @@ export function FontFamily({ fonts }: FontFamilyProps) {
           </HStack>
 
           <Stack>
-            <panda.span fontWeight="semibold">{font.extensions.prop}</panda.span>
-            <panda.span fontFamily={font.value} opacity="0.7">
+            <bamboo.span fontWeight="semibold">{font.extensions.prop}</bamboo.span>
+            <bamboo.span fontFamily={font.value} opacity="0.7">
               {font.value}
-            </panda.span>
+            </bamboo.span>
           </Stack>
         </Stack>
       ))}

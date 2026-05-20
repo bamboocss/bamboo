@@ -8,12 +8,12 @@ const tsconfigPath = path.join(__dirname, '../tsconfig.json')
 const dts = (relative: string) => path.join(__dirname, '../node_modules/' + relative)
 
 const dtsFiles = {
-  ['@pandacss/dev']: dts('@pandacss/dev/dist/index.d.ts'),
+  ['@bamboocss/dev']: dts('@bamboocss/dev/dist/index.d.ts'),
   ['react']: dts('@types/react/index.d.ts'),
 }
 
 console.log('Generating dts bundles...')
-const bundledDts = generateDtsBundle([{ filePath: path.join(__dirname, 'panda-types.ts') }], {
+const bundledDts = generateDtsBundle([{ filePath: path.join(__dirname, 'bamboo-types.ts') }], {
   preferredConfigPath: tsconfigPath,
 })
 
@@ -21,7 +21,7 @@ const outdir = path.join(__dirname, '../src/dts/')
 console.log('Writing dts bundles in', outdir)
 
 await getOrCreateDir(outdir)
-await fs.writeFile(outdir + '@pandacss/types'.replace('/', '_') + '.d.ts', bundledDts[0])
+await fs.writeFile(outdir + '@bamboocss/types'.replace('/', '_') + '.d.ts', bundledDts[0])
 await Promise.all(
   Object.keys(dtsFiles).map((name) => {
     console.log('Copying', name)

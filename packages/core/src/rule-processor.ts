@@ -1,5 +1,5 @@
-import type { CssOptions, Stylesheet } from '@pandacss/core'
-import { PandaError } from '@pandacss/shared'
+import type { CssOptions, Stylesheet } from '@bamboocss/core'
+import { BambooError } from '@bamboocss/shared'
 import type {
   AtomicRecipeRule,
   AtomicRule,
@@ -8,7 +8,7 @@ import type {
   RecipeVariantsRule,
   SlotRecipeDefinition,
   SystemStyleObject,
-} from '@pandacss/types'
+} from '@bamboocss/types'
 import type { Context } from './context'
 import type { StyleDecoder } from './style-decoder'
 import type { StyleEncoder } from './style-encoder'
@@ -27,7 +27,7 @@ export class RuleProcessor {
   getParamsOrThrow() {
     const isReady = Boolean(this.encoder && this.decoder && this.sheet)
     if (!isReady) {
-      throw new PandaError('MISSING_PARAMS', 'RuleProcessor is missing params, please call `clone` first')
+      throw new BambooError('MISSING_PARAMS', 'RuleProcessor is missing params, please call `clone` first')
     }
 
     return {

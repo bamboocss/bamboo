@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { createContext } from '@pandacss/fixture'
+import { createContext } from '@bamboocss/fixture'
 import { generateColorPaletteSpec } from '../src/spec/color-palette'
 
 describe('color palette spec generation', () => {

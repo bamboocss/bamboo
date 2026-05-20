@@ -1,4 +1,4 @@
-import { calc, toPx } from '@pandacss/shared'
+import { calc, toPx } from '@bamboocss/shared'
 import type { TokenDictionary, TokenMiddleware } from './dictionary'
 import { Token, type TokenExtensions } from './token'
 import type { ColorPaletteExtensions } from './transform'

@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { logo } from '../lib/panda-context'
+import { logo } from '../lib/bamboo-context'
 
 export function Logo(props: React.ComponentProps<'svg'>) {
   if (logo) return <img src={logo} width="16" alt="logo" />

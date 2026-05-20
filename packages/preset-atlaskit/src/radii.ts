@@ -1,4 +1,4 @@
-import type { Tokens } from '@pandacss/types'
+import type { Tokens } from '@bamboocss/types'
 
 export const radii: Tokens['radii'] = {
   xsmall: { value: '2px' },

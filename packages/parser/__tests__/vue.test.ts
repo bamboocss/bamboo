@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { vueToTsx } from '@pandacss/plugin-vue'
+import { vueToTsx } from '@bamboocss/plugin-vue'
 import { parseAndExtract } from './fixture'
 
 describe('extract Vue templates', () => {

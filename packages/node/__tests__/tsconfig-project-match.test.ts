@@ -7,7 +7,7 @@ import { isSourceFileIncludedInTsconfig } from '../src/tsconfig-utils'
 
 describe('isSourceFileIncludedInTsconfig', () => {
   test('matches src/foo.ts against include "${configDir}/src/*"', () => {
-    const dir = mkdtempSync(path.join(tmpdir(), 'panda-tsconfig-match-'))
+    const dir = mkdtempSync(path.join(tmpdir(), 'bamboo-tsconfig-match-'))
     try {
       writeFileSync(
         path.join(dir, 'tsconfig.json'),

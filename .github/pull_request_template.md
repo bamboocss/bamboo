@@ -23,6 +23,6 @@ Closes # <!-- Github issue # here -->
 
 ## 💣 Is this a breaking change (Yes/No):
 
-<!-- If Yes, please describe the impact and migration path for existing Panda users. -->
+<!-- If Yes, please describe the impact and migration path for existing Bamboo users. -->
 
 ## 📝 Additional Information

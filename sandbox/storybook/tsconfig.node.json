@@ -7,5 +7,5 @@
     "allowSyntheticDefaultImports": true,
     "strict": true
   },
-  "include": ["panda.config.ts", "postcss.config.cjs", "postcss.config.mjs"]
+  "include": ["bamboo.config.ts", "postcss.config.cjs", "postcss.config.mjs"]
 }

@@ -1,7 +1,7 @@
 {
-  "name": "@pandacss/postcss",
+  "name": "@bamboocss/postcss",
   "version": "1.11.1",
-  "description": "PostCSS integration for Panda CSS",
+  "description": "PostCSS integration for Bamboo CSS",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -25,10 +25,10 @@
     "dev": "pnpm build-fast --watch"
   },
   "sideEffects": false,
-  "homepage": "https://panda-css.com",
+  "homepage": "https://bamboo-css.com",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chakra-ui/panda.git",
+    "url": "git+https://github.com/chakra-ui/bamboo.git",
     "directory": "packages/postcss"
   },
   "publishConfig": {
@@ -38,10 +38,10 @@
     "dist"
   ],
   "dependencies": {
-    "@pandacss/node": "workspace:*",
+    "@bamboocss/node": "workspace:*",
     "postcss": "8.5.14"
   },
   "devDependencies": {
-    "@pandacss/logger": "workspace:*"
+    "@bamboocss/logger": "workspace:*"
   }
 }

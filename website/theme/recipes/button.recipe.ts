@@ -1,5 +1,5 @@
 import { createAnatomy } from '@ark-ui/react/anatomy'
-import { defineParts, defineRecipe } from '@pandacss/dev'
+import { defineParts, defineRecipe } from '@bamboocss/dev'
 
 const anatomy = createAnatomy('button', ['leftIcon', 'rightIcon'])
 const parts = defineParts(anatomy.build())

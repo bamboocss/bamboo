@@ -6,7 +6,7 @@ import type {
   MixedCondition,
   MultiBlockCondition,
   SelectorCondition,
-} from '@pandacss/types'
+} from '@bamboocss/types'
 import { AtRule } from 'postcss'
 import { safeParse } from './safe-parse'
 

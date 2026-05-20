@@ -1,6 +1,6 @@
-import type { Conditions, ConditionObjectQuery } from '@pandacss/types'
+import type { Conditions, ConditionObjectQuery } from '@bamboocss/types'
 import type { AddError } from '../types'
-import { isString } from '@pandacss/shared'
+import { isString } from '@bamboocss/shared'
 
 const validateObjectCondition = (obj: ConditionObjectQuery, addError: AddError): { hasSlot: boolean } => {
   let hasSlot = false

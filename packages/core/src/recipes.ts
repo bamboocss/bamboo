@@ -1,5 +1,5 @@
 import {
-  PandaError,
+  BambooError,
   capitalize,
   createRegex,
   dashCase,
@@ -7,7 +7,7 @@ import {
   isObject,
   memo,
   splitProps,
-} from '@pandacss/shared'
+} from '@bamboocss/shared'
 import type {
   ArtifactFilters,
   Dict,
@@ -16,7 +16,7 @@ import type {
   SlotRecipeConfig,
   SlotRecipeDefinition,
   SystemStyleObject,
-} from '@pandacss/types'
+} from '@bamboocss/types'
 import merge from 'lodash.merge'
 import type { RecipeNode } from './types'
 import { transformStyles, type SerializeContext } from './serialize'
@@ -193,7 +193,7 @@ export class Recipes {
 
   getConfigOrThrow = memo((name: string) => {
     const config = this.getConfig(name)
-    if (!config) throw new PandaError('UNKNOWN_RECIPE', `Recipe "${name}" not found`)
+    if (!config) throw new BambooError('UNKNOWN_RECIPE', `Recipe "${name}" not found`)
     return config
   })
 

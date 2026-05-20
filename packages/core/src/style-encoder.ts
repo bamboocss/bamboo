@@ -1,5 +1,5 @@
 import {
-  PandaError,
+  BambooError,
   getOrCreateSet,
   getSlotRecipes,
   isObjectOrArray,
@@ -7,7 +7,7 @@ import {
   toResponsiveObject,
   traverse,
   uniq,
-} from '@pandacss/shared'
+} from '@bamboocss/shared'
 import type {
   Dict,
   EncoderJson,
@@ -18,7 +18,7 @@ import type {
   StyleEntry,
   StyleProps,
   StyleResultObject,
-} from '@pandacss/types'
+} from '@bamboocss/types'
 import { version } from '../package.json'
 import type { Context } from './context'
 import { Recipes } from './recipes'
@@ -314,7 +314,7 @@ export class StyleEncoder {
     const recipeConfig = this.context.recipes.getConfigOrThrow(recipeName)
 
     if (!Recipes.isSlotRecipeConfig(recipeConfig)) {
-      throw new PandaError('INVALID_RECIPE', `Recipe "${recipeName}" is not a slot recipe`)
+      throw new BambooError('INVALID_RECIPE', `Recipe "${recipeName}" is not a slot recipe`)
     }
 
     const base: Dict = {}

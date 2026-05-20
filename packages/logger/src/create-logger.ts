@@ -1,4 +1,4 @@
-import type { LogEntry, LogLevel, LoggerInterface } from '@pandacss/types'
+import type { LogEntry, LogLevel, LoggerInterface } from '@bamboocss/types'
 import colors from 'kleur'
 import { isMatch } from 'matcher'
 

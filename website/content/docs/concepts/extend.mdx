@@ -3,12 +3,12 @@ title: The extend keyword
 description: What is and how to to use the extend keyword
 ---
 
-The `extend` keyword allows you to extend the default Panda configuration. It is useful when you want to add your own
-customizations to Panda, without erasing the default `presets` values (`conditions`, `tokens`, `utilities`, etc).
+The `extend` keyword allows you to extend the default Bamboo configuration. It is useful when you want to add your own
+customizations to Bamboo, without erasing the default `presets` values (`conditions`, `tokens`, `utilities`, etc).
 
 It will (deeply) merge your customizations with the default ones, instead of replacing them.
 
-The `extend` keyword allows you to extend the following parts of Panda:
+The `extend` keyword allows you to extend the following parts of Bamboo:
 
 - [conditions](/docs/customization/conditions)
 - [theme](/docs/customization/theme)
@@ -22,10 +22,10 @@ The `extend` keyword allows you to extend the following parts of Panda:
 
 ## Example
 
-After running the `panda init` command you should see something similar to this:
+After running the `bamboo init` command you should see something similar to this:
 
 ```ts
-import { defineConfig } from '@pandacss/dev'
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   // ...
@@ -42,7 +42,7 @@ export default defineConfig({
 Let's say you want to add a new color to the default theme. You can do it like this:
 
 ```ts
-import { defineConfig } from '@pandacss/dev'
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   theme: {
@@ -60,7 +60,7 @@ This will add a new color to the default theme, without erasing the other ones.
 Now, let's say we want to create new property `br` that applies a border radius to an element.
 
 ```ts
-import { defineConfig } from '@pandacss/dev'
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   utilities: {
@@ -81,7 +81,7 @@ What if this utility was coming from a preset (`@acme/my-preset`) ? You can exte
 deeply merged with the existing one:
 
 ```ts
-import { defineConfig } from '@pandacss/dev'
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   presets: ['@acme/my-preset']
@@ -100,7 +100,7 @@ export default defineConfig({
 Let's say you want to remove the `br` utility from the `@acme/my-preset` preset. You can do it like this:
 
 ```ts
-import { defineConfig } from '@pandacss/dev'
+import { defineConfig } from '@bamboocss/dev'
 import myPreset from '@acme/my-preset'
 
 const { br, ...utilities } = myPreset.utilities
@@ -118,25 +118,25 @@ export default defineConfig({
 
 ## Removing something from the base presets
 
-Let's say you want to remove the `stack` pattern from the `@pandacss/preset-base` preset (included by default).
+Let's say you want to remove the `stack` pattern from the `@bamboocss/preset-base` preset (included by default).
 
 You can pick only the parts that you need with and spread the rest, like this:
 
 ```ts
-import pandaBasePreset from '@pandacss/preset-base'
+import bambooBasePreset from '@bamboocss/preset-base'
 
 // omitting stack here
-const { stack, ...pandaBasePresetPatterns } = pandaBasePreset.patterns
+const { stack, ...bambooBasePresetPatterns } = bambooBasePreset.patterns
 
 export default defineConfig({
-  presets: ['@pandacss/preset-panda'], // 👈 we still want the tokens, breakpoints and textStyles from this preset
+  presets: ['@bamboocss/preset-bamboo'], // 👈 we still want the tokens, breakpoints and textStyles from this preset
 
-  // ⚠️ we need to eject to prevent the `@pandacss/preset-base` from being resolved
-  // https://panda-css.com/docs/customization/presets#which-panda-presets-will-be-included-
+  // ⚠️ we need to eject to prevent the `@bamboocss/preset-base` from being resolved
+  // https://bamboo-css.com/docs/customization/presets#which-bamboo-presets-will-be-included-
   eject: true,
   patterns: {
     extend: {
-      ...pandaBasePresetPatterns
+      ...bambooBasePresetPatterns
       // your customizations here
     }
   }
@@ -145,7 +145,7 @@ export default defineConfig({
 
 ## Minimal setup
 
-If you want to use Panda with the bare minimum, without any of the defaults, you can read more about it
+If you want to use Bamboo with the bare minimum, without any of the defaults, you can read more about it
 [here](/docs/guides/minimal-setup)
 
 ## FAQ

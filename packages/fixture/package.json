@@ -1,22 +1,22 @@
 {
-  "name": "@pandacss/fixture",
+  "name": "@bamboocss/fixture",
   "version": "0.37.2",
   "private": true,
-  "description": "Test fixtures for Panda CSS",
+  "description": "Test fixtures for Bamboo CSS",
   "main": "src/index.ts",
   "types": "src/index.ts",
   "author": "Segun Adebayo <joseshegs@gmail.com>",
   "license": "MIT",
   "devDependencies": {
-    "@pandacss/config": "workspace:^",
-    "@pandacss/core": "workspace:^",
-    "@pandacss/generator": "workspace:^",
-    "@pandacss/node": "workspace:^",
-    "@pandacss/preset-base": "workspace:*",
-    "@pandacss/preset-panda": "workspace:*",
-    "@pandacss/shared": "workspace:^",
-    "@pandacss/token-dictionary": "workspace:^",
-    "@pandacss/types": "workspace:*",
+    "@bamboocss/config": "workspace:^",
+    "@bamboocss/core": "workspace:^",
+    "@bamboocss/generator": "workspace:^",
+    "@bamboocss/node": "workspace:^",
+    "@bamboocss/preset-base": "workspace:*",
+    "@bamboocss/preset-bamboo": "workspace:*",
+    "@bamboocss/shared": "workspace:^",
+    "@bamboocss/token-dictionary": "workspace:^",
+    "@bamboocss/types": "workspace:*",
     "postcss": "8.5.14"
   }
 }

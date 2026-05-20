@@ -6096,7 +6096,7 @@ it('resolves identifier pointing to default value on parameters JsxExpression > 
 it('still explore both branches when using a default value as the condition expression', () => {
   expect(
     extractFromCode(
-      `import { css } from "../panda/css";
+      `import { css } from "../bamboo/css";
 
       const CompB = ({ disabled = false }: { disabled: boolean }) => {
         return (
@@ -6137,7 +6137,7 @@ it('still explore both branches when using a default value as the condition expr
 it('extract all `css` style objects', () => {
   expect(
     extractFromCode(
-      `import { css } from "../panda/css";
+      `import { css } from "../bamboo/css";
 
       css({ mx: '3', paddingTop: '4' }, { mx: '10', pt: '6' })
       `,

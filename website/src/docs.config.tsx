@@ -37,13 +37,13 @@ export interface DocsConfig {
 }
 
 export const docsConfig: DocsConfig = {
-  title: 'Panda CSS',
+  title: 'Bamboo CSS',
   description: 'Build modern websites using build-time and type-safe CSS-in-JS',
-  url: 'https://panda-css.com',
+  url: 'https://bamboo-css.com',
   logoUrl: '/',
-  docsRepositoryBase: 'https://github.com/chakra-ui/panda',
+  docsRepositoryBase: 'https://github.com/chakra-ui/bamboo',
   gitTimestamp: 'Last updated on',
-  twitterUrl: 'https://twitter.com/panda__css',
+  twitterUrl: 'https://twitter.com/bamboo__css',
   discordUrl: 'https://discord.gg/VQrkpsgSx7',
   navigation: [
     {
@@ -64,7 +64,7 @@ export const docsConfig: DocsConfig = {
     {
       title: 'Playground',
       type: 'page',
-      href: 'https://play.panda-css.com/',
+      href: 'https://play.bamboo-css.com/',
       external: true,
       newWindow: true
     }
@@ -80,17 +80,17 @@ export const docsNavigation: NavItem = {
       url: 'overview',
       items: [
         { title: 'Getting Started', url: 'getting-started' },
-        { title: 'Why Panda?', url: 'why-panda' },
+        { title: 'Why Bamboo?', url: 'why-bamboo' },
         { title: 'FAQs', url: 'faq' },
         { title: 'Browser Support', url: 'browser-support' },
         {
           title: 'Roadmap',
-          href: 'https://panda-css.canny.io/',
+          href: 'https://bamboo-css.canny.io/',
           external: true
         },
         {
           title: 'Changelog',
-          href: 'https://github.com/chakra-ui/panda/blob/main/CHANGELOG.md',
+          href: 'https://github.com/chakra-ui/bamboo/blob/main/CHANGELOG.md',
           external: true
         }
       ]
@@ -171,7 +171,7 @@ export const docsNavigation: NavItem = {
         { title: 'Layer Styles', url: 'layer-styles' },
         { title: 'Animation Styles', url: 'animation-styles' },
         { title: 'Spec', url: 'spec', tag: 'new' },
-        { title: 'Panda Studio', url: 'studio' }
+        { title: 'Bamboo Studio', url: 'studio' }
       ]
     },
     {

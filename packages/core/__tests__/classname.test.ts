@@ -1,5 +1,5 @@
-import { createGeneratorContext } from '@pandacss/fixture'
-import { createCss } from '@pandacss/shared'
+import { createGeneratorContext } from '@bamboocss/fixture'
+import { createCss } from '@bamboocss/shared'
 import { describe, expect, test } from 'vitest'
 
 describe('generate classnames', () => {

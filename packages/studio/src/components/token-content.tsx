@@ -1,6 +1,6 @@
-import { panda } from '../../styled-system/jsx'
+import { bamboo } from '../../styled-system/jsx'
 
-export const TokenContent = panda('div', {
+export const TokenContent = bamboo('div', {
   base: {
     display: 'flex',
     flexDirection: 'column',

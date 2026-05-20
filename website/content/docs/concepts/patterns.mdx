@@ -1,7 +1,7 @@
 ---
 title: Patterns
 description:
-  Patterns are layout primitives that can be used to create robust and responsive layouts with ease. Panda comes with
+  Patterns are layout primitives that can be used to create robust and responsive layouts with ease. Bamboo comes with
   predefined patterns like stack, hstack, vstack, wrap, etc. These patterns can be used as functions or JSX elements.
 ---
 
@@ -770,7 +770,7 @@ export function Page() {
 
 ### cq (Container Query)
 
-To make it easier to use container queries, we've added a new `cq` pattern to `@pandacss/preset-base`. It is used to
+To make it easier to use container queries, we've added a new `cq` pattern to `@bamboocss/preset-base`. It is used to
 apply styles based on the width of the container.
 
 The `cq` function accepts the following properties:
@@ -839,7 +839,7 @@ Read more about container queries [here](/docs/concepts/conditional-styles#conta
 
 ## Usage with JSX
 
-To use the pattern in JSX, you need to set the `jsxFramework` property in the config. When this is set, Panda will emit
+To use the pattern in JSX, you need to set the `jsxFramework` property in the config. When this is set, Bamboo will emit
 files for JSX elements based on the framework.
 
 Every pattern can be used as a JSX element and imported from the `/jsx` entrypoint. By default, the pattern name is the
@@ -871,7 +871,7 @@ existing components to create new components.
 To track the usage of the patterns in these cases, you'll need to add the `jsx` hint for the pattern config
 
 ```js {12} filename="button.pattern.ts"
-import { definePattern } from '@pandacss/dev'
+import { definePattern } from '@bamboocss/dev'
 
 const scrollable = definePattern({
   // ...
@@ -880,7 +880,7 @@ const scrollable = definePattern({
 })
 ```
 
-Then you can create a new component that uses the `PageScrollable` component and Panda will track the usage of the
+Then you can create a new component that uses the `PageScrollable` component and Bamboo will track the usage of the
 `scrollable` pattern as well.
 
 ```tsx

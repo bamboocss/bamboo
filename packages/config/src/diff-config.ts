@@ -1,5 +1,5 @@
-import { dashCase } from '@pandacss/shared'
-import type { ArtifactId, Config, DiffConfigResult } from '@pandacss/types'
+import { dashCase } from '@bamboocss/shared'
+import type { ArtifactId, Config, DiffConfigResult } from '@bamboocss/types'
 import microdiff from 'microdiff'
 import { artifactMatchers } from './config-deps'
 

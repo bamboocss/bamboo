@@ -64,7 +64,7 @@ export default function App() {
 
 ## Config Slot Recipe
 
-The `createStyleContext` function can also be used with slot recipes defined in the `panda.config.ts` file.
+The `createStyleContext` function can also be used with slot recipes defined in the `bamboo.config.ts` file.
 
 - Pass the config recipe to the `createStyleContext` function
 - Use the `withProvider` and `withContext` functions to create compound components
@@ -177,7 +177,7 @@ want to opt-out of the recipe styles.
 The rules of config recipes still applies when using `createStyleContext`. Ensure the name of the final component
 matches the name of the recipe.
 
-> If you want to use a custom name, you can configure the recipe's `jsx` property in the `panda.config.ts` file.
+> If you want to use a custom name, you can configure the recipe's `jsx` property in the `bamboo.config.ts` file.
 
 ```tsx
 // recipe name is "card"

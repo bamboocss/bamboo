@@ -1,6 +1,6 @@
-import { logger } from '@pandacss/logger'
-import { PandaError } from '@pandacss/shared'
-import type { UserConfig } from '@pandacss/types'
+import { logger } from '@bamboocss/logger'
+import { BambooError } from '@bamboocss/shared'
+import type { UserConfig } from '@bamboocss/types'
 import type { ArtifactNames, TokensData } from './types'
 import { validateArtifactNames } from './validation/validate-artifact'
 import { validateBreakpoints } from './validation/validate-breakpoints'
@@ -61,7 +61,7 @@ export const validateConfig = (config: Partial<UserConfig>) => {
       .join('\n')}\n`
 
     if (config.validation === 'error') {
-      throw new PandaError('CONFIG_ERROR', errors)
+      throw new BambooError('CONFIG_ERROR', errors)
     }
 
     logger.warn('config', errors)

@@ -1,9 +1,9 @@
-import type { Config, Preset } from '@pandacss/types'
-import { mergeConfigs } from '@pandacss/config/merge'
-import presetBase from '@pandacss/preset-base'
-import presetPanda from '@pandacss/preset-panda'
+import type { Config, Preset } from '@bamboocss/types'
+import { mergeConfigs } from '@bamboocss/config/merge'
+import presetBase from '@bamboocss/preset-base'
+import presetBamboo from '@bamboocss/preset-bamboo'
 import { validateConfig } from '../../../../packages/config/src/validate-config'
-import { logger } from '@pandacss/logger'
+import { logger } from '@bamboocss/logger'
 
 type Extendable<T> = T & { extend?: T }
 type ExtendableConfig = Extendable<Config>
@@ -23,7 +23,7 @@ export function resolveConfig(config?: Config) {
       presets.add(preset)
     })
   } else if (!config.eject) {
-    presets.add(presetPanda)
+    presets.add(presetBamboo)
   }
 
   presets.add(playgroundPreset)

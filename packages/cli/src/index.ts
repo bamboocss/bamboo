@@ -1,4 +1,4 @@
-import { PandaError } from '@pandacss/shared'
+import { BambooError } from '@bamboocss/shared'
 import type {
   AnimationStyles,
   CompositionStyles,
@@ -8,7 +8,7 @@ import type {
   GlobalStyleObject,
   HooksApiInterface,
   LayerStyles,
-  PandaPlugin,
+  BambooPlugin,
   Parts,
   PatternConfig,
   PatternProperties,
@@ -23,14 +23,14 @@ import type {
   TextStyles,
   ThemeVariant,
   Tokens,
-} from '@pandacss/types'
+} from '@bamboocss/types'
 
 /* -----------------------------------------------------------------------------
  * Config creators
  * -----------------------------------------------------------------------------*/
 
 export function defineConfig(config: Config) {
-  return Object.assign(config, { name: '__panda.config__' })
+  return Object.assign(config, { name: '__bamboo.config__' })
 }
 
 export function defineRecipe<T extends RecipeVariantRecord>(config: RecipeConfig<T>): RecipeConfig {
@@ -49,7 +49,7 @@ export function defineParts<T extends Parts>(parts: T) {
       Object.entries(config).map(([key, value]) => {
         const part = parts[key]
         if (part == null) {
-          throw new PandaError(
+          throw new BambooError(
             'NOT_FOUND',
             `Part "${key}" does not exist in the anatomy. Available parts: ${Object.keys(parts).join(', ')}`,
           )
@@ -84,7 +84,7 @@ export function defineUtility(utility: PropertyConfig) {
   return utility
 }
 
-export function definePlugin(plugin: PandaPlugin) {
+export function definePlugin(plugin: BambooPlugin) {
   return plugin
 }
 

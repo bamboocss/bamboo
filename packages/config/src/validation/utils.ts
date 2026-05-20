@@ -1,4 +1,4 @@
-import { isObject, isString } from '@pandacss/shared'
+import { isObject, isString } from '@bamboocss/shared'
 
 const REFERENCE_REGEX = /({([^}]*)})/g
 const curlyBracketRegex = /[{}]/g

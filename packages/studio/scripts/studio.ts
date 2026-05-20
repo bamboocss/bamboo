@@ -1,4 +1,4 @@
-import { colors, logger } from '@pandacss/logger'
+import { colors, logger } from '@bamboocss/logger'
 import { join } from 'node:path'
 
 export interface BuildOpts {
@@ -17,7 +17,7 @@ export async function buildStudio({ outDir, configPath, base }: BuildOpts) {
 
   const astro = await import('astro')
   const { default: react } = await import('@astrojs/react')
-  const { default: studio } = await import('@pandacss/astro-plugin-studio')
+  const { default: studio } = await import('@bamboocss/astro-plugin-studio')
 
   try {
     process.env.PUBLIC_CONFIG_PATH = configPath
@@ -36,7 +36,7 @@ export async function buildStudio({ outDir, configPath, base }: BuildOpts) {
 export async function serveStudio({ configPath, port, host, outDir, base }: BuildOpts) {
   const astro = await import('astro')
   const { default: react } = await import('@astrojs/react')
-  const { default: studio } = await import('@pandacss/astro-plugin-studio')
+  const { default: studio } = await import('@bamboocss/astro-plugin-studio')
 
   try {
     process.env.PUBLIC_CONFIG_PATH = configPath
@@ -59,7 +59,7 @@ export async function serveStudio({ configPath, port, host, outDir, base }: Buil
 export async function previewStudio({ outDir, base }: BuildOpts) {
   const astro = await import('astro')
   const { default: react } = await import('@astrojs/react')
-  const { default: studio } = await import('@pandacss/astro-plugin-studio')
+  const { default: studio } = await import('@bamboocss/astro-plugin-studio')
 
   try {
     await astro.preview({

@@ -1,8 +1,8 @@
-import { findConfig } from '@pandacss/config'
-import { messages } from '@pandacss/core'
-import { logger, quote } from '@pandacss/logger'
-import { PandaError } from '@pandacss/shared'
-import type { Config } from '@pandacss/types'
+import { findConfig } from '@bamboocss/config'
+import { messages } from '@bamboocss/core'
+import { logger, quote } from '@bamboocss/logger'
+import { BambooError } from '@bamboocss/shared'
+import type { Config } from '@bamboocss/types'
 import fsExtra from 'fs-extra'
 import { lookItUpSync } from 'look-it-up'
 import { outdent } from 'outdent'
@@ -22,7 +22,7 @@ export async function setupConfig(cwd: string, opts: SetupOptions = {}) {
     configFile = findConfig({ cwd })
   } catch (err) {
     // ignore config not found error
-    if (!(err instanceof PandaError)) {
+    if (!(err instanceof BambooError)) {
       throw err
     }
   }
@@ -33,15 +33,15 @@ export async function setupConfig(cwd: string, opts: SetupOptions = {}) {
   const cmd = pm === 'npm' ? 'npm run' : pm
 
   const isTs = lookItUpSync('tsconfig.json', cwd)
-  const file = isTs ? 'panda.config.ts' : 'panda.config.mjs'
+  const file = isTs ? 'bamboo.config.ts' : 'bamboo.config.mjs'
 
-  logger.info('init:config', `creating panda config file: ${quote(file)}`)
+  logger.info('init:config', `creating bamboo config file: ${quote(file)}`)
 
   if (!force && configFile) {
     logger.warn('init:config', messages.configExists(cmd))
   } else {
     const content = outdent`
-import { defineConfig } from "@pandacss/dev"
+import { defineConfig } from "@bamboocss/dev"
 
 export default defineConfig({
     // Whether to use css reset
@@ -76,7 +76,7 @@ export async function setupPostcss(cwd: string) {
   const content = outdent`
 module.exports = {
   plugins: {
-    '@pandacss/dev/postcss': {},
+    '@bamboocss/dev/postcss': {},
   },
 }
   `

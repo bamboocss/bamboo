@@ -1,4 +1,4 @@
-import type { GlobalStyleObject } from '@pandacss/types'
+import type { GlobalStyleObject } from '@bamboocss/types'
 
 const EMPTY = '/*-*/ /*-*/'
 

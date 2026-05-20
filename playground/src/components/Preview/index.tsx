@@ -8,19 +8,19 @@ import { flex } from '@/styled-system/patterns'
 import { UseResponsiveView } from '@/src/hooks/useResponsiveView'
 import { responsiveBorder } from '@/src/components/Preview/responsive-border'
 import { ErrorIcon } from '@/src/components/icons'
-import { UsePanda } from '@/src/hooks/usePanda'
+import { UseBamboo } from '@/src/hooks/useBamboo'
 
 export type PreviewProps = {
   source: string
   isResponsive: boolean
-  panda: UsePanda
+  bamboo: UseBamboo
   responsiveView: UseResponsiveView
   error: Error | null
 }
 
 export const Preview = memo(function Preview(props: PreviewProps) {
-  const { source, isResponsive, responsiveView, panda, error } = props
-  const { previewCss = '', previewJs } = panda
+  const { source, isResponsive, responsiveView, bamboo, error } = props
+  const { previewCss = '', previewJs } = bamboo
 
   const isClient = useIsClient()
 

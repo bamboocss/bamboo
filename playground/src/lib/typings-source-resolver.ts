@@ -18,7 +18,7 @@ export class TypingsSourceResolver {
   }
 
   private async resolveFile(url: string) {
-    if (url.includes('styled-system') || url.includes('@types/pandacss__types')) return
+    if (url.includes('styled-system') || url.includes('@types/bamboocss__types')) return
     const res = await fetch(url, { method: 'GET' })
 
     if (res.ok) {

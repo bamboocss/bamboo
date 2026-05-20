@@ -1,10 +1,10 @@
-# Claude Code Guide for Panda CSS
+# Claude Code Guide for Bamboo CSS
 
-This guide helps AI assistants understand the Panda CSS codebase structure, conventions, and best practices.
+This guide helps AI assistants understand the Bamboo CSS codebase structure, conventions, and best practices.
 
 ## Project Overview
 
-Panda CSS is a CSS-in-JS framework with static extraction capabilities. The project is a monorepo managed by **pnpm** with workspace support.
+Bamboo CSS is a CSS-in-JS framework with static extraction capabilities. The project is a monorepo managed by **pnpm** with workspace support.
 
 ## Key Architecture
 
@@ -14,7 +14,7 @@ Panda CSS is a CSS-in-JS framework with static extraction capabilities. The proj
 /packages/          # Core packages published to npm
   /core/           # CSS processing, rule generation, optimization (PostCSS/LightningCSS)
   /node/           # Node.js APIs, config resolution, file watching
-  /cli/            # CLI tool (@pandacss/dev package)
+  /cli/            # CLI tool (@bamboocss/dev package)
   /parser/         # Static analysis and extraction
   /generator/      # Code generation for styled-system
   /fixture/        # Shared test fixtures and utilities
@@ -33,7 +33,7 @@ Panda CSS is a CSS-in-JS framework with static extraction capabilities. The proj
 
 ### Key Concepts
 
-1. **Static Extraction**: Panda analyzes source files to extract styles at build time
+1. **Static Extraction**: Bamboo analyzes source files to extract styles at build time
 2. **Design Tokens**: Type-safe design tokens defined in config
 3. **Recipes**: Reusable component style patterns (like variants)
 4. **Conditions**: Responsive and state-based styling (e.g., `_hover`, `md:`, `_dark`)
@@ -91,7 +91,7 @@ pnpm update <package> --ignore-scripts
 - **PostCSS ecosystem**: Coordinate updates across all PostCSS plugins to avoid CSS output changes
 - **browserslist**: Updates affect `postcss-merge-rules` behavior - test thoroughly
 - **lightningcss**: Used optionally via `config.lightningcss` flag, depends on browserslist for targets
-- **Node.js packages**: Core packages (`@pandacss/core`, `@pandacss/node`, etc.) must stay in sync
+- **Node.js packages**: Core packages (`@bamboocss/core`, `@bamboocss/node`, etc.) must stay in sync
 
 ## Common Workflows
 
@@ -125,7 +125,7 @@ pnpm update <package> --ignore-scripts
 **Format:**
 ```markdown
 ---
-'@pandacss/package-name': patch|minor|major
+'@bamboocss/package-name': patch|minor|major
 ---
 
 Brief description of the change and its impact.
@@ -144,7 +144,7 @@ Brief description of the change and its impact.
 ### Configuration Flow
 1. User config → `packages/config/` → Config resolution
 2. Config hooks → `packages/types/src/config.ts`
-3. Context creation → `packages/node/src/` → `PandaContext`
+3. Context creation → `packages/node/src/` → `BambooContext`
 4. Code generation → `packages/generator/`
 
 ### CSS Processing Flow
@@ -195,15 +195,15 @@ Brief description of the change and its impact.
 ## Package Relationships
 
 ```
-@pandacss/dev (CLI)
-  ├─ @pandacss/node (core runtime)
-  │   ├─ @pandacss/core (CSS processing)
-  │   ├─ @pandacss/parser (static analysis)
-  │   ├─ @pandacss/generator (codegen)
-  │   └─ @pandacss/config (config resolution)
-  └─ @pandacss/postcss (PostCSS plugin)
+@bamboocss/dev (CLI)
+  ├─ @bamboocss/node (core runtime)
+  │   ├─ @bamboocss/core (CSS processing)
+  │   ├─ @bamboocss/parser (static analysis)
+  │   ├─ @bamboocss/generator (codegen)
+  │   └─ @bamboocss/config (config resolution)
+  └─ @bamboocss/postcss (PostCSS plugin)
 
-@pandacss/core
+@bamboocss/core
   ├─ postcss (CSS processing)
   ├─ lightningcss (optional, faster CSS processing)
   ├─ browserslist (browser targets)

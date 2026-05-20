@@ -3,7 +3,7 @@ title: Custom Font
 description: How to use custom fonts in your project.
 ---
 
-Adding custom fonts to your application or website is a typical requirement for projects. Panda recommends using custom
+Adding custom fonts to your application or website is a typical requirement for projects. Bamboo recommends using custom
 fonts through CSS variables for consistency.
 
 ## Setup
@@ -53,7 +53,7 @@ export default function Layout(props) {
 }
 ```
 
-> **Note 🚨:** By default, Next.js attaches the className for the fonts to the `<body>` element, for panda to
+> **Note 🚨:** By default, Next.js attaches the className for the fonts to the `<body>` element, for bamboo to
 > appropriately load fonts, update the code to attach the `className` to the `<html>` element.
 
 #### Pages Router
@@ -94,7 +94,7 @@ Next, import the font into your project:
 import '@fontsource-variable/fira-code'
 ```
 
-Lastly, create a variable to use it as a token in the panda config
+Lastly, create a variable to use it as a token in the bamboo config
 
 ```css filename="styles/font.css"
 :root {
@@ -126,7 +126,7 @@ Then alias the font names to css variables.
 
 ### Global Font Face
 
-You can also define global font face in your panda config.
+You can also define global font face in your bamboo config.
 
 ```js
 export default defineConfig({
@@ -187,7 +187,7 @@ Then expose the font names to css variables.
 }
 ```
 
-You can also use [globalVars](/docs/concepts/writing-styles#global-vars) in your panda config to define the variables.
+You can also use [globalVars](/docs/concepts/writing-styles#global-vars) in your bamboo config to define the variables.
 
 ```js
 export default defineConfig({
@@ -197,7 +197,7 @@ export default defineConfig({
 })
 ```
 
-## Update Panda Config
+## Update Bamboo Config
 
 ```js
 export default defineConfig({

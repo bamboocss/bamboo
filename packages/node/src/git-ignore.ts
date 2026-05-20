@@ -1,16 +1,16 @@
 import { appendFileSync, readFileSync, writeFileSync } from 'fs'
 import { lookItUpSync } from 'look-it-up'
 import outdent from 'outdent'
-import type { PandaContext } from './create-context'
+import type { BambooContext } from './create-context'
 
-export function setupGitIgnore(ctx: PandaContext) {
+export function setupGitIgnore(ctx: BambooContext) {
   const { outdir, gitignore } = ctx.config
 
   if (!gitignore) return
 
   const txt = outdent`
   
-  ## Panda
+  ## Bamboo
   ${outdir}
   ${ctx.studio.outdir}
   `

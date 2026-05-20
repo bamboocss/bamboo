@@ -1,4 +1,4 @@
-import { PandaError } from '@pandacss/shared'
+import { BambooError } from '@bamboocss/shared'
 import type { LiteralKind } from './box-factory'
 import type { PrimitiveType } from './types'
 
@@ -9,7 +9,7 @@ export const getTypeOfLiteral = (value: PrimitiveType | PrimitiveType[]): Litera
   if (typeof value === 'boolean') return 'boolean'
   if (value === null) return 'null'
   if (value === undefined) return 'undefined'
-  throw new PandaError(
+  throw new BambooError(
     'UNKNOWN_LITERAL_TYPE',
     `Unexpected literal type: ${value as any}. Expected: string, number, boolean, null, undefined, or array`,
   )

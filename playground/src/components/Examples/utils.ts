@@ -1,7 +1,7 @@
 export const getConfig = (
   config?: string,
   otherCode?: string,
-  imports = 'import { defineConfig } from "@pandacss/dev";',
+  imports = 'import { defineConfig } from "@bamboocss/dev";',
 ) => {
   const conf = `${imports ?? ''}${otherCode ? `\n\n${otherCode}` : ''}
 

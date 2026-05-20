@@ -1,4 +1,4 @@
-export type PandaErrorCode =
+export type BambooErrorCode =
   | 'CONFIG_NOT_FOUND'
   | 'CONFIG_ERROR'
   | 'NOT_FOUND'
@@ -15,13 +15,13 @@ export type PandaErrorCode =
   | 'NO_CONTEXT'
   | 'INVALID_TOKEN'
 
-export class PandaError extends Error {
+export class BambooError extends Error {
   readonly code: string
   readonly hint?: string
 
-  constructor(code: PandaErrorCode, message: string, opts?: { hint?: string; cause?: unknown }) {
+  constructor(code: BambooErrorCode, message: string, opts?: { hint?: string; cause?: unknown }) {
     super(message, { cause: opts?.cause })
-    this.code = `ERR_PANDA_${code}`
+    this.code = `ERR_BAMBOO_${code}`
     this.hint = opts?.hint
   }
 }

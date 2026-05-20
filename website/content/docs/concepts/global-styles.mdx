@@ -1,9 +1,9 @@
 ---
 title: Global Styles
-description: How to work with resets, global styles, and global CSS variables in Panda.
+description: How to work with resets, global styles, and global CSS variables in Bamboo.
 ---
 
-Panda groups global styles into reset and base layers so you can control defaults predictably and override them safely.
+Bamboo groups global styles into reset and base layers so you can control defaults predictably and override them safely.
 
 ## Layers overview
 
@@ -16,8 +16,8 @@ Panda groups global styles into reset and base layers so you can control default
 
 Enable or scope the reset styles.
 
-```ts filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```ts filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   preflight: true
@@ -26,8 +26,8 @@ export default defineConfig({
 
 Scope and level:
 
-```ts filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```ts filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   preflight: { scope: '.extension', level: 'element' }
@@ -49,8 +49,8 @@ These variables are used by the reset and defaults. Set them in `globalCss`:
 
 Use `globalCss` to define additional global styles and set variables.
 
-```ts filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```ts filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   // ...
@@ -90,8 +90,8 @@ You can set variables on `:root`, a `.dark` class, or via media queries.
 
 Define additional global CSS variables or `@property` entries.
 
-```ts filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```ts filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   globalVars: {

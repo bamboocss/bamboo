@@ -1,4 +1,4 @@
-import type { Context } from '@pandacss/core'
+import type { Context } from '@bamboocss/core'
 import { outdent } from 'outdent'
 import { match } from 'ts-pattern'
 import isValidPropJson from '../generated/is-valid-prop.mjs.json' assert { type: 'json' }
@@ -38,7 +38,7 @@ export function generateIsValidProp(ctx: Context) {
   return {
     js: content,
     dts: outdent`
-    import type { DistributiveOmit, HTMLPandaProps, JsxStyleProps, Pretty } from '../types';
+    import type { DistributiveOmit, HTMLBambooProps, JsxStyleProps, Pretty } from '../types';
 
     declare const isCssProperty: (value: string) => boolean;
 

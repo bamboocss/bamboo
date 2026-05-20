@@ -1,4 +1,4 @@
-import type { Dict } from '@pandacss/types'
+import type { Dict } from '@bamboocss/types'
 import { describe, expect, test } from 'vitest'
 import { createRuleProcessor } from './fixture'
 

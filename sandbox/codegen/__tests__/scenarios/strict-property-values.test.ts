@@ -108,7 +108,7 @@ describe('css', () => {
   })
 
   test('arbitrary selector', () => {
-    assertType(css({ ['&:data-panda']: { display: 'flex' } }))
+    assertType(css({ ['&:data-bamboo']: { display: 'flex' } }))
   })
 
   test('important', () => {

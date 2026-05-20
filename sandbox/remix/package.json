@@ -4,7 +4,7 @@
   "sideEffects": false,
   "type": "module",
   "scripts": {
-    "prepare": "panda codegen",
+    "prepare": "bamboo codegen",
     "build": "remix build",
     "dev": "remix dev --manual",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
@@ -21,7 +21,7 @@
     "react-dom": "19.2.0"
   },
   "devDependencies": {
-    "@pandacss/dev": "workspace:^",
+    "@bamboocss/dev": "workspace:^",
     "@remix-run/dev": "2.17.2",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",

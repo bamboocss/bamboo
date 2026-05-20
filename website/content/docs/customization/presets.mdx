@@ -3,29 +3,29 @@ title: Presets
 description: Creating your own reusable preset for utilities and theme
 ---
 
-By default, any configuration you add in your own `panda.config.js` file is smartly merged with the
+By default, any configuration you add in your own `bamboo.config.js` file is smartly merged with the
 [default configuration](#), allowing you to override or extend specific parts of the configuration.
 
-You can specify a preset in your `panda.config.js` file by using the `presets` option:
+You can specify a preset in your `bamboo.config.js` file by using the `presets` option:
 
 ```js
-import { defineConfig } from '@pandacss/dev'
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
-  presets: ['@acmecorp/panda-preset']
+  presets: ['@acmecorp/bamboo-preset']
 })
 ```
 
 ## Creating a preset
 
-Presets are also valid Panda configuration objects, taking a similar shape to the configuration you would add in your
-`panda.config.ts` file.
+Presets are also valid Bamboo configuration objects, taking a similar shape to the configuration you would add in your
+`bamboo.config.ts` file.
 
 > **Note:** Every preset must have a unique name.
 
 ```js
 // my-preset.js
-import { definePreset } from '@pandacss/dev'
+import { definePreset } from '@bamboocss/dev'
 
 export default definePreset({
   name: 'my-preset',
@@ -43,11 +43,11 @@ export default definePreset({
 })
 ```
 
-You can then use this preset in your `panda.config.ts` file:
+You can then use this preset in your `bamboo.config.ts` file:
 
 ```js
-// panda.config.ts
-import { defineConfig } from '@pandacss/dev'
+// bamboo.config.ts
+import { defineConfig } from '@bamboocss/dev'
 import myPreset from './my-preset'
 
 export default defineConfig({
@@ -68,7 +68,7 @@ The available keys for a preset are:
 ### Asynchronous presets
 
 There are cases where you need to perform logic to determine the content of your preset, you'd call functions to do
-this. In cases where they're asynchronous; panda allows promises, given that they resolve to a valid preset object.
+this. In cases where they're asynchronous; bamboo allows promises, given that they resolve to a valid preset object.
 
 ```js
 // my-preset.js
@@ -88,11 +88,11 @@ export default async function myPreset() {
 }
 ```
 
-You can then use this preset in your `panda.config.ts` file:
+You can then use this preset in your `bamboo.config.ts` file:
 
 ```js
-// panda.config.ts
-import { defineConfig } from '@pandacss/dev'
+// bamboo.config.ts
+import { defineConfig } from '@bamboocss/dev'
 import myPreset from './my-preset'
 
 export default defineConfig({
@@ -100,26 +100,26 @@ export default defineConfig({
 })
 ```
 
-## Which panda presets will be included ?
+## Which bamboo presets will be included ?
 
 ![Visual helper](/stately-presets-merging.png)
 
-- `@pandacss/preset-base`: ALWAYS included if NOT using `eject: true`
+- `@bamboocss/preset-base`: ALWAYS included if NOT using `eject: true`
 
-- `@pandacss/preset-panda`: only included by default if you haven't specified the `presets` config option, otherwise
+- `@bamboocss/preset-bamboo`: only included by default if you haven't specified the `presets` config option, otherwise
   you'll have to include that preset by yourself like so:
 
 ```ts
-import pandaPreset from '@pandacss/preset-panda'
-import { defineConfig } from '@pandacss/dev'
+import bambooPreset from '@bamboocss/preset-bamboo'
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   // ...
-  presets: [pandaPreset, myCustomPreset]
+  presets: [bambooPreset, myCustomPreset]
 })
 ```
 
 ## Minimal setup
 
-If you want to use Panda with the bare minimum, without any of the defaults, you can read more about it
+If you want to use Bamboo with the bare minimum, without any of the defaults, you can read more about it
 [here](/docs/guides/minimal-setup)

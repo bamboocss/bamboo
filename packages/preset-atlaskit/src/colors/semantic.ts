@@ -1,4 +1,4 @@
-import type { SemanticTokens } from '@pandacss/types'
+import type { SemanticTokens } from '@bamboocss/types'
 
 export const semanticColors: SemanticTokens['colors'] = {
   text: {

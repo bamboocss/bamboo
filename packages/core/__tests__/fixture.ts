@@ -1,5 +1,5 @@
-import { createContext } from '@pandacss/fixture'
-import { type Config } from '@pandacss/types'
+import { createContext } from '@bamboocss/fixture'
+import { type Config } from '@bamboocss/types'
 import { RuleProcessor } from '../src/rule-processor'
 
 export const createRuleProcessor = (userConfig?: Config) => {

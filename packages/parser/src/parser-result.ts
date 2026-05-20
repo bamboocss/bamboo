@@ -1,6 +1,6 @@
-import type { ParserOptions } from '@pandacss/core'
-import { PandaError, getOrCreateSet } from '@pandacss/shared'
-import type { ParserResultInterface, ResultItem } from '@pandacss/types'
+import type { ParserOptions } from '@bamboocss/core'
+import { BambooError, getOrCreateSet } from '@bamboocss/shared'
+import type { ParserResultInterface, ResultItem } from '@bamboocss/types'
 
 function cartesian<T>(arrays: T[][]): T[][] {
   if (arrays.length === 0) return [[]]
@@ -51,7 +51,7 @@ export class ParserResult implements ParserResultInterface {
         this.setToken(result)
         break
       default:
-        throw new PandaError(
+        throw new BambooError(
           'UNKNOWN_RESULT_TYPE',
           `Unknown parser result type: "${name}". Expected one of: css, cva, sva, token`,
         )

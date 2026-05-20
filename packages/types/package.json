@@ -1,7 +1,7 @@
 {
-  "name": "@pandacss/types",
+  "name": "@bamboocss/types",
   "version": "1.11.1",
-  "description": "The types for css panda",
+  "description": "The types for css bamboo",
   "main": "dist/index.d.ts",
   "author": "Segun Adebayo <joseshegs@gmail.com>",
   "license": "MIT",
@@ -16,13 +16,13 @@
   "scripts": {
     "prepare": "ncp node_modules/csstype/index.d.ts src/csstype.d.ts",
     "dev": "tsx scripts/watch.ts",
-    "build": "cross-env PANDA_BUILD=1 tsx scripts/postbuild.ts && tsx scripts/build.ts"
+    "build": "cross-env BAMBOO_BUILD=1 tsx scripts/postbuild.ts && tsx scripts/build.ts"
   },
   "sideEffects": false,
-  "homepage": "https://panda-css.com",
+  "homepage": "https://bamboo-css.com",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chakra-ui/panda.git",
+    "url": "git+https://github.com/chakra-ui/bamboo.git",
     "directory": "packages/types"
   },
   "publishConfig": {
@@ -32,7 +32,7 @@
     "dist"
   ],
   "devDependencies": {
-    "@pandacss/extractor": "workspace:*",
+    "@bamboocss/extractor": "workspace:*",
     "csstype": "3.2.3",
     "microdiff": "1.5.0",
     "ncp": "2.0.0",

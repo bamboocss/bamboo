@@ -1,4 +1,4 @@
-import { logger } from '@pandacss/logger'
+import { logger } from '@bamboocss/logger'
 import fs from 'node:fs'
 import path from 'node:path'
 import readline from 'node:readline'
@@ -78,7 +78,7 @@ export const startProfiling = async (cwd: string, prefix: string, isWatching?: b
 
       const date = new Date()
       const timestamp = date.toISOString().replace(/[-:.]/g, '')
-      const title = `panda-${prefix}-${timestamp}`
+      const title = `bamboo-${prefix}-${timestamp}`
 
       const outfile = path.join(cwd, `${title}.cpuprofile`)
       fs.writeFileSync(outfile, JSON.stringify(params.profile))

@@ -1,7 +1,7 @@
 {
-  "name": "@pandacss/parser",
+  "name": "@bamboocss/parser",
   "version": "1.11.1",
-  "description": "The static parser for panda css",
+  "description": "The static parser for bamboo css",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -19,10 +19,10 @@
   "author": "Segun Adebayo <joseshegs@gmail.com>",
   "license": "MIT",
   "sideEffects": false,
-  "homepage": "https://panda-css.com",
+  "homepage": "https://bamboo-css.com",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chakra-ui/panda.git",
+    "url": "git+https://github.com/chakra-ui/bamboo.git",
     "directory": "packages/parser"
   },
   "publishConfig": {
@@ -34,19 +34,19 @@
     "dev": "pnpm build-fast --watch"
   },
   "dependencies": {
-    "@pandacss/config": "workspace:^",
-    "@pandacss/core": "workspace:^",
-    "@pandacss/extractor": "workspace:*",
-    "@pandacss/logger": "workspace:*",
-    "@pandacss/shared": "workspace:*",
-    "@pandacss/types": "workspace:*",
+    "@bamboocss/config": "workspace:^",
+    "@bamboocss/core": "workspace:^",
+    "@bamboocss/extractor": "workspace:*",
+    "@bamboocss/logger": "workspace:*",
+    "@bamboocss/shared": "workspace:*",
+    "@bamboocss/types": "workspace:*",
     "ts-morph": "28.0.0",
     "ts-pattern": "5.9.0"
   },
   "devDependencies": {
-    "@pandacss/generator": "workspace:*",
-    "@pandacss/plugin-svelte": "workspace:*",
-    "@pandacss/plugin-vue": "workspace:*"
+    "@bamboocss/generator": "workspace:*",
+    "@bamboocss/plugin-svelte": "workspace:*",
+    "@bamboocss/plugin-vue": "workspace:*"
   },
   "files": [
     "dist"

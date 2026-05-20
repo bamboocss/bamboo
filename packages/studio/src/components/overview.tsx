@@ -45,7 +45,7 @@ export default function Overview() {
 
         <div className={vstack({ my: '10', textAlign: 'center' })}>
           <Yums className={css({ fontSize: '24rem', h: '300px' })} />
-          <span className={css({ fontSize: '7xl', letterSpacing: 'tighter', fontWeight: 'medium' })}>Panda Studio</span>
+          <span className={css({ fontSize: '7xl', letterSpacing: 'tighter', fontWeight: 'medium' })}>Bamboo Studio</span>
           <p className={css({ fontSize: '2xl' })}>Live documentation for your design tokens (colors, fonts, etc.)</p>
         </div>
 
@@ -53,7 +53,7 @@ export default function Overview() {
           <a href={getUrl('colors')} className={buttonRecipe({ variant: 'solid' })}>
             Get Started
           </a>
-          <a href="https://panda-css.com?ref=studio" target="_blank" className={buttonRecipe({ variant: 'outline' })}>
+          <a href="https://bamboo-css.com?ref=studio" target="_blank" className={buttonRecipe({ variant: 'outline' })}>
             View Docs
           </a>
         </div>

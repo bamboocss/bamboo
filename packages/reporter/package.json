@@ -1,5 +1,5 @@
 {
-  "name": "@pandacss/reporter",
+  "name": "@bamboocss/reporter",
   "version": "1.11.1",
   "description": "Track and report usage of tokens and recipes",
   "main": "dist/index.js",
@@ -25,10 +25,10 @@
     "dev": "pnpm build-fast --watch"
   },
   "sideEffects": false,
-  "homepage": "https://panda-css.com",
+  "homepage": "https://bamboo-css.com",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chakra-ui/panda.git",
+    "url": "git+https://github.com/chakra-ui/bamboo.git",
     "directory": "packages/reporter"
   },
   "publishConfig": {
@@ -38,11 +38,11 @@
     "dist"
   ],
   "dependencies": {
-    "@pandacss/core": "workspace:*",
-    "@pandacss/generator": "workspace:*",
-    "@pandacss/logger": "workspace:*",
-    "@pandacss/shared": "workspace:*",
-    "@pandacss/types": "workspace:*",
+    "@bamboocss/core": "workspace:*",
+    "@bamboocss/generator": "workspace:*",
+    "@bamboocss/logger": "workspace:*",
+    "@bamboocss/shared": "workspace:*",
+    "@bamboocss/types": "workspace:*",
     "table": "6.9.0",
     "wordwrapjs": "5.1.1"
   },

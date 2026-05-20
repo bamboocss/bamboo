@@ -1,4 +1,4 @@
-import { isString } from '@pandacss/shared'
+import { isString } from '@bamboocss/shared'
 import type { Context } from './context'
 
 export class FileEngine {

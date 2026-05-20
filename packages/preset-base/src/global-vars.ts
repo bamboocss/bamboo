@@ -1,4 +1,4 @@
-import type { CssPropertyDefinition, GlobalVarsDefinition } from '@pandacss/types'
+import type { CssPropertyDefinition, GlobalVarsDefinition } from '@bamboocss/types'
 
 const effectValues: CssPropertyDefinition = {
   syntax: '*',

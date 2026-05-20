@@ -1,9 +1,9 @@
 import { isMainThread, parentPort } from 'worker_threads'
 import colors from 'kleur'
-import { PandaError } from '@pandacss/shared'
+import { BambooError } from '@bamboocss/shared'
 
 export function handleError(error: unknown) {
-  if (error instanceof PandaError) {
+  if (error instanceof BambooError) {
     console.error(colors.red(`${error.code}: ${error.message}`))
     if (error.hint) {
       console.error(colors.dim(error.hint))

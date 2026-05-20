@@ -1,6 +1,6 @@
-import type { ParserOptions } from '@pandacss/core'
-import { uniq } from '@pandacss/shared'
-import type { AnalysisReport, Nullable, TokenDataTypes } from '@pandacss/types'
+import type { ParserOptions } from '@bamboocss/core'
+import { uniq } from '@bamboocss/shared'
+import type { AnalysisReport, Nullable, TokenDataTypes } from '@bamboocss/types'
 
 const formatter = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 2,

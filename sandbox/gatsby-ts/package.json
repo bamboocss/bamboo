@@ -7,7 +7,7 @@
     "gatsby"
   ],
   "scripts": {
-    "prepare": "panda codegen",
+    "prepare": "bamboo codegen",
     "dev": "gatsby develop",
     "start": "gatsby develop",
     "build": "gatsby build",
@@ -16,7 +16,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@pandacss/dev": "workspace:*",
+    "@bamboocss/dev": "workspace:*",
     "gatsby": "5.15.0",
     "gatsby-plugin-postcss": "6.15.0",
     "postcss": "8.5.14",

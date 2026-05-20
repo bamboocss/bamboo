@@ -1,6 +1,6 @@
-import { panda } from '../../styled-system/jsx'
+import { bamboo } from '../../styled-system/jsx'
 
-export const ColorWrapper = panda('div', {
+export const ColorWrapper = bamboo('div', {
   base: {
     width: 'full',
     height: '10',

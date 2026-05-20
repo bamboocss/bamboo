@@ -1,5 +1,5 @@
 /**
- * This code is shared between the runtime (no matter the panda.config) and cli
+ * This code is shared between the runtime (no matter the bamboo.config) and cli
  */
 
 export { isObject } from './assert'

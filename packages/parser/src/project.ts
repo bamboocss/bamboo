@@ -1,12 +1,12 @@
-import type { ParserOptions } from '@pandacss/core'
+import type { ParserOptions } from '@bamboocss/core'
 import type {
   ConfigTsOptions,
   JsxFactoryResultTransform,
-  PandaHooks,
+  BambooHooks,
   ParserResultConfigureOptions,
   ParserResultInterface,
   Runtime,
-} from '@pandacss/types'
+} from '@bamboocss/types'
 import {
   FileSystemRefreshResult,
   ScriptKind,
@@ -44,7 +44,7 @@ const createTsProject = (options: Partial<TsProjectOptions>) =>
 export interface ProjectOptions extends TsProjectOptions {
   readFile: Runtime['fs']['readFileSync']
   getFiles(): string[]
-  hooks: Partial<PandaHooks>
+  hooks: Partial<BambooHooks>
   parserOptions: ParserOptions
   tsOptions?: ConfigTsOptions
 }

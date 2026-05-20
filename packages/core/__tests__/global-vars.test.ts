@@ -1,5 +1,5 @@
-import { createGeneratorContext } from '@pandacss/fixture'
-import type { GlobalVarsDefinition } from '@pandacss/types'
+import { createGeneratorContext } from '@bamboocss/fixture'
+import type { GlobalVarsDefinition } from '@bamboocss/types'
 import { describe, expect, test } from 'vitest'
 
 function globalVars(vars?: GlobalVarsDefinition) {

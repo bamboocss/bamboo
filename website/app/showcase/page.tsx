@@ -2,20 +2,20 @@ import { Navbar } from '@/components/navbar'
 import { generateOgImageUrl } from '@/lib/og-image'
 import { showcases } from '@/showcase'
 import { css } from '@/styled-system/css'
-import { Container, Grid, panda, Stack } from '@/styled-system/jsx'
+import { Container, Grid, bamboo, Stack } from '@/styled-system/jsx'
 import { FooterSection } from '@/www/footer.section'
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 
-const ogTitle = 'See projects built with Panda CSS'
+const ogTitle = 'See projects built with Bamboo CSS'
 const ogDescription =
-  'Explore the projects and applications built using Panda CSS'
+  'Explore the projects and applications built using Bamboo CSS'
 
 export const metadata: Metadata = {
   title: 'Showcase',
   description:
-    'Panda CSS is a powerful tool for building modern web applications.',
+    'Bamboo CSS is a powerful tool for building modern web applications.',
   openGraph: {
     title: ogTitle,
     description: ogDescription,
@@ -85,10 +85,10 @@ const ShowcaseCard = ({ data }: { data: Showcase }) => {
         })}
       />
       <Stack gap="0" p="4" bg="bg">
-        <panda.h3 fontSize="lg" fontWeight="semibold">
+        <bamboo.h3 fontSize="lg" fontWeight="semibold">
           {name}
-        </panda.h3>
-        <panda.p color="fg.muted">{description}</panda.p>
+        </bamboo.h3>
+        <bamboo.p color="fg.muted">{description}</bamboo.p>
       </Stack>
     </Link>
   )
@@ -98,28 +98,28 @@ export default function ShowcasePage() {
   return (
     <>
       <Navbar />
-      <panda.div bg="bg.muted" pt="20" minH="80dvh">
+      <bamboo.div bg="bg.muted" pt="20" minH="80dvh">
         <Container py="20">
           <Stack gap="6" align="center">
             <Stack align="center" textAlign="center">
-              <panda.h1
+              <bamboo.h1
                 fontSize={{ base: '3xl', md: '5xl' }}
                 fontWeight="bold"
                 letterSpacing="tight"
               >
                 Showcase
-              </panda.h1>
+              </bamboo.h1>
             </Stack>
-            <panda.p
+            <bamboo.p
               fontSize={{ base: 'lg', md: 'xl' }}
               color="fg.muted"
               maxW="2xl"
               lineHeight="relaxed"
               textAlign="center"
             >
-              Explore the projects built with Panda CSS by the community and get
+              Explore the projects built with Bamboo CSS by the community and get
               inspired for your next project.
-            </panda.p>
+            </bamboo.p>
           </Stack>
         </Container>
 
@@ -133,7 +133,7 @@ export default function ShowcasePage() {
             ))}
           </Grid>
         </Container>
-      </panda.div>
+      </bamboo.div>
       <FooterSection />
     </>
   )

@@ -1,4 +1,4 @@
-import type { Config } from '@pandacss/types'
+import type { Config } from '@bamboocss/types'
 
 export interface InitCommandFlags
   extends Pick<Config, 'jsxFramework' | 'syntax' | 'cwd' | 'poll' | 'watch' | 'gitignore' | 'outExtension' | 'outdir'> {

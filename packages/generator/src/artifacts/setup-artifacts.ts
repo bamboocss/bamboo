@@ -1,5 +1,5 @@
-import type { Context } from '@pandacss/core'
-import type { AffectedArtifacts, Artifact, ArtifactFilters, ArtifactId } from '@pandacss/types'
+import type { Context } from '@bamboocss/core'
+import type { AffectedArtifacts, Artifact, ArtifactFilters, ArtifactId } from '@bamboocss/types'
 import outdent from 'outdent'
 import { generateConditions } from './js/conditions'
 import { generateStringLiteralConditions } from './js/conditions.string-literal'

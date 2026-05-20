@@ -1,5 +1,5 @@
-import type { Context } from '@pandacss/core'
-import type { ConditionQuery } from '@pandacss/types'
+import type { Context } from '@bamboocss/core'
+import type { ConditionQuery } from '@bamboocss/types'
 import outdent from 'outdent'
 
 function formatConditionJsDoc(raw: ConditionQuery | undefined): string {

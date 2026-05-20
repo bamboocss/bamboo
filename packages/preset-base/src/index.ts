@@ -1,4 +1,4 @@
-import type { Preset } from '@pandacss/types'
+import type { Preset } from '@bamboocss/types'
 import { conditions } from './conditions'
 import { globalCss } from './global-css'
 // import { globalVars } from './global-vars'
@@ -8,7 +8,7 @@ import { utilities } from './utilities'
 const definePreset = <T extends Preset>(preset: T) => preset
 
 export const preset = definePreset({
-  name: '@pandacss/preset-base',
+  name: '@bamboocss/preset-base',
   conditions,
   utilities,
   patterns,

@@ -1,8 +1,8 @@
-import { mergeConfigs } from '@pandacss/config'
-import { fixtureDefaults } from '@pandacss/fixture'
-import { Generator } from '@pandacss/generator'
-import { parseJson, stringifyJson } from '@pandacss/shared'
-import type { Config, LoadConfigResult, UserConfig } from '@pandacss/types'
+import { mergeConfigs } from '@bamboocss/config'
+import { fixtureDefaults } from '@bamboocss/fixture'
+import { Generator } from '@bamboocss/generator'
+import { parseJson, stringifyJson } from '@bamboocss/shared'
+import type { Config, LoadConfigResult, UserConfig } from '@bamboocss/types'
 import { describe, expect, test } from 'vitest'
 import { DiffEngine } from '../src/diff-engine'
 

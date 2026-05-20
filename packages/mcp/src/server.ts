@@ -1,9 +1,9 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js'
-import { logger } from '@pandacss/logger'
-import { analyze, loadConfigAndCreateContext, type PandaContext } from '@pandacss/node'
-import { TOKEN_CATEGORIES } from '@pandacss/token-dictionary'
+import { logger } from '@bamboocss/logger'
+import { analyze, loadConfigAndCreateContext, type BambooContext } from '@bamboocss/node'
+import { TOKEN_CATEGORIES } from '@bamboocss/token-dictionary'
 import { resolve } from 'path'
 import * as z from 'zod/v4'
 
@@ -17,7 +17,7 @@ const json = (data: unknown) => ({
 })
 
 export interface CreateMcpServerOptions {
-  ctx: PandaContext
+  ctx: BambooContext
 }
 
 /**
@@ -28,7 +28,7 @@ export function createMcpServer(options: CreateMcpServerOptions) {
   const { ctx } = options
 
   const server = new McpServer({
-    name: '@pandacss/mcp',
+    name: '@bamboocss/mcp',
     version: '1.0.0',
   })
 
@@ -127,7 +127,7 @@ export function createMcpServer(options: CreateMcpServerOptions) {
 
   server.registerTool(
     'get_config',
-    { description: 'Get the resolved Panda CSS configuration including paths, JSX settings, and output options' },
+    { description: 'Get the resolved Bamboo CSS configuration including paths, JSX settings, and output options' },
     async () => json(ctx.config),
   )
 
@@ -188,7 +188,7 @@ export async function startMcpServer(options: StartMcpServerOptions = {}) {
   const resolvedCwd = resolve(cwd)
   const resolvedConfigPath = configPath ? resolve(configPath) : undefined
 
-  // Load Panda context
+  // Load Bamboo context
   const ctx = await loadConfigAndCreateContext({
     cwd: resolvedCwd,
     configPath: resolvedConfigPath,
@@ -202,7 +202,7 @@ export async function startMcpServer(options: StartMcpServerOptions = {}) {
   await server.connect(serverTransport)
 
   // Use stderr for logging (stdout is reserved for MCP protocol)
-  console.error('Panda CSS MCP server started')
+  console.error('Bamboo CSS MCP server started')
   console.error(`Working directory: ${resolvedCwd}`)
   if (resolvedConfigPath) {
     console.error(`Config path: ${resolvedConfigPath}`)

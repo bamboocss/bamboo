@@ -1,5 +1,5 @@
-import { fixtureDefaults } from '@pandacss/fixture'
-import type { LoadConfigResult } from '@pandacss/types'
+import { fixtureDefaults } from '@bamboocss/fixture'
+import type { LoadConfigResult } from '@bamboocss/types'
 import { expect, test } from 'vitest'
 import { Generator } from '../src'
 import { generatePattern } from '../src/artifacts/js/pattern'

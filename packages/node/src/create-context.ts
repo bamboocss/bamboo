@@ -1,16 +1,16 @@
-import type { StyleEncoder, Stylesheet } from '@pandacss/core'
-import { Generator } from '@pandacss/generator'
-import { logger } from '@pandacss/logger'
-import { ParserResult, Project } from '@pandacss/parser'
-import { uniq } from '@pandacss/shared'
-import type { LoadConfigResult, Runtime, WatchOptions, WatcherEventType } from '@pandacss/types'
+import type { StyleEncoder, Stylesheet } from '@bamboocss/core'
+import { Generator } from '@bamboocss/generator'
+import { logger } from '@bamboocss/logger'
+import { ParserResult, Project } from '@bamboocss/parser'
+import { uniq } from '@bamboocss/shared'
+import type { LoadConfigResult, Runtime, WatchOptions, WatcherEventType } from '@bamboocss/types'
 import { debounce } from 'perfect-debounce'
 import { createBox } from './cli-box'
 import { DiffEngine } from './diff-engine'
 import { nodeRuntime } from './node-runtime'
 import { OutputEngine } from './output-engine'
 
-export class PandaContext extends Generator {
+export class BambooContext extends Generator {
   runtime: Runtime
   project: Project
   output: OutputEngine

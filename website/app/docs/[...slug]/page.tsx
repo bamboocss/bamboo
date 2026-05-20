@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: DocsPageProps) {
   
   if (!doc) {
     return {
-      title: 'Panda CSS',
+      title: 'Bamboo CSS',
       description: 'Build modern websites using build time and type-safe CSS-in-JS'
     }
   }
@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: DocsPageProps) {
   })
 
   return {
-    title: `${doc.title} | Panda CSS`,
+    title: `${doc.title} | Bamboo CSS`,
     description: doc.description,
     openGraph: {
       title: doc.title,

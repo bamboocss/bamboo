@@ -1,4 +1,4 @@
-import { createContext } from '@pandacss/fixture'
+import { createContext } from '@bamboocss/fixture'
 import { describe, expect, test } from 'vitest'
 import { generateCssFn } from '../src/artifacts/js/css-fn'
 import { generateStringLiteralCssFn } from '../src/artifacts/js/css-fn.string-literal'

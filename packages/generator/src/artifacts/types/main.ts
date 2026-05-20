@@ -1,4 +1,4 @@
-import type { Context } from '@pandacss/core'
+import type { Context } from '@bamboocss/core'
 import { outdent } from 'outdent'
 
 export const generateTypesEntry = (ctx: Context, isJsxRequired: boolean) => {
@@ -16,22 +16,22 @@ export const generateTypesEntry = (ctx: Context, isJsxRequired: boolean) => {
   return {
     global: outdent`
     // @ts-nocheck
-    import type * as Panda from '@pandacss/dev'
+    import type * as Bamboo from '@bamboocss/dev'
     ${ctx.file.importType('RecipeVariantRecord, RecipeConfig, SlotRecipeVariantRecord, SlotRecipeConfig', './recipe')}
     ${ctx.file.importType('Parts', './parts')}
     ${ctx.file.importType('PatternConfig, PatternProperties', './pattern')}
     ${ctx.file.importType('GlobalStyleObject, SystemStyleObject', './system-types')}
     ${ctx.file.importType('CompositionStyles', './composition')}
 
-    declare module '@pandacss/dev' {
-      export function defineRecipe<V extends RecipeVariantRecord>(config: RecipeConfig<V>): Panda.RecipeConfig
-      export function defineSlotRecipe<S extends string, V extends SlotRecipeVariantRecord<S>>(config: SlotRecipeConfig<S, V>): Panda.SlotRecipeConfig
+    declare module '@bamboocss/dev' {
+      export function defineRecipe<V extends RecipeVariantRecord>(config: RecipeConfig<V>): Bamboo.RecipeConfig
+      export function defineSlotRecipe<S extends string, V extends SlotRecipeVariantRecord<S>>(config: SlotRecipeConfig<S, V>): Bamboo.SlotRecipeConfig
       export function defineStyles(definition: SystemStyleObject): SystemStyleObject
-      export function defineGlobalStyles(definition: GlobalStyleObject): Panda.GlobalStyleObject
-      export function defineTextStyles(definition: CompositionStyles['textStyles']): Panda.TextStyles
-      export function defineAnimationStyles(definition: CompositionStyles['animationStyles']): Panda.AnimationStyles
-      export function defineLayerStyles(definition: CompositionStyles['layerStyles']): Panda.LayerStyles
-      export function definePattern<T extends PatternProperties>(config: PatternConfig<T>): Panda.PatternConfig
+      export function defineGlobalStyles(definition: GlobalStyleObject): Bamboo.GlobalStyleObject
+      export function defineTextStyles(definition: CompositionStyles['textStyles']): Bamboo.TextStyles
+      export function defineAnimationStyles(definition: CompositionStyles['animationStyles']): Bamboo.AnimationStyles
+      export function defineLayerStyles(definition: CompositionStyles['layerStyles']): Bamboo.LayerStyles
+      export function definePattern<T extends PatternProperties>(config: PatternConfig<T>): Bamboo.PatternConfig
       export function defineParts<T extends Parts>(parts: T): (config: Partial<Record<keyof T, SystemStyleObject>>) => Partial<Record<keyof T, SystemStyleObject>>
     }
     `,

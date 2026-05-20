@@ -1,9 +1,9 @@
-import type { ImportResult, ParserOptions } from '@pandacss/core'
-import { BoxNodeMap, box, extract, unbox, type EvaluateOptions, type Unboxed } from '@pandacss/extractor'
-import type { Generator } from '@pandacss/generator'
-import { logger } from '@pandacss/logger'
-import { astish } from '@pandacss/shared'
-import type { ParserResultConfigureOptions, ResultItem, JsxFactoryResultTransform } from '@pandacss/types'
+import type { ImportResult, ParserOptions } from '@bamboocss/core'
+import { BoxNodeMap, box, extract, unbox, type EvaluateOptions, type Unboxed } from '@bamboocss/extractor'
+import type { Generator } from '@bamboocss/generator'
+import { logger } from '@bamboocss/logger'
+import { astish } from '@bamboocss/shared'
+import type { ParserResultConfigureOptions, ResultItem, JsxFactoryResultTransform } from '@bamboocss/types'
 import type { SourceFile } from 'ts-morph'
 import { Node } from 'ts-morph'
 import { match } from 'ts-pattern'
@@ -64,27 +64,27 @@ export function createParser(context: ParserOptions) {
               if (options?.matchTag) {
                 // If the user has a custom matchTag function,
                 // we're not going to match every uppercased tag
-                const isPandaComponent = file.isPandaComponent(prop.tagName)
+                const isBambooComponent = file.isBambooComponent(prop.tagName)
                 const matchTagMode = options.matchTagMode ?? 'extend'
-                const isCustomMatch = options.matchTag(prop.tagName, isPandaComponent)
+                const isCustomMatch = options.matchTag(prop.tagName, isBambooComponent)
 
                 if (matchTagMode === 'override') {
                   return isCustomMatch
                 }
 
-                return isPandaComponent || isCustomMatch
+                return isBambooComponent || isCustomMatch
               }
 
               return !!file.matchTag(prop.tagName)
             },
             matchProp: (prop) => {
-              const isPandaProp = file.matchTagProp(prop.tagName, prop.propName)
+              const isBambooProp = file.matchTagProp(prop.tagName, prop.propName)
 
               if (options?.matchTagProp) {
-                return isPandaProp && options.matchTagProp(prop.tagName, prop.propName)
+                return isBambooProp && options.matchTagProp(prop.tagName, prop.propName)
               }
 
-              return isPandaProp
+              return isBambooProp
             },
           }
         : undefined,
@@ -92,7 +92,7 @@ export function createParser(context: ParserOptions) {
         matchFn: (prop) => file.matchFn(prop.fnName),
         matchProp: () => true,
         matchArg: (prop) => {
-          // skip resolving `badge` here: `panda("span", badge)`
+          // skip resolving `badge` here: `bamboo("span", badge)`
           if (file.isJsxFactory(prop.fnName) && prop.index === 1 && Node.isIdentifier(prop.argNode)) return false
           return true
         },
@@ -205,9 +205,9 @@ export function createParser(context: ParserOptions) {
               }
             })
           })
-          // panda("span", { ... }) or panda("div", badge)
-          // or panda("span", { color: "red.100", ... })
-          // or panda('span')` color: red; `
+          // bamboo("span", { ... }) or bamboo("div", badge)
+          // or bamboo("span", { color: "red.100", ... })
+          // or bamboo('span')` color: red; `
           .when(jsx.isJsxFactory, () => {
             result.queryList.forEach((query) => {
               if (query.kind === 'call-expression' && query.box.value[1]) {
@@ -221,16 +221,16 @@ export function createParser(context: ParserOptions) {
                 const result = { name, box: boxNode, data: transformed ?? combined } as ResultItem
 
                 // CallExpression factory inline recipe
-                // panda("span", { base: {}, variants: { ... } })
+                // bamboo("span", { base: {}, variants: { ... } })
                 if (box.isRecipe(map)) {
                   parserResult.setCva(result)
                 } else {
                   // CallExpression factory css
-                  // panda("span", { color: "red.100", ... })
+                  // bamboo("span", { color: "red.100", ... })
                   parserResult.set('css', result)
                 }
 
-                // panda("div", badge, { ... })
+                // bamboo("div", badge, { ... })
                 const recipeOptions = query.box.value[2]
                 if (
                   box.isUnresolvable(map) &&
@@ -255,7 +255,7 @@ export function createParser(context: ParserOptions) {
                 }
               } else if (query.kind === 'tagged-template') {
                 // TaggedTemplateExpression factory css
-                // panda('span')` color: red; `
+                // bamboo('span')` color: red; `
                 const obj = astish(query.box.value as string)
                 parserResult.set('css', {
                   name,
@@ -265,7 +265,7 @@ export function createParser(context: ParserOptions) {
               }
             })
           })
-          // panda.span({ ... }) or panda.div` ...`
+          // bamboo.span({ ... }) or bamboo.div` ...`
           .when(file.isJsxFactory, (name) => {
             result.queryList.forEach((query) => {
               if (query.kind === 'call-expression') {
@@ -279,12 +279,12 @@ export function createParser(context: ParserOptions) {
                 const result = { name, box: boxNode, data: transformed ?? combined } as ResultItem
 
                 // PropertyAccess factory inline recipe
-                // panda.span({ base: {}, variants: { ... } })
+                // bamboo.span({ base: {}, variants: { ... } })
                 if (box.isRecipe(map)) {
                   parserResult.setCva(result)
                 } else {
                   // PropertyAccess factory css
-                  // panda.span({ ... })
+                  // bamboo.span({ ... })
                   parserResult.set('css', result)
                 }
               } else if (query.kind === 'tagged-template') {

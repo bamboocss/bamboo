@@ -1,5 +1,5 @@
 import { cva } from '@/styled-system/css'
-import { panda } from '@/styled-system/jsx'
+import { bamboo } from '@/styled-system/jsx'
 import Link from 'next/link'
 
 const buttonRecipe = cva({
@@ -135,6 +135,6 @@ const buttonRecipe = cva({
   }
 })
 
-export const ButtonLink = panda(Link, buttonRecipe)
+export const ButtonLink = bamboo(Link, buttonRecipe)
 
-export const Button = panda('button', buttonRecipe)
+export const Button = bamboo('button', buttonRecipe)

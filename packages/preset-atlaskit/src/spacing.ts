@@ -1,4 +1,4 @@
-import type { Tokens } from '@pandacss/types'
+import type { Tokens } from '@bamboocss/types'
 
 export const spacing: Tokens['spacing'] = {
   '0': { value: '0px' },

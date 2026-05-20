@@ -272,14 +272,14 @@ describe('css.raw edge cases with spreading', () => {
 
   test('handles spreading with renamed imports', () => {
     const code = `
-      import { css as pandaCss } from "styled-system/css";
+      import { css as bambooCss } from "styled-system/css";
       
-      const baseStyles = pandaCss.raw({
+      const baseStyles = bambooCss.raw({
         color: 'purple',
         fontWeight: 'bold'
       })
       
-      const component = pandaCss({
+      const component = bambooCss({
         ...baseStyles,
         _active: {
           ...baseStyles,

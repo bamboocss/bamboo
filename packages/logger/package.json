@@ -1,7 +1,7 @@
 {
-  "name": "@pandacss/logger",
+  "name": "@bamboocss/logger",
   "version": "1.11.1",
-  "description": "The core css panda library",
+  "description": "The core css bamboo library",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -25,10 +25,10 @@
     "dev": "pnpm build-fast --watch"
   },
   "sideEffects": false,
-  "homepage": "https://panda-css.com",
+  "homepage": "https://bamboo-css.com",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chakra-ui/panda.git",
+    "url": "git+https://github.com/chakra-ui/bamboo.git",
     "directory": "packages/logger"
   },
   "publishConfig": {
@@ -38,7 +38,7 @@
     "dist"
   ],
   "dependencies": {
-    "@pandacss/types": "workspace:*",
+    "@bamboocss/types": "workspace:*",
     "kleur": "4.1.5"
   },
   "devDependencies": {

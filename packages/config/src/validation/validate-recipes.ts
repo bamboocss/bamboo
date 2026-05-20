@@ -1,4 +1,4 @@
-import type { Config } from '@pandacss/types'
+import type { Config } from '@bamboocss/types'
 import type { AddError, ArtifactNames, TokensData } from '../types'
 
 interface Options {

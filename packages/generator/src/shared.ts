@@ -1,5 +1,5 @@
-import { isObject, walkObject } from '@pandacss/shared'
-import type { AnimationStyleSpec, LayerStyleSpec, TextStyleSpec } from '@pandacss/types'
+import { isObject, walkObject } from '@bamboocss/shared'
+import type { AnimationStyleSpec, LayerStyleSpec, TextStyleSpec } from '@bamboocss/types'
 
 export const isBooleanValue = (value: string) => value === 'true' || value === 'false'
 

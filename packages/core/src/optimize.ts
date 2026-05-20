@@ -1,4 +1,4 @@
-import type { PandaHooks } from '@pandacss/types'
+import type { BambooHooks } from '@bamboocss/types'
 import postcss, { Root } from 'postcss'
 import nested from 'postcss-nested'
 import { optimizePostCss } from './plugins/optimize-postcss'
@@ -7,7 +7,7 @@ import prettify from './plugins/prettify'
 interface OptimizeOptions {
   minify?: boolean
   browserslist?: string[]
-  hooks?: Partial<PandaHooks>
+  hooks?: Partial<BambooHooks>
 }
 
 export function optimizeCss(code: string | Root, options: OptimizeOptions = {}) {

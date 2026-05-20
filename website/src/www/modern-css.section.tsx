@@ -1,5 +1,5 @@
 import { css } from '@/styled-system/css'
-import { Circle, Container, Flex, Stack, panda } from '@/styled-system/jsx'
+import { Circle, Container, Flex, Stack, bamboo } from '@/styled-system/jsx'
 import { button } from '@/styled-system/recipes'
 import { token } from '@/styled-system/tokens'
 import { Icon } from '@/theme/icons'
@@ -34,7 +34,7 @@ const codeSnippet = outdent`
 
 export const ModernCssSection = () => {
   return (
-    <panda.section bg="bg.main">
+    <bamboo.section bg="bg.main">
       <Container mb={{ lg: '-10rem' }}>
         <Flex
           direction={{ base: 'column', lg: 'row' }}
@@ -49,32 +49,32 @@ export const ModernCssSection = () => {
               position="relative"
             >
               <Icon icon="Css3" />
-              <panda.div position="absolute" top="-2" right="-5" color="fg">
+              <bamboo.div position="absolute" top="-2" right="-5" color="fg">
                 <Icon
                   icon="Sparks2"
                   className={css({ w: '22px', h: '22px' })}
                 />
-              </panda.div>
+              </bamboo.div>
             </Circle>
 
             <Stack gap="4">
-              <panda.h3 textStyle="panda.h3" fontWeight="bold">
+              <bamboo.h3 textStyle="bamboo.h3" fontWeight="bold">
                 Generates Modern CSS code at build time
-              </panda.h3>
-              <panda.h4
-                textStyle="panda.h4"
+              </bamboo.h3>
+              <bamboo.h4
+                textStyle="bamboo.h4"
                 fontWeight="medium"
                 color="fg.muted"
               >
-                Panda uses modern features like cascade layers, :where selectors
+                Bamboo uses modern features like cascade layers, :where selectors
                 and css variables to give you best-in-class css output.
-              </panda.h4>
+              </bamboo.h4>
             </Stack>
 
             <LearnMore href="/docs/concepts/cascade-layers" />
           </Stack>
 
-          <panda.div flex="1" maxW={{ lg: '40rem' }} flexShrink="0">
+          <bamboo.div flex="1" maxW={{ lg: '40rem' }} flexShrink="0">
             <Code
               lang="css"
               style={{ borderRadius: token('radii.xl') }}
@@ -82,9 +82,9 @@ export const ModernCssSection = () => {
             >
               {codeSnippet}
             </Code>
-          </panda.div>
+          </bamboo.div>
         </Flex>
       </Container>
-    </panda.section>
+    </bamboo.section>
   )
 }

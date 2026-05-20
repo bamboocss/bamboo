@@ -23,5 +23,5 @@
     }
   },
   "files": ["./.eslintrc.cjs"],
-  "include": ["src", "./*.d.ts", "panda.config.ts"]
+  "include": ["src", "./*.d.ts", "bamboo.config.ts"]
 }

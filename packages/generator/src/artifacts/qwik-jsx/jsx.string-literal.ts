@@ -1,4 +1,4 @@
-import type { Context } from '@pandacss/core'
+import type { Context } from '@bamboocss/core'
 import { outdent } from 'outdent'
 
 export function generateQwikJsxStringLiteralFactory(ctx: Context) {

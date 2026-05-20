@@ -160,7 +160,7 @@ export const usePlayground = (props: UsePlayGroundProps) => {
     switchLayout,
     // Immediate state for Editor (prevents cursor jumping)
     state,
-    // Deferred state for expensive operations (panda processing)
+    // Deferred state for expensive operations (bamboo processing)
     deferredState,
     setState: handleStateChange,
     setExample,

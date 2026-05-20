@@ -5,7 +5,7 @@
  * We inline this to avoid dependencies on browserslist, caniuse-api, and cssnano-utils
  * which can cause warnings (e.g. baseline-browser-mapping) and affect CSS output stability.
  *
- * Compatibility checks are simplified: we always allow merging since Panda targets modern browsers.
+ * Compatibility checks are simplified: we always allow merging since Bamboo targets modern browsers.
  */
 
 import type { AtRule, Declaration, Rule } from 'postcss'

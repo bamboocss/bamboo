@@ -1,4 +1,4 @@
-import type { FontfaceRule, GlobalPositionTry as GlobalPositionTryDefinition } from '@pandacss/types'
+import type { FontfaceRule, GlobalPositionTry as GlobalPositionTryDefinition } from '@bamboocss/types'
 import { stringify } from './stringify'
 
 interface GlobalFontfaceOptions {

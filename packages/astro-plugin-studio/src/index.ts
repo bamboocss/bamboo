@@ -1,27 +1,27 @@
-import { loadConfigAndCreateContext, type PandaContext } from '@pandacss/node'
-import { stringify as stringifyPanda } from '@pandacss/core'
+import { loadConfigAndCreateContext, type BambooContext } from '@bamboocss/node'
+import { stringify as stringifyBamboo } from '@bamboocss/core'
 import type { AstroIntegration } from 'astro'
 import { stringify } from 'javascript-stringify'
 import type { PluginOption } from 'vite'
 
-const virtualModuleId = 'virtual:panda'
+const virtualModuleId = 'virtual:bamboo'
 const resolvedVirtualModuleId = '\0' + virtualModuleId
 
 function vitePlugin(configPath: string): PluginOption {
-  let config: PandaContext['config']
+  let config: BambooContext['config']
   const textStyleMap: Record<string, string> = {}
   const layerStyleMap: Record<string, string> = {}
   const themesMap: Record<string, any> = {}
 
-  async function loadPandaConfig() {
+  async function loadBambooConfig() {
     const ctx = await loadConfigAndCreateContext({ configPath })
     for (const key of Object.keys(ctx.config.theme?.textStyles ?? {})) {
       const utility = ctx.utility.transform('textStyle', key)
-      textStyleMap[key] = stringifyPanda(utility.styles)
+      textStyleMap[key] = stringifyBamboo(utility.styles)
     }
     for (const key of Object.keys(ctx.config.theme?.layerStyles ?? {})) {
       const utility = ctx.utility.transform('layerStyle', key)
-      layerStyleMap[key] = stringifyPanda(utility.styles)
+      layerStyleMap[key] = stringifyBamboo(utility.styles)
     }
 
     // Process themes if they exist
@@ -35,12 +35,12 @@ function vitePlugin(configPath: string): PluginOption {
   }
 
   return {
-    name: '@pandacss/studio',
+    name: '@bamboocss/studio',
 
     async configureServer(server) {
       server.watcher.add(configPath).on('change', async (path) => {
         if (path !== configPath) return
-        await loadPandaConfig()
+        await loadBambooConfig()
         const module = server.moduleGraph.getModuleById(resolvedVirtualModuleId)
         if (module) await server.reloadModule(module)
       })
@@ -55,7 +55,7 @@ function vitePlugin(configPath: string): PluginOption {
 
     async load(id) {
       if (id === resolvedVirtualModuleId) {
-        await loadPandaConfig()
+        await loadBambooConfig()
         return {
           code: [
             `export const config = ${stringify(config)}`,
@@ -69,8 +69,8 @@ function vitePlugin(configPath: string): PluginOption {
   }
 }
 
-const pandaStudio = (): AstroIntegration => ({
-  name: '@pandacss/studio',
+const bambooStudio = (): AstroIntegration => ({
+  name: '@bamboocss/studio',
   hooks: {
     'astro:config:setup': ({ updateConfig }) => {
       const configPath = process.env.PUBLIC_CONFIG_PATH
@@ -88,4 +88,4 @@ const pandaStudio = (): AstroIntegration => ({
   },
 })
 
-export default pandaStudio
+export default bambooStudio

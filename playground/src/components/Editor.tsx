@@ -4,7 +4,7 @@ import { Flex } from '@/styled-system/jsx'
 import { segmentGroup } from '@/styled-system/recipes'
 import { SegmentGroup } from '@ark-ui/react/segment-group'
 import MonacoEditor, { DiffEditor } from '@monaco-editor/react'
-import { PandaEditorProps, defaultEditorOptions, useEditor } from '../hooks/useEditor'
+import { BambooEditorProps, defaultEditorOptions, useEditor } from '../hooks/useEditor'
 import { memo } from 'react'
 
 const tabs = [
@@ -19,7 +19,7 @@ const editorPaths = {
   config: 'config.ts',
 }
 
-export const Editor = memo(function Editor(props: PandaEditorProps) {
+export const Editor = memo(function Editor(props: BambooEditorProps) {
   const {
     activeTab,
     setActiveTab,

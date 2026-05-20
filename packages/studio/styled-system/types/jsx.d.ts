@@ -27,7 +27,7 @@ export type ComponentProps<T extends ElementType> = T extends ComponentType<infe
   ? JSX.LibraryManagedAttributes<T, P>
   : ComponentPropsWithRef<T>
 
-export interface PandaComponent<T extends ElementType, P extends Dict = {}> {
+export interface BambooComponent<T extends ElementType, P extends Dict = {}> {
   (props: JsxHTMLProps<ComponentProps<T> & UnstyledProps & AsProps, Assign<JsxStyleProps, P>>): JSX.Element
   displayName?: string | undefined
 }
@@ -45,12 +45,12 @@ export interface JsxFactoryOptions<TProps extends Dict> {
 
 export type JsxRecipeProps<T extends ElementType, P extends Dict> = JsxHTMLProps<ComponentProps<T> & UnstyledProps & AsProps, P>;
 
-export type JsxElement<T extends ElementType, P extends Dict> = T extends PandaComponent<infer A, infer B>
-  ? PandaComponent<A, Pretty<DistributiveUnion<P, B>>>
-  : PandaComponent<T, P>
+export type JsxElement<T extends ElementType, P extends Dict> = T extends BambooComponent<infer A, infer B>
+  ? BambooComponent<A, Pretty<DistributiveUnion<P, B>>>
+  : BambooComponent<T, P>
 
 export interface JsxFactory {
-  <T extends ElementType>(component: T): PandaComponent<T, {}>
+  <T extends ElementType>(component: T): BambooComponent<T, {}>
   <T extends ElementType, P extends RecipeVariantRecord>(component: T, recipe: RecipeDefinition<P>, options?: JsxFactoryOptions<JsxRecipeProps<T, RecipeSelection<P>>>): JsxElement<
     T,
     RecipeSelection<P>
@@ -59,11 +59,11 @@ export interface JsxFactory {
 }
 
 export type JsxElements = {
-  [K in keyof JSX.IntrinsicElements]: PandaComponent<K, {}>
+  [K in keyof JSX.IntrinsicElements]: BambooComponent<K, {}>
 }
 
-export type Panda = JsxFactory & JsxElements
+export type Bamboo = JsxFactory & JsxElements
 
-export type HTMLPandaProps<T extends ElementType> = JsxHTMLProps<ComponentProps<T> & UnstyledProps & AsProps, JsxStyleProps>
+export type HTMLBambooProps<T extends ElementType> = JsxHTMLProps<ComponentProps<T> & UnstyledProps & AsProps, JsxStyleProps>
 
-export type PandaVariantProps<T extends PandaComponent<any, any>> = T extends PandaComponent<any, infer Props> ? Props : never
+export type BambooVariantProps<T extends BambooComponent<any, any>> = T extends BambooComponent<any, infer Props> ? Props : never

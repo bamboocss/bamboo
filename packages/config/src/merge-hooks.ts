@@ -1,18 +1,18 @@
-import { logger } from '@pandacss/logger'
-import type { AnyFunction, PandaHooks, PandaPlugin } from '@pandacss/types'
+import { logger } from '@bamboocss/logger'
+import type { AnyFunction, BambooHooks, BambooPlugin } from '@bamboocss/types'
 
 type HookEntry = [pluginName: string, cb: AnyFunction]
 
-export const mergeHooks = (plugins: PandaPlugin[]) => {
-  const hooksFns: Partial<Record<keyof PandaHooks, HookEntry[]>> = {}
+export const mergeHooks = (plugins: BambooPlugin[]) => {
+  const hooksFns: Partial<Record<keyof BambooHooks, HookEntry[]>> = {}
 
   plugins.forEach(({ name, hooks }) => {
     Object.entries(hooks ?? {}).forEach(([key, value]) => {
-      if (!hooksFns[key as keyof PandaHooks]) {
-        hooksFns[key as keyof PandaHooks] = [] as HookEntry[]
+      if (!hooksFns[key as keyof BambooHooks]) {
+        hooksFns[key as keyof BambooHooks] = [] as HookEntry[]
       }
 
-      hooksFns[key as keyof PandaHooks]!.push([name, value])
+      hooksFns[key as keyof BambooHooks]!.push([name, value])
     })
   })
 
@@ -27,16 +27,16 @@ export const mergeHooks = (plugins: PandaPlugin[]) => {
         return [key, reducer(fns)]
       }
 
-      return [key, syncHooks.includes(key as keyof PandaHooks) ? callAll(...fns) : callAllAsync(...fns)]
+      return [key, syncHooks.includes(key as keyof BambooHooks) ? callAll(...fns) : callAllAsync(...fns)]
     }),
-  ) as Partial<PandaHooks>
+  ) as Partial<BambooHooks>
 
   return mergedHooks
 }
 
-type Reducer<T extends keyof PandaHooks> = (fns: Array<PandaHooks[T]>) => PandaHooks[T]
+type Reducer<T extends keyof BambooHooks> = (fns: Array<BambooHooks[T]>) => BambooHooks[T]
 
-const createReducer = <T extends keyof PandaHooks>(reducer: Reducer<T>) => reducer
+const createReducer = <T extends keyof BambooHooks>(reducer: Reducer<T>) => reducer
 
 const reducers = {
   'config:resolved': createReducer<'config:resolved'>((fns) => async (_args) => {
@@ -96,7 +96,7 @@ const reducers = {
     }
     return content
   }),
-  'codegen:prepare': createReducer<'codegen:prepare'>((fns): PandaHooks['codegen:prepare'] => async (_args) => {
+  'codegen:prepare': createReducer<'codegen:prepare'>((fns): BambooHooks['codegen:prepare'] => async (_args) => {
     const args = Object.assign({}, _args)
     const original = _args.artifacts
     let artifacts = args.artifacts
@@ -142,7 +142,7 @@ const reducers = {
   }),
 }
 
-const syncHooks: Array<keyof PandaHooks> = [
+const syncHooks: Array<keyof BambooHooks> = [
   'context:created',
   'parser:before',
   'parser:preprocess',

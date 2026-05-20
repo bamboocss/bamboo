@@ -1,6 +1,6 @@
-import { panda } from '@/styled-system/jsx'
+import { bamboo } from '@/styled-system/jsx'
 
-export const Badge = panda('span', {
+export const Badge = bamboo('span', {
   base: {
     fontWeight: 'medium',
     fontSize: '11px',

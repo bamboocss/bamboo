@@ -5,7 +5,7 @@ import {
   Square,
   Stack,
   VStack,
-  panda
+  bamboo
 } from '@/styled-system/jsx'
 import { Icon, IconType } from '@/theme/icons'
 
@@ -14,10 +14,10 @@ export const WorksEverywhereSection = () => {
     <section>
       <Container pt="32" pb="48">
         <VStack gap="20">
-          <panda.h2 textStyle="panda.h2" fontWeight="bold" textAlign="center">
+          <bamboo.h2 textStyle="bamboo.h2" fontWeight="bold" textAlign="center">
             Works Everywhere. <br />
             Including Server Components.
-          </panda.h2>
+          </bamboo.h2>
 
           <Stack
             gap="12"
@@ -50,15 +50,15 @@ export const WorksEverywhereSection = () => {
           </Stack>
 
           <VStack maxW="560px" mx="auto">
-            <panda.span
+            <bamboo.span
               textStyle="2xl"
               fontWeight="medium"
               letterSpacing="tight"
               textAlign="center"
             >
-              Panda works out of box with your favorite JS framework. Use it
+              Bamboo works out of box with your favorite JS framework. Use it
               with Vite, Remix,{' '}
-              <panda.mark
+              <bamboo.mark
                 bg="yellow.300"
                 rounded="lg"
                 px="2"
@@ -66,8 +66,8 @@ export const WorksEverywhereSection = () => {
                 boxDecorationBreak="clone"
               >
                 Next.js (including app dir)
-              </panda.mark>
-            </panda.span>
+              </bamboo.mark>
+            </bamboo.span>
           </VStack>
         </VStack>
       </Container>
@@ -90,8 +90,8 @@ const ProjectLogo = ({
     >
       <Icon {...iconProps} />
     </Square>
-    <panda.span textStyle="xl" letterSpacing="tight" fontWeight="bold">
+    <bamboo.span textStyle="xl" letterSpacing="tight" fontWeight="bold">
       {title}
-    </panda.span>
+    </bamboo.span>
   </VStack>
 )

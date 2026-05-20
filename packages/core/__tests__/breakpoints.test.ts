@@ -1,4 +1,4 @@
-import { fixturePreset } from '@pandacss/fixture'
+import { fixturePreset } from '@bamboocss/fixture'
 import postcss from 'postcss'
 import { describe, expect, test } from 'vitest'
 import { Breakpoints } from '../src/breakpoints'

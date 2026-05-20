@@ -1,6 +1,6 @@
-import { panda } from '@/styled-system/jsx'
+import { bamboo } from '@/styled-system/jsx'
 
-export const Blockquote = panda('blockquote', {
+export const Blockquote = bamboo('blockquote', {
   base: {
     mt: { base: '6', _first: '0' },
     borderColor: { base: 'gray.300', _dark: 'gray.400' },

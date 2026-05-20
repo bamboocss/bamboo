@@ -1,7 +1,7 @@
-import type { StyleDecoder, StyleEncoder } from '@pandacss/core'
-import { createContext } from '@pandacss/fixture'
-import type { Config, TSConfig } from '@pandacss/types'
-import type { PandaContext } from '../../node/src/create-context'
+import type { StyleDecoder, StyleEncoder } from '@bamboocss/core'
+import { createContext } from '@bamboocss/fixture'
+import type { Config, TSConfig } from '@bamboocss/types'
+import type { BambooContext } from '../../node/src/create-context'
 import { getImportDeclarations } from '../src/get-import-declarations'
 
 const filePath = 'app/src/test.tsx'
@@ -135,7 +135,7 @@ export function jsxRecipeParser(code: string) {
 }
 
 interface ParseAndExtractReturn {
-  ctx: PandaContext
+  ctx: BambooContext
   encoder: StyleEncoder
   styles: StyleDecoder
   json: any[]

@@ -47,6 +47,6 @@ export async function main() {
   console.log('[postbuild] Copied types to packages/generator/src/artifacts ✅')
 }
 
-if (process.env.PANDA_BUILD) {
+if (process.env.BAMBOO_BUILD) {
   main()
 }

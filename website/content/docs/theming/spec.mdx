@@ -1,9 +1,9 @@
 ---
 title: Spec
-description: Document your design system in Panda.
+description: Document your design system in Bamboo.
 ---
 
-A spec is a readable JSON representation of the theme structure in your panda config. They're designed to be used for
+A spec is a readable JSON representation of the theme structure in your bamboo config. They're designed to be used for
 **documentation purposes** in your own docs websites and Storybook. Some common use cases:
 
 - Document tokens in your theme (colors, spacing, fonts, etc.)
@@ -15,7 +15,7 @@ A spec is a readable JSON representation of the theme structure in your panda co
 To create the spec files, run the following command in your terminal:
 
 ```bash
-pnpm panda spec
+pnpm bamboo spec
 ```
 
 Learn more about the spec CLI flags [here](/docs/references/cli#spec)
@@ -378,7 +378,7 @@ Contains an array of animation style entries. Each entry includes:
 - Animation properties such as `duration`, `timingFunction`, etc.
 - Optional examples: `functionExamples` and `jsxExamples`
 
-If no animation styles are configured in your `panda.config.ts` file , this file will contain an empty data array.
+If no animation styles are configured in your `bamboo.config.ts` file , this file will contain an empty data array.
 
 ### `keyframes.json`
 
@@ -521,5 +521,5 @@ Contains an array of condition entries. Each entry includes:
 ### Can I edit the spec files directly?
 
 **No.** The spec files are **generated** files—you should **not** edit your design tokens, recipes, or theme directly in
-these files. All configuration changes must be made in your `panda.config.ts` file. The spec files exist purely for
+these files. All configuration changes must be made in your `bamboo.config.ts` file. The spec files exist purely for
 documentation and visualization purposes.

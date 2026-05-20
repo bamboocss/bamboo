@@ -1,4 +1,4 @@
-import { defineTokens } from '@pandacss/dev'
+import { defineTokens } from '@bamboocss/dev'
 import { colors } from './colors'
 
 export const tokens = defineTokens({

@@ -40,13 +40,13 @@ export const MobileNavBar = () => {
             <NavLink href="/docs">Docs</NavLink>
             <NavLink href="/team">Team</NavLink>
             <NavLink href="/showcase">Showcase</NavLink>
-            <NavLink href="https://play.panda-css.com/" isExternal>
+            <NavLink href="https://play.bamboo-css.com/" isExternal>
               <HStack>
                 <span>Playground</span>
                 <ButtonIcon icon="ExternalLink" />
               </HStack>
             </NavLink>
-            <NavLink href="https://github.com/chakra-ui/panda" isExternal>
+            <NavLink href="https://github.com/chakra-ui/bamboo" isExternal>
               <HStack>
                 <span>Github</span>
                 <ButtonIcon icon="ExternalLink" />

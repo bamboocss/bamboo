@@ -1,6 +1,6 @@
 import { Monaco as MonacoType } from '@monaco-editor/react'
 import * as Monaco from 'monaco-editor'
-import { Dict } from '@pandacss/types'
+import { Dict } from '@bamboocss/types'
 
 const IMPORT_COMMAND = 'resolveImport'
 
@@ -99,7 +99,7 @@ const buildSuggestions = (opts: BuildSuggestionsOpts): Monaco.languages.Completi
     insertText: label,
     range: range,
     command: {
-      title: 'Panda Autocomplete',
+      title: 'Bamboo Autocomplete',
       id: IMPORT_COMMAND,
       arguments: [
         {

@@ -11,7 +11,7 @@ export const MultiThemes = () => {
         onClick={async () => {
           // const el = document.documentElement
           const el = document.getElementById('abc')!
-          const current = el.dataset.pandaTheme
+          const current = el.dataset.bambooTheme
           const next = current === 'primary' ? 'secondary' : 'primary'
           const theme = await getTheme(next)
           injectTheme(el, theme)
@@ -37,7 +37,7 @@ export const MultiThemes = () => {
 
 const ThemeExample = ({ name }: { name?: string }) => {
   return (
-    <div className={hstack({ p: '4', my: '4', border: '1px dashed' })} data-panda-theme={name ? name : undefined}>
+    <div className={hstack({ p: '4', my: '4', border: '1px dashed' })} data-bamboo-theme={name ? name : undefined}>
       <span>{name || 'inherit'}:</span>
       <span className={css({ color: 'text' })}>text</span>
       <span className={css({ color: 'body' })}>body</span>

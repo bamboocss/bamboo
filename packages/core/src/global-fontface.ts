@@ -1,4 +1,4 @@
-import type { FontfaceRule, GlobalFontface as GlobalFontfaceDefinition } from '@pandacss/types'
+import type { FontfaceRule, GlobalFontface as GlobalFontfaceDefinition } from '@bamboocss/types'
 import { stringify } from './stringify'
 
 interface GlobalFontfaceOptions {

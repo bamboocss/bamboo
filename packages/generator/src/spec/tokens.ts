@@ -1,5 +1,5 @@
-import type { Context } from '@pandacss/core'
-import { walkObject } from '@pandacss/shared'
+import type { Context } from '@bamboocss/core'
+import { walkObject } from '@bamboocss/shared'
 import type {
   SemanticTokenSpec,
   SemanticTokenGroupDefinition,
@@ -7,7 +7,7 @@ import type {
   TokenSpec,
   TokenGroupDefinition,
   TokenValue,
-} from '@pandacss/types'
+} from '@bamboocss/types'
 import { generateTokenExamples } from './token-examples'
 
 export const generateTokensSpec = (ctx: Context): TokenSpec => {

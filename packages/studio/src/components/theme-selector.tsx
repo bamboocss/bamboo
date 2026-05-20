@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useStore } from '@nanostores/react'
-import { panda, Stack } from '../../styled-system/jsx'
-import { availableThemes } from '../lib/panda-context'
+import { bamboo, Stack } from '../../styled-system/jsx'
+import { availableThemes } from '../lib/bamboo-context'
 import { currentThemeStore } from '../lib/theme-store'
 
 const titleCase = (str: string) => str.replace(/[-_]/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase())
@@ -28,10 +28,10 @@ export function ThemeSelector() {
   if (!isHydrated) {
     return (
       <Stack gap="2">
-        <panda.label fontWeight="bold" fontSize="small" opacity="0.7">
+        <bamboo.label fontWeight="bold" fontSize="small" opacity="0.7">
           THEME
-        </panda.label>
-        <panda.select
+        </bamboo.label>
+        <bamboo.select
           px="3"
           py="2"
           borderRadius="md"
@@ -43,17 +43,17 @@ export function ThemeSelector() {
           disabled
         >
           <option>Loading...</option>
-        </panda.select>
+        </bamboo.select>
       </Stack>
     )
   }
 
   return (
     <Stack gap="2">
-      <panda.label fontWeight="bold" fontSize="small" opacity="0.7">
+      <bamboo.label fontWeight="bold" fontSize="small" opacity="0.7">
         THEME
-      </panda.label>
-      <panda.select
+      </bamboo.label>
+      <bamboo.select
         id="theme-selector"
         px="3"
         py="2"
@@ -73,7 +73,7 @@ export function ThemeSelector() {
             {titleCase(theme)}
           </option>
         ))}
-      </panda.select>
+      </bamboo.select>
     </Stack>
   )
 }

@@ -1,6 +1,6 @@
 ---
 title: Virtual Color
-description: Panda allows you to create a virtual color or color placeholder in your project.
+description: Bamboo allows you to create a virtual color or color placeholder in your project.
 ---
 
 The `colorPalette` property is how you create virtual colors.
@@ -221,8 +221,8 @@ theme.
 
 To completely disable color palette generation, set `enabled` to `false`:
 
-```ts filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```ts filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   theme: {
@@ -237,8 +237,8 @@ export default defineConfig({
 
 To generate color palettes for only specific colors, use the `include` option:
 
-```ts filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```ts filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   theme: {
@@ -254,7 +254,7 @@ your theme.
 
 **Glob patterns** are supported for nested tokens:
 
-```ts filename="panda.config.ts"
+```ts filename="bamboo.config.ts"
 colorPalette: {
   include: ['gray.*', 'blue.*'] // Includes all nested tokens
 }
@@ -264,8 +264,8 @@ colorPalette: {
 
 To exclude certain colors from color palette generation, use the `exclude` option:
 
-```ts filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```ts filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   theme: {
@@ -282,8 +282,8 @@ This will generate color palettes for all colors except `yellow` and `orange`.
 
 You can combine the `enabled`, `include`, and `exclude` options as needed:
 
-```ts filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```ts filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   theme: {
@@ -303,7 +303,7 @@ excluded).
 
 If nested tokens show as raw paths (e.g., `colors.base.accent`) instead of CSS variables, use glob patterns:
 
-```ts filename="panda.config.ts"
+```ts filename="bamboo.config.ts"
 semanticTokens: {
   colors: {
     button: {

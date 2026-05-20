@@ -53,12 +53,12 @@ export function getClientConfig(client: McpClient): McpClientConfig {
 export function generateMcpConfig(clientConfig: McpClientConfig) {
   const serverConfig = {
     command: 'npx',
-    args: ['panda', 'mcp'],
+    args: ['bamboo', 'mcp'],
   }
 
   return {
     [clientConfig.configKey]: {
-      panda: serverConfig,
+      bamboo: serverConfig,
     },
   }
 }

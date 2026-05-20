@@ -1,4 +1,4 @@
-import { UsePanda } from '@/src/hooks/usePanda'
+import { UseBamboo } from '@/src/hooks/useBamboo'
 import { TypingsSourceResolver } from '@/src/lib/typings-source-resolver'
 import { BeforeMount, EditorProps, Monaco as MonacoType, OnChange, OnMount } from '@monaco-editor/react'
 import * as Monaco from 'monaco-editor'
@@ -9,20 +9,20 @@ import { useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocalStorage, useUpdateEffect } from 'usehooks-ts'
 import { configureAutoImports } from '../lib/auto-import'
-import { pandaTheme } from '../lib/gruvbox-theme'
+import { bambooTheme } from '../lib/gruvbox-theme'
 import { State } from './usePlayground'
 
 // @ts-ignore
-import pandaDevDts from '../dts/@pandacss_dev.d.ts?raw'
+import bambooDevDts from '../dts/@bamboocss_dev.d.ts?raw'
 // @ts-ignore
-import pandaTypesDts from '../dts/@pandacss_types.d.ts?raw'
+import bambooTypesDts from '../dts/@bamboocss_types.d.ts?raw'
 // @ts-ignore
 import reactDts from '../dts/react.d.ts?raw'
 
-export interface PandaEditorProps {
+export interface BambooEditorProps {
   value: State
   onChange: (state: State) => void
-  panda: UsePanda
+  bamboo: UseBamboo
   diffState?: State | null
   isLoading: boolean
 }
@@ -81,10 +81,10 @@ const activateMonacoJSXHighlighter = async (monacoEditor: Monaco.editor.IStandal
   return dispose
 }
 
-export function useEditor(props: PandaEditorProps) {
-  const { onChange, value, panda } = props
+export function useEditor(props: BambooEditorProps) {
+  const { onChange, value, bamboo } = props
 
-  const { artifacts, context } = panda
+  const { artifacts, context } = bamboo
 
   const { resolvedTheme } = useTheme()
 
@@ -188,19 +188,19 @@ export function useEditor(props: PandaEditorProps) {
     [artifacts],
   )
 
-  const getPandaTypes = useCallback(async () => {}, [])
+  const getBambooTypes = useCallback(async () => {}, [])
 
   const onBeforeMount: BeforeMount = (monaco) => {
-    monaco.editor.defineTheme('panda-dark', pandaTheme)
+    monaco.editor.defineTheme('bamboo-dark', bambooTheme)
   }
 
   useEffect(() => {
-    monacoRef.current?.editor.setTheme(resolvedTheme === 'dark' ? 'panda-dark' : 'vs')
+    monacoRef.current?.editor.setTheme(resolvedTheme === 'dark' ? 'bamboo-dark' : 'vs')
   }, [monacoRef, resolvedTheme])
 
   const onCodeEditorMount: OnMount = useCallback(
     async (editor, monaco) => {
-      if (resolvedTheme === 'dark') monaco.editor.setTheme('panda-dark')
+      if (resolvedTheme === 'dark') monaco.editor.setTheme('bamboo-dark')
       monacoRef.current = monaco
       monacoEditorRef.current = editor
 
@@ -234,12 +234,12 @@ export function jsxs(type: React.ElementType, props: unknown, key?: React.Key): 
           filePath: 'file:///node_modules/@types/react/jsx-runtime.d.ts',
         },
         {
-          content: pandaDevDts,
-          filePath: 'file:///node_modules/@pandacss/dev/index.d.ts',
+          content: bambooDevDts,
+          filePath: 'file:///node_modules/@bamboocss/dev/index.d.ts',
         },
         {
-          content: pandaTypesDts,
-          filePath: 'file:///node_modules/@pandacss/types/index.d.ts',
+          content: bambooTypesDts,
+          filePath: 'file:///node_modules/@bamboocss/types/index.d.ts',
         },
       ]
 
@@ -247,7 +247,7 @@ export function jsxs(type: React.ElementType, props: unknown, key?: React.Key): 
         monaco.languages.typescript.typescriptDefaults.addExtraLib(src.content, src.filePath)
       })
     },
-    [configureEditor, setupLibs, getPandaTypes],
+    [configureEditor, setupLibs, getBambooTypes],
   )
 
   // Use ref to track current value for onChange - keeps callback stable

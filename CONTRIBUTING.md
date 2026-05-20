@@ -1,29 +1,29 @@
-Thanks for showing interest to contribute to Panda CSS 💖, you rock!
+Thanks for showing interest to contribute to Bamboo CSS 💖, you rock!
 
 When it comes to open source, there are different ways you can contribute, all of which are valuable. Here's a few
 guidelines that should help you as you prepare your contribution.
 
 ## Setup the Project
 
-The following steps will get you up and running to contribute to Panda CSS:
+The following steps will get you up and running to contribute to Bamboo CSS:
 
-1. Fork the repo (click the <kbd>Fork</kbd> button at the top right of [this page](https://github.com/chakra-ui/panda))
+1. Fork the repo (click the <kbd>Fork</kbd> button at the top right of [this page](https://github.com/chakra-ui/bamboo))
 
 2. Clone your fork locally
 
 ```sh
-git clone https://github.com/<your_github_username>/panda.git
-cd panda
+git clone https://github.com/<your_github_username>/bamboo.git
+cd bamboo
 ```
 
 3. Setup all the dependencies and packages by running `pnpm install`. This command will install dependencies.
 
-> If you run into any issues during this step, kindly reach out to the Panda CSS team here:
-> [Panda Discord](https://discord.gg/VQrkpsgSx7)
+> If you run into any issues during this step, kindly reach out to the Bamboo CSS team here:
+> [Bamboo Discord](https://discord.gg/VQrkpsgSx7)
 
 ## Development
 
-To improve our development process, we've set up tooling and systems. Panda CSS uses a monorepo structure with the
+To improve our development process, we've set up tooling and systems. Bamboo CSS uses a monorepo structure with the
 following structure:
 
 ### Directory Structure
@@ -31,13 +31,13 @@ following structure:
 | Package                                       | Description                                                 |
 | --------------------------------------------- | ----------------------------------------------------------- |
 | [cli](packages/cli)                           | CLI package installed by the end user                       |
-| [core](packages/core)                         | Contains core features of Panda (utility, recipes, etc)     |
-| [config](packages/config)                     | Contains functions for reading and merging the panda config |
+| [core](packages/core)                         | Contains core features of Bamboo (utility, recipes, etc)     |
+| [config](packages/config)                     | Contains functions for reading and merging the bamboo config |
 | [extractor](packages/extractor)               | Contains code for fast AST parsing and scanning             |
 | [generator](packages/generator)               | Contains codegen artifacts (js, css, jsx)                   |
 | [parser](packages/parser)                     | Contains code for parsing a source code                     |
 | [is-valid-prop](packages/is-valid-prop)       | Contains code for checking if a prop is a valid css prop    |
-| [node](packages/node)                         | Contains the Node.js API of Panda's features                |
+| [node](packages/node)                         | Contains the Node.js API of Bamboo's features                |
 | [token-dictionary](packages/token-dictionary) | Contains code used to process tokens and semantic tokens    |
 | [shared](packages/shared)                     | Contains shared TS                                          |
 
@@ -67,13 +67,13 @@ all components.
 Please conform to the issue template and provide a clear path to reproduction with a code example. The best way to show
 a bug is by sending a minimal reproduction as a GitHub repo, CodeSandbox, or StackBlitz.
 
-You may wish to use this starter template to help you get going: https://github.com/astahmer/panda-vite-template
+You may wish to use this starter template to help you get going: https://github.com/astahmer/bamboo-vite-template
 
 ## Proposing new or changed API?
 
 Please provide thoughtful comments and some sample API code. Proposals that don't line up with our roadmap or don't have
 a thoughtful explanation will be closed. You can check the existing proposals and our official roadmap here:
-https://panda-css.canny.io/
+https://bamboo-css.canny.io/
 
 ## Making a Pull Request?
 
@@ -102,14 +102,14 @@ If you are interested in the detailed specification you can visit https://www.co
 
 ### Steps to PR
 
-1. Fork of the panda repository and clone your fork
+1. Fork of the bamboo repository and clone your fork
 
 2. Create a new branch out of the `main` branch. We follow the convention `[type/scope]`. For example
    `fix/accordion-hook` or `docs/menu-typo`. `type` can be either `docs`, `fix`, `feat`, `build`, or any other
    conventional commit type. `scope` is just a short id that describes the scope of work.
 
 3. Make and commit your changes following the
-   [commit convention](https://github.com/chakra-ui/panda/blob/main/CONTRIBUTING.md#commit-convention). As you develop,
+   [commit convention](https://github.com/chakra-ui/bamboo/blob/main/CONTRIBUTING.md#commit-convention). As you develop,
    you can run `pnpm pkg <module> build` and `pnpm pkg <module> test` to make sure everything works as expected. Please
    note that you might have to run `pnpm boot` first in order to build all dependencies.
 
@@ -138,4 +138,4 @@ Our docsite lives in the [monorepo](./website/pages/docs/).
 
 ## License
 
-By contributing your code to the panda GitHub repository, you agree to license your contribution under the MIT license.
+By contributing your code to the bamboo GitHub repository, you agree to license your contribution under the MIT license.

@@ -1,11 +1,11 @@
-import { memo } from '@pandacss/shared'
-import type { ImportMapOutput } from '@pandacss/types'
+import { memo } from '@bamboocss/shared'
+import type { ImportMapOutput } from '@bamboocss/types'
 import type { Context } from './context'
 
 export interface ImportResult {
   /** @example 'hstack' */
   name: string
-  /** @example 'pandaHStack' */
+  /** @example 'bambooHStack' */
   alias: string
   /**
    * @example '../../styled-system/patterns'
@@ -259,7 +259,7 @@ export class FileMatcher {
     }
   })
 
-  isPandaComponent = memo((tagName: string) => {
+  isBambooComponent = memo((tagName: string) => {
     // ignore fragments
     if (!tagName) return false
     const { jsx } = this.context
@@ -272,7 +272,7 @@ export class FileMatcher {
   })
 
   matchTag = memo((tagName: string) => {
-    return this.isPandaComponent(tagName) || isUpperCase(tagName)
+    return this.isBambooComponent(tagName) || isUpperCase(tagName)
   })
 
   matchTagProp = memo((tagName: string, propName: string) => {

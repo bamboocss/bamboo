@@ -1,7 +1,7 @@
 import { themes as prismThemes } from 'prism-react-renderer'
 import type { Config } from '@docusaurus/types'
 import type * as Preset from '@docusaurus/preset-classic'
-import pandaCss from '@pandacss/dev/postcss'
+import bambooCss from '@bamboocss/dev/postcss'
 
 const config: Config = {
   plugins: [
@@ -9,7 +9,7 @@ const config: Config = {
       return {
         name: 'docusaurus-plugin',
         configurePostCss(postcssOptions) {
-          postcssOptions.plugins.push(pandaCss())
+          postcssOptions.plugins.push(bambooCss())
           return postcssOptions
         },
       }

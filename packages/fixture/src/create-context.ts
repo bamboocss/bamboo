@@ -1,9 +1,9 @@
-import { mergeConfigs } from '@pandacss/config'
-import { RuleProcessor } from '@pandacss/core'
-import { Generator } from '@pandacss/generator'
-import { PandaContext } from '@pandacss/node'
-import { omit, parseJson, pick, stringifyJson, traverse } from '@pandacss/shared'
-import type { Config, LoadConfigResult, UserConfig } from '@pandacss/types'
+import { mergeConfigs } from '@bamboocss/config'
+import { RuleProcessor } from '@bamboocss/core'
+import { Generator } from '@bamboocss/generator'
+import { BambooContext } from '@bamboocss/node'
+import { omit, parseJson, pick, stringifyJson, traverse } from '@bamboocss/shared'
+import type { Config, LoadConfigResult, UserConfig } from '@bamboocss/types'
 import { fixturePreset } from './config'
 
 const hookUtils = {
@@ -57,7 +57,7 @@ export const createContext = (userConfig?: Config & Pick<Partial<LoadConfigResul
     }
   }
 
-  return new PandaContext({
+  return new BambooContext({
     ...fixtureDefaults,
     hooks: userConfig?.hooks ?? {},
     config: Object.assign({}, defaults, resolvedConfig),

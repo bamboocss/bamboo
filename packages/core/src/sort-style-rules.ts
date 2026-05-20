@@ -1,6 +1,6 @@
-import type { AtomicStyleResult, ConditionDetails, SelectorCondition } from '@pandacss/types'
+import type { AtomicStyleResult, ConditionDetails, SelectorCondition } from '@bamboocss/types'
 import { sortAtRules } from './sort-at-rules'
-import { getPropertyPriority } from '@pandacss/shared'
+import { getPropertyPriority } from '@bamboocss/shared'
 
 const hasAtRule = (conditions: ConditionDetails[]) =>
   conditions.some((details) => details.type === 'at-rule' || details.type === 'mixed' || details.type === 'multi-block')

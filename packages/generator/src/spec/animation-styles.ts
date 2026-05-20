@@ -1,5 +1,5 @@
-import type { Context } from '@pandacss/core'
-import type { AnimationStyleSpec } from '@pandacss/types'
+import type { Context } from '@bamboocss/core'
+import type { AnimationStyleSpec } from '@bamboocss/types'
 import { generateCompositionStyleSpec } from '../shared'
 
 export const generateAnimationStylesSpec = (ctx: Context): AnimationStyleSpec => {

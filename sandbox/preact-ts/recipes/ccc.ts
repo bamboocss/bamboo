@@ -1,4 +1,4 @@
-import { defineRecipe } from '@pandacss/dev'
+import { defineRecipe } from '@bamboocss/dev'
 
 export const ccc = defineRecipe({
   className: 'ccc1',

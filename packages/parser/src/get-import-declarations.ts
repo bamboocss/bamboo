@@ -1,5 +1,5 @@
-import { resolveTsPathPattern } from '@pandacss/config/ts-path'
-import type { ImportResult, ParserOptions } from '@pandacss/core'
+import { resolveTsPathPattern } from '@bamboocss/config/ts-path'
+import type { ImportResult, ParserOptions } from '@bamboocss/core'
 import type { SourceFile } from 'ts-morph'
 import { getModuleSpecifierValue } from './get-module-specifier-value'
 

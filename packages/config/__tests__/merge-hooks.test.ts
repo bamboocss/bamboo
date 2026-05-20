@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { mergeHooks } from '../src/merge-hooks'
-import type { Artifact } from '@pandacss/types'
+import type { Artifact } from '@bamboocss/types'
 
 describe('mergeConfigs / theme', () => {
   test('should merge hooks and call sequentially async', async () => {
@@ -8,7 +8,7 @@ describe('mergeConfigs / theme', () => {
     let conf
     const hooks = mergeHooks([
       {
-        name: 'panda-plugin',
+        name: 'bamboo-plugin',
         hooks: {
           'config:resolved': (args) => {
             order.push(0)
@@ -20,7 +20,7 @@ describe('mergeConfigs / theme', () => {
         },
       },
       {
-        name: 'panda-plugin2',
+        name: 'bamboo-plugin2',
         hooks: {
           'config:resolved': (args) => {
             order.push(1)
@@ -53,7 +53,7 @@ describe('mergeConfigs / theme', () => {
     let original: string
     const hooks = mergeHooks([
       {
-        name: 'panda-plugin',
+        name: 'bamboo-plugin',
         hooks: {
           'cssgen:done': (args) => {
             order.push(0)
@@ -64,7 +64,7 @@ describe('mergeConfigs / theme', () => {
         },
       },
       {
-        name: 'panda-plugin2',
+        name: 'bamboo-plugin2',
         hooks: {
           'cssgen:done': (args) => {
             order.push(1)
@@ -93,7 +93,7 @@ describe('mergeConfigs / theme', () => {
     let original: Artifact[]
     const hooks = mergeHooks([
       {
-        name: 'panda-plugin',
+        name: 'bamboo-plugin',
         hooks: {
           'codegen:prepare': (args) => {
             order.push(0)
@@ -107,7 +107,7 @@ describe('mergeConfigs / theme', () => {
         },
       },
       {
-        name: 'panda-plugin2',
+        name: 'bamboo-plugin2',
         hooks: {
           'codegen:prepare': (args) => {
             order.push(1)

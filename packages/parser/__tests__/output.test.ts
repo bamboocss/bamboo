@@ -1154,7 +1154,7 @@ describe('extract to css output pipeline', () => {
     `)
   })
 
-  // https://github.com/chakra-ui/panda/issues/1062
+  // https://github.com/chakra-ui/bamboo/issues/1062
   describe('issue 1062: expand colorPalette flexibility', () => {
     test('should extract color palette with more than one level of nesting', () => {
       const code = `
@@ -1691,7 +1691,7 @@ describe('extract to css output pipeline', () => {
 
   test('should extract config recipes', () => {
     const code = `
-       import { panda, Stack } from "styled-system/jsx"
+       import { bamboo, Stack } from "styled-system/jsx"
       import { button, anotherButton, complexButton } from "styled-system/recipes"
 
       function AnotherButtonWithRegex({ children, variant, size, css: cssProp }: ButtonProps) {
@@ -3292,7 +3292,7 @@ describe('extract to css output pipeline', () => {
     `)
   })
 
-  test('custom matchTag in extend mode preserves panda component matching', () => {
+  test('custom matchTag in extend mode preserves bamboo component matching', () => {
     const code = `
     import { Stack } from "styled-system/jsx"
 
@@ -3306,8 +3306,8 @@ describe('extract to css output pipeline', () => {
         'parser:before': (args) => {
           args.configure({
             matchTagMode: 'extend',
-            matchTag(tag, isPandaComponent) {
-              calls.set(tag, isPandaComponent)
+            matchTag(tag, isBambooComponent) {
+              calls.set(tag, isBambooComponent)
               return false
             },
           })
@@ -3335,7 +3335,7 @@ describe('extract to css output pipeline', () => {
     `)
   })
 
-  test('custom matchTag in override mode controls panda component matching', () => {
+  test('custom matchTag in override mode controls bamboo component matching', () => {
     const code = `
     import { Stack } from "styled-system/jsx"
 
@@ -3352,8 +3352,8 @@ describe('extract to css output pipeline', () => {
         'parser:before': (args) => {
           args.configure({
             matchTagMode: 'override',
-            matchTag(tag, isPandaComponent) {
-              calls.set(tag, isPandaComponent)
+            matchTag(tag, isBambooComponent) {
+              calls.set(tag, isBambooComponent)
               return tag === 'OkComponent'
             },
           })

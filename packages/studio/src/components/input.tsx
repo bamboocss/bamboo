@@ -1,5 +1,5 @@
 import { cva } from '../../styled-system/css'
-import { panda } from '../../styled-system/jsx'
+import { bamboo } from '../../styled-system/jsx'
 
 export const inputRecipe = cva({
   base: {
@@ -22,8 +22,8 @@ export const inputRecipe = cva({
   variants: {},
 })
 
-export const Input = panda('input', inputRecipe)
+export const Input = bamboo('input', inputRecipe)
 
-export const Textarea = panda('textarea', inputRecipe)
+export const Textarea = bamboo('textarea', inputRecipe)
 
-export const Select = panda('select', inputRecipe)
+export const Select = bamboo('select', inputRecipe)

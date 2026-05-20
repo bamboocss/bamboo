@@ -8,9 +8,9 @@ const publicUrl = getPublicUrl()
 const seoConfig = defineMetadata({
   metadataBase: new URL(publicUrl),
   title: {
-    template: '%s - Panda CSS',
+    template: '%s - Bamboo CSS',
     default:
-      'Panda CSS - Build modern websites using build time and type-safe CSS-in-JS'
+      'Bamboo CSS - Build modern websites using build time and type-safe CSS-in-JS'
   },
   description: 'Build modern websites using build time and type-safe CSS-in-JS',
   themeColor: '#F6E458',
@@ -26,7 +26,7 @@ const seoConfig = defineMetadata({
     { rel: 'image/x-icon', url: '/favicon.ico' }
   ],
   twitter: {
-    site: '@panda__css',
+    site: '@bamboo__css',
     creator: '@thesegunadebayo'
   }
 })

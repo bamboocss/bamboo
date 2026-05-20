@@ -1,6 +1,6 @@
-import type { Context } from '@pandacss/core'
-import { compact } from '@pandacss/shared'
-import type { ArtifactFilters } from '@pandacss/types'
+import type { Context } from '@bamboocss/core'
+import { compact } from '@bamboocss/shared'
+import type { ArtifactFilters } from '@bamboocss/types'
 import { stringify } from 'javascript-stringify'
 import { outdent } from 'outdent'
 

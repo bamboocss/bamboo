@@ -104,21 +104,21 @@ ${doc.llm}
 
 ---
 
-_This content is automatically generated from the official Panda CSS documentation._
+_This content is automatically generated from the official Bamboo CSS documentation._
 `
 }
 
 function generateCategoryContent(category: string, docs: typeof import('.velite').docs) {
   const categoryTitles: Record<string, string> = {
-    overview: 'Panda CSS Overview',
-    installation: 'Panda CSS Installation Guides',
-    concepts: 'Panda CSS Core Concepts',
-    theming: 'Panda CSS Theming',
-    utilities: 'Panda CSS Utilities',
-    customization: 'Panda CSS Customization',
-    guides: 'Panda CSS Guides',
-    migration: 'Panda CSS Migration Guides',
-    references: 'Panda CSS References'
+    overview: 'Bamboo CSS Overview',
+    installation: 'Bamboo CSS Installation Guides',
+    concepts: 'Bamboo CSS Core Concepts',
+    theming: 'Bamboo CSS Theming',
+    utilities: 'Bamboo CSS Utilities',
+    customization: 'Bamboo CSS Customization',
+    guides: 'Bamboo CSS Guides',
+    migration: 'Bamboo CSS Migration Guides',
+    references: 'Bamboo CSS References'
   }
 
   const sections = docs.map(doc => {
@@ -138,7 +138,7 @@ ${doc.llm}
 
   return `# ${categoryTitles[category] || category}
 
-> This document contains all ${category} documentation for Panda CSS
+> This document contains all ${category} documentation for Bamboo CSS
 
 ## Table of Contents
 
@@ -150,6 +150,6 @@ ${sections}
 
 ---
 
-_This content is automatically generated from the official Panda CSS documentation._
+_This content is automatically generated from the official Bamboo CSS documentation._
 `
 }

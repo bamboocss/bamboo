@@ -1,6 +1,6 @@
 ---
 title: Recipes
-description: Panda provides a way to write CSS-in-JS with better performance, developer experience, and composability.
+description: Bamboo provides a way to write CSS-in-JS with better performance, developer experience, and composability.
 ---
 
 Recipes are a way to create multi-variant styles with a type-safe runtime API.
@@ -24,7 +24,7 @@ Atomic recipes are a way to create multi-variant atomic styles with a type-safe 
 They are defined using the `cva` function which was inspired by [Class Variance Authority](https://cva.style/). The
 `cva` function which takes an object as its argument.
 
-> **Note:** `cva` is not the same as [Class Variance Authority](https://cva.style/). The `cva` from Panda is a
+> **Note:** `cva` is not the same as [Class Variance Authority](https://cva.style/). The `cva` from Bamboo is a
 > purpose-built function for creating atomic recipes that are connected to your design tokens and utilities.
 
 ### Defining the recipe
@@ -62,7 +62,7 @@ const Button = () => {
 }
 ```
 
-When a recipe is created, Panda will extract and generate CSS for every variant and compoundVariant `css` ahead of time,
+When a recipe is created, Bamboo will extract and generate CSS for every variant and compoundVariant `css` ahead of time,
 as atomic classes.
 
 ```css
@@ -121,7 +121,7 @@ Compound variants are a way to combine multiple variants together to create more
 defined using the `compoundVariants` property , which takes an array of objects as its argument. Each object in the
 array represents a set of conditions that must be met in order for the corresponding styles to be applied.
 
-Here's an example of how to use `compoundVariants` in Panda:
+Here's an example of how to use `compoundVariants` in Bamboo:
 
 ```js
 import { cva } from '../styled-system/css'
@@ -219,7 +219,7 @@ your code with lots of conditional logic.
 
 ### TypeScript Guide
 
-Panda provides two type utilities for inferring the variant types of a recipe: `RecipeVariant` and `RecipeVariantProps`.
+Bamboo provides two type utilities for inferring the variant types of a recipe: `RecipeVariant` and `RecipeVariantProps`.
 
 Use `RecipeVariant` to infer the raw variant type of a recipe. Each variant key is required.
 
@@ -281,7 +281,7 @@ entrypoint.
 
 The `styled` function takes the element type as its first argument, and the recipe as its second argument.
 
-> Make sure to add the `jsxFramework` option to your `panda.config` file, and run `panda codegen` to generate the JSX
+> Make sure to add the `jsxFramework` option to your `bamboo.config` file, and run `bamboo codegen` to generate the JSX
 > entrypoint.
 
 ```js
@@ -332,7 +332,7 @@ The config recipe takes the following additional properties:
 To define a config recipe, import the `defineRecipe` helper function
 
 ```jsx filename="button.recipe.ts"
-import { defineRecipe } from '@pandacss/dev'
+import { defineRecipe } from '@bamboocss/dev'
 
 export const buttonRecipe = defineRecipe({
   className: 'button',
@@ -366,8 +366,8 @@ export const buttonRecipe = defineRecipe({
 
 To add the recipe to the config, you’d need to add it to the `theme.recipes` object.
 
-```jsx filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```jsx filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 import { buttonRecipe } from './button.recipe'
 
 export default defineConfig({
@@ -385,14 +385,14 @@ export default defineConfig({
 
 ### Generate JS code
 
-This generates a recipes folder the specified `outdir` which is `styled-system` by default. If Panda doesn’t
-automatically generate your CSS file, you can run the `panda codegen` command.
+This generates a recipes folder the specified `outdir` which is `styled-system` by default. If Bamboo doesn’t
+automatically generate your CSS file, you can run the `bamboo codegen` command.
 
 You only need to import the recipes into the component files where you need to use them.
 
 ### Using the recipe
 
-To use the recipe, you can import the recipe from the `<outdir>/recipes` entrypoint and use it in your component. Panda
+To use the recipe, you can import the recipe from the `<outdir>/recipes` entrypoint and use it in your component. Bamboo
 tracks the usage of the recipe and only generates CSS of the variants used in your application.
 
 ```js
@@ -473,10 +473,10 @@ type ButtonProps = ButtonVariants & {
 
 ### Usage in JSX
 
-Layer recipes can be consumed directly in your custom JSX components. Panda will automatically track the usage of the
+Layer recipes can be consumed directly in your custom JSX components. Bamboo will automatically track the usage of the
 recipe if the component name matches the recipe name.
 
-For example, if your recipe is called `button` and you create a `Button` component from it, Panda will automatically
+For example, if your recipe is called `button` and you create a `Button` component from it, Bamboo will automatically
 track the usage of the variant properties.
 
 ```tsx
@@ -513,7 +513,7 @@ existing components (like Button) to create new components.
 To track the usage of the recipes in these cases, you'll need to add the `jsx` hint for the recipe config
 
 ```js {12} filename="button.recipe.ts"
-import { defineRecipe } from '@pandacss/dev'
+import { defineRecipe } from '@bamboocss/dev'
 
 const button = defineRecipe({
   base: {
@@ -528,7 +528,7 @@ const button = defineRecipe({
 })
 ```
 
-Then you can create a new component that uses the `Button` component and Panda will track the usage of the `button`
+Then you can create a new component that uses the `Button` component and Bamboo will track the usage of the `button`
 recipe as well.
 
 ```tsx
@@ -547,7 +547,7 @@ const PageButton = (props: ButtonProps) => {
 If you're using a recipe from a preset, you can still extend it in your config.
 
 ```js
-import { defineConfig } from '@pandacss/dev'
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   //...
@@ -650,8 +650,8 @@ export const Demo = {
 - Recipes created from `cva` cannot have responsive or conditional values. Only layer recipes can have responsive or
   conditional values.
 
-- Due to static nature of Panda, it's not possible to track the usage of the recipes in all cases. Here are some of use
-  cases that Panda won't be able to track the usage of the recipe variants:
+- Due to static nature of Bamboo, it's not possible to track the usage of the recipes in all cases. Here are some of use
+  cases that Bamboo won't be able to track the usage of the recipe variants:
 
   **When you change the name of the variant prop in the JSX component**
 
@@ -667,7 +667,7 @@ export const Demo = {
   }
   ```
 
-  **When you use the recipe in a custom component that is not named as per the recipe name, Panda won't be able to track
+  **When you use the recipe in a custom component that is not named as per the recipe name, Bamboo won't be able to track
   the usage of the recipe variants.**
 
   In below example, the component name `Button` is renamed to `Random` and we are using `button` recipe.
@@ -722,8 +722,8 @@ const button = defineRecipe({
 
 ## Static CSS
 
-Panda provides a way to generate `static CSS` for your recipes. This is useful when you want to generate CSS for a
-recipe without using the recipe in your code or if you use dynamic styling that Panda can't keep track of.
+Bamboo provides a way to generate `static CSS` for your recipes. This is useful when you want to generate CSS for a
+recipe without using the recipe in your code or if you use dynamic styling that Bamboo can't keep track of.
 
 More information about static CSS can be found [here](/docs/guides/static.md#generating-recipes).
 
@@ -734,7 +734,7 @@ variants you use will exist in the generated CSS, regardless of the number of re
 
 This contrasts with [Atomic recipes](/docs/concepts/recipes#atomic-recipe-or-cva) (cva), which generates all of the
 variants regardless of what was used in your code. The reason for this difference is that all `config.recipes` are known
-at the start of the panda process when we evaluate your config.
+at the start of the bamboo process when we evaluate your config.
 
 In contrast, the CVA recipes are scattered throughout your code. To get all of them and find their usage across your
 code, we would need to scan your app code multiple times, which would not be ideal performance-wise.
@@ -749,6 +749,6 @@ with only the styles used. Choose according to your component needs.
 | Are generated just in time (JIT) based on usage        | ✅ yes, only the recipe variants found in your code will be generated                                                                                                                                                     | ❌ no, all variants found in your `cva` recipes will always be generated                                                                                                                                             |
 | Can be shared in a preset                              | ✅ yes, you can include it in your `preset.theme.recipes`                                                                                                                                                                 | ❌ no                                                                                                                                                                                                                |
 | Can be applied responsively                            | ✅ yes, `button({ size: { base: 'sm', md: 'lg' } })`                                                                                                                                                                      | ❌ no, only the styles in the recipe can be responsive                                                                                                                                                               |
-| Can be colocated in your markup code                   | ❌ no, they must be defined or imported in your `panda.config`                                                                                                                                                            | ✅ yes, you can place it anywhere in your app                                                                                                                                                                        |
+| Can be colocated in your markup code                   | ❌ no, they must be defined or imported in your `bamboo.config`                                                                                                                                                            | ✅ yes, you can place it anywhere in your app                                                                                                                                                                        |
 | Generate atomic classes                                | ❌ no, a specific className will be generated using your `recipe.className`                                                                                                                                               | ✅ yes                                                                                                                                                                                                               |
-| Can be composed/merged at runtime                      | ❌ no, a specific className will be generated using your `recipe.className`, [you need to use `cx` to add each recipe classes](https://panda-css.com/docs/concepts/merging-styles#merging-config-recipe-and-style-object) | ✅ [yes, you can use the `.raw` function (ex: `button.raw({ size: "md" })`) to get the atomic style object and merge them all in a `css(xxx, yyy, zzz)` call](/docs/concepts/merging-styles#merging-cva--css-styles) |
+| Can be composed/merged at runtime                      | ❌ no, a specific className will be generated using your `recipe.className`, [you need to use `cx` to add each recipe classes](https://bamboo-css.com/docs/concepts/merging-styles#merging-config-recipe-and-style-object) | ✅ [yes, you can use the `.raw` function (ex: `button.raw({ size: "md" })`) to get the atomic style object and merge them all in a `css(xxx, yyy, zzz)` call](/docs/concepts/merging-styles#merging-cva--css-styles) |

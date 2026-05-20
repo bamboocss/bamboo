@@ -1,4 +1,4 @@
-import type { Context } from '@pandacss/core'
+import type { Context } from '@bamboocss/core'
 import { match } from 'ts-pattern'
 import composition from '../generated/composition.d.ts.json' assert { type: 'json' }
 import csstype from '../generated/csstype.d.ts.json' assert { type: 'json' }

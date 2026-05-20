@@ -1,5 +1,5 @@
-import { createContext } from '@pandacss/fixture'
-import type { Config } from '@pandacss/types'
+import { createContext } from '@bamboocss/fixture'
+import type { Config } from '@bamboocss/types'
 import { describe, expect, test } from 'vitest'
 
 const tokenCss = (config?: Config) => {
@@ -571,7 +571,7 @@ describe('generator', () => {
     `)
   })
 
-  // https://github.com/chakra-ui/panda/issues/769
+  // https://github.com/chakra-ui/bamboo/issues/769
   describe('issue 769: Invalid CSS when extending theme with semanticTokens', () => {
     test('should not extract nested tokens as `color-palette` css variables', () => {
       const css = tokenCss({
@@ -1039,7 +1039,7 @@ describe('generator', () => {
           --colors-body: var(--colors-blue-600);
       }
 
-        [data-panda-theme=primary] {
+        [data-bamboo-theme=primary] {
           --colors-text: red;
           --colors-muted: var(--colors-red-200);
           --colors-body: var(--colors-red-600)
@@ -1049,7 +1049,7 @@ describe('generator', () => {
           :where(html) {
             --colors-body: var(--colors-blue-400)
               }
-          [data-panda-theme=primary] {
+          [data-bamboo-theme=primary] {
             --colors-body: var(--colors-red-400)
                   }
           }
@@ -1134,7 +1134,7 @@ describe('generator', () => {
           --colors-body: var(--colors-blue-600);
       }
 
-        [data-panda-theme=primary] {
+        [data-bamboo-theme=primary] {
           --colors-text: red;
           --colors-muted: var(--colors-red-200);
           --colors-body: var(--colors-red-600)
@@ -1144,7 +1144,7 @@ describe('generator', () => {
           :where(html) {
             --colors-body: var(--colors-blue-400)
               }
-          [data-panda-theme=primary] {
+          [data-bamboo-theme=primary] {
             --colors-body: var(--colors-red-400)
                   }
           }
@@ -1211,7 +1211,7 @@ describe('generator', () => {
           --colors-body: var(--colors-blue-600);
       }
 
-        [data-panda-theme=primary] {
+        [data-bamboo-theme=primary] {
           --colors-text: red;
           --colors-muted: var(--colors-red-200);
           --colors-body: var(--colors-red-600)
@@ -1221,7 +1221,7 @@ describe('generator', () => {
           :where(html) {
             --colors-body: var(--colors-blue-400)
               }
-          [data-panda-theme=primary] {
+          [data-bamboo-theme=primary] {
             --colors-body: var(--colors-red-400)
                   }
           }

@@ -3,7 +3,7 @@ title: Color opacity modifier
 description: How to dynamically set the opacity of a raw color or color token
 ---
 
-Every utilities connected to the `colors` tokens in the `@pandacss/preset-base` (included by default) can use the
+Every utilities connected to the `colors` tokens in the `@bamboocss/preset-base` (included by default) can use the
 [`color-mix`](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/color-mix) CSS function. This means for
 example: `background`, `backgroundColor`, `color`, `border`, `borderColor`, etc.
 
@@ -71,7 +71,7 @@ Here's a cool snippet (that we use internally !) that makes it easier to create 
 property:
 
 ```ts
-import type { PropertyTransform } from '@pandacss/types'
+import type { PropertyTransform } from '@bamboocss/types'
 export const createColorMixTransform =
   (prop: string): PropertyTransform =>
   (value, args) => {

@@ -1,4 +1,4 @@
-import type { UtilityConfig, PropertyValues } from '@pandacss/types'
+import type { UtilityConfig, PropertyValues } from '@bamboocss/types'
 
 const widthValues: PropertyValues = (theme) => ({
   auto: 'auto',

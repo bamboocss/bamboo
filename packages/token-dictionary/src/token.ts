@@ -1,4 +1,4 @@
-import { isBaseCondition, toHash, walkObject } from '@pandacss/shared'
+import { isBaseCondition, toHash, walkObject } from '@bamboocss/shared'
 import { isCompositeTokenValue } from './is-composite'
 import { getReferences, hasReference } from './utils'
 

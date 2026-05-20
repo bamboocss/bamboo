@@ -7,12 +7,12 @@
     "dev": "vite",
     "build": "vite build",
     "serve": "vite preview",
-    "css": "PANDA_DEBUG=* panda",
-    "css:dev": "PANDA_DEBUG=* panda -w"
+    "css": "BAMBOO_DEBUG=* bamboo",
+    "css:dev": "BAMBOO_DEBUG=* bamboo -w"
   },
   "license": "MIT",
   "devDependencies": {
-    "@pandacss/dev": "workspace:*",
+    "@bamboocss/dev": "workspace:*",
     "typescript": "6.0.2",
     "vite": "7.2.6",
     "vite-plugin-solid": "2.11.10"

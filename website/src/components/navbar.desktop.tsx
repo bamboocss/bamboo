@@ -32,10 +32,10 @@ export const DesktopNavBar = () => {
         <NavLink href="/docs">Docs</NavLink>
         <NavLink href="/team">Team</NavLink>
         <NavLink href="/showcase">Showcase</NavLink>
-        <NavLink href="https://play.panda-css.com/" isExternal>
+        <NavLink href="https://play.bamboo-css.com/" isExternal>
           Playground
         </NavLink>
-        <NavLink href="https://github.com/chakra-ui/panda" isExternal>
+        <NavLink href="https://github.com/chakra-ui/bamboo" isExternal>
           <FaGithub className={css({ fontSize: '2xl' })} />
         </NavLink>
         <ThemeSwitchIconButton />

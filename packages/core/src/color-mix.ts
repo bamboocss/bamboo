@@ -1,4 +1,4 @@
-import type { TransformArgs } from '@pandacss/types'
+import type { TransformArgs } from '@bamboocss/types'
 
 export const colorMix = (value: string, token: TransformArgs['token']) => {
   if (!value || typeof value !== 'string') return { invalid: true, value }

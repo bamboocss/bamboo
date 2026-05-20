@@ -1,4 +1,4 @@
-import type { Config } from '@pandacss/types'
+import type { Config } from '@bamboocss/types'
 import { describe, expect, test } from 'vitest'
 import { resolveConfig } from '../src/resolve-config'
 import type { BundleConfigResult } from '../src/types'
@@ -7,7 +7,7 @@ describe('preset:resolved hook', () => {
   const bundleResult: BundleConfigResult = {
     config: {},
     dependencies: [],
-    path: '/mock/panda.config.ts',
+    path: '/mock/bamboo.config.ts',
   }
 
   test('should be called for each preset', async () => {
@@ -38,7 +38,7 @@ describe('preset:resolved hook', () => {
 
     expect(capturedPresets).toMatchInlineSnapshot(`
       [
-        "@pandacss/preset-base",
+        "@bamboocss/preset-base",
         "design-system-preset",
       ]
     `)

@@ -176,7 +176,7 @@
 
 @layer base{
   :root {
-    --made-with-panda: '🐼';
+    --made-with-bamboo: '🎋';
     --global-color-border: var(--colors-border);
     --global-color-placeholder: var(--colors-neutral-500);
     color-scheme: light dark;

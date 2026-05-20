@@ -6,11 +6,11 @@ import {
   isString,
   mapObject,
   memo,
-  PandaError,
+  BambooError,
   walkObject,
   type CssVar,
   type CssVarOptions,
-} from '@pandacss/shared'
+} from '@bamboocss/shared'
 import type {
   Recursive,
   SemanticTokens,
@@ -18,7 +18,7 @@ import type {
   TokenCategory,
   Tokens,
   ColorPaletteOptions,
-} from '@pandacss/types'
+} from '@bamboocss/types'
 import { isMatching, match } from 'ts-pattern'
 import { isCompositeTokenValue } from './is-composite'
 import { middlewares } from './middleware'
@@ -410,7 +410,7 @@ export class TokenDictionary {
       if (path.includes('/')) {
         const mix = this.colorMix(path, this.view.getVar.bind(this.view))
         if (mix.invalid) {
-          throw new PandaError('INVALID_TOKEN', 'Invalid color mix at ' + path + ': ' + mix.value)
+          throw new BambooError('INVALID_TOKEN', 'Invalid color mix at ' + path + ': ' + mix.value)
         }
 
         return mix.value

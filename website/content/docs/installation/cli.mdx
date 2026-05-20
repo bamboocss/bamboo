@@ -1,38 +1,38 @@
 ---
-title: Panda CLI
-description: An alternative way to use Panda is by running the Panda CLI tool.
+title: Bamboo CLI
+description: An alternative way to use Bamboo is by running the Bamboo CLI tool.
 ---
 
-This guide shows you how to use Panda as an alternative approach by running the Panda CLI tool.
+This guide shows you how to use Bamboo as an alternative approach by running the Bamboo CLI tool.
 
 <Steps>
 
-### Install Panda
+### Install Bamboo
 
 <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
   {/* <!-- prettier-ignore-start --> */}
   <Tab>
     ```bash
-    pnpm install -D @pandacss/dev
-    pnpm panda init
+    pnpm install -D @bamboocss/dev
+    pnpm bamboo init
     ```
   </Tab>
   <Tab>
     ```bash
-    npm install -D @pandacss/dev
-    npx panda init
+    npm install -D @bamboocss/dev
+    npx bamboo init
     ```
   </Tab>
   <Tab>
     ```bash
-    yarn add -D @pandacss/dev
-    yarn panda init
+    yarn add -D @bamboocss/dev
+    yarn bamboo init
     ```
   </Tab>
   <Tab>
     ```bash
-    bun add -D @pandacss/dev
-    bun panda init
+    bun add -D @bamboocss/dev
+    bun bamboo init
     ```
   </Tab>
   {/* <!-- prettier-ignore-end --> */}
@@ -40,10 +40,10 @@ This guide shows you how to use Panda as an alternative approach by running the 
 
 ### Configure the content
 
-Add the paths to all of your JavaScript or TypeScript code where you intend to use panda.
+Add the paths to all of your JavaScript or TypeScript code where you intend to use bamboo.
 
 ```js {5}
-import { defineConfig } from '@pandacss/dev'
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   preflight: true,
@@ -60,20 +60,20 @@ Open your `package.json` file and update the `scripts` section as follows:
 ```diff {3}
 {
   "scripts": {
-+    "prepare": "panda codegen",
++    "prepare": "bamboo codegen",
   }
 }
 ```
 
 The `prepare` script that will run codegen after dependency installation. Read more about
-[codegen](/docs/references/cli#panda-codegen) in the CLI section.
+[codegen](/docs/references/cli#bamboo-codegen) in the CLI section.
 
-> This step ensures that the panda output directory is regenerated after each dependency installation. So you can add
+> This step ensures that the bamboo output directory is regenerated after each dependency installation. So you can add
 > the output directory to your `.gitignore` file and not worry about it.
 
 ### Import the generated CSS
 
-For each Panda run, it emits the generated CSS at the `styled-system/styles.css` file path. Import this file at the root
+For each Bamboo run, it emits the generated CSS at the `styled-system/styles.css` file path. Import this file at the root
 component of your project.
 
 ```jsx {1}
@@ -84,7 +84,7 @@ export function App() {
 }
 ```
 
-### Start the Panda build process
+### Start the Bamboo build process
 
 Run the CLI tool to scan your JavaScript and TypeScript files for style properties and call expressions.
 
@@ -93,49 +93,49 @@ Run the CLI tool to scan your JavaScript and TypeScript files for style properti
   <Tab>
     ```bash
     # Run it once
-    pnpm panda
+    pnpm bamboo
 
     # Run it in watch mode
-    pnpm panda --watch
+    pnpm bamboo --watch
     ```
 
   </Tab>
   <Tab>
     ```bash
     # Run it once
-    npx panda
+    npx bamboo
 
     # Run it in watch mode
-    npx panda --watch
+    npx bamboo --watch
     ```
 
   </Tab>
   <Tab>
     ```bash
     # Run it once
-    yarn panda
+    yarn bamboo
 
     # Run it in watch mode
-    yarn panda --watch
+    yarn bamboo --watch
     ```
 
   </Tab>
   <Tab>
     ```bash
     # Run it once
-    bun panda
+    bun bamboo
 
     # Run it in watch mode
-    bun panda --watch
+    bun bamboo --watch
     ```
 
   </Tab>
   {/* <!-- prettier-ignore-end --> */}
 </Tabs>
 
-### Start using Panda
+### Start using Bamboo
 
-Use the generated style utilities in your code and panda will extract them to the generated CSS file. Then run your
+Use the generated style utilities in your code and bamboo will extract them to the generated CSS file. Then run your
 build process.
 
 ```jsx

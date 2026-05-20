@@ -3,21 +3,21 @@ import { teamMembers } from '@/docs.config'
 import { generateOgImageUrl } from '@/lib/og-image'
 import { fetchGithubUsers, type GitHubUser } from '@/lib/github-utils'
 import { css } from '@/styled-system/css'
-import { Container, Grid, HStack, panda, Stack } from '@/styled-system/jsx'
+import { Container, Grid, HStack, bamboo, Stack } from '@/styled-system/jsx'
 import { FooterSection } from '@/www/footer.section'
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { FaGithub, FaGlobe, FaTwitter } from 'react-icons/fa'
 
-const ogTitle = 'Meet the Panda CSS Team'
+const ogTitle = 'Meet the Bamboo CSS Team'
 const ogDescription =
-  'Get to know the passionate engineers who make Panda CSS possible'
+  'Get to know the passionate engineers who make Bamboo CSS possible'
 
 export const metadata: Metadata = {
   title: 'Team',
   description:
-    'Panda CSS is maintained by a passionate team of engineers. It also receives contributions from engineers around the world.',
+    'Bamboo CSS is maintained by a passionate team of engineers. It also receives contributions from engineers around the world.',
   openGraph: {
     title: ogTitle,
     description: ogDescription,
@@ -76,7 +76,7 @@ const TeamMemberCard = ({ member }: { member: GitHubUser }) => {
   const role = teamMember?.role || 'Contributor'
 
   return (
-    <panda.div
+    <bamboo.div
       bg="bg"
       borderRadius="xl"
       p="8"
@@ -89,7 +89,7 @@ const TeamMemberCard = ({ member }: { member: GitHubUser }) => {
       }}
     >
       <Stack gap="6" align="center" pt="4">
-        <panda.div
+        <bamboo.div
           position="relative"
           w="20"
           h="20"
@@ -110,21 +110,21 @@ const TeamMemberCard = ({ member }: { member: GitHubUser }) => {
               height: '100%'
             })}
           />
-        </panda.div>
+        </bamboo.div>
 
         <Stack gap="1" align="center">
-          <panda.h3 fontSize="xl" fontWeight="bold">
+          <bamboo.h3 fontSize="xl" fontWeight="bold">
             {member.name || member.login}
-          </panda.h3>
+          </bamboo.h3>
 
-          <panda.p textStyle="ms" color="var(--fg-muted)">
+          <bamboo.p textStyle="ms" color="var(--fg-muted)">
             {role}
-          </panda.p>
+          </bamboo.p>
         </Stack>
 
-        <panda.p fontSize="sm">
-          {member.bio || 'Contributing to the Panda CSS ecosystem'}
-        </panda.p>
+        <bamboo.p fontSize="sm">
+          {member.bio || 'Contributing to the Bamboo CSS ecosystem'}
+        </bamboo.p>
 
         <HStack gap="4" justify="center">
           <SocialIcon platform="github" url={member.html_url} />
@@ -139,7 +139,7 @@ const TeamMemberCard = ({ member }: { member: GitHubUser }) => {
           )}
         </HStack>
       </Stack>
-    </panda.div>
+    </bamboo.div>
   )
 }
 
@@ -152,26 +152,26 @@ export default async function TeamPage() {
   return (
     <>
       <Navbar />
-      <panda.div bg="bg.muted" pt="20" minH="80dvh">
+      <bamboo.div bg="bg.muted" pt="20" minH="80dvh">
         <Container py="20">
           <Stack gap="16" align="center">
             <Stack gap="6" align="center" textAlign="center">
-              <panda.h1
+              <bamboo.h1
                 fontSize={{ base: '3xl', md: '5xl' }}
                 fontWeight="bold"
                 letterSpacing="tight"
               >
                 Meet our team
-              </panda.h1>
-              <panda.p
+              </bamboo.h1>
+              <bamboo.p
                 fontSize={{ base: 'lg', md: 'xl' }}
                 color="fg.muted"
                 maxW="2xl"
                 lineHeight="relaxed"
               >
-                Panda CSS is maintained by a passionate team of engineers. It
+                Bamboo CSS is maintained by a passionate team of engineers. It
                 also receives contributions from engineers around the world.
-              </panda.p>
+              </bamboo.p>
             </Stack>
 
             <Grid
@@ -185,19 +185,19 @@ export default async function TeamPage() {
                   <TeamMemberCard key={member.login} member={member} />
                 ))
               ) : (
-                <panda.div
+                <bamboo.div
                   gridColumn="1 / -1"
                   textAlign="center"
                   p="8"
                   color="fg.muted"
                 >
                   Unable to load team members
-                </panda.div>
+                </bamboo.div>
               )}
             </Grid>
           </Stack>
         </Container>
-      </panda.div>
+      </bamboo.div>
       <FooterSection />
     </>
   )

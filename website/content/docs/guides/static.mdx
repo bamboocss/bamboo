@@ -1,15 +1,15 @@
 ---
 title: Static CSS Generator
-description: Panda can be used to generate a static set of utility classes for your project.
+description: Bamboo can be used to generate a static set of utility classes for your project.
 ---
 
-Panda can be used to generate a static set of utility classes for your project.
+Bamboo can be used to generate a static set of utility classes for your project.
 
-This is useful if you want to use Panda in an HTML project or you want absolute zero runtime.
+This is useful if you want to use Bamboo in an HTML project or you want absolute zero runtime.
 
 ## Usage
 
-To generate a static set of CSS classes, add them to your `panda.config.js` file:
+To generate a static set of CSS classes, add them to your `bamboo.config.js` file:
 
 ```js
 export default {
@@ -88,7 +88,7 @@ export default {
 You can also directly specify a recipe's `staticCss` rules from inside a recipe config, e.g.:
 
 ```js
-import { defineRecipe } from '@pandacss/dev'
+import { defineRecipe } from '@bamboocss/dev'
 
 const card = defineRecipe({
   className: 'card',
@@ -106,7 +106,7 @@ const card = defineRecipe({
 would be the equivalent of defining it inside the main config:
 
 ```js
-import { defineConfig } from '@pandacss/dev'
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   // ...
@@ -122,8 +122,8 @@ export default defineConfig({
 
 Or you could even generate the CSS for every config `recipe` / `slotRecipes` (and each of their variants):
 
-```tsx filename="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```tsx filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   // ...
@@ -137,7 +137,7 @@ This is mostly useful for testing purposes with [`Storybook`](/docs/installation
 
 ## Performance Considerations
 
-Panda provides intelligent caching and memoization to optimize static CSS generation. However, **pre-generating large
+Bamboo provides intelligent caching and memoization to optimize static CSS generation. However, **pre-generating large
 numbers of styles can still impact build times**. It's important to be selective and only generate the styles you
 actually need.
 

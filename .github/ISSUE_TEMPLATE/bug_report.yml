@@ -25,8 +25,8 @@ body:
     attributes:
       label: "Link to Reproduction"
       description: |
-        A link to a minimal Panda playground or if really needed a Stackblitz reproduction which demonstrates the bug
-        https://play.panda-css.com/ or https://stackblitz.com/edit/vitejs-vite-lfwyue?file=src%2FApp.tsx&terminal=dev
+        A link to a minimal Bamboo playground or if really needed a Stackblitz reproduction which demonstrates the bug
+        https://play.bamboo-css.com/ or https://stackblitz.com/edit/vitejs-vite-lfwyue?file=src%2FApp.tsx&terminal=dev
       placeholder: "https://stackblitz.com/edit/vitejs-vite-lfwyue?file=src%2FApp.tsx&terminal=dev"
     validations:
       required: true
@@ -48,10 +48,10 @@ body:
       description: "The JS framework used in your project. Specify JS/TS."
       placeholder: "React (TS)"
   - type: "input"
-    id: "panda-version"
+    id: "bamboo-version"
     attributes:
-      label: "Panda CSS Version"
-      description: "The version of Panda CSS you use."
+      label: "Bamboo CSS Version"
+      description: "The version of Bamboo CSS you use."
       placeholder: "x.x.x"
     validations:
       required: true

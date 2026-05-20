@@ -1,12 +1,12 @@
-![Write typesafe styles with Panda](.github/assets/banner.png 'Write typesafe styles with Panda')
+![Write typesafe styles with Bamboo](.github/assets/banner.png 'Write typesafe styles with Bamboo')
 
 <p align="center">
   <br/>
-  <a href="https://panda-css.com">Panda</a> is a universal styling solution for the modern web &mdash;
+  <a href="https://bamboo-css.com">Bamboo</a> is a universal styling solution for the modern web &mdash;
   <br/>
   build time, type safe, and scalable CSS-in-JS
   <br/><br/>
-  <img alt="NPM Downloads" src="https://img.shields.io/npm/dm/%40pandacss%2Fdev"> <img alt="NPM Version" src="https://img.shields.io/npm/v/%40pandacss%2Fdev"> <img alt="X (formerly Twitter) Follow" src="https://img.shields.io/twitter/follow/panda__css">
+  <img alt="NPM Downloads" src="https://img.shields.io/npm/dm/%40bamboocss%2Fdev"> <img alt="NPM Version" src="https://img.shields.io/npm/v/%40bamboocss%2Fdev"> <img alt="X (formerly Twitter) Follow" src="https://img.shields.io/twitter/follow/bamboo__css">
   
   <br/><br/>
 </p>
@@ -26,7 +26,7 @@
 
 <p align="center">
 <b>
-🐼 Get a taste of Panda. Try it out for yourself in&nbsp;
+🐼 Get a taste of Bamboo. Try it out for yourself in&nbsp;
  <a href="https://stackblitz.com/edit/vitejs-vite-lfwyue?file=src%2FApp.tsx&terminal=dev">StackBlitz</a>
 </b>
 </p>
@@ -37,20 +37,20 @@
 
 ## Documentation
 
-Visit our [official documentation](https://panda-css.com/).
+Visit our [official documentation](https://bamboo-css.com/).
 
 ## Install
 
-The **recommended** way to install the latest version of Panda is by running the command below:
+The **recommended** way to install the latest version of Bamboo is by running the command below:
 
 ```bash
-npm i -D @pandacss/dev
+npm i -D @bamboocss/dev
 ```
 
-To scaffold the panda config and postcss
+To scaffold the bamboo config and postcss
 
 ```bash
-npx panda init -p
+npx bamboo init -p
 ```
 
 Setup and import the entry CSS file
@@ -69,7 +69,7 @@ Start the dev server of your project
 npm run dev
 ```
 
-Start using panda
+Start using bamboo
 
 ```jsx
 import { css } from '../styled-system/css'
@@ -90,35 +90,35 @@ function Example() {
 | Package                                       | Description                                                 |
 | --------------------------------------------- | ----------------------------------------------------------- |
 | [cli](packages/cli)                           | CLI package installed by the end user                       |
-| [core](packages/core)                         | Contains core features of Panda (utility, recipes, etc)     |
-| [config](packages/config)                     | Contains functions for reading and merging the panda config |
+| [core](packages/core)                         | Contains core features of Bamboo (utility, recipes, etc)     |
+| [config](packages/config)                     | Contains functions for reading and merging the bamboo config |
 | [extractor](packages/extractor)               | Contains code for fast AST parsing and scanning             |
 | [generator](packages/generator)               | Contains codegen artifacts (js, css, jsx)                   |
 | [parser](packages/parser)                     | Contains code for parsing a source code                     |
 | [is-valid-prop](packages/is-valid-prop)       | Contains code for checking if a prop is a valid css prop    |
-| [node](packages/node)                         | Contains the Node.js API of Panda's features                |
+| [node](packages/node)                         | Contains the Node.js API of Bamboo's features                |
 | [token-dictionary](packages/token-dictionary) | Contains code used to process tokens and semantic tokens    |
 | [shared](packages/shared)                     | Contains shared TS functions                                |
 
 ## Contributing
 
 Feel like contributing? That's awesome! We have a
-[contributing guide](https://github.com/chakra-ui/panda/blob/main/CONTRIBUTING.md) to help guide you.
+[contributing guide](https://github.com/chakra-ui/bamboo/blob/main/CONTRIBUTING.md) to help guide you.
 
 ### Want to help improve the docs?
 
 Our docsite lives in the [monorepo](./website/pages/docs/).
 
 If you're interested in contributing to the documentation, check out the
-[contributing guide](https://github.com/chakra-ui/panda/blob/main/CONTRIBUTING.md).
+[contributing guide](https://github.com/chakra-ui/bamboo/blob/main/CONTRIBUTING.md).
 
 ## Support
 
-Having trouble? Get help in the official [Panda Discord](https://discord.gg/VQrkpsgSx7).
+Having trouble? Get help in the official [Bamboo Discord](https://discord.gg/VQrkpsgSx7).
 
 ## Acknowledgement
 
-The development of Panda was only possible due to the inspiration and ideas from these amazing projects.
+The development of Bamboo was only possible due to the inspiration and ideas from these amazing projects.
 
 - [Chakra UI](https://chakra-ui.com/) - where it all started
 - [Vanilla Extract](https://vanilla-extract.style/) - for inspiring the utilities API

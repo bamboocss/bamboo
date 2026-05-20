@@ -1,5 +1,5 @@
-import { fixtureDefaults } from '@pandacss/fixture'
-import { type StaticCssOptions } from '@pandacss/types'
+import { fixtureDefaults } from '@bamboocss/fixture'
+import { type StaticCssOptions } from '@bamboocss/types'
 import { describe, expect, test } from 'vitest'
 import { Context } from '../src/context'
 

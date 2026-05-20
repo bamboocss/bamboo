@@ -1,6 +1,6 @@
-import { logger } from '@pandacss/logger'
-import type { CssArtifactType } from '@pandacss/types'
-import type { PandaContext } from './create-context'
+import { logger } from '@bamboocss/logger'
+import type { CssArtifactType } from '@bamboocss/types'
+import type { BambooContext } from './create-context'
 
 export interface CssGenOptions {
   cwd: string
@@ -10,7 +10,7 @@ export interface CssGenOptions {
   splitting?: boolean
 }
 
-export const cssgen = async (ctx: PandaContext, options: CssGenOptions) => {
+export const cssgen = async (ctx: BambooContext, options: CssGenOptions) => {
   const { outfile, type, minimal, splitting } = options
 
   const sheet = ctx.createSheet()

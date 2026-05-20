@@ -2,8 +2,8 @@
   "extends": "./tsconfig.build.json",
   "compilerOptions": {
     "paths": {
-      "@pandacss/fixture": ["./packages/fixture/src/index.ts"],
-      "@pandacss/types": ["./packages/types/src/index.ts"]
+      "@bamboocss/fixture": ["./packages/fixture/src/index.ts"],
+      "@bamboocss/types": ["./packages/types/src/index.ts"]
     }
   },
   "include": ["packages/**/*.ts"],

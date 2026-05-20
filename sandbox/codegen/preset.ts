@@ -1,4 +1,4 @@
-import { definePreset, defineRecipe, defineSlotRecipe } from '@pandacss/dev'
+import { definePreset, defineRecipe, defineSlotRecipe } from '@bamboocss/dev'
 
 const buttonRecipe = defineRecipe({
   className: 'button',

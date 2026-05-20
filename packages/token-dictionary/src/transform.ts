@@ -1,5 +1,5 @@
-import { isCssUnit, isString, PandaError } from '@pandacss/shared'
-import type { TokenDataTypes } from '@pandacss/types'
+import { isCssUnit, isString, BambooError } from '@bamboocss/shared'
+import type { TokenDataTypes } from '@bamboocss/types'
 import picomatch from 'picomatch'
 import { P, match } from 'ts-pattern'
 import type { TokenTransformer } from './dictionary'
@@ -157,7 +157,7 @@ export const transformColorMix: TokenTransformer = {
 
       const mix = dict.colorMix(path, tokenFn)
       if (mix.invalid) {
-        throw new PandaError('INVALID_TOKEN', 'Invalid color mix at ' + path + ': ' + mix.value)
+        throw new BambooError('INVALID_TOKEN', 'Invalid color mix at ' + path + ': ' + mix.value)
       }
 
       return mix.value
@@ -213,7 +213,7 @@ export const addConditionalCssVariables: TokenTransformer = {
       token.value = expandReferences(token.value, (path) => {
         const mix = dictionary.colorMix(path, tokenFn)
         if (mix.invalid) {
-          throw new PandaError('INVALID_TOKEN', 'Invalid color mix at ' + path + ': ' + mix.value)
+          throw new BambooError('INVALID_TOKEN', 'Invalid color mix at ' + path + ': ' + mix.value)
         }
         return mix.value
       })
@@ -352,7 +352,7 @@ export const addColorPalette: TokenTransformer = {
       colorPaletteTokenKeys.push(remainingPath.slice(i))
     }
 
-    // https://github.com/chakra-ui/panda/issues/1421
+    // https://github.com/chakra-ui/bamboo/issues/1421
     if (colorPaletteTokenKeys.length === 0) {
       colorPaletteTokenKeys.push([''])
     }

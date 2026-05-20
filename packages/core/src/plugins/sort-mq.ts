@@ -39,4 +39,4 @@ export default function sortMediaQueries(): TransformCallback {
   return inner
 }
 
-sortMediaQueries.postcssPlugin = 'panda-sort-mq'
+sortMediaQueries.postcssPlugin = 'bamboo-sort-mq'

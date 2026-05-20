@@ -1,12 +1,12 @@
 ---
-title: Panda Integration Hooks
-description: Leveraging hooks in Panda to create custom functionality.
+title: Bamboo Integration Hooks
+description: Leveraging hooks in Bamboo to create custom functionality.
 ---
 
-Panda hooks can be used to add new functionality or modify existing behavior during certian parts of the compiler
+Bamboo hooks can be used to add new functionality or modify existing behavior during certian parts of the compiler
 lifecycle.
 
-Hooks are mostly callbacks that can be added to the panda config via the `hooks` property, or installed via `plugins`.
+Hooks are mostly callbacks that can be added to the bamboo config via the `hooks` property, or installed via `plugins`.
 
 Here are some examples of what you can do with hooks:
 
@@ -15,9 +15,9 @@ Here are some examples of what you can do with hooks:
   preset.
 - tweak the design token or classname engine (`tokens:created`, `utility:created`), like prefixing token names, or
   customizing the hashing function
-- transform a source file to a `tsx` friendly syntax before it's parsed (`parser:before`) so that Panda can
+- transform a source file to a `tsx` friendly syntax before it's parsed (`parser:before`) so that Bamboo can
   automatically extract its styles usage
-- create your own styles parser (`parser:before`, `parser:after`) using the file's content so that Panda could be used
+- create your own styles parser (`parser:before`, `parser:after`) using the file's content so that Bamboo could be used
   with any templating language
 - alter the generated JS and DTS code (`codegen:prepare`)
 - modify the generated CSS (`cssgen:done`), allowing all kinds of customizations like removing the unused CSS variables,
@@ -32,7 +32,7 @@ Here are some examples of what you can do with hooks:
 This is especially useful when migrating from other css-in-js libraries, [like Stitches.](/docs/migration/stitches)
 
 ```ts
-import { defineConfig } from '@pandacss/dev'
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   // ...
@@ -76,7 +76,7 @@ Here's an example of how to leveraging the provided `utils` functions in the `co
 `stack` pattern from the resolved config.
 
 ```ts
-import { defineConfig } from '@pandacss/dev'
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   // ...
@@ -94,13 +94,13 @@ You can use the `preset:resolved` hook to modify presets after they are resolved
 filtering out parts of a preset.
 
 ```ts
-import { defineConfig } from '@pandacss/dev'
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   // ...
   hooks: {
     'preset:resolved': ({ utils, preset, name }) => {
-      if (name === '@pandacss/preset-panda') {
+      if (name === '@bamboocss/preset-bamboo') {
         return utils.omit(preset, ['theme.tokens.colors', 'theme.semanticTokens.colors'])
       }
       return preset
@@ -111,7 +111,7 @@ export default defineConfig({
 
 ### Configuring JSX extraction
 
-Use the `matchTag` / `matchTagProp` functions to customize the way Panda extracts your JSX.
+Use the `matchTag` / `matchTagProp` functions to customize the way Bamboo extracts your JSX.
 
 This can be especially useful when working with libraries that have properties that look like CSS properties but are not
 and should be ignored.
@@ -143,8 +143,8 @@ export default defineConfig({
 
 Here's an example of how to transform the generated css in the `cssgen:done` hook.
 
-```ts file="panda.config.ts"
-import { defineConfig } from '@pandacss/dev'
+```ts file="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
 import { removeUnusedCssVars } from './remove-unused-css-vars'
 import { removeUnusedKeyframes } from './remove-unused-keyframes'
 
@@ -161,8 +161,8 @@ export default defineConfig({
 ```
 
 Get the snippets for the removal logic from our Github Sandbox in the
-[remove-unused-css-vars](https://github.com/chakra-ui/panda/blob/main/sandbox/vite-ts/remove-unused-css-vars.ts) and
-[remove-unused-keyframes](https://github.com/chakra-ui/panda/blob/main/sandbox/vite-ts/remove-unused-keyframes.ts)
+[remove-unused-css-vars](https://github.com/chakra-ui/bamboo/blob/main/sandbox/vite-ts/remove-unused-css-vars.ts) and
+[remove-unused-keyframes](https://github.com/chakra-ui/bamboo/blob/main/sandbox/vite-ts/remove-unused-keyframes.ts)
 files.
 
 > Note: Using this means you can't use the JS function [`token.var`](/docs/guides/dynamic-styling#using-tokenvar) (or
@@ -179,7 +179,7 @@ with a `hooks` object with the same structure as the `hooks` object in the confi
 > defined in the `plugins` array, with the user's config called last.
 
 ```ts
-import { defineConfig } from '@pandacss/dev'
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   // ...
@@ -201,7 +201,7 @@ export default defineConfig({
 ## Reference
 
 ```ts
-export interface PandaHooks {
+export interface BambooHooks {
   /**
    * Called when the config is resolved, after all the presets are loaded and merged.
    * This is the first hook called, you can use it to tweak the config before the context is created.
@@ -220,7 +220,7 @@ export interface PandaHooks {
    */
   'utility:created': (args: UtilityCreatedHookArgs) => MaybeAsyncReturn
   /**
-   * Called when the Panda context has been created and the API is ready to be used.
+   * Called when the Bamboo context has been created and the API is ready to be used.
    */
   'context:created': (args: ContextCreatedHookArgs) => void
   /**
@@ -229,7 +229,7 @@ export interface PandaHooks {
   'config:change': (args: ConfigChangeHookArgs) => MaybeAsyncReturn
   /**
    * Called after reading the file content but before parsing it.
-   * You can use this hook to transform the file content to a tsx-friendly syntax so that Panda's parser can parse it.
+   * You can use this hook to transform the file content to a tsx-friendly syntax so that Bamboo's parser can parse it.
    * You can also use this hook to parse the file's content on your side using a custom parser, in this case you don't have to return anything.
    */
   'parser:before': (args: ParserResultBeforeHookArgs) => string | void

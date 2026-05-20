@@ -1,6 +1,6 @@
-import { colors, logger } from '@pandacss/logger'
+import { colors, logger } from '@bamboocss/logger'
 import { parse } from 'path'
-import type { PandaContext } from './create-context'
+import type { BambooContext } from './create-context'
 
 export interface DebugOptions {
   outdir: string
@@ -8,7 +8,7 @@ export interface DebugOptions {
   onlyConfig?: boolean
 }
 
-export async function debug(ctx: PandaContext, options: DebugOptions) {
+export async function debug(ctx: BambooContext, options: DebugOptions) {
   const files = ctx.getFiles()
   const measureTotal = logger.time.debug(`Done parsing ${files.length} files`)
 
@@ -66,6 +66,6 @@ export async function debug(ctx: PandaContext, options: DebugOptions) {
     }
   })
 
-  logger.info('cli', `Found ${colors.bold(`${filesWithCss.length}/${files.length}`)} files using Panda`)
+  logger.info('cli', `Found ${colors.bold(`${filesWithCss.length}/${files.length}`)} files using Bamboo`)
   measureTotal()
 }

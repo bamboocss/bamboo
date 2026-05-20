@@ -1,4 +1,4 @@
-import { colors, quote } from '@pandacss/logger'
+import { colors, quote } from '@bamboocss/logger'
 import { outdent } from 'outdent'
 import type { Context } from './context'
 
@@ -49,17 +49,17 @@ export const artifactsGenerated = (
 
 export const configExists = (cmd: string) => outdent`
       \n
-      It looks like you already have panda created\`.
+      It looks like you already have bamboo created\`.
 
-      You can now run ${quote(cmd, ' panda --watch')}.
+      You can now run ${quote(cmd, ' bamboo --watch')}.
 
       `
 
 export const thankYou = () => outdent`
 
-  🚀 Thanks for choosing ${colors.cyan('Panda')} to write your css.
+  🚀 Thanks for choosing ${colors.cyan('Bamboo')})} to write your css.
 
-  You are set up to start using Panda!
+  You are set up to start using Bamboo!
 
   `
 
@@ -80,7 +80,7 @@ export const codegenComplete = () =>
 export const noExtract = () =>
   outdent`
   No style object or props were detected in your source files.
-  If this is unexpected, double-check the \`include\` options in your Panda config\n
+  If this is unexpected, double-check the \`include\` options in your Bamboo config\n
 `
 
 export const watch = () =>
@@ -98,10 +98,10 @@ export const buildComplete = (count: number) =>
   Successfully extracted css from ${count} file(s) ✨
   `
 
-const randomWords = ['Sweet', 'Divine', 'Pandalicious', 'Super']
+const randomWords = ['Sweet', 'Divine', 'Bamboolicious', 'Super']
 const pickRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)]
 
-export const exclamation = () => `🐼 ${pickRandom(randomWords)}! ✨`
+export const exclamation = () => `🎋 ${pickRandom(randomWords)}! ✨`
 
 export const cssArtifactComplete = (type: string) => `Successfully generated ${type} css artifact ✨`
 

@@ -1,5 +1,5 @@
 {
-  "name": "@pandacss/core",
+  "name": "@bamboocss/core",
   "version": "1.11.1",
   "description": "core functions for extract-it",
   "main": "dist/index.js",
@@ -28,10 +28,10 @@
     "dist"
   ],
   "sideEffects": false,
-  "homepage": "https://panda-css.com",
+  "homepage": "https://bamboo-css.com",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chakra-ui/panda.git",
+    "url": "git+https://github.com/chakra-ui/bamboo.git",
     "directory": "packages/core"
   },
   "publishConfig": {
@@ -39,11 +39,11 @@
   },
   "dependencies": {
     "@csstools/postcss-cascade-layers": "5.0.2",
-    "@pandacss/is-valid-prop": "workspace:^",
-    "@pandacss/logger": "workspace:*",
-    "@pandacss/shared": "workspace:*",
-    "@pandacss/token-dictionary": "workspace:*",
-    "@pandacss/types": "workspace:*",
+    "@bamboocss/is-valid-prop": "workspace:^",
+    "@bamboocss/logger": "workspace:*",
+    "@bamboocss/shared": "workspace:*",
+    "@bamboocss/token-dictionary": "workspace:*",
+    "@bamboocss/types": "workspace:*",
     "browserslist": "4.28.1",
     "lodash.merge": "4.6.2",
     "outdent": "0.8.0",

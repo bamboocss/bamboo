@@ -1,17 +1,17 @@
 {
-  "name": "@pandacss/config",
+  "name": "@bamboocss/config",
   "version": "1.11.1",
-  "description": "Find and load panda config",
+  "description": "Find and load bamboo config",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "author": "Segun Adebayo <joseshegs@gmail.com>",
   "license": "MIT",
   "sideEffects": false,
-  "homepage": "https://panda-css.com",
+  "homepage": "https://bamboo-css.com",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chakra-ui/panda.git",
+    "url": "git+https://github.com/chakra-ui/bamboo.git",
     "directory": "packages/config"
   },
   "publishConfig": {
@@ -74,11 +74,11 @@
     "dist"
   ],
   "dependencies": {
-    "@pandacss/logger": "workspace:*",
-    "@pandacss/preset-base": "workspace:*",
-    "@pandacss/preset-panda": "workspace:*",
-    "@pandacss/shared": "workspace:*",
-    "@pandacss/types": "workspace:*",
+    "@bamboocss/logger": "workspace:*",
+    "@bamboocss/preset-base": "workspace:*",
+    "@bamboocss/preset-bamboo": "workspace:*",
+    "@bamboocss/shared": "workspace:*",
+    "@bamboocss/types": "workspace:*",
     "bundle-n-require": "1.1.2",
     "escalade": "3.2.0",
     "microdiff": "1.5.0",

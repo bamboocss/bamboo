@@ -1,13 +1,13 @@
-import { findConfig, getConfigDependencies } from '@pandacss/config'
-import { logger } from '@pandacss/logger'
-import { PandaError, uniq } from '@pandacss/shared'
-import type { DiffConfigResult } from '@pandacss/types'
+import { findConfig, getConfigDependencies } from '@bamboocss/config'
+import { logger } from '@bamboocss/logger'
+import { BambooError, uniq } from '@bamboocss/shared'
+import type { DiffConfigResult } from '@bamboocss/types'
 import { existsSync, statSync } from 'fs'
 import { normalize, resolve } from 'path'
 import type { Message, Root } from 'postcss'
 import { codegen } from './codegen'
 import { loadConfigAndCreateContext } from './config'
-import { PandaContext } from './create-context'
+import { BambooContext } from './create-context'
 import { parseDependency } from './parse-dependency'
 
 const fileModifiedMap = new Map<string, number>()
@@ -19,9 +19,9 @@ interface FileChanges {
 
 export class Builder {
   /**
-   * The current panda context
+   * The current bamboo context
    */
-  context: PandaContext | undefined
+  context: BambooContext | undefined
 
   private hasEmitted = false
   private filesMeta: FileChanges | undefined
@@ -62,7 +62,7 @@ export class Builder {
     const ctx = this.getContextOrThrow()
 
     this.affecteds = await ctx.diff.reloadConfigAndRefreshContext((conf) => {
-      this.context = new PandaContext(conf)
+      this.context = new BambooContext(conf)
     })
 
     logger.debug('builder', this.affecteds)
@@ -119,9 +119,9 @@ export class Builder {
     return ctx
   }
 
-  getContextOrThrow = (): PandaContext => {
+  getContextOrThrow = (): BambooContext => {
     if (!this.context) {
-      throw new PandaError('NO_CONTEXT', 'context not loaded')
+      throw new BambooError('NO_CONTEXT', 'context not loaded')
     }
     return this.context
   }
@@ -148,7 +148,7 @@ export class Builder {
     return { changes, hasFilesChanged }
   }
 
-  extractFile = (ctx: PandaContext, file: string) => {
+  extractFile = (ctx: BambooContext, file: string) => {
     const meta = this.filesMeta?.changes.get(file) ?? this.getFileMeta(file)
 
     const hasConfigChanged = this.affecteds ? this.affecteds.hasConfigChanged : true

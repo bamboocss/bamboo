@@ -1,6 +1,6 @@
 'use client'
 import { UseConfig } from '@/src/hooks/useConfig'
-import { usePanda } from '@/src/hooks/usePanda'
+import { useBamboo } from '@/src/hooks/useBamboo'
 import { UsePlayground } from '@/src/hooks/usePlayground'
 import { useResponsiveView } from '@/src/hooks/useResponsiveView'
 import { css, cx } from '@/styled-system/css'
@@ -41,12 +41,12 @@ export const PlaygroundContent = (props: Props) => {
     setExample,
   } = playground
 
-  // Use deferred state for expensive panda processing
+  // Use deferred state for expensive bamboo processing
   const _state = diffState ?? deferredState
 
   const { config, isLoading, error } = _config
-  const panda = usePanda(_state, config)
-  const responsiveView = useResponsiveView(panda.context.config.theme?.breakpoints)
+  const bamboo = useBamboo(_state, config)
+  const responsiveView = useResponsiveView(bamboo.context.config.theme?.breakpoints)
 
   return (
     <>
@@ -123,10 +123,10 @@ export const PlaygroundContent = (props: Props) => {
             className={splitter()}
           >
             <Splitter.Panel id="editor">
-              <Editor value={state} onChange={setState} panda={panda} diffState={diffState} isLoading={isLoading} />
+              <Editor value={state} onChange={setState} bamboo={bamboo} diffState={diffState} isLoading={isLoading} />
             </Splitter.Panel>
 
-            <ArtifactsPanel panda={panda} />
+            <ArtifactsPanel bamboo={bamboo} />
           </Splitter.Root>
         </Splitter.Panel>
         <Splitter.ResizeTrigger id="left:preview" asChild disabled={isPreviewMode}>
@@ -135,10 +135,10 @@ export const PlaygroundContent = (props: Props) => {
         <Splitter.Panel id="preview" className={css({ zIndex: 3, pos: 'relative' })}>
           <Preview
             source={_state.code}
-            panda={panda}
+            bamboo={bamboo}
             responsiveView={responsiveView}
             isResponsive={isResponsive}
-            error={error ?? (panda.context.error as Error)}
+            error={error ?? (bamboo.context.error as Error)}
           />
         </Splitter.Panel>
       </Splitter.Root>

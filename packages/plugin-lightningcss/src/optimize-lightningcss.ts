@@ -1,4 +1,4 @@
-import { logger } from '@pandacss/logger'
+import { logger } from '@bamboocss/logger'
 import { Features, transform, browserslistToTargets } from 'lightningcss'
 import browserslist from 'browserslist'
 

@@ -3,7 +3,7 @@ import { Providers } from '@/components/providers'
 import { css, cx } from '@/styled-system/css'
 import { fontClassName } from 'styles/fonts'
 import seoConfig from '../seo.config'
-import '../styles/panda.css'
+import '../styles/bamboo.css'
 
 interface Props {
   children: React.ReactNode
@@ -29,7 +29,7 @@ export default function RootLayout(props: Props) {
     >
       <head>
         <Script
-          data-domain="panda-css.com"
+          data-domain="bamboo-css.com"
           src="https://plausible.io/js/script.js"
         />
       </head>

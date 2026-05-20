@@ -1,4 +1,4 @@
-import { fixturePreset } from '@pandacss/fixture'
+import { fixturePreset } from '@bamboocss/fixture'
 import { describe, expect, test } from 'vitest'
 import { Conditions } from '../src/conditions'
 import { compareAtRuleOrMixed as _compareAtRuleOrMixed } from '../src/sort-style-rules'
@@ -280,14 +280,14 @@ describe('Conditions', () => {
     expect(css.values).toMatchInlineSnapshot(`
       {
         "_themePrimary": {
-          "raw": "[data-panda-theme=primary] &",
+          "raw": "[data-bamboo-theme=primary] &",
           "type": "parent-nesting",
-          "value": "[data-panda-theme=primary] &",
+          "value": "[data-bamboo-theme=primary] &",
         },
         "_themeSecondary": {
-          "raw": "[data-panda-theme=secondary] &",
+          "raw": "[data-bamboo-theme=secondary] &",
           "type": "parent-nesting",
-          "value": "[data-panda-theme=secondary] &",
+          "value": "[data-bamboo-theme=secondary] &",
         },
       }
     `)
@@ -308,7 +308,7 @@ describe('Conditions', () => {
     const sorted = css.sort(['_before', '_themePrimary'])
     expect(sorted.map((c) => c.raw)).toMatchInlineSnapshot(`
       [
-        "[data-panda-theme=primary] &",
+        "[data-bamboo-theme=primary] &",
         "&::before",
       ]
     `)
@@ -319,7 +319,7 @@ describe('Conditions', () => {
       [
         "@media (hover: hover) and (pointer: fine)",
         "&:is(:hover, [data-hover])",
-        "[data-panda-theme=primary] &",
+        "[data-bamboo-theme=primary] &",
         "&::before",
       ]
     `)

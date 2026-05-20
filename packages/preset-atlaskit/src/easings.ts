@@ -1,4 +1,4 @@
-import type { Tokens } from '@pandacss/types'
+import type { Tokens } from '@bamboocss/types'
 
 export const easings: Tokens['easings'] = {
   easeIn: { value: 'cubic-bezier(0.8,0,0,0.8)' },

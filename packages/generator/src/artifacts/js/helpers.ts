@@ -1,4 +1,4 @@
-import type { Context } from '@pandacss/core'
+import type { Context } from '@bamboocss/core'
 import { outdent } from 'outdent'
 import astishMjs from '../generated/astish.mjs.json' assert { type: 'json' }
 import helpersMjs from '../generated/helpers.mjs.json' assert { type: 'json' }

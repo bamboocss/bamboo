@@ -1,12 +1,12 @@
 ---
-title: Configuring Panda
-description: Customize how Panda works via the `panda.config.ts` file in your project.
+title: Configuring Bamboo
+description: Customize how Bamboo works via the `bamboo.config.ts` file in your project.
 ---
 
-Customize how Panda works via the `panda.config.ts` file in your project.
+Customize how Bamboo works via the `bamboo.config.ts` file in your project.
 
 ```js
-import { defineConfig } from '@pandacss/dev'
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   // your configuration options here...
@@ -19,7 +19,7 @@ export default defineConfig({
 
 **Type**: `string[]`
 
-**Default**: `['@pandacss/preset-base', '@pandacss/preset-panda']`
+**Default**: `['@bamboocss/preset-base', '@bamboocss/preset-bamboo']`
 
 The set of reusable and shareable configuration presets.
 
@@ -28,7 +28,7 @@ as a set of overrides and extensions.
 
 ```json
 {
-  "presets": ["@pandacss/preset-base", "@pandacss/preset-panda"]
+  "presets": ["@bamboocss/preset-base", "@bamboocss/preset-bamboo"]
 }
 ```
 
@@ -38,7 +38,7 @@ as a set of overrides and extensions.
 
 **Default**: `false`
 
-Whether to opt-out of the defaults config presets: [`@pandacss/preset-base`, `@pandacss/preset-panda`]
+Whether to opt-out of the defaults config presets: [`@bamboocss/preset-base`, `@bamboocss/preset-bamboo`]
 
 ```json
 {
@@ -132,11 +132,11 @@ Whether to only emit the `tokens` directory
 
 The namespace prefix for the generated css classes and css variables.
 
-Ex: when using a prefix of `panda-`
+Ex: when using a prefix of `bamboo-`
 
 ```json
 {
-  "prefix": "panda"
+  "prefix": "bamboo"
 }
 ```
 
@@ -151,8 +151,8 @@ const App = () => {
 would result in:
 
 ```css
-.panda-text_blue\.500 {
-  color: var(--panda-colors-blue-500);
+.bamboo-text_blue\.500 {
+  color: var(--bamboo-colors-blue-500);
 }
 ```
 
@@ -167,7 +167,7 @@ Ex: when customizing the utilities layer
 ```json
 {
   "layers": {
-    "utilities": "panda_utilities"
+    "utilities": "bamboo_utilities"
   }
 }
 ```
@@ -183,7 +183,7 @@ const App = () => {
 would result in:
 
 ```css
-@layer panda_utilities {
+@layer bamboo_utilities {
   .text_blue\.500 {
     color: var(--colors-blue-500);
   }
@@ -326,7 +326,7 @@ Whether to update the .gitignore file.
 Will add the following to your `.gitignore` file:
 
 ```txt
-# Panda
+# Bamboo
 styled-system
 styled-system-static
 ```
@@ -527,7 +527,7 @@ If set to `true` and `outExtension` is set to `mjs`, the generated typescript `.
 
 **Default**: `object-literal`
 
-Decides which syntax to use when writing CSS. For existing projects, you might need to run the `panda codegen --clean`.
+Decides which syntax to use when writing CSS. For existing projects, you might need to run the `bamboo codegen --clean`.
 
 ```json
 {
@@ -917,14 +917,14 @@ The factory name of the element
 
 ```json
 {
-  "jsxFactory": "panda"
+  "jsxFactory": "bamboo"
 }
 ```
 
 Ex:
 
 ```tsx
-<panda.button marginTop="40px">Click me</panda.button>
+<bamboo.button marginTop="40px">Click me</bamboo.button>
 ```
 
 ### jsxStyleProps
@@ -965,15 +965,15 @@ Ex with 'none':
 
 **Type**: `Partial<Studio>`
 
-**Default**: `{ title: 'Panda', logo: '🐼' }`
+**Default**: `{ title: 'Bamboo', logo: '🎋' }`
 
 Used to customize the design system studio
 
 ```json
 {
   "studio": {
-    "logo": "🐼",
-    "title": "Panda"
+    "logo": "🎋",
+    "title": "Bamboo"
   }
 }
 ```
@@ -1014,14 +1014,14 @@ The validation strictness to use when validating the config.
 
 ### Hooks
 
-**Type**: `PandaHooks`
+**Type**: `BambooHooks`
 
-Panda provides a set of callbacks that you can hook into for more advanced use cases. Check the
+Bamboo provides a set of callbacks that you can hook into for more advanced use cases. Check the
 [Hooks](/docs/concepts/hooks) docs for more information.
 
 ### Plugins
 
-**Type**: `PandaPlugin[]`
+**Type**: `BambooPlugin[]`
 
 Plugins are currently simple objects that contain a `name` and a `hooks` object with the same structure as the `hooks`
 object in the config.
@@ -1030,7 +1030,7 @@ They will be called in sequence in the order they are defined in the `plugins` a
 last.
 
 ```ts
-import { defineConfig } from '@pandacss/dev'
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   // ...

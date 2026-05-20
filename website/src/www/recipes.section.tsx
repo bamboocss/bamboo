@@ -1,7 +1,7 @@
 import { Code, codeStyle } from '@/components/code-highlight/code'
 import { LearnMore } from '@/www/learn-more'
 import { css } from '@/styled-system/css'
-import { Circle, Container, Flex, Stack, panda } from '@/styled-system/jsx'
+import { Circle, Container, Flex, Stack, bamboo } from '@/styled-system/jsx'
 import { button } from '@/styled-system/recipes'
 import { token } from '@/styled-system/tokens'
 import { Icon } from '@/theme/icons'
@@ -37,7 +37,7 @@ export const badge = cva({
 
 export const RecipesSection = () => {
   return (
-    <panda.section bg="bg.main">
+    <bamboo.section bg="bg.main">
       <Container mb={{ lg: '-10rem' }}>
         <Flex
           direction={{ base: 'column', lg: 'row' }}
@@ -52,34 +52,34 @@ export const RecipesSection = () => {
               position="relative"
             >
               <Icon icon="Recipe" />
-              <panda.div position="absolute" top="-2" right="-5" color="fg">
+              <bamboo.div position="absolute" top="-2" right="-5" color="fg">
                 <Icon
                   icon="Sparks2"
                   className={css({ w: '22px', h: '22px' })}
                 />
-              </panda.div>
+              </bamboo.div>
             </Circle>
 
             <Stack gap="4">
-              <panda.h3 textStyle="panda.h3" fontWeight="bold">
+              <bamboo.h3 textStyle="bamboo.h3" fontWeight="bold">
                 Recipes and variants just like Stitches
-              </panda.h3>
-              <panda.h4
-                textStyle="panda.h4"
+              </bamboo.h3>
+              <bamboo.h4
+                textStyle="bamboo.h4"
                 fontWeight="medium"
                 color="fg.muted"
               >
-                Panda gives you a robust functions to define recipes and even
+                Bamboo gives you a robust functions to define recipes and even
                 “cva” to help you design composable component styles.
-              </panda.h4>
+              </bamboo.h4>
             </Stack>
 
-            <panda.div position={{ lg: 'absolute' }} bottom="40" left="0">
+            <bamboo.div position={{ lg: 'absolute' }} bottom="40" left="0">
               <LearnMore href="/docs/concepts/recipes" />
-            </panda.div>
+            </bamboo.div>
           </Stack>
 
-          <panda.div flex="1" maxW={{ lg: '40rem' }} flexShrink="0">
+          <bamboo.div flex="1" maxW={{ lg: '40rem' }} flexShrink="0">
             <Code
               lang="tsx"
               style={{ borderRadius: token('radii.xl') }}
@@ -87,9 +87,9 @@ export const RecipesSection = () => {
             >
               {codeSnippet}
             </Code>
-          </panda.div>
+          </bamboo.div>
         </Flex>
       </Container>
-    </panda.section>
+    </bamboo.section>
   )
 }

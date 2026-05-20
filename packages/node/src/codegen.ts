@@ -1,7 +1,7 @@
-import type { ArtifactId } from '@pandacss/types'
-import type { PandaContext } from './create-context'
+import type { ArtifactId } from '@bamboocss/types'
+import type { BambooContext } from './create-context'
 
-export async function codegen(ctx: PandaContext, ids?: ArtifactId[]) {
+export async function codegen(ctx: BambooContext, ids?: ArtifactId[]) {
   const { default: pLimit } = await import('p-limit')
   const limit = pLimit(20)
   if (ctx.config.clean) ctx.output.empty()

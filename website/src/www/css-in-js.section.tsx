@@ -1,5 +1,5 @@
 import { css } from '@/styled-system/css'
-import { HStack, Stack, VStack, panda } from '@/styled-system/jsx'
+import { HStack, Stack, VStack, bamboo } from '@/styled-system/jsx'
 import { Icon, IconType } from '@/theme/icons'
 import { outdent } from 'outdent'
 import { Code } from '@/components/code-highlight/code'
@@ -106,31 +106,31 @@ const features: Array<{ title: string; description: string; icon: IconType }> =
 
 export const CssInJSSection = () => {
   return (
-    <panda.section bg="black" pt="10rem" pb="12rem" color="white" mt="2px">
-      <panda.div maxW="8xl" mx="auto" px={{ base: '4', md: '6', lg: '8' }}>
+    <bamboo.section bg="black" pt="10rem" pb="12rem" color="white" mt="2px">
+      <bamboo.div maxW="8xl" mx="auto" px={{ base: '4', md: '6', lg: '8' }}>
         <VStack gap="16">
-          <panda.h2
-            textStyle="panda.h2"
+          <bamboo.h2
+            textStyle="bamboo.h2"
             fontWeight="semibold"
             textAlign={{ base: 'center', lg: 'left' }}
           >
             Styling library{' '}
-            <panda.span color="yellow.300">you’ll enjoy</panda.span> using 🐼
-          </panda.h2>
+            <bamboo.span color="yellow.300">you’ll enjoy</bamboo.span> using 🎋
+          </bamboo.h2>
 
-          <panda.div width="full" maxW="4xl" mx="auto">
+          <bamboo.div width="full" maxW="4xl" mx="auto">
             <Code lang="tsx" extensions={[tabs]} subProps={codeSnippets} />
-          </panda.div>
+          </bamboo.div>
 
           <VStack maxW={{ base: '2xl', lg: '5xl' }} mx="auto" gap="16">
-            <panda.span
-              textStyle="panda.h3"
+            <bamboo.span
+              textStyle="bamboo.h3"
               textAlign="center"
               fontWeight="semibold"
             >
               CSS-in-JS with build time generated styles, RSC compatible,
               multi-variant support.
-            </panda.span>
+            </bamboo.span>
 
             <Stack
               direction={{ base: 'column', lg: 'row' }}
@@ -152,17 +152,17 @@ export const CssInJSSection = () => {
                       icon={icon}
                       className={css({ color: 'yellow.300' })}
                     />
-                    <panda.span fontWeight="semibold">{title}</panda.span>
+                    <bamboo.span fontWeight="semibold">{title}</bamboo.span>
                   </HStack>
-                  <panda.span color="gray.200" maxW={{ lg: '256px' }}>
+                  <bamboo.span color="gray.200" maxW={{ lg: '256px' }}>
                     {description}
-                  </panda.span>
+                  </bamboo.span>
                 </Stack>
               ))}
             </Stack>
           </VStack>
         </VStack>
-      </panda.div>
-    </panda.section>
+      </bamboo.div>
+    </bamboo.section>
   )
 }

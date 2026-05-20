@@ -1,5 +1,5 @@
-import { hypenateProperty } from '@pandacss/shared'
-import type { Dict } from '@pandacss/types'
+import { hypenateProperty } from '@bamboocss/shared'
+import type { Dict } from '@bamboocss/types'
 import { unitlessProperties } from './unitless'
 
 // adapted from https://github.com/stitchesjs/stitches/blob/50fd8a1adc6360340fe348a8b3ebc8b06d38e230/packages/stringify/src/index.js

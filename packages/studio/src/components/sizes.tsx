@@ -1,10 +1,10 @@
 import * as React from 'react'
-import { toPx } from '@pandacss/shared'
+import { toPx } from '@bamboocss/shared'
 import { Fragment } from 'react'
-import { Grid, panda } from '../../styled-system/jsx'
+import { Grid, bamboo } from '../../styled-system/jsx'
 import { getSortedSizes } from '../lib/sizes-sort'
 import { TokenGroup } from './token-group'
-import type { Token } from '@pandacss/token-dictionary'
+import type { Token } from '@bamboocss/token-dictionary'
 import { EmptyState } from './empty-state'
 import { SizesIcon } from './icons'
 
@@ -33,7 +33,7 @@ export default function Sizes(props: SizesProps) {
   if (sortedSizes.length === 0) {
     return (
       <EmptyState title="No Tokens" icon={<SizesIcon />}>
-        The panda config does not contain any `{name}`` tokens
+        The bamboo config does not contain any `{name}`` tokens
       </EmptyState>
     )
   }
@@ -41,12 +41,12 @@ export default function Sizes(props: SizesProps) {
   return (
     <TokenGroup>
       <Grid display="grid" columnGap="10" rowGap="2.5" columns={5}>
-        <panda.span fontWeight="semibold">Name</panda.span>
-        <panda.span fontWeight="semibold">Size</panda.span>
-        <panda.span fontWeight="semibold" gridColumn="span 3 / span 3">
+        <bamboo.span fontWeight="semibold">Name</bamboo.span>
+        <bamboo.span fontWeight="semibold">Size</bamboo.span>
+        <bamboo.span fontWeight="semibold" gridColumn="span 3 / span 3">
           Pixels
-        </panda.span>
-        <panda.hr gridColumn="span 5 / span 5" />
+        </bamboo.span>
+        <bamboo.hr gridColumn="span 5 / span 5" />
         {sortedSizes
           .sort((a, b) => a.extensions.prop - b.extensions.prop)
           .map((size, index) => (
@@ -54,7 +54,7 @@ export default function Sizes(props: SizesProps) {
               <b>{size.extensions.prop}</b>
               <span>{size.value}</span>
               <span>{toPx(size.value as string)}</span>
-              <panda.span
+              <bamboo.span
                 height="5"
                 background="rgba(255, 192, 203, 0.5)"
                 gridColumn="span 2 / span 2"

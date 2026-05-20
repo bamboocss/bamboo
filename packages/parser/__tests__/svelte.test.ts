@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { svelteToTsx } from '@pandacss/plugin-svelte'
+import { svelteToTsx } from '@bamboocss/plugin-svelte'
 import { parseAndExtract } from './fixture'
 
 describe('extract svelte templates', () => {

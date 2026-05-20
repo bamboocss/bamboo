@@ -4,21 +4,21 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "prepare": "panda",
+    "prepare": "bamboo",
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "explore": "source-map-explorer 'dist/assets/*.js' --no-border-checks",
-    "analyze": "pnpm panda codegen --clean && ANALYZE=true vite build && pnpm explore",
-    "visualize": "pnpm panda codegen --clean && vite-bundle-visualizer"
+    "analyze": "pnpm bamboo codegen --clean && ANALYZE=true vite build && pnpm explore",
+    "visualize": "pnpm bamboo codegen --clean && vite-bundle-visualizer"
   },
   "dependencies": {
     "react": "19.2.0",
     "react-dom": "19.2.0"
   },
   "devDependencies": {
-    "@pandacss/dev": "workspace:*",
-    "@pandacss/studio": "workspace:*",
+    "@bamboocss/dev": "workspace:*",
+    "@bamboocss/studio": "workspace:*",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "5.1.1",

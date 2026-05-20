@@ -1,14 +1,14 @@
 ---
 title: Migrating from Theme UI
-description: Migrate your project from Theme UI to Panda.
+description: Migrate your project from Theme UI to Bamboo.
 ---
 
-This guide outlines the steps needed to migrate your project from Theme UI to Panda and highlights key design
+This guide outlines the steps needed to migrate your project from Theme UI to Bamboo and highlights key design
 differences between the two libraries.
 
 Here are some similarities between the two libraries.
 
-- Panda and Theme UI both support JSX style props.
+- Bamboo and Theme UI both support JSX style props.
 - Supports design tokens and themes.
 - Support for styling primitives like `Box`, `Flex`, `Grid`, etc.
 
@@ -19,7 +19,7 @@ Below are some of the differences between the two libraries.
 Theme UI relies on `@emotion/styled` to style components. This means that every time you use the `sx` prop, runtime
 CSS-in-JS is required to compute the styles in the browser. This can lead to performance issues in larger applications.
 
-Panda relies on `postcss` and converts CSS-in-JS styles to static CSS at build-time, leading to better performance in
+Bamboo relies on `postcss` and converts CSS-in-JS styles to static CSS at build-time, leading to better performance in
 larger applications.
 
 ## Theming
@@ -50,15 +50,15 @@ export default function App({ Component, pageProps }) {
 }
 ```
 
-In Panda, you don't need to wrap your application in a `ThemeProvider` component. Instead, you can pass the theme object
-to the `panda.config.js` file.
+In Bamboo, you don't need to wrap your application in a `ThemeProvider` component. Instead, you can pass the theme object
+to the `bamboo.config.js` file.
 
-The theme object in Panda is broken down into multiple parts, `tokens` and `semanticTokens`. The theme specification
+The theme object in Bamboo is broken down into multiple parts, `tokens` and `semanticTokens`. The theme specification
 also required passing the tokens as `{ value: XX }`
 
 ```js
-// panda.config.js
-import { defineConfig } from '@pandacss/dev'
+// bamboo.config.js
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   theme: {
@@ -98,7 +98,7 @@ export const Demo = props => (
 )
 ```
 
-Panda offers three similar ways to style components. The first approach is to use the `styled` element syntax and rename
+Bamboo offers three similar ways to style components. The first approach is to use the `styled` element syntax and rename
 `sx` to `css`
 
 ```jsx
@@ -188,10 +188,10 @@ export default {
 <button sx={{ variant: 'buttons.primary' }} />
 ```
 
-In Panda, multi-variant styles are referred to as recipes. Recipes are a collection of styles that can be applied to any
+In Bamboo, multi-variant styles are referred to as recipes. Recipes are a collection of styles that can be applied to any
 component.
 
-There are two ways to define recipes in Panda. The first approach is to use the `cva` function which produces atomic
+There are two ways to define recipes in Bamboo. The first approach is to use the `cva` function which produces atomic
 classnames.
 
 ```js
@@ -228,12 +228,12 @@ const Demo = () => (
 )
 ```
 
-The second approach is to define the recipe in the `theme.recipes` property of the panda config. This is referred to as
-'Config recipes' in Panda and allows for sharing recipes across components and projects.
+The second approach is to define the recipe in the `theme.recipes` property of the bamboo config. This is referred to as
+'Config recipes' in Bamboo and allows for sharing recipes across components and projects.
 
 ```js
-// panda.config.js
-import { defineConfig } from '@pandacss/dev'
+// bamboo.config.js
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   theme: {
@@ -283,12 +283,12 @@ const theme = {
 const Demo = () => <button sx={{ color: 'primary' }} />
 ```
 
-In Panda, color modes related values are defined as `semanticTokens` in the theme. Semantic tokens are tokens that
+In Bamboo, color modes related values are defined as `semanticTokens` in the theme. Semantic tokens are tokens that
 change depending on the color mode.
 
 ```js
-// panda.config.js
-import { defineConfig } from '@pandacss/dev'
+// bamboo.config.js
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   theme: {
@@ -335,11 +335,11 @@ export default props => (
 )
 ```
 
-In Panda, global styles are defined in the `theme.global` property of the panda config.
+In Bamboo, global styles are defined in the `theme.global` property of the bamboo config.
 
 ```js
-// panda.config.js
-import { defineConfig } from '@pandacss/dev'
+// bamboo.config.js
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   globalCss: {
@@ -370,7 +370,7 @@ const Demo = () => (
 )
 ```
 
-In Panda, these are called "layout patterns", or "patterns" for short. Panda provides similar patterns that can be used
+In Bamboo, these are called "layout patterns", or "patterns" for short. Bamboo provides similar patterns that can be used
 as a function or JSX element just like Theme UI.
 
 ```jsx

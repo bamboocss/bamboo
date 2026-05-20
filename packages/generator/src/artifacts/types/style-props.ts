@@ -1,9 +1,9 @@
-import type { Context } from '@pandacss/core'
-import { allCssProperties } from '@pandacss/is-valid-prop'
-import { unionType } from '@pandacss/shared'
+import type { Context } from '@bamboocss/core'
+import { allCssProperties } from '@bamboocss/is-valid-prop'
+import { unionType } from '@bamboocss/shared'
 import outdent from 'outdent'
 
-import type { UserConfig } from '@pandacss/types'
+import type { UserConfig } from '@bamboocss/types'
 import csstype from '../generated/csstype.d.ts.json' assert { type: 'json' }
 
 export function generateStyleProps(ctx: Context) {

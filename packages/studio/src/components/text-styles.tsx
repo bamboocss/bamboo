@@ -1,6 +1,6 @@
-import { textStyles } from 'virtual:panda'
-import { panda } from '../../styled-system/jsx'
-import * as context from '../lib/panda-context'
+import { textStyles } from 'virtual:bamboo'
+import { bamboo } from '../../styled-system/jsx'
+import * as context from '../lib/bamboo-context'
 import { EmptyState } from './empty-state'
 import { TextStylesIcon } from './icons'
 import { TokenContent } from './token-content'
@@ -14,19 +14,19 @@ export default function TextStyles() {
       <TokenContent>
         {keys?.length !== 0 ? (
           keys.map((name) => (
-            <panda.div px="1" py="2.5" key={name}>
-              <panda.div borderColor="card">
-                <panda.span fontWeight="medium">{name}</panda.span>
-              </panda.div>
-              <panda.div flex="auto" my="3" className={`virtual-text-style-${name}`} truncate>
-                Panda textStyles are time saving
-              </panda.div>
+            <bamboo.div px="1" py="2.5" key={name}>
+              <bamboo.div borderColor="card">
+                <bamboo.span fontWeight="medium">{name}</bamboo.span>
+              </bamboo.div>
+              <bamboo.div flex="auto" my="3" className={`virtual-text-style-${name}`} truncate>
+                Bamboo textStyles are time saving
+              </bamboo.div>
               <style
                 dangerouslySetInnerHTML={{
                   __html: `.virtual-text-style-${name} { ${textStyles[name]} }`,
                 }}
               />
-            </panda.div>
+            </bamboo.div>
           ))
         ) : (
           <EmptyState title="No Text Styles" icon={<TextStylesIcon />}>

@@ -1,4 +1,4 @@
-import { css, cva, button, flex, card } from '@my-panda-styled-system'
+import { css, cva, button, flex, card } from '@my-bamboo-styled-system'
 
 const section = cva({
   base: { border: 'none' },

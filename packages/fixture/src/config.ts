@@ -1,6 +1,6 @@
-import presetBase from '@pandacss/preset-base'
-import presetPanda from '@pandacss/preset-panda'
-import type { PresetCore, Theme } from '@pandacss/types'
+import presetBase from '@bamboocss/preset-base'
+import presetBamboo from '@bamboocss/preset-bamboo'
+import type { PresetCore, Theme } from '@bamboocss/types'
 
 import { recipes } from './recipes'
 import { slotRecipes } from './slot-recipes'
@@ -14,7 +14,7 @@ export const conditions = {
   light: '[data-theme=light] &, .light &, &.light, &[data-theme=light]',
 }
 
-const theme = presetPanda.theme
+const theme = presetBamboo.theme
 const tokens = {
   ...theme.tokens,
   colors: {

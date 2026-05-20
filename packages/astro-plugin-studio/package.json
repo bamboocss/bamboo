@@ -1,17 +1,17 @@
 {
-  "name": "@pandacss/astro-plugin-studio",
+  "name": "@bamboocss/astro-plugin-studio",
   "version": "1.11.1",
-  "description": "Vite plugin for Pandacss Studio",
+  "description": "Vite plugin for Bamboocss Studio",
   "author": "Segun Adebayo <joseshegs@gmail.com>",
   "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "sideEffects": false,
-  "homepage": "https://panda-css.com",
+  "homepage": "https://bamboo-css.com",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chakra-ui/panda.git",
+    "url": "git+https://github.com/chakra-ui/bamboo.git",
     "directory": "packages/astro-plugin-studio"
   },
   "publishConfig": {
@@ -38,8 +38,8 @@
     "dist"
   ],
   "dependencies": {
-    "@pandacss/core": "workspace:*",
-    "@pandacss/node": "workspace:*",
+    "@bamboocss/core": "workspace:*",
+    "@bamboocss/node": "workspace:*",
     "javascript-stringify": "2.1.0"
   },
   "devDependencies": {

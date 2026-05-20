@@ -1,4 +1,4 @@
-import { Box, HStack, panda } from '@/styled-system/jsx'
+import { Box, HStack, bamboo } from '@/styled-system/jsx'
 
 interface CodeBlockProps {
   title: string
@@ -62,7 +62,7 @@ interface CodeLangIconProps {
   type: CodeLang | (string & {})
 }
 
-const Svg = panda('svg', {
+const Svg = bamboo('svg', {
   base: {
     boxSize: '1em',
     fontSize: 'md'

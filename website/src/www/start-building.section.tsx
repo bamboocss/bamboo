@@ -1,18 +1,18 @@
 import { ButtonLink } from '@/components/ui/button'
 import { css } from '@/styled-system/css'
-import { Container, Stack, VStack, panda } from '@/styled-system/jsx'
+import { Container, Stack, VStack, bamboo } from '@/styled-system/jsx'
 import Image from 'next/image'
 
 export const StartBuildingSection = () => {
   return (
-    <panda.section bg="bg.main">
+    <bamboo.section bg="bg.main">
       <Container pt="240px" pb="24">
         <VStack>
           <Image
-            src="/panda-rocket.svg"
+            src="/bamboo-rocket.svg"
             width={213}
             height={242}
-            alt="Yums the panda riding a rocket"
+            alt="Yums the bamboo riding a rocket"
             className={css({
               position: 'absolute',
               top: '-10',
@@ -22,15 +22,15 @@ export const StartBuildingSection = () => {
           />
 
           <VStack gap="6">
-            <panda.span
-              textStyle="panda.h2"
+            <bamboo.span
+              textStyle="bamboo.h2"
               letterSpacing="tight"
               fontWeight="bold"
               textAlign="center"
             >
               Start building with <br />
-              Panda today
-            </panda.span>
+              Bamboo today
+            </bamboo.span>
 
             <Stack
               width="full"
@@ -54,12 +54,12 @@ export const StartBuildingSection = () => {
                 variant="funky"
                 w={{ base: 'full', sm: '240px' }}
               >
-                Learn Panda
+                Learn Bamboo
               </ButtonLink>
             </Stack>
           </VStack>
         </VStack>
       </Container>
-    </panda.section>
+    </bamboo.section>
   )
 }

@@ -1,5 +1,5 @@
-import * as pandaDefs from '@pandacss/dev'
-import { Config, Dict, Preset } from '@pandacss/types'
+import * as bambooDefs from '@bamboocss/dev'
+import { Config, Dict, Preset } from '@bamboocss/types'
 import { transform } from 'sucrase'
 
 export type PlaygroundConfig = Config & { presets: Preset[] }
@@ -18,7 +18,7 @@ export const evalConfig = (configStr: string, _scope?: Dict): PlaygroundConfig |
     .replace(/\bimport\b[^\n;]+[;\n]?/g, '')
     .trim()
 
-  const scope = Object.assign({}, pandaDefs, _scope)
+  const scope = Object.assign({}, bambooDefs, _scope)
   const config = evalCode(`return (() => {${codeTrimmed}; return config})()`, scope)
   return config
 }

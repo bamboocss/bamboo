@@ -1,5 +1,5 @@
-import type { Context } from '@pandacss/core'
-import type { PatternSpec } from '@pandacss/types'
+import type { Context } from '@bamboocss/core'
+import type { PatternSpec } from '@bamboocss/types'
 
 const getExampleValue = (prop: { type?: string; value?: unknown }): string => {
   if (prop.type === 'enum' && Array.isArray(prop.value) && prop.value.length > 0) {

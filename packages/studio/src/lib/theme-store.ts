@@ -1,6 +1,6 @@
 import { atom } from 'nanostores'
 
-const THEME_STORAGE_KEY = 'panda-studio-theme'
+const THEME_STORAGE_KEY = 'bamboo-studio-theme'
 
 // Store for the current theme
 export const currentThemeStore = atom<string | undefined>(undefined)

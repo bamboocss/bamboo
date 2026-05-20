@@ -17,6 +17,6 @@
     "module": "ESNext",
     "customConditions": ["source"]
   },
-  "include": ["src", "./panda.config.ts"],
+  "include": ["src", "./bamboo.config.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

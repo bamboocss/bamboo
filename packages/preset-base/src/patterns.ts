@@ -1,4 +1,4 @@
-import type { PatternConfig } from '@pandacss/types'
+import type { PatternConfig } from '@bamboocss/types'
 
 function definePattern<T extends PatternConfig>(config: T) {
   return config

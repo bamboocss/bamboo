@@ -1,8 +1,8 @@
-# Panda CSS System Architecture
+# Bamboo CSS System Architecture
 
 ## Overview
 
-Panda CSS is a universal, build-time, type-safe CSS-in-JS solution that extracts styles at compile time and generates optimized CSS and TypeScript utilities. The system follows a modular architecture built as a pnpm monorepo with distinct packages handling different aspects of the styling pipeline.
+Bamboo CSS is a universal, build-time, type-safe CSS-in-JS solution that extracts styles at compile time and generates optimized CSS and TypeScript utilities. The system follows a modular architecture built as a pnpm monorepo with distinct packages handling different aspects of the styling pipeline.
 
 ## Core Philosophy
 
@@ -15,7 +15,7 @@ Panda CSS is a universal, build-time, type-safe CSS-in-JS solution that extracts
 ## Repository Structure
 
 ```
-panda/
+bamboo/
 ├── packages/           # Core packages (published to npm)
 ├── sandbox/           # Framework integration examples
 ├── playground/        # Development testing environment
@@ -27,27 +27,27 @@ panda/
 
 ### 1. User-Facing Packages
 
-#### `@pandacss/dev` (packages/cli)
+#### `@bamboocss/dev` (packages/cli)
 - **Purpose**: Main entry point for end users
-- **Exports**: CLI binary (`panda` command), PostCSS plugin, presets
+- **Exports**: CLI binary (`bamboo` command), PostCSS plugin, presets
 - **Key responsibilities**:
   - Command-line interface (init, codegen, build, analyze, debug, studio)
   - Interactive setup wizard
   - Update notifications
 - **Dependencies**: Orchestrates all other packages
 
-#### `@pandacss/postcss` (packages/postcss)
+#### `@bamboocss/postcss` (packages/postcss)
 - **Purpose**: PostCSS plugin integration
 - **Key responsibilities**:
-  - Integrates Panda into PostCSS build pipeline
+  - Integrates Bamboo into PostCSS build pipeline
   - Uses `Builder` class to process CSS files
   - Registers file dependencies for hot module replacement
-  - Validates and processes Panda-specific CSS
+  - Validates and processes Bamboo-specific CSS
 
 ### 2. Core Processing Packages
 
-#### `@pandacss/core` (packages/core)
-- **Purpose**: Heart of the Panda system containing all core logic
+#### `@bamboocss/core` (packages/core)
+- **Purpose**: Heart of the Bamboo system containing all core logic
 - **Key classes**:
   - **Context**: Central orchestration class that manages all engines
   - **Utility**: CSS utility generation and processing
@@ -58,7 +58,7 @@ panda/
   - **StyleEncoder/StyleDecoder**: Style serialization and deserialization
   - **TokenDictionary**: Design token management
   - **JsxEngine**: JSX component analysis
-  - **ImportMap**: Import tracking for panda functions
+  - **ImportMap**: Import tracking for bamboo functions
 - **Key responsibilities**:
   - Style transformation and serialization
   - CSS optimization and minification
@@ -66,19 +66,19 @@ panda/
   - Selector parsing and manipulation
   - Color mixing utilities
 
-#### `@pandacss/parser` (packages/parser)
+#### `@bamboocss/parser` (packages/parser)
 - **Purpose**: Static code analysis and extraction
 - **Key responsibilities**:
   - TypeScript/JavaScript AST parsing (uses ts-morph)
   - Vue SFC parsing (uses @vue/compiler-sfc)
   - Svelte component parsing
   - Extracting style declarations from source code
-  - Matching function calls and JSX props against Panda APIs
+  - Matching function calls and JSX props against Bamboo APIs
 - **Key classes**:
   - **Project**: Manages ts-morph project for file analysis
   - **ParserResult**: Collects and organizes extraction results
 
-#### `@pandacss/extractor` (packages/extractor)
+#### `@bamboocss/extractor` (packages/extractor)
 - **Purpose**: Low-level AST extraction and evaluation
 - **Key responsibilities**:
   - Extracting values from AST nodes
@@ -90,7 +90,7 @@ panda/
   - **Boxing**: Wrapping AST nodes with metadata
   - **Evaluation**: Computing static values from code
 
-#### `@pandacss/generator` (packages/generator)
+#### `@bamboocss/generator` (packages/generator)
 - **Purpose**: Code generation for styled-system output
 - **Directory structure**:
   ```
@@ -110,29 +110,29 @@ panda/
 
 ### 3. Configuration & Setup
 
-#### `@pandacss/config` (packages/config)
+#### `@bamboocss/config` (packages/config)
 - **Purpose**: Configuration loading and merging
 - **Key responsibilities**:
-  - Finding and loading `panda.config.ts/js`
+  - Finding and loading `bamboo.config.ts/js`
   - Dynamic config import with bundle-n-require
   - Merging user config with presets
   - Config diffing for incremental updates
   - TypeScript path mapping resolution
 
-#### `@pandacss/preset-*` (packages/preset-*)
+#### `@bamboocss/preset-*` (packages/preset-*)
 - **Available presets**:
   - `preset-base`: Minimal foundation preset
-  - `preset-panda`: Default preset with design system tokens
+  - `preset-bamboo`: Default preset with design system tokens
   - `preset-atlaskit`: Atlassian design system integration
   - `preset-open-props`: Open Props design tokens
 - **Purpose**: Shareable configuration and design tokens
 
 ### 4. Orchestration & Build
 
-#### `@pandacss/node` (packages/node)
+#### `@bamboocss/node` (packages/node)
 - **Purpose**: Node.js runtime and build orchestration
 - **Key classes/functions**:
-  - **PandaContext**: Extended context with build-time features
+  - **BambooContext**: Extended context with build-time features
   - **Builder**: Incremental build system with file watching
   - **DiffEngine**: Detects configuration changes
   - **OutputEngine**: Manages file writing
@@ -146,7 +146,7 @@ panda/
 
 ### 5. Utilities & Infrastructure
 
-#### `@pandacss/token-dictionary` (packages/token-dictionary)
+#### `@bamboocss/token-dictionary` (packages/token-dictionary)
 - **Purpose**: Design token processing
 - **Key responsibilities**:
   - Token transformation and references
@@ -159,29 +159,29 @@ panda/
   - Use `getVar()` for RuleProcessor and string pattern expansion
   - Use `get()` for AST evaluation of token CallExpressions
 
-#### `@pandacss/types` (packages/types)
+#### `@bamboocss/types` (packages/types)
 - **Purpose**: Shared TypeScript types
 - **Build process**: Generates complex conditional types from csstype
 - **Exports**: All type definitions used across packages
 
-#### `@pandacss/shared` (packages/shared)
+#### `@bamboocss/shared` (packages/shared)
 - **Purpose**: Shared utility functions
 - **Examples**: Object manipulation, string utilities, memoization, pattern functions
 
-#### `@pandacss/is-valid-prop` (packages/is-valid-prop)
+#### `@bamboocss/is-valid-prop` (packages/is-valid-prop)
 - **Purpose**: Validates CSS property names
 - **Used by**: Core and generator for prop filtering
 
-#### `@pandacss/logger` (packages/logger)
+#### `@bamboocss/logger` (packages/logger)
 - **Purpose**: Centralized logging with log levels
 - **Features**: Colored output, timing utilities, debug mode
 
-#### `@pandacss/reporter` (packages/reporter)
+#### `@bamboocss/reporter` (packages/reporter)
 - **Purpose**: User-friendly error and warning messages
 
 ### 6. Developer Experience
 
-#### `@pandacss/studio` (packages/studio)
+#### `@bamboocss/studio` (packages/studio)
 - **Purpose**: Visual documentation of design tokens
 - **Technology**: Astro-based static site
 - **Features**:
@@ -191,21 +191,21 @@ panda/
   - Spacing scale
   - Interactive token explorer
 
-#### `@pandacss/astro-plugin-studio` (packages/astro-plugin-studio)
-- **Purpose**: Astro integration for Panda Studio
+#### `@bamboocss/astro-plugin-studio` (packages/astro-plugin-studio)
+- **Purpose**: Astro integration for Bamboo Studio
 
 ## System Flow
 
-### 1. Initialization Flow (`panda init`)
+### 1. Initialization Flow (`bamboo init`)
 
 ```
-User runs `panda init`
+User runs `bamboo init`
     ↓
 CLI (packages/cli)
     ↓
 Interactive wizard or flag parsing
     ↓
-setupConfig() - Creates panda.config.ts
+setupConfig() - Creates bamboo.config.ts
     ↓
 setupPostcss() - Optional postcss.config.js
     ↓
@@ -216,10 +216,10 @@ codegen() - Generates styled-system directory
 setupGitIgnore() - Updates .gitignore
 ```
 
-### 2. Build/Watch Flow (`panda` or `panda --watch`)
+### 2. Build/Watch Flow (`bamboo` or `bamboo --watch`)
 
 ```
-User runs `panda`
+User runs `bamboo`
     ↓
 CLI (packages/cli)
     ↓
@@ -261,11 +261,11 @@ Optimize CSS (postcss plugins)
 ```
 Build tool runs PostCSS
     ↓
-@pandacss/postcss plugin
+@bamboocss/postcss plugin
     ↓
 Builder.setup() - Same as above
     ↓
-Builder.isValidRoot() - Check for Panda CSS
+Builder.isValidRoot() - Check for Bamboo CSS
     ↓
 Builder.emit() - Generate artifacts
     ↓
@@ -283,14 +283,14 @@ Source file (e.g., App.tsx)
     ↓
 ts-morph creates SourceFile
     ↓
-getImportDeclarations() - Find panda imports
+getImportDeclarations() - Find bamboo imports
     ├─→ css(), cva(), styled(), token(), etc.
     ↓
-extract() from @pandacss/extractor
+extract() from @bamboocss/extractor
     ├─→ Scan for function calls
     │   └─→ Match against ImportMap
     ├─→ Scan for JSX elements
-    │   ├─→ Match styled.div, panda.div
+    │   ├─→ Match styled.div, bamboo.div
     │   └─→ Match JSX props (if jsxStyleProps enabled)
     ↓
 For each match:
@@ -389,7 +389,7 @@ generateArtifacts() dispatches to:
 - Handles complex expressions, spreads, and conditionals
 
 ### 6. Token Resolution Strategy
-Panda CSS has a dual-mode token resolution system that handles tokens differently based on context:
+Bamboo CSS has a dual-mode token resolution system that handles tokens differently based on context:
 
 #### CallExpression Mode (AST Extraction)
 When `token()` appears as a **CallExpression** in the AST (i.e., actually called as a function):
@@ -442,7 +442,7 @@ const styles = css({
 
 This dual-mode system exists because:
 1. **Template literals with interpolation** execute functions at runtime, so build-time evaluation must match runtime behavior
-2. **String patterns** are processed by Panda's RuleProcessor and can be transformed to CSS variables for dynamic theming
+2. **String patterns** are processed by Bamboo's RuleProcessor and can be transformed to CSS variables for dynamic theming
 3. **Semantic tokens** (with conditions) must always use CSS variables to support responsive/conditional values
 4. Users can explicitly request CSS variables with `token.var()` when needed in CallExpressions
 
@@ -526,7 +526,7 @@ import { styled } from './styled-system/jsx/vue'
 ## Plugin System
 
 ### Hooks API
-Panda provides a hookable API for extensibility:
+Bamboo provides a hookable API for extensibility:
 
 ```typescript
 hooks: {
@@ -693,7 +693,7 @@ border: "1px solid token(colors.yellow.100)"
 
 **Enable debug logging**:
 ```bash
-DEBUG=* panda
+DEBUG=* bamboo
 ```
 
 Look for these log messages:
@@ -722,7 +722,7 @@ Look for these log messages:
 
 ## Conclusion
 
-Panda CSS architecture emphasizes:
+Bamboo CSS architecture emphasizes:
 - **Modularity**: Clear separation of concerns across packages
 - **Performance**: Build-time optimization and zero runtime overhead
 - **Type safety**: Full TypeScript integration with generated types

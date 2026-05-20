@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { processRecipe } from './fixture'
-import { createGeneratorContext } from '@pandacss/fixture'
+import { createGeneratorContext } from '@bamboocss/fixture'
 
 describe('recipe ruleset', () => {
   test('should work with basic', () => {

@@ -1,5 +1,5 @@
-import type { Context } from '@pandacss/core'
-import { capitalize, unionType } from '@pandacss/shared'
+import type { Context } from '@bamboocss/core'
+import { capitalize, unionType } from '@bamboocss/shared'
 import { outdent } from 'outdent'
 import pluralize from 'pluralize'
 

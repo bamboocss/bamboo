@@ -1,4 +1,4 @@
-import type { UtilityConfig } from '@pandacss/types'
+import type { UtilityConfig } from '@bamboocss/types'
 
 const srMapping: Record<string, any> = {
   true: {

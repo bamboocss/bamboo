@@ -1,4 +1,4 @@
-import type { Preset } from '@pandacss/types'
+import type { Preset } from '@bamboocss/types'
 import { breakpoints } from './breakpoints'
 import { colors } from './colors/core'
 import { semanticColors } from './colors/semantic'
@@ -17,7 +17,7 @@ import { easings } from './easings'
 const definePreset = <T extends Preset>(config: T) => config
 
 export const preset = definePreset({
-  name: '@pandacss/preset-atlaskit',
+  name: '@bamboocss/preset-atlaskit',
   theme: {
     breakpoints: breakpoints,
     tokens: {

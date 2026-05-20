@@ -1,6 +1,6 @@
 import type { TSConfig } from 'pkg-types'
 import type { Conditions, ExtendableConditions } from './conditions'
-import type { PandaHooks } from './hooks'
+import type { BambooHooks } from './hooks'
 import type { PatternConfig } from './pattern'
 import type { Keys, LiteralUnion, PathIn, RequiredBy } from './shared'
 import type { StaticCssOptions } from './static-css'
@@ -23,7 +23,7 @@ export type CascadeLayers = Record<CascadeLayer, string>
 export interface StudioOptions {
   /**
    * Used to customize the design system studio
-   * @default { title: 'Panda', logo: '🐼' }
+   * @default { title: 'Bamboo', logo: '🎋' }
    */
   studio?: {
     /**
@@ -442,15 +442,15 @@ interface PresetOptions {
 }
 
 export interface HooksOptions {
-  hooks?: Partial<PandaHooks>
+  hooks?: Partial<BambooHooks>
 }
 
-export interface PandaPlugin extends HooksOptions {
+export interface BambooPlugin extends HooksOptions {
   name: string
 }
 
 export interface PluginsOptions {
-  plugins?: PandaPlugin[]
+  plugins?: BambooPlugin[]
 }
 
 export interface Config
@@ -464,7 +464,7 @@ export interface Config
     HooksOptions,
     PluginsOptions {
   /**
-   * Whether to opt-out of the defaults config presets: [`@pandacss/preset-base`, `@pandacss/preset-panda`]
+   * Whether to opt-out of the defaults config presets: [`@bamboocss/preset-base`, `@bamboocss/preset-bamboo`]
    * @default 'false'
    */
   eject?: boolean
@@ -510,7 +510,7 @@ export interface LoadConfigResult extends LoadTsConfigResult {
   serialized: string
   deserialize: () => Config
   dependencies: string[]
-  hooks: Partial<PandaHooks>
+  hooks: Partial<BambooHooks>
 }
 
 export interface HashOptions {

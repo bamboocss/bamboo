@@ -1,5 +1,5 @@
 import * as p from '@clack/prompts'
-import { logger } from '@pandacss/logger'
+import { logger } from '@bamboocss/logger'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { dirname, resolve } from 'path'
 import { CLIENT_NAMES, generateMcpConfig, getClientConfig, isValidClient, MCP_CLIENTS, type McpClient } from './clients'
@@ -13,7 +13,7 @@ export async function initMcpConfig(options: InitMcpConfigOptions = {}) {
   const { cwd = process.cwd() } = options
   let { clients } = options
 
-  p.intro('Panda MCP Setup')
+  p.intro('Bamboo MCP Setup')
 
   // If no clients specified, prompt user to select
   if (!clients || clients.length === 0) {
@@ -96,7 +96,7 @@ export async function initMcpConfig(options: InitMcpConfigOptions = {}) {
   // Show results
   p.note(results.map((r) => `${r.client}: ${r.path}`).join('\n'), 'Created MCP configurations')
 
-  p.outro('MCP setup complete! Your AI assistants can now use Panda CSS tools.')
+  p.outro('MCP setup complete! Your AI assistants can now use Bamboo CSS tools.')
 
   return results
 }

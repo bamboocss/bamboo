@@ -1,9 +1,9 @@
-import type { Config, Preset } from '@pandacss/types'
+import type { Config, Preset } from '@bamboocss/types'
 import { describe, expect, test } from 'vitest'
 import { getResolvedConfig } from '../src'
-import { PANDA_CONFIG_NAME } from '@pandacss/shared'
+import { BAMBOO_CONFIG_NAME } from '@bamboocss/shared'
 
-const defineConfig = <T extends Config>(config: T) => Object.assign(config, { name: PANDA_CONFIG_NAME })
+const defineConfig = <T extends Config>(config: T) => Object.assign(config, { name: BAMBOO_CONFIG_NAME })
 const definePreset = <T extends Preset>(preset: T) => preset
 
 describe('mergeConfigs / presets', () => {
@@ -138,7 +138,7 @@ describe('mergeConfigs / presets', () => {
 
     expect(result).toMatchInlineSnapshot(`
       {
-        "name": "__panda.config__",
+        "name": "__bamboo.config__",
         "presets": [
           {
             "name": "preset-1",

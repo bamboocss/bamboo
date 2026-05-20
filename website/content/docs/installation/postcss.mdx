@@ -1,63 +1,63 @@
 ---
 title: Using PostCSS
-description: Installing Panda as a PostCSS plugin is the recommended way to integrate it with your project.
+description: Installing Bamboo as a PostCSS plugin is the recommended way to integrate it with your project.
 ---
 
-This guide shows you how to install Panda as a PostCSS plugin, which is the recommended way to integrate it with your
+This guide shows you how to install Bamboo as a PostCSS plugin, which is the recommended way to integrate it with your
 project.
 
 <Steps>
-### Install Panda
+### Install Bamboo
 
-Install panda and create your `panda.config.ts` file.
+Install bamboo and create your `bamboo.config.ts` file.
 
 <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
   {/* <!-- prettier-ignore-start --> */}
   <Tab>
     ```bash
-    pnpm install -D @pandacss/dev postcss
-    pnpm panda init -p
+    pnpm install -D @bamboocss/dev postcss
+    pnpm bamboo init -p
     ```
   </Tab>
   <Tab>
     ```bash
-    npm install -D @pandacss/dev postcss
-    npx panda init -p
+    npm install -D @bamboocss/dev postcss
+    npx bamboo init -p
     ```
   </Tab>
   <Tab>
     ```bash
-    yarn add -D @pandacss/dev postcss
-    yarn panda init -p
+    yarn add -D @bamboocss/dev postcss
+    yarn bamboo init -p
     ```
   </Tab>
   <Tab>
     ```bash
-    bun add -D @pandacss/dev postcss
-    bun panda init -p
+    bun add -D @bamboocss/dev postcss
+    bun bamboo init -p
     ```
   </Tab>
   {/* <!-- prettier-ignore-end --> */}
 </Tabs>
 
-### Add Panda to your PostCSS config
+### Add Bamboo to your PostCSS config
 
-Add panda to your `postcss.config.cjs` file, or wherever PostCSS is configured in your project.
+Add bamboo to your `postcss.config.cjs` file, or wherever PostCSS is configured in your project.
 
 ```js
 module.exports = {
   plugins: {
-    '@pandacss/dev/postcss': {}
+    '@bamboocss/dev/postcss': {}
   }
 }
 ```
 
 ### Configure the content
 
-Add your panda config to your `panda.config.js` file, or wherever panda is configured in your project.
+Add your bamboo config to your `bamboo.config.js` file, or wherever bamboo is configured in your project.
 
 ```js {5}
-import { defineConfig } from '@pandacss/dev'
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   preflight: true,
@@ -74,15 +74,15 @@ Open your `package.json` file and update the `scripts` section as follows:
 ```diff {3}
 {
   "scripts": {
-+    "prepare": "panda codegen",
++    "prepare": "bamboo codegen",
   }
 }
 ```
 
 The `prepare` script will run codegen after dependency installation. Read more about
-[codegen](/docs/references/cli#panda-codegen) in the CLI section.
+[codegen](/docs/references/cli#bamboo-codegen) in the CLI section.
 
-> This step ensures that the panda output directory is regenerated after each dependency installation. So you can add
+> This step ensures that the bamboo output directory is regenerated after each dependency installation. So you can add
 > the output directory to your `.gitignore` file and not worry about it.
 
 ### Configure the entry CSS with layers
@@ -125,9 +125,9 @@ Run your build process by feeding the [root css](#configure-the-entry-css-with-l
 > If you're using a framework, PostCSS is probably already integrated with your build process. Check our other guides or
 > the documentation of your framework to see how to configure PostCSS.
 
-### Start using Panda
+### Start using Bamboo
 
-Use the generated style utilities in your code and panda will extract them to the generated CSS file.
+Use the generated style utilities in your code and bamboo will extract them to the generated CSS file.
 
 ```jsx
 import { css } from './styled-system/css'

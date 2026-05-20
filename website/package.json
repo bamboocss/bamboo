@@ -4,7 +4,7 @@
   "description": "",
   "private": true,
   "scripts": {
-    "prepare": "panda codegen",
+    "prepare": "bamboo codegen",
     "dev:content": "velite --watch",
     "dev:next": "next dev",
     "dev": "run-p dev:*",
@@ -17,8 +17,8 @@
   },
   "dependencies": {
     "@ark-ui/react": "5.18.3",
-    "@pandacss/preset-panda": "workspace:*",
-    "@pandacss/token-dictionary": "workspace:*",
+    "@bamboocss/preset-bamboo": "workspace:*",
+    "@bamboocss/token-dictionary": "workspace:*",
     "bright": "1.0.0",
     "focus-visible": "5.2.1",
     "fuse.js": "^7.1.0",
@@ -39,8 +39,8 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.3",
     "@eslint/js": "^9.39.1",
-    "@pandacss/dev": "workspace:*",
-    "@pandacss/postcss": "workspace:^",
+    "@bamboocss/dev": "workspace:*",
+    "@bamboocss/postcss": "workspace:^",
     "@shikijs/rehype": "^3.19.0",
     "@shikijs/transformers": "^3.19.0",
     "@types/git-url-parse": "16.0.2",

@@ -1,6 +1,6 @@
 ## Folder structure
 
-- `.panda`
+- `.bamboo`
   - `tokens` (index.js, index.d.ts, index.css)
   - `styled-system` (index.js, index.d.ts)
   - `package.json`
@@ -27,8 +27,8 @@ function getTokenVar(path) {
 ```
 
 ```js
-import { generateCssVar, generateDts, generateJs } from '@pandacss/generator'
-import { createTokenMap } from '@pandacss/token-dictionary'
+import { generateCssVar, generateDts, generateJs } from '@bamboocss/generator'
+import { createTokenMap } from '@bamboocss/token-dictionary'
 
 const conf = new Conf()
 
@@ -41,7 +41,7 @@ const files = generateJs(dict, { formats: ['esm', 'cjs'] })
 
 ```json
 {
-  "name": "dot-panda",
+  "name": "dot-bamboo",
   "description": "...",
   "exports": {
     "./tokens": {
@@ -61,10 +61,10 @@ const files = generateJs(dict, { formats: ['esm', 'cjs'] })
 ```
 
 ```js
-import { definePackage, writePackage } from '@pandacss/generators'
+import { definePackage, writePackage } from '@bamboocss/generators'
 
 const pkg = setupPackage({
-  name: 'dot-panda',
+  name: 'dot-bamboo',
   description: '...',
   dir: 'generated',
   exports: ['tokens', 'css'],
@@ -75,12 +75,12 @@ writePackage(pkg)
 updateTsConfig({
   compilerOptions: {
     paths: {
-      'design-system': ['./.panda'],
+      'design-system': ['./.bamboo'],
     },
   },
 })
 
-updateGitIgnore({ comment: '# Panda', path: '.@pandacss/dev' })
+updateGitIgnore({ comment: '# Bamboo', path: '.@bamboocss/dev' })
 ```
 
 ```ts

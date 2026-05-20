@@ -1,17 +1,17 @@
 {
-  "name": "@pandacss/extractor",
+  "name": "@bamboocss/extractor",
   "version": "1.11.1",
-  "description": "The css extractor for css panda",
+  "description": "The css extractor for css bamboo",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "author": "Segun Adebayo <joseshegs@gmail.com>",
   "license": "MIT",
   "sideEffects": false,
-  "homepage": "https://panda-css.com",
+  "homepage": "https://bamboo-css.com",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chakra-ui/panda.git",
+    "url": "git+https://github.com/chakra-ui/bamboo.git",
     "directory": "packages/extractor"
   },
   "publishConfig": {
@@ -42,7 +42,7 @@
     "dist"
   ],
   "dependencies": {
-    "@pandacss/shared": "workspace:*",
+    "@bamboocss/shared": "workspace:*",
     "ts-evaluator": "1.2.0",
     "ts-morph": "28.0.0"
   }

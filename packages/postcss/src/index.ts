@@ -1,11 +1,11 @@
-import { Builder, setLogStream } from '@pandacss/node'
+import { Builder, setLogStream } from '@bamboocss/node'
 import { createRequire } from 'module'
 import path from 'path'
 import type { PluginCreator, TransformCallback } from 'postcss'
 
 const customRequire = createRequire(__dirname)
 
-const PLUGIN_NAME = 'pandacss'
+const PLUGIN_NAME = 'bamboocss'
 
 export interface PluginOptions {
   configPath?: string
@@ -16,7 +16,7 @@ export interface PluginOptions {
 
 const interopDefault = (obj: any) => (obj && obj.__esModule ? obj.default : obj)
 
-export const loadConfig = () => interopDefault(customRequire('@pandacss/postcss'))
+export const loadConfig = () => interopDefault(customRequire('@bamboocss/postcss'))
 
 let stream: ReturnType<typeof setLogStream> | undefined
 
@@ -24,7 +24,7 @@ let stream: ReturnType<typeof setLogStream> | undefined
 export const builder = new Builder()
 let builderGuard: Promise<void> | undefined
 
-export const pandacss: PluginCreator<PluginOptions> = (options = {}) => {
+export const bamboocss: PluginCreator<PluginOptions> = (options = {}) => {
   const { configPath, cwd, logfile, allow } = options
 
   if (!stream && logfile) {
@@ -38,7 +38,7 @@ export const pandacss: PluginCreator<PluginOptions> = (options = {}) => {
 
     await builder.setup({ configPath, cwd })
 
-    // ignore non-panda css file
+    // ignore non-bamboo css file
     if (!builder.isValidRoot(root)) return
 
     await builder.emit()
@@ -77,9 +77,9 @@ export const pandacss: PluginCreator<PluginOptions> = (options = {}) => {
   }
 }
 
-pandacss.postcss = true
+bamboocss.postcss = true
 
-export default pandacss
+export default bamboocss
 
 const nodeModulesRegex = /node_modules/
 

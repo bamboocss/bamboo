@@ -1,7 +1,7 @@
 import { Code, codeStyle } from '@/components/code-highlight/code'
 import { LearnMore } from '@/www/learn-more'
 import { css } from '@/styled-system/css'
-import { Box, Circle, Container, Stack, panda } from '@/styled-system/jsx'
+import { Box, Circle, Container, Stack, bamboo } from '@/styled-system/jsx'
 import { button } from '@/styled-system/recipes'
 import { token } from '@/styled-system/tokens'
 import { Icon } from '@/theme/icons'
@@ -52,7 +52,7 @@ const CodePanel = (props: {
   const { title, children, className } = props
   return (
     <div className={className}>
-      <panda.span
+      <bamboo.span
         ml="8"
         display="inline-flex"
         py="2"
@@ -63,8 +63,8 @@ const CodePanel = (props: {
         textStyle="xl"
       >
         {title}
-      </panda.span>
-      <panda.div flexShrink="0">
+      </bamboo.span>
+      <bamboo.div flexShrink="0">
         <Code
           lang="tsx"
           style={{ borderRadius: token('radii.xl'), margin: '0' }}
@@ -72,14 +72,14 @@ const CodePanel = (props: {
         >
           {children}
         </Code>
-      </panda.div>
+      </bamboo.div>
     </div>
   )
 }
 
 export const DesignTokensSection = () => {
   return (
-    <panda.section bg="bg">
+    <bamboo.section bg="bg">
       <Container pt={{ base: '20', lg: '40' }} pb={{ base: '16', lg: '32' }}>
         <Stack
           gap="20"
@@ -95,24 +95,24 @@ export const DesignTokensSection = () => {
             color="fg.headline"
           >
             <Icon icon="DesignTokenBox" />
-            <panda.div position="absolute" top="-15px" right="-30px" color="fg">
+            <bamboo.div position="absolute" top="-15px" right="-30px" color="fg">
               <Icon icon="Sparks2" className={css({ w: '48px', h: '48px' })} />
-            </panda.div>
+            </bamboo.div>
           </Circle>
 
           <Box flex="1">
             <Stack maxW={{ lg: '560px' }}>
-              <panda.h3 textStyle="panda.h3" fontWeight="bold">
+              <bamboo.h3 textStyle="bamboo.h3" fontWeight="bold">
                 Design token support
-              </panda.h3>
-              <panda.h4
-                textStyle="panda.h4"
+              </bamboo.h3>
+              <bamboo.h4
+                textStyle="bamboo.h4"
                 fontWeight="medium"
                 color="fg.muted"
               >
                 Specify base and semantic tokens with ease using the W3C working
                 token spec.
-              </panda.h4>
+              </bamboo.h4>
             </Stack>
           </Box>
 
@@ -128,6 +128,6 @@ export const DesignTokensSection = () => {
           </CodePanel>
         </Stack>
       </Container>
-    </panda.section>
+    </bamboo.section>
   )
 }

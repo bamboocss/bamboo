@@ -8,12 +8,12 @@ export const GET = async () => {
       title: 'Complete documentation',
       href: `${getPublicUrl('/llms-full.txt')}`,
       description:
-        'The complete Panda CSS documentation including all concepts, utilities, and guides'
+        'The complete Bamboo CSS documentation including all concepts, utilities, and guides'
     },
     {
       title: 'Overview',
       href: `${getPublicUrl('/llms.txt/overview')}`,
-      description: 'Getting started, browser support, FAQ, and why Panda CSS'
+      description: 'Getting started, browser support, FAQ, and why Bamboo CSS'
     },
     {
       title: 'Installation',
@@ -75,13 +75,13 @@ export const GET = async () => {
 }
 
 const TEMPLATE = `
-# Panda CSS Documentation for LLMs
+# Bamboo CSS Documentation for LLMs
 
-> Panda CSS is a CSS-in-JS framework with build-time optimizations for styling web applications
+> Bamboo CSS is a CSS-in-JS framework with build-time optimizations for styling web applications
 
 ## Documentation Sets
 
-This index provides links to documentation organized by topic. Each link contains the full text content for that section, making it easy for LLMs to understand specific aspects of Panda CSS.
+This index provides links to documentation organized by topic. Each link contains the full text content for that section, making it easy for LLMs to understand specific aspects of Bamboo CSS.
 
 %DOCUMENT_SETS%
 

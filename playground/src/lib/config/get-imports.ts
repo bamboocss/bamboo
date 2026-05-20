@@ -1,4 +1,4 @@
-import { Dict } from '@pandacss/types'
+import { Dict } from '@bamboocss/types'
 
 export const getImports = (code: string) => {
   const codeWithoutComments = code.replace(/\/\/[^\r\n]*|\/\*[\s\S]*?\*\//g, '')
@@ -9,7 +9,7 @@ export const getImports = (code: string) => {
   while ((match = importRegex.exec(codeWithoutComments)) !== null) {
     const [, namedImports, namespaceImport, defaultImport, pkg] = match
 
-    if (pkg === '@pandacss/dev') {
+    if (pkg === '@bamboocss/dev') {
       continue
     }
 

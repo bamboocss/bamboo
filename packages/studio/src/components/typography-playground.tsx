@@ -1,8 +1,8 @@
-import type { Token } from '@pandacss/token-dictionary'
+import type { Token } from '@bamboocss/token-dictionary'
 import * as React from 'react'
 import { useState } from 'react'
-import { Stack, panda } from '../../styled-system/jsx'
-import * as context from '../lib/panda-context'
+import { Stack, bamboo } from '../../styled-system/jsx'
+import * as context from '../lib/bamboo-context'
 import { Select } from './input'
 import { TokenContent } from './token-content'
 import { TokenGroup } from './token-group'
@@ -58,7 +58,7 @@ export default function TypographyPlayground() {
     <TokenGroup>
       <TokenContent>
         <div>
-          <panda.div
+          <bamboo.div
             contentEditable
             outline="0"
             pt="28"
@@ -68,17 +68,17 @@ export default function TypographyPlayground() {
             width="fit-content"
             style={configValues}
           >
-            Write type-safe styles with ease using Panda CSS
-          </panda.div>
+            Write type-safe styles with ease using Bamboo CSS
+          </bamboo.div>
 
           <Stack gap="4">
             {Object.keys(config).map((tokenKey) => (
-              <panda.div display="flex" alignItems="center" gap="1.5" key={tokenKey}>
-                <panda.span whiteSpace="nowrap" width="48" textTransform="capitalize" mr="2">
+              <bamboo.div display="flex" alignItems="center" gap="1.5" key={tokenKey}>
+                <bamboo.span whiteSpace="nowrap" width="48" textTransform="capitalize" mr="2">
                   {tokenKey.replace(/([a-z0-9])([A-Z])/g, '$1 $2')}
-                </panda.span>
+                </bamboo.span>
                 {renderTokenSwitch(tokenKey as keyof typeof defaultConfig)}
-              </panda.div>
+              </bamboo.div>
             ))}
           </Stack>
         </div>

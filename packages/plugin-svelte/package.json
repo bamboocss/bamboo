@@ -1,17 +1,17 @@
 {
-  "name": "@pandacss/plugin-svelte",
+  "name": "@bamboocss/plugin-svelte",
   "version": "1.11.1",
-  "description": "Panda CSS plugin for Svelte single file component support",
+  "description": "Bamboo CSS plugin for Svelte single file component support",
   "author": "Segun Adebayo <joseshegs@gmail.com>",
   "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "sideEffects": false,
-  "homepage": "https://panda-css.com",
+  "homepage": "https://bamboo-css.com",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chakra-ui/panda.git",
+    "url": "git+https://github.com/chakra-ui/bamboo.git",
     "directory": "packages/plugin-svelte"
   },
   "publishConfig": {
@@ -38,7 +38,7 @@
     "dist"
   ],
   "dependencies": {
-    "@pandacss/types": "workspace:*",
+    "@bamboocss/types": "workspace:*",
     "magic-string": "0.30.21"
   }
 }

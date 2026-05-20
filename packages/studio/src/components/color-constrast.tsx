@@ -1,7 +1,7 @@
 import * as React from 'react'
-import { HStack, Stack, VStack, panda } from '../../styled-system/jsx'
+import { HStack, Stack, VStack, bamboo } from '../../styled-system/jsx'
 import { getContrastPairs, getContrastRatio } from '../lib/color'
-import * as context from '../lib/panda-context'
+import * as context from '../lib/bamboo-context'
 import { Select } from './input'
 import { TestScore } from './test-score'
 import { TokenContent } from './token-content'
@@ -21,8 +21,8 @@ function ColorSelect(props: ColorSelectProps) {
   const { title, colors, onChange, value } = props
   return (
     <Stack flex="1">
-      <panda.span fontWeight="semibold">{title}</panda.span>
-      <panda.div
+      <bamboo.span fontWeight="semibold">{title}</bamboo.span>
+      <bamboo.div
         display="flex"
         flexDirection="column"
         borderWidth="1px"
@@ -78,24 +78,24 @@ export default function ColorContrastChecker() {
 
         <div>
           <VStack textAlign="center" gap="2.5">
-            <panda.span fontWeight="bold" fontSize="4xl">
+            <bamboo.span fontWeight="bold" fontSize="4xl">
               {constrastRatio ? `${constrastRatio?.toFixed(2).replace(/[.,]00$/, '')}:1` : ':'}
-            </panda.span>
-            <panda.span fontWeight="semibold" opacity="0.5">
+            </bamboo.span>
+            <bamboo.span fontWeight="semibold" opacity="0.5">
               Contrast ratio
-            </panda.span>
+            </bamboo.span>
           </VStack>
           {wcag && (
-            <panda.div display="flex" gap="5" marginTop="10">
+            <bamboo.div display="flex" gap="5" marginTop="10">
               <Stack flex="1" gap="4">
-                <panda.span fontWeight="semibold">Normal Text</panda.span>
+                <bamboo.span fontWeight="semibold">Normal Text</bamboo.span>
                 <TestScore score={wcag[0]} size="regular" />
               </Stack>
               <Stack flex="1" gap="4">
-                <panda.span fontWeight="semibold">Large Text</panda.span>
+                <bamboo.span fontWeight="semibold">Large Text</bamboo.span>
                 <TestScore score={wcag[1]} size="large" />
               </Stack>
-            </panda.div>
+            </bamboo.div>
           )}
         </div>
       </TokenContent>

@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 import { createRuleProcessor } from './fixture'
-import type { Config } from '@pandacss/types'
+import type { Config } from '@bamboocss/types'
 
 const config: Config = {
   theme: {

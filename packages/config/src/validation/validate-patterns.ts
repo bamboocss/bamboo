@@ -1,4 +1,4 @@
-import type { Patterns } from '@pandacss/types'
+import type { Patterns } from '@bamboocss/types'
 import type { ArtifactNames } from '../types'
 
 export const validatePatterns = (patterns: Patterns | undefined, names: ArtifactNames) => {

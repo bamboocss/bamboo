@@ -1,3 +1,3 @@
 /* eslint-disable */
-import type { Panda } from '../types/jsx';
-export declare const panda: Panda
+import type { Bamboo } from '../types/jsx';
+export declare const bamboo: Bamboo

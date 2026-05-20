@@ -1,5 +1,5 @@
-import { Context, Stylesheet, stringify } from '@pandacss/core'
-import type { Dict } from '@pandacss/types'
+import { Context, Stylesheet, stringify } from '@bamboocss/core'
+import type { Dict } from '@bamboocss/types'
 
 export function generateKeyframeCss(ctx: Context, sheet: Stylesheet) {
   const { keyframes = {} } = ctx.config.theme ?? {}

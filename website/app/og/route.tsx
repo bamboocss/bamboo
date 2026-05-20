@@ -57,7 +57,7 @@ export async function GET(request: Request) {
                     marginBottom: '16px'
                   }}
                 >
-                  🐼 / {upperFirst(category)}
+                  🎋 / {upperFirst(category)}
                 </div>
               )}
               <div
@@ -101,7 +101,7 @@ export async function GET(request: Request) {
                     alignSelf: 'flex-start'
                   }}
                 >
-                  npm i -D @pandacss/dev
+                  npm i -D @bamboocss/dev
                 </div>
               )}
             </div>

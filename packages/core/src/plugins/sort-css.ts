@@ -54,4 +54,4 @@ export default function sortCss(): TransformCallback {
   return inner
 }
 
-sortCss.postcssPlugin = 'panda-sort-css'
+sortCss.postcssPlugin = 'bamboo-sort-css'

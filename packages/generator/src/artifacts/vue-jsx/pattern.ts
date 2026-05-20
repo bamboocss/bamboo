@@ -1,5 +1,5 @@
-import type { Context } from '@pandacss/core'
-import type { ArtifactFilters } from '@pandacss/types'
+import type { Context } from '@bamboocss/core'
+import type { ArtifactFilters } from '@bamboocss/types'
 import { outdent } from 'outdent'
 import { match } from 'ts-pattern'
 

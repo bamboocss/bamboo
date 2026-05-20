@@ -15,7 +15,7 @@ export default function App() {
         })}
       >
         <span>🐼</span>
-        <span>Hello from Panda</span>
+        <span>Hello from Bamboo</span>
       </div>
     </div>
   )

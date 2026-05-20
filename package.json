@@ -1,9 +1,9 @@
 {
-  "name": "panda",
+  "name": "bamboo",
   "version": "0.0.1",
   "private": true,
   "type": "module",
-  "description": "The repository of css panda",
+  "description": "The repository of css bamboo",
   "scripts": {
     "playground": "pnpm --filter=./playground",
     "build:playground": "pnpm --filter {./playground}... build",
@@ -26,7 +26,7 @@
     "release": "changeset publish",
     "release-dev": "changeset version --snapshot dev && changeset publish --tag dev",
     "prepare-studio": "pnpm --filter=./packages/studio codegen",
-    "build-studio": "pnpm --filter=./sandbox/vite-ts exec pnpm panda studio --build",
+    "build-studio": "pnpm --filter=./sandbox/vite-ts exec pnpm bamboo studio --build",
     "deploy-studio": "pnpm prepare-studio && pnpm build-studio",
     "serve-studio": "npx serve ./sandbox/vite-ts/styled-system-studio",
     "website": "pnpm --filter=./website",

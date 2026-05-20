@@ -22,7 +22,7 @@ const config = {
       },
       {
         source: '/play',
-        destination: 'https://play.panda-css.com',
+        destination: 'https://play.bamboo-css.com',
         permanent: true
       },
       {

@@ -1,4 +1,4 @@
-import { HStack, panda } from '@/styled-system/jsx'
+import { HStack, bamboo } from '@/styled-system/jsx'
 
 export const CommandPrompt = (props: { value: string }) => {
   const { value } = props
@@ -9,7 +9,7 @@ export const CommandPrompt = (props: { value: string }) => {
       fontWeight="medium"
       fontFamily="mono"
     >
-      <panda.code opacity="0.3">$</panda.code>
+      <bamboo.code opacity="0.3">$</bamboo.code>
       <span>{value}</span>
     </HStack>
   )

@@ -1,11 +1,11 @@
-import { logger } from '@pandacss/logger'
-import { capitalize, isBaseCondition, isObject, toRem, withoutSpace } from '@pandacss/shared'
+import { logger } from '@bamboocss/logger'
+import { capitalize, isBaseCondition, isObject, toRem, withoutSpace } from '@bamboocss/shared'
 import type {
   ConditionDetails,
   ConditionQuery,
   Conditions as ConditionsConfig,
   ThemeVariantsMap,
-} from '@pandacss/types'
+} from '@bamboocss/types'
 import { Breakpoints } from './breakpoints'
 import { parseCondition } from './parse-condition'
 import { compareAtRuleOrMixed } from './sort-style-rules'
@@ -112,7 +112,7 @@ export class Conditions {
   }
 
   getThemeSelector = (name: string) => {
-    return `[data-panda-theme=${name}]`
+    return `[data-bamboo-theme=${name}]`
   }
 
   getThemeName = (theme: string) => {

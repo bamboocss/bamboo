@@ -1,10 +1,10 @@
-import type { Context } from '@pandacss/core'
-import { compact } from '@pandacss/shared'
-import type { ThemeVariant } from '@pandacss/types'
+import type { Context } from '@bamboocss/core'
+import { compact } from '@bamboocss/shared'
+import type { ThemeVariant } from '@bamboocss/types'
 import outdent from 'outdent'
 import { stringifyVars } from '../css/token-css'
 
-const getThemeId = (themeName: string) => 'panda-theme-' + themeName
+const getThemeId = (themeName: string) => 'bamboo-theme-' + themeName
 
 /**
  * Get CSS for a specific theme
@@ -72,7 +72,7 @@ export function generateThemesIndex(ctx: Context, files: ReturnType<typeof gener
       throw new Error('No head found in doc')
     }
 
-    el.dataset.pandaTheme = theme.name
+    el.dataset.bambooTheme = theme.name
 
     head.appendChild(sheet)
     sheet.innerHTML = theme.css

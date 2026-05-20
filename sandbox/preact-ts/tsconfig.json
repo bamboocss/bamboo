@@ -21,6 +21,6 @@
       "styled-system/*": ["./styled-system/*"]
     }
   },
-  "include": ["src", "./panda.config.ts"],
+  "include": ["src", "./bamboo.config.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

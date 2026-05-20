@@ -1,6 +1,6 @@
 import layersPolyfill from '@csstools/postcss-cascade-layers'
-import { logger } from '@pandacss/logger'
-import type { CascadeLayer, Dict, SystemStyleObject } from '@pandacss/types'
+import { logger } from '@bamboocss/logger'
+import type { CascadeLayer, Dict, SystemStyleObject } from '@bamboocss/types'
 import postcss, { CssSyntaxError } from 'postcss'
 import { optimizeCss } from './optimize'
 import sortMediaQueries from './plugins/sort-mq'

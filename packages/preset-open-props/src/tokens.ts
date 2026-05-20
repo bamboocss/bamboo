@@ -1,4 +1,4 @@
-import type { Tokens } from '@pandacss/types'
+import type { Tokens } from '@bamboocss/types'
 import { colors } from './colors'
 import { zIndex } from './zIndex'
 import { assets } from './assets'

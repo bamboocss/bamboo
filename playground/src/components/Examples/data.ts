@@ -28,7 +28,7 @@ export const EXAMPLES = [
             })}
           >
             <span>🐼</span>
-            <span>Hello from Panda</span>
+            <span>Hello from Bamboo</span>
           </div>
         </div>
       );
@@ -168,7 +168,7 @@ export const EXAMPLES = [
     },
   },
 })`,
-      `import { defineConfig, defineRecipe } from '@pandacss/dev'`,
+      `import { defineConfig, defineRecipe } from '@bamboocss/dev'`,
     ),
   },
   {
@@ -221,7 +221,7 @@ export const EXAMPLES = [
     },
   },
 });`,
-      `import { defineConfig, defineSlotRecipe } from '@pandacss/dev'`,
+      `import { defineConfig, defineSlotRecipe } from '@bamboocss/dev'`,
     ),
   },
   {

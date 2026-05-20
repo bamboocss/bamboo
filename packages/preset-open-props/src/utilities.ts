@@ -1,4 +1,4 @@
-import type { UtilityConfig } from '@pandacss/types'
+import type { UtilityConfig } from '@bamboocss/types'
 import MaskCornerCuts from 'open-props/src/masks.corner-cuts'
 import MaskEdges from 'open-props/src/masks.edges'
 import { camelize } from './utils'

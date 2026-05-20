@@ -27,7 +27,7 @@
     "@docusaurus/module-type-aliases": "3.9.2",
     "@docusaurus/tsconfig": "3.9.2",
     "@docusaurus/types": "3.9.2",
-    "@pandacss/dev": "workspace:*",
+    "@bamboocss/dev": "workspace:*",
     "typescript": "6.0.2"
   },
   "browserslist": {

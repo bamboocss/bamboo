@@ -96,10 +96,10 @@ importers:
 
   packages/astro-plugin-studio:
     dependencies:
-      '@pandacss/core':
+      '@bamboocss/core':
         specifier: workspace:*
         version: link:../core
-      '@pandacss/node':
+      '@bamboocss/node':
         specifier: workspace:*
         version: link:../node
       javascript-stringify:
@@ -118,34 +118,34 @@ importers:
       '@clack/prompts':
         specifier: 0.11.0
         version: 0.11.0
-      '@pandacss/config':
+      '@bamboocss/config':
         specifier: workspace:*
         version: link:../config
-      '@pandacss/logger':
+      '@bamboocss/logger':
         specifier: workspace:*
         version: link:../logger
-      '@pandacss/mcp':
+      '@bamboocss/mcp':
         specifier: workspace:*
         version: link:../mcp
-      '@pandacss/node':
+      '@bamboocss/node':
         specifier: workspace:*
         version: link:../node
-      '@pandacss/postcss':
+      '@bamboocss/postcss':
         specifier: workspace:*
         version: link:../postcss
-      '@pandacss/preset-base':
+      '@bamboocss/preset-base':
         specifier: workspace:*
         version: link:../preset-base
-      '@pandacss/preset-panda':
+      '@bamboocss/preset-bamboo':
         specifier: workspace:*
-        version: link:../preset-panda
-      '@pandacss/shared':
+        version: link:../preset-bamboo
+      '@bamboocss/shared':
         specifier: workspace:*
         version: link:../shared
-      '@pandacss/token-dictionary':
+      '@bamboocss/token-dictionary':
         specifier: workspace:*
         version: link:../token-dictionary
-      '@pandacss/types':
+      '@bamboocss/types':
         specifier: workspace:*
         version: link:../types
       cac:
@@ -164,19 +164,19 @@ importers:
 
   packages/config:
     dependencies:
-      '@pandacss/logger':
+      '@bamboocss/logger':
         specifier: workspace:*
         version: link:../logger
-      '@pandacss/preset-base':
+      '@bamboocss/preset-base':
         specifier: workspace:*
         version: link:../preset-base
-      '@pandacss/preset-panda':
+      '@bamboocss/preset-bamboo':
         specifier: workspace:*
-        version: link:../preset-panda
-      '@pandacss/shared':
+        version: link:../preset-bamboo
+      '@bamboocss/shared':
         specifier: workspace:*
         version: link:../shared
-      '@pandacss/types':
+      '@bamboocss/types':
         specifier: workspace:*
         version: link:../types
       bundle-n-require:
@@ -198,55 +198,55 @@ importers:
 
   packages/config/__tests__/samples/cjs:
     devDependencies:
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:^
         version: link:../../../../cli
 
   packages/config/__tests__/samples/cts:
     devDependencies:
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:^
         version: link:../../../../cli
 
   packages/config/__tests__/samples/js:
     devDependencies:
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:^
         version: link:../../../../cli
 
   packages/config/__tests__/samples/mjs:
     devDependencies:
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:^
         version: link:../../../../cli
 
   packages/config/__tests__/samples/mts:
     devDependencies:
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:^
         version: link:../../../../cli
 
   packages/config/__tests__/samples/nested-files:
     devDependencies:
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:^
         version: link:../../../../cli
 
   packages/config/__tests__/samples/ts:
     devDependencies:
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:^
         version: link:../../../../cli
 
   packages/config/__tests__/samples/ts-import-map:
     devDependencies:
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:^
         version: link:../../../../cli
 
   packages/config/__tests__/samples/ts-import-map-one-source:
     devDependencies:
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:^
         version: link:../../../../cli
 
@@ -256,13 +256,13 @@ importers:
 
   packages/config/__tests__/samples/with-preset:
     devDependencies:
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:^
         version: link:../../../../cli
 
   packages/config/__tests__/samples/with-tsconfig-paths:
     devDependencies:
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:^
         version: link:../../../../cli
 
@@ -271,19 +271,19 @@ importers:
       '@csstools/postcss-cascade-layers':
         specifier: 5.0.2
         version: 5.0.2(postcss@8.5.14)
-      '@pandacss/is-valid-prop':
+      '@bamboocss/is-valid-prop':
         specifier: workspace:^
         version: link:../is-valid-prop
-      '@pandacss/logger':
+      '@bamboocss/logger':
         specifier: workspace:*
         version: link:../logger
-      '@pandacss/shared':
+      '@bamboocss/shared':
         specifier: workspace:*
         version: link:../shared
-      '@pandacss/token-dictionary':
+      '@bamboocss/token-dictionary':
         specifier: workspace:*
         version: link:../token-dictionary
-      '@pandacss/types':
+      '@bamboocss/types':
         specifier: workspace:*
         version: link:../types
       browserslist:
@@ -326,7 +326,7 @@ importers:
 
   packages/extractor:
     dependencies:
-      '@pandacss/shared':
+      '@bamboocss/shared':
         specifier: workspace:*
         version: link:../shared
       ts-evaluator:
@@ -338,31 +338,31 @@ importers:
 
   packages/fixture:
     devDependencies:
-      '@pandacss/config':
+      '@bamboocss/config':
         specifier: workspace:^
         version: link:../config
-      '@pandacss/core':
+      '@bamboocss/core':
         specifier: workspace:^
         version: link:../core
-      '@pandacss/generator':
+      '@bamboocss/generator':
         specifier: workspace:^
         version: link:../generator
-      '@pandacss/node':
+      '@bamboocss/node':
         specifier: workspace:^
         version: link:../node
-      '@pandacss/preset-base':
+      '@bamboocss/preset-base':
         specifier: workspace:*
         version: link:../preset-base
-      '@pandacss/preset-panda':
+      '@bamboocss/preset-bamboo':
         specifier: workspace:*
-        version: link:../preset-panda
-      '@pandacss/shared':
+        version: link:../preset-bamboo
+      '@bamboocss/shared':
         specifier: workspace:^
         version: link:../shared
-      '@pandacss/token-dictionary':
+      '@bamboocss/token-dictionary':
         specifier: workspace:^
         version: link:../token-dictionary
-      '@pandacss/types':
+      '@bamboocss/types':
         specifier: workspace:*
         version: link:../types
       postcss:
@@ -371,22 +371,22 @@ importers:
 
   packages/generator:
     dependencies:
-      '@pandacss/core':
+      '@bamboocss/core':
         specifier: workspace:*
         version: link:../core
-      '@pandacss/is-valid-prop':
+      '@bamboocss/is-valid-prop':
         specifier: workspace:^
         version: link:../is-valid-prop
-      '@pandacss/logger':
+      '@bamboocss/logger':
         specifier: workspace:*
         version: link:../logger
-      '@pandacss/shared':
+      '@bamboocss/shared':
         specifier: workspace:*
         version: link:../shared
-      '@pandacss/token-dictionary':
+      '@bamboocss/token-dictionary':
         specifier: workspace:*
         version: link:../token-dictionary
-      '@pandacss/types':
+      '@bamboocss/types':
         specifier: workspace:*
         version: link:../types
       javascript-stringify:
@@ -417,7 +417,7 @@ importers:
 
   packages/logger:
     dependencies:
-      '@pandacss/types':
+      '@bamboocss/types':
         specifier: workspace:*
         version: link:../types
       kleur:
@@ -436,16 +436,16 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.29.0
         version: 1.29.0(zod@4.1.12)
-      '@pandacss/logger':
+      '@bamboocss/logger':
         specifier: workspace:*
         version: link:../logger
-      '@pandacss/node':
+      '@bamboocss/node':
         specifier: workspace:*
         version: link:../node
-      '@pandacss/token-dictionary':
+      '@bamboocss/token-dictionary':
         specifier: workspace:*
         version: link:../token-dictionary
-      '@pandacss/types':
+      '@bamboocss/types':
         specifier: workspace:*
         version: link:../types
       zod:
@@ -454,40 +454,40 @@ importers:
 
   packages/node:
     dependencies:
-      '@pandacss/config':
+      '@bamboocss/config':
         specifier: workspace:*
         version: link:../config
-      '@pandacss/core':
+      '@bamboocss/core':
         specifier: workspace:*
         version: link:../core
-      '@pandacss/generator':
+      '@bamboocss/generator':
         specifier: workspace:*
         version: link:../generator
-      '@pandacss/logger':
+      '@bamboocss/logger':
         specifier: workspace:*
         version: link:../logger
-      '@pandacss/parser':
+      '@bamboocss/parser':
         specifier: workspace:*
         version: link:../parser
-      '@pandacss/plugin-lightningcss':
+      '@bamboocss/plugin-lightningcss':
         specifier: workspace:*
         version: link:../plugin-lightningcss
-      '@pandacss/plugin-svelte':
+      '@bamboocss/plugin-svelte':
         specifier: workspace:*
         version: link:../plugin-svelte
-      '@pandacss/plugin-vue':
+      '@bamboocss/plugin-vue':
         specifier: workspace:*
         version: link:../plugin-vue
-      '@pandacss/reporter':
+      '@bamboocss/reporter':
         specifier: workspace:*
         version: link:../reporter
-      '@pandacss/shared':
+      '@bamboocss/shared':
         specifier: workspace:*
         version: link:../shared
-      '@pandacss/token-dictionary':
+      '@bamboocss/token-dictionary':
         specifier: workspace:*
         version: link:../token-dictionary
-      '@pandacss/types':
+      '@bamboocss/types':
         specifier: workspace:*
         version: link:../types
       browserslist:
@@ -575,22 +575,22 @@ importers:
 
   packages/parser:
     dependencies:
-      '@pandacss/config':
+      '@bamboocss/config':
         specifier: workspace:^
         version: link:../config
-      '@pandacss/core':
+      '@bamboocss/core':
         specifier: workspace:^
         version: link:../core
-      '@pandacss/extractor':
+      '@bamboocss/extractor':
         specifier: workspace:*
         version: link:../extractor
-      '@pandacss/logger':
+      '@bamboocss/logger':
         specifier: workspace:*
         version: link:../logger
-      '@pandacss/shared':
+      '@bamboocss/shared':
         specifier: workspace:*
         version: link:../shared
-      '@pandacss/types':
+      '@bamboocss/types':
         specifier: workspace:*
         version: link:../types
       ts-morph:
@@ -600,22 +600,22 @@ importers:
         specifier: 5.9.0
         version: 5.9.0
     devDependencies:
-      '@pandacss/generator':
+      '@bamboocss/generator':
         specifier: workspace:*
         version: link:../generator
-      '@pandacss/plugin-svelte':
+      '@bamboocss/plugin-svelte':
         specifier: workspace:*
         version: link:../plugin-svelte
-      '@pandacss/plugin-vue':
+      '@bamboocss/plugin-vue':
         specifier: workspace:*
         version: link:../plugin-vue
 
   packages/plugin-lightningcss:
     dependencies:
-      '@pandacss/logger':
+      '@bamboocss/logger':
         specifier: workspace:*
         version: link:../logger
-      '@pandacss/types':
+      '@bamboocss/types':
         specifier: workspace:*
         version: link:../types
       browserslist:
@@ -627,7 +627,7 @@ importers:
 
   packages/plugin-svelte:
     dependencies:
-      '@pandacss/types':
+      '@bamboocss/types':
         specifier: workspace:*
         version: link:../types
       magic-string:
@@ -636,7 +636,7 @@ importers:
 
   packages/plugin-vue:
     dependencies:
-      '@pandacss/types':
+      '@bamboocss/types':
         specifier: workspace:*
         version: link:../types
       '@vue/compiler-sfc':
@@ -652,20 +652,20 @@ importers:
 
   packages/postcss:
     dependencies:
-      '@pandacss/node':
+      '@bamboocss/node':
         specifier: workspace:*
         version: link:../node
       postcss:
         specifier: 8.5.14
         version: 8.5.14
     devDependencies:
-      '@pandacss/logger':
+      '@bamboocss/logger':
         specifier: workspace:*
         version: link:../logger
 
   packages/preset-atlaskit:
     dependencies:
-      '@pandacss/types':
+      '@bamboocss/types':
         specifier: workspace:*
         version: link:../types
     devDependencies:
@@ -678,13 +678,13 @@ importers:
 
   packages/preset-base:
     dependencies:
-      '@pandacss/types':
+      '@bamboocss/types':
         specifier: workspace:*
         version: link:../types
 
   packages/preset-open-props:
     dependencies:
-      '@pandacss/types':
+      '@bamboocss/types':
         specifier: workspace:*
         version: link:../types
       css:
@@ -698,27 +698,27 @@ importers:
         specifier: 0.0.38
         version: 0.0.38
 
-  packages/preset-panda:
+  packages/preset-bamboo:
     dependencies:
-      '@pandacss/types':
+      '@bamboocss/types':
         specifier: workspace:*
         version: link:../types
 
   packages/reporter:
     dependencies:
-      '@pandacss/core':
+      '@bamboocss/core':
         specifier: workspace:*
         version: link:../core
-      '@pandacss/generator':
+      '@bamboocss/generator':
         specifier: workspace:*
         version: link:../generator
-      '@pandacss/logger':
+      '@bamboocss/logger':
         specifier: workspace:*
         version: link:../logger
-      '@pandacss/shared':
+      '@bamboocss/shared':
         specifier: workspace:*
         version: link:../shared
-      '@pandacss/types':
+      '@bamboocss/types':
         specifier: workspace:*
         version: link:../types
       table:
@@ -742,22 +742,22 @@ importers:
       '@nanostores/react':
         specifier: ^1.0.0
         version: 1.0.0(nanostores@1.1.0)(react@19.2.0)
-      '@pandacss/astro-plugin-studio':
+      '@bamboocss/astro-plugin-studio':
         specifier: workspace:*
         version: link:../astro-plugin-studio
-      '@pandacss/config':
+      '@bamboocss/config':
         specifier: workspace:*
         version: link:../config
-      '@pandacss/logger':
+      '@bamboocss/logger':
         specifier: workspace:*
         version: link:../logger
-      '@pandacss/shared':
+      '@bamboocss/shared':
         specifier: workspace:*
         version: link:../shared
-      '@pandacss/token-dictionary':
+      '@bamboocss/token-dictionary':
         specifier: workspace:*
         version: link:../token-dictionary
-      '@pandacss/types':
+      '@bamboocss/types':
         specifier: workspace:*
         version: link:../types
       astro:
@@ -788,13 +788,13 @@ importers:
 
   packages/token-dictionary:
     dependencies:
-      '@pandacss/logger':
+      '@bamboocss/logger':
         specifier: workspace:^
         version: link:../logger
-      '@pandacss/shared':
+      '@bamboocss/shared':
         specifier: workspace:*
         version: link:../shared
-      '@pandacss/types':
+      '@bamboocss/types':
         specifier: workspace:*
         version: link:../types
       picomatch:
@@ -810,7 +810,7 @@ importers:
 
   packages/types:
     devDependencies:
-      '@pandacss/extractor':
+      '@bamboocss/extractor':
         specifier: workspace:*
         version: link:../extractor
       csstype:
@@ -837,24 +837,24 @@ importers:
       '@monaco-editor/react':
         specifier: 4.6.0
         version: 4.6.0(monaco-editor@0.46.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
-      '@pandacss/config':
+      '@bamboocss/config':
         specifier: workspace:*
         version: link:../packages/config
-      '@pandacss/generator':
+      '@bamboocss/generator':
         specifier: workspace:*
         version: link:../packages/generator
-      '@pandacss/logger':
+      '@bamboocss/logger':
         specifier: workspace:*
         version: link:../packages/logger
-      '@pandacss/parser':
+      '@bamboocss/parser':
         specifier: workspace:*
         version: link:../packages/parser
-      '@pandacss/preset-base':
+      '@bamboocss/preset-base':
         specifier: workspace:*
         version: link:../packages/preset-base
-      '@pandacss/preset-panda':
+      '@bamboocss/preset-bamboo':
         specifier: workspace:*
-        version: link:../packages/preset-panda
+        version: link:../packages/preset-bamboo
       '@prisma/client':
         specifier: 5.9.1
         version: 5.9.1(prisma@5.9.1)
@@ -937,10 +937,10 @@ importers:
       '@next/bundle-analyzer':
         specifier: 15.5.6
         version: 15.5.6
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:*
         version: link:../packages/cli
-      '@pandacss/types':
+      '@bamboocss/types':
         specifier: workspace:*
         version: link:../packages/types
       '@types/react':
@@ -980,13 +980,13 @@ importers:
         specifier: 1.9.10
         version: 1.9.10
     devDependencies:
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:*
         version: link:../../packages/cli
 
   sandbox/codegen:
     dependencies:
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:^
         version: link:../../packages/cli
       react:
@@ -1076,13 +1076,13 @@ importers:
 
   sandbox/component-lib/nuxt-lib-source/packages/css-lib:
     devDependencies:
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:*
         version: link:../../../../../packages/cli
 
   sandbox/component-lib/nuxt-lib-source/packages/nuxt-app:
     devDependencies:
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:*
         version: link:../../../../../packages/cli
       '@sandbox-nuxt-lib-source/css-lib':
@@ -1128,7 +1128,7 @@ importers:
       '@docusaurus/types':
         specifier: 3.9.2
         version: 3.9.2(@swc/core@1.15.3(@swc/helpers@0.5.17))(esbuild@0.27.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:*
         version: link:../../packages/cli
       typescript:
@@ -1137,7 +1137,7 @@ importers:
 
   sandbox/gatsby-ts:
     dependencies:
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:*
         version: link:../../packages/cli
       gatsby:
@@ -1168,7 +1168,7 @@ importers:
 
   sandbox/next-js-app:
     dependencies:
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:*
         version: link:../../packages/cli
       '@types/react':
@@ -1195,7 +1195,7 @@ importers:
 
   sandbox/next-js-pages:
     dependencies:
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:*
         version: link:../../packages/cli
       '@types/react':
@@ -1222,7 +1222,7 @@ importers:
 
   sandbox/nuxt:
     devDependencies:
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:*
         version: link:../../packages/cli
       nuxt:
@@ -1241,7 +1241,7 @@ importers:
         specifier: 10.27.2
         version: 10.27.2
     devDependencies:
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:*
         version: link:../../packages/cli
       '@preact/preset-vite':
@@ -1265,7 +1265,7 @@ importers:
       '@builder.io/qwik-city':
         specifier: 1.17.2
         version: 1.17.2(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.31.1)(rollup@4.53.1)(terser@5.44.1)(tsx@4.20.6)(typescript@6.0.2)(yaml@2.8.1)
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:*
         version: link:../../packages/cli
       eslint-plugin-qwik:
@@ -1308,7 +1308,7 @@ importers:
         specifier: 19.2.0
         version: 19.2.0(react@19.2.0)
     devDependencies:
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:^
         version: link:../../packages/cli
       '@remix-run/dev':
@@ -1357,10 +1357,10 @@ importers:
         specifier: 19.2.0
         version: 19.2.0(react@19.2.0)
     devDependencies:
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:*
         version: link:../../packages/cli
-      '@pandacss/studio':
+      '@bamboocss/studio':
         specifier: workspace:*
         version: link:../../packages/studio
       '@types/react':
@@ -1394,7 +1394,7 @@ importers:
         specifier: 1.9.10
         version: 1.9.10
     devDependencies:
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:*
         version: link:../../packages/cli
       typescript:
@@ -1416,7 +1416,7 @@ importers:
         specifier: 19.2.0
         version: 19.2.0(react@19.2.0)
     devDependencies:
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:*
         version: link:../../packages/cli
       '@storybook/addon-docs':
@@ -1455,7 +1455,7 @@ importers:
 
   sandbox/svelte:
     devDependencies:
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:*
         version: link:../../packages/cli
       '@sveltejs/adapter-auto':
@@ -1510,10 +1510,10 @@ importers:
         specifier: 19.2.0
         version: 19.2.0(react@19.2.0)
     devDependencies:
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:*
         version: link:../../packages/cli
-      '@pandacss/studio':
+      '@bamboocss/studio':
         specifier: workspace:*
         version: link:../../packages/studio
       '@types/react':
@@ -1556,7 +1556,7 @@ importers:
         specifier: 0.27.2
         version: 0.27.2(@swc/helpers@0.5.17)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.31.1)(react-dom@19.2.0(react@19.2.0))(react-server-dom-webpack@19.2.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(webpack@5.102.1(@swc/core@1.15.3(@swc/helpers@0.5.17))(esbuild@0.27.0)))(react@19.2.0)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
     devDependencies:
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:*
         version: link:../../packages/cli
       '@types/react':
@@ -1574,10 +1574,10 @@ importers:
       '@ark-ui/react':
         specifier: 5.18.3
         version: 5.18.3(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
-      '@pandacss/preset-panda':
+      '@bamboocss/preset-bamboo':
         specifier: workspace:*
-        version: link:../packages/preset-panda
-      '@pandacss/token-dictionary':
+        version: link:../packages/preset-bamboo
+      '@bamboocss/token-dictionary':
         specifier: workspace:*
         version: link:../packages/token-dictionary
       bright:
@@ -1635,10 +1635,10 @@ importers:
       '@eslint/js':
         specifier: ^9.39.1
         version: 9.39.1
-      '@pandacss/dev':
+      '@bamboocss/dev':
         specifier: workspace:*
         version: link:../packages/cli
-      '@pandacss/postcss':
+      '@bamboocss/postcss':
         specifier: workspace:^
         version: link:../packages/postcss
       '@shikijs/rehype':

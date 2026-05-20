@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useStore } from '@nanostores/react'
-import type { TokenDataTypes } from '@pandacss/types'
-import * as context from './panda-context'
+import type { TokenDataTypes } from '@bamboocss/types'
+import * as context from './bamboo-context'
 import { currentThemeStore } from './theme-store'
 
 export const useThemeTokens = (category: keyof TokenDataTypes) => {

@@ -1,7 +1,7 @@
-import type { Context } from '@pandacss/core'
-import { capitalize, walkObject } from '@pandacss/shared'
-import type { Token } from '@pandacss/token-dictionary'
-import type { ThemesSpec, ThemeSpecDefinition, ThemeTokenGroupDefinition, ThemeTokenValue } from '@pandacss/types'
+import type { Context } from '@bamboocss/core'
+import { capitalize, walkObject } from '@bamboocss/shared'
+import type { Token } from '@bamboocss/token-dictionary'
+import type { ThemesSpec, ThemeSpecDefinition, ThemeTokenGroupDefinition, ThemeTokenValue } from '@bamboocss/types'
 import { generateTokenExamples } from './token-examples'
 
 const generateThemeTokenGroups = (

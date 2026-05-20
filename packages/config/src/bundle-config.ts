@@ -1,6 +1,6 @@
-import { logger } from '@pandacss/logger'
-import { PandaError } from '@pandacss/shared'
-import type { Config } from '@pandacss/types'
+import { logger } from '@bamboocss/logger'
+import { BambooError } from '@bamboocss/shared'
+import type { Config } from '@bamboocss/types'
 import { bundleNRequire } from 'bundle-n-require'
 import { findConfig } from './find-config'
 import type { BundleConfigResult, ConfigFileOptions } from './types'
@@ -29,7 +29,7 @@ export async function bundleConfig(options: ConfigFileOptions): Promise<BundleCo
   const result = await bundle(filePath, cwd)
 
   if (typeof result.config !== 'object') {
-    throw new PandaError('CONFIG_ERROR', `💥 Config must export or return an object.`)
+    throw new BambooError('CONFIG_ERROR', `💥 Config must export or return an object.`)
   }
 
   result.config.outdir ??= 'styled-system'

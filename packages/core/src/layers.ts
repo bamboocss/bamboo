@@ -1,5 +1,5 @@
-import { PandaError } from '@pandacss/shared'
-import type { CascadeLayer, CascadeLayers } from '@pandacss/types'
+import { BambooError } from '@bamboocss/shared'
+import type { CascadeLayer, CascadeLayers } from '@bamboocss/types'
 import postcss, { AtRule, Root } from 'postcss'
 
 export class Layers {
@@ -70,7 +70,7 @@ export class Layers {
       }
 
       default:
-        throw new PandaError('INVALID_LAYER', `Unknown layer: ${layer}`)
+        throw new BambooError('INVALID_LAYER', `Unknown layer: ${layer}`)
     }
   }
 

@@ -69,11 +69,11 @@ ${doc.llm}
     })
   })
 
-  return `# Panda CSS Complete Documentation
+  return `# Bamboo CSS Complete Documentation
 
-> Panda CSS is a CSS-in-JS framework with build-time optimizations for styling web applications
+> Bamboo CSS is a CSS-in-JS framework with build-time optimizations for styling web applications
 
-This document contains the complete Panda CSS documentation, organized by category for easy navigation.
+This document contains the complete Bamboo CSS documentation, organized by category for easy navigation.
 
 ## Table of Contents
 ${tocEntries.join('\n')}
@@ -83,6 +83,6 @@ ${sections.join('\n')}
 
 ---
 
-_This is the complete Panda CSS documentation, automatically generated from the official sources._
+_This is the complete Bamboo CSS documentation, automatically generated from the official sources._
 `
 }

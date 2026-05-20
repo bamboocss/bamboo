@@ -1,5 +1,5 @@
 export default {
   plugins: {
-    '@pandacss/dev/postcss': {},
+    '@bamboocss/dev/postcss': {},
   },
 }

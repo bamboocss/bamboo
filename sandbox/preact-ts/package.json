@@ -7,14 +7,14 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "css": "PANDA_DEBUG=* panda",
-    "css:dev": "PANDA_DEBUG=* panda cssgen -w"
+    "css": "BAMBOO_DEBUG=* bamboo",
+    "css:dev": "BAMBOO_DEBUG=* bamboo cssgen -w"
   },
   "dependencies": {
     "preact": "10.27.2"
   },
   "devDependencies": {
-    "@pandacss/dev": "workspace:*",
+    "@bamboocss/dev": "workspace:*",
     "@preact/preset-vite": "2.10.2",
     "typescript": "6.0.2",
     "vite": "7.2.6",

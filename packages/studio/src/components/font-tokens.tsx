@@ -1,6 +1,6 @@
-import type { Token } from '@pandacss/token-dictionary'
+import type { Token } from '@bamboocss/token-dictionary'
 import * as React from 'react'
-import { HStack, panda, Stack } from '../../styled-system/jsx'
+import { HStack, bamboo, Stack } from '../../styled-system/jsx'
 import { TokenContent } from '../components/token-content'
 import { TokenGroup } from '../components/token-group'
 import { Input, Textarea } from './input'
@@ -28,7 +28,7 @@ export default function FontTokens(props: FontTokensProps) {
   if (fontTokens.length === 0) {
     return (
       <EmptyState title="No Tokens" icon={<TypographyIcon />}>
-        The panda config does not contain any `{token}` tokens
+        The bamboo config does not contain any `{token}` tokens
       </EmptyState>
     )
   }
@@ -48,10 +48,10 @@ export default function FontTokens(props: FontTokensProps) {
           <React.Fragment key={fontToken.extensions.prop}>
             <Stack gap="3.5">
               <HStack gap="1">
-                <panda.span fontWeight="medium">{fontToken.extensions.prop}</panda.span>
-                <panda.span opacity="0.4">({fontToken.value})</panda.span>
+                <bamboo.span fontWeight="medium">{fontToken.extensions.prop}</bamboo.span>
+                <bamboo.span opacity="0.4">({fontToken.value})</bamboo.span>
               </HStack>
-              <panda.span
+              <bamboo.span
                 fontSize="4xl"
                 lineHeight="normal"
                 className="render"
@@ -60,7 +60,7 @@ export default function FontTokens(props: FontTokensProps) {
                 }}
               >
                 {text}
-              </panda.span>
+              </bamboo.span>
             </Stack>
           </React.Fragment>
         ))}

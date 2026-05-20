@@ -78,7 +78,7 @@ cli.command('codegen [scenario]', 'Generate code').action(async (scenario) => {
   if (scenario && !isValidScenario(scenario)) return
 
   const commands = (scenario ? [scenario] : scenarioList).map(
-    (fw) => `pnpm panda codegen --clean --config panda.${fw}.config.ts`,
+    (fw) => `pnpm bamboo codegen --clean --config bamboo.${fw}.config.ts`,
   )
 
   await Promise.all(commands.map(runCommand))

@@ -1,15 +1,15 @@
 ---
 title: MCP Server
-description: Expose your Panda CSS design system to AI assistants using the Model Context Protocol (MCP).
+description: Expose your Bamboo CSS design system to AI assistants using the Model Context Protocol (MCP).
 ---
 
-The Panda MCP Server allows AI assistants like Claude, Cursor, VS Code Copilot, Windsurf, and Codex to understand and
+The Bamboo MCP Server allows AI assistants like Claude, Cursor, VS Code Copilot, Windsurf, and Codex to understand and
 work with your project's design system. It provides tools for querying tokens, recipes, patterns, conditions, and more.
 
 ## What is MCP?
 
 The [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) is an open standard for connecting AI assistants to
-external tools and data sources. Panda's MCP server exposes your design system through a set of specialized tools that
+external tools and data sources. Bamboo's MCP server exposes your design system through a set of specialized tools that
 AI assistants can use to:
 
 - Look up design tokens and their values
@@ -24,13 +24,13 @@ AI assistants can use to:
 Run the interactive setup command in your project:
 
 ```bash
-pnpm panda init-mcp
+pnpm bamboo init-mcp
 ```
 
 This will prompt you to select which AI clients to configure:
 
 ```
-◆  Panda MCP Setup
+◆  Bamboo MCP Setup
 │
 ◆  Select AI clients to configure:
 │  ◻ Claude (.mcp.json)
@@ -42,7 +42,7 @@ This will prompt you to select which AI clients to configure:
 
 ### 2. Use with Your AI Assistant
 
-Once configured, your AI assistant will automatically have access to Panda CSS tools. You can ask questions like:
+Once configured, your AI assistant will automatically have access to Bamboo CSS tools. You can ask questions like:
 
 - "What color tokens are available in my design system?"
 - "Show me the button recipe variants"
@@ -57,13 +57,13 @@ Initialize MCP configuration for one or more AI clients.
 
 ```bash
 # Interactive mode - select clients from a list
-pnpm panda init-mcp
+pnpm bamboo init-mcp
 
 # Configure specific clients directly
-pnpm panda init-mcp --client claude,cursor
+pnpm bamboo init-mcp --client claude,cursor
 
 # Specify working directory
-pnpm panda init-mcp --cwd ./my-project
+pnpm bamboo init-mcp --cwd ./my-project
 ```
 
 | Flag               | Description                               |
@@ -76,18 +76,18 @@ pnpm panda init-mcp --cwd ./my-project
 Start the MCP server manually (usually not needed - clients start it automatically).
 
 ```bash
-pnpm panda mcp
+pnpm bamboo mcp
 
 # With custom config path
-pnpm panda mcp --config ./panda.config.ts
+pnpm bamboo mcp --config ./bamboo.config.ts
 
 # Specify working directory
-pnpm panda mcp --cwd ./my-project
+pnpm bamboo mcp --cwd ./my-project
 ```
 
 | Flag                  | Description               |
 | --------------------- | ------------------------- |
-| `--config, -c <path>` | Path to Panda config file |
+| `--config, -c <path>` | Path to Bamboo config file |
 | `--cwd <path>`        | Current working directory |
 
 ## Supported AI Clients
@@ -118,7 +118,7 @@ The MCP server exposes these tools to AI assistants:
 | `get_text_styles`      | Get text style compositions for typography                          | -                                         |
 | `get_layer_styles`     | Get layer style compositions for visual styling                     | -                                         |
 | `get_animation_styles` | Get animation style compositions                                    | -                                         |
-| `get_config`           | Get the resolved Panda CSS configuration                            | -                                         |
+| `get_config`           | Get the resolved Bamboo CSS configuration                            | -                                         |
 | `get_usage_report`     | Analyze token/recipe usage across the codebase                      | `scope?` - `'all'`, `'token'`, `'recipe'` |
 
 The `get_usage_report` tool is particularly useful for auditing your design system, identifying unused tokens/recipes,
@@ -126,20 +126,20 @@ and finding missing definitions.
 
 ## Generated Configuration
 
-When you run `panda init-mcp`, the following configuration is generated for each selected client:
+When you run `bamboo init-mcp`, the following configuration is generated for each selected client:
 
 ```json
 {
   "mcpServers": {
-    "panda": {
+    "bamboo": {
       "command": "npx",
-      "args": ["panda", "mcp"]
+      "args": ["bamboo", "mcp"]
     }
   }
 }
 ```
 
-The server automatically loads your `panda.config.ts` from the current working directory when started.
+The server automatically loads your `bamboo.config.ts` from the current working directory when started.
 
 ## Manual Configuration
 
@@ -152,9 +152,9 @@ Create `.mcp.json` in your project root:
 ```json
 {
   "mcpServers": {
-    "panda": {
+    "bamboo": {
       "command": "npx",
-      "args": ["panda", "mcp"]
+      "args": ["bamboo", "mcp"]
     }
   }
 }
@@ -167,9 +167,9 @@ Create `.cursor/mcp.json`:
 ```json
 {
   "mcpServers": {
-    "panda": {
+    "bamboo": {
       "command": "npx",
-      "args": ["panda", "mcp"]
+      "args": ["bamboo", "mcp"]
     }
   }
 }
@@ -182,9 +182,9 @@ Create `.vscode/mcp.json`:
 ```json
 {
   "servers": {
-    "panda": {
+    "bamboo": {
       "command": "npx",
-      "args": ["panda", "mcp"]
+      "args": ["bamboo", "mcp"]
     }
   }
 }
@@ -192,14 +192,14 @@ Create `.vscode/mcp.json`:
 
 ### Custom Config Path
 
-If your Panda config is not in the default location, specify it explicitly:
+If your Bamboo config is not in the default location, specify it explicitly:
 
 ```json
 {
   "mcpServers": {
-    "panda": {
+    "bamboo": {
       "command": "npx",
-      "args": ["panda", "mcp", "--config", "./path/to/panda.config.ts"]
+      "args": ["bamboo", "mcp", "--config", "./path/to/bamboo.config.ts"]
     }
   }
 }
@@ -239,9 +239,9 @@ The AI will use `get_conditions` to show all available breakpoints.
 
 If the MCP server fails to start:
 
-1. Ensure Panda CSS is installed: `pnpm add -D @pandacss/dev`
-2. Verify you have a valid `panda.config.ts` in your project
-3. Check that `npx panda mcp` runs without errors
+1. Ensure Bamboo CSS is installed: `pnpm add -D @bamboocss/dev`
+2. Verify you have a valid `bamboo.config.ts` in your project
+3. Check that `npx bamboo mcp` runs without errors
 
 ### Tools Not Available
 
@@ -255,6 +255,6 @@ If tools aren't showing up in your AI assistant:
 
 If `get_usage_report` returns empty results:
 
-1. Ensure your `include` paths in `panda.config.ts` cover your source files
-2. Run `pnpm panda codegen` to ensure the project is properly set up
-3. Verify files contain Panda CSS usage (css(), styled(), etc.)
+1. Ensure your `include` paths in `bamboo.config.ts` cover your source files
+2. Run `pnpm bamboo codegen` to ensure the project is properly set up
+3. Verify files contain Bamboo CSS usage (css(), styled(), etc.)

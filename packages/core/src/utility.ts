@@ -8,8 +8,8 @@ import {
   memo,
   toHash,
   withoutSpace,
-} from '@pandacss/shared'
-import type { TokenDictionary } from '@pandacss/token-dictionary'
+} from '@bamboocss/shared'
+import type { TokenDictionary } from '@bamboocss/token-dictionary'
 import type {
   AnyFunction,
   CssKeyframes,
@@ -19,7 +19,7 @@ import type {
   TokenDataTypes,
   TransformArgs,
   UtilityConfig,
-} from '@pandacss/types'
+} from '@bamboocss/types'
 import type { TransformResult } from './types'
 import { colorMix } from './color-mix'
 

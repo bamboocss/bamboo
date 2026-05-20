@@ -1,17 +1,17 @@
 {
-  "name": "@pandacss/shared",
+  "name": "@bamboocss/shared",
   "version": "1.11.1",
-  "description": "Shared utilities for css panda",
+  "description": "Shared utilities for css bamboo",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "author": "Segun Adebayo <joseshegs@gmail.com>",
   "license": "MIT",
   "sideEffects": false,
-  "homepage": "https://panda-css.com",
+  "homepage": "https://bamboo-css.com",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chakra-ui/panda.git",
+    "url": "git+https://github.com/chakra-ui/bamboo.git",
     "directory": "packages/shared"
   },
   "publishConfig": {

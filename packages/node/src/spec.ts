@@ -1,12 +1,12 @@
-import { logger } from '@pandacss/logger'
-import type { ArtifactId, SpecFile } from '@pandacss/types'
-import type { PandaContext } from './create-context'
+import { logger } from '@bamboocss/logger'
+import type { ArtifactId, SpecFile } from '@bamboocss/types'
+import type { BambooContext } from './create-context'
 
 export interface SpecOptions {
   outdir?: string
 }
 
-export async function spec(ctx: PandaContext, options: SpecOptions) {
+export async function spec(ctx: BambooContext, options: SpecOptions) {
   const { outdir } = options
 
   const specs = ctx.getSpec()

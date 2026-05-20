@@ -1,6 +1,6 @@
 # Release Workflow
 
-Follow these steps in order when releasing a new Panda CSS version.
+Follow these steps in order when releasing a new Bamboo CSS version.
 
 ## Steps
 
@@ -48,7 +48,7 @@ gh run list --branch main --workflow=release.yml --limit 1
 
 ```bash
 git fetch --tags
-git tag | grep '@pandacss/types@<version>'
+git tag | grep '@bamboocss/types@<version>'
 ```
 
 Poll every ~30 seconds. If not confirmed after 10 minutes, stop and investigate.
@@ -97,7 +97,7 @@ mutation {
   createDiscussion(input: {
     repositoryId: "R_kgDOHuVHqA"
     categoryId: "DIC_kwDOHuVHqM4CXQ3j"
-    title: "Panda v<version>"
+    title: "Bamboo v<version>"
     body: "..."
   }) {
     discussion { id url }
@@ -119,6 +119,6 @@ Paste this into the Discord `#announcements` channel:
 
 ```
 @here 🐼
-Panda v<version>
+Bamboo v<version>
 <discussion url>
 ```

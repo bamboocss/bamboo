@@ -1,7 +1,7 @@
-import { TokenDictionary } from '@pandacss/token-dictionary'
-import type { Token, TokenExtensions } from '@pandacss/token-dictionary'
+import { TokenDictionary } from '@bamboocss/token-dictionary'
+import type { Token, TokenExtensions } from '@bamboocss/token-dictionary'
 import { useState, useMemo, useDeferredValue } from 'react'
-import * as context from './panda-context'
+import * as context from './bamboo-context'
 
 interface Color {
   isConditional?: boolean

@@ -1,5 +1,5 @@
 import { cva } from '../styled-system/css'
-import { panda } from '../styled-system/jsx'
+import { bamboo } from '../styled-system/jsx'
 
 const card = cva({
   base: {
@@ -52,4 +52,4 @@ const card = cva({
   ],
 })
 
-export const Card = panda('section', card)
+export const Card = bamboo('section', card)

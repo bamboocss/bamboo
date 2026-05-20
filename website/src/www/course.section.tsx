@@ -160,7 +160,7 @@ export const CourseSection = () => {
               letterSpacing: 'tight'
             })}
           >
-            The official Panda CSS course
+            The official Bamboo CSS course
           </h2>
           <p
             className={css({
@@ -169,15 +169,15 @@ export const CourseSection = () => {
               color: 'fg.muted'
             })}
           >
-            Panda Mastery - Created by the Panda team
+            Bamboo Mastery - Created by the Bamboo team
           </p>
           <ul className={stack({ gap: '3', my: '8' })}>
             <ListItem>Save time by learning with a practical approach</ListItem>
             <ListItem>Build consistent design systems with confidence</ListItem>
-            <ListItem>Learn the technical details behind Panda CSS</ListItem>
+            <ListItem>Learn the technical details behind Bamboo CSS</ListItem>
           </ul>
           <Link
-            href="https://www.pandamastery.com/?ref=course-section"
+            href="https://www.bamboomastery.com/?ref=course-section"
             style={{ minWidth: '240px' }}
             className={button({
               color: { base: 'black', _dark: 'main' },

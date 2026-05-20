@@ -1,4 +1,4 @@
-import type { Tokens } from '@pandacss/types'
+import type { Tokens } from '@bamboocss/types'
 
 export const durations: Tokens['durations'] = {
   none: { value: '0ms' },

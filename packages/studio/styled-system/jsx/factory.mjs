@@ -22,7 +22,7 @@ function styledFn(Dynamic, configOrCva = {}, options = {}) {
   const __shouldForwardProps__ = composeShouldForwardProps(Dynamic, shouldForwardProp)
   const __base__ = Dynamic.__base__ || Dynamic
 
-  const PandaComponent = /* @__PURE__ */ forwardRef(function PandaComponent(props, ref) {
+  const BambooComponent = /* @__PURE__ */ forwardRef(function BambooComponent(props, ref) {
     const { as: Element = __base__, unstyled, children, ...restProps } = props
 
     const combinedProps = useMemo(() => Object.assign({}, defaultProps, restProps), [restProps])
@@ -62,12 +62,12 @@ function styledFn(Dynamic, configOrCva = {}, options = {}) {
 
   const name = getDisplayName(__base__)
 
-  PandaComponent.displayName = `panda.${name}`
-  PandaComponent.__cva__ = __cvaFn__
-  PandaComponent.__base__ = __base__
-  PandaComponent.__shouldForwardProps__ = shouldForwardProp
+  BambooComponent.displayName = `bamboo.${name}`
+  BambooComponent.__cva__ = __cvaFn__
+  BambooComponent.__base__ = __base__
+  BambooComponent.__shouldForwardProps__ = shouldForwardProp
 
-  return PandaComponent
+  return BambooComponent
 }
 
 function createJsxFactory() {
@@ -86,4 +86,4 @@ function createJsxFactory() {
   })
 }
 
-export const panda = /* @__PURE__ */ createJsxFactory()
+export const bamboo = /* @__PURE__ */ createJsxFactory()

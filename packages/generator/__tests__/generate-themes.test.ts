@@ -1,4 +1,4 @@
-import { createContext } from '@pandacss/fixture'
+import { createContext } from '@bamboocss/fixture'
 import { describe, expect, test } from 'vitest'
 import { generateThemes, generateThemesIndex } from '../src/artifacts/js/themes'
 
@@ -52,16 +52,16 @@ describe('generate themes', () => {
         {
           "json": "{
         "name": "default",
-        "id": "panda-theme-default",
-        "css": "[data-panda-theme=default] {\\n    --colors-primary: blue;\\n    --colors-simple: var(--colors-red-600);\\n    --colors-text: var(--colors-blue-600)\\n}\\n\\n@media (prefers-color-scheme: dark) {\\n      [data-panda-theme=default] {\\n        --colors-text: var(--colors-blue-400)\\n            }\\n        }"
+        "id": "bamboo-theme-default",
+        "css": "[data-bamboo-theme=default] {\\n    --colors-primary: blue;\\n    --colors-simple: var(--colors-red-600);\\n    --colors-text: var(--colors-blue-600)\\n}\\n\\n@media (prefers-color-scheme: dark) {\\n      [data-bamboo-theme=default] {\\n        --colors-text: var(--colors-blue-400)\\n            }\\n        }"
       }",
           "name": "theme-default",
         },
         {
           "json": "{
         "name": "pink",
-        "id": "panda-theme-pink",
-        "css": "[data-panda-theme=pink] {\\n    --colors-primary: pink;\\n    --colors-text: var(--colors-pink-600)\\n}\\n\\n@media (prefers-color-scheme: dark) {\\n      [data-panda-theme=pink] {\\n        --colors-text: var(--colors-pink-400)\\n            }\\n        }"
+        "id": "bamboo-theme-pink",
+        "css": "[data-bamboo-theme=pink] {\\n    --colors-primary: pink;\\n    --colors-text: var(--colors-pink-600)\\n}\\n\\n@media (prefers-color-scheme: dark) {\\n      [data-bamboo-theme=pink] {\\n        --colors-text: var(--colors-pink-400)\\n            }\\n        }"
       }",
           "name": "theme-pink",
         },
@@ -88,7 +88,7 @@ describe('generate themes', () => {
           throw new Error('No head found in doc')
         }
 
-        el.dataset.pandaTheme = theme.name
+        el.dataset.bambooTheme = theme.name
 
         head.appendChild(sheet)
         sheet.innerHTML = theme.css

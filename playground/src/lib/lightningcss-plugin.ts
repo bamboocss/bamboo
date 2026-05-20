@@ -1,4 +1,4 @@
-import type { PandaPlugin } from '@pandacss/types'
+import type { BambooPlugin } from '@bamboocss/types'
 
 /**
  * Playground-specific lightningcss plugin that uses the WASM build.
@@ -9,7 +9,7 @@ import type { PandaPlugin } from '@pandacss/types'
  * defined in the playground's package.json via lightningcss-wasm's
  * browserslistToTargets.
  */
-export function pluginLightningcssWasm(): PandaPlugin {
+export function pluginLightningcssWasm(): BambooPlugin {
   return {
     name: 'playground-lightningcss-wasm',
     hooks: {

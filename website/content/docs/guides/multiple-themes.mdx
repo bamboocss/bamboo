@@ -1,20 +1,20 @@
 ---
 title: Multi-Theme Tokens
-description: Panda supports advance token definition beyond just light/dark mode; theming beyond just dark mode. You can define multi-theme tokens using nested conditions.
+description: Bamboo supports advance token definition beyond just light/dark mode; theming beyond just dark mode. You can define multi-theme tokens using nested conditions.
 ---
 
 ## Multi-Theme Tokens
 
-Panda supports advance token definition beyond just light/dark mode; theming beyond just dark mode. You can define
+Bamboo supports advance token definition beyond just light/dark mode; theming beyond just dark mode. You can define
 multi-theme tokens using nested conditions.
 
 Let's say your application supports a pink and blue theme, and each theme can have a light and dark mode. Let's see how
-to model this in Panda.
+to model this in Bamboo.
 
 We'll start by defining the following conditions for these theme and color modes:
 
 ```js
-// panda.config.ts
+// bamboo.config.ts
 const config = {
   conditions: {
     light: '[data-color-mode=light] &',
@@ -25,12 +25,12 @@ const config = {
 }
 ```
 
-> Conditions are a way to provide preset css selectors or media queries for use in your Panda project
+> Conditions are a way to provide preset css selectors or media queries for use in your Bamboo project
 
 Next, we'll define a `colors.text` semantic token for the pink and blue theme.
 
 ```js
-// panda.config.ts
+// bamboo.config.ts
 const theme = {
   // ...
   semanticTokens: {
@@ -49,7 +49,7 @@ const theme = {
 Next, we'll modify `colors.text` to support light and dark color modes for each theme.
 
 ```js
-// panda.config.ts
+// bamboo.config.ts
 const theme = {
   // ...
   semanticTokens: {
@@ -90,11 +90,11 @@ The above example shows you how to define multi-theme tokens using nested condit
 
 This allows you to apply a `theme` on multiple tokens at once, using data attributes and CSS variables.
 
-> Theme variants can be applied using the `data-panda-theme` attribute with the theme key as the value.
+> Theme variants can be applied using the `data-bamboo-theme` attribute with the theme key as the value.
 
 ```ts
-// panda.config.ts
-import { defineConfig } from '@pandacss/dev'
+// bamboo.config.ts
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   // ...
@@ -166,8 +166,8 @@ By default, no additional theme variant is generated, you need to specify the sp
 `staticCss.themes` to include them in the CSS output.
 
 ```ts
-// panda.config.ts
-import { defineConfig } from '@pandacss/dev'
+// bamboo.config.ts
+import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   // ...
@@ -186,7 +186,7 @@ This will generate the following CSS:
     --colors-body: var(--colors-blue-600);
   }
 
-  [data-panda-theme='primary'] {
+  [data-bamboo-theme='primary'] {
     --colors-text: red;
     --colors-muted: var(--colors-red-200);
     --colors-body: var(--colors-red-600);
@@ -197,7 +197,7 @@ This will generate the following CSS:
       --colors-body: var(--colors-blue-400);
     }
 
-    [data-panda-theme='primary'] {
+    [data-bamboo-theme='primary'] {
       --colors-body: var(--colors-red-400);
     }
   }
@@ -217,8 +217,8 @@ Each theme has a corresponding JSON file with a similar structure:
 ```json
 {
   "name": "primary",
-  "id": "panda-themes-primary",
-  "css": "[data-panda-theme=primary] { ... }"
+  "id": "bamboo-themes-primary",
+  "css": "[data-bamboo-theme=primary] { ... }"
 }
 ```
 
@@ -262,7 +262,7 @@ export default async function RootLayout({
   const theme = themeName && (await getTheme(themeName))
 
   return (
-    <html lang="en" data-panda-theme={themeName ? themeName : undefined}>
+    <html lang="en" data-bamboo-theme={themeName ? themeName : undefined}>
       {themeName && (
         <head>
           <style
@@ -288,7 +288,7 @@ export default function Home() {
     <>
       <button
         onClick={async () => {
-          const current = document.documentElement.dataset.pandaTheme
+          const current = document.documentElement.dataset.bambooTheme
           const next = current === 'primary' ? 'secondary' : 'primary'
           const theme = await getTheme(next)
           setCookie('theme', next, 7)
@@ -315,7 +315,7 @@ function setCookie(cName: string, cValue: any, expDays: number) {
 Finally, you can create a theme contract to ensure that all themes have the same structure:
 
 ```ts
-import { defineThemeContract } from '@pandacss/dev'
+import { defineThemeContract } from '@bamboocss/dev'
 
 const defineTheme = defineThemeContract({
   tokens: {

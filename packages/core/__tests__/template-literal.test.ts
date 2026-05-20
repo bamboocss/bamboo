@@ -1,4 +1,4 @@
-import { astish } from '@pandacss/shared'
+import { astish } from '@bamboocss/shared'
 import { describe, expect, test } from 'vitest'
 import { createRuleProcessor } from './fixture'
 

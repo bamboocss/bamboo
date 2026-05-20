@@ -1,4 +1,4 @@
-import type { ConfigTsOptions } from '@pandacss/types'
+import type { ConfigTsOptions } from '@bamboocss/types'
 import fs from 'fs'
 import path from 'path'
 import type { TSConfig } from 'pkg-types'

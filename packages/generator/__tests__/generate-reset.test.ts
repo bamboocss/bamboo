@@ -1,5 +1,5 @@
-import { createContext } from '@pandacss/fixture'
-import type { Config } from '@pandacss/types'
+import { createContext } from '@bamboocss/fixture'
+import type { Config } from '@bamboocss/types'
 import { describe, expect, test } from 'vitest'
 
 const resetCss = (config?: Config) => {

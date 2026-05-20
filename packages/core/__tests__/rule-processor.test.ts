@@ -1,5 +1,5 @@
-import { createGeneratorContext } from '@pandacss/fixture'
-import type { Config, Dict, RecipeDefinition, SlotRecipeDefinition } from '@pandacss/types'
+import { createGeneratorContext } from '@bamboocss/fixture'
+import type { Config, Dict, RecipeDefinition, SlotRecipeDefinition } from '@bamboocss/types'
 import { describe, expect, test } from 'vitest'
 import { RuleProcessor } from '../src/rule-processor'
 import { createRuleProcessor } from './fixture'

@@ -1,4 +1,4 @@
-import type { ArtifactId, ConfigPath } from '@pandacss/types'
+import type { ArtifactId, ConfigPath } from '@bamboocss/types'
 import { createMatcher } from './create-matcher'
 
 // Below is the list of all the config paths that can affect an artifact generation

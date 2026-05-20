@@ -9,7 +9,7 @@ export function LearnMore({ href = '/learn' }: { href?: string }) {
       href={href}
       className={hstack({
         alignSelf: 'flex-start',
-        textStyle: 'panda.h4',
+        textStyle: 'bamboo.h4',
         fontWeight: 'bold',
         flexShrink: '0'
       })}

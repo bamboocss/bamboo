@@ -1,15 +1,15 @@
 {
-  "name": "@pandacss/studio",
+  "name": "@bamboocss/studio",
   "version": "1.11.1",
-  "description": "The automated token documentation for Panda CSS",
+  "description": "The automated token documentation for Bamboo CSS",
   "main": "dist/studio.js",
   "module": "dist/studio.mjs",
   "types": "dist/studio.d.ts",
   "sideEffects": false,
-  "homepage": "https://panda-css.com",
+  "homepage": "https://bamboo-css.com",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chakra-ui/panda.git",
+    "url": "git+https://github.com/chakra-ui/bamboo.git",
     "directory": "packages/studio"
   },
   "publishConfig": {
@@ -26,15 +26,15 @@
     }
   },
   "scripts": {
-    "panda": "node ../cli/bin.js",
+    "bamboo": "node ../cli/bin.js",
     "codegen": "node ../cli/bin.js codegen",
     "build": "tsup",
-    "postbuild": "pnpm panda",
+    "postbuild": "pnpm bamboo",
     "build-fast": "tsup --no-dts",
     "dev": "pnpm build-fast --watch",
-    "dev:panda": "node ../cli/bin.js --clean --watch",
+    "dev:bamboo": "node ../cli/bin.js --clean --watch",
     "dev:astro": "astro dev",
-    "start": "concurrently \"pnpm dev:panda\" \"pnpm dev:astro\""
+    "start": "concurrently \"pnpm dev:bamboo\" \"pnpm dev:astro\""
   },
   "files": [
     "dist",
@@ -46,7 +46,7 @@
     "*.mjs"
   ],
   "keywords": [
-    "panda",
+    "bamboo",
     "studio",
     "design tokens",
     "documentation"
@@ -56,12 +56,12 @@
   "dependencies": {
     "@astrojs/react": "5.0.4",
     "@nanostores/react": "^1.0.0",
-    "@pandacss/astro-plugin-studio": "workspace:*",
-    "@pandacss/config": "workspace:*",
-    "@pandacss/logger": "workspace:*",
-    "@pandacss/shared": "workspace:*",
-    "@pandacss/token-dictionary": "workspace:*",
-    "@pandacss/types": "workspace:*",
+    "@bamboocss/astro-plugin-studio": "workspace:*",
+    "@bamboocss/config": "workspace:*",
+    "@bamboocss/logger": "workspace:*",
+    "@bamboocss/shared": "workspace:*",
+    "@bamboocss/token-dictionary": "workspace:*",
+    "@bamboocss/types": "workspace:*",
     "astro": "6.2.2",
     "nanostores": "^1.1.0",
     "react": "19.2.0",
