@@ -25,7 +25,7 @@ const CATEGORY_PROPERTY_MAP: Record<string, string> = {
 }
 
 export const getCategoryProperty = (category?: string): string => {
-  return category ? CATEGORY_PROPERTY_MAP[category] ?? 'color' : 'color'
+  return category ? (CATEGORY_PROPERTY_MAP[category] ?? 'color') : 'color'
 }
 
 export const generateTokenExamples = (token: Token, jsxStyleProps: JsxStyleProps = 'all') => {

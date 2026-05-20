@@ -5,6 +5,4 @@ const styles = css({
   lineHeight: '1.75rem'
 })
 
-export const Text = (props: React.ComponentProps<'p'>) => (
-  <p className={styles} {...props} />
-)
+export const Text = (props: React.ComponentProps<'p'>) => <p className={styles} {...props} />

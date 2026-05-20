@@ -37,17 +37,13 @@ function generateFullDocumentation(
   const sections: string[] = []
 
   categories.forEach(category => {
-    const categoryDocs = docs.filter(doc =>
-      doc.slug.startsWith(`docs/${category.key}`)
-    )
+    const categoryDocs = docs.filter(doc => doc.slug.startsWith(`docs/${category.key}`))
 
     if (categoryDocs.length === 0) return
 
     tocEntries.push(`\n### ${category.title}`)
     categoryDocs.forEach(doc => {
-      tocEntries.push(
-        `- [${doc.title}](#${doc.title.toLowerCase().replace(/\s+/g, '-')})`
-      )
+      tocEntries.push(`- [${doc.title}](#${doc.title.toLowerCase().replace(/\s+/g, '-')})`)
     })
 
     sections.push(`\n# ${category.title}\n`)

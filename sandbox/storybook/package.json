@@ -1,19 +1,23 @@
 {
   "name": "sandbox-storybook",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "type": "module",
   "private": true,
+  "description": "",
+  "keywords": [],
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepare": "bamboo codegen",
     "dev": "storybook dev -p 6006",
     "build": "storybook build"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "dependencies": {
+    "react": "19.2.0",
+    "react-dom": "19.2.0"
+  },
   "devDependencies": {
     "@bamboocss/dev": "workspace:*",
     "@storybook/addon-docs": "10.1.2",
@@ -27,9 +31,5 @@
     "postcss": "8.5.14",
     "storybook": "10.1.2",
     "vite": "7.2.6"
-  },
-  "dependencies": {
-    "react": "19.2.0",
-    "react-dom": "19.2.0"
   }
 }

@@ -13,11 +13,7 @@ import { createHeadings } from '@/mdx/heading'
 import { Link } from '@/mdx/link'
 import { ListItem, OrderedList, UnorderedList } from '@/mdx/list'
 import { Pre } from '@/mdx/pre'
-import {
-  RouteSwitch,
-  RouteSwitchContent,
-  RouteSwitchTrigger
-} from '@/mdx/route-switch'
+import { RouteSwitch, RouteSwitchContent, RouteSwitchTrigger } from '@/mdx/route-switch'
 import { Steps } from '@/mdx/steps'
 import { Summary } from '@/mdx/summary'
 import { Table, Td, Th, Tr } from '@/mdx/table'

@@ -22,12 +22,7 @@ export const FooterSection = () => {
           >
             bamboo
           </bamboo.p>
-          <Image
-            src="/bamboo-hello.svg"
-            width={196}
-            height={261}
-            alt="Yums the bamboo waving"
-          />
+          <Image src="/bamboo-hello.svg" width={196} height={261} alt="Yums the bamboo waving" />
         </Flex>
 
         <Wrap mt="12" justifyContent={{ base: 'center', md: 'unset' }}>

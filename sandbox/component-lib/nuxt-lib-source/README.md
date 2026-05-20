@@ -2,19 +2,21 @@
 
 This is an example of using bamboo css as a source based component library.
 
-  * https://bamboo-css.com/docs/guides/component-library#include-the-src-files
+- https://bamboo-css.com/docs/guides/component-library#include-the-src-files
 
-The css-lib package contains a simple export for a button style.
-The nuxt-app package consumes the export and uses it within a vue component.
+The css-lib package contains a simple export for a button style. The nuxt-app package consumes the export and uses it
+within a vue component.
 
 ## Running the Example
 
 To install the packages
+
 ```
 pnpm install
 ```
 
 Generate the styled-system directories
+
 ```
 cd packages/css-lib
 pnpm css
@@ -24,6 +26,7 @@ pnpm css
 ```
 
 To start the nuxt application
+
 ```
 cd packages/nuxt-app
 pnpm dev

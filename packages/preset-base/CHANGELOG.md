@@ -37,7 +37,6 @@
   `flex: 0 0 var(--spacing-5, 5)` — resolved spacing token
 
   Closes #3490
-
   - @pandacss/types@1.9.1
 
 ## 1.9.0
@@ -86,7 +85,6 @@
   ```
 
   Both `token()` function syntax and brace syntax `{...}` now work correctly in gradient utilities.
-
   - @pandacss/types@1.7.3
 
 ## 1.7.2
@@ -175,7 +173,6 @@
 ### Minor Changes
 
 - 1c36121: Added new transition values and enhanced transition property utilities
-
   - `size` → `width, height, min-width, max-width, min-height, max-height`
   - `position` → `left, right, top, bottom, inset, inset-inline, inset-block`
   - `background` → `background, background-color, background-image, background-position`
@@ -200,7 +197,6 @@
 ### Minor Changes
 
 - 9964772: Add new utilities for managing focus rings with `focusRing` and `focusVisibleRing` properties
-
   - `focusRing`: Style focus states using `&:is(:focus, [data-focus])` selector with `outside`, `inside`, `mixed`, or
     `none` values
   - `focusVisibleRing`: Style keyboard-only focus using `&:is(:focus-visible, [data-focus-visible])` selector
@@ -363,7 +359,6 @@
 ### Minor Changes
 
 - 654ed5c: Adds more `aria` attributes to conditions for better accessibility and styling hooks.
-
   - `[aria-disabled=true]` was added to `disabled`, `peerDisabled`, and `groupDisabled` conditions.
   - `[aria-readonly=true]` was added to the `readOnly` condition.
   - `[aria-invalid=true]` was added to `invalid` and `groupInvalid` conditions.
@@ -429,7 +424,6 @@
 ### Minor Changes
 
 - bb37d2b: Add support for new conditions
-
   - `current` -> `&:is([aria-current=true], [data-current])`
   - `today` -> `&[data-today]`
   - `unavailable` -> `&[data-unavailable]`
@@ -765,11 +759,9 @@
 ### Minor Changes
 
 - bcfb5c5: ### Fixed
-
   - Fix className collisions between utilities by using unique class names per property in the default preset.
 
   ### Changed
-
   - **Color Mode Selectors**: Changed the default selectors for `_light` and `_dark` to target parent elements. This
     ensures consistent behavior with using these conditions to style pseudo elements (like `::before` and `::after`).
 
@@ -785,7 +777,6 @@
   - Changed `divideX` and `divideY` now maps to the `borderWidths` token group.
 
   ### Added
-
   - **Spacing Utilities**: Add new `spaceX` and `spaceY` utilities for applying margin between elements. Especially
     useful when applying negative margin to child elements.
 
@@ -1217,7 +1208,6 @@
 - 84304901: Improve performance, mostly for the CSS generation by removing a lot of `postcss` usage (and plugins).
 
   ## Public changes:
-
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
@@ -1225,7 +1215,6 @@
     this run.
 
   ## Internal changes:
-
   - `markImportant` fn from JS instead of walking through postcss AST nodes
   - use a fork of `stitches` `stringify` function instead of `postcss-css-in-js` to write the CSS string from a JS
     object
@@ -1631,7 +1620,6 @@
 ### Minor Changes
 
 - c08de87f: ### Breaking
-
   - Renamed the `name` property of a config recipe to `className`. This is to ensure API consistency and express the
     intent of the property more clearly.
 
@@ -1729,7 +1717,6 @@
 ### Patch Changes
 
 - 08d33e0f: - Fix issue where `gridRows` has the wrong `className`
-
   - Fix issue where `gridItem` pattern did not use the `colStart` and `rowStart` values
 
 - f7aff8eb: Fix issue where `_even` and `_odd` map to incorrect selectors

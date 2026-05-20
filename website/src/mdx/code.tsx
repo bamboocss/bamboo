@@ -27,11 +27,5 @@ const styles = cva({
 export const Code = (props: React.ComponentProps<'code'>): JSX.Element => {
   const { className = '', ...rest } = props
   const hasLineNumbers = 'data-line-numbers' in props
-  return (
-    <code
-      className={cx(styles({ hasLineNumbers }), className)}
-      dir="ltr"
-      {...rest}
-    />
-  )
+  return <code className={cx(styles({ hasLineNumbers }), className)} dir="ltr" {...rest} />
 }

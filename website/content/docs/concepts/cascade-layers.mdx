@@ -3,12 +3,11 @@ title: Cascade Layers
 description: CSS cascade layers refer to the order in which CSS rules are applied to an HTML element.
 ---
 
-When multiple CSS rules apply
-to the same element, the browser uses the cascade to determine which rule should take precedence. See the
-[MDN article](https://developer.mozilla.org/en-US/docs/Web/CSS/@layer) to learn more.
+When multiple CSS rules apply to the same element, the browser uses the cascade to determine which rule should take
+precedence. See the [MDN article](https://developer.mozilla.org/en-US/docs/Web/CSS/@layer) to learn more.
 
-Bamboo takes advantage of the cascade to provide a more efficient and flexible way to organize styles. This allows you to
-define styles in a modular way, using CSS rules that are scoped to specific components or elements.
+Bamboo takes advantage of the cascade to provide a more efficient and flexible way to organize styles. This allows you
+to define styles in a modular way, using CSS rules that are scoped to specific components or elements.
 
 ## Layer Types
 
@@ -112,13 +111,15 @@ exciting feature of CSS cascade layers.
 
 ## Customize layers
 
-Bamboo lets you customize the cascade layers, so your project can coexist with other solutions. Learn more about customizing layers [here](/docs/references/config#layers).
+Bamboo lets you customize the cascade layers, so your project can coexist with other solutions. Learn more about
+customizing layers [here](/docs/references/config#layers).
 
 ## Polyfills
 
 In event that you need to support older browsers, you can use the following postcss plugin in your PostCSS config:
 
-- [postcss-cascade-layers](https://www.npmjs.com/package/@csstools/postcss-cascade-layers): Adds support for CSS Cascade Layers.
+- [postcss-cascade-layers](https://www.npmjs.com/package/@csstools/postcss-cascade-layers): Adds support for CSS Cascade
+  Layers.
 
 Here is an example of a `postcss.config.js` file that uses these polyfills:
 
@@ -128,4 +129,6 @@ module.exports = {
 }
 ```
 
-Since CSS `@layer`s have a lower priority than other CSS rules, this postcss plugin is also useful in cases where your styles are being overridden by some other stylesheets that you're not in total control of, since it will remove the `@layer` rules and still emulate their specificity.
+Since CSS `@layer`s have a lower priority than other CSS rules, this postcss plugin is also useful in cases where your
+styles are being overridden by some other stylesheets that you're not in total control of, since it will remove the
+`@layer` rules and still emulate their specificity.

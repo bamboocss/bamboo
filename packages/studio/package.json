@@ -2,19 +2,33 @@
   "name": "@bamboocss/studio",
   "version": "1.11.1",
   "description": "The automated token documentation for Bamboo CSS",
-  "main": "dist/studio.js",
-  "module": "dist/studio.mjs",
-  "types": "dist/studio.d.ts",
-  "sideEffects": false,
+  "keywords": [
+    "bamboo",
+    "design tokens",
+    "documentation",
+    "studio"
+  ],
   "homepage": "https://bamboo-css.com",
+  "license": "MIT",
+  "author": "Segun Adebayo <joseshegs@gmail.com>",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/chakra-ui/bamboo.git",
     "directory": "packages/studio"
   },
-  "publishConfig": {
-    "access": "public"
-  },
+  "files": [
+    "dist",
+    "src",
+    "public",
+    "styled-system",
+    "tsconfig.json",
+    "*.ts",
+    "*.mjs"
+  ],
+  "sideEffects": false,
+  "main": "dist/studio.js",
+  "module": "dist/studio.mjs",
+  "types": "dist/studio.d.ts",
   "exports": {
     ".": {
       "types": "./dist/studio.d.ts",
@@ -24,6 +38,9 @@
         "default": "./dist/studio.mjs"
       }
     }
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "bamboo": "node ../cli/bin.js",
@@ -36,32 +53,15 @@
     "dev:astro": "astro dev",
     "start": "concurrently \"pnpm dev:bamboo\" \"pnpm dev:astro\""
   },
-  "files": [
-    "dist",
-    "src",
-    "public",
-    "styled-system",
-    "tsconfig.json",
-    "*.ts",
-    "*.mjs"
-  ],
-  "keywords": [
-    "bamboo",
-    "studio",
-    "design tokens",
-    "documentation"
-  ],
-  "author": "Segun Adebayo <joseshegs@gmail.com>",
-  "license": "MIT",
   "dependencies": {
     "@astrojs/react": "5.0.4",
-    "@nanostores/react": "^1.0.0",
     "@bamboocss/astro-plugin-studio": "workspace:*",
     "@bamboocss/config": "workspace:*",
     "@bamboocss/logger": "workspace:*",
     "@bamboocss/shared": "workspace:*",
     "@bamboocss/token-dictionary": "workspace:*",
     "@bamboocss/types": "workspace:*",
+    "@nanostores/react": "^1.0.0",
     "astro": "6.2.2",
     "nanostores": "^1.1.0",
     "react": "19.2.0",

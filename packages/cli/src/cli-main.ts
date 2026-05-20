@@ -44,7 +44,7 @@ export async function main() {
   const cwd = process.cwd()
 
   cli
-    .command('init', "Initialize the bamboo config file")
+    .command('init', 'Initialize the bamboo config file')
     .option('-i, --interactive', 'Run in interactive mode', { default: false })
     .option('-f, --force', 'Force overwrite existing config file')
     .option('-p, --postcss', 'Emit postcss config file')

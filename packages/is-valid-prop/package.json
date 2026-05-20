@@ -2,21 +2,21 @@
   "name": "@bamboocss/is-valid-prop",
   "version": "1.11.1",
   "description": "Common error messages for css bamboo",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
-  "author": "Segun Adebayo <joseshegs@gmail.com>",
-  "license": "MIT",
-  "sideEffects": false,
   "homepage": "https://bamboo-css.com",
+  "license": "MIT",
+  "author": "Segun Adebayo <joseshegs@gmail.com>",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/chakra-ui/bamboo.git",
     "directory": "packages/is-valid-prop"
   },
-  "publishConfig": {
-    "access": "public"
-  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "source": "./src/index.ts",
@@ -29,15 +29,15 @@
     },
     "./package.json": "./package.json"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "mdn": "tsx scripts/prepare.ts",
     "build": "tsup src/index.ts --format=esm,cjs --dts && tsx scripts/postbuild.ts",
     "build-fast": "tsup src/index.ts --format=esm,cjs --no-dts",
     "dev": "tsup src/index.ts --watch --format=esm,cjs --no-dts --onSuccess=\"tsx scripts/postbuild.ts\""
   },
-  "files": [
-    "dist"
-  ],
   "devDependencies": {
     "mdn-data": "^2.15.0"
   }

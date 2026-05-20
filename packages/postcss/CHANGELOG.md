@@ -112,7 +112,6 @@
 ### Patch Changes
 
 - bb32028: Fix "Browserslist: caniuse-lite is outdated" warning by updating `browserslist` and PostCSS-related packages:
-
   - Update `browserslist` from 4.23.3 to 4.24.4
   - Update `postcss` from 8.4.49 to 8.5.6
   - Update `postcss-nested` from 6.0.1 to 7.0.2
@@ -576,7 +575,6 @@
 ### Patch Changes
 
 - d5977c24: - Add a `--logfile` flag to the `panda`, `panda codegen`, `panda cssgen` and `panda debug` commands.
-
   - Add a `logfile` option to the postcss plugin
 
   Logs will be streamed to the file specified by the `--logfile` flag or the `logfile` option. This is useful for
@@ -653,7 +651,6 @@
 - 84304901: Improve performance, mostly for the CSS generation by removing a lot of `postcss` usage (and plugins).
 
   ## Public changes:
-
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
@@ -661,7 +658,6 @@
     this run.
 
   ## Internal changes:
-
   - `markImportant` fn from JS instead of walking through postcss AST nodes
   - use a fork of `stitches` `stringify` function instead of `postcss-css-in-js` to write the CSS string from a JS
     object

@@ -11,9 +11,9 @@ export interface LoggerConfig {
 
 export const createLogger = (conf: LoggerConfig = {}): LoggerInterface => {
   let onLog = conf.onLog
-  let level: LogLevel = conf.isDebug ? 'debug' : conf.level ?? 'info'
+  let level: LogLevel = conf.isDebug ? 'debug' : (conf.level ?? 'info')
 
-  const filter = conf.filter !== '*' ? conf.filter?.split(/[\s,]+/) ?? [] : []
+  const filter = conf.filter !== '*' ? (conf.filter?.split(/[\s,]+/) ?? []) : []
 
   const getLevel = () => (filter.length ? 'debug' : level)
 

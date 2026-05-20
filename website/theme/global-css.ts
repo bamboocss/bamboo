@@ -8,8 +8,7 @@ export const globalCss = defineGlobalStyles({
     fontFamily: 'sans',
     fontSize: '0.9em',
     '--nextra-primary-hue': '212deg',
-    scrollPaddingTop:
-      'calc(var(--navbar-height, 4rem) + var(--banner-height, 2.5rem) + 1rem)'
+    scrollPaddingTop: 'calc(var(--navbar-height, 4rem) + var(--banner-height, 2.5rem) + 1rem)'
   },
   body: {
     bg: 'bg',

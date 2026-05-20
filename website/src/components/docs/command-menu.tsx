@@ -2,11 +2,7 @@
 import { docs } from '.velite'
 import { Badge } from '@/components/ui/badge'
 import { dialogSlotRecipe } from '@/components/ui/dialog'
-import {
-  convertToSearchItems,
-  filterSearchItems,
-  getSearchIndex
-} from '@/lib/search-index'
+import { convertToSearchItems, filterSearchItems, getSearchIndex } from '@/lib/search-index'
 import { useMatchMedia } from '@/lib/use-match-media'
 import { css, cx } from '@/styled-system/css'
 import { createListCollection } from '@ark-ui/react/collection'
@@ -47,10 +43,7 @@ export const CommandMenu = (props: Props) => {
 
   const router = useRouter()
 
-  const collection = useMemo(
-    () => createListCollection({ items: filteredItems }),
-    [filteredItems]
-  )
+  const collection = useMemo(() => createListCollection({ items: filteredItems }), [filteredItems])
 
   const isMobile = useMatchMedia(mediaQuery)
   useHotkey({ enabled: !isMobile, setOpen })
@@ -61,12 +54,7 @@ export const CommandMenu = (props: Props) => {
   })
 
   return (
-    <Dialog.Root
-      lazyMount
-      unmountOnExit
-      open={open}
-      onOpenChange={event => setOpen(event.open)}
-    >
+    <Dialog.Root lazyMount unmountOnExit open={open} onOpenChange={event => setOpen(event.open)}>
       <Dialog.Trigger asChild>{trigger}</Dialog.Trigger>
       <Portal>
         <Dialog.Backdrop className={dialogStyles.backdrop} />
@@ -180,9 +168,7 @@ export const CommandMenu = (props: Props) => {
                           <Stack gap="1">
                             <Box fontWeight="semibold">
                               {item.label}
-                              {item.type === 'heading' && (
-                                <Badge>{item.category}</Badge>
-                              )}
+                              {item.type === 'heading' && <Badge>{item.category}</Badge>}
                             </Box>
                             <Box textStyle="sm" color="fg.muted" lineClamp={2}>
                               {item.description}

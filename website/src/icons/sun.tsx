@@ -1,13 +1,6 @@
 export function SunIcon(props: React.ComponentProps<'svg'>) {
   return (
-    <svg
-      fill="none"
-      viewBox="3 3 18 18"
-      width="12"
-      height="12"
-      stroke="currentColor"
-      {...props}
-    >
+    <svg fill="none" viewBox="3 3 18 18" width="12" height="12" stroke="currentColor" {...props}>
       <path
         strokeLinecap="round"
         strokeLinejoin="round"

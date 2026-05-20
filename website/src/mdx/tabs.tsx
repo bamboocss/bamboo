@@ -18,10 +18,7 @@ export const Tabs = (props: React.PropsWithChildren<{ items: string[] }>) => {
     tabsStore.getServerSnapshot
   )
 
-  const persistentStore = React.useMemo(
-    () => tabsStore.getParsedSnapshot(),
-    [store]
-  )
+  const persistentStore = React.useMemo(() => tabsStore.getParsedSnapshot(), [store])
   const value = persistentStore?.[storageKey] || items[0]
 
   return (

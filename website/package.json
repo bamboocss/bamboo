@@ -1,8 +1,8 @@
 {
   "name": "website",
   "version": "1.0.0",
-  "description": "",
   "private": true,
+  "description": "",
   "scripts": {
     "prepare": "bamboo codegen",
     "dev:content": "velite --watch",
@@ -37,10 +37,10 @@
     "zod": "3.25.1"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.3",
-    "@eslint/js": "^9.39.1",
     "@bamboocss/dev": "workspace:*",
     "@bamboocss/postcss": "workspace:^",
+    "@eslint/eslintrc": "^3.3.3",
+    "@eslint/js": "^9.39.1",
     "@shikijs/rehype": "^3.19.0",
     "@shikijs/transformers": "^3.19.0",
     "@types/git-url-parse": "16.0.2",
@@ -49,8 +49,8 @@
     "eslint": "^9.39.1",
     "eslint-config-next": "16.0.6",
     "eslint-plugin-react-hooks": "^7.0.1",
+    "oxfmt": "0.51.0",
     "postcss": "8.5.14",
-    "prettier": "3.2.5",
     "rehype-autolink-headings": "^7.1.0",
     "rehype-slug": "^6.0.0",
     "shiki": "^3.19.0",

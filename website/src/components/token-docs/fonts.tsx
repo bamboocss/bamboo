@@ -8,9 +8,7 @@ export const Fonts = () => {
       {defaultFonts.map(token => (
         <div key={token.name} className={stack({ w: 'full' })}>
           <div style={{ fontFamily: token.value, fontSize: '32px' }}>Ag</div>
-          <p className={css({ fontWeight: 'medium' })}>
-            {token.extensions.prop}
-          </p>
+          <p className={css({ fontWeight: 'medium' })}>{token.extensions.prop}</p>
           <p className={css({ opacity: '0.6' })}>{token.value}</p>
         </div>
       ))}

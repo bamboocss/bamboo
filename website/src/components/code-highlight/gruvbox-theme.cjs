@@ -278,11 +278,7 @@ module.exports = {
     },
     {
       name: 'Function declarations',
-      scope: [
-        'storage.type.function',
-        'entity.function',
-        'entity.name.function.static'
-      ],
+      scope: ['storage.type.function', 'entity.function', 'entity.name.function.static'],
       settings: {
         foreground: '#8ec07c'
       }
@@ -432,10 +428,7 @@ module.exports = {
       }
     },
     {
-      scope: [
-        'string.interpolated.dollar.shell',
-        'string.interpolated.backtick.shell'
-      ],
+      scope: ['string.interpolated.dollar.shell', 'string.interpolated.backtick.shell'],
       settings: {
         foreground: '#8ec07c'
       }
@@ -454,11 +447,7 @@ module.exports = {
     },
     {
       name: 'C# functions & namespace',
-      scope: [
-        'meta.function.cs',
-        'entity.name.function.cs',
-        'entity.name.type.namespace.cs'
-      ],
+      scope: ['meta.function.cs', 'entity.name.function.cs', 'entity.name.type.namespace.cs'],
       settings: {
         foreground: '#b8bb26'
       }
@@ -535,10 +524,7 @@ module.exports = {
       }
     },
     {
-      scope: [
-        'source.java variable.other.object',
-        'source.java variable.other.definition.java'
-      ],
+      scope: ['source.java variable.other.object', 'source.java variable.other.definition.java'],
       settings: {
         foreground: '#ebdbb2'
       }
@@ -633,9 +619,7 @@ module.exports = {
     },
     {
       name: 'JSON Level 0',
-      scope: [
-        'source.json meta.structure.dictionary.json support.type.property-name.json'
-      ],
+      scope: ['source.json meta.structure.dictionary.json support.type.property-name.json'],
       settings: {
         foreground: '#b8bb26'
       }
@@ -809,10 +793,7 @@ module.exports = {
     },
     {
       name: 'ReasonML property',
-      scope: [
-        'source.reason support.property-value',
-        'source.reason entity.name.filename'
-      ],
+      scope: ['source.reason support.property-value', 'source.reason entity.name.filename'],
       settings: {
         foreground: '#fe8019'
       }

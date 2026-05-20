@@ -60,10 +60,7 @@ function Ident() {
   return (
     <>
       {[...Array(indent)].map((_, i) => (
-        <span
-          className={css({ display: 'inline-block', width: '5px' })}
-          key={i}
-        />
+        <span className={css({ display: 'inline-block', width: '5px' })} key={i} />
       ))}
     </>
   )

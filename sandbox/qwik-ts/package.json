@@ -1,10 +1,7 @@
 {
   "name": "sandbox-qwik",
-  "description": "Demo App with Routing built-in (recommended)",
-  "engines": {
-    "node": ">=15.0.0"
-  },
   "private": true,
+  "description": "Demo App with Routing built-in (recommended)",
   "scripts": {
     "build": "qwik build",
     "build.client": "vite build",
@@ -13,21 +10,24 @@
     "deploy": "echo 'Run \"npm run qwik add\" to install a server adapter'",
     "dev": "vite --mode ssr",
     "dev.debug": "node --inspect-brk ./node_modules/vite/bin/vite.js --mode ssr --force",
-    "fmt": "prettier --write .",
-    "fmt.check": "prettier --check .",
+    "fmt": "oxfmt .",
+    "fmt.check": "oxfmt --check .",
     "lint": "eslint \"src/**/*.ts*\"",
     "preview": "qwik build preview && vite preview --open",
     "start": "vite --open --mode ssr",
     "qwik": "qwik"
   },
   "devDependencies": {
+    "@bamboocss/dev": "workspace:*",
     "@builder.io/qwik": "1.17.2",
     "@builder.io/qwik-city": "1.17.2",
-    "@bamboocss/dev": "workspace:*",
     "eslint-plugin-qwik": "1.17.2",
     "typescript": "6.0.2",
     "undici": "7.7.0",
     "vite": "7.2.6",
     "vite-tsconfig-paths": "5.1.4"
+  },
+  "engines": {
+    "node": ">=15.0.0"
   }
 }

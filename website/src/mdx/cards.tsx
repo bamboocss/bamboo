@@ -58,10 +58,7 @@ export const Cards = (props: React.ComponentProps<'div'>) => {
   const { className, ...rest } = props
   return (
     <div
-      className={cx(
-        grid({ columns: { base: 1, sm: 2 }, mt: '10', gap: '6' }),
-        className
-      )}
+      className={cx(grid({ columns: { base: 1, sm: 2 }, mt: '10', gap: '6' }), className)}
       {...rest}
     />
   )

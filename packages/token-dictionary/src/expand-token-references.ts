@@ -115,7 +115,7 @@ export const expandTokenReferences = (str: string, resolve: (path: string) => st
         // Try to resolve the token path, which is the left part of the token fn
         // `token(tokenPath, fallback))`
         //        ^^^^^^^^^
-        const resolved = tokenPath ? resolve(tokenPath) ?? esc(tokenPath) : tokenPath
+        const resolved = tokenPath ? (resolve(tokenPath) ?? esc(tokenPath)) : tokenPath
 
         if (fallback) {
           // `, colors.xxx.yyy` -> `colors.xxx.yyy`

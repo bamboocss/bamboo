@@ -21,17 +21,11 @@ export default function RootLayout(props: Props) {
   return (
     <html
       lang="en"
-      className={cx(
-        fontClassName,
-        css({ fontFamily: 'body', fontSize: '0.9em' })
-      )}
+      className={cx(fontClassName, css({ fontFamily: 'body', fontSize: '0.9em' }))}
       suppressHydrationWarning
     >
       <head>
-        <Script
-          data-domain="bamboo-css.com"
-          src="https://plausible.io/js/script.js"
-        />
+        <Script data-domain="bamboo-css.com" src="https://plausible.io/js/script.js" />
       </head>
       <body suppressHydrationWarning>
         <Providers>{children}</Providers>

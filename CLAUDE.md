@@ -4,7 +4,8 @@ This guide helps AI assistants understand the Bamboo CSS codebase structure, con
 
 ## Project Overview
 
-Bamboo CSS is a CSS-in-JS framework with static extraction capabilities. The project is a monorepo managed by **pnpm** with workspace support.
+Bamboo CSS is a CSS-in-JS framework with static extraction capabilities. The project is a monorepo managed by **pnpm**
+with workspace support.
 
 ## Key Architecture
 
@@ -64,6 +65,7 @@ cd packages/core && pnpm test
 ```
 
 **Key test commands:**
+
 ```bash
 pnpm test <path>              # Run tests for specific package/file
 pnpm test packages/core       # Test all core package tests
@@ -74,12 +76,14 @@ pnpm build-fast               # Fast build without type definitions
 ### Package Management
 
 **Use `--ignore-scripts` for dependency updates:**
+
 ```bash
 pnpm install --ignore-scripts
 pnpm update <package> --ignore-scripts
 ```
 
 **When updating PostCSS or browserslist-related packages:**
+
 1. Update package.json versions
 2. Run `pnpm install --ignore-scripts`
 3. Run `pnpm test packages/core` to verify CSS output unchanged
@@ -123,6 +127,7 @@ pnpm update <package> --ignore-scripts
 ```
 
 **Format:**
+
 ```markdown
 ---
 '@bamboocss/package-name': patch|minor|major
@@ -135,6 +140,7 @@ Brief description of the change and its impact.
 ```
 
 **Changeset types:**
+
 - `patch`: Bug fixes, dependency updates, non-breaking changes
 - `minor`: New features, backwards-compatible changes
 - `major`: Breaking changes
@@ -142,12 +148,14 @@ Brief description of the change and its impact.
 ## Important Files & Patterns
 
 ### Configuration Flow
+
 1. User config → `packages/config/` → Config resolution
 2. Config hooks → `packages/types/src/config.ts`
 3. Context creation → `packages/node/src/` → `BambooContext`
 4. Code generation → `packages/generator/`
 
 ### CSS Processing Flow
+
 1. Style objects → `packages/core/src/rule-processor.ts`
 2. CSS generation → `packages/core/src/stylesheet.ts`
 3. Optimization → `packages/core/src/optimize.ts`
@@ -155,6 +163,7 @@ Brief description of the change and its impact.
    - LightningCSS path: `optimize-lightningcss.ts`
 
 ### Test Fixtures
+
 - `packages/fixture/` contains shared test utilities
 - `createContext()` and `createRuleProcessor()` are used throughout tests
 - Fixtures provide a base config with design tokens and recipes
@@ -164,12 +173,14 @@ Brief description of the change and its impact.
 ### Understanding Test Failures
 
 **Snapshot mismatches:**
+
 - Compare expected vs received CSS output carefully
 - Look for media query ordering, selector merging, or whitespace changes
 - Identify which dependency update caused the change
 - Common culprits: `postcss-merge-rules`, `postcss-nested`, `browserslist`
 
 **Build failures:**
+
 - Check TypeScript errors in `packages/*/src/`
 - Run `pnpm build-fast` for faster iteration without type checking
 - Use `pnpm typecheck` for type-only validation
@@ -177,6 +188,7 @@ Brief description of the change and its impact.
 ### Finding Code
 
 **Use search tools strategically:**
+
 - Grep for function names, class names, or specific strings
 - Check both `/src/` and `/__tests__/` directories
 - Look in `/packages/types/src/` for type definitions
@@ -190,7 +202,9 @@ Brief description of the change and its impact.
 4. **Workspace protocol**: Internal packages use `workspace:*` in dependencies
 5. **Multiple package.json**: Each package has its own, plus root package.json
 6. **Sandbox warnings**: Even if main packages are fine, check sandbox projects for warnings
-7. **TypeScript version sync**: The TypeScript version in the root `package.json` must match the version used by `ts-morph`'s dependency. Mismatches can cause parsing errors and type issues. Always verify `ts-morph` compatibility when updating TypeScript.
+7. **TypeScript version sync**: The TypeScript version in the root `package.json` must match the version used by
+   `ts-morph`'s dependency. Mismatches can cause parsing errors and type issues. Always verify `ts-morph` compatibility
+   when updating TypeScript.
 
 ## Package Relationships
 
@@ -229,6 +243,7 @@ Brief description of the change and its impact.
 ## Emergency Rollback
 
 If a change breaks things:
+
 ```bash
 git checkout packages/          # Revert package.json changes
 pnpm install --ignore-scripts   # Restore dependencies
@@ -237,5 +252,4 @@ pnpm test packages/core         # Verify tests pass
 
 ---
 
-**Last Updated**: 2025-01-17
-**Project Version**: 1.4.2
+**Last Updated**: 2025-01-17 **Project Version**: 1.4.2

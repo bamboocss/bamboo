@@ -14,9 +14,7 @@ interface HeadingState {
 }
 
 function useTocState() {
-  const [headingStates, setHeadingStates] = useState<
-    Record<string, HeadingState>
-  >({})
+  const [headingStates, setHeadingStates] = useState<Record<string, HeadingState>>({})
   const observerRef = useRef<IntersectionObserver | null>(null)
 
   useEffect(() => {
@@ -94,8 +92,7 @@ function useTocState() {
             // If still no heading found and we're near the bottom, activate the last heading
             if (!fallbackId) {
               const isNearBottom =
-                window.innerHeight + window.scrollY >=
-                document.documentElement.scrollHeight - 100
+                window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 100
 
               if (isNearBottom) {
                 const allIds = Object.keys(newStates)
@@ -140,9 +137,7 @@ function useTocState() {
 
   useEffect(() => {
     // Find the active heading for auto-scrolling TOC
-    const activeId = Object.keys(headingStates).find(
-      id => headingStates[id]?.isActive
-    )
+    const activeId = Object.keys(headingStates).find(id => headingStates[id]?.isActive)
     if (!activeId) return
 
     // Use requestAnimationFrame to ensure DOM is ready

@@ -2,21 +2,21 @@
   "name": "@bamboocss/config",
   "version": "1.11.1",
   "description": "Find and load bamboo config",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
-  "author": "Segun Adebayo <joseshegs@gmail.com>",
-  "license": "MIT",
-  "sideEffects": false,
   "homepage": "https://bamboo-css.com",
+  "license": "MIT",
+  "author": "Segun Adebayo <joseshegs@gmail.com>",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/chakra-ui/bamboo.git",
     "directory": "packages/config"
   },
-  "publishConfig": {
-    "access": "public"
-  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "source": "./src/index.ts",
@@ -65,18 +65,18 @@
     },
     "./package.json": "./package.json"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup --tsconfig tsconfig.build.json --dts",
     "build-fast": "tsup --no-dts",
     "dev": "pnpm build-fast --watch"
   },
-  "files": [
-    "dist"
-  ],
   "dependencies": {
     "@bamboocss/logger": "workspace:*",
-    "@bamboocss/preset-base": "workspace:*",
     "@bamboocss/preset-bamboo": "workspace:*",
+    "@bamboocss/preset-base": "workspace:*",
     "@bamboocss/shared": "workspace:*",
     "@bamboocss/types": "workspace:*",
     "bundle-n-require": "1.1.2",

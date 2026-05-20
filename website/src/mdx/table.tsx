@@ -11,10 +11,7 @@ const tableStyles = css({
   p: '0'
 })
 
-export const Table = ({
-  className = '',
-  ...props
-}: React.ComponentProps<'table'>) => (
+export const Table = ({ className = '', ...props }: React.ComponentProps<'table'>) => (
   <table className={cx('scroll-area', tableStyles, className)} {...props} />
 )
 
@@ -31,10 +28,7 @@ const thStyles = css({
   fontWeight: 'semibold'
 })
 
-export const Th = ({
-  className = '',
-  ...props
-}: React.ComponentProps<'th'>) => (
+export const Th = ({ className = '', ...props }: React.ComponentProps<'th'>) => (
   <th className={cx(thStyles, className)} {...props} />
 )
 
@@ -52,10 +46,7 @@ const trStyles = css({
   }
 })
 
-export const Tr = ({
-  className = '',
-  ...props
-}: React.ComponentProps<'tr'>) => (
+export const Tr = ({ className = '', ...props }: React.ComponentProps<'tr'>) => (
   <tr className={cx(trStyles, className)} {...props} />
 )
 
@@ -71,9 +62,6 @@ const tdStyles = css({
   py: '2'
 })
 
-export const Td = ({
-  className = '',
-  ...props
-}: React.ComponentProps<'td'>) => (
+export const Td = ({ className = '', ...props }: React.ComponentProps<'td'>) => (
   <td className={cx(tdStyles, className)} {...props} />
 )

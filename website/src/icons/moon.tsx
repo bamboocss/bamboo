@@ -1,13 +1,6 @@
 export function MoonIcon(props: React.ComponentProps<'svg'>) {
   return (
-    <svg
-      fill="none"
-      viewBox="2 2 20 20"
-      width="12"
-      height="12"
-      stroke="currentColor"
-      {...props}
-    >
+    <svg fill="none" viewBox="2 2 20 20" width="12" height="12" stroke="currentColor" {...props}>
       <path
         strokeLinecap="round"
         strokeLinejoin="round"

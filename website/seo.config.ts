@@ -9,8 +9,7 @@ const seoConfig = defineMetadata({
   metadataBase: new URL(publicUrl),
   title: {
     template: '%s - Bamboo CSS',
-    default:
-      'Bamboo CSS - Build modern websites using build time and type-safe CSS-in-JS'
+    default: 'Bamboo CSS - Build modern websites using build time and type-safe CSS-in-JS'
   },
   description: 'Build modern websites using build time and type-safe CSS-in-JS',
   themeColor: '#F6E458',

@@ -2,11 +2,21 @@
   "name": "@bamboocss/postcss",
   "version": "1.11.1",
   "description": "PostCSS integration for Bamboo CSS",
+  "homepage": "https://bamboo-css.com",
+  "license": "MIT",
+  "author": "Segun Adebayo <joseshegs@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chakra-ui/bamboo.git",
+    "directory": "packages/postcss"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "author": "Segun Adebayo <joseshegs@gmail.com>",
-  "license": "MIT",
   "exports": {
     ".": {
       "source": "./src/index.ts",
@@ -19,24 +29,14 @@
     },
     "./package.json": "./package.json"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup src/index.ts --format=cjs,esm --shims --dts",
     "build-fast": "tsup src/index.ts --format=cjs,esm --shims --no-dts",
     "dev": "pnpm build-fast --watch"
   },
-  "sideEffects": false,
-  "homepage": "https://bamboo-css.com",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/chakra-ui/bamboo.git",
-    "directory": "packages/postcss"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "files": [
-    "dist"
-  ],
   "dependencies": {
     "@bamboocss/node": "workspace:*",
     "postcss": "8.5.14"

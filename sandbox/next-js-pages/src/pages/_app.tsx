@@ -9,5 +9,5 @@ export default function App({ Component, pageProps }: AppProps) {
     <main className={inter.className}>
       <Component {...pageProps} />
     </main>
-  );
+  )
 }

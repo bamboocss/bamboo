@@ -74,11 +74,7 @@ export const TryBambooSection = () => {
                 >
                   {i + 1}
                 </bamboo.span>
-                <bamboo.span
-                  fontWeight="semibold"
-                  textStyle="bamboo.h4"
-                  maxW={{ lg: '240px' }}
-                >
+                <bamboo.span fontWeight="semibold" textStyle="bamboo.h4" maxW={{ lg: '240px' }}>
                   {step.title}
                 </bamboo.span>
               </Stack>

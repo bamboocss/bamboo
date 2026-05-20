@@ -21,8 +21,8 @@ Below are some differences between the two libraries.
 
 In styled-components, you can use both tagged template literals and object syntax to style components.
 
-In Bamboo, you need to decide which syntax you want to use. Bamboo recommends using the object syntax, but provides a way
-to opt-in to tagged template literals.
+In Bamboo, you need to decide which syntax you want to use. Bamboo recommends using the object syntax, but provides a
+way to opt-in to tagged template literals.
 
 To initialize a project with the object syntax, run the following command.
 
@@ -123,8 +123,8 @@ const Button = styled.button`
 `
 ```
 
-In Bamboo, we model interpolations using the variants API. This allows define style groups or recipes that can be applied
-to components.
+In Bamboo, we model interpolations using the variants API. This allows define style groups or recipes that can be
+applied to components.
 
 ```jsx
 const Button = styled('button', {
@@ -148,8 +148,8 @@ const Button = styled('button', {
 
 ### Defining Tokens
 
-In styled-components, you can define tokens in a theme object that is passed to the `ThemeProvider`.
-This requires the use of React's context API to access the theme object in your styles
+In styled-components, you can define tokens in a theme object that is passed to the `ThemeProvider`. This requires the
+use of React's context API to access the theme object in your styles
 
 ```tsx
 import { ThemeProvider } from 'styled-components'
@@ -166,7 +166,7 @@ const App = () => (
     <Button>Button</Button>
   </ThemeProvider>
 )
-````
+```
 
 In Bamboo, you define tokens in the `theme` key of the `bamboo.config.ts` file. This allows you to access the tokens in
 your styles without the need for React's context API.
@@ -339,8 +339,8 @@ const GlobalStyle = createGlobalStyle`
 `
 ```
 
-In Bamboo, you can use the `globalCss` key of the `bamboo.config.ts` file to define global styles. This will automatically
-add styles to the project via PostCSS.
+In Bamboo, you can use the `globalCss` key of the `bamboo.config.ts` file to define global styles. This will
+automatically add styles to the project via PostCSS.
 
 ```tsx
 // bamboo.config.ts

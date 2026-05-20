@@ -29,13 +29,6 @@ const preStyles = cva({
 export const Pre = (props: React.ComponentProps<'pre'>) => {
   const { className = '', ...rest } = props
   return (
-    <pre
-      className={cx(
-        preStyles({ hasFilename: false }),
-        'scroll-area',
-        className
-      )}
-      {...rest}
-    />
+    <pre className={cx(preStyles({ hasFilename: false }), 'scroll-area', className)} {...rest} />
   )
 }

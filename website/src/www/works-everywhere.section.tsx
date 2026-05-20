@@ -1,12 +1,5 @@
 import { ComponentPropsWithoutRef } from 'react'
-import {
-  Container,
-  HStack,
-  Square,
-  Stack,
-  VStack,
-  bamboo
-} from '@/styled-system/jsx'
+import { Container, HStack, Square, Stack, VStack, bamboo } from '@/styled-system/jsx'
 import { Icon, IconType } from '@/theme/icons'
 
 export const WorksEverywhereSection = () => {
@@ -19,11 +12,7 @@ export const WorksEverywhereSection = () => {
             Including Server Components.
           </bamboo.h2>
 
-          <Stack
-            gap="12"
-            direction={{ base: 'column', lg: 'row' }}
-            align="center"
-          >
+          <Stack gap="12" direction={{ base: 'column', lg: 'row' }} align="center">
             <HStack gap="12">
               <ProjectLogo icon="RemixLogo" title="Remix" />
               <ProjectLogo icon="ViteLogo" title="Vite" />
@@ -56,15 +45,8 @@ export const WorksEverywhereSection = () => {
               letterSpacing="tight"
               textAlign="center"
             >
-              Bamboo works out of box with your favorite JS framework. Use it
-              with Vite, Remix,{' '}
-              <bamboo.mark
-                bg="yellow.300"
-                rounded="lg"
-                px="2"
-                py="1"
-                boxDecorationBreak="clone"
-              >
+              Bamboo works out of box with your favorite JS framework. Use it with Vite, Remix,{' '}
+              <bamboo.mark bg="yellow.300" rounded="lg" px="2" py="1" boxDecorationBreak="clone">
                 Next.js (including app dir)
               </bamboo.mark>
             </bamboo.span>
@@ -78,16 +60,9 @@ export const WorksEverywhereSection = () => {
 const ProjectLogo = ({
   title,
   ...iconProps
-}: { icon: IconType; title: string } & ComponentPropsWithoutRef<
-  typeof Icon
->) => (
+}: { icon: IconType; title: string } & ComponentPropsWithoutRef<typeof Icon>) => (
   <VStack>
-    <Square
-      size="20"
-      rounded="lg"
-      layerStyle="offShadow"
-      _dark={{ boxShadowColor: 'yellow.300' }}
-    >
+    <Square size="20" rounded="lg" layerStyle="offShadow" _dark={{ boxShadowColor: 'yellow.300' }}>
       <Icon {...iconProps} />
     </Square>
     <bamboo.span textStyle="xl" letterSpacing="tight" fontWeight="bold">

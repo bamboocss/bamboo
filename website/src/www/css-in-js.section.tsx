@@ -85,24 +85,23 @@ const codeSnippets = [
   }
 ]
 
-const features: Array<{ title: string; description: string; icon: IconType }> =
-  [
-    {
-      title: 'Zero runtime',
-      description: 'Generates static CSS at build-time',
-      icon: 'FastForwardArrow'
-    },
-    {
-      title: 'Type safe',
-      description: 'TypeScript support out of the box',
-      icon: 'TypescriptLogo'
-    },
-    {
-      title: 'Amazing DX',
-      description: 'Low learning curve, great developer experience',
-      icon: 'Sparks'
-    }
-  ]
+const features: Array<{ title: string; description: string; icon: IconType }> = [
+  {
+    title: 'Zero runtime',
+    description: 'Generates static CSS at build-time',
+    icon: 'FastForwardArrow'
+  },
+  {
+    title: 'Type safe',
+    description: 'TypeScript support out of the box',
+    icon: 'TypescriptLogo'
+  },
+  {
+    title: 'Amazing DX',
+    description: 'Low learning curve, great developer experience',
+    icon: 'Sparks'
+  }
+]
 
 export const CssInJSSection = () => {
   return (
@@ -114,8 +113,7 @@ export const CssInJSSection = () => {
             fontWeight="semibold"
             textAlign={{ base: 'center', lg: 'left' }}
           >
-            Styling library{' '}
-            <bamboo.span color="yellow.300">you’ll enjoy</bamboo.span> using 🎋
+            Styling library <bamboo.span color="yellow.300">you’ll enjoy</bamboo.span> using 🎋
           </bamboo.h2>
 
           <bamboo.div width="full" maxW="4xl" mx="auto">
@@ -123,13 +121,8 @@ export const CssInJSSection = () => {
           </bamboo.div>
 
           <VStack maxW={{ base: '2xl', lg: '5xl' }} mx="auto" gap="16">
-            <bamboo.span
-              textStyle="bamboo.h3"
-              textAlign="center"
-              fontWeight="semibold"
-            >
-              CSS-in-JS with build time generated styles, RSC compatible,
-              multi-variant support.
+            <bamboo.span textStyle="bamboo.h3" textAlign="center" fontWeight="semibold">
+              CSS-in-JS with build time generated styles, RSC compatible, multi-variant support.
             </bamboo.span>
 
             <Stack
@@ -148,10 +141,7 @@ export const CssInJSSection = () => {
                   key={title}
                 >
                   <HStack>
-                    <Icon
-                      icon={icon}
-                      className={css({ color: 'yellow.300' })}
-                    />
+                    <Icon icon={icon} className={css({ color: 'yellow.300' })} />
                     <bamboo.span fontWeight="semibold">{title}</bamboo.span>
                   </HStack>
                   <bamboo.span color="gray.200" maxW={{ lg: '256px' }}>

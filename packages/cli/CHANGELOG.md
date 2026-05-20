@@ -742,7 +742,6 @@
 
 - fea78c7: Adds support for static analysis of used tokens and recipe variants. It helps to get a birds-eye view of how
   your design system is used and answers the following questions:
-
   - What tokens are most used?
   - What recipe variants are most used?
   - How many hardcoded values vs tokens do we have?
@@ -1047,12 +1046,10 @@
 - 5dcdae4: Improve monorepo setup DX by exposing some cli flags
 
   ### `panda init`
-
   - Added new flag `--no-codegen` to skip codegen during initialization
   - Added new flag `--outdir` to specify the output directory for generated files
 
   ### `panda emit-pkg`
-
   - Added new `--base` flag to specify the base directory for the entrypoints in the generated `package.json#exports`
     field
 
@@ -1656,7 +1653,6 @@
 ### Patch Changes
 
 - d5977c24: - Add a `--logfile` flag to the `panda`, `panda codegen`, `panda cssgen` and `panda debug` commands.
-
   - Add a `logfile` option to the postcss plugin
 
   Logs will be streamed to the file specified by the `--logfile` flag or the `logfile` option. This is useful for
@@ -1751,7 +1747,6 @@
 ### Minor Changes
 
 - f58f6df2: Refactor `config.hooks` to be much more powerful, you can now:
-
   - Tweak the config after it has been resolved (after presets are loaded and merged), this could be used to dynamically
     load all `recipes` from a folder
   - Transform a source file's content before parsing it, this could be used to transform the file content to a
@@ -1883,7 +1878,6 @@
 - 84304901: Improve performance, mostly for the CSS generation by removing a lot of `postcss` usage (and plugins).
 
   ## Public changes:
-
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
@@ -1891,7 +1885,6 @@
     this run.
 
   ## Internal changes:
-
   - `markImportant` fn from JS instead of walking through postcss AST nodes
   - use a fork of `stitches` `stringify` function instead of `postcss-css-in-js` to write the CSS string from a JS
     object
@@ -2389,7 +2382,6 @@
 
   In addition to the optional `glob` that you can already pass to override the config.include option, the `panda cssgen`
   command now accepts a new `{type}` argument to generate only a specific type of CSS:
-
   - preflight
   - tokens
   - static
@@ -2693,7 +2685,6 @@
 - a669f4d5: Introduce new slot recipe features.
 
   Slot recipes are useful for styling composite or multi-part components easily.
-
   - `sva`: the slot recipe version of `cva`
   - `defineSlotRecipe`: the slot recipe version of `defineRecipe`
 
@@ -2855,7 +2846,6 @@
   ```
 
 - f9247e52: Provide better error logs:
-
   - full stacktrace when using PANDA_DEBUG
   - specific CssSyntaxError to better spot the error
 
@@ -2996,7 +2986,6 @@
 ### Patch Changes
 
 - fb40fff2: Initial release of all packages
-
   - Internal AST parser for TS and TSX
   - Support for defining presets in config
   - Support for design tokens (core and semantic)

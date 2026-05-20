@@ -28,18 +28,18 @@ following structure:
 
 ### Directory Structure
 
-| Package                                       | Description                                                 |
-| --------------------------------------------- | ----------------------------------------------------------- |
-| [cli](packages/cli)                           | CLI package installed by the end user                       |
+| Package                                       | Description                                                  |
+| --------------------------------------------- | ------------------------------------------------------------ |
+| [cli](packages/cli)                           | CLI package installed by the end user                        |
 | [core](packages/core)                         | Contains core features of Bamboo (utility, recipes, etc)     |
 | [config](packages/config)                     | Contains functions for reading and merging the bamboo config |
-| [extractor](packages/extractor)               | Contains code for fast AST parsing and scanning             |
-| [generator](packages/generator)               | Contains codegen artifacts (js, css, jsx)                   |
-| [parser](packages/parser)                     | Contains code for parsing a source code                     |
-| [is-valid-prop](packages/is-valid-prop)       | Contains code for checking if a prop is a valid css prop    |
+| [extractor](packages/extractor)               | Contains code for fast AST parsing and scanning              |
+| [generator](packages/generator)               | Contains codegen artifacts (js, css, jsx)                    |
+| [parser](packages/parser)                     | Contains code for parsing a source code                      |
+| [is-valid-prop](packages/is-valid-prop)       | Contains code for checking if a prop is a valid css prop     |
 | [node](packages/node)                         | Contains the Node.js API of Bamboo's features                |
-| [token-dictionary](packages/token-dictionary) | Contains code used to process tokens and semantic tokens    |
-| [shared](packages/shared)                     | Contains shared TS                                          |
+| [token-dictionary](packages/token-dictionary) | Contains code used to process tokens and semantic tokens     |
+| [shared](packages/shared)                     | Contains shared TS                                           |
 
 ### Tooling
 
@@ -120,7 +120,7 @@ If you are interested in the detailed specification you can visit https://www.co
 5. Also, if you provide `jsx` snippets to the changeset, please turn off the live preview by doing the following at the
    beginning of the snippet: ` ```jsx live=false`
 
-> If you made minor changes like CI config, prettier, etc, you can run `pnpm changeset add --empty` to generate an empty
+> If you made minor changes like CI config, oxfmt, etc, you can run `pnpm changeset add --empty` to generate an empty
 > changeset file to document your changes.
 
 ### Tests

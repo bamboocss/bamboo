@@ -758,13 +758,12 @@ export default preset
   writeFileSync(indexPath, indexContent, 'utf-8')
   console.log('✓ Generated index.ts')
 
-  // Format generated files with prettier
-  console.log('\n📝 Formatting generated files with prettier...')
+  console.log('\n📝 Formatting generated files with oxfmt...')
   try {
-    execSync(`pnpm exec prettier --write "${srcDir}/**/*.ts"`, { stdio: 'inherit', cwd: join(__dirname, '../../..') })
+    execSync(`pnpm exec oxfmt "${srcDir}/**/*.ts"`, { stdio: 'inherit', cwd: join(__dirname, '../../..') })
     console.log('✓ Files formatted successfully')
   } catch (error) {
-    console.warn('⚠️  Prettier formatting failed:', error.message)
+    console.warn('⚠️  Formatting failed:', error.message)
     console.warn('   Files were generated but not formatted')
   }
 

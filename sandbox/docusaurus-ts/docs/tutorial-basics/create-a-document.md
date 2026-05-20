@@ -53,5 +53,5 @@ export default {
       items: ['tutorial-basics/create-a-document'],
     },
   ],
-};
+}
 ```

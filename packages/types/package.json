@@ -2,9 +2,19 @@
   "name": "@bamboocss/types",
   "version": "1.11.1",
   "description": "The types for css bamboo",
-  "main": "dist/index.d.ts",
-  "author": "Segun Adebayo <joseshegs@gmail.com>",
+  "homepage": "https://bamboo-css.com",
   "license": "MIT",
+  "author": "Segun Adebayo <joseshegs@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chakra-ui/bamboo.git",
+    "directory": "packages/types"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "main": "dist/index.d.ts",
   "exports": {
     ".": {
       "source": "./src/index.ts",
@@ -13,24 +23,14 @@
     },
     "./package.json": "./package.json"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "prepare": "ncp node_modules/csstype/index.d.ts src/csstype.d.ts",
     "dev": "tsx scripts/watch.ts",
     "build": "cross-env BAMBOO_BUILD=1 tsx scripts/postbuild.ts && tsx scripts/build.ts"
   },
-  "sideEffects": false,
-  "homepage": "https://bamboo-css.com",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/chakra-ui/bamboo.git",
-    "directory": "packages/types"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "files": [
-    "dist"
-  ],
   "devDependencies": {
     "@bamboocss/extractor": "workspace:*",
     "csstype": "3.2.3",

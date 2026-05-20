@@ -10,7 +10,7 @@ export const dynamic = 'force-static'
 export async function generateStaticParams() {
   const categories = [
     'overview',
-    'installation', 
+    'installation',
     'concepts',
     'theming',
     'utilities',
@@ -19,12 +19,12 @@ export async function generateStaticParams() {
     'migration',
     'references'
   ]
-  
+
   // Generate params for category pages
   const categoryParams = categories.map(category => ({
     slug: [category]
   }))
-  
+
   // Generate params for individual doc pages
   const docParams = docs.map(doc => {
     const slugParts = doc.slug.replace('docs/', '').split('/')
@@ -32,14 +32,14 @@ export async function generateStaticParams() {
       slug: slugParts
     }
   })
-  
+
   return [...categoryParams, ...docParams]
 }
 
 export async function GET(request: Request, context: RouteContext) {
   const params = await context.params
   let slugParts = params.slug
-  
+
   // Remove .mdx extension from the last part if present
   const lastPart = slugParts[slugParts.length - 1]
   if (lastPart.endsWith('.mdx')) {
@@ -48,19 +48,19 @@ export async function GET(request: Request, context: RouteContext) {
       lastPart.slice(0, -4) // Remove .mdx
     ]
   }
-  
+
   // Check if this is a specific doc request (e.g., /installation/redwood)
   if (slugParts.length > 1) {
     const fullSlug = `docs/${slugParts.join('/')}`
     const doc = docs.find(d => d.slug === fullSlug)
-    
+
     if (!doc) {
       notFound()
     }
-    
+
     // Generate content for a single doc
     const content = generateSingleDocContent(doc)
-    
+
     return new Response(content, {
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
@@ -68,14 +68,12 @@ export async function GET(request: Request, context: RouteContext) {
       }
     })
   }
-  
+
   // Category level request (e.g., /installation)
   const category = slugParts[0]
 
   // Filter docs by category
-  const categoryDocs = docs.filter(doc => 
-    doc.slug.startsWith(`docs/${category}`)
-  )
+  const categoryDocs = docs.filter(doc => doc.slug.startsWith(`docs/${category}`))
 
   if (categoryDocs.length === 0) {
     notFound()
@@ -95,7 +93,7 @@ export async function GET(request: Request, context: RouteContext) {
   })
 }
 
-function generateSingleDocContent(doc: typeof import('.velite').docs[0]) {
+function generateSingleDocContent(doc: (typeof import('.velite').docs)[0]) {
   return `# ${doc.title}
 
 ${doc.description || ''}
@@ -121,20 +119,22 @@ function generateCategoryContent(category: string, docs: typeof import('.velite'
     references: 'Bamboo CSS References'
   }
 
-  const sections = docs.map(doc => {
-    const title = doc.title
-    const slug = doc.slug.replace('docs/', '')
-    const level = slug.split('/').length - 1
-    const headerLevel = '#'.repeat(Math.min(level + 1, 6))
-    
-    return `
+  const sections = docs
+    .map(doc => {
+      const title = doc.title
+      const slug = doc.slug.replace('docs/', '')
+      const level = slug.split('/').length - 1
+      const headerLevel = '#'.repeat(Math.min(level + 1, 6))
+
+      return `
 ${headerLevel} ${title}
 
 ${doc.description || ''}
 
 ${doc.llm}
 `
-  }).join('\n\n---\n\n')
+    })
+    .join('\n\n---\n\n')
 
   return `# ${categoryTitles[category] || category}
 

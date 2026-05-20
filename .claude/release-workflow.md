@@ -55,7 +55,8 @@ Poll every ~30 seconds. If not confirmed after 10 minutes, stop and investigate.
 
 ### 7. Draft the CHANGELOG.md entry
 
-Using the changeset content captured in step 4, add a new entry at the top of `CHANGELOG.md` following the existing format:
+Using the changeset content captured in step 4, add a new entry at the top of `CHANGELOG.md` following the existing
+format:
 
 ```markdown
 ## [<version>](#<version>) - <date>
@@ -88,7 +89,8 @@ git pull origin main
 
 ### 10. Create the GitHub Announcements discussion
 
-Open a new discussion in the **Announcements** category with the release notes. Close it immediately after using the `closeDiscussion` GraphQL mutation (closed announcements still appear pinned in the Discussions tab).
+Open a new discussion in the **Announcements** category with the release notes. Close it immediately after using the
+`closeDiscussion` GraphQL mutation (closed announcements still appear pinned in the Discussions tab).
 
 ```bash
 # Create

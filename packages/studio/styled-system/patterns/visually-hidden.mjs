@@ -1,13 +1,14 @@
-import { getPatternStyles, patternFns } from '../helpers.mjs';
-import { css } from '../css/index.mjs';
+import { getPatternStyles, patternFns } from '../helpers.mjs'
+import { css } from '../css/index.mjs'
 
 const visuallyHiddenConfig = {
-transform(props) {
-  return {
-    srOnly: true,
-    ...props
-  };
-}}
+  transform(props) {
+    return {
+      srOnly: true,
+      ...props,
+    }
+  },
+}
 
 export const getVisuallyHiddenStyle = (styles = {}) => {
   const _styles = getPatternStyles(visuallyHiddenConfig, styles)

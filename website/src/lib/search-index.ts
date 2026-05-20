@@ -31,19 +31,12 @@ export interface SearchItem {
 /**
  * Extract content for each heading section from the full document
  */
-function extractSectionContent(
-  fullContent: string,
-  toc: Doc['toc'],
-  currentIndex: number
-): string {
+function extractSectionContent(fullContent: string, toc: Doc['toc'], currentIndex: number): string {
   const currentHeading = toc[currentIndex]
   const nextHeading = toc[currentIndex + 1]
 
   // Find the start position of current heading in content
-  const currentHeadingPattern = new RegExp(
-    `#+\\s*${escapeRegExp(currentHeading.title)}`,
-    'i'
-  )
+  const currentHeadingPattern = new RegExp(`#+\\s*${escapeRegExp(currentHeading.title)}`, 'i')
   const currentMatch = fullContent.match(currentHeadingPattern)
 
   if (!currentMatch) {
@@ -55,10 +48,7 @@ function extractSectionContent(
   // Find end position (start of next heading or end of document)
   let endIndex = fullContent.length
   if (nextHeading) {
-    const nextHeadingPattern = new RegExp(
-      `#+\\s*${escapeRegExp(nextHeading.title)}`,
-      'i'
-    )
+    const nextHeadingPattern = new RegExp(`#+\\s*${escapeRegExp(nextHeading.title)}`, 'i')
     const nextMatch = fullContent
       .slice(startIndex + currentMatch[0].length)
       .match(nextHeadingPattern)

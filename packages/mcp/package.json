@@ -2,11 +2,21 @@
   "name": "@bamboocss/mcp",
   "version": "1.11.1",
   "description": "MCP server for Bamboo CSS AI assistants",
+  "homepage": "https://bamboo-css.com",
+  "license": "MIT",
+  "author": "Segun Adebayo <joseshegs@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chakra-ui/bamboo.git",
+    "directory": "packages/mcp"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "author": "Segun Adebayo <joseshegs@gmail.com>",
-  "license": "MIT",
   "exports": {
     ".": {
       "source": "./src/index.ts",
@@ -19,31 +29,21 @@
     },
     "./package.json": "./package.json"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup src/index.ts --format=esm,cjs",
     "build-fast": "tsup src/index.ts --format=esm,cjs",
     "dev": "pnpm build-fast --watch"
   },
-  "sideEffects": false,
-  "homepage": "https://bamboo-css.com",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/chakra-ui/bamboo.git",
-    "directory": "packages/mcp"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "files": [
-    "dist"
-  ],
   "dependencies": {
-    "@clack/prompts": "0.11.0",
-    "@modelcontextprotocol/sdk": "^1.29.0",
     "@bamboocss/logger": "workspace:*",
     "@bamboocss/node": "workspace:*",
     "@bamboocss/token-dictionary": "workspace:*",
     "@bamboocss/types": "workspace:*",
+    "@clack/prompts": "0.11.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "zod": "^4.0.0"
   }
 }

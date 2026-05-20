@@ -91,31 +91,28 @@ describe('PostCSS plugin', () => {
     )
   })
 
-  test.sequential(
-    '`Builder` instance race condition when postcss invokes bamboo processing simultaneously',
-    async () => {
-      builder.context = undefined
-      const setupContextSpy = vi.spyOn(builder, 'setupContext')
+  test.sequential('`Builder` instance race condition when postcss invokes bamboo processing simultaneously', async () => {
+    builder.context = undefined
+    const setupContextSpy = vi.spyOn(builder, 'setupContext')
 
-      const setupOrder: string[] = []
-      const setupOriginal = builder.setup
-      const setupSpy = vi.spyOn(builder, 'setup').mockImplementation((...args) => {
-        setupOrder.push('enter')
-        return setupOriginal.apply(this, args).finally(() => setupOrder.push('leave'))
-      })
+    const setupOrder: string[] = []
+    const setupOriginal = builder.setup
+    const setupSpy = vi.spyOn(builder, 'setup').mockImplementation((...args) => {
+      setupOrder.push('enter')
+      return setupOriginal.apply(this, args).finally(() => setupOrder.push('leave'))
+    })
 
-      try {
-        const input = '@layer reset, base, tokens, recipes, utilities;'
-        const configPath = join(__dirname, 'samples', 'bamboo.config.cjs')
+    try {
+      const input = '@layer reset, base, tokens, recipes, utilities;'
+      const configPath = join(__dirname, 'samples', 'bamboo.config.cjs')
 
-        await Promise.all([1, 2, 3, 4].map(() => run(input, { configPath })))
+      await Promise.all([1, 2, 3, 4].map(() => run(input, { configPath })))
 
-        expect(setupContextSpy).toHaveBeenCalledTimes(1)
-        expect(setupOrder).toEqual(['enter', 'leave', 'enter', 'leave', 'enter', 'leave', 'enter', 'leave'])
-      } finally {
-        setupContextSpy.mockRestore()
-        setupSpy.mockRestore()
-      }
-    },
-  )
+      expect(setupContextSpy).toHaveBeenCalledTimes(1)
+      expect(setupOrder).toEqual(['enter', 'leave', 'enter', 'leave', 'enter', 'leave', 'enter', 'leave'])
+    } finally {
+      setupContextSpy.mockRestore()
+      setupSpy.mockRestore()
+    }
+  })
 })

@@ -44,11 +44,7 @@ const codeSnippets = {
   }`
 }
 
-const CodePanel = (props: {
-  title: string
-  children: string
-  className?: string
-}) => {
+const CodePanel = (props: { title: string; children: string; className?: string }) => {
   const { title, children, className } = props
   return (
     <div className={className}>
@@ -81,12 +77,7 @@ export const DesignTokensSection = () => {
   return (
     <bamboo.section bg="bg">
       <Container pt={{ base: '20', lg: '40' }} pb={{ base: '16', lg: '32' }}>
-        <Stack
-          gap="20"
-          direction={{ base: 'column', lg: 'row' }}
-          align={{ lg: 'center' }}
-          mb="20"
-        >
+        <Stack gap="20" direction={{ base: 'column', lg: 'row' }} align={{ lg: 'center' }} mb="20">
           <Circle
             size="173px"
             boxShadowColor="bg.subtle"
@@ -105,13 +96,8 @@ export const DesignTokensSection = () => {
               <bamboo.h3 textStyle="bamboo.h3" fontWeight="bold">
                 Design token support
               </bamboo.h3>
-              <bamboo.h4
-                textStyle="bamboo.h4"
-                fontWeight="medium"
-                color="fg.muted"
-              >
-                Specify base and semantic tokens with ease using the W3C working
-                token spec.
+              <bamboo.h4 textStyle="bamboo.h4" fontWeight="medium" color="fg.muted">
+                Specify base and semantic tokens with ease using the W3C working token spec.
               </bamboo.h4>
             </Stack>
           </Box>

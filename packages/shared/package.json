@@ -2,21 +2,21 @@
   "name": "@bamboocss/shared",
   "version": "1.11.1",
   "description": "Shared utilities for css bamboo",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
-  "author": "Segun Adebayo <joseshegs@gmail.com>",
-  "license": "MIT",
-  "sideEffects": false,
   "homepage": "https://bamboo-css.com",
+  "license": "MIT",
+  "author": "Segun Adebayo <joseshegs@gmail.com>",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/chakra-ui/bamboo.git",
     "directory": "packages/shared"
   },
-  "publishConfig": {
-    "access": "public"
-  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "source": "./src/index.ts",
@@ -29,12 +29,12 @@
     },
     "./package.json": "./package.json"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup --dts && tsx scripts/postbuild.ts",
     "build-fast": "tsup --no-dts",
     "dev": "tsup --no-dts --watch --onSuccess=\"tsx scripts/postbuild.ts\""
-  },
-  "files": [
-    "dist"
-  ]
+  }
 }

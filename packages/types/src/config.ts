@@ -454,7 +454,8 @@ export interface PluginsOptions {
 }
 
 export interface Config
-  extends StudioOptions,
+  extends
+    StudioOptions,
     ExtendableOptions,
     CssgenOptions,
     CodegenOptions,
@@ -484,8 +485,7 @@ export interface Preset extends ExtendableOptions, PresetOptions {
 }
 
 export interface UserConfig
-  extends Partial<PresetCore>,
-    RequiredBy<Omit<Config, keyof PresetCore>, 'outdir' | 'cwd' | 'include'> {}
+  extends Partial<PresetCore>, RequiredBy<Omit<Config, keyof PresetCore>, 'outdir' | 'cwd' | 'include'> {}
 
 export interface PathMapping {
   pattern: RegExp

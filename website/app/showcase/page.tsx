@@ -9,13 +9,11 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 const ogTitle = 'See projects built with Bamboo CSS'
-const ogDescription =
-  'Explore the projects and applications built using Bamboo CSS'
+const ogDescription = 'Explore the projects and applications built using Bamboo CSS'
 
 export const metadata: Metadata = {
   title: 'Showcase',
-  description:
-    'Bamboo CSS is a powerful tool for building modern web applications.',
+  description: 'Bamboo CSS is a powerful tool for building modern web applications.',
   openGraph: {
     title: ogTitle,
     description: ogDescription,
@@ -66,12 +64,7 @@ const ShowcaseCard = ({ data }: { data: Showcase }) => {
   const { name, description, url, image } = data
 
   return (
-    <Link
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={cardStyles}
-    >
+    <Link href={url} target="_blank" rel="noopener noreferrer" className={cardStyles}>
       <Image
         src={image}
         alt={name}
@@ -117,17 +110,14 @@ export default function ShowcasePage() {
               lineHeight="relaxed"
               textAlign="center"
             >
-              Explore the projects built with Bamboo CSS by the community and get
-              inspired for your next project.
+              Explore the projects built with Bamboo CSS by the community and get inspired for your
+              next project.
             </bamboo.p>
           </Stack>
         </Container>
 
         <Container pb="20">
-          <Grid
-            columns={{ base: 1, md: 2, lg: 3 }}
-            gap={{ base: '4', md: '8' }}
-          >
+          <Grid columns={{ base: 1, md: 2, lg: 3 }} gap={{ base: '4', md: '8' }}>
             {showcases.map(showcase => (
               <ShowcaseCard key={showcase.name} data={showcase} />
             ))}

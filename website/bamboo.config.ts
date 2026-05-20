@@ -11,11 +11,7 @@ import { keyframes } from './theme/keyframes'
 export default defineConfig({
   preflight: true,
   // define the content to scan 👇🏻
-  include: [
-    './src/**/*.{tsx,ts,jsx}',
-    './pages/**/*.{jsx,tsx}',
-    './app/**/*.{jsx,tsx}'
-  ],
+  include: ['./src/**/*.{tsx,ts,jsx}', './pages/**/*.{jsx,tsx}', './app/**/*.{jsx,tsx}'],
   exclude: [],
   outdir: 'styled-system',
   jsxFramework: 'react',

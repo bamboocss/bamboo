@@ -26,19 +26,18 @@ export interface TransformResult {
   styles: Dict
 }
 
-export interface StylesheetContext
-  extends Pick<
-    Context,
-    | 'utility'
-    | 'conditions'
-    | 'encoder'
-    | 'decoder'
-    | 'isValidProperty'
-    | 'hooks'
-    | 'globalVars'
-    | 'globalFontface'
-    | 'globalPositionTry'
-  > {
+export interface StylesheetContext extends Pick<
+  Context,
+  | 'utility'
+  | 'conditions'
+  | 'encoder'
+  | 'decoder'
+  | 'isValidProperty'
+  | 'hooks'
+  | 'globalVars'
+  | 'globalFontface'
+  | 'globalPositionTry'
+> {
   layers: Layers
   helpers: PatternHelpers
   hash?: boolean

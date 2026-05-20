@@ -13,16 +13,10 @@ export const CourseMiniBanner = () => {
         rounded="sm"
         css={{ _icon: { width: '3' } }}
       >
-        <span
-          className={circle({ size: '1.5', bg: '#32aef2', flexShrink: '0' })}
-        />
+        <span className={circle({ size: '1.5', bg: '#32aef2', flexShrink: '0' })} />
         <p>
-          <span className={css({ fontWeight: 'medium' })}>
-            Want to skip the docs?{' '}
-          </span>
-          <span className={css({ hideBelow: 'xl' })}>
-            Watch the official Bamboo course
-          </span>
+          <span className={css({ fontWeight: 'medium' })}>Want to skip the docs? </span>
+          <span className={css({ hideBelow: 'xl' })}>Watch the official Bamboo course</span>
         </p>
         <ButtonIcon icon="RightArrowIcon" />
       </HStack>
@@ -31,12 +25,7 @@ export const CourseMiniBanner = () => {
 }
 
 const MiniIcon = () => (
-  <svg
-    viewBox="0 0 108 27"
-    fill="none"
-    height="18px"
-    className={css({ hideBelow: 'md' })}
-  >
+  <svg viewBox="0 0 108 27" fill="none" height="18px" className={css({ hideBelow: 'md' })}>
     <rect
       x="0.933725"
       y="0.933725"
@@ -81,22 +70,13 @@ export const CourseBanner = () => {
   return (
     <Link href="https://www.bamboomastery.com/?ref=course-banner">
       <HStack bg="yellow.300" pos="relative">
-        <HStack
-          justify="center"
-          px="2"
-          py="2"
-          rounded="sm"
-          w="full"
-          pos="relative"
-        >
+        <HStack justify="center" px="2" py="2" rounded="sm" w="full" pos="relative">
           <MiniIcon />
           <p className={css({ color: 'black' })}>
             <span className={css({ fontWeight: 'medium' })}>
               Want to skip the docs? Check out bamboomastery.com{' '}
             </span>
-            <span className={css({ hideBelow: 'sm' })}>
-              - the best way to learn Bamboo CSS
-            </span>
+            <span className={css({ hideBelow: 'sm' })}>- the best way to learn Bamboo CSS</span>
           </p>
         </HStack>
       </HStack>

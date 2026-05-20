@@ -13,8 +13,8 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
-  prettier:
-    name: Prettier
+  format:
+    name: Format
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -23,8 +23,8 @@ jobs:
       - name: Install
         uses: ./.github/composite-actions/install
 
-      - name: Run Prettier
-        run: pnpm prettier
+      - name: Run oxfmt
+        run: pnpm fmt
 
   tests:
     name: Unit Tests
@@ -52,7 +52,7 @@ jobs:
       - name: Run ESLint
         run: pnpm lint
         env:
-          NODE_OPTIONS: "--max-old-space-size=4096"
+          NODE_OPTIONS: '--max-old-space-size=4096'
 
   types:
     name: TypeScript

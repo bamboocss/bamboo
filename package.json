@@ -2,8 +2,11 @@
   "name": "bamboo",
   "version": "0.0.1",
   "private": true,
-  "type": "module",
   "description": "The repository of css bamboo",
+  "keywords": [],
+  "license": "MIT",
+  "author": "Segun Adebayo <joseshegs@gmail.com>",
+  "type": "module",
   "scripts": {
     "playground": "pnpm --filter=./playground",
     "build:playground": "pnpm --filter {./playground}... build",
@@ -20,8 +23,8 @@
     "test:codegen": "pnpm codegen test && pnpm codegen typecheck",
     "test-watch": "vitest --watch -u",
     "lint": "eslint packages",
-    "prettier": "prettier --check packages",
-    "prettier-fix": "prettier --write packages",
+    "fmt": "oxfmt --check packages",
+    "fmt:fix": "oxfmt packages",
     "typecheck": "tsc --noEmit",
     "release": "changeset publish",
     "release-dev": "changeset version --snapshot dev && changeset publish --tag dev",
@@ -32,9 +35,6 @@
     "website": "pnpm --filter=./website",
     "mdx-check": "mdx-local-link-checker docs && mdx-local-link-checker website/pages/docs"
   },
-  "keywords": [],
-  "author": "Segun Adebayo <joseshegs@gmail.com>",
-  "license": "MIT",
   "dependencies": {
     "@changesets/changelog-github": "0.5.2",
     "@changesets/cli": "2.29.8",
@@ -61,16 +61,15 @@
     "@typescript-eslint/eslint-plugin": "8.58.2",
     "@typescript-eslint/parser": "8.58.2",
     "eslint": "9.39.1",
-    "eslint-config-prettier": "10.1.8",
     "globals": "^17.0.0",
-    "prettier": "3.2.5",
+    "oxfmt": "0.51.0",
     "typescript-eslint": "8.58.2",
     "vite-plugin-virtual": "^0.4.0"
   },
   "lint-staged": {
     "packages/**/*.{ts,tsx}": [
       "pnpm prepare-studio",
-      "pnpm prettier-fix",
+      "pnpm fmt:fix",
       "git add --all packages/studio/"
     ]
   },

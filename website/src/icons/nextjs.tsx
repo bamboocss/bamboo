@@ -9,10 +9,7 @@ export const NextjsLogo = () => (
       height="26"
       style={{ maskType: 'alpha' }}
     >
-      <path
-        d="M20 33c7.18 0 13-5.82 13-13S27.18 7 20 7 7 12.82 7 20s5.82 13 13 13z"
-        fill="#000"
-      />
+      <path d="M20 33c7.18 0 13-5.82 13-13S27.18 7 20 7 7 12.82 7 20s5.82 13 13 13z" fill="#000" />
     </mask>
     <g mask="url(#nextjs-white_svg__a)">
       <path
@@ -25,10 +22,7 @@ export const NextjsLogo = () => (
         d="M28.596 29.753L16.987 14.8H14.8v10.396h1.75v-8.174l10.672 13.789c.482-.322.94-.676 1.374-1.058z"
         fill="url(#nextjs-white_svg__b)"
       />
-      <path
-        d="M25.344 14.8h-1.733v10.4h1.733V14.8z"
-        fill="url(#nextjs-white_svg__c)"
-      />
+      <path d="M25.344 14.8h-1.733v10.4h1.733V14.8z" fill="url(#nextjs-white_svg__c)" />
     </g>
     <defs>
       <linearGradient

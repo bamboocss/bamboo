@@ -171,9 +171,11 @@ will generate the following CSS:
 
 ## Multi-block conditions
 
-Sometimes you need a single condition to generate multiple independent CSS blocks, each with its own at-rule. For example, you might want hover feedback on desktop (pointer devices) and active/press feedback on touch devices.
+Sometimes you need a single condition to generate multiple independent CSS blocks, each with its own at-rule. For
+example, you might want hover feedback on desktop (pointer devices) and active/press feedback on touch devices.
 
-Use the object syntax with `@slot` markers to define multi-block conditions. Each path from the root of the object to a `@slot` value becomes an independent CSS block:
+Use the object syntax with `@slot` markers to define multi-block conditions. Each path from the root of the object to a
+`@slot` value becomes an independent CSS block:
 
 ```tsx
 import { defineConfig } from '@bamboocss/dev'
@@ -183,14 +185,14 @@ export default defineConfig({
     extend: {
       hoverActive: {
         '@media (hover: hover)': {
-          '&:is(:hover, [data-hover])': '@slot',
+          '&:is(:hover, [data-hover])': '@slot'
         },
         '@media (hover: none)': {
-          '&:is(:active, [data-active])': '@slot',
-        },
-      },
-    },
-  },
+          '&:is(:active, [data-active])': '@slot'
+        }
+      }
+    }
+  }
 })
 ```
 
@@ -199,8 +201,8 @@ import { css } from '../styled-system/css'
 
 css({
   _hoverActive: {
-    bg: 'red',
-  },
+    bg: 'red'
+  }
 })
 ```
 
@@ -219,7 +221,9 @@ will generate the following CSS:
 }
 ```
 
-This is also useful for any scenario where a single condition needs to apply the same styles across multiple independent at-rule blocks. Objects with a single `@slot` path behave identically to the [mixed conditions](#mixed-conditions) array syntax.
+This is also useful for any scenario where a single condition needs to apply the same styles across multiple independent
+at-rule blocks. Objects with a single `@slot` path behave identically to the [mixed conditions](#mixed-conditions) array
+syntax.
 
 ## Container queries
 

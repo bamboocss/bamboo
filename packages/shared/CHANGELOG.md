@@ -128,7 +128,6 @@
 ### Patch Changes
 
 - efa060d: Improve algorithm for deterministic property order.
-
   - Longhand (`padding`, `margin`, `inset`)
   - Shorthand of longhands (`padding-inline`, `margin-inline`)
   - Shorthand of shorthands (`padding-inline-start`, `margin-inline-start`)
@@ -367,7 +366,6 @@
 ### Minor Changes
 
 - f0296249: - Sort the longhand/shorthand atomic rules in a deterministic order to prevent property conflicts
-
   - Automatically merge the `base` object in the `css` root styles in the runtime
   - This may be a breaking change depending on how your styles are created
 
@@ -448,7 +446,6 @@
 - 84304901: Improve performance, mostly for the CSS generation by removing a lot of `postcss` usage (and plugins).
 
   ## Public changes:
-
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
@@ -456,7 +453,6 @@
     this run.
 
   ## Internal changes:
-
   - `markImportant` fn from JS instead of walking through postcss AST nodes
   - use a fork of `stitches` `stringify` function instead of `postcss-css-in-js` to write the CSS string from a JS
     object
@@ -595,7 +591,6 @@
 
   **Limitation:** This feature does not allow compose mixed styled composition. A mixed styled composition happens when
   an element is created from a cva/inline cva, and another created from a config recipe.
-
   - CVA or Inline CVA + CVA or Inline CVA = ✅
   - Config Recipe + Config Recipe = ✅
   - CVA or Inline CVA + Config Recipe = ❌
@@ -674,7 +669,6 @@
 - a669f4d5: Introduce new slot recipe features.
 
   Slot recipes are useful for styling composite or multi-part components easily.
-
   - `sva`: the slot recipe version of `cva`
   - `defineSlotRecipe`: the slot recipe version of `defineRecipe`
 
@@ -730,7 +724,6 @@
   further reduce it.
 
   `config.jsxStyleProps`:
-
   - When set to 'all', all style props are allowed.
   - When set to 'minimal', only the `css` prop is allowed.
   - When set to 'none', no style props are allowed and therefore the `jsxFactory` will not be usable as a component:
@@ -837,7 +830,6 @@
 ### Patch Changes
 
 - fb40fff2: Initial release of all packages
-
   - Internal AST parser for TS and TSX
   - Support for defining presets in config
   - Support for design tokens (core and semantic)
@@ -911,7 +903,6 @@ export default defineConfig({
 - 84304901: Improve performance, mostly for the CSS generation by removing a lot of `postcss` usage (and plugins).
 
   ## Public changes:
-
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
@@ -919,7 +910,6 @@ export default defineConfig({
     this run.
 
   ## Internal changes:
-
   - `markImportant` fn from JS instead of walking through postcss AST nodes
   - use a fork of `stitches` `stringify` function instead of `postcss-css-in-js` to write the CSS string from a JS
     object
@@ -1058,7 +1048,6 @@ export default defineConfig({
 
   **Limitation:** This feature does not allow compose mixed styled composition. A mixed styled composition happens when
   an element is created from a cva/inline cva, and another created from a config recipe.
-
   - CVA or Inline CVA + CVA or Inline CVA = ✅
   - Config Recipe + Config Recipe = ✅
   - CVA or Inline CVA + Config Recipe = ❌
@@ -1137,7 +1126,6 @@ export default defineConfig({
 - a669f4d5: Introduce new slot recipe features.
 
   Slot recipes are useful for styling composite or multi-part components easily.
-
   - `sva`: the slot recipe version of `cva`
   - `defineSlotRecipe`: the slot recipe version of `defineRecipe`
 
@@ -1193,7 +1181,6 @@ export default defineConfig({
   further reduce it.
 
   `config.jsxStyleProps`:
-
   - When set to 'all', all style props are allowed.
   - When set to 'minimal', only the `css` prop is allowed.
   - When set to 'none', no style props are allowed and therefore the `jsxFactory` will not be usable as a component:
@@ -1300,7 +1287,6 @@ export default defineConfig({
 ### Patch Changes
 
 - fb40fff2: Initial release of all packages
-
   - Internal AST parser for TS and TSX
   - Support for defining presets in config
   - Support for design tokens (core and semantic)

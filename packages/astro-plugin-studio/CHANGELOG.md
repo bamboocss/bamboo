@@ -25,7 +25,6 @@
 ### Patch Changes
 
 - bc2b8d7: Dependency updates for reported security advisories.
-
   - **@pandacss/node** / **@pandacss/token-dictionary**: bump `picomatch` to 4.0.4
     ([GHSA-3v7f-55p6-f55p](https://github.com/advisories/GHSA-3v7f-55p6-f55p),
     [GHSA-c2c7-rcm5-vvqj](https://github.com/advisories/GHSA-c2c7-rcm5-vvqj)).
@@ -84,7 +83,6 @@
 ### Patch Changes
 
 - 4627837: **Studio**: Fix React SSR errors when running Panda Studio.
-
   - `ReferenceError: module is not defined` - React's CJS entry point was loaded in an ESM context
   - `TypeError: dispatcher.getOwner is not a function` - React development/production builds were mixed during SSR
   - @pandacss/node@1.7.3
@@ -602,7 +600,6 @@
 ### Patch Changes
 
 - d5977c24: - Add a `--logfile` flag to the `panda`, `panda codegen`, `panda cssgen` and `panda debug` commands.
-
   - Add a `logfile` option to the postcss plugin
 
   Logs will be streamed to the file specified by the `--logfile` flag or the `logfile` option. This is useful for
@@ -678,7 +675,6 @@
 - 84304901: Improve performance, mostly for the CSS generation by removing a lot of `postcss` usage (and plugins).
 
   ## Public changes:
-
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
@@ -686,7 +682,6 @@
     this run.
 
   ## Internal changes:
-
   - `markImportant` fn from JS instead of walking through postcss AST nodes
   - use a fork of `stitches` `stringify` function instead of `postcss-css-in-js` to write the CSS string from a JS
     object

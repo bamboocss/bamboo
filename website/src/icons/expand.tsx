@@ -5,13 +5,7 @@ export function ExpandIcon({
   ...props
 }: { isOpen?: boolean } & React.ComponentProps<'svg'>) {
   return (
-    <svg
-      height="12"
-      width="12"
-      viewBox="0 0 16 16"
-      fill="currentColor"
-      {...props}
-    >
+    <svg height="12" width="12" viewBox="0 0 16 16" fill="currentColor" {...props}>
       <path
         fillRule="evenodd"
         d="M4.177 7.823l2.396-2.396A.25.25 0 017 5.604v4.792a.25.25 0 01-.427.177L4.177 8.177a.25.25 0 010-.354z"

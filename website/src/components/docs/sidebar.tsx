@@ -25,9 +25,7 @@ interface Props {
 
 export function Sidebar({ slug: currentSlug }: Props) {
   const pathname = usePathname()
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set()
-  )
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
 
   // Use the sidebar structure from config
   const sidebarStructure: SidebarItem[] =
@@ -67,8 +65,7 @@ export function Sidebar({ slug: currentSlug }: Props) {
   return (
     <Stack as="nav" gap="1">
       {sidebarStructure.map(section => {
-        const isExpanded =
-          expandedSections.has(section.slug) || isSectionActive(section)
+        const isExpanded = expandedSections.has(section.slug) || isSectionActive(section)
 
         return (
           <div key={section.slug}>

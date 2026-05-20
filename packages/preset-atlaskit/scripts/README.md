@@ -44,7 +44,7 @@ node scripts/generate-theme.mjs --clean
    - `easings.ts` - Easing curves from @atlaskit/motion (`Tokens['easings']`)
    - `breakpoints.ts` - Responsive breakpoints from Atlassian Design System (`Theme['breakpoints']`)
    - `index.ts` - Main preset export
-4. Formats all generated files with Prettier for consistent code style
+4. Formats all generated files with oxfmt for consistent code style
 
 **Flags:**
 

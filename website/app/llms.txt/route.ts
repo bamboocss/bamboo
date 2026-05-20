@@ -18,8 +18,7 @@ export const GET = async () => {
     {
       title: 'Installation',
       href: `${getPublicUrl('/llms.txt/installation')}`,
-      description:
-        'Framework-specific installation guides for all supported frameworks'
+      description: 'Framework-specific installation guides for all supported frameworks'
     },
     {
       title: 'Concepts',
@@ -30,8 +29,7 @@ export const GET = async () => {
     {
       title: 'Theming',
       href: `${getPublicUrl('/llms.txt/theming')}`,
-      description:
-        'Design tokens, text styles, layer styles, and animation styles'
+      description: 'Design tokens, text styles, layer styles, and animation styles'
     },
     {
       title: 'Utilities',
@@ -62,9 +60,7 @@ export const GET = async () => {
 
   const content = TEMPLATE.replace(
     '%DOCUMENT_SETS%',
-    documentSets
-      .map(set => `- [${set.title}](${set.href}): ${set.description}`)
-      .join('\n')
+    documentSets.map(set => `- [${set.title}](${set.href}): ${set.description}`).join('\n')
   )
 
   return new Response(content, {

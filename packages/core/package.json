@@ -2,11 +2,21 @@
   "name": "@bamboocss/core",
   "version": "1.11.1",
   "description": "core functions for extract-it",
+  "homepage": "https://bamboo-css.com",
+  "license": "MIT",
+  "author": "Segun Adebayo <joseshegs@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chakra-ui/bamboo.git",
+    "directory": "packages/core"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "author": "Segun Adebayo <joseshegs@gmail.com>",
-  "license": "MIT",
   "exports": {
     ".": {
       "source": "./src/index.ts",
@@ -19,31 +29,21 @@
     },
     "./package.json": "./package.json"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup --dts",
     "build-fast": "tsup --no-dts",
     "dev": "pnpm build-fast --watch"
   },
-  "files": [
-    "dist"
-  ],
-  "sideEffects": false,
-  "homepage": "https://bamboo-css.com",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/chakra-ui/bamboo.git",
-    "directory": "packages/core"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
   "dependencies": {
-    "@csstools/postcss-cascade-layers": "5.0.2",
     "@bamboocss/is-valid-prop": "workspace:^",
     "@bamboocss/logger": "workspace:*",
     "@bamboocss/shared": "workspace:*",
     "@bamboocss/token-dictionary": "workspace:*",
     "@bamboocss/types": "workspace:*",
+    "@csstools/postcss-cascade-layers": "5.0.2",
     "browserslist": "4.28.1",
     "lodash.merge": "4.6.2",
     "outdent": "0.8.0",

@@ -32,9 +32,7 @@ export const ColorGridToken = (props: ColorGridTokenProps) => {
         style={{ background: token.extensions.varRef }}
       />
       <div>
-        <div className={css({ fontWeight: 'medium' })}>
-          {token.extensions.prop}
-        </div>
+        <div className={css({ fontWeight: 'medium' })}>{token.extensions.prop}</div>
         <div className={colorTokenValue({ copied })}>{token.value}</div>
       </div>
     </div>

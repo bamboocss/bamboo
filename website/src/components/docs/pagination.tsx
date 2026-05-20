@@ -15,11 +15,7 @@ interface Props {
 }
 
 // Flatten navigation to get all pages in order
-function flattenNavigation(
-  items: NavItem[],
-  prefix = '',
-  category = ''
-): PaginationItem[] {
+function flattenNavigation(items: NavItem[], prefix = '', category = ''): PaginationItem[] {
   const result: PaginationItem[] = []
 
   for (const item of items) {
@@ -37,16 +33,10 @@ function flattenNavigation(
 
     // Recursively process child items
     if (item.items) {
-      const currentPrefix = item.url
-        ? prefix
-          ? `${prefix}/${item.url}`
-          : item.url
-        : prefix
+      const currentPrefix = item.url ? (prefix ? `${prefix}/${item.url}` : item.url) : prefix
       // Pass the category down - if this is a top-level section, use its title as category
       const categoryToPass = !prefix && item.url ? item.title : currentCategory
-      result.push(
-        ...flattenNavigation(item.items, currentPrefix, categoryToPass)
-      )
+      result.push(...flattenNavigation(item.items, currentPrefix, categoryToPass))
     }
   }
 
@@ -70,10 +60,7 @@ function getPagination(currentSlug: string): {
 
   return {
     prev: currentIndex > 0 ? allPages[currentIndex - 1] : undefined,
-    next:
-      currentIndex < allPages.length - 1
-        ? allPages[currentIndex + 1]
-        : undefined
+    next: currentIndex < allPages.length - 1 ? allPages[currentIndex + 1] : undefined
   }
 }
 
@@ -115,14 +102,10 @@ const PagationLink = (props: PagationLinkProps) => {
         _icon: { boxSize: '4', flexShrink: '0' }
       })}
     >
-      {type === 'prev' && (
-        <ChevronRightIcon className={css({ transform: 'rotate(180deg)' })} />
-      )}
+      {type === 'prev' && <ChevronRightIcon className={css({ transform: 'rotate(180deg)' })} />}
       <Box textAlign="start" minW="0" flex="1">
         <Box className={css({ textStyle: 'sm', mb: '1' })}>{item.category}</Box>
-        <Box
-          className={css({ fontWeight: 'medium', color: 'fg', truncate: true })}
-        >
+        <Box className={css({ fontWeight: 'medium', color: 'fg', truncate: true })}>
           {item.title}
         </Box>
       </Box>

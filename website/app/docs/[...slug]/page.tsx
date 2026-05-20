@@ -23,7 +23,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: DocsPageProps) {
   const { slug } = await params
   const doc = docs.find(doc => doc.slug.endsWith(slug.join('/')))
-  
+
   if (!doc) {
     return {
       title: 'Bamboo CSS',
@@ -84,13 +84,7 @@ export default async function DocsPage(props: DocsPageProps) {
         </Box>
 
         {/* Main Content */}
-        <Box
-          as="article"
-          flex="1"
-          minW="0"
-          px={{ base: '4', lg: '10' }}
-          pt="10"
-        >
+        <Box as="article" flex="1" minW="0" px={{ base: '4', lg: '10' }} pt="10">
           <Breadcrumb slug={slug} />
           <Header doc={doc} />
           <div

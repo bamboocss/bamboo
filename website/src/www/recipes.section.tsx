@@ -39,12 +39,7 @@ export const RecipesSection = () => {
   return (
     <bamboo.section bg="bg.main">
       <Container mb={{ lg: '-10rem' }}>
-        <Flex
-          direction={{ base: 'column', lg: 'row' }}
-          gap="8"
-          justify="space-between"
-          py="20"
-        >
+        <Flex direction={{ base: 'column', lg: 'row' }} gap="8" justify="space-between" py="20">
           <Stack position="relative" gap="14" maxW={{ lg: '560px' }} pt="10">
             <Circle
               size="94px"
@@ -53,10 +48,7 @@ export const RecipesSection = () => {
             >
               <Icon icon="Recipe" />
               <bamboo.div position="absolute" top="-2" right="-5" color="fg">
-                <Icon
-                  icon="Sparks2"
-                  className={css({ w: '22px', h: '22px' })}
-                />
+                <Icon icon="Sparks2" className={css({ w: '22px', h: '22px' })} />
               </bamboo.div>
             </Circle>
 
@@ -64,13 +56,9 @@ export const RecipesSection = () => {
               <bamboo.h3 textStyle="bamboo.h3" fontWeight="bold">
                 Recipes and variants just like Stitches
               </bamboo.h3>
-              <bamboo.h4
-                textStyle="bamboo.h4"
-                fontWeight="medium"
-                color="fg.muted"
-              >
-                Bamboo gives you a robust functions to define recipes and even
-                “cva” to help you design composable component styles.
+              <bamboo.h4 textStyle="bamboo.h4" fontWeight="medium" color="fg.muted">
+                Bamboo gives you a robust functions to define recipes and even “cva” to help you
+                design composable component styles.
               </bamboo.h4>
             </Stack>
 
@@ -80,11 +68,7 @@ export const RecipesSection = () => {
           </Stack>
 
           <bamboo.div flex="1" maxW={{ lg: '40rem' }} flexShrink="0">
-            <Code
-              lang="tsx"
-              style={{ borderRadius: token('radii.xl') }}
-              codeClassName={codeStyle}
-            >
+            <Code lang="tsx" style={{ borderRadius: token('radii.xl') }} codeClassName={codeStyle}>
               {codeSnippet}
             </Code>
           </bamboo.div>

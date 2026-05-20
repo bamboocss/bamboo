@@ -1,6 +1,8 @@
 ---
 title: Multi-Theme Tokens
-description: Bamboo supports advance token definition beyond just light/dark mode; theming beyond just dark mode. You can define multi-theme tokens using nested conditions.
+description:
+  Bamboo supports advance token definition beyond just light/dark mode; theming beyond just dark mode. You can define
+  multi-theme tokens using nested conditions.
 ---
 
 ## Multi-Theme Tokens
@@ -86,7 +88,8 @@ scheme.
 
 ## Multi-Themes
 
-The above example shows you how to define multi-theme tokens using nested conditions but you can also define clearly separated themes using the `themes` property in the config.
+The above example shows you how to define multi-theme tokens using nested conditions but you can also define clearly
+separated themes using the `themes` property in the config.
 
 This allows you to apply a `theme` on multiple tokens at once, using data attributes and CSS variables.
 
@@ -209,8 +212,8 @@ This will generate the following CSS:
 An alternative way of applying a theme is by using the new `styled-system/themes` entrypoint where you can import the
 themes expected CSS and apply them in your app.
 
-> ℹ️ The `styled-system/themes` will always contain every themes (tree-shaken if not used), whereas `staticCss.themes` only
-> applies to the CSS output.
+> ℹ️ The `styled-system/themes` will always contain every themes (tree-shaken if not used), whereas `staticCss.themes`
+> only applies to the CSS output.
 
 Each theme has a corresponding JSON file with a similar structure:
 
@@ -252,11 +255,7 @@ import { cookies } from 'next/headers'
 import './globals.css'
 import { ThemeName, getTheme } from '../../styled-system/themes'
 
-export default async function RootLayout({
-  children
-}: {
-  children: React.ReactNode
-}) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const store = cookies()
   const themeName = store.get('theme')?.value as ThemeName
   const theme = themeName && (await getTheme(themeName))
@@ -265,11 +264,7 @@ export default async function RootLayout({
     <html lang="en" data-bamboo-theme={themeName ? themeName : undefined}>
       {themeName && (
         <head>
-          <style
-            type="text/css"
-            id={theme.id}
-            dangerouslySetInnerHTML={{ __html: theme.css }}
-          />
+          <style type="text/css" id={theme.id} dangerouslySetInnerHTML={{ __html: theme.css }} />
         </head>
       )}
       <body>{children}</body>

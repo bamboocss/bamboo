@@ -2,15 +2,30 @@
   "name": "@bamboocss/dev",
   "version": "1.11.1",
   "description": "The user facing package for bamboo css",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
-  "author": "Segun Adebayo <joseshegs@gmail.com>",
+  "homepage": "https://bamboo-css.com",
   "license": "MIT",
+  "author": "Segun Adebayo <joseshegs@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chakra-ui/bamboo.git",
+    "directory": "packages/cli"
+  },
   "bin": {
     "bamboo": "bin.js",
     "bamboocss": "bin.js"
   },
+  "files": [
+    "dist",
+    "bin",
+    "app",
+    "bin.js",
+    "*.d.ts",
+    "postcss.js"
+  ],
+  "sideEffects": false,
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "source": "./src/index.ts",
@@ -33,13 +48,6 @@
     "./postcss": "./postcss.js",
     "./package.json": "./package.json"
   },
-  "sideEffects": false,
-  "homepage": "https://bamboo-css.com",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/chakra-ui/bamboo.git",
-    "directory": "packages/cli"
-  },
   "publishConfig": {
     "access": "public"
   },
@@ -48,26 +56,18 @@
     "build-fast": "tsup src --format=esm,cjs --no-dts --no-splitting --shims",
     "dev": "pnpm build-fast --watch src"
   },
-  "files": [
-    "dist",
-    "bin",
-    "app",
-    "bin.js",
-    "*.d.ts",
-    "postcss.js"
-  ],
   "dependencies": {
-    "@clack/prompts": "0.11.0",
     "@bamboocss/config": "workspace:*",
     "@bamboocss/logger": "workspace:*",
     "@bamboocss/mcp": "workspace:*",
     "@bamboocss/node": "workspace:*",
     "@bamboocss/postcss": "workspace:*",
-    "@bamboocss/preset-base": "workspace:*",
     "@bamboocss/preset-bamboo": "workspace:*",
+    "@bamboocss/preset-base": "workspace:*",
     "@bamboocss/shared": "workspace:*",
     "@bamboocss/token-dictionary": "workspace:*",
     "@bamboocss/types": "workspace:*",
+    "@clack/prompts": "0.11.0",
     "cac": "6.7.14"
   },
   "devDependencies": {

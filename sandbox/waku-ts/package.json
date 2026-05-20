@@ -1,8 +1,8 @@
 {
   "name": "sandbox-waku-ts",
   "version": "0.0.0",
-  "type": "module",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "waku dev --with-ssr",
     "build": "waku build --with-ssr",

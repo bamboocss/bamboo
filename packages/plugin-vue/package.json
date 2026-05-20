@@ -2,21 +2,21 @@
   "name": "@bamboocss/plugin-vue",
   "version": "1.11.1",
   "description": "Bamboo CSS plugin for Vue single file component support",
-  "author": "Segun Adebayo <joseshegs@gmail.com>",
-  "license": "MIT",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
-  "sideEffects": false,
   "homepage": "https://bamboo-css.com",
+  "license": "MIT",
+  "author": "Segun Adebayo <joseshegs@gmail.com>",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/chakra-ui/bamboo.git",
     "directory": "packages/plugin-vue"
   },
-  "publishConfig": {
-    "access": "public"
-  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "source": "./src/index.ts",
@@ -29,14 +29,14 @@
     },
     "./package.json": "./package.json"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup src/index.ts --format=esm,cjs --dts",
     "build-fast": "tsup src/index.ts --format=esm,cjs --no-dts",
     "dev": "pnpm build-fast --watch"
   },
-  "files": [
-    "dist"
-  ],
   "dependencies": {
     "@bamboocss/types": "workspace:*",
     "@vue/compiler-sfc": "3.5.25",

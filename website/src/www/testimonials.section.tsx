@@ -77,9 +77,7 @@ export const TestimonialsSection = () => {
                 </bamboo.div>
 
                 <Stack gap="0">
-                  <bamboo.span fontWeight="bold">
-                    {testimonial.author}
-                  </bamboo.span>
+                  <bamboo.span fontWeight="bold">{testimonial.author}</bamboo.span>
                   <span>{testimonial.username}</span>
                 </Stack>
               </HStack>

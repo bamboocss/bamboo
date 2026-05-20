@@ -44,9 +44,7 @@ export const Navbar = () => {
           <Anchor
             data-scope="navbar"
             data-part="logo-link"
-            href={
-              typeof docsConfig.logoUrl === 'string' ? docsConfig.logoUrl : '/'
-            }
+            href={typeof docsConfig.logoUrl === 'string' ? docsConfig.logoUrl : '/'}
             className={css({
               _hover: { opacity: 0.75 }
             })}
@@ -60,28 +58,21 @@ export const Navbar = () => {
         )}
 
         {items.map(item => {
-          const active =
-            item.href === pathname || pathname?.startsWith(item.href + '/')
+          const active = item.href === pathname || pathname?.startsWith(item.href + '/')
           return (
             <Anchor
               data-scope="navbar"
               data-part="nav-link"
               href={item.href}
               key={item.href}
-              className={cx(
-                !active || item.newWindow ? classes.inactive : classes.active
-              )}
+              className={cx(!active || item.newWindow ? classes.inactive : classes.active)}
               newWindow={item.newWindow}
               aria-current={!item.newWindow && active}
             >
               <span data-scope="navbar" data-part="nav-link-text">
                 {item.title}
               </span>
-              <span
-                className={css({ visibility: 'hidden', fontWeight: '500' })}
-              >
-                {item.title}
-              </span>
+              <span className={css({ visibility: 'hidden', fontWeight: '500' })}>{item.title}</span>
             </Anchor>
           )
         })}
@@ -108,12 +99,7 @@ export const Navbar = () => {
 
         <MobileNavDrawer
           trigger={
-            <button
-              type="button"
-              aria-label="Menu"
-              data-scope="navbar"
-              data-part="mobile-menu"
-            >
+            <button type="button" aria-label="Menu" data-scope="navbar" data-part="mobile-menu">
               <MenuIcon />
             </button>
           }
@@ -159,10 +145,7 @@ const MobileNavDrawer = (props: MobileNavDrawerProps) => {
           <div className={cx(classes.body, 'scroll-area')}>{children}</div>
           <Dialog.CloseTrigger className={classes.closeTrigger}>
             <Center width="5" height="5" color="fg">
-              <Icon
-                icon="Close"
-                className={css({ width: '1em', height: 'auto' })}
-              />
+              <Icon icon="Close" className={css({ width: '1em', height: 'auto' })} />
             </Center>
           </Dialog.CloseTrigger>
         </Dialog.Content>

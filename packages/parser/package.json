@@ -2,6 +2,18 @@
   "name": "@bamboocss/parser",
   "version": "1.11.1",
   "description": "The static parser for bamboo css",
+  "homepage": "https://bamboo-css.com",
+  "license": "MIT",
+  "author": "Segun Adebayo <joseshegs@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chakra-ui/bamboo.git",
+    "directory": "packages/parser"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -15,15 +27,6 @@
       },
       "require": "./dist/index.js"
     }
-  },
-  "author": "Segun Adebayo <joseshegs@gmail.com>",
-  "license": "MIT",
-  "sideEffects": false,
-  "homepage": "https://bamboo-css.com",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/chakra-ui/bamboo.git",
-    "directory": "packages/parser"
   },
   "publishConfig": {
     "access": "public"
@@ -47,8 +50,5 @@
     "@bamboocss/generator": "workspace:*",
     "@bamboocss/plugin-svelte": "workspace:*",
     "@bamboocss/plugin-vue": "workspace:*"
-  },
-  "files": [
-    "dist"
-  ]
+  }
 }

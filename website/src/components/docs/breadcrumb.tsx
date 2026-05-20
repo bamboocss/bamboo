@@ -29,9 +29,7 @@ export const Breadcrumb = ({ slug }: Props) => {
           ) : (
             <span className={css({ color: 'fg.muted' })}>{crumb.label}</span>
           )}
-          {!crumb.isLast && (
-            <ChevronRightIcon className={css({ w: 3, h: 3 })} />
-          )}
+          {!crumb.isLast && <ChevronRightIcon className={css({ w: 3, h: 3 })} />}
         </HStack>
       ))}
     </HStack>

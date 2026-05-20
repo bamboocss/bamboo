@@ -88,10 +88,7 @@ const linkStyles = cva({
   }
 })
 
-const RouteSwitchLink = (props: {
-  value: string
-  children: React.ReactNode
-}) => {
+const RouteSwitchLink = (props: { value: string; children: React.ReactNode }) => {
   const { value, children } = props
   const searchParams = useSearchParams()
   const { isActive, rootId } = useRouteSwitch()

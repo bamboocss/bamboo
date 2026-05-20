@@ -2,6 +2,12 @@
   "name": "sandbox-config-test-with-importmap",
   "private": true,
   "type": "module",
+  "imports": {
+    "#bamboo/css": "./ts-import-map-outdir/css/index.mjs",
+    "#bamboo/recipes": "./ts-import-map-outdir/recipes/index.mjs",
+    "#bamboo/patterns": "./ts-import-map-outdir/patterns/index.mjs",
+    "#bamboo/jsx": "./ts-import-map-outdir/jsx/index.mjs"
+  },
   "scripts": {
     "prepare": "bamboo codegen",
     "start": "node --experimental-modules ./ts-import-map.js",
@@ -9,12 +15,6 @@
     "ship": "pnpm bamboo ship -o ./styles.json",
     "test:start": "node --experimental-modules test-ts-import-map.js",
     "test": "bamboo codegen && pnpm ship && pnpm test:start"
-  },
-  "imports": {
-    "#bamboo/css": "./ts-import-map-outdir/css/index.mjs",
-    "#bamboo/recipes": "./ts-import-map-outdir/recipes/index.mjs",
-    "#bamboo/patterns": "./ts-import-map-outdir/patterns/index.mjs",
-    "#bamboo/jsx": "./ts-import-map-outdir/jsx/index.mjs"
   },
   "devDependencies": {
     "@bamboocss/dev": "workspace:^"

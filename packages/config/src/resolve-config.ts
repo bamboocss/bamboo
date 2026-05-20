@@ -75,7 +75,9 @@ export async function resolveConfig(result: BundleConfigResult, cwd: string): Pr
     }
   }
 
-  const serialized = stringifyJson(Object.assign({}, loadConfigResult.config, { name: BAMBOO_CONFIG_NAME, presets: [] }))
+  const serialized = stringifyJson(
+    Object.assign({}, loadConfigResult.config, { name: BAMBOO_CONFIG_NAME, presets: [] }),
+  )
   const deserialize = () => parseJson(serialized)
 
   return { ...loadConfigResult, serialized, deserialize, hooks }

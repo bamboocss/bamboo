@@ -42,11 +42,7 @@ export function ThemeSwitchButton() {
   const { iconToUse, toggleTheme, mounted, iconText } = useThemeSwitch()
 
   return (
-    <button
-      style={{ opacity: mounted ? 1 : 0 }}
-      onClick={toggleTheme}
-      className={switchStyle}
-    >
+    <button style={{ opacity: mounted ? 1 : 0 }} onClick={toggleTheme} className={switchStyle}>
       <HStack gap="2">
         <span>{iconText} </span>
         <ButtonIcon icon={iconToUse} />

@@ -1,6 +1,6 @@
 /* eslint-disable */
-import type {  RecipeRule  } from './static-css';
-import type {  SystemStyleObject, DistributiveOmit, Pretty  } from './system-types';
+import type { RecipeRule } from './static-css'
+import type { SystemStyleObject, DistributiveOmit, Pretty } from './system-types'
 
 type StringToBoolean<T> = T extends 'true' | 'false' ? boolean : T
 
@@ -107,8 +107,7 @@ interface RecipeConfigMeta {
 }
 
 export interface RecipeConfig<T extends RecipeVariantRecord = RecipeVariantRecord>
-  extends RecipeDefinition<T>,
-    RecipeConfigMeta {}
+  extends RecipeDefinition<T>, RecipeConfigMeta {}
 
 /* -----------------------------------------------------------------------------
  * Recipe / Slot
@@ -122,8 +121,10 @@ export type SlotRecipeVariantFn<S extends string, T extends RecipeVariantRecord>
   props?: RecipeSelection<T>,
 ) => SlotRecord<S, string>
 
-export interface SlotRecipeRuntimeFn<S extends string, T extends SlotRecipeVariantRecord<S>>
-  extends SlotRecipeVariantFn<S, T> {
+export interface SlotRecipeRuntimeFn<
+  S extends string,
+  T extends SlotRecipeVariantRecord<S>,
+> extends SlotRecipeVariantFn<S, T> {
   raw: (props?: RecipeSelection<T>) => Record<S, SystemStyleObject>
   variantKeys: (keyof T)[]
   variantMap: RecipeVariantMap<T>

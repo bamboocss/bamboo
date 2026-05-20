@@ -14,13 +14,11 @@ type ActiveAnchor = Record<
 >
 
 const ActiveAnchorContext = createContext<ActiveAnchor>({})
-const SetActiveAnchorContext = createContext<
-  React.Dispatch<React.SetStateAction<ActiveAnchor>>
->(v => v)
-
-const IntersectionObserverContext = createContext<IntersectionObserver | null>(
-  null
+const SetActiveAnchorContext = createContext<React.Dispatch<React.SetStateAction<ActiveAnchor>>>(
+  v => v
 )
+
+const IntersectionObserverContext = createContext<IntersectionObserver | null>(null)
 const slugs = new WeakMap()
 const SlugsContext = createContext<WeakMap<any, any>>(slugs)
 
@@ -29,16 +27,11 @@ const SlugsContext = createContext<WeakMap<any, any>>(slugs)
 export const useActiveAnchor = () => useContext(ActiveAnchorContext)
 export const useSetActiveAnchor = () => useContext(SetActiveAnchorContext)
 
-export const useIntersectionObserver = () =>
-  useContext(IntersectionObserverContext)
+export const useIntersectionObserver = () => useContext(IntersectionObserverContext)
 
 export const useSlugs = () => useContext(SlugsContext)
 
-export const ActiveAnchorProvider = ({
-  children
-}: {
-  children: React.ReactNode
-}) => {
+export const ActiveAnchorProvider = ({ children }: { children: React.ReactNode }) => {
   const [activeAnchor, setActiveAnchor] = useState<ActiveAnchor>({})
   const [observer, setObserver] = useState<IntersectionObserver | null>(null)
 
@@ -55,8 +48,7 @@ export const ActiveAnchorProvider = ({
               if (entry?.rootBounds && slugs.has(entry.target)) {
                 const [slug, index] = slugs.get(entry.target)
                 const aboveHalfViewport =
-                  entry.boundingClientRect.y +
-                    entry.boundingClientRect.height <=
+                  entry.boundingClientRect.y + entry.boundingClientRect.height <=
                   entry.rootBounds.y + entry.rootBounds.height
                 const insideHalfViewport = entry.intersectionRatio > 0
                 ret[slug] = {
@@ -72,10 +64,7 @@ export const ActiveAnchorProvider = ({
             let largestIndexAboveViewport = -1
             for (const s in ret) {
               ret[s].isActive = false
-              if (
-                ret[s].insideHalfViewport &&
-                ret[s].index < smallestIndexInViewport
-              ) {
+              if (ret[s].insideHalfViewport && ret[s].index < smallestIndexInViewport) {
                 smallestIndexInViewport = ret[s].index
                 activeSlug = s
               }

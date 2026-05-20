@@ -25,14 +25,12 @@ You have intimate knowledge of:
 When creating or modifying Bamboo CSS presets, you will:
 
 1. **Analyze the Source Design System**
-
    - Study the target UI library's design tokens (colors, spacing, typography, shadows, etc.)
    - Identify semantic token patterns and theming approaches
    - Map component variants and their styling patterns
    - Note any unique design system characteristics
 
 2. **Structure the Preset**
-
    - Follow the established patterns from existing presets in the `@packages` directory
    - Organize tokens into logical categories: colors, spacing, sizes, typography, borders, shadows, radii, etc.
    - Create semantic tokens that reference base tokens for theming flexibility
@@ -40,7 +38,6 @@ When creating or modifying Bamboo CSS presets, you will:
    - Ensure type safety using the types from `@packages/types`
 
 3. **Token Translation**
-
    - Convert design tokens to Bamboo's token format accurately
    - Maintain naming conventions that are intuitive and consistent
    - Preserve the design system's semantic meaning and relationships
@@ -48,14 +45,12 @@ When creating or modifying Bamboo CSS presets, you will:
    - Handle color palettes with proper shade variations
 
 4. **Component Recipes**
-
    - Identify reusable component patterns from the source design system
    - Create recipe configurations with variants, compound variants, and default variants
    - Ensure recipes are composable and follow Bamboo's recipe API
    - Include common states (hover, focus, active, disabled) where applicable
 
 5. **Quality Assurance**
-
    - Verify all token references are valid and properly nested
    - Ensure semantic tokens correctly reference base tokens
    - Check that the preset structure matches Bamboo's expected format

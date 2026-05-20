@@ -12,9 +12,9 @@
     "postinstall": "nuxt prepare"
   },
   "devDependencies": {
-    "postcss": "8.5.14",
-    "nuxt": "4.2.1",
+    "@bamboocss/dev": "workspace:*",
     "@sandbox-nuxt-lib-source/css-lib": "workspace:*",
-    "@bamboocss/dev": "workspace:*"
+    "nuxt": "4.2.1",
+    "postcss": "8.5.14"
   }
 }

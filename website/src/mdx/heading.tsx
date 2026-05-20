@@ -1,10 +1,7 @@
 import { cva } from '@/styled-system/css'
 import { useEffect, useRef } from 'react'
 import { useSetActiveAnchor } from '../mdx/contexts'
-import {
-  useIntersectionObserver,
-  useSlugs
-} from '../mdx/contexts/active-anchor'
+import { useIntersectionObserver, useSlugs } from '../mdx/contexts/active-anchor'
 
 type HeadingTag = `h${1 | 2 | 3 | 4 | 5 | 6}`
 
@@ -73,9 +70,7 @@ export const Heading = (props: Props) => {
   )
 }
 
-export function createHeadings(
-  context: HeadingContext
-): Record<HeadingTag, React.FC<any>> {
+export function createHeadings(context: HeadingContext): Record<HeadingTag, React.FC<any>> {
   return {
     h1: props => <h1 className={styles({ tag: 'h1' })} {...props} />,
     h2: props => <Heading tag="h2" context={context} {...props} />,

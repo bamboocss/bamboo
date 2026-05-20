@@ -87,18 +87,18 @@ function Example() {
 
 ## Directory Structure
 
-| Package                                       | Description                                                 |
-| --------------------------------------------- | ----------------------------------------------------------- |
-| [cli](packages/cli)                           | CLI package installed by the end user                       |
+| Package                                       | Description                                                  |
+| --------------------------------------------- | ------------------------------------------------------------ |
+| [cli](packages/cli)                           | CLI package installed by the end user                        |
 | [core](packages/core)                         | Contains core features of Bamboo (utility, recipes, etc)     |
 | [config](packages/config)                     | Contains functions for reading and merging the bamboo config |
-| [extractor](packages/extractor)               | Contains code for fast AST parsing and scanning             |
-| [generator](packages/generator)               | Contains codegen artifacts (js, css, jsx)                   |
-| [parser](packages/parser)                     | Contains code for parsing a source code                     |
-| [is-valid-prop](packages/is-valid-prop)       | Contains code for checking if a prop is a valid css prop    |
+| [extractor](packages/extractor)               | Contains code for fast AST parsing and scanning              |
+| [generator](packages/generator)               | Contains codegen artifacts (js, css, jsx)                    |
+| [parser](packages/parser)                     | Contains code for parsing a source code                      |
+| [is-valid-prop](packages/is-valid-prop)       | Contains code for checking if a prop is a valid css prop     |
 | [node](packages/node)                         | Contains the Node.js API of Bamboo's features                |
-| [token-dictionary](packages/token-dictionary) | Contains code used to process tokens and semantic tokens    |
-| [shared](packages/shared)                     | Contains shared TS functions                                |
+| [token-dictionary](packages/token-dictionary) | Contains code used to process tokens and semantic tokens     |
+| [shared](packages/shared)                     | Contains shared TS functions                                 |
 
 ## Contributing
 

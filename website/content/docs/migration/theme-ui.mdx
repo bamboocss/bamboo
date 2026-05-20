@@ -50,8 +50,8 @@ export default function App({ Component, pageProps }) {
 }
 ```
 
-In Bamboo, you don't need to wrap your application in a `ThemeProvider` component. Instead, you can pass the theme object
-to the `bamboo.config.js` file.
+In Bamboo, you don't need to wrap your application in a `ThemeProvider` component. Instead, you can pass the theme
+object to the `bamboo.config.js` file.
 
 The theme object in Bamboo is broken down into multiple parts, `tokens` and `semanticTokens`. The theme specification
 also required passing the tokens as `{ value: XX }`
@@ -98,8 +98,8 @@ export const Demo = props => (
 )
 ```
 
-Bamboo offers three similar ways to style components. The first approach is to use the `styled` element syntax and rename
-`sx` to `css`
+Bamboo offers three similar ways to style components. The first approach is to use the `styled` element syntax and
+rename `sx` to `css`
 
 ```jsx
 import { styled } from 'styled-system/jsx'
@@ -188,8 +188,8 @@ export default {
 <button sx={{ variant: 'buttons.primary' }} />
 ```
 
-In Bamboo, multi-variant styles are referred to as recipes. Recipes are a collection of styles that can be applied to any
-component.
+In Bamboo, multi-variant styles are referred to as recipes. Recipes are a collection of styles that can be applied to
+any component.
 
 There are two ways to define recipes in Bamboo. The first approach is to use the `cva` function which produces atomic
 classnames.
@@ -370,8 +370,8 @@ const Demo = () => (
 )
 ```
 
-In Bamboo, these are called "layout patterns", or "patterns" for short. Bamboo provides similar patterns that can be used
-as a function or JSX element just like Theme UI.
+In Bamboo, these are called "layout patterns", or "patterns" for short. Bamboo provides similar patterns that can be
+used as a function or JSX element just like Theme UI.
 
 ```jsx
 import { Box, Grid } from 'styled-system/jsx'

@@ -31,7 +31,6 @@ Before creating a new release, make sure that there are no pending pull requests
 2. Using each changeset in the [.changeset](./.changeset) directory, add the changes to the new release section.
 
    **Some things to note:**
-
    - If a change is not relevant to the end user, feel free to omit it from the changelog.
    - You can edit the changeset content to make it more readable. Every changelog should be easy to understand by the
      end user, and include some code snippets if possible.
@@ -40,6 +39,6 @@ Before creating a new release, make sure that there are no pending pull requests
 
    > **Maintainers:** After the release, a Slack message will be sent to the #release channel
 
-4. When the release is complete, create a PR to: 
+4. When the release is complete, create a PR to:
    1. update the [CHANGELOG.md](./CHANGELOG.md) file with the new version.
    2. Add any lingering documentation.

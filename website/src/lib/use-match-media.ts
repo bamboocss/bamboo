@@ -7,8 +7,7 @@ export const useMatchMedia = (query: string) => {
   })
 
   useEffect(() => {
-    const handler = (event: MediaQueryListEvent): void =>
-      setIsMatch(event.matches)
+    const handler = (event: MediaQueryListEvent): void => setIsMatch(event.matches)
     window.matchMedia(query).addEventListener('change', handler)
     return () => window.matchMedia(query).removeEventListener('change', handler)
   }, [query])

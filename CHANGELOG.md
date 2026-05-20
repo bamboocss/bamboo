@@ -27,13 +27,16 @@ See the [Changesets](./.changeset) for the latest changes.
 
 - Fix `css.d.ts` for `syntax: 'template-literal'` mode to match the runtime implementation.
 
-  Previously the generated `styled-system/css/css.d.ts` only declared a single tagged-template signature, causing type errors (`TS2554`, `TS2339`) when using multi-arg invocations (`css(styleA, styleB, ...)`) or `css.raw`. The generated types are now aligned with the runtime.
+  Previously the generated `styled-system/css/css.d.ts` only declared a single tagged-template signature, causing type
+  errors (`TS2554`, `TS2339`) when using multi-arg invocations (`css(styleA, styleB, ...)`) or `css.raw`. The generated
+  types are now aligned with the runtime.
 
 - Bump `postcss` from `8.5.6` to `8.5.14` to address [CVE-2026-41305](https://www.cve.org/CVERecord?id=CVE-2026-41305).
 
 - Bump `@modelcontextprotocol/sdk` from `^1.25.2` to `^1.29.0` in the MCP package.
 
-- Bump `astro` to `6.2.2`, `vite` to `7.3.2`, and `@astrojs/react` to `5.0.4` in Studio to address upstream security fixes (CVE-2026-41067, CVE-2026-39365, CVE-2026-39364, CVE-2026-29074).
+- Bump `astro` to `6.2.2`, `vite` to `7.3.2`, and `@astrojs/react` to `5.0.4` in Studio to address upstream security
+  fixes (CVE-2026-41067, CVE-2026-39365, CVE-2026-39364, CVE-2026-29074).
 
 ## [1.11.0](#1.11.0) - 2026-05-03
 
@@ -41,7 +44,8 @@ See the [Changesets](./.changeset) for the latest changes.
 
 - Support multi-block conditions with declarative object syntax.
 
-  A single condition can now generate multiple independent CSS blocks using a declarative object syntax with `@slot` markers. This is useful for patterns like hover-on-desktop + active-on-touch, where each block needs its own at-rule.
+  A single condition can now generate multiple independent CSS blocks using a declarative object syntax with `@slot`
+  markers. This is useful for patterns like hover-on-desktop + active-on-touch, where each block needs its own at-rule.
 
   **Config:**
 
@@ -89,15 +93,22 @@ See the [Changesets](./.changeset) for the latest changes.
 
 ### Fixed
 
-- Fix `bamboo codegen` crashing with `ERR_REQUIRE_ESM` on Node 18 and Node 20.0–20.18 by pinning `@csstools/postcss-cascade-layers` back to `5.0.2`.
+- Fix `bamboo codegen` crashing with `ERR_REQUIRE_ESM` on Node 18 and Node 20.0–20.18 by pinning
+  `@csstools/postcss-cascade-layers` back to `5.0.2`.
 
-  Version `6.0.0` dropped CommonJS support and raised the engine requirement to Node `>=20.19.0`. Since `@bamboocss/core` ships a CJS build, we stay on the last dual-published version — the two releases are functionally equivalent.
+  Version `6.0.0` dropped CommonJS support and raised the engine requirement to Node `>=20.19.0`. Since
+  `@bamboocss/core` ships a CJS build, we stay on the last dual-published version — the two releases are functionally
+  equivalent.
 
-- Fix `bamboo` crashing with a TypeScript compiler options error when using a `tsconfig.json` with string-form enum values like `target: "ESNext"`.
+- Fix `bamboo` crashing with a TypeScript compiler options error when using a `tsconfig.json` with string-form enum
+  values like `target: "ESNext"`.
 
-  TypeScript 6.0 (inside `ts-morph@28`) now requires `compilerOptions` to be passed as numeric enums, not raw JSON strings. Bamboo now normalizes `compilerOptions` via `ts.convertCompilerOptionsFromJson` before handing them to ts-morph.
+  TypeScript 6.0 (inside `ts-morph@28`) now requires `compilerOptions` to be passed as numeric enums, not raw JSON
+  strings. Bamboo now normalizes `compilerOptions` via `ts.convertCompilerOptionsFromJson` before handing them to
+  ts-morph.
 
-- Improve compiled JSX extraction so `css` props are correctly recognized from framework runtime helper output (React, Preact, Vue, Solid, and Qwik builds).
+- Improve compiled JSX extraction so `css` props are correctly recognized from framework runtime helper output (React,
+  Preact, Vue, Solid, and Qwik builds).
 
 ## [1.10.0](#1.10.0) - 2026-04-18
 
@@ -106,36 +117,44 @@ See the [Changesets](./.changeset) for the latest changes.
 - Extract Vue, Svelte, and LightningCSS support into standalone plugins.
 
   Framework-specific parsing and CSS optimization are now opt-in via dedicated packages:
-
   - `@bamboocss/plugin-vue` — Vue SFC support
   - `@bamboocss/plugin-svelte` — Svelte component support
   - `@bamboocss/plugin-lightningcss` — LightningCSS optimization
 
 - Add support for generating theme tokens in `bamboo spec` output.
 
-  Previously, tokens defined in the `themes` config were excluded from the spec output because they are registered as virtual tokens. Now, `bamboo spec` generates a `themes.json` file containing tokens and semantic tokens for each configured theme.
+  Previously, tokens defined in the `themes` config were excluded from the spec output because they are registered as
+  virtual tokens. Now, `bamboo spec` generates a `themes.json` file containing tokens and semantic tokens for each
+  configured theme.
 
 ### Fixed
 
 - Fix double CSS optimization in PostCSS plugin.
 
-- Re-export the `AnimationStyles` type from `@bamboocss/dev` so the return type of `defineAnimationStyles` can be resolved by consumers.
+- Re-export the `AnimationStyles` type from `@bamboocss/dev` so the return type of `defineAnimationStyles` can be
+  resolved by consumers.
 
-  Previously only `TextStyles` and `LayerStyles` were re-exported, which caused the generated `.d.ts` to fall back to a deep qualified name (`_bamboocss_types.AnimationStyles`) for `defineAnimationStyles`'s inferred return type. When consumers could not resolve that path, the value was inferred as `any` and triggered `@typescript-eslint/no-unsafe-assignment` at call sites.
+  Previously only `TextStyles` and `LayerStyles` were re-exported, which caused the generated `.d.ts` to fall back to a
+  deep qualified name (`_bamboocss_types.AnimationStyles`) for `defineAnimationStyles`'s inferred return type. When
+  consumers could not resolve that path, the value was inferred as `any` and triggered
+  `@typescript-eslint/no-unsafe-assignment` at call sites.
 
 ### Changed
 
 - Improve error handling architecture across all packages.
 
-- Replace discontinued `tsconfck` with [`get-tsconfig`](https://github.com/privatenumber/get-tsconfig) for resolving and parsing `tsconfig.json` (including `extends`).
+- Replace discontinued `tsconfck` with [`get-tsconfig`](https://github.com/privatenumber/get-tsconfig) for resolving and
+  parsing `tsconfig.json` (including `extends`).
 
 - Update TypeScript support to 6.0 with ts-morph v28.
 
-  Use TypeScript 6.0 or later with Bamboo. This release updates static analysis and codegen to ts-morph v28 and TypeScript 6.0.2.
+  Use TypeScript 6.0 or later with Bamboo. This release updates static analysis and codegen to ts-morph v28 and
+  TypeScript 6.0.2.
 
 - Security dependency updates.
-
-  - `@bamboocss/node` / `@bamboocss/token-dictionary`: bump `picomatch` to 4.0.4 ([GHSA-3v7f-55p6-f55p](https://github.com/advisories/GHSA-3v7f-55p6-f55p), [GHSA-c2c7-rcm5-vvqj](https://github.com/advisories/GHSA-c2c7-rcm5-vvqj)).
+  - `@bamboocss/node` / `@bamboocss/token-dictionary`: bump `picomatch` to 4.0.4
+    ([GHSA-3v7f-55p6-f55p](https://github.com/advisories/GHSA-3v7f-55p6-f55p),
+    [GHSA-c2c7-rcm5-vvqj](https://github.com/advisories/GHSA-c2c7-rcm5-vvqj)).
   - `@bamboocss/mcp`: bump `@modelcontextprotocol/sdk` to ^1.25.2.
   - `@bamboocss/astro-plugin-studio`: bump `astro` (dev) to 5.18.1.
 
@@ -259,7 +278,6 @@ Update `csstype` from 3.1.3 to 3.2.3, which adds support for newer CSS propertie
 
 - **MCP Server ([#mcp-new-tools](./.changeset/mcp-new-tools.md))**  
   Added a new MCP server that exposes tools for AI agents.
-
   - New command: `bamboo init-mcp`
   - Available tools: `get_tokens`, `get_semantic_tokens`, `get_recipes`, `get_patterns`, `get_conditions`,
     `get_text_styles`, `get_layer_styles`, `get_keyframes`, `get_config`, `get_usage_report`
@@ -269,7 +287,6 @@ Update `csstype` from 3.1.3 to 3.2.3, which adds support for newer CSS propertie
 ### Fixed
 
 - **Studio:** Fixed React SSR errors when running Bamboo Studio.
-
   - `ReferenceError: module is not defined`—React's CJS entry point was loaded in an ESM context.
   - `TypeError: dispatcher.getOwner is not a function`—React development/production builds were mixed during SSR.
 
@@ -295,7 +312,6 @@ Update `csstype` from 3.1.3 to 3.2.3, which adds support for newer CSS propertie
 - **Config**: Fix issue where `@bamboocss/config` CJS entrypoint is broken due to `merge-anything` ESM-only dependency.
 
 - **Spec**:
-
   - Fixed issue in recipe specs where boolean variant values were incorrectly formatted with quotes (e.g.,
     `button({ primary: true })` instead of `button({ primary: 'true' })`).
   - Updated color palette spec generation to dynamically discover and use actual available tokens
@@ -308,7 +324,6 @@ Update `csstype` from 3.1.3 to 3.2.3, which adds support for newer CSS propertie
 
 - **New `bamboo spec` Command:** Introduced a `bamboo spec` command to generate specification files for your theme
   (helpful for documentation). This command outputs JSON spec files with metadata, examples, and usage information.
-
   - Usage:
 
     ```sh
@@ -415,7 +430,6 @@ bamboo cssgen --splitting
 ### Fixed
 
 - **Studio**
-
   - Fix semantic tokens defined in `defineTheme` not showing in Bamboo Studio. We now show a theme selector in the token
     pages for the theme-aware tokens.
 
@@ -517,7 +531,6 @@ files.
 ### Fixed
 
 - Fix "Browserslist: caniuse-lite is outdated" warning by updating `browserslist` and PostCSS-related packages:
-
   - Update `browserslist` from 4.23.3 to 4.24.4
   - Update `postcss` from 8.4.49 to 8.5.6
   - Update `postcss-nested` from 6.0.1 to 7.0.2
@@ -603,7 +616,6 @@ logged during development.
 ### Fixed
 
 - **JSX Style Context**
-
   - Fix type issue where `withRootProvider` from style context incorrectly allowed JSX style props to be passed through
     to the root component.
 
@@ -622,8 +634,8 @@ logged during development.
   - Fix issue in React where combining wrapping a style context component with `styled` caused `ref` to be incorrectly
     typed.
 
-- **JSX Recipe Tracking**: Fix issue where Bamboo eagerly tracks every JSX slot of a slot recipe when scanning for recipe
-  props. For example, assume you have a tabs recipe with the following slots:
+- **JSX Recipe Tracking**: Fix issue where Bamboo eagerly tracks every JSX slot of a slot recipe when scanning for
+  recipe props. For example, assume you have a tabs recipe with the following slots:
 
   ```jsx
   <Tabs.Root>
@@ -646,13 +658,11 @@ logged during development.
 
 - **Transition Utilities**: Added new transition values and enhanced transition property utilities in
   `@bamboocss/preset-base`
-
   - `size` → `width, height, min-width, max-width, min-height, max-height`
   - `position` → `left, right, top, bottom, inset, inset-inline, inset-block`
   - `background` → `background, background-color, background-image, background-position`
 
 - **Composition Types**: Add more properties to the `textStyles` and `layerStyles` config
-
   - Added text style properties: `color`, text layout (`direction`, `textAlign`, `writingMode`), and advanced text
     properties
   - Added layer style properties: layout (`position`, `zIndex`, `display`), visual effects (`clipPath`, `mixBlendMode`),
@@ -898,7 +908,6 @@ Then, use like this:
 ### Changed
 
 - Improve algorithm for deterministic property order:
-
   - Longhand (`padding`, `margin`, `inset`)
   - Shorthand of longhands (`padding-inline`, `margin-inline`)
   - Shorthand of shorthands (`padding-inline-start`, `margin-inline-start`)
@@ -1599,14 +1608,12 @@ export default defineConfig({
   tldr: use `importMap` instead for absolute paths (e.g can be used for component libraries)
 
   `emitPackage` is deprecated, it's known for causing several issues:
-
   - bundlers sometimes eagerly cache the `node_modules`, leading to `bamboo codegen` updates to the `styled-system` not
     visible in the browser
   - auto-imports are not suggested in your IDE.
   - in some IDE the typings are not always reflected properly
 
   As alternatives, you can use:
-
   - relative paths instead of absolute paths (e.g. `../styled-system/css` instead of `styled-system/css`)
   - use package.json #imports and/or tsconfig path aliases (prefer package.json#imports when possible, TS 5.4 supports
     them by default) like `#styled-system/css` instead of `styled-system/css`
@@ -3863,8 +3870,8 @@ function Demo() {
   })
   ```
 
-- Invoke `config:change` hook in more situations (when the `--watch` flag is passed to `bamboo codegen`, `bamboo cssgen`,
-  `bamboo ship`)
+- Invoke `config:change` hook in more situations (when the `--watch` flag is passed to `bamboo codegen`,
+  `bamboo cssgen`, `bamboo ship`)
 
 - Watch for more config options paths changes, so that the related artifacts will be regenerated a bit more reliably
   (ex: updating the `config.hooks` will now trigger a full regeneration of `styled-system`)
@@ -3973,8 +3980,8 @@ html .aaa .bbb .ccc {
 ### Added
 
 - Add a `--cpu-prof` flag to `bamboo`, `bamboo cssgen`, `bamboo codegen` and `bamboo debug` commands This is useful for
-  debugging performance issues in `bamboo` itself. This will generate a `bamboo-{command}-{timestamp}.cpuprofile` file in
-  the current working directory, which can be opened in tools like [Speedscope](https://www.speedscope.app/)
+  debugging performance issues in `bamboo` itself. This will generate a `bamboo-{command}-{timestamp}.cpuprofile` file
+  in the current working directory, which can be opened in tools like [Speedscope](https://www.speedscope.app/)
 - Slight perf improvement by caching a few computed properties that contains a loop
 
 This is mostly intended for maintainers or can be asked by maintainers to help debug issues.
@@ -4596,8 +4603,8 @@ export const Primary: Story = {
 - Add support for emit-pkg command to emit just the `package.json` file with the required entrypoints. If an existing
   `package.json` file is present, the `exports` field will be updated.
 
-When setting up Bamboo in a monorepo, this command is useful in monorepo setups where you want the codegen to run only in
-a dedicated workspace package.
+When setting up Bamboo in a monorepo, this command is useful in monorepo setups where you want the codegen to run only
+in a dedicated workspace package.
 
 - Automatically extract/generate CSS for `sva` even if `slots` are not statically extractable, since it will only
   produce atomic styles, we don't care much about slots for `sva` specifically
@@ -4640,8 +4647,8 @@ const card = sva({
 
 ### Fixed
 
-- Fix `slotRecipes` typings, [the recently added `recipe.staticCss`](https://github.com/chakra-ui/bamboo/pull/1765) added
-  to `config.recipes` weren't added to `config.slotRecipes`
+- Fix `slotRecipes` typings, [the recently added `recipe.staticCss`](https://github.com/chakra-ui/bamboo/pull/1765)
+  added to `config.recipes` weren't added to `config.slotRecipes`
 - Fix a typing issue with `config.strictTokens` when using the `[xxx]` escape-hatch syntax with property-based
   conditionals
 
@@ -4696,7 +4703,6 @@ css({
   Initial extraction time can get slow when using static CSS with lots of recipes or parsing a lot of files.
 
   **Scenarios**
-
   - Park UI went from 3500ms to 580ms (6x faster)
   - Bamboo Website went from 2900ms to 208ms (14x faster)
 
@@ -5051,8 +5057,8 @@ function App() {
 
 ### Changed
 
-- Ensure dir exists before writing file for the `bamboo cssgen` / `bamboo ship` / `bamboo analyze` commands when specifying
-  an outfile.
+- Ensure dir exists before writing file for the `bamboo cssgen` / `bamboo ship` / `bamboo analyze` commands when
+  specifying an outfile.
 
 ## [0.17.4](#0.17.4) - 2023-10-30
 
@@ -5127,8 +5133,8 @@ const className = css({ color: Color.Red, backgroundColor: Color['Blue'] })
 - Use predefined interfaces instead of relying on automatic TS type inference or type aliases. This should result in
   snappier
 
-This should fix issues with the generation of typescript declaration (`.d.ts`) files when using `@bamboocss/xxx` packages
-directly, such as:
+This should fix issues with the generation of typescript declaration (`.d.ts`) files when using `@bamboocss/xxx`
+packages directly, such as:
 
 ```
 src/config.ts(21,14): error TS2742: The inferred type of 'tokens' cannot be named without a reference to '../node_modules/@bamboocss/types/src/shared'. This is likely not portable. A type annotation is necessa…
@@ -5867,8 +5873,9 @@ export const App = () => {
 - Change the typings for the `css(...args)` function so that you can pass possibly undefined values to it. This is
   mostly intended for component props that have optional values like `cssProps?: SystemStyleObject` and would use it
   like `css({ ... }, cssProps)`
-- Change the `css.raw` function signature to match the one from [`css()`](https://github.com/chakra-ui/bamboo/pull/1264),
-  to allow passing multiple style objects that will be smartly merged.
+- Change the `css.raw` function signature to match the one from
+  [`css()`](https://github.com/chakra-ui/bamboo/pull/1264), to allow passing multiple style objects that will be smartly
+  merged.
 
 ## [0.13.1](#0.13.1) - 2023-08-29
 
@@ -6451,7 +6458,6 @@ const hstack = definePattern({
 ### Added
 
 - Added new flags to the `bamboo cssgen` and `bamboo ship` command:
-
   - `-w, --watch` flag to watch for changes
   - `-o` shortcut for `--outfile`
 

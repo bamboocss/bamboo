@@ -21,4 +21,3 @@ export const Button = ({ children }: ButtonProps) => {
     </button>
   )
 }
-

@@ -401,12 +401,7 @@ const PostCSSLogo = (props: ComponentPropsWithoutRef<'svg'>) => (
     </g>
     <defs>
       <clipPath id="clip0_442_361">
-        <rect
-          width="45"
-          height="45"
-          fill="white"
-          transform="translate(0 0.778809)"
-        />
+        <rect width="45" height="45" fill="white" transform="translate(0 0.778809)" />
       </clipPath>
     </defs>
   </svg>
@@ -502,10 +497,7 @@ const icons = {
 
 export type IconType = keyof typeof icons
 
-export const Icon = ({
-  icon,
-  ...props
-}: ComponentPropsWithoutRef<'svg'> & { icon: IconType }) => {
+export const Icon = ({ icon, ...props }: ComponentPropsWithoutRef<'svg'> & { icon: IconType }) => {
   const Icon = icons[icon]
   return <Icon data-scope="icon" {...props} />
 }
@@ -518,12 +510,5 @@ export const ButtonIcon = ({
   icon: IconType
   side?: 'left' | 'right'
 }) => {
-  return (
-    <Icon
-      icon={icon}
-      data-scope="button"
-      data-part={side + '-icon'}
-      {...props}
-    />
-  )
+  return <Icon icon={icon} data-scope="button" data-part={side + '-icon'} {...props} />
 }

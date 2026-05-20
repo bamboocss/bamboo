@@ -16,8 +16,9 @@ type RecursiveToken<C extends string, V> =
       [K in C]: RecursiveToken<C, V>
     }
 
-export interface SemanticToken<Value = string, Condition extends string = string>
-  extends Token<RecursiveToken<Condition, Value>> {}
+export interface SemanticToken<Value = string, Condition extends string = string> extends Token<
+  RecursiveToken<Condition, Value>
+> {}
 
 /* -----------------------------------------------------------------------------
  * Token data types

@@ -11,8 +11,7 @@ import Link from 'next/link'
 import { FaGithub, FaGlobe, FaTwitter } from 'react-icons/fa'
 
 const ogTitle = 'Meet the Bamboo CSS Team'
-const ogDescription =
-  'Get to know the passionate engineers who make Bamboo CSS possible'
+const ogDescription = 'Get to know the passionate engineers who make Bamboo CSS possible'
 
 export const metadata: Metadata = {
   title: 'Team',
@@ -129,14 +128,9 @@ const TeamMemberCard = ({ member }: { member: GitHubUser }) => {
         <HStack gap="4" justify="center">
           <SocialIcon platform="github" url={member.html_url} />
           {member.twitter_username && (
-            <SocialIcon
-              platform="twitter"
-              url={`https://twitter.com/${member.twitter_username}`}
-            />
+            <SocialIcon platform="twitter" url={`https://twitter.com/${member.twitter_username}`} />
           )}
-          {member.blog && (
-            <SocialIcon platform="blog" url={toHttps(member.blog)} />
-          )}
+          {member.blog && <SocialIcon platform="blog" url={toHttps(member.blog)} />}
         </HStack>
       </Stack>
     </bamboo.div>
@@ -169,28 +163,16 @@ export default async function TeamPage() {
                 maxW="2xl"
                 lineHeight="relaxed"
               >
-                Bamboo CSS is maintained by a passionate team of engineers. It
-                also receives contributions from engineers around the world.
+                Bamboo CSS is maintained by a passionate team of engineers. It also receives
+                contributions from engineers around the world.
               </bamboo.p>
             </Stack>
 
-            <Grid
-              columns={{ base: 1, md: 2, lg: 3 }}
-              gap="8"
-              w="full"
-              maxW="6xl"
-            >
+            <Grid columns={{ base: 1, md: 2, lg: 3 }} gap="8" w="full" maxW="6xl">
               {data.length > 0 ? (
-                data.map(member => (
-                  <TeamMemberCard key={member.login} member={member} />
-                ))
+                data.map(member => <TeamMemberCard key={member.login} member={member} />)
               ) : (
-                <bamboo.div
-                  gridColumn="1 / -1"
-                  textAlign="center"
-                  p="8"
-                  color="fg.muted"
-                >
+                <bamboo.div gridColumn="1 / -1" textAlign="center" p="8" color="fg.muted">
                   Unable to load team members
                 </bamboo.div>
               )}

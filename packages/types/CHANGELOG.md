@@ -103,7 +103,6 @@
 ### Patch Changes
 
 - 331d1a5: Update `csstype` from 3.1.3 to 3.2.3, which adds support for newer CSS properties including:
-
   - Anchor positioning: `anchorName`, `anchorScope`, `positionAnchor`, `positionArea`, `positionTry`,
     `positionTryFallbacks`, `positionTryOrder`, `positionVisibility`
   - Text wrapping: `textWrapMode`, `textWrapStyle`, `textSpacingTrim`
@@ -119,7 +118,6 @@
 
 - 3c86c29: Expand `TextStyleProperty` type (consumed by `TextStyle` → `TextStyles` types) to include support for
   `text-box` properties:
-
   - [`text-box`](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/text-box)
   - [`text-box-edge`](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/text-box-edge)
   - [`text-box-trim`](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/text-box-trim)
@@ -229,13 +227,11 @@
 - 70efd73: Enhanced composition types with comprehensive CSS property support
 
   **Text Style Properties:** Added these properties to `theme.textStyles`:
-
   - Added `color` property
   - Text layout properties (`direction`, `textAlign`, `writingMode`)
   - Advanced text properties (`tabSize`, `hangingPunctuation`, `textDecorationSkip*`, `textStroke*`)
 
   **Layer Style Properties:** Added these properties to `theme.layerStyles`:
-
   - Layout properties (`position`, `zIndex`, `display`, `height`, `width`, `margin*`, `inset*`)
   - Visual effects (`clipPath`, `mixBlendMode`, `mask*`)
   - Modern properties (`aspectRatio`, `objectFit`, `cursor`, `content`, `transition`)
@@ -249,7 +245,6 @@
 ### Minor Changes
 
 - 47a0011: Add missing WebKit CSS properties to resolve TypeScript errors. Adds support for:
-
   - `WebkitUserDrag` / `-webkit-user-drag` - Controls element drag behavior
   - `WebkitAppRegion` / `-webkit-app-region` - For Electron window controls
   - `WebkitBorderHorizontalSpacing` / `-webkit-border-horizontal-spacing` - Table border spacing
@@ -341,7 +336,6 @@
 ### Minor Changes
 
 - 5286731: Add support for recent baseline and experimental css properties:
-
   - **Size interpolation:** fieldSizing, interpolateSize
   - **Text rendering:** textWrapMode, textWrapStyle and textSpacingTrim
   - **[Experimental] Anchor positioning:** anchorName, anchorScope, positionAnchor, positionArea, positionTry,
@@ -366,7 +360,6 @@
 
 - fea78c7: Adds support for static analysis of used tokens and recipe variants. It helps to get a birds-eye view of how
   your design system is used and answers the following questions:
-
   - What tokens are most used?
   - What recipe variants are most used?
   - How many hardcoded values vs tokens do we have?
@@ -617,14 +610,12 @@
   tldr: use `importMap` instead for absolute paths (e.g can be used for component libraries)
 
   `emitPackage` is deprecated, it's known for causing several issues:
-
   - bundlers sometimes eagerly cache the `node_modules`, leading to `panda codegen` updates to the `styled-system` not
     visible in the browser
   - auto-imports are not suggested in your IDE.
   - in some IDE the typings are not always reflected properly
 
   As alternatives, you can use:
-
   - relative paths instead of absolute paths (e.g. `../styled-system/css` instead of `styled-system/css`)
   - use package.json #imports and/or tsconfig path aliases (prefer package.json#imports when possible, TS 5.4 supports
     them by default) like `#styled-system/css` instead of `styled-system/css`
@@ -778,7 +769,6 @@
 ### Patch Changes
 
 - 74dfb3e: - Fix `sva` typings, the `splitVariantProps` was missing from the `d.ts` file
-
   - Add a `getVariantProps` helper to the slot recipes API (`sva` and `config slot recipes`)
 
   ```ts
@@ -909,11 +899,9 @@
 ### Minor Changes
 
 - bcfb5c5: ### Fixed
-
   - Fix className collisions between utilities by using unique class names per property in the default preset.
 
   ### Changed
-
   - **Color Mode Selectors**: Changed the default selectors for `_light` and `_dark` to target parent elements. This
     ensures consistent behavior with using these conditions to style pseudo elements (like `::before` and `::after`).
 
@@ -929,7 +917,6 @@
   - Changed `divideX` and `divideY` now maps to the `borderWidths` token group.
 
   ### Added
-
   - **Spacing Utilities**: Add new `spaceX` and `spaceY` utilities for applying margin between elements. Especially
     useful when applying negative margin to child elements.
 
@@ -1275,7 +1262,6 @@
   ```
 
   ## Description
-
   - Simplify typings for the style properties.
   - Add the `csstype` comments for each property.
 
@@ -1386,14 +1372,12 @@
   ## Why?
 
   It's known for causing several issues:
-
   - bundlers sometimes eagerly cache the `node_modules`, leading to `panda codegen` updates to the `styled-system` not
     visible in the browser
   - auto-imports are not suggested in your IDE.
   - in some IDE the typings are not always reflected properly
 
   ## As alternatives, you can use:
-
   - relative paths instead of absolute paths (e.g. `../styled-system/css` instead of `styled-system/css`)
   - use [package.json #imports](https://nodejs.org/api/packages.html#subpath-imports) and/or tsconfig path aliases
     (prefer package.json#imports when possible, TS 5.4 supports them by default) like `#styled-system/css` instead of
@@ -1838,7 +1822,6 @@
 ### Minor Changes
 
 - f58f6df2: Refactor `config.hooks` to be much more powerful, you can now:
-
   - Tweak the config after it has been resolved (after presets are loaded and merged), this could be used to dynamically
     load all `recipes` from a folder
   - Transform a source file's content before parsing it, this could be used to transform the file content to a
@@ -1914,7 +1897,6 @@
 - 84304901: Improve performance, mostly for the CSS generation by removing a lot of `postcss` usage (and plugins).
 
   ## Public changes:
-
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
@@ -1922,7 +1904,6 @@
     this run.
 
   ## Internal changes:
-
   - `markImportant` fn from JS instead of walking through postcss AST nodes
   - use a fork of `stitches` `stringify` function instead of `postcss-css-in-js` to write the CSS string from a JS
     object
@@ -2191,7 +2172,6 @@
 ### Minor Changes
 
 - 904aec7b: - Add support for `staticCss` in presets allowing you create sharable, pre-generated styles
-
   - Add support for extending `staticCss` defined in presets
 
   ```jsx
@@ -2386,7 +2366,6 @@
 - a669f4d5: Introduce new slot recipe features.
 
   Slot recipes are useful for styling composite or multi-part components easily.
-
   - `sva`: the slot recipe version of `cva`
   - `defineSlotRecipe`: the slot recipe version of `defineRecipe`
 
@@ -2442,7 +2421,6 @@
   further reduce it.
 
   `config.jsxStyleProps`:
-
   - When set to 'all', all style props are allowed.
   - When set to 'minimal', only the `css` prop is allowed.
   - When set to 'none', no style props are allowed and therefore the `jsxFactory` will not be usable as a component:
@@ -2456,7 +2434,6 @@
 ### Minor Changes
 
 - c08de87f: ### Breaking
-
   - Renamed the `name` property of a config recipe to `className`. This is to ensure API consistency and express the
     intent of the property more clearly.
 
@@ -2620,7 +2597,6 @@
 
 - c308e8be: Allow asynchronous presets
 - fb40fff2: Initial release of all packages
-
   - Internal AST parser for TS and TSX
   - Support for defining presets in config
   - Support for design tokens (core and semantic)
@@ -2673,7 +2649,6 @@ export default defineConfig({
 ```
 
 - d5977c24: - Add a `--logfile` flag to the `panda`, `panda codegen`, `panda cssgen` and `panda debug` commands.
-
   - Add a `logfile` option to the postcss plugin
 
   Logs will be streamed to the file specified by the `--logfile` flag or the `logfile` option. This is useful for
@@ -2935,7 +2910,6 @@ export default defineConfig({
 ### Minor Changes
 
 - f58f6df2: Refactor `config.hooks` to be much more powerful, you can now:
-
   - Tweak the config after it has been resolved (after presets are loaded and merged), this could be used to dynamically
     load all `recipes` from a folder
   - Transform a source file's content before parsing it, this could be used to transform the file content to a
@@ -3011,7 +2985,6 @@ export default defineConfig({
 - 84304901: Improve performance, mostly for the CSS generation by removing a lot of `postcss` usage (and plugins).
 
   ## Public changes:
-
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
@@ -3019,7 +2992,6 @@ export default defineConfig({
     this run.
 
   ## Internal changes:
-
   - `markImportant` fn from JS instead of walking through postcss AST nodes
   - use a fork of `stitches` `stringify` function instead of `postcss-css-in-js` to write the CSS string from a JS
     object
@@ -3288,7 +3260,6 @@ export default defineConfig({
 ### Minor Changes
 
 - 904aec7b: - Add support for `staticCss` in presets allowing you create sharable, pre-generated styles
-
   - Add support for extending `staticCss` defined in presets
 
   ```jsx
@@ -3483,7 +3454,6 @@ export default defineConfig({
 - a669f4d5: Introduce new slot recipe features.
 
   Slot recipes are useful for styling composite or multi-part components easily.
-
   - `sva`: the slot recipe version of `cva`
   - `defineSlotRecipe`: the slot recipe version of `defineRecipe`
 
@@ -3539,7 +3509,6 @@ export default defineConfig({
   further reduce it.
 
   `config.jsxStyleProps`:
-
   - When set to 'all', all style props are allowed.
   - When set to 'minimal', only the `css` prop is allowed.
   - When set to 'none', no style props are allowed and therefore the `jsxFactory` will not be usable as a component:
@@ -3553,7 +3522,6 @@ export default defineConfig({
 ### Minor Changes
 
 - c08de87f: ### Breaking
-
   - Renamed the `name` property of a config recipe to `className`. This is to ensure API consistency and express the
     intent of the property more clearly.
 
@@ -3717,7 +3685,6 @@ export default defineConfig({
 
 - c308e8be: Allow asynchronous presets
 - fb40fff2: Initial release of all packages
-
   - Internal AST parser for TS and TSX
   - Support for defining presets in config
   - Support for design tokens (core and semantic)

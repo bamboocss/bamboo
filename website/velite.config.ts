@@ -20,9 +20,7 @@ function remarkCodeTitle() {
       const metaString = `${node.lang ?? ''} ${node.meta ?? ''}`.trim()
 
       if (!metaString) return
-      const [filename] = metaString.match(
-        /(?<=filename=("|'))(.*?)(?=("|'))/
-      ) ?? ['']
+      const [filename] = metaString.match(/(?<=filename=("|'))(.*?)(?=("|'))/) ?? ['']
 
       if (!filename && metaString.includes('filename=')) {
         file.message('Invalid title', node, 'remark-code-title')
@@ -54,8 +52,7 @@ const transformerEmptyLineSpace: ShikiTransformer = {
     const isEmpty =
       !node.children?.length ||
       node.children.every(
-        child =>
-          child.type === 'text' && (!child.value || child.value.trim() === '')
+        child => child.type === 'text' && (!child.value || child.value.trim() === '')
       )
 
     if (isEmpty) {
@@ -79,9 +76,7 @@ const docs = defineCollection({
       description: s.string().optional(),
       metadata: s.metadata(),
       llm: s
-        .custom<string | undefined>(
-          i => i === undefined || typeof i === 'string'
-        )
+        .custom<string | undefined>(i => i === undefined || typeof i === 'string')
         .transform((_data, { meta }) => {
           return (meta.content as string) ?? ''
         }),

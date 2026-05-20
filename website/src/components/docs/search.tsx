@@ -56,11 +56,7 @@ export const SearchButton = (props: React.ComponentProps<'button'>) => {
   return (
     <>
       <div className={cx(styles.container, css({ hideBelow: 'sm' }))}>
-        <button
-          spellCheck={false}
-          className={cx(className, styles.input)}
-          {...rest}
-        >
+        <button spellCheck={false} className={cx(className, styles.input)} {...rest}>
           Search docs...
         </button>
         <kbd data-mounted={!!key || undefined} className={styles.kbd}>

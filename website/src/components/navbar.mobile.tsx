@@ -76,10 +76,7 @@ const MobileNavDrawer = (props: MobileNavDrawerProps) => {
           <div className={classes.body}>{children}</div>
           <Dialog.CloseTrigger className={classes.closeTrigger}>
             <Center width="5" height="5" color="fg">
-              <Icon
-                icon="Close"
-                className={css({ width: '1em', height: 'auto' })}
-              />
+              <Icon icon="Close" className={css({ width: '1em', height: 'auto' })} />
             </Center>
           </Dialog.CloseTrigger>
         </Dialog.Content>

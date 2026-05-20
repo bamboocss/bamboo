@@ -23,13 +23,9 @@ export const Sizings = () => {
       <div className={stack({ px: '3', pt: '2' })}>
         {defaultSizings.map(token => (
           <div key={token.name} className={hstack({ py: '1', fontSize: 'sm' })}>
-            <p className={css({ width: '100px', fontWeight: 'medium' })}>
-              {token.extensions.prop}
-            </p>
+            <p className={css({ width: '100px', fontWeight: 'medium' })}>{token.extensions.prop}</p>
             <p className={css({ width: '100px' })}>{token.value}</p>
-            <p className={css({ width: '100px' })}>
-              {token.extensions.pixelValue}
-            </p>
+            <p className={css({ width: '100px' })}>{token.extensions.pixelValue}</p>
           </div>
         ))}
       </div>

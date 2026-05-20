@@ -735,14 +735,12 @@
   tldr: use `importMap` instead for absolute paths (e.g can be used for component libraries)
 
   `emitPackage` is deprecated, it's known for causing several issues:
-
   - bundlers sometimes eagerly cache the `node_modules`, leading to `panda codegen` updates to the `styled-system` not
     visible in the browser
   - auto-imports are not suggested in your IDE.
   - in some IDE the typings are not always reflected properly
 
   As alternatives, you can use:
-
   - relative paths instead of absolute paths (e.g. `../styled-system/css` instead of `styled-system/css`)
   - use package.json #imports and/or tsconfig path aliases (prefer package.json#imports when possible, TS 5.4 supports
     them by default) like `#styled-system/css` instead of `styled-system/css`
@@ -1334,7 +1332,6 @@
   ```
 
   Would incorrectly report:
-
   - [tokens] Missing token: `colors.green.500/half` used in `config.semanticTokens.colors.secondary`
   - [tokens] Missing token: `colors.blue.500/32` used in `config.semanticTokens.colors.secondary`
   - @pandacss/types@0.34.2
@@ -1499,7 +1496,6 @@
 ### Minor Changes
 
 - f0296249: - Sort the longhand/shorthand atomic rules in a deterministic order to prevent property conflicts
-
   - Automatically merge the `base` object in the `css` root styles in the runtime
   - This may be a breaking change depending on how your styles are created
 
@@ -1602,7 +1598,6 @@
 
 - ab32d1d7: Fix issue where errors were thrown when semantic tokens are overriden in tokens.
 - d5977c24: - Add a `--logfile` flag to the `panda`, `panda codegen`, `panda cssgen` and `panda debug` commands.
-
   - Add a `logfile` option to the postcss plugin
 
   Logs will be streamed to the file specified by the `--logfile` flag or the `logfile` option. This is useful for
@@ -1669,7 +1664,6 @@
 ### Patch Changes
 
 - ea3f5548: Add config validation:
-
   - Check for duplicate between token & semanticTokens names
   - Check for duplicate between recipes/patterns/slots names
   - Check for token / semanticTokens paths (must end/contain 'value')
@@ -1696,7 +1690,6 @@
 ### Minor Changes
 
 - f58f6df2: Refactor `config.hooks` to be much more powerful, you can now:
-
   - Tweak the config after it has been resolved (after presets are loaded and merged), this could be used to dynamically
     load all `recipes` from a folder
   - Transform a source file's content before parsing it, this could be used to transform the file content to a
@@ -1804,7 +1797,6 @@
 - 84304901: Improve performance, mostly for the CSS generation by removing a lot of `postcss` usage (and plugins).
 
   ## Public changes:
-
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
@@ -1812,7 +1804,6 @@
     this run.
 
   ## Internal changes:
-
   - `markImportant` fn from JS instead of walking through postcss AST nodes
   - use a fork of `stitches` `stringify` function instead of `postcss-css-in-js` to write the CSS string from a JS
     object
@@ -2050,7 +2041,6 @@
 ### Minor Changes
 
 - 904aec7b: - Add support for `staticCss` in presets allowing you create sharable, pre-generated styles
-
   - Add support for extending `staticCss` defined in presets
 
   ```jsx
@@ -2616,7 +2606,6 @@
 
 - c308e8be: Allow asynchronous presets
 - fb40fff2: Initial release of all packages
-
   - Internal AST parser for TS and TSX
   - Support for defining presets in config
   - Support for design tokens (core and semantic)

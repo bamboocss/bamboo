@@ -1,8 +1,9 @@
 {
   "name": "sandbox-solid",
   "version": "0.0.0",
-  "description": "",
   "private": true,
+  "description": "",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -10,14 +11,13 @@
     "css": "BAMBOO_DEBUG=* bamboo",
     "css:dev": "BAMBOO_DEBUG=* bamboo -w"
   },
-  "license": "MIT",
+  "dependencies": {
+    "solid-js": "1.9.10"
+  },
   "devDependencies": {
     "@bamboocss/dev": "workspace:*",
     "typescript": "6.0.2",
     "vite": "7.2.6",
     "vite-plugin-solid": "2.11.10"
-  },
-  "dependencies": {
-    "solid-js": "1.9.10"
   }
 }

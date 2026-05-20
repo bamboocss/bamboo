@@ -28,22 +28,12 @@ export const CommunitySection = () => {
             <bamboo.h3 textStyle="bamboo.h3" fontWeight="bold">
               Join our community
             </bamboo.h3>
-            <bamboo.span
-              textStyle="2xl"
-              letterSpacing="tight"
-              fontWeight="medium"
-            >
-              Get support, get involved and join our community of developers -
-              Hop into our Discord
+            <bamboo.span textStyle="2xl" letterSpacing="tight" fontWeight="medium">
+              Get support, get involved and join our community of developers - Hop into our Discord
             </bamboo.span>
           </Stack>
 
-          <ButtonLink
-            href="https://discord.gg/VQrkpsgSx7"
-            size="lg"
-            color="www"
-            variant="funky"
-          >
+          <ButtonLink href="https://discord.gg/VQrkpsgSx7" size="lg" color="www" variant="funky">
             Join our Discord
             <Icon icon="ExternalLink" />
           </ButtonLink>

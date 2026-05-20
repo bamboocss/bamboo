@@ -9,7 +9,14 @@ import {
   unionType,
 } from '@bamboocss/shared'
 import type { TokenDictionary } from '@bamboocss/token-dictionary'
-import type { ArtifactFilters, Dict, PatternConfig, PatternHelpers, PatternProperty, UserConfig } from '@bamboocss/types'
+import type {
+  ArtifactFilters,
+  Dict,
+  PatternConfig,
+  PatternHelpers,
+  PatternProperty,
+  UserConfig,
+} from '@bamboocss/types'
 import type { Utility } from './utility'
 
 interface PatternOptions {

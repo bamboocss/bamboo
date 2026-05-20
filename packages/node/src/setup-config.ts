@@ -7,7 +7,7 @@ import fsExtra from 'fs-extra'
 import { lookItUpSync } from 'look-it-up'
 import { outdent } from 'outdent'
 import { join } from 'path'
-import prettier from 'prettier'
+import { execFileSync } from 'child_process'
 
 type SetupOptions = Partial<Config> & {
   force?: boolean
@@ -65,7 +65,13 @@ export default defineConfig({
 })
     `
 
-    await fsExtra.writeFile(join(cwd, file), await prettier.format(content, { parser: 'babel' }))
+    const filePath = join(cwd, file)
+    await fsExtra.writeFile(filePath, content)
+    try {
+      execFileSync('oxfmt', [filePath], { stdio: 'ignore' })
+    } catch {
+      // oxfmt not available, file is written unformatted
+    }
     logger.log(messages.thankYou())
   }
 }

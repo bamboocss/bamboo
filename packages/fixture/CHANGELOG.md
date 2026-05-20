@@ -249,7 +249,6 @@
 ### Minor Changes
 
 - f58f6df2: Refactor `config.hooks` to be much more powerful, you can now:
-
   - Tweak the config after it has been resolved (after presets are loaded and merged), this could be used to dynamically
     load all `recipes` from a folder
   - Transform a source file's content before parsing it, this could be used to transform the file content to a
@@ -317,7 +316,6 @@
 - 84304901: Improve performance, mostly for the CSS generation by removing a lot of `postcss` usage (and plugins).
 
   ## Public changes:
-
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
@@ -325,7 +323,6 @@
     this run.
 
   ## Internal changes:
-
   - `markImportant` fn from JS instead of walking through postcss AST nodes
   - use a fork of `stitches` `stringify` function instead of `postcss-css-in-js` to write the CSS string from a JS
     object
@@ -633,7 +630,6 @@
 - a669f4d5: Introduce new slot recipe features.
 
   Slot recipes are useful for styling composite or multi-part components easily.
-
   - `sva`: the slot recipe version of `cva`
   - `defineSlotRecipe`: the slot recipe version of `defineRecipe`
 
@@ -699,7 +695,6 @@
 ### Minor Changes
 
 - c08de87f: ### Breaking
-
   - Renamed the `name` property of a config recipe to `className`. This is to ensure API consistency and express the
     intent of the property more clearly.
 
@@ -893,7 +888,6 @@ export default defineConfig({
 ```
 
 - d5977c24: - Add a `--logfile` flag to the `panda`, `panda codegen`, `panda cssgen` and `panda debug` commands.
-
   - Add a `logfile` option to the postcss plugin
 
   Logs will be streamed to the file specified by the `--logfile` flag or the `logfile` option. This is useful for
@@ -1022,7 +1016,6 @@ export default defineConfig({
 ### Minor Changes
 
 - f58f6df2: Refactor `config.hooks` to be much more powerful, you can now:
-
   - Tweak the config after it has been resolved (after presets are loaded and merged), this could be used to dynamically
     load all `recipes` from a folder
   - Transform a source file's content before parsing it, this could be used to transform the file content to a
@@ -1090,7 +1083,6 @@ export default defineConfig({
 - 84304901: Improve performance, mostly for the CSS generation by removing a lot of `postcss` usage (and plugins).
 
   ## Public changes:
-
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
@@ -1098,7 +1090,6 @@ export default defineConfig({
     this run.
 
   ## Internal changes:
-
   - `markImportant` fn from JS instead of walking through postcss AST nodes
   - use a fork of `stitches` `stringify` function instead of `postcss-css-in-js` to write the CSS string from a JS
     object
@@ -1406,7 +1397,6 @@ export default defineConfig({
 - a669f4d5: Introduce new slot recipe features.
 
   Slot recipes are useful for styling composite or multi-part components easily.
-
   - `sva`: the slot recipe version of `cva`
   - `defineSlotRecipe`: the slot recipe version of `defineRecipe`
 
@@ -1472,7 +1462,6 @@ export default defineConfig({
 ### Minor Changes
 
 - c08de87f: ### Breaking
-
   - Renamed the `name` property of a config recipe to `className`. This is to ensure API consistency and express the
     intent of the property more clearly.
 

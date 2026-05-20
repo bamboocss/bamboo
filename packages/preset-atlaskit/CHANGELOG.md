@@ -106,7 +106,6 @@
 - 47a4698: Update the experimental atlaskit preset with comprehensive token coverage from Atlassian Design System
 
   ## New Token Categories
-
   - **Opacity tokens** - `disabled` (0.4) and `loading` (0.2) semantic opacity values
   - **Duration tokens** - Animation durations from @atlaskit/motion (`none`, `small`, `medium`, `large`)
   - **Easing tokens** - Cubic-bezier curves from @atlaskit/motion (7 variants: `easeIn`, `easeOut`, `easeInOut`,
@@ -629,7 +628,6 @@
 - 84304901: Improve performance, mostly for the CSS generation by removing a lot of `postcss` usage (and plugins).
 
   ## Public changes:
-
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
@@ -637,7 +635,6 @@
     this run.
 
   ## Internal changes:
-
   - `markImportant` fn from JS instead of walking through postcss AST nodes
   - use a fork of `stitches` `stringify` function instead of `postcss-css-in-js` to write the CSS string from a JS
     object

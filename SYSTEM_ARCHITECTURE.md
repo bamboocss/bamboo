@@ -2,7 +2,9 @@
 
 ## Overview
 
-Bamboo CSS is a universal, build-time, type-safe CSS-in-JS solution that extracts styles at compile time and generates optimized CSS and TypeScript utilities. The system follows a modular architecture built as a pnpm monorepo with distinct packages handling different aspects of the styling pipeline.
+Bamboo CSS is a universal, build-time, type-safe CSS-in-JS solution that extracts styles at compile time and generates
+optimized CSS and TypeScript utilities. The system follows a modular architecture built as a pnpm monorepo with distinct
+packages handling different aspects of the styling pipeline.
 
 ## Core Philosophy
 
@@ -28,6 +30,7 @@ bamboo/
 ### 1. User-Facing Packages
 
 #### `@bamboocss/dev` (packages/cli)
+
 - **Purpose**: Main entry point for end users
 - **Exports**: CLI binary (`bamboo` command), PostCSS plugin, presets
 - **Key responsibilities**:
@@ -37,6 +40,7 @@ bamboo/
 - **Dependencies**: Orchestrates all other packages
 
 #### `@bamboocss/postcss` (packages/postcss)
+
 - **Purpose**: PostCSS plugin integration
 - **Key responsibilities**:
   - Integrates Bamboo into PostCSS build pipeline
@@ -47,6 +51,7 @@ bamboo/
 ### 2. Core Processing Packages
 
 #### `@bamboocss/core` (packages/core)
+
 - **Purpose**: Heart of the Bamboo system containing all core logic
 - **Key classes**:
   - **Context**: Central orchestration class that manages all engines
@@ -67,6 +72,7 @@ bamboo/
   - Color mixing utilities
 
 #### `@bamboocss/parser` (packages/parser)
+
 - **Purpose**: Static code analysis and extraction
 - **Key responsibilities**:
   - TypeScript/JavaScript AST parsing (uses ts-morph)
@@ -79,6 +85,7 @@ bamboo/
   - **ParserResult**: Collects and organizes extraction results
 
 #### `@bamboocss/extractor` (packages/extractor)
+
 - **Purpose**: Low-level AST extraction and evaluation
 - **Key responsibilities**:
   - Extracting values from AST nodes
@@ -91,6 +98,7 @@ bamboo/
   - **Evaluation**: Computing static values from code
 
 #### `@bamboocss/generator` (packages/generator)
+
 - **Purpose**: Code generation for styled-system output
 - **Directory structure**:
   ```
@@ -111,6 +119,7 @@ bamboo/
 ### 3. Configuration & Setup
 
 #### `@bamboocss/config` (packages/config)
+
 - **Purpose**: Configuration loading and merging
 - **Key responsibilities**:
   - Finding and loading `bamboo.config.ts/js`
@@ -119,7 +128,8 @@ bamboo/
   - Config diffing for incremental updates
   - TypeScript path mapping resolution
 
-#### `@bamboocss/preset-*` (packages/preset-*)
+#### `@bamboocss/preset-*` (packages/preset-\*)
+
 - **Available presets**:
   - `preset-base`: Minimal foundation preset
   - `preset-bamboo`: Default preset with design system tokens
@@ -130,6 +140,7 @@ bamboo/
 ### 4. Orchestration & Build
 
 #### `@bamboocss/node` (packages/node)
+
 - **Purpose**: Node.js runtime and build orchestration
 - **Key classes/functions**:
   - **BambooContext**: Extended context with build-time features
@@ -142,11 +153,12 @@ bamboo/
   - Config change detection
   - Git ignore management
   - CSS generation and optimization
-  - Prettier formatting integration
+  - oxfmt formatting integration
 
 ### 5. Utilities & Infrastructure
 
 #### `@bamboocss/token-dictionary` (packages/token-dictionary)
+
 - **Purpose**: Design token processing
 - **Key responsibilities**:
   - Token transformation and references
@@ -160,28 +172,34 @@ bamboo/
   - Use `get()` for AST evaluation of token CallExpressions
 
 #### `@bamboocss/types` (packages/types)
+
 - **Purpose**: Shared TypeScript types
 - **Build process**: Generates complex conditional types from csstype
 - **Exports**: All type definitions used across packages
 
 #### `@bamboocss/shared` (packages/shared)
+
 - **Purpose**: Shared utility functions
 - **Examples**: Object manipulation, string utilities, memoization, pattern functions
 
 #### `@bamboocss/is-valid-prop` (packages/is-valid-prop)
+
 - **Purpose**: Validates CSS property names
 - **Used by**: Core and generator for prop filtering
 
 #### `@bamboocss/logger` (packages/logger)
+
 - **Purpose**: Centralized logging with log levels
 - **Features**: Colored output, timing utilities, debug mode
 
 #### `@bamboocss/reporter` (packages/reporter)
+
 - **Purpose**: User-friendly error and warning messages
 
 ### 6. Developer Experience
 
 #### `@bamboocss/studio` (packages/studio)
+
 - **Purpose**: Visual documentation of design tokens
 - **Technology**: Astro-based static site
 - **Features**:
@@ -192,6 +210,7 @@ bamboo/
   - Interactive token explorer
 
 #### `@bamboocss/astro-plugin-studio` (packages/astro-plugin-studio)
+
 - **Purpose**: Astro integration for Bamboo Studio
 
 ## System Flow
@@ -253,7 +272,7 @@ Generator (packages/generator)
 Builder.write() - Write files to styled-system
     ↓
 Optimize CSS (postcss plugins)
-    └─→ Format with prettier
+    └─→ Format with oxfmt
 ```
 
 ### 3. PostCSS Integration Flow
@@ -317,8 +336,8 @@ StyleEncoder - Encode to atomic classes
     └─→ Return extracted styles
 ```
 
-**Token Extraction Details**:
-When `token()` is encountered:
+**Token Extraction Details**: When `token()` is encountered:
+
 1. `imports.matchers.tokens.match` identifies token imports (packages/core/src/import-map.ts:25)
 2. Parser extracts the token CallExpression arguments (packages/parser/src/parser.ts:165-176)
 3. Extractor evaluates the token path and optional fallback (packages/extractor/src/maybe-box-node.ts)
@@ -357,12 +376,14 @@ generateArtifacts() dispatches to:
 ## Key Design Patterns
 
 ### 1. Context Pattern
+
 - **Context** class is the central orchestrator
 - All engines (Utility, Recipes, Patterns, etc.) are initialized in Context
 - Context is passed down to all subsystems
 - Provides unified access to configuration, tokens, and utilities
 
 ### 2. Engine Pattern
+
 - Specialized engines handle different concerns:
   - **Utility**: CSS utility generation
   - **Recipes**: Component recipes
@@ -372,89 +393,104 @@ generateArtifacts() dispatches to:
   - **FileEngine**: File template management
 
 ### 3. Builder Pattern
+
 - **Builder** class manages incremental builds
 - Tracks file changes and config diffs
 - Coordinates setup → extract → generate → write cycle
 - Handles file watching and HMR
 
 ### 4. Encoder/Decoder Pattern
+
 - **StyleEncoder**: Converts style objects to atomic class names
 - **StyleDecoder**: Collects all encoded styles for CSS generation
 - Enables atomic CSS with automatic deduplication
 
 ### 5. Box/Unbox Pattern (Extractor)
+
 - **Boxing**: Wraps AST nodes with metadata and utilities
 - **Evaluation**: Computes static values
 - **Unboxing**: Extracts final values
 - Handles complex expressions, spreads, and conditionals
 
 ### 6. Token Resolution Strategy
+
 Bamboo CSS has a dual-mode token resolution system that handles tokens differently based on context:
 
 #### CallExpression Mode (AST Extraction)
+
 When `token()` appears as a **CallExpression** in the AST (i.e., actually called as a function):
 
 ```typescript
 // Template literal interpolation with CallExpression
 const styles = css({
-  border: `1px solid ${token('colors.yellow.100')}`  // token() is called
+  border: `1px solid ${token('colors.yellow.100')}`, // token() is called
 })
 ```
 
 **Resolution**: The extractor evaluates `token()` calls **at build time** and resolves them to:
+
 - **Base tokens** (no conditions) → Raw value (e.g., `"#fef9c3"`)
 - **Semantic/conditional tokens** → CSS variable (e.g., `"var(--colors-primary)"`)
 - **Virtual tokens** (colorPalette) → CSS variable (e.g., `"var(--colors-color-palette-500)"`)
 
 **Key files**:
+
 - `packages/extractor/src/maybe-box-node.ts` - Handles token CallExpression evaluation
 - `packages/token-dictionary/src/dictionary.ts` - `get()` returns raw values, `getVar()` returns CSS variables
 
 #### String Pattern Mode (RuleProcessor)
+
 When `token(...)` appears as a **string pattern** (not executed as a function):
 
 ```typescript
 // String literal with token pattern
 const styles = css({
-  border: "1px solid token(colors.yellow.100)"  // Plain string, no CallExpression
+  border: '1px solid token(colors.yellow.100)', // Plain string, no CallExpression
 })
 ```
 
 **Resolution**: The RuleProcessor pattern-matches the string **after parsing** via `expandReferenceInValue()`:
+
 - Finds pattern: `token(path.to.token)`
 - Always resolves to CSS variable: `"var(--path-to-token)"`
 
 **Key files**:
+
 - `packages/token-dictionary/src/dictionary.ts:392-411` - `expandReferenceInValue()` method
 - `packages/core/src/utility.ts:262` - `getToken()` uses `getVar()` for CSS variable output
 - `packages/core/src/utility.ts:400` - `defaultTransform()` uses `getVar()` for CSS custom properties
 
 #### Critical Distinction
 
-| Context | Example | Resolution | Output |
-|---------|---------|------------|--------|
-| **Template literal + CallExpression** | `` `1px solid ${token('colors.yellow.100')}` `` | AST evaluation → Raw value | `"1px solid #fef9c3"` |
-| **String pattern (no call)** | `"1px solid token(colors.yellow.100)"` | RuleProcessor → CSS variable | `"1px solid var(--colors-yellow-100)"` |
-| **Object property + CallExpression** | `{ color: token('colors.red.500') }` | AST evaluation → Raw value | `{ color: "#ef4444" }` |
-| **Object property + token.var()** | `{ color: token.var('colors.red.500') }` | AST evaluation → CSS variable | `{ color: "var(--colors-red-500)" }` |
+| Context                               | Example                                         | Resolution                    | Output                                 |
+| ------------------------------------- | ----------------------------------------------- | ----------------------------- | -------------------------------------- |
+| **Template literal + CallExpression** | `` `1px solid ${token('colors.yellow.100')}` `` | AST evaluation → Raw value    | `"1px solid #fef9c3"`                  |
+| **String pattern (no call)**          | `"1px solid token(colors.yellow.100)"`          | RuleProcessor → CSS variable  | `"1px solid var(--colors-yellow-100)"` |
+| **Object property + CallExpression**  | `{ color: token('colors.red.500') }`            | AST evaluation → Raw value    | `{ color: "#ef4444" }`                 |
+| **Object property + token.var()**     | `{ color: token.var('colors.red.500') }`        | AST evaluation → CSS variable | `{ color: "var(--colors-red-500)" }`   |
 
 #### Why This Design?
 
 This dual-mode system exists because:
-1. **Template literals with interpolation** execute functions at runtime, so build-time evaluation must match runtime behavior
-2. **String patterns** are processed by Bamboo's RuleProcessor and can be transformed to CSS variables for dynamic theming
+
+1. **Template literals with interpolation** execute functions at runtime, so build-time evaluation must match runtime
+   behavior
+2. **String patterns** are processed by Bamboo's RuleProcessor and can be transformed to CSS variables for dynamic
+   theming
 3. **Semantic tokens** (with conditions) must always use CSS variables to support responsive/conditional values
 4. Users can explicitly request CSS variables with `token.var()` when needed in CallExpressions
 
 ## Build Optimization
 
 ### Incremental Builds
+
 - **File tracking**: Tracks modified times of source and config files
 - **Dependency graph**: Knows which files affect what artifacts
 - **Smart invalidation**: Only regenerates changed artifacts
 - **Config diffing**: Detects specific config changes to minimize regeneration
 
 ### CSS Optimization
+
 - **Atomic CSS**: Each unique style gets one class
 - **Layer ordering**: Uses `@layer` for predictable cascade
 - **PostCSS pipeline**:
@@ -465,6 +501,7 @@ This dual-mode system exists because:
   - `lightningcss` - Fast minification and vendor prefixing
 
 ### Code Splitting
+
 - Separate artifacts for different concerns
 - Lazy-loadable pattern and recipe functions
 - Tree-shakeable exports
@@ -472,18 +509,20 @@ This dual-mode system exists because:
 ## Type System
 
 ### Generated Types
+
 ```typescript
 // Utility props
-css({ color: 'red.500' })  // Autocomplete for 'red.500'
+css({ color: 'red.500' }) // Autocomplete for 'red.500'
 
 // Pattern props
-stack({ gap: '4' })  // Autocomplete for spacing tokens
+stack({ gap: '4' }) // Autocomplete for spacing tokens
 
 // Recipe variants
-button({ size: 'lg', variant: 'solid' })  // Autocomplete variants
+button({ size: 'lg', variant: 'solid' }) // Autocomplete variants
 ```
 
 ### Type Generation Flow
+
 ```
 User config (theme.tokens)
     ↓
@@ -501,6 +540,7 @@ TypeScript provides autocomplete
 ## Framework Integration
 
 ### JSX Factory Pattern
+
 Each framework gets a custom JSX factory:
 
 ```typescript
@@ -518,6 +558,7 @@ import { styled } from './styled-system/jsx/vue'
 ```
 
 ### Framework-Specific Parsing
+
 - **React/Preact**: Standard JSX
 - **Vue**: SFC parsing with `@vue/compiler-sfc`
 - **Svelte**: Component parsing with custom transformer
@@ -526,6 +567,7 @@ import { styled } from './styled-system/jsx/vue'
 ## Plugin System
 
 ### Hooks API
+
 Bamboo provides a hookable API for extensibility:
 
 ```typescript
@@ -539,7 +581,9 @@ hooks: {
 ```
 
 ### Plugin Architecture
+
 Plugins can:
+
 - Modify token dictionary
 - Add custom utilities
 - Transform generated code
@@ -548,6 +592,7 @@ Plugins can:
 ## Testing Strategy
 
 ### Test Infrastructure
+
 - **Vitest**: Test runner with globals
 - **Happy-dom**: Browser environment simulation
 - **Unit tests**: Per-package in `__tests__` directories
@@ -555,6 +600,7 @@ Plugins can:
 - **Fixtures**: Sample projects in `packages/fixture`
 
 ### Test Coverage Areas
+
 1. **Config loading**: Various config formats and merging
 2. **Token processing**: Token transformation and references
 3. **Parser**: AST extraction accuracy
@@ -565,6 +611,7 @@ Plugins can:
 ## Development Workflow
 
 ### Local Development
+
 ```bash
 pnpm install              # Install dependencies
 pnpm build-fast          # Quick build without types
@@ -573,6 +620,7 @@ pnpm playground          # Run playground examples
 ```
 
 ### Package Scripts
+
 - `build`: Full build with types
 - `build-fast`: Quick build, no type generation
 - `dev`: Watch mode
@@ -580,6 +628,7 @@ pnpm playground          # Run playground examples
 - `typecheck`: TypeScript validation
 
 ### Release Process
+
 1. Changes tracked with Changesets (`.changeset/`)
 2. Run `pnpm changeset` to document changes
 3. Changesets generates changelog and version bumps
@@ -588,18 +637,21 @@ pnpm playground          # Run playground examples
 ## Performance Considerations
 
 ### Build Performance
+
 - **Lazy imports**: Delays loading until needed
 - **Parallel processing**: Uses `pnpm --parallel` for multi-package builds
 - **Caching**: ts-morph caches parsed ASTs
 - **Fast glob**: Efficient file scanning
 
 ### Runtime Performance
+
 - **Zero runtime**: All styles generated at build time
 - **Minimal JS**: Only necessary utility functions shipped
 - **CSS variables**: Dynamic theming without JS
 - **Tree-shaking**: Unused utilities eliminated
 
 ### Memory Management
+
 - **Memoization**: Expensive computations cached
 - **Streaming**: Large file processing in chunks
 - **Context cleanup**: Proper disposal of resources
@@ -607,12 +659,14 @@ pnpm playground          # Run playground examples
 ## Error Handling
 
 ### User-Facing Errors
+
 - **Reporter package**: Formatted, helpful error messages
 - **Logger levels**: debug, info, warn, error, silent
 - **Stack traces**: Preserved for debugging
 - **Suggestions**: Actionable error messages
 
 ### Error Categories
+
 1. **Config errors**: Invalid configuration
 2. **Parse errors**: Malformed source code
 3. **Generation errors**: Failed artifact creation
@@ -626,17 +680,19 @@ pnpm playground          # Run playground examples
 
 ```typescript
 // ❌ WRONG - Returns raw value when CSS variable needed
-const tokenValue = this.tokens.view.get(path)  // Returns "#ef4444"
+const tokenValue = this.tokens.view.get(path) // Returns "#ef4444"
 
 // ✅ CORRECT - Returns CSS variable for RuleProcessor
-const tokenValue = this.tokens.view.getVar(path)  // Returns "var(--colors-red-500)"
+const tokenValue = this.tokens.view.getVar(path) // Returns "var(--colors-red-500)"
 ```
 
 **When to use each**:
+
 - Use `get()`: When evaluating token CallExpressions in AST (extractor phase)
 - Use `getVar()`: When processing string patterns in RuleProcessor (expandReferenceInValue, getToken, defaultTransform)
 
 **Common locations that need `getVar()`**:
+
 - `packages/core/src/utility.ts:262` - `getToken()` method
 - `packages/core/src/utility.ts:400` - `defaultTransform()` method
 - `packages/token-dictionary/src/dictionary.ts:392-411` - `expandReferenceInValue()` method
@@ -672,7 +728,7 @@ border: `1px solid ${token('colors.yellow.100')}`
 // → Result: "1px solid #fef9c3" (raw value)
 
 // String pattern - Resolved by RuleProcessor
-border: "1px solid token(colors.yellow.100)"
+border: '1px solid token(colors.yellow.100)'
 // → Result: "1px solid var(--colors-yellow-100)" (CSS variable)
 ```
 
@@ -683,6 +739,7 @@ border: "1px solid token(colors.yellow.100)"
 **Pitfall**: Adding new function types to ImportMap but forgetting to add parser handlers
 
 **Checklist when adding new function types**:
+
 1. ✅ Add to `packages/core/src/import-map.ts` matcher configuration
 2. ✅ Add `.when()` case in `packages/parser/src/parser.ts` switch statement
 3. ✅ Add storage method in `packages/parser/src/parser-result.ts` (e.g., `setToken()`)
@@ -692,16 +749,19 @@ border: "1px solid token(colors.yellow.100)"
 ### Debugging Token Resolution
 
 **Enable debug logging**:
+
 ```bash
 DEBUG=* bamboo
 ```
 
 Look for these log messages:
+
 - `ast:import` - Shows what imports were found
 - `ast:css`, `ast:token`, etc. - Shows what functions were extracted
 - Token resolution paths in extractor
 
 **Test both modes**:
+
 - Write tests for CallExpression evaluation (token.test.ts)
 - Write tests for string pattern resolution (output.test.ts)
 - Ensure semantic and virtual tokens resolve to CSS variables
@@ -709,12 +769,14 @@ Look for these log messages:
 ## Future Architecture Considerations
 
 ### Extensibility Points
+
 - Custom pattern definitions
 - Plugin marketplace
 - Framework adapters
 - Build tool integrations
 
 ### Scalability
+
 - Multi-threaded parsing for large codebases
 - Distributed caching for monorepos
 - Incremental type checking
@@ -723,10 +785,12 @@ Look for these log messages:
 ## Conclusion
 
 Bamboo CSS architecture emphasizes:
+
 - **Modularity**: Clear separation of concerns across packages
 - **Performance**: Build-time optimization and zero runtime overhead
 - **Type safety**: Full TypeScript integration with generated types
 - **Flexibility**: Framework-agnostic with multiple integration points
 - **Developer experience**: Autocomplete, helpful errors, and visual tools
 
-The system is designed to scale from small projects to large monorepos while maintaining fast build times and excellent developer experience.
+The system is designed to scale from small projects to large monorepos while maintaining fast build times and excellent
+developer experience.

@@ -23,7 +23,6 @@
 ### Patch Changes
 
 - bc2b8d7: Dependency updates for reported security advisories.
-
   - **@pandacss/node** / **@pandacss/token-dictionary**: bump `picomatch` to 4.0.4
     ([GHSA-3v7f-55p6-f55p](https://github.com/advisories/GHSA-3v7f-55p6-f55p),
     [GHSA-c2c7-rcm5-vvqj](https://github.com/advisories/GHSA-c2c7-rcm5-vvqj)).
@@ -54,7 +53,6 @@
   **Before (broken):** `--shadows-control-accent: 0 var(--sizes-0\.5) var(--sizes-0-5) rgba(92, 225, 113, 0.25)`
 
   **After (fixed):** `--shadows-control-accent: 0 var(--sizes-0\.5) var(--sizes-0\.5) rgba(92, 225, 113, 0.25)`
-
   - @pandacss/logger@1.9.1
   - @pandacss/shared@1.9.1
   - @pandacss/types@1.9.1
@@ -802,14 +800,12 @@
 ### Patch Changes
 
 - 93dc9f5: Public changes: Some quality of life fixes for the Studio:
-
   - Handle displaying values using the `[xxx]` escape-hatch syntax for `textStyles` in the studio
   - Display an empty state when there's no token in a specific token page in the studio
 
   ***
 
   (mostly) Internal changes:
-
   - Add `deepResolveReference` in TokenDictionary, helpful to get the raw value from a semantic token by recursively
     traversing the token references.
   - Added some exports in the `@pandacss/token-dictionary` package, mostly useful when building tooling around Panda
@@ -1255,7 +1251,6 @@
 ### Patch Changes
 
 - 64d5144: Allow using the color opacity modifier syntax (`blue.300/70`) in token references:
-
   - `{colors.blue.300/70}`
   - `token(colors.blue.300/70)`
 
@@ -1550,7 +1545,6 @@
 - 84304901: Improve performance, mostly for the CSS generation by removing a lot of `postcss` usage (and plugins).
 
   ## Public changes:
-
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
@@ -1558,7 +1552,6 @@
     this run.
 
   ## Internal changes:
-
   - `markImportant` fn from JS instead of walking through postcss AST nodes
   - use a fork of `stitches` `stringify` function instead of `postcss-css-in-js` to write the CSS string from a JS
     object
@@ -1914,7 +1907,6 @@
 ### Minor Changes
 
 - b1c31fdd: - Introduces deep nested `colorPalettes` for enhanced color management
-
   - Previous color palette structure was flat and less flexible, now `colorPalettes` can be organized hierarchically for
     improved organization
 
@@ -2157,7 +2149,6 @@
 ### Patch Changes
 
 - fb40fff2: Initial release of all packages
-
   - Internal AST parser for TS and TSX
   - Support for defining presets in config
   - Support for design tokens (core and semantic)
@@ -2212,7 +2203,6 @@ export default defineConfig({
 ```
 
 - d5977c24: - Add a `--logfile` flag to the `panda`, `panda codegen`, `panda cssgen` and `panda debug` commands.
-
   - Add a `logfile` option to the postcss plugin
 
   Logs will be streamed to the file specified by the `--logfile` flag or the `logfile` option. This is useful for
@@ -2314,7 +2304,6 @@ export default defineConfig({
 - 84304901: Improve performance, mostly for the CSS generation by removing a lot of `postcss` usage (and plugins).
 
   ## Public changes:
-
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
@@ -2322,7 +2311,6 @@ export default defineConfig({
     this run.
 
   ## Internal changes:
-
   - `markImportant` fn from JS instead of walking through postcss AST nodes
   - use a fork of `stitches` `stringify` function instead of `postcss-css-in-js` to write the CSS string from a JS
     object
@@ -2678,7 +2666,6 @@ export default defineConfig({
 ### Minor Changes
 
 - b1c31fdd: - Introduces deep nested `colorPalettes` for enhanced color management
-
   - Previous color palette structure was flat and less flexible, now `colorPalettes` can be organized hierarchically for
     improved organization
 
@@ -2921,7 +2908,6 @@ export default defineConfig({
 ### Patch Changes
 
 - fb40fff2: Initial release of all packages
-
   - Internal AST parser for TS and TSX
   - Support for defining presets in config
   - Support for design tokens (core and semantic)
@@ -3167,7 +3153,6 @@ Will now allow you to use the following syntax for token path:
 - 84304901: Improve performance, mostly for the CSS generation by removing a lot of `postcss` usage (and plugins).
 
   ## Public changes:
-
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
@@ -3175,7 +3160,6 @@ Will now allow you to use the following syntax for token path:
     this run.
 
   ## Internal changes:
-
   - `markImportant` fn from JS instead of walking through postcss AST nodes
   - use a fork of `stitches` `stringify` function instead of `postcss-css-in-js` to write the CSS string from a JS
     object
@@ -3531,7 +3515,6 @@ Will now allow you to use the following syntax for token path:
 ### Minor Changes
 
 - b1c31fdd: - Introduces deep nested `colorPalettes` for enhanced color management
-
   - Previous color palette structure was flat and less flexible, now `colorPalettes` can be organized hierarchically for
     improved organization
 
@@ -3774,7 +3757,6 @@ Will now allow you to use the following syntax for token path:
 ### Patch Changes
 
 - fb40fff2: Initial release of all packages
-
   - Internal AST parser for TS and TSX
   - Support for defining presets in config
   - Support for design tokens (core and semantic)
@@ -3829,7 +3811,6 @@ export default defineConfig({
 ```
 
 - d5977c24: - Add a `--logfile` flag to the `panda`, `panda codegen`, `panda cssgen` and `panda debug` commands.
-
   - Add a `logfile` option to the postcss plugin
 
   Logs will be streamed to the file specified by the `--logfile` flag or the `logfile` option. This is useful for
@@ -3931,7 +3912,6 @@ export default defineConfig({
 - 84304901: Improve performance, mostly for the CSS generation by removing a lot of `postcss` usage (and plugins).
 
   ## Public changes:
-
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
@@ -3939,7 +3919,6 @@ export default defineConfig({
     this run.
 
   ## Internal changes:
-
   - `markImportant` fn from JS instead of walking through postcss AST nodes
   - use a fork of `stitches` `stringify` function instead of `postcss-css-in-js` to write the CSS string from a JS
     object
@@ -4295,7 +4274,6 @@ export default defineConfig({
 ### Minor Changes
 
 - b1c31fdd: - Introduces deep nested `colorPalettes` for enhanced color management
-
   - Previous color palette structure was flat and less flexible, now `colorPalettes` can be organized hierarchically for
     improved organization
 
@@ -4538,7 +4516,6 @@ export default defineConfig({
 ### Patch Changes
 
 - fb40fff2: Initial release of all packages
-
   - Internal AST parser for TS and TSX
   - Support for defining presets in config
   - Support for design tokens (core and semantic)

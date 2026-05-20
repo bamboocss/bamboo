@@ -54,7 +54,11 @@ export class StyleEncoder {
 
   isEmpty = () => {
     return (
-      !this.atomic.size && !this.recipes.size && !this.compound_variants.size && !this.recipes_base.size && !this.grouped.size
+      !this.atomic.size &&
+      !this.recipes.size &&
+      !this.compound_variants.size &&
+      !this.recipes_base.size &&
+      !this.grouped.size
     )
   }
 
@@ -346,9 +350,7 @@ export class StyleEncoder {
     }
 
     if (this.grouped.size) {
-      styles.grouped = Object.fromEntries(
-        Array.from(this.grouped.entries()).map(([id, set]) => [id, Array.from(set)]),
-      )
+      styles.grouped = Object.fromEntries(Array.from(this.grouped.entries()).map(([id, set]) => [id, Array.from(set)]))
     }
 
     return {
