@@ -1,5 +1,18 @@
 # @bamboocss/core
 
+## 1.11.5
+
+### Patch Changes
+
+- f3591d8: Fix chunk splitting in build output that produced unstable hashed filenames in published packages.
+  - Build each entry point independently to prevent shared-code extraction into chunk files
+  - Fix build ordering race condition where studio postbuild could run before CLI was ready
+  - @bamboocss/is-valid-prop@1.11.5
+  - @bamboocss/logger@1.11.5
+  - @bamboocss/shared@1.11.5
+  - @bamboocss/token-dictionary@1.11.5
+  - @bamboocss/types@1.11.5
+
 ## 1.11.4
 
 ### Patch Changes

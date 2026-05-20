@@ -1,5 +1,11 @@
 # @bamboocss/preset-base
 
+## 1.11.5
+
+### Patch Changes
+
+- @bamboocss/types@1.11.5
+
 ## 1.11.4
 
 ### Patch Changes
