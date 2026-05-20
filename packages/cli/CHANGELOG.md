@@ -1,5 +1,22 @@
 # @bamboocss/dev
 
+## 1.11.4
+
+### Patch Changes
+
+- fix pre-commit hook leaving dirty state after commit
+- Updated dependencies
+  - @bamboocss/config@1.11.4
+  - @bamboocss/logger@1.11.4
+  - @bamboocss/mcp@1.11.4
+  - @bamboocss/node@1.11.4
+  - @bamboocss/postcss@1.11.4
+  - @bamboocss/preset-bamboo@1.11.4
+  - @bamboocss/preset-base@1.11.4
+  - @bamboocss/shared@1.11.4
+  - @bamboocss/token-dictionary@1.11.4
+  - @bamboocss/types@1.11.4
+
 ## 1.11.3
 
 ### Patch Changes

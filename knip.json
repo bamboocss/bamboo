@@ -71,6 +71,7 @@
       "project": ["src/**/*.ts"]
     },
     "packages/shared": {
+      "entry": ["src/shared.ts!", "src/astish.ts!", "src/normalize-html.ts!"],
       "project": ["src/**/*.ts"]
     },
     "packages/token-dictionary": {

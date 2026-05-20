@@ -1,5 +1,17 @@
 # @bamboocss/core
 
+## 1.11.4
+
+### Patch Changes
+
+- fix pre-commit hook leaving dirty state after commit
+- Updated dependencies
+  - @bamboocss/is-valid-prop@1.11.4
+  - @bamboocss/logger@1.11.4
+  - @bamboocss/shared@1.11.4
+  - @bamboocss/token-dictionary@1.11.4
+  - @bamboocss/types@1.11.4
+
 ## 1.11.3
 
 ### Patch Changes

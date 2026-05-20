@@ -1,5 +1,11 @@
 # @bamboocss/types
 
+## 1.11.4
+
+### Patch Changes
+
+- fix pre-commit hook leaving dirty state after commit
+
 ## 1.11.3
 
 ### Patch Changes
