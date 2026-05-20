@@ -20,6 +20,7 @@ __generated__
 .idea
 *.vsix
 .vercel
+.envrc
 
 ## Panda
 styled-system
