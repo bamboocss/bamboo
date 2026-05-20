@@ -4,7 +4,7 @@
   "commit": false,
   "fixed": [["@bamboocss/**"]],
   "linked": [],
-  "access": "restricted",
+  "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
   "ignore": ["sandbox-*", "playground", "website", "@bamboocss/fixture"]

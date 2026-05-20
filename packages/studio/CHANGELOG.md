@@ -1,5 +1,20 @@
 # @pandacss/studio
 
+## 1.11.2
+
+### Patch Changes
+
+- 0f49103: migrate build to tsdown
+- migrate to tsdown
+- Updated dependencies [0f49103]
+- Updated dependencies
+  - @bamboocss/astro-plugin-studio@1.11.2
+  - @bamboocss/token-dictionary@1.11.2
+  - @bamboocss/config@1.11.2
+  - @bamboocss/logger@1.11.2
+  - @bamboocss/shared@1.11.2
+  - @bamboocss/types@1.11.2
+
 ## 1.11.1
 
 ### Patch Changes
@@ -823,7 +838,7 @@
 
   ```ts
   // panda.config.ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from "@pandacss/dev";
 
   export default defineConfig({
     theme: {
@@ -834,25 +849,25 @@
             variants: {
               size: {
                 sm: {
-                  fontSize: 'sm',
+                  fontSize: "sm",
                 },
                 // ...
               },
             },
             compoundVariants: [
               {
-                size: 'sm',
-                css: { color: 'blue.100'},
+                size: "sm",
+                css: { color: "blue.100" },
               },
             ],
           },
         },
       },
     },
-  })
+  });
 
   // app.tsx
-  const Button = styled('button', button)
+  const Button = styled("button", button);
 
   const App = () => {
     return (
@@ -860,8 +875,8 @@
       // the `text_blue` was missing
       // ✅ it's now fixed -> `button button--size_sm text_blue`
       <Button size="sm">Click me</Button>
-    )
-  }
+    );
+  };
   ```
 
   - Add a `getVariantProps` helper to the recipes API (`cva` and `config recipes`)

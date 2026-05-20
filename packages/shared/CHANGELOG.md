@@ -1,5 +1,12 @@
 # @pandacss/shared
 
+## 1.11.2
+
+### Patch Changes
+
+- 0f49103: migrate build to tsdown
+- migrate to tsdown
+
 ## 1.11.1
 
 ## 1.11.0
@@ -76,43 +83,43 @@
   Add `createStyleContext` function to framework artifacts for React, Preact, Solid, and Vue frameworks
 
   ```tsx
-  import { sva } from 'styled-system/css'
-  import { createStyleContext } from 'styled-system/jsx'
+  import { sva } from "styled-system/css";
+  import { createStyleContext } from "styled-system/jsx";
 
   const card = sva({
-    slots: ['root', 'label'],
+    slots: ["root", "label"],
     base: {
       root: {
-        color: 'red',
-        bg: 'red.300',
+        color: "red",
+        bg: "red.300",
       },
       label: {
-        fontWeight: 'medium',
+        fontWeight: "medium",
       },
     },
     variants: {
       size: {
         sm: {
           root: {
-            padding: '10px',
+            padding: "10px",
           },
         },
         md: {
           root: {
-            padding: '20px',
+            padding: "20px",
           },
         },
       },
     },
     defaultVariants: {
-      size: 'sm',
+      size: "sm",
     },
-  })
+  });
 
-  const { withProvider, withContext } = createStyleContext(card)
+  const { withProvider, withContext } = createStyleContext(card);
 
-  const CardRoot = withProvider('div', 'root')
-  const CardLabel = withContext('label', 'label')
+  const CardRoot = withProvider("div", "root");
+  const CardLabel = withContext("label", "label");
   ```
 
   Then, use like this:
@@ -128,16 +135,17 @@
 ### Patch Changes
 
 - efa060d: Improve algorithm for deterministic property order.
+
   - Longhand (`padding`, `margin`, `inset`)
   - Shorthand of longhands (`padding-inline`, `margin-inline`)
   - Shorthand of shorthands (`padding-inline-start`, `margin-inline-start`)
 
   ```tsx
   css({
-    p: '4',
-    pr: '2',
-    px: '10',
-  })
+    p: "4",
+    pr: "2",
+    px: "10",
+  });
   ```
 
   Will result in the following css regardless of the order of the properties:
@@ -162,17 +170,17 @@
   **Before:**
 
   ```ts
-  export type Token = 'colors.green.400' | 'colors.red.400'
+  export type Token = "colors.green.400" | "colors.red.400";
 
-  export type ColorToken = 'green.400' | 'red.400'
+  export type ColorToken = "green.400" | "red.400";
   ```
 
   **After:**
 
   ```ts
-  export type Token = `colors.${ColorToken}`
+  export type Token = `colors.${ColorToken}`;
 
-  export type ColorToken = 'green.400' | 'red.400'
+  export type ColorToken = "green.400" | "red.400";
   ```
 
 ## 0.53.7
@@ -225,7 +233,7 @@
     & p {
       color: red;
     }
-  `
+  `;
   ```
 
   After:
@@ -235,7 +243,7 @@
     p {
       color: red;
     }
-  `
+  `;
   ```
 
   > **Good to know**: Internally, this will still convert to `p` to `& p`, but the generated css will work as expected.
@@ -308,21 +316,21 @@
 - 99870bb: Fix issue where setting the pattern `jsx` option with dot notation didn't work.
 
   ```jsx
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from "@pandacss/dev";
 
   export default defineConfig({
     // ...
     patterns: {
       extend: {
         grid: {
-          jsx: ['Form.Group', 'Grid'],
+          jsx: ["Form.Group", "Grid"],
         },
         stack: {
-          jsx: ['Form.Action', 'Stack'],
+          jsx: ["Form.Action", "Stack"],
         },
       },
     },
-  })
+  });
   ```
 
 ## 0.37.0
@@ -366,6 +374,7 @@
 ### Minor Changes
 
 - f0296249: - Sort the longhand/shorthand atomic rules in a deterministic order to prevent property conflicts
+
   - Automatically merge the `base` object in the `css` root styles in the runtime
   - This may be a breaking change depending on how your styles are created
 
@@ -373,10 +382,10 @@
 
   ```ts
   css({
-    padding: '1px',
-    paddingTop: '3px',
-    paddingBottom: '4px',
-  })
+    padding: "1px",
+    paddingTop: "3px",
+    paddingBottom: "4px",
+  });
   ```
 
   Will now always generate the following css:
@@ -446,6 +455,7 @@
 - 84304901: Improve performance, mostly for the CSS generation by removing a lot of `postcss` usage (and plugins).
 
   ## Public changes:
+
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
@@ -453,6 +463,7 @@
     this run.
 
   ## Internal changes:
+
   - `markImportant` fn from JS instead of walking through postcss AST nodes
   - use a fork of `stitches` `stringify` function instead of `postcss-css-in-js` to write the CSS string from a JS
     object
@@ -502,9 +513,9 @@
 
   ```ts
   css({
-    borderWidth: '[2px!]',
-    width: '[2px !important]',
-  })
+    borderWidth: "[2px!]",
+    width: "[2px !important]",
+  });
   ```
 
 ## 0.22.0
@@ -521,18 +532,18 @@
   and suffixing with `]`, e.g. writing `[123px]` as a value will bypass the token validation.
 
   ```ts
-  import { css } from '../styled-system/css'
+  import { css } from "../styled-system/css";
 
   css({
     // @ts-expect-error TS will throw when using from strictTokens: true
-    color: '#fff',
+    color: "#fff",
     // @ts-expect-error TS will throw when using from strictTokens: true
-    width: '100px',
+    width: "100px",
 
     // ✅ but this is now allowed:
-    bgColor: '[rgb(51 155 240)]',
-    fontSize: '[12px]',
-  })
+    bgColor: "[rgb(51 155 240)]",
+    fontSize: "[12px]",
+  });
   ```
 
 ## 0.20.1
@@ -575,35 +586,36 @@
   together and the styles will be merged correctly.
 
   ```jsx
-  const Box = styled('div', {
+  const Box = styled("div", {
     base: {
-      background: 'red.light',
-      color: 'white',
+      background: "red.light",
+      color: "white",
     },
-  })
+  });
 
   const ExtendedBox = styled(Box, {
-    base: { background: 'red.dark' },
-  })
+    base: { background: "red.dark" },
+  });
 
   // <ExtendedBox> will have a background of `red.dark` and a color of `white`
   ```
 
   **Limitation:** This feature does not allow compose mixed styled composition. A mixed styled composition happens when
   an element is created from a cva/inline cva, and another created from a config recipe.
+
   - CVA or Inline CVA + CVA or Inline CVA = ✅
   - Config Recipe + Config Recipe = ✅
   - CVA or Inline CVA + Config Recipe = ❌
 
   ```jsx
-  import { button } from '../styled-system/recipes'
+  import { button } from "../styled-system/recipes";
 
-  const Button = styled('div', button)
+  const Button = styled("div", button);
 
   // ❌ This will throw an error
   const ExtendedButton = styled(Button, {
-    base: { background: 'red.dark' },
-  })
+    base: { background: "red.dark" },
+  });
   ```
 
 ## 0.16.0
@@ -657,7 +669,14 @@
   Example:
 
   ```tsx
-  <h1 className={cx(css({ mx: '3', paddingTop: '4' }), css({ mx: '10', pt: '6' }))}>Will result in "mx_10 pt_6"</h1>
+  <h1
+    className={cx(
+      css({ mx: "3", paddingTop: "4" }),
+      css({ mx: "10", pt: "6" })
+    )}
+  >
+    Will result in "mx_10 pt_6"
+  </h1>
   ```
 
 ## 0.11.0
@@ -669,18 +688,19 @@
 - a669f4d5: Introduce new slot recipe features.
 
   Slot recipes are useful for styling composite or multi-part components easily.
+
   - `sva`: the slot recipe version of `cva`
   - `defineSlotRecipe`: the slot recipe version of `defineRecipe`
 
   **Definition**
 
   ```jsx
-  import { sva } from 'styled-system/css'
+  import { sva } from "styled-system/css";
 
   const button = sva({
-    slots: ['label', 'icon'],
+    slots: ["label", "icon"],
     base: {
-      label: { color: 'red', textDecoration: 'underline' },
+      label: { color: "red", textDecoration: "underline" },
     },
     variants: {
       rounded: {
@@ -688,33 +708,33 @@
       },
       size: {
         sm: {
-          label: { fontSize: 'sm' },
-          icon: { fontSize: 'sm' },
+          label: { fontSize: "sm" },
+          icon: { fontSize: "sm" },
         },
         lg: {
-          label: { fontSize: 'lg' },
-          icon: { fontSize: 'lg', color: 'pink' },
+          label: { fontSize: "lg" },
+          icon: { fontSize: "lg", color: "pink" },
         },
       },
     },
     defaultVariants: {
-      size: 'sm',
+      size: "sm",
     },
-  })
+  });
   ```
 
   **Usage**
 
   ```jsx
   export function App() {
-    const btnClass = button({ size: 'lg', rounded: true })
+    const btnClass = button({ size: "lg", rounded: true });
 
     return (
       <button>
         <p class={btnClass.label}> Label</p>
         <p class={btnClass.icon}> Icon</p>
       </button>
-    )
+    );
   }
   ```
 
@@ -724,6 +744,7 @@
   further reduce it.
 
   `config.jsxStyleProps`:
+
   - When set to 'all', all style props are allowed.
   - When set to 'minimal', only the `css` prop is allowed.
   - When set to 'none', no style props are allowed and therefore the `jsxFactory` will not be usable as a component:
@@ -761,19 +782,19 @@
 
   ```ts
   const shorthands = {
-    flexDir: 'flexDirection',
-  }
+    flexDir: "flexDirection",
+  };
 
   const obj = {
-    flexDir: 'row',
+    flexDir: "row",
     flexDirection: undefined,
-  }
+  };
 
   const result = walkObject(obj, (value) => value, {
     getKey(prop) {
-      return shorthands[prop] ?? prop
+      return shorthands[prop] ?? prop;
     },
-  })
+  });
   ```
 
   This would set the `flexDirection` to `row` (using `getKey`) and then set the `flexDirection` property again, this
@@ -794,8 +815,8 @@
   // panda.config.ts
   export default defineConfig({
     //...
-    syntax: 'template-literal',
-  })
+    syntax: "template-literal",
+  });
   ```
 
   > For existing projects, you might need to run the `panda codegen --clean`
@@ -871,11 +892,11 @@ This hook is called right before writing the codegen files to disk. You can use 
 export default defineConfig({
   // ...
   hooks: {
-    'codegen:prepare': ({ artifacts, changed }) => {
+    "codegen:prepare": ({ artifacts, changed }) => {
       // do something with the emitted js/d.ts files
     },
   },
-})
+});
 ```
 
 - 49c760cd: Fix issue where responsive array in css and cva doesn't generate the correct classname
@@ -903,6 +924,7 @@ export default defineConfig({
 - 84304901: Improve performance, mostly for the CSS generation by removing a lot of `postcss` usage (and plugins).
 
   ## Public changes:
+
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
@@ -910,6 +932,7 @@ export default defineConfig({
     this run.
 
   ## Internal changes:
+
   - `markImportant` fn from JS instead of walking through postcss AST nodes
   - use a fork of `stitches` `stringify` function instead of `postcss-css-in-js` to write the CSS string from a JS
     object
@@ -959,9 +982,9 @@ export default defineConfig({
 
   ```ts
   css({
-    borderWidth: '[2px!]',
-    width: '[2px !important]',
-  })
+    borderWidth: "[2px!]",
+    width: "[2px !important]",
+  });
   ```
 
 ## 0.22.0
@@ -978,18 +1001,18 @@ export default defineConfig({
   and suffixing with `]`, e.g. writing `[123px]` as a value will bypass the token validation.
 
   ```ts
-  import { css } from '../styled-system/css'
+  import { css } from "../styled-system/css";
 
   css({
     // @ts-expect-error TS will throw when using from strictTokens: true
-    color: '#fff',
+    color: "#fff",
     // @ts-expect-error TS will throw when using from strictTokens: true
-    width: '100px',
+    width: "100px",
 
     // ✅ but this is now allowed:
-    bgColor: '[rgb(51 155 240)]',
-    fontSize: '[12px]',
-  })
+    bgColor: "[rgb(51 155 240)]",
+    fontSize: "[12px]",
+  });
   ```
 
 ## 0.20.1
@@ -1032,35 +1055,36 @@ export default defineConfig({
   together and the styles will be merged correctly.
 
   ```jsx
-  const Box = styled('div', {
+  const Box = styled("div", {
     base: {
-      background: 'red.light',
-      color: 'white',
+      background: "red.light",
+      color: "white",
     },
-  })
+  });
 
   const ExtendedBox = styled(Box, {
-    base: { background: 'red.dark' },
-  })
+    base: { background: "red.dark" },
+  });
 
   // <ExtendedBox> will have a background of `red.dark` and a color of `white`
   ```
 
   **Limitation:** This feature does not allow compose mixed styled composition. A mixed styled composition happens when
   an element is created from a cva/inline cva, and another created from a config recipe.
+
   - CVA or Inline CVA + CVA or Inline CVA = ✅
   - Config Recipe + Config Recipe = ✅
   - CVA or Inline CVA + Config Recipe = ❌
 
   ```jsx
-  import { button } from '../styled-system/recipes'
+  import { button } from "../styled-system/recipes";
 
-  const Button = styled('div', button)
+  const Button = styled("div", button);
 
   // ❌ This will throw an error
   const ExtendedButton = styled(Button, {
-    base: { background: 'red.dark' },
-  })
+    base: { background: "red.dark" },
+  });
   ```
 
 ## 0.16.0
@@ -1114,7 +1138,14 @@ export default defineConfig({
   Example:
 
   ```tsx
-  <h1 className={cx(css({ mx: '3', paddingTop: '4' }), css({ mx: '10', pt: '6' }))}>Will result in "mx_10 pt_6"</h1>
+  <h1
+    className={cx(
+      css({ mx: "3", paddingTop: "4" }),
+      css({ mx: "10", pt: "6" })
+    )}
+  >
+    Will result in "mx_10 pt_6"
+  </h1>
   ```
 
 ## 0.11.0
@@ -1126,18 +1157,19 @@ export default defineConfig({
 - a669f4d5: Introduce new slot recipe features.
 
   Slot recipes are useful for styling composite or multi-part components easily.
+
   - `sva`: the slot recipe version of `cva`
   - `defineSlotRecipe`: the slot recipe version of `defineRecipe`
 
   **Definition**
 
   ```jsx
-  import { sva } from 'styled-system/css'
+  import { sva } from "styled-system/css";
 
   const button = sva({
-    slots: ['label', 'icon'],
+    slots: ["label", "icon"],
     base: {
-      label: { color: 'red', textDecoration: 'underline' },
+      label: { color: "red", textDecoration: "underline" },
     },
     variants: {
       rounded: {
@@ -1145,33 +1177,33 @@ export default defineConfig({
       },
       size: {
         sm: {
-          label: { fontSize: 'sm' },
-          icon: { fontSize: 'sm' },
+          label: { fontSize: "sm" },
+          icon: { fontSize: "sm" },
         },
         lg: {
-          label: { fontSize: 'lg' },
-          icon: { fontSize: 'lg', color: 'pink' },
+          label: { fontSize: "lg" },
+          icon: { fontSize: "lg", color: "pink" },
         },
       },
     },
     defaultVariants: {
-      size: 'sm',
+      size: "sm",
     },
-  })
+  });
   ```
 
   **Usage**
 
   ```jsx
   export function App() {
-    const btnClass = button({ size: 'lg', rounded: true })
+    const btnClass = button({ size: "lg", rounded: true });
 
     return (
       <button>
         <p class={btnClass.label}> Label</p>
         <p class={btnClass.icon}> Icon</p>
       </button>
-    )
+    );
   }
   ```
 
@@ -1181,6 +1213,7 @@ export default defineConfig({
   further reduce it.
 
   `config.jsxStyleProps`:
+
   - When set to 'all', all style props are allowed.
   - When set to 'minimal', only the `css` prop is allowed.
   - When set to 'none', no style props are allowed and therefore the `jsxFactory` will not be usable as a component:
@@ -1218,19 +1251,19 @@ export default defineConfig({
 
   ```ts
   const shorthands = {
-    flexDir: 'flexDirection',
-  }
+    flexDir: "flexDirection",
+  };
 
   const obj = {
-    flexDir: 'row',
+    flexDir: "row",
     flexDirection: undefined,
-  }
+  };
 
   const result = walkObject(obj, (value) => value, {
     getKey(prop) {
-      return shorthands[prop] ?? prop
+      return shorthands[prop] ?? prop;
     },
-  })
+  });
   ```
 
   This would set the `flexDirection` to `row` (using `getKey`) and then set the `flexDirection` property again, this
@@ -1251,8 +1284,8 @@ export default defineConfig({
   // panda.config.ts
   export default defineConfig({
     //...
-    syntax: 'template-literal',
-  })
+    syntax: "template-literal",
+  });
   ```
 
   > For existing projects, you might need to run the `panda codegen --clean`

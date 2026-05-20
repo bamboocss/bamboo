@@ -1,5 +1,15 @@
 # @pandacss/plugin-vue
 
+## 1.11.2
+
+### Patch Changes
+
+- 0f49103: migrate build to tsdown
+- migrate to tsdown
+- Updated dependencies [0f49103]
+- Updated dependencies
+  - @bamboocss/types@1.11.2
+
 ## 1.11.1
 
 ### Patch Changes
