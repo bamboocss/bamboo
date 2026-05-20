@@ -1,20 +1,19 @@
-import { getPatternStyles, patternFns } from '../helpers.mjs'
-import { css } from '../css/index.mjs'
+import { getPatternStyles, patternFns } from '../helpers.mjs';
+import { css } from '../css/index.mjs';
 
 const spacerConfig = {
-  transform(props, { map, isCssUnit, isCssVar }) {
-    const { size, ...rest } = props
-    return {
-      alignSelf: 'stretch',
-      justifySelf: 'stretch',
-      flex: map(size, (v) => {
-        if (v == null) return '1'
-        return `0 0 ${isCssUnit(v) || isCssVar(v) ? v : `token(spacing.${v}, ${v})`}`
-      }),
-      ...rest,
-    }
-  },
-}
+transform(props, { map, isCssUnit, isCssVar }) {
+	const { size, ...rest } = props;
+	return {
+		alignSelf: "stretch",
+		justifySelf: "stretch",
+		flex: map(size, (v) => {
+			if (v == null) return "1";
+			return `0 0 ${isCssUnit(v) || isCssVar(v) ? v : `token(spacing.${v}, ${v})`}`;
+		}),
+		...rest
+	};
+}}
 
 export const getSpacerStyle = (styles = {}) => {
   const _styles = getPatternStyles(spacerConfig, styles)

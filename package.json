@@ -45,7 +45,6 @@
     "cross-env": "10.1.0",
     "happy-dom": "20.0.11",
     "husky": "9.1.7",
-    "lint-staged": "16.2.7",
     "mdx-local-link-checker": "2.1.1",
     "rimraf": "5.0.10",
     "ts-morph": "28.0.0",
@@ -61,13 +60,6 @@
     "oxfmt": "0.51.0",
     "oxlint": "1.66.0",
     "vite-plugin-virtual": "^0.4.0"
-  },
-  "lint-staged": {
-    "packages/**/*.{ts,tsx}": [
-      "pnpm prepare-studio",
-      "pnpm fmt:fix",
-      "git add --all packages/studio/"
-    ]
   },
   "packageManager": "pnpm@11.0.8",
   "pnpm": {

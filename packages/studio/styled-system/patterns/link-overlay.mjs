@@ -1,20 +1,19 @@
-import { getPatternStyles, patternFns } from '../helpers.mjs'
-import { css } from '../css/index.mjs'
+import { getPatternStyles, patternFns } from '../helpers.mjs';
+import { css } from '../css/index.mjs';
 
 const linkOverlayConfig = {
-  transform(props) {
-    return {
-      _before: {
-        content: '""',
-        position: 'absolute',
-        inset: '0',
-        zIndex: '0',
-        ...props['_before'],
-      },
-      ...props,
-    }
-  },
-}
+transform(props) {
+	return {
+		_before: {
+			content: "\"\"",
+			position: "absolute",
+			inset: "0",
+			zIndex: "0",
+			...props["_before"]
+		},
+		...props
+	};
+}}
 
 export const getLinkOverlayStyle = (styles = {}) => {
   const _styles = getPatternStyles(linkOverlayConfig, styles)

@@ -1,1 +1,3 @@
-npx lint-staged
+pnpm fmt:fix
+pnpm prepare-studio
+git add --all packages/studio/
