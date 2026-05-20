@@ -52,8 +52,8 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsdown 'src/*.ts' --format=esm,cjs --dts --shims",
-    "build-fast": "tsdown --dts=false 'src/*.ts' --format=esm,cjs --shims",
+    "build": "tsdown --dts",
+    "build-fast": "tsdown --dts=false",
     "dev": "pnpm build-fast --watch src"
   },
   "dependencies": {

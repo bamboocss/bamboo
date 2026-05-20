@@ -381,7 +381,6 @@ describe('bundle config', () => {
           },
         },
         "dependencies": [
-          "packages/cli/dist/chunk-C2EiDwsr.cjs",
           "packages/shared/dist/index.cjs",
           "packages/cli/dist/index.cjs",
           "packages/config/__tests__/samples/common/tokens.ts",

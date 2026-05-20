@@ -1,7 +1,11 @@
 import { defineConfig } from 'tsdown'
 
-export default defineConfig({
-  entry: ['src/index.ts', 'src/merge-config.ts', 'src/diff-config.ts', 'src/resolve-ts-path-pattern.ts'],
-  format: ['cjs', 'esm'],
-  shims: true,
-})
+const entries = ['src/index.ts', 'src/merge-config.ts', 'src/diff-config.ts', 'src/resolve-ts-path-pattern.ts']
+
+export default defineConfig(
+  entries.map((entry) => ({
+    entry: [entry],
+    format: ['cjs', 'esm'] as const,
+    shims: true,
+  })),
+)
