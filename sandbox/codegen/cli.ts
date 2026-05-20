@@ -65,7 +65,7 @@ cli
     for (const command of commands) {
       try {
         await runCommand(command.cmd, command.env)
-      } catch (error) {
+      } catch {
         console.error('Some commands failed:')
         process.exit(1)
       }

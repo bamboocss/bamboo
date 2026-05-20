@@ -35,7 +35,7 @@ console.timeEnd('bundle-types')
 async function getOrCreateDir(dir: string) {
   try {
     await fs.mkdir(dir)
-  } catch (e) {
+  } catch {
     // ignore
   }
 }

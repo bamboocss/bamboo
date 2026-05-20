@@ -18,7 +18,7 @@ const profilerResults = function (...args) {
   console.groupEnd()
 }
 
-export const Profiler = ({ children, id, name, onRerender }) => {
+export const Profiler = ({ children, id, name: _name, onRerender }) => {
   const [value, setValue] = useState(0)
 
   const onClick = useCallback(() => {

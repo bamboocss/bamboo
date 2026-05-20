@@ -22,9 +22,9 @@
     "codegen": "pnpm --filter=./sandbox/codegen",
     "test:codegen": "pnpm codegen test && pnpm codegen typecheck",
     "test-watch": "vitest --watch -u",
-    "lint": "eslint packages",
-    "fmt": "oxfmt --check packages",
-    "fmt:fix": "oxfmt packages",
+    "lint": "oxlint .",
+    "fmt": "oxfmt --check .",
+    "fmt:fix": "oxfmt .",
     "typecheck": "tsc --noEmit",
     "release": "changeset publish",
     "release-dev": "changeset version --snapshot dev && changeset publish --tag dev",
@@ -55,15 +55,9 @@
     "vitest": "4.0.15"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.1",
-    "@types/eslint": "9.6.1",
     "@types/node": "24.10.1",
-    "@typescript-eslint/eslint-plugin": "8.58.2",
-    "@typescript-eslint/parser": "8.58.2",
-    "eslint": "9.39.1",
-    "globals": "^17.0.0",
     "oxfmt": "0.51.0",
-    "typescript-eslint": "8.58.2",
+    "oxlint": "1.66.0",
     "vite-plugin-virtual": "^0.4.0"
   },
   "lint-staged": {

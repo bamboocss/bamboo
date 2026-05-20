@@ -1,0 +1,43 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "categories": {
+    "correctness": "error"
+  },
+  "plugins": ["typescript"],
+  "ignorePatterns": [
+    "**/*.d.ts",
+    "**/*.js",
+    "**/*.cjs",
+    "**/*.mjs",
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/coverage/**",
+    "**/styled-system/**",
+    "**/*-outdir/**",
+    "**/outdir/**"
+  ],
+  "env": {
+    "node": true,
+    "browser": true
+  },
+  "rules": {
+    "no-prototype-builtins": "off",
+    "typescript/no-explicit-any": "off",
+    "typescript/no-non-null-assertion": "off",
+    "typescript/ban-ts-comment": "off",
+    "typescript/no-require-imports": "off",
+    "typescript/no-wrapper-object-types": "off",
+    "no-unused-expressions": "off",
+    "no-unassigned-vars": "off",
+    "no-unsafe-optional-chaining": "off",
+    "typescript/no-unnecessary-parameter-property-assignment": "off",
+    "typescript/no-unused-vars": [
+      "error",
+      {
+        "varsIgnorePattern": "^_",
+        "argsIgnorePattern": "^_",
+        "ignoreRestSiblings": true
+      }
+    ]
+  }
+}

@@ -13,7 +13,7 @@ export default function App() {
   )
 }
 
-const CvaButtonProfiler = () => {
+const _CvaButtonProfiler = () => {
   const [key, setKey] = useState(null)
   return (
     <Profiler name="bamboo" id="bamboo" onRerender={(newKey: any) => setKey(newKey)}>

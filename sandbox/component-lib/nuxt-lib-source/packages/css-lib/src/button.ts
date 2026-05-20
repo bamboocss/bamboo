@@ -1,4 +1,4 @@
-import { css, cva } from '@sandbox-nuxt-lib-source/styled-system/css'
+import { cva } from '@sandbox-nuxt-lib-source/styled-system/css'
 
 export const butt_styles = cva({
   base: {

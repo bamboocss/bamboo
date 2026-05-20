@@ -22,6 +22,5 @@
       "styled-system/*": ["./styled-system/*"]
     }
   },
-  "files": ["./.eslintrc.cjs"],
   "include": ["src", "./*.d.ts", "bamboo.config.ts"]
 }
