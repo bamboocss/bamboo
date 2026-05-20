@@ -21,6 +21,7 @@ __generated__
 *.vsix
 .vercel
 .envrc
+.npmrc
 
 ## Panda
 styled-system

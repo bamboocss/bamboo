@@ -1,4 +1,4 @@
-import { isCssProperty } from './is-valid-prop.mjs';
+import { isCssProperty } from './is-valid-prop.mjs'
 
 export const defaultShouldForwardProp = (prop, variantKeys) => !variantKeys.includes(prop) && !isCssProperty(prop)
 

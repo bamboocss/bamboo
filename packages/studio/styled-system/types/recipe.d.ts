@@ -1,6 +1,6 @@
 /* eslint-disable */
-import type {  RecipeRule  } from './static-css';
-import type {  SystemStyleObject, DistributiveOmit, Pretty  } from './system-types';
+import type { RecipeRule } from './static-css'
+import type { SystemStyleObject, DistributiveOmit, Pretty } from './system-types'
 
 type StringToBoolean<T> = T extends 'true' | 'false' ? boolean : T
 
