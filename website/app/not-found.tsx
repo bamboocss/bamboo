@@ -19,7 +19,7 @@ export default function Page() {
             <Link
               className={css({
                 fontWeight: 'medium',
-                textDecoration: 'underline'
+                textDecoration: 'underline',
               })}
               href="/docs"
             >

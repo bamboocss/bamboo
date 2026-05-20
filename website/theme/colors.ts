@@ -2,7 +2,7 @@ import { defineTokens } from '@bamboocss/dev'
 
 const makePrimaryColor = (l: number) => {
   return {
-    value: `hsl(var(--nextra-primary-hue) 100% ${l}%)`
+    value: `hsl(var(--nextra-primary-hue) 100% ${l}%)`,
   }
 }
 
@@ -22,7 +22,7 @@ export const colors = defineTokens.colors({
     700: makePrimaryColor(39),
     750: makePrimaryColor(35),
     800: makePrimaryColor(32),
-    900: makePrimaryColor(24)
+    900: makePrimaryColor(24),
   } as any,
   gray: {
     50: { value: '#f9fafb' },
@@ -35,7 +35,7 @@ export const colors = defineTokens.colors({
     700: { value: '#374151' },
     800: { value: '#1f2937' },
     900: { value: '#111827' },
-    950: { value: '#030712' }
+    950: { value: '#030712' },
   },
   neutral: {
     50: { value: '#fafafa' },
@@ -48,7 +48,7 @@ export const colors = defineTokens.colors({
     700: { value: '#404040' },
     800: { value: '#262626' },
     900: { value: '#171717' },
-    950: { value: '#0a0a0a' }
+    950: { value: '#0a0a0a' },
   },
   red: {
     50: { value: '#fef2f2' },
@@ -61,7 +61,7 @@ export const colors = defineTokens.colors({
     700: { value: '#b91c1c' },
     800: { value: '#991b1b' },
     900: { value: '#7f1d1d' },
-    950: { value: '#450a0a' }
+    950: { value: '#450a0a' },
   },
   orange: {
     50: { value: '#fff7ed' },
@@ -74,7 +74,7 @@ export const colors = defineTokens.colors({
     700: { value: '#c2410c' },
     800: { value: '#9a3412' },
     900: { value: '#7c2d12' },
-    950: { value: '#431407' }
+    950: { value: '#431407' },
   },
   yellow: {
     50: { value: '#fefce8' },
@@ -87,7 +87,7 @@ export const colors = defineTokens.colors({
     700: { value: '#a16207' },
     800: { value: '#854d0e' },
     900: { value: '#713f12' },
-    950: { value: '#422006' }
+    950: { value: '#422006' },
   },
   blue: {
     50: { value: '#eff6ff' },
@@ -100,7 +100,7 @@ export const colors = defineTokens.colors({
     700: { value: '#1d4ed8' },
     800: { value: '#1e40af' },
     900: { value: '#1e3a8a' },
-    950: { value: '#172554' }
+    950: { value: '#172554' },
   },
   blackAlpha: {
     50: { value: 'rgba(0, 0, 0, 0.04)' },
@@ -112,7 +112,7 @@ export const colors = defineTokens.colors({
     600: { value: 'rgba(0, 0, 0, 0.48)' },
     700: { value: 'rgba(0, 0, 0, 0.64)' },
     800: { value: 'rgba(0, 0, 0, 0.80)' },
-    900: { value: 'rgba(0, 0, 0, 0.92)' }
+    900: { value: 'rgba(0, 0, 0, 0.92)' },
   },
   whiteAlpha: {
     50: { value: 'rgba(255, 255, 255, 0.04)' },
@@ -124,6 +124,6 @@ export const colors = defineTokens.colors({
     600: { value: 'rgba(255, 255, 255, 0.48)' },
     700: { value: 'rgba(255, 255, 255, 0.64)' },
     800: { value: 'rgba(255, 255, 255, 0.80)' },
-    900: { value: 'rgba(255, 255, 255, 0.92)' }
-  }
+    900: { value: 'rgba(255, 255, 255, 0.92)' },
+  },
 })

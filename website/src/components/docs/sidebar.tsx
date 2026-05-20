@@ -38,12 +38,12 @@ export function Sidebar({ slug: currentSlug }: Props) {
         slug: item.external ? item.href || '' : `${section.url}/${item.url}`,
         external: item.external,
         href: item.href,
-        tag: item.tag
-      }))
+        tag: item.tag,
+      })),
     })) || []
 
   const toggleSection = (slug: string) => {
-    setExpandedSections(prev => {
+    setExpandedSections((prev) => {
       const next = new Set(prev)
       if (next.has(slug)) {
         next.delete(slug)
@@ -59,12 +59,12 @@ export function Sidebar({ slug: currentSlug }: Props) {
   }
 
   const isSectionActive = (section: SidebarItem) => {
-    return section.children?.some(child => isActive(child.slug)) || false
+    return section.children?.some((child) => isActive(child.slug)) || false
   }
 
   return (
     <Stack as="nav" gap="1">
-      {sidebarStructure.map(section => {
+      {sidebarStructure.map((section) => {
         const isExpanded = expandedSections.has(section.slug) || isSectionActive(section)
 
         return (
@@ -85,9 +85,9 @@ export function Sidebar({ slug: currentSlug }: Props) {
                 transitionProperty: 'background',
                 transitionDuration: '200ms',
                 _hover: {
-                  bg: 'bg.subtle'
+                  bg: 'bg.subtle',
                 },
-                cursor: 'pointer'
+                cursor: 'pointer',
               })}
             >
               <HStack>
@@ -95,18 +95,13 @@ export function Sidebar({ slug: currentSlug }: Props) {
                 {section.tag && <Badge variant="solid">{section.tag}</Badge>}
               </HStack>
               {section.children && (
-                <Box
-                  as={isExpanded ? ChevronDownIcon : ChevronRightIcon}
-                  w="4"
-                  h="4"
-                  color="fg.muted"
-                />
+                <Box as={isExpanded ? ChevronDownIcon : ChevronRightIcon} w="4" h="4" color="fg.muted" />
               )}
             </button>
 
             {isExpanded && section.children && (
               <Stack gap="0.5" mt="1">
-                {section.children.map(item => {
+                {section.children.map((item) => {
                   const linkStyles = css({
                     display: 'flex',
                     alignItems: 'center',
@@ -123,8 +118,8 @@ export function Sidebar({ slug: currentSlug }: Props) {
                     _current: {
                       color: 'fg',
                       bg: 'accent.subtle',
-                      fontWeight: 'semibold'
-                    }
+                      fontWeight: 'semibold',
+                    },
                   })
 
                   if (item.external) {

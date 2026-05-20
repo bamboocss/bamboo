@@ -11,5 +11,5 @@ export const codeStyle = css({
   fontFamily: 'mono',
   fontSize: 'md',
   lineHeight: '1.7',
-  fontWeight: '500'
+  fontWeight: '500',
 })

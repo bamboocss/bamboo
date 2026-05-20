@@ -1,49 +1,21 @@
 export const SolidjsLogo = () => (
   <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <linearGradient
-      id="solidjs_svg__a"
-      gradientUnits="userSpaceOnUse"
-      x1="9.301"
-      y1="5.578"
-      x2="33.301"
-      y2="17.241"
-    >
+    <linearGradient id="solidjs_svg__a" gradientUnits="userSpaceOnUse" x1="9.301" y1="5.578" x2="33.301" y2="17.241">
       <stop offset="0.1" stopColor="#76B3E1"></stop>
       <stop offset="0.3" stopColor="#DCF2FD"></stop>
       <stop offset="1" stopColor="#76B3E1"></stop>
     </linearGradient>
-    <linearGradient
-      id="solidjs_svg__b"
-      gradientUnits="userSpaceOnUse"
-      x1="22.468"
-      y1="11.284"
-      x2="18.265"
-      y2="25.279"
-    >
+    <linearGradient id="solidjs_svg__b" gradientUnits="userSpaceOnUse" x1="22.468" y1="11.284" x2="18.265" y2="25.279">
       <stop offset="0" stopColor="#76B3E1"></stop>
       <stop offset="0.5" stopColor="#4377BB"></stop>
       <stop offset="1" stopColor="#1F3B77"></stop>
     </linearGradient>
-    <linearGradient
-      id="solidjs_svg__c"
-      gradientUnits="userSpaceOnUse"
-      x1="7.547"
-      y1="17.376"
-      x2="31.817"
-      y2="33.877"
-    >
+    <linearGradient id="solidjs_svg__c" gradientUnits="userSpaceOnUse" x1="7.547" y1="17.376" x2="31.817" y2="33.877">
       <stop offset="0" stopColor="#315AA9"></stop>
       <stop offset="0.5" stopColor="#518AC8"></stop>
       <stop offset="1" stopColor="#315AA9"></stop>
     </linearGradient>
-    <linearGradient
-      id="solidjs_svg__d"
-      gradientUnits="userSpaceOnUse"
-      x1="18.496"
-      y1="19.361"
-      x2="8.704"
-      y2="55.275"
-    >
+    <linearGradient id="solidjs_svg__d" gradientUnits="userSpaceOnUse" x1="18.496" y1="19.361" x2="8.704" y2="55.275">
       <stop offset="0" stopColor="#4377BB"></stop>
       <stop offset="0.5" stopColor="#1A336B"></stop>
       <stop offset="1" stopColor="#1A336B"></stop>

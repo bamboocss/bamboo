@@ -83,7 +83,7 @@ const Button = styled.button({
   backgroundColor: '#fff',
   border: '1px solid #000',
   color: '#000',
-  padding: '0.5rem 1rem'
+  padding: '0.5rem 1rem',
 })
 ```
 
@@ -98,8 +98,8 @@ const Button = styled('button', {
     backgroundColor: '#fff',
     border: '1px solid #000',
     color: '#000',
-    padding: '0.5rem 1rem'
-  }
+    padding: '0.5rem 1rem',
+  },
 })
 ```
 
@@ -109,13 +109,13 @@ In styled-components, you can interpolate the component's props to conditionally
 
 ```jsx
 const Button = styled.button`
-  ${props =>
+  ${(props) =>
     props.color === 'violet' &&
     `
     background-color: 'blueviolet'
   `}
 
-  ${props =>
+  ${(props) =>
     props.color === 'gray' &&
     `
     background-color: 'gainsboro'
@@ -157,8 +157,8 @@ import { ThemeProvider } from 'styled-components'
 const theme = {
   colors: {
     primary: 'blue',
-    secondary: 'red'
-  }
+    secondary: 'red',
+  },
 }
 
 const App = () => (
@@ -181,11 +181,11 @@ export default defineConfig({
       tokens: {
         colors: {
           primary: { value: 'blue' },
-          secondary: { value: 'red' }
-        }
-      }
-    }
-  }
+          secondary: { value: 'red' },
+        },
+      },
+    },
+  },
 })
 ```
 
@@ -201,7 +201,7 @@ import styled from 'styled-components'
 const StyledLink = styled.a(({ theme }) => ({
   color: theme.colors.primary,
   display: 'block',
-  textDecoration: 'none'
+  textDecoration: 'none',
 }))
 
 // theme.d.ts
@@ -230,11 +230,11 @@ export default defineConfig({
         // add custom colors
         colors: {
           primary: { value: 'blue' },
-          secondary: { value: 'red' }
-        }
-      }
-    }
-  }
+          secondary: { value: 'red' },
+        },
+      },
+    },
+  },
 })
 
 // link.tsx
@@ -244,8 +244,8 @@ const StyledLink = styled('a', {
   base: {
     color: 'primary',
     display: 'block',
-    textDecoration: 'none'
-  }
+    textDecoration: 'none',
+  },
 })
 ```
 
@@ -304,8 +304,8 @@ const Button = styled.button({
   padding: '0.5rem 1rem',
 
   [media.greaterThan('medium')]: {
-    padding: '1rem 2rem'
-  }
+    padding: '1rem 2rem',
+  },
 })
 ```
 
@@ -319,8 +319,8 @@ const Button = styled('button', {
     backgroundColor: '#fff',
     border: '1px solid #000',
     color: '#000',
-    padding: { base: '0.5rem 1rem', md: '1rem 2rem' }
-  }
+    padding: { base: '0.5rem 1rem', md: '1rem 2rem' },
+  },
 })
 ```
 
@@ -350,9 +350,9 @@ export default defineConfig({
   globalCss: {
     body: {
       margin: 0,
-      padding: 0
-    }
-  }
+      padding: 0,
+    },
+  },
 })
 ```
 
@@ -440,15 +440,15 @@ export default defineConfig({
       keyframes: {
         rotate: {
           from: {
-            transform: 'rotate(0deg)'
+            transform: 'rotate(0deg)',
           },
           to: {
-            transform: 'rotate(360deg)'
-          }
-        }
-      }
-    }
-  }
+            transform: 'rotate(360deg)',
+          },
+        },
+      },
+    },
+  },
 })
 
 // usage

@@ -36,23 +36,23 @@ const checkbox = sva({
   base: {
     root: { display: 'flex', alignItems: 'center', gap: '2' },
     control: { borderWidth: '1px', borderRadius: 'sm' },
-    label: { marginStart: '2' }
+    label: { marginStart: '2' },
   },
   variants: {
     size: {
       sm: {
         control: { width: '8', height: '8' },
-        label: { fontSize: 'sm' }
+        label: { fontSize: 'sm' },
       },
       md: {
         control: { width: '10', height: '10' },
-        label: { fontSize: 'md' }
-      }
-    }
+        label: { fontSize: 'md' },
+      },
+    },
   },
   defaultVariants: {
-    size: 'sm'
-  }
+    size: 'sm',
+  },
 })
 ```
 
@@ -176,11 +176,11 @@ const button = sva({
       _hover: {
         // v--- 🎯 this will target the `text` slot
         '& .btn__text': {
-          color: 'white'
-        }
-      }
-    }
-  }
+          color: 'white',
+        },
+      },
+    },
+  },
 })
 ```
 
@@ -251,7 +251,7 @@ First, create a shared context for ths styles
 'use client'
 import { createContext, forwardRef, useContext } from 'react'
 
-export const createStyleContext = recipe => {
+export const createStyleContext = (recipe) => {
   const StyleContext = createContext(null)
 
   const withProvider = (Component, part) => {
@@ -330,23 +330,23 @@ export const checkboxRecipe = defineSlotRecipe({
   base: {
     root: { display: 'flex', alignItems: 'center', gap: '2' },
     control: { borderWidth: '1px', borderRadius: 'sm' },
-    label: { marginStart: '2' }
+    label: { marginStart: '2' },
   },
   variants: {
     size: {
       sm: {
         control: { width: '8', height: '8' },
-        label: { fontSize: 'sm' }
+        label: { fontSize: 'sm' },
       },
       md: {
         control: { width: '10', height: '10' },
-        label: { fontSize: 'md' }
-      }
-    }
+        label: { fontSize: 'md' },
+      },
+    },
   },
   defaultVariants: {
-    size: 'sm'
-  }
+    size: 'sm',
+  },
 })
 ```
 
@@ -364,10 +364,10 @@ export default defineConfig({
   theme: {
     extend: {
       slotRecipes: {
-        checkbox: checkboxRecipe
-      }
-    }
-  }
+        checkbox: checkboxRecipe,
+      },
+    },
+  },
 })
 ```
 
@@ -474,7 +474,7 @@ import { defineParts, definetRecipe } from '@bamboocss/dev'
 const parts = defineParts({
   root: { selector: '& [data-part="root"]' },
   control: { selector: '& [data-part="control"]' },
-  label: { selector: '& [data-part="label"]' }
+  label: { selector: '& [data-part="label"]' },
 })
 
 export const checkboxRecipe = defineRecipe({
@@ -483,22 +483,22 @@ export const checkboxRecipe = defineRecipe({
   base: parts({
     root: { display: 'flex', alignItems: 'center', gap: '2' },
     control: { borderWidth: '1px', borderRadius: 'sm' },
-    label: { marginStart: '2' }
+    label: { marginStart: '2' },
   }),
   variants: {
     size: {
       sm: parts({
         control: { width: '8', height: '8' },
-        label: { fontSize: 'sm' }
+        label: { fontSize: 'sm' },
       }),
       md: parts({
         control: { width: '10', height: '10' },
-        label: { fontSize: 'md' }
-      })
-    }
+        label: { fontSize: 'md' },
+      }),
+    },
   },
   defaultVariants: {
-    size: 'sm'
-  }
+    size: 'sm',
+  },
 })
 ```

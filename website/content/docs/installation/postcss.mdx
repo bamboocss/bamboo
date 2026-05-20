@@ -47,8 +47,8 @@ Add bamboo to your `postcss.config.cjs` file, or wherever PostCSS is configured 
 ```js
 module.exports = {
   plugins: {
-    '@bamboocss/dev/postcss': {}
-  }
+    '@bamboocss/dev/postcss': {},
+  },
 }
 ```
 
@@ -63,7 +63,7 @@ export default defineConfig({
   preflight: true,
   include: ['./src/**/*.{ts,tsx,js,jsx}', './pages/**/*.{ts,tsx,js,jsx}'],
   exclude: [],
-  outdir: 'styled-system'
+  outdir: 'styled-system',
 })
 ```
 

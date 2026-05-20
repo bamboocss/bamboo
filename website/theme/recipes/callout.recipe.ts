@@ -17,19 +17,19 @@ export const calloutRecipe = defineRecipe({
       borderRadius: 'lg',
       borderWidth: '1px',
       py: '2',
-      px: '4'
+      px: '4',
     },
     icon: {
       userSelect: 'none',
       textStyle: 'xl',
       pe: '2',
-      fontFamily: '"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"'
+      fontFamily: '"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
     },
     content: {
       width: '100%',
       minWidth: 0,
-      lineHeight: '1.75rem'
-    }
+      lineHeight: '1.75rem',
+    },
   }),
   variants: {
     type: {
@@ -41,9 +41,9 @@ export const calloutRecipe = defineRecipe({
           _dark: {
             borderColor: 'rgb(251 146 60 / 0.3)', // opacity modifier
             bg: 'rgb(251 146 60 / 0.2)',
-            color: 'orange.300'
-          }
-        }
+            color: 'orange.300',
+          },
+        },
       }),
       error: parts({
         root: {
@@ -53,9 +53,9 @@ export const calloutRecipe = defineRecipe({
           _dark: {
             borderColor: 'rgb(248 113 113 / 0.3)',
             bg: 'rgb(127 29 29 / 0.3)',
-            color: 'red.200'
-          }
-        }
+            color: 'red.200',
+          },
+        },
       }),
       info: parts({
         root: {
@@ -65,9 +65,9 @@ export const calloutRecipe = defineRecipe({
           _dark: {
             borderColor: 'rgb(191 219 254 / 0.3)',
             bg: 'rgb(30 58 138 / 0.3)',
-            color: 'blue.200'
-          }
-        }
+            color: 'blue.200',
+          },
+        },
       }),
       warning: parts({
         root: {
@@ -77,13 +77,13 @@ export const calloutRecipe = defineRecipe({
           _dark: {
             borderColor: 'rgb(254 240 138 / 0.3)',
             bg: 'rgb(113 63 18 / 0.3)',
-            color: 'yellow.200'
-          }
-        }
-      })
-    }
+            color: 'yellow.200',
+          },
+        },
+      }),
+    },
   },
   defaultVariants: {
-    type: 'default'
-  }
+    type: 'default',
+  },
 })

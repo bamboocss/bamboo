@@ -20,7 +20,7 @@ export const CopyMdxWidget = (props: { doc: Docs }) => {
         flexShrink: '0',
         spaceX: '-1px',
         '& > :first-child': { borderEndRadius: '0' },
-        '& > :last-child': { borderStartRadius: '0' }
+        '& > :last-child': { borderStartRadius: '0' },
       })}
     >
       <CopyPageButton doc={doc} />
@@ -34,7 +34,7 @@ const CopyPageButton = (props: { doc: Docs }) => {
 
   const clipboard = useClipboard({
     value: doc.llm,
-    timeout: 1000
+    timeout: 1000,
   })
 
   return (
@@ -49,25 +49,25 @@ const ActionMenu = (props: { doc: Docs }) => {
 
   const readUrl = encodeURIComponent(
     `Use web browsing to access links and information: ${getPublicUrl(`/${doc.slug}.mdx`)}/\n\nI want to ask some questions
-    `
+    `,
   )
 
   const items = [
     {
       label: 'View as markdown',
       href: `${getPublicUrl(`/${doc.slug}.mdx`)}`,
-      icon: BsMarkdown
+      icon: BsMarkdown,
     },
     {
       label: 'Open in ChatGPT',
       href: `https://chatgpt.com/?hints=search&q=${readUrl}`,
-      icon: OpenAiIcon
+      icon: OpenAiIcon,
     },
     {
       label: 'Open in Claude',
       href: `https://claude.ai/new?q=${readUrl}`,
-      icon: AnthropicIcon
-    }
+      icon: AnthropicIcon,
+    },
   ]
 
   return (
@@ -87,10 +87,10 @@ const ActionMenu = (props: { doc: Docs }) => {
               p: '1',
               borderWidth: '1px',
               outline: '0',
-              borderRadius: 'md'
+              borderRadius: 'md',
             })}
           >
-            {items.map(item => (
+            {items.map((item) => (
               <Menu.Item
                 key={item.label}
                 value={item.label}
@@ -107,11 +107,11 @@ const ActionMenu = (props: { doc: Docs }) => {
                   textDecorationColor: 'border',
                   textUnderlineOffset: '4px',
                   _icon: {
-                    boxSize: '3'
+                    boxSize: '3',
                   },
                   _highlighted: {
-                    bg: 'bg.muted'
-                  }
+                    bg: 'bg.muted',
+                  },
                 })}
               >
                 <NextLink href={item.href}>

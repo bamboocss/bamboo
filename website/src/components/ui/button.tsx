@@ -9,14 +9,14 @@ const buttonRecipe = cva({
     justifyContent: 'center',
     fontWeight: 600,
     flexShrink: 0,
-    transition: 'background'
+    transition: 'background',
   },
 
   variants: {
     shape: {
       circle: {
-        borderRadius: '50%'
-      }
+        borderRadius: '50%',
+      },
     },
 
     variant: {
@@ -25,49 +25,49 @@ const buttonRecipe = cva({
         border: '3px solid var(--border-color, black)',
         boxShadow: '4px 4px 0px 0px var(--shadow-color, black)',
         _hover: {
-          boxShadow: '6px 6px 0px 0px var(--shadow-color, black)'
-        }
+          boxShadow: '6px 6px 0px 0px var(--shadow-color, black)',
+        },
       },
       outline: {
         borderRadius: 'sm',
         borderWidth: '1px',
-        borderColor: 'border'
-      }
+        borderColor: 'border',
+      },
     },
 
     color: {
       www: {
         color: { base: 'black', _hover: 'white' },
-        bg: { base: 'yellow.300', _hover: 'gray.400' }
+        bg: { base: 'yellow.300', _hover: 'gray.400' },
       },
       main: {
         bg: 'bg.emphasized',
-        color: 'black'
+        color: 'black',
       },
       black: {
         bg: 'black',
         color: 'white',
-        boxShadow: 'none'
+        boxShadow: 'none',
       },
       white: {
         bg: 'white',
-        color: 'black'
+        color: 'black',
       },
       yellow: {
         bg: 'bg.main',
-        color: 'fg'
+        color: 'fg',
       },
       border: {
         bg: 'transparent',
         color: 'fg',
         borderColor: 'fg.headline',
-        boxShadowColor: 'fg.headline'
+        boxShadowColor: 'fg.headline',
       },
       ghost: {
         bg: 'transparent',
         border: 'none',
         shadow: 'none',
-        color: 'fg'
+        color: 'fg',
       },
       'ghost.white': {
         bg: 'transparent',
@@ -75,15 +75,15 @@ const buttonRecipe = cva({
         shadow: 'none',
         color: 'white',
         _icon: {
-          color: 'yellow.400'
-        }
+          color: 'yellow.400',
+        },
       },
       neutral: {
         bg: 'bg',
         _hover: {
-          bg: 'bg.subtle'
-        }
-      }
+          bg: 'bg.subtle',
+        },
+      },
     },
 
     size: {
@@ -92,47 +92,47 @@ const buttonRecipe = cva({
         minH: '6',
         gap: '2',
         px: '2',
-        py: '2'
+        py: '2',
       },
       xs: {
         textStyle: 'sm',
         gap: '2',
         px: '4',
-        py: '2'
+        py: '2',
       },
       sm: {
         textStyle: 'lg',
         gap: '3',
         px: '6',
-        py: '3'
+        py: '3',
       },
       md: {
         gap: '3',
         px: '6',
         py: '3',
-        textStyle: { base: 'md', md: 'lg', lg: 'xl' }
+        textStyle: { base: 'md', md: 'lg', lg: 'xl' },
       },
       lg: {
         gap: '3',
         px: '6',
         py: '3',
-        textStyle: '2xl'
+        textStyle: '2xl',
       },
       xl: {
         gap: '3',
         px: '6',
         py: '3',
         fontSize: '2rem',
-        fontWeight: 'bold'
-      }
-    }
+        fontWeight: 'bold',
+      },
+    },
   },
 
   defaultVariants: {
     color: 'main',
     size: 'md',
-    variant: 'outline'
-  }
+    variant: 'outline',
+  },
 })
 
 export const ButtonLink = bamboo(Link, buttonRecipe)

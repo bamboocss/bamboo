@@ -12,7 +12,7 @@ const styles = css({
   bg: 'bg.surface',
   borderColor: 'border',
   p: '2',
-  shadow: 'sm'
+  shadow: 'sm',
 })
 
 export const Details = (props: React.ComponentProps<'details'>) => {
@@ -33,12 +33,7 @@ export const Details = (props: React.ComponentProps<'details'>) => {
   }, [openState])
 
   return (
-    <details
-      className={styles}
-      {...rest}
-      open={delayedOpenState}
-      data-expanded={openState ? '' : undefined}
-    >
+    <details className={styles} {...rest} open={delayedOpenState} data-expanded={openState ? '' : undefined}>
       <DetailsProvider value={setOpen}>{summary}</DetailsProvider>
       <Collapse isOpen={openState}>{restChildren}</Collapse>
     </details>

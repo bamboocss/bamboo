@@ -8,7 +8,7 @@ const Arrow = () => (
   <span
     className={css({
       transition: 'opacity',
-      opacity: { base: '0', _groupHover: '1' }
+      opacity: { base: '0', _groupHover: '1' },
     })}
   >
     <LuChevronRight />
@@ -43,9 +43,7 @@ export const Card = (props: Props) => {
               </HStack>
             </bamboo.span>
             {description && (
-              <bamboo.span color={{ base: 'neutral.700', _dark: 'neutral.400' }}>
-                {description}
-              </bamboo.span>
+              <bamboo.span color={{ base: 'neutral.700', _dark: 'neutral.400' }}>{description}</bamboo.span>
             )}
           </Stack>
         </span>
@@ -56,10 +54,5 @@ export const Card = (props: Props) => {
 
 export const Cards = (props: React.ComponentProps<'div'>) => {
   const { className, ...rest } = props
-  return (
-    <div
-      className={cx(grid({ columns: { base: 1, sm: 2 }, mt: '10', gap: '6' }), className)}
-      {...rest}
-    />
-  )
+  return <div className={cx(grid({ columns: { base: 1, sm: 2 }, mt: '10', gap: '6' }), className)} {...rest} />
 }

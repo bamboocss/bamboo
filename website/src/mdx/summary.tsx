@@ -10,20 +10,20 @@ const styles = css({
   transition: 'colors',
   _hover: {
     bg: 'gray.100',
-    _dark: { bg: 'neutral.800' }
+    _dark: { bg: 'neutral.800' },
   },
   _before: {
     mr: '1',
     display: 'inline-block',
     transition: 'transform',
     content: "''",
-    _dark: { filter: 'invert(1)' }
+    _dark: { filter: 'invert(1)' },
   },
   '[data-expanded] > &': {
     _before: {
-      transform: 'rotate(90deg)'
-    }
-  }
+      transform: 'rotate(90deg)',
+    },
+  },
 })
 
 export const Summary = (props: React.ComponentProps<'summary'>) => {
@@ -32,9 +32,9 @@ export const Summary = (props: React.ComponentProps<'summary'>) => {
     <summary
       className={styles}
       {...props}
-      onClick={e => {
+      onClick={(e) => {
         e.preventDefault()
-        setOpen(v => !v)
+        setOpen((v) => !v)
       }}
     />
   )

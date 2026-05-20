@@ -18,8 +18,8 @@ export const HeroSection = () => {
             mb="24"
             hideBelow="md"
           >
-            CSS-in-JS with build time generated styles, RSC compatible, multi-variant support, and
-            best-in-class developer experience
+            CSS-in-JS with build time generated styles, RSC compatible, multi-variant support, and best-in-class
+            developer experience
           </bamboo.h4>
 
           <Flex gap="8">
@@ -46,22 +46,10 @@ export const HeroSection = () => {
                 </bamboo.h1>
               </div>
               <Stack align="center" direction={{ base: 'column', sm: 'row' }} gap="6">
-                <ButtonLink
-                  href="/docs"
-                  size="lg"
-                  color="main"
-                  variant="funky"
-                  w={{ base: 'full', sm: '240px' }}
-                >
+                <ButtonLink href="/docs" size="lg" color="main" variant="funky" w={{ base: 'full', sm: '240px' }}>
                   Get Started
                 </ButtonLink>
-                <ButtonLink
-                  href="/learn"
-                  size="lg"
-                  color="black"
-                  variant="funky"
-                  w={{ base: 'full', sm: '240px' }}
-                >
+                <ButtonLink href="/learn" size="lg" color="black" variant="funky" w={{ base: 'full', sm: '240px' }}>
                   Learn Bamboo
                 </ButtonLink>
               </Stack>

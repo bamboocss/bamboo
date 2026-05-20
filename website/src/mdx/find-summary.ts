@@ -26,7 +26,7 @@ export const findSummary = (children: React.ReactNode) => {
       c = cloneElement(child, {
         ...child.props,
         children: result[1]?.length ? result[1] : undefined,
-        key: index
+        key: index,
       })
     }
 

@@ -7,12 +7,7 @@ import Link from 'next/link'
 export const CourseMiniBanner = () => {
   return (
     <Link href="https://www.bamboomastery.com/?ref=course-banner-mini">
-      <HStack
-        bg={{ base: 'gray.100', _dark: 'gray.800' }}
-        px="2"
-        rounded="sm"
-        css={{ _icon: { width: '3' } }}
-      >
+      <HStack bg={{ base: 'gray.100', _dark: 'gray.800' }} px="2" rounded="sm" css={{ _icon: { width: '3' } }}>
         <span className={circle({ size: '1.5', bg: '#32aef2', flexShrink: '0' })} />
         <p>
           <span className={css({ fontWeight: 'medium' })}>Want to skip the docs? </span>
@@ -73,9 +68,7 @@ export const CourseBanner = () => {
         <HStack justify="center" px="2" py="2" rounded="sm" w="full" pos="relative">
           <MiniIcon />
           <p className={css({ color: 'black' })}>
-            <span className={css({ fontWeight: 'medium' })}>
-              Want to skip the docs? Check out bamboomastery.com{' '}
-            </span>
+            <span className={css({ fontWeight: 'medium' })}>Want to skip the docs? Check out bamboomastery.com </span>
             <span className={css({ hideBelow: 'sm' })}>- the best way to learn Bamboo CSS</span>
           </p>
         </HStack>

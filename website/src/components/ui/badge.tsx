@@ -6,22 +6,22 @@ export const Badge = bamboo('span', {
     fontSize: '11px',
     px: '1',
     ms: '2',
-    rounded: 'sm'
+    rounded: 'sm',
   },
   variants: {
     variant: {
       outline: {
         borderWidth: '1px',
         bg: 'bg',
-        color: 'fg'
+        color: 'fg',
       },
       solid: {
         bg: 'primary.600',
-        color: 'white'
-      }
-    }
+        color: 'white',
+      },
+    },
   },
   defaultVariants: {
-    variant: 'outline'
-  }
+    variant: 'outline',
+  },
 })

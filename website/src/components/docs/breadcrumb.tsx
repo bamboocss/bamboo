@@ -11,7 +11,7 @@ export const Breadcrumb = ({ slug }: Props) => {
 
   const breadcrumbs = parts.map((part, index) => ({
     label: part.replace(/-/g, ' '),
-    isLast: index === parts.length - 1
+    isLast: index === parts.length - 1,
   }))
 
   return (

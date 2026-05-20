@@ -2,9 +2,7 @@ import { ImageResponse } from 'next/og'
 import { Logo } from './logo'
 import { Yums } from './mascot'
 
-const monaSans = fetch(new URL('../../styles/Onest-Bold.ttf', import.meta.url)).then(res =>
-  res.arrayBuffer()
-)
+const monaSans = fetch(new URL('../../styles/Onest-Bold.ttf', import.meta.url)).then((res) => res.arrayBuffer())
 
 const upperFirst = (str: string) => str.charAt(0).toUpperCase() + str.slice(1)
 
@@ -32,7 +30,7 @@ export async function GET(request: Request) {
           flexDirection: 'column',
           backgroundColor: '#F6E458',
           color: '#000000',
-          padding: '80px'
+          padding: '80px',
         }}
       >
         <Logo style={{ marginBottom: '56px' }} />
@@ -42,7 +40,7 @@ export async function GET(request: Request) {
               display: 'flex',
               flexDirection: 'column',
               maxWidth: '72%',
-              flex: '1'
+              flex: '1',
             }}
           >
             {category && (
@@ -52,7 +50,7 @@ export async function GET(request: Request) {
                   fontFamily: 'Onest',
                   color: '#7B722C',
                   fontSize: '24px',
-                  marginBottom: '16px'
+                  marginBottom: '16px',
                 }}
               >
                 🎋 / {upperFirst(category)}
@@ -63,7 +61,7 @@ export async function GET(request: Request) {
                 fontSize: getFontSize(title),
                 fontFamily: 'Onest',
                 fontWeight: 700,
-                letterSpacing: '-1.5px'
+                letterSpacing: '-1.5px',
               }}
             >
               {upperFirst(title)}
@@ -76,7 +74,7 @@ export async function GET(request: Request) {
                   fontFamily: 'Onest',
                   fontWeight: 400,
                   color: '#7B722C',
-                  lineHeight: 1.4
+                  lineHeight: 1.4,
                 }}
               >
                 {description}
@@ -96,7 +94,7 @@ export async function GET(request: Request) {
                   padding: '12px 24px',
                   border: '6px solid #000000',
                   boxShadow: '4px 3px 0px 0px #000',
-                  alignSelf: 'flex-start'
+                  alignSelf: 'flex-start',
                 }}
               >
                 npm i -D @bamboocss/dev
@@ -106,7 +104,7 @@ export async function GET(request: Request) {
           <Yums
             style={{
               width: '275px',
-              height: '355px'
+              height: '355px',
             }}
           />
         </div>
@@ -119,10 +117,10 @@ export async function GET(request: Request) {
             name: 'Onest',
             data: await monaSans,
             style: 'normal',
-            weight: 700
-          }
-        ]
-      }
+            weight: 700,
+          },
+        ],
+      },
     )
   } catch (error) {
     console.log(error.message)

@@ -26,9 +26,9 @@ const layerStyles = defineLayerStyles({
     value: {
       background: 'gray.50',
       border: '2px solid',
-      borderColor: 'gray.500'
-    }
-  }
+      borderColor: 'gray.500',
+    },
+  },
 })
 ```
 
@@ -45,9 +45,9 @@ import { layerStyles } from './layer-styles'
 export default defineConfig({
   theme: {
     extend: {
-      layerStyles
-    }
-  }
+      layerStyles,
+    },
+  },
 })
 ```
 
@@ -86,16 +86,16 @@ export default defineConfig({
               border: '1px solid',
               borderColor: 'gray.200',
               borderRadius: 'md',
-              boxShadow: 'sm'
-            }
+              boxShadow: 'sm',
+            },
           },
           elevated: {
             value: {
               background: 'white',
               border: 'none',
               borderRadius: 'lg',
-              boxShadow: 'lg'
-            }
+              boxShadow: 'lg',
+            },
           },
           outlined: {
             value: {
@@ -103,13 +103,13 @@ export default defineConfig({
               border: '2px solid',
               borderColor: 'gray.300',
               borderRadius: 'md',
-              boxShadow: 'none'
-            }
-          }
-        }
-      }
-    }
-  }
+              boxShadow: 'none',
+            },
+          },
+        },
+      },
+    },
+  },
 })
 ```
 

@@ -9,7 +9,7 @@ const features = [
   'Utility Classes',
   'Recipes',
   'Just-in-Time',
-  'Variants'
+  'Variants',
 ]
 
 const recipe = sva({
@@ -19,26 +19,26 @@ const recipe = sva({
       bg: 'bg',
       py: '5',
       textStyle: '2xl',
-      fontWeight: 'semibold'
+      fontWeight: 'semibold',
     },
     marquee: {
       listStyleType: 'none',
       _motionReduce: {
         '& .rfm-marquee': {
-          animation: 'none!'
-        }
-      }
+          animation: 'none!',
+        },
+      },
     },
     item: {
       mx: '2',
       display: 'flex',
       alignItems: 'center',
-      gap: '2'
+      gap: '2',
     },
     itemText: {
-      letterSpacing: 'tight'
-    }
-  }
+      letterSpacing: 'tight',
+    },
+  },
 })
 
 export const FeatureMarqueeSection = () => {

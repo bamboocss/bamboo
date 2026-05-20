@@ -125,7 +125,7 @@ export default defineConfig({
   exclude: [],
 
   // The output directory for your css system
-  outdir: 'styled-system'
+  outdir: 'styled-system',
 })
 ```
 
@@ -143,10 +143,10 @@ import tsconfigPaths from 'vite-tsconfig-paths'
 export default defineConfig({
   css: {
     postcss: {
-      plugins: [bamboocss, autoprefixer]
-    }
+      plugins: [bamboocss, autoprefixer],
+    },
   },
-  plugins: [reactRouter(), tsconfigPaths()]
+  plugins: [reactRouter(), tsconfigPaths()],
 })
 ```
 
@@ -173,7 +173,7 @@ import stylesheet from './app.css?url'
 
 export const links: LinksFunction = () => [
   // ...
-  { rel: 'stylesheet', href: stylesheet }
+  { rel: 'stylesheet', href: stylesheet },
 ]
 
 export function Layout({ children }: { children: React.ReactNode }) {

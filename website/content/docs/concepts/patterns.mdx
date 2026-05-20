@@ -809,9 +809,9 @@ export default defineConfig({
     containerSizes: {
       xs: '40em',
       sm: '60em',
-      md: '80em'
-    }
-  }
+      md: '80em',
+    },
+  },
 })
 ```
 
@@ -827,7 +827,7 @@ function Demo() {
         className={css({
           // When the sidebar container reaches the `sm` size
           // change font size to `md`
-          fontSize: { base: 'lg', '@sidebar/sm': 'md' }
+          fontSize: { base: 'lg', '@sidebar/sm': 'md' },
         })}
       />
     </nav>
@@ -876,7 +876,7 @@ import { definePattern } from '@bamboocss/dev'
 const scrollable = definePattern({
   // ...
   // Add the jsx hint to track the usage of the pattern in JSX, you can also use a regex to match multiple components
-  jsx: ['Scrollable', 'PageScrollable']
+  jsx: ['Scrollable', 'PageScrollable'],
 })
 ```
 

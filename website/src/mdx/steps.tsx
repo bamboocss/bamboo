@@ -24,9 +24,9 @@ const styles = css({
       mt: '1px',
       ml: '-36px',
       textStyle: 'md',
-      fontWeight: 'bold'
-    }
-  }
+      fontWeight: 'bold',
+    },
+  },
 })
 
 export const Steps = (props: React.ComponentProps<'div'>) => {

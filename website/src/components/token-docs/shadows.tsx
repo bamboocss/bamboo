@@ -15,7 +15,7 @@ export const Shadows = () => {
                   width: '20',
                   height: '10',
                   borderWidth: '1px',
-                  rounded: 'sm'
+                  rounded: 'sm',
                 })}
                 style={{ boxShadow: token.value }}
               />

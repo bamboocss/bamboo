@@ -10,25 +10,23 @@ const preStyles = cva({
     contain: 'paint',
     maxH: '640px',
     '& code[data-language] .line': {
-      px: '4'
-    }
+      px: '4',
+    },
   },
   variants: {
     hasFilename: {
       true: {
         pt: '12',
-        pb: '4'
+        pb: '4',
       },
       false: {
-        py: '4'
-      }
-    }
-  }
+        py: '4',
+      },
+    },
+  },
 })
 
 export const Pre = (props: React.ComponentProps<'pre'>) => {
   const { className = '', ...rest } = props
-  return (
-    <pre className={cx(preStyles({ hasFilename: false }), 'scroll-area', className)} {...rest} />
-  )
+  return <pre className={cx(preStyles({ hasFilename: false }), 'scroll-area', className)} {...rest} />
 }

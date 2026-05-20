@@ -65,8 +65,8 @@ export const Collapse = (props: Props) => {
         overflow: 'hidden',
         transition: 'all',
         _motionReduce: {
-          transition: 'none'
-        }
+          transition: 'none',
+        },
       })}
       style={initialOpenValue || horizontal ? undefined : { height: 0 }}
     >
@@ -77,16 +77,16 @@ export const Collapse = (props: Props) => {
           css({
             transition: 'opacity 500ms ease-in-out',
             _motionReduce: {
-              transition: 'none'
+              transition: 'none',
             },
             '&[data-open="false"]': {
-              opacity: 0
+              opacity: 0,
             },
             '&[data-open="true"]': {
-              opacity: 1
-            }
+              opacity: 1,
+            },
           }),
-          className
+          className,
         )}
       >
         {children}

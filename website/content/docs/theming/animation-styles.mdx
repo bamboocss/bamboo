@@ -20,19 +20,19 @@ export const animationStyles = defineAnimationStyles({
       transformOrigin: 'var(--transform-origin)',
       animationDuration: 'fast',
       '&[data-placement^=top]': {
-        animationName: 'slide-from-top, fade-in'
+        animationName: 'slide-from-top, fade-in',
       },
       '&[data-placement^=bottom]': {
-        animationName: 'slide-from-bottom, fade-in'
+        animationName: 'slide-from-bottom, fade-in',
       },
       '&[data-placement^=left]': {
-        animationName: 'slide-from-left, fade-in'
+        animationName: 'slide-from-left, fade-in',
       },
       '&[data-placement^=right]': {
-        animationName: 'slide-from-right, fade-in'
-      }
-    }
-  }
+        animationName: 'slide-from-right, fade-in',
+      },
+    },
+  },
 })
 ```
 
@@ -49,9 +49,9 @@ import { animationStyles } from './animation-styles'
 export default defineConfig({
   theme: {
     extend: {
-      animationStyles
-    }
-  }
+      animationStyles,
+    },
+  },
 })
 ```
 
@@ -82,13 +82,13 @@ export const popoverSlotRecipe = defineSlotRecipe({
   base: {
     content: {
       _open: {
-        animationStyle: 'scale-fade-in'
+        animationStyle: 'scale-fade-in',
       },
       _closed: {
-        animationStyle: 'scale-fade-out'
-      }
-    }
-  }
+        animationStyle: 'scale-fade-out',
+      },
+    },
+  },
 })
 ```
 
@@ -110,27 +110,27 @@ export default defineConfig({
             value: {
               animationName: 'fade-in',
               animationDuration: '300ms',
-              animationTimingFunction: 'ease-in-out'
-            }
+              animationTimingFunction: 'ease-in-out',
+            },
           },
           slow: {
             value: {
               animationName: 'fade-in',
               animationDuration: '600ms',
-              animationTimingFunction: 'ease-in-out'
-            }
+              animationTimingFunction: 'ease-in-out',
+            },
           },
           fast: {
             value: {
               animationName: 'fade-in',
               animationDuration: '150ms',
-              animationTimingFunction: 'ease-in-out'
-            }
-          }
-        }
-      }
-    }
-  }
+              animationTimingFunction: 'ease-in-out',
+            },
+          },
+        },
+      },
+    },
+  },
 })
 ```
 

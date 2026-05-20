@@ -13,20 +13,20 @@ const testimonials: Array<{
     author: 'Alex S.',
     avatar: '/profiles/alex-s.png',
     text: 'Working with Bamboo CSS has been a delightful experience. The seamless styling it offers is impressive, providing a native CSS-like experience but with added benefits like typesafety, JIT styles, and recipe variants. Plus, you can use it anywhere!',
-    username: '@astahmer_dev'
+    username: '@astahmer_dev',
   },
   {
     author: 'Abraham A.',
     avatar: '/profiles/anubra.png',
     text: "🎋 Excited to share my love for @bamboo_css! It's revolutionized my styling process by seamlessly integrating CSS in JS without any runtime overhead. Say goodbye to complexity and hello to efficiency! 🎨 Highly recommend trying it out!",
-    username: '@anubra266'
+    username: '@anubra266',
   },
   {
     author: 'Ivica B.',
     avatar: '/profiles/ivica-b.png',
     text: 'Bamboo CSS has completely transformed the way I approach styling in my projects. By harnessing the remarkable performance benefits of Utility Classes and the ease of use that CSS-in-JS provides, I experience a significant enhancement in readability and DX. It’s like having the best of both worlds in a single styling engine.',
-    username: '@_isBatak'
-  }
+    username: '@_isBatak',
+  },
 ]
 
 export const TestimonialsSection = () => {
@@ -41,7 +41,7 @@ export const TestimonialsSection = () => {
             pos: 'absolute',
             top: '24',
             right: '8',
-            color: 'yellow.300'
+            color: 'yellow.300',
           })}
         />
         <bamboo.h3
@@ -54,7 +54,7 @@ export const TestimonialsSection = () => {
         </bamboo.h3>
 
         <Grid columns={{ base: 1, lg: 3 }} gap="6" mt="20">
-          {testimonials.map(testimonial => (
+          {testimonials.map((testimonial) => (
             <Stack
               key={testimonial.username}
               gap="8"

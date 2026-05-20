@@ -8,7 +8,7 @@ export const teamMembers: TeamMember[] = [
   { login: 'astahmer', role: 'Creator' },
   { login: 'cschroeter', role: 'Creator @ Park UI' },
   { login: 'anubra266', role: 'Creator @ Tark UI' },
-  { login: 'estheragbaje', role: 'Developer Marketing' }
+  { login: 'estheragbaje', role: 'Developer Marketing' },
 ]
 
 export interface NavItem {
@@ -49,26 +49,26 @@ export const docsConfig: DocsConfig = {
     {
       title: 'Docs',
       type: 'page',
-      href: '/docs'
+      href: '/docs',
     },
     {
       title: 'Team',
       type: 'page',
-      href: '/team'
+      href: '/team',
     },
     {
       title: 'Showcase',
       type: 'page',
-      href: '/showcase'
+      href: '/showcase',
     },
     {
       title: 'Playground',
       type: 'page',
       href: 'https://play.bamboo-css.com/',
       external: true,
-      newWindow: true
-    }
-  ]
+      newWindow: true,
+    },
+  ],
 }
 
 export const docsNavigation: NavItem = {
@@ -86,14 +86,14 @@ export const docsNavigation: NavItem = {
         {
           title: 'Roadmap',
           href: 'https://bamboo-css.canny.io/',
-          external: true
+          external: true,
         },
         {
           title: 'Changelog',
           href: 'https://github.com/bamboocss/bamboo/blob/main/CHANGELOG.md',
-          external: true
-        }
-      ]
+          external: true,
+        },
+      ],
     },
     {
       title: 'AI for Agents',
@@ -101,8 +101,8 @@ export const docsNavigation: NavItem = {
       tag: 'new',
       items: [
         { title: 'LLMs.txt', url: 'llms-txt' },
-        { title: 'MCP Server', url: 'mcp-server' }
-      ]
+        { title: 'MCP Server', url: 'mcp-server' },
+      ],
     },
     {
       title: 'Installation',
@@ -126,8 +126,8 @@ export const docsNavigation: NavItem = {
         { title: 'Preact', url: 'preact' },
         { title: 'Solid.js', url: 'solidjs' },
         { title: 'Svelte', url: 'svelte' },
-        { title: 'Storybook', url: 'storybook' }
-      ]
+        { title: 'Storybook', url: 'storybook' },
+      ],
     },
     {
       title: 'Concepts',
@@ -149,8 +149,8 @@ export const docsNavigation: NavItem = {
         { title: 'Color opacity modifier', url: 'color-opacity-modifier' },
         { title: 'Hooks', url: 'hooks' },
         { title: 'Styled System', url: 'styled-system' },
-        { title: 'The extend keyword', url: 'extend' }
-      ]
+        { title: 'The extend keyword', url: 'extend' },
+      ],
     },
     {
       title: 'Migration',
@@ -158,8 +158,8 @@ export const docsNavigation: NavItem = {
       items: [
         { title: 'Stitches', url: 'stitches' },
         { title: 'Styled Components', url: 'styled-components' },
-        { title: 'Theme UI', url: 'theme-ui' }
-      ]
+        { title: 'Theme UI', url: 'theme-ui' },
+      ],
     },
     {
       title: 'Theming',
@@ -171,8 +171,8 @@ export const docsNavigation: NavItem = {
         { title: 'Layer Styles', url: 'layer-styles' },
         { title: 'Animation Styles', url: 'animation-styles' },
         { title: 'Spec', url: 'spec', tag: 'new' },
-        { title: 'Bamboo Studio', url: 'studio' }
-      ]
+        { title: 'Bamboo Studio', url: 'studio' },
+      ],
     },
     {
       title: 'Customization',
@@ -183,8 +183,8 @@ export const docsNavigation: NavItem = {
         { title: 'Utilities', url: 'utilities' },
         { title: 'Presets', url: 'presets' },
         { title: 'Theme', url: 'theme' },
-        { title: 'Config Functions', url: 'config-functions' }
-      ]
+        { title: 'Config Functions', url: 'config-functions' },
+      ],
     },
     {
       title: 'Utilities',
@@ -209,8 +209,8 @@ export const docsNavigation: NavItem = {
         { title: 'Tables', url: 'tables' },
         { title: 'Transforms', url: 'transforms' },
         { title: 'Transitions', url: 'transitions' },
-        { title: 'Typography', url: 'typography' }
-      ]
+        { title: 'Typography', url: 'typography' },
+      ],
     },
     {
       title: 'Guides',
@@ -222,16 +222,16 @@ export const docsNavigation: NavItem = {
         { title: 'Custom Fonts', url: 'fonts' },
         { title: 'Dynamic Styles', url: 'dynamic-styling' },
         { title: 'Static Generator', url: 'static' },
-        { title: 'Debugging', url: 'debugging' }
-      ]
+        { title: 'Debugging', url: 'debugging' },
+      ],
     },
     {
       title: 'References',
       url: 'references',
       items: [
         { title: 'CLI', url: 'cli' },
-        { title: 'Config', url: 'config' }
-      ]
-    }
-  ]
+        { title: 'Config', url: 'config' },
+      ],
+    },
+  ],
 }

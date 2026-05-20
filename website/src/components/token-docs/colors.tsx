@@ -6,12 +6,12 @@ import { defaultColors } from './query'
 export const Colors = () => {
   return (
     <div className={stack({ gap: '8' })}>
-      {defaultColors.map(color => (
+      {defaultColors.map((color) => (
         <div key={color.key} className={stack()}>
           <p
             className={css({
               textTransform: 'capitalize',
-              fontWeight: 'medium'
+              fontWeight: 'medium',
             })}
           >
             {color.key}

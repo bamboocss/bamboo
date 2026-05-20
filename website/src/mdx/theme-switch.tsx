@@ -21,9 +21,9 @@ export function ThemeSwitch({ className }: ThemeSwitchProps) {
       options={[
         { value: 'light', label: 'Light' },
         { value: 'dark', label: 'Dark' },
-        { value: 'system', label: 'System' }
+        { value: 'system', label: 'System' },
       ]}
-      onChange={option => {
+      onChange={(option) => {
         if (!option) return
         setTheme(option.value)
       }}
@@ -35,12 +35,12 @@ export function ThemeSwitch({ className }: ThemeSwitchProps) {
               display: 'flex',
               alignItems: 'center',
               gap: 2,
-              textTransform: 'capitalize'
+              textTransform: 'capitalize',
             })}
           >
             <IconToUse />
           </div>
-        )
+        ),
       }}
     />
   )

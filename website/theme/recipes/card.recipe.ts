@@ -26,16 +26,16 @@ export const cardRecipe = defineRecipe({
         transition: 'all',
         _hover: {
           boxShadowColor: 'border.muted',
-          borderColor: 'border'
+          borderColor: 'border',
         },
         _active: {
           boxShadow: 'sm',
-          boxShadowColor: 'gray.200'
+          boxShadowColor: 'gray.200',
         },
         _dark: {
           _hover: { boxShadow: 'none' },
-          boxShadow: 'none'
-        }
+          boxShadow: 'none',
+        },
       },
       title: {
         display: 'flex',
@@ -44,23 +44,23 @@ export const cardRecipe = defineRecipe({
         gap: 2,
         p: 4,
         color: 'fg.muted',
-        _hover: { color: 'fg' }
-      }
+        _hover: { color: 'fg' },
+      },
     }),
     '& img': {
-      userSelect: 'none'
+      userSelect: 'none',
     },
     '&:hover svg': {
-      color: 'currentColor'
+      color: 'currentColor',
     },
     _icon: {
       width: '1.5rem',
       color: '#00000033',
       _dark: { color: '#ffffff66', _hover: { color: 'currentColor' } },
-      transition: 'color 0.3s ease'
+      transition: 'color 0.3s ease',
     },
     '& p': {
-      mt: '0.5rem'
+      mt: '0.5rem',
     },
     '& h3': {
       counterIncrement: 'step',
@@ -72,7 +72,7 @@ export const cardRecipe = defineRecipe({
         border: '4px solid white',
         bg: 'gray.100',
         _dark: {
-          bg: 'neutral.800'
+          bg: 'neutral.800',
         },
         borderRadius: '9999px',
         color: 'neutral.400',
@@ -81,9 +81,9 @@ export const cardRecipe = defineRecipe({
         textAlign: 'center',
         textIndent: '1px',
         mt: '3px',
-        ml: '-41px'
-      }
-    }
+        ml: '-41px',
+      },
+    },
   },
   variants: {
     variant: {
@@ -95,20 +95,20 @@ export const cardRecipe = defineRecipe({
             borderColor: 'neutral.800',
             _hover: {
               borderColor: 'neutral.700',
-              bg: 'neutral.900'
-            }
+              bg: 'neutral.900',
+            },
           },
           _hover: {
             bgColor: 'gray.50',
-            boxShadow: 'md'
-          }
+            boxShadow: 'md',
+          },
         },
         content: {
           _dark: {
             color: 'neutra.200',
-            _hover: { color: 'neutral.50' }
-          }
-        }
+            _hover: { color: 'neutral.50' },
+          },
+        },
       }),
       image: parts({
         root: {
@@ -120,21 +120,21 @@ export const cardRecipe = defineRecipe({
             color: 'gray.50',
             _hover: {
               borderColor: 'neutral.500',
-              bg: 'neutral.700'
-            }
+              bg: 'neutral.700',
+            },
           },
           _hover: {
-            boxShadow: 'lg'
-          }
+            boxShadow: 'lg',
+          },
         },
         content: {
-          _dark: { color: 'gray.300', _hover: { color: 'gray.100' } }
+          _dark: { color: 'gray.300', _hover: { color: 'gray.100' } },
         },
         title: {
           display: 'flex',
-          gap: 1
-        }
-      })
-    }
-  }
+          gap: 1,
+        },
+      }),
+    },
+  },
 })

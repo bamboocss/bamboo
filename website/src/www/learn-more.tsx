@@ -11,7 +11,7 @@ export function LearnMore({ href = '/learn' }: { href?: string }) {
         alignSelf: 'flex-start',
         textStyle: 'bamboo.h4',
         fontWeight: 'bold',
-        flexShrink: '0'
+        flexShrink: '0',
       })}
     >
       Learn more

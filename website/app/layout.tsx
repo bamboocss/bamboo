@@ -13,7 +13,7 @@ const { themeColor: _, ...metadata } = seoConfig
 export { metadata }
 
 export const viewport = {
-  viewport: seoConfig.themeColor
+  viewport: seoConfig.themeColor,
 }
 
 export default function RootLayout(props: Props) {

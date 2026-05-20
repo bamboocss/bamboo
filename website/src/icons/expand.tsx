@@ -1,9 +1,6 @@
 import { css } from '@/styled-system/css'
 
-export function ExpandIcon({
-  isOpen,
-  ...props
-}: { isOpen?: boolean } & React.ComponentProps<'svg'>) {
+export function ExpandIcon({ isOpen, ...props }: { isOpen?: boolean } & React.ComponentProps<'svg'>) {
   return (
     <svg height="12" width="12" viewBox="0 0 16 16" fill="currentColor" {...props}>
       <path

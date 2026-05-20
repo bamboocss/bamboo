@@ -73,7 +73,7 @@ const styles = css({
   backgroundColor: 'gainsboro',
   borderRadius: '9999px',
   fontSize: '13px',
-  padding: '10px 15px'
+  padding: '10px 15px',
 })
 
 // AFTER - Better
@@ -81,7 +81,7 @@ const styles = css({
   bg: 'gainsboro',
   rounded: '9999px',
   fontSize: '13px',
-  p: '10px 15px'
+  p: '10px 15px',
 })
 ```
 
@@ -248,8 +248,8 @@ Bamboo supports the native css nesting syntax. You can use the `&` selector to c
   className={css({
     bg: 'red.400',
     '&:hover': {
-      bg: 'orange.400'
-    }
+      bg: 'orange.400',
+    },
   })}
 />
 ```
@@ -261,8 +261,8 @@ You can also target children and siblings using the `&` syntax.
   className={css({
     bg: 'red.400',
     '& span': {
-      color: 'pink.400'
-    }
+      color: 'pink.400',
+    },
   })}
 />
 ```
@@ -282,8 +282,8 @@ For example, to create a hover style, you can use the `_hover` pseudo prop.
   className={css({
     bg: 'red.400',
     _hover: {
-      bg: 'orange.400'
-    }
+      bg: 'orange.400',
+    },
   })}
 />
 ```
@@ -305,13 +305,13 @@ import { defineConfig, defineGlobalStyles } from '@bamboocss/dev'
 const globalCss = defineGlobalStyles({
   'html, body': {
     color: 'gray.900',
-    lineHeight: '1.5'
-  }
+    lineHeight: '1.5',
+  },
 })
 
 export default defineConfig({
   // ...
-  globalCss
+  globalCss,
 })
 ```
 
@@ -382,7 +382,7 @@ export const Button = ({ css: cssProp = {}, children }) => {
   // using the flex pattern
   const hstackProps = hstack.raw({
     border: '1px solid',
-    _hover: { color: 'blue.400' }
+    _hover: { color: 'blue.400' },
   })
 
   // merging the styles
@@ -401,9 +401,9 @@ const buttonRecipe = cva({
   base: { display: 'flex', fontSize: 'lg' },
   variants: {
     variant: {
-      primary: { color: 'white', backgroundColor: 'blue.500' }
-    }
-  }
+      primary: { color: 'white', backgroundColor: 'blue.500' },
+    },
+  },
 })
 
 export const Button = ({ css: cssProp = {}, children }) => {
@@ -415,7 +415,7 @@ export const Button = ({ css: cssProp = {}, children }) => {
     { _hover: { color: 'blue.400' } },
 
     // adding style overrides (external)
-    cssProp
+    cssProp,
   )
 
   return <button className={className}>{children}</button>
@@ -432,23 +432,23 @@ const checkbox = sva({
   base: {
     root: { display: 'flex', alignItems: 'center', gap: '2' },
     control: { borderWidth: '1px', borderRadius: 'sm' },
-    label: { marginStart: '2' }
+    label: { marginStart: '2' },
   },
   variants: {
     size: {
       sm: {
         control: { width: '8', height: '8' },
-        label: { fontSize: 'sm' }
+        label: { fontSize: 'sm' },
       },
       md: {
         control: { width: '10', height: '10' },
-        label: { fontSize: 'md' }
-      }
-    }
+        label: { fontSize: 'md' },
+      },
+    },
   },
   defaultVariants: {
-    size: 'sm'
-  }
+    size: 'sm',
+  },
 })
 
 export const Checkbox = ({ rootProps, controlProps, labelProps }) => {
@@ -488,7 +488,7 @@ const styles = css({
   borderWidth: '1px',
   borderRadius: '8px',
   paddingX: '12px',
-  paddingY: '24px'
+  paddingY: '24px',
 })
 
 const Card = ({ className, ...props }) => {
@@ -508,7 +508,7 @@ import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   // ...
-  hash: true
+  hash: true,
 })
 ```
 
@@ -523,8 +523,8 @@ const styles = css({
   display: 'flex',
   flexDirection: 'row',
   _hover: {
-    bg: 'red.50'
-  }
+    bg: 'red.50',
+  },
 })
 ```
 
@@ -552,7 +552,7 @@ Applying important styles works just like CSS
 
 ```js
 css({
-  color: 'red !important'
+  color: 'red !important',
 })
 ```
 
@@ -560,7 +560,7 @@ You can also apply important using just the exclamation syntax `!`
 
 ```js
 css({
-  color: 'red!'
+  color: 'red!',
 })
 ```
 
@@ -573,7 +573,7 @@ import { css } from '../styled-system/css'
 import type { SystemStyleObject } from '../styled-system/types'
 
 const styles: SystemStyleObject = {
-  color: 'red'
+  color: 'red',
 }
 ```
 
@@ -629,9 +629,9 @@ export default defineConfig({
     '--button-color': {
       syntax: '<color>',
       inherits: false,
-      initialValue: 'blue'
-    }
-  }
+      initialValue: 'blue',
+    },
+  },
 })
 ```
 
@@ -645,7 +645,7 @@ const className = css({
   '--button-color': 'colors.red.300',
   // ^^^^^^^^^^^^  will be suggested
 
-  backgroundColor: 'var(--button-color)'
+  backgroundColor: 'var(--button-color)',
   //                ^^^^^^^^^^^^^^^^^^  will be suggested
 })
 ```

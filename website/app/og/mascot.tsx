@@ -1,12 +1,5 @@
 export const Yums = (props: React.ComponentProps<'svg'>) => (
-  <svg
-    viewBox="0 0 759 984"
-    width="759"
-    height="984"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    {...props}
-  >
+  <svg viewBox="0 0 759 984" width="759" height="984" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
     <path
       d="M176.611 541.88C176.611 541.88 181.753 482.383 124.26 486.833C70.3029 491.01 90.2585 586.589 90.2585 586.589C90.2585 586.589 133.405 618.836 159.309 605.012C178.351 594.853 176.611 541.88 176.611 541.88Z"
       fill="#545468"

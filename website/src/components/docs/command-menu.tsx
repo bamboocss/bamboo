@@ -33,13 +33,10 @@ export const CommandMenu = (props: Props) => {
   // Filter items based on input
   const matches = useMemo(
     () => filterSearchItems(items, searchIndex, inputValueState),
-    [items, searchIndex, inputValueState]
+    [items, searchIndex, inputValueState],
   )
 
-  const filteredItems = useMemo(
-    () => Object.values(matches).flat().slice(0, limit),
-    [matches, limit]
-  )
+  const filteredItems = useMemo(() => Object.values(matches).flat().slice(0, limit), [matches, limit])
 
   const router = useRouter()
 
@@ -50,11 +47,11 @@ export const CommandMenu = (props: Props) => {
 
   const dialogStyles = dialogSlotRecipe({
     size: 'lg',
-    placement: isMobile ? 'bottom' : 'top'
+    placement: isMobile ? 'bottom' : 'top',
   })
 
   return (
-    <Dialog.Root lazyMount unmountOnExit open={open} onOpenChange={event => setOpen(event.open)}>
+    <Dialog.Root lazyMount unmountOnExit open={open} onOpenChange={(event) => setOpen(event.open)}>
       <Dialog.Trigger asChild>{trigger}</Dialog.Trigger>
       <Portal>
         <Dialog.Backdrop className={dialogStyles.backdrop} />
@@ -69,7 +66,7 @@ export const CommandMenu = (props: Props) => {
               loopFocus={false}
               collection={collection}
               composite={false}
-              onValueChange={e => {
+              onValueChange={(e) => {
                 router.push(e.value[0])
                 requestAnimationFrame(() => {
                   setOpen(false)
@@ -89,7 +86,7 @@ export const CommandMenu = (props: Props) => {
                   alignItems: 'center',
                   padding: '0 1rem',
                   display: 'flex',
-                  position: 'relative'
+                  position: 'relative',
                 })}
               >
                 <Combobox.Input
@@ -102,7 +99,7 @@ export const CommandMenu = (props: Props) => {
                     marginLeft: '.75rem',
                     marginRight: '1rem',
                     fontSize: '1rem',
-                    outline: '0'
+                    outline: '0',
                   })}
                 />
               </Combobox.Control>
@@ -123,8 +120,8 @@ export const CommandMenu = (props: Props) => {
                     bg: 'bg',
                     flexDirection: 'column',
                     margin: '0 auto',
-                    display: 'flex'
-                  })
+                    display: 'flex',
+                  }),
                 )}
               >
                 <Combobox.List>
@@ -144,13 +141,13 @@ export const CommandMenu = (props: Props) => {
                             margin: '0 1rem 1rem',
                             paddingTop: '1rem',
                             fontWeight: 'medium',
-                            lineHeight: '1.5rem'
+                            lineHeight: '1.5rem',
                           })}
                         >
                           {group}
                         </Combobox.ItemGroupLabel>
                       )}
-                      {items.map(item => (
+                      {items.map((item) => (
                         <Combobox.Item
                           key={item.value}
                           item={item}
@@ -161,8 +158,8 @@ export const CommandMenu = (props: Props) => {
                             py: '3',
                             rounded: 'sm',
                             _highlighted: {
-                              bg: 'bg.main'
-                            }
+                              bg: 'bg.main',
+                            },
                           })}
                         >
                           <Stack gap="1">

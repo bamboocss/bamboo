@@ -27,7 +27,7 @@ const App = () => {
     <div
       className={css({
         // ❌ Avoid: Bamboo can't determine the value of color at build-time
-        color
+        color,
       })}
     />
   )
@@ -51,11 +51,11 @@ export default defineConfig({
       {
         properties: {
           // ✅ Good: Pre-generate the styles for the color
-          color: ['red.300']
-        }
-      }
-    ]
-  }
+          color: ['red.300'],
+        },
+      },
+    ],
+  },
 })
 ```
 
@@ -81,16 +81,16 @@ import { useState } from 'react'
 import { css } from '../styled-system/css'
 import { token } from '../styled-system/tokens'
 
-const Component = props => {
+const Component = (props) => {
   return (
     <div
       className={css({
         // ✅ Good: Store the value in a CSS custom property
-        color: 'var(--color)'
+        color: 'var(--color)',
       })}
       style={{
         // ✅ Good: Handle the runtime value in the style attribute
-        '--color': token(`colors.${props.color}`)
+        '--color': token(`colors.${props.color}`),
       }}
     >
       Dynamic color with runtime value
@@ -115,12 +115,12 @@ given token:
 import { useState } from 'react'
 import { token } from '../styled-system/tokens'
 
-const Component = props => {
+const Component = (props) => {
   return (
     <div
       style={{
         // ✅ Good: Dynamically generate CSS custom property from the token
-        color: token.var(`colors.${props.color}`)
+        color: token.var(`colors.${props.color}`),
       }}
     >
       Dynamic color with runtime value
@@ -144,7 +144,7 @@ For example, let's say we create a Card component that accepts a `color` prop:
 ```tsx filename="Card.tsx"
 import { styled } from '../styled-system/jsx'
 
-const Card = props => {
+const Card = (props) => {
   return <styled.div px="4" py="3" {...props} />
 }
 ```
@@ -221,8 +221,8 @@ export const Funky: Story = {
   args: button.raw({
     visual: 'funky',
     shape: 'circle',
-    size: 'sm'
-  })
+    size: 'sm',
+  }),
 }
 ```
 
@@ -245,8 +245,8 @@ const component = css({
   // Spreading in nested conditions
   _hover: {
     ...interactive,
-    _dark: { ...interactive, color: 'white' }
-  }
+    _dark: { ...interactive, color: 'white' },
+  },
 })
 ```
 
@@ -262,11 +262,11 @@ You can compose different style objects together using the `css.raw()` function.
 import { css } from 'styled-system/css'
 
 const paragraphSpacingStyle = css.raw({
-  '& p': { marginBlockEnd: '1em' }
+  '& p': { marginBlockEnd: '1em' },
 })
 
 export const proseCss = css.raw({
-  '& h1': paragraphSpacingStyle
+  '& h1': paragraphSpacingStyle,
 })
 ```
 
@@ -295,7 +295,7 @@ import { cva } from '.bamboo/css'
 const getVariants = () => {
   const spacingTokens = Object.entries({
     sm: 'token(spacing.1)',
-    md: 'token(spacing.2)'
+    md: 'token(spacing.2)',
   })
 
   // Generate variants programmatically
@@ -305,8 +305,8 @@ const getVariants = () => {
 
 const baseStyle = cva({
   variants: {
-    variant: getVariants()
-  }
+    variant: getVariants(),
+  },
 })
 ```
 
@@ -353,7 +353,7 @@ const App = () => {
     <Stack
       color={isHovered ? { _hover: 'red.100' } : 'red.200'}
       _hover={{
-        color: { base: 'red.300', md: isHovered ? 'red.400' : undefined }
+        color: { base: 'red.300', md: isHovered ? 'red.400' : undefined },
       }}
     >
       <div className={css({ color: isHovered ? 'red.500' : 'red.600' })} />
@@ -422,7 +422,7 @@ const App = () => {
       className={css({
         color: mainColor,
         fontSize: sizes.md,
-        width: sizes['2xl']
+        width: sizes['2xl'],
       })}
     />
   )
@@ -440,7 +440,7 @@ import { css } from '../styled-system/css'
 const colorByType = {
   primary: 'red.300',
   secondary: 'blue.300',
-  tertiary: 'green.300'
+  tertiary: 'green.300',
 }
 
 const Section = () => {
@@ -465,9 +465,9 @@ const sectionRecipe = cva({
     type: {
       primary: { color: 'red.300' },
       secondary: { color: 'blue.300' },
-      tertiary: { color: 'green.300' }
-    }
-  }
+      tertiary: { color: 'green.300' },
+    },
+  },
 })
 
 const Section = () => {

@@ -17,9 +17,9 @@ import { defineConfig } from '@bamboocss/dev'
 export default defineConfig({
   conditions: {
     extend: {
-      groupHover: '[role=group]:where(:hover, [data-hover]) &'
-    }
-  }
+      groupHover: '[role=group]:where(:hover, [data-hover]) &',
+    },
+  },
 })
 ```
 
@@ -63,7 +63,7 @@ function App() {
     <div role="group">
       <span
         className={css({
-          color: { base: 'blue.400', _groupHover: 'blue.600' }
+          color: { base: 'blue.400', _groupHover: 'blue.600' },
         })}
       />
     </div>
@@ -83,9 +83,9 @@ export default defineConfig({
   conditions: {
     extend: {
       // Extend the default `dark` condition
-      dark: '.dark &, [data-theme="dark"] &'
-    }
-  }
+      dark: '.dark &, [data-theme="dark"] &',
+    },
+  },
 })
 ```
 
@@ -127,9 +127,9 @@ export default defineConfig({
   conditions: {
     extend: {
       mq: '@media (min-width: token(sizes.4xl))',
-      size2: '&[data-size=token(spacing.2)]'
-    }
-  }
+      size2: '&[data-size=token(spacing.2)]',
+    },
+  },
 })
 ```
 
@@ -143,9 +143,9 @@ import { defineConfig } from '@bamboocss/dev'
 export default defineConfig({
   conditions: {
     extend: {
-      supportHover: ['@media (hover: hover) and (pointer: fine)', '&:hover']
-    }
-  }
+      supportHover: ['@media (hover: hover) and (pointer: fine)', '&:hover'],
+    },
+  },
 })
 ```
 
@@ -154,8 +154,8 @@ import { css } from '../styled-system/css'
 
 css({
   _supportHover: {
-    color: 'red'
-  }
+    color: 'red',
+  },
 })
 ```
 
@@ -185,14 +185,14 @@ export default defineConfig({
     extend: {
       hoverActive: {
         '@media (hover: hover)': {
-          '&:is(:hover, [data-hover])': '@slot'
+          '&:is(:hover, [data-hover])': '@slot',
         },
         '@media (hover: none)': {
-          '&:is(:active, [data-active])': '@slot'
-        }
-      }
-    }
-  }
+          '&:is(:active, [data-active])': '@slot',
+        },
+      },
+    },
+  },
 })
 ```
 
@@ -201,8 +201,8 @@ import { css } from '../styled-system/css'
 
 css({
   _hoverActive: {
-    bg: 'red'
-  }
+    bg: 'red',
+  },
 })
 ```
 

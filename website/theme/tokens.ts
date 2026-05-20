@@ -12,12 +12,12 @@ export const tokens = defineTokens({
     '3xl': { value: '1.875rem' },
     '4xl': { value: '2.25rem' },
     '5xl': { value: '3rem' },
-    '6xl': { value: '4rem' }
+    '6xl': { value: '4rem' },
   },
   fonts: {
     mono: { value: 'var(--font-mono), Menlo, monospace' },
     body: { value: 'var(--font-sans), sans-serif' },
-    heading: { value: 'var(--font-sans), sans-serif' }
+    heading: { value: 'var(--font-sans), sans-serif' },
   },
-  colors
+  colors,
 })

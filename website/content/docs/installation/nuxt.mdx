@@ -138,7 +138,7 @@ export default defineConfig({
   exclude: [],
 
   // The output directory for your css system
-  outdir: 'styled-system'
+  outdir: 'styled-system',
 })
 ```
 
@@ -160,16 +160,16 @@ const { resolve } = createResolver(import.meta.url)
 
 export default defineNuxtConfig({
   alias: {
-    'styled-system': resolve('./styled-system')
+    'styled-system': resolve('./styled-system'),
   },
 
   css: ['@/assets/css/global.css'],
 
   postcss: {
     plugins: {
-      '@bamboocss/dev/postcss': {}
-    }
-  }
+      '@bamboocss/dev/postcss': {},
+    },
+  },
 })
 ```
 

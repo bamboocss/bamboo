@@ -12,8 +12,8 @@ const className = css({
   colorPalette: 'blue',
   bg: 'colorPalette.100',
   _hover: {
-    bg: 'colorPalette.200'
-  }
+    bg: 'colorPalette.200',
+  },
 })
 ```
 
@@ -30,17 +30,17 @@ import { css, cva, cx } from '../styled-system/css'
 
 const button = cva({
   base: {
-    padding: 4
+    padding: 4,
     // you can also specify a default colorPalette in the `base` recipe key
     // colorPalette: 'blue',
     // ^^^^^^^^^^^^^^^^^^^^
   },
   variants: {
     variant: {
-      primary: { color: 'colorPalette.500' }
-    }
+      primary: { color: 'colorPalette.500' },
+    },
   },
-  defaultVariants: { variant: 'primary' }
+  defaultVariants: { variant: 'primary' },
 })
 ```
 
@@ -57,11 +57,11 @@ const someButton = cva({
     variant: {
       primary: {
         bg: { base: 'colorPalette.500', _dark: 'colorPalette.200' },
-        color: { base: 'white', _dark: 'gray.900' }
-      }
-    }
+        color: { base: 'white', _dark: 'gray.900' },
+      },
+    },
   },
-  defaultVariants: { variant: 'primary' }
+  defaultVariants: { variant: 'primary' },
 })
 
 export const App = () => {
@@ -94,25 +94,25 @@ const theme = {
       colors: {
         button: {
           dark: {
-            value: 'navy'
+            value: 'navy',
           },
           light: {
             DEFAULT: {
-              value: 'skyblue'
+              value: 'skyblue',
             },
             accent: {
               DEFAULT: {
-                value: 'cyan'
+                value: 'cyan',
               },
               secondary: {
-                value: 'blue'
-              }
-            }
-          }
-        }
-      }
-    }
-  }
+                value: 'blue',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
 }
 ```
 
@@ -130,8 +130,8 @@ export const App = () => {
         backgroundColor: 'colorPalette.dark',
         _hover: {
           color: 'colorPalette.light.accent',
-          background: 'colorPalette.light.accent.secondary'
-        }
+          background: 'colorPalette.light.accent.secondary',
+        },
       })}
     >
       Root color palette
@@ -150,7 +150,7 @@ export const App = () => {
     <button
       className={css({
         colorPalette: 'button.light.accent',
-        color: 'colorPalette.secondary'
+        color: 'colorPalette.secondary',
       })}
     >
       Nested color palette leaf
@@ -175,10 +175,10 @@ export default defineConfig({
   staticCss: {
     css: [
       {
-        properties: { colorPalette: ['red', 'blue'] }
-      }
-    ]
-  }
+        properties: { colorPalette: ['red', 'blue'] },
+      },
+    ],
+  },
 })
 ```
 
@@ -191,7 +191,7 @@ function ButtonShowcase() {
   const [colorPalette, setColorPalette] = useState('red')
   return (
     <div>
-      <select value={colorPalette} onChange={e => setColorPalette(e.currentTarget.value)}>
+      <select value={colorPalette} onChange={(e) => setColorPalette(e.currentTarget.value)}>
         <option value="red">Red</option>
         <option value="blue">Blue</option>
       </select>
@@ -200,7 +200,7 @@ function ButtonShowcase() {
         className={css({
           bg: 'colorPalette.50',
           color: 'colorPalette.500',
-          colorPalette
+          colorPalette,
         })}
       >
         Click me
@@ -227,9 +227,9 @@ import { defineConfig } from '@bamboocss/dev'
 export default defineConfig({
   theme: {
     colorPalette: {
-      enabled: false
-    }
-  }
+      enabled: false,
+    },
+  },
 })
 ```
 
@@ -243,9 +243,9 @@ import { defineConfig } from '@bamboocss/dev'
 export default defineConfig({
   theme: {
     colorPalette: {
-      include: ['gray', 'blue', 'red']
-    }
-  }
+      include: ['gray', 'blue', 'red'],
+    },
+  },
 })
 ```
 
@@ -270,9 +270,9 @@ import { defineConfig } from '@bamboocss/dev'
 export default defineConfig({
   theme: {
     colorPalette: {
-      exclude: ['yellow', 'orange']
-    }
-  }
+      exclude: ['yellow', 'orange'],
+    },
+  },
 })
 ```
 
@@ -290,9 +290,9 @@ export default defineConfig({
     colorPalette: {
       enabled: true,
       include: ['gray', 'blue', 'red', 'green'],
-      exclude: ['red'] // This will override the include for 'red'
-    }
-  }
+      exclude: ['red'], // This will override the include for 'red'
+    },
+  },
 })
 ```
 

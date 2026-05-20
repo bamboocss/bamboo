@@ -6,7 +6,7 @@ import { Tabs } from '@ark-ui/react/tabs'
 export function TabsList({ titles }: { titles: string[] }) {
   return (
     <Tabs.List className={css({ display: 'flex', fontWeight: 'medium' })}>
-      {titles.map(title => (
+      {titles.map((title) => (
         <Tabs.Trigger key={title} value={title}>
           {title}
         </Tabs.Trigger>

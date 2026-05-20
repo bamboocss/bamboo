@@ -16,7 +16,7 @@ export async function GET() {
     { key: 'customization', title: 'Customization' },
     { key: 'guides', title: 'Guides' },
     { key: 'migration', title: 'Migration' },
-    { key: 'references', title: 'References' }
+    { key: 'references', title: 'References' },
   ]
 
   const content = generateFullDocumentation(sortedDocs, categories)
@@ -24,31 +24,31 @@ export async function GET() {
   return new Response(content, {
     headers: {
       'Content-Type': 'text/plain; charset=utf-8',
-      'Cache-Control': 'public, max-age=3600'
-    }
+      'Cache-Control': 'public, max-age=3600',
+    },
   })
 }
 
 function generateFullDocumentation(
   docs: typeof import('.velite').docs,
-  categories: Array<{ key: string; title: string }>
+  categories: Array<{ key: string; title: string }>,
 ) {
   const tocEntries: string[] = []
   const sections: string[] = []
 
-  categories.forEach(category => {
-    const categoryDocs = docs.filter(doc => doc.slug.startsWith(`docs/${category.key}`))
+  categories.forEach((category) => {
+    const categoryDocs = docs.filter((doc) => doc.slug.startsWith(`docs/${category.key}`))
 
     if (categoryDocs.length === 0) return
 
     tocEntries.push(`\n### ${category.title}`)
-    categoryDocs.forEach(doc => {
+    categoryDocs.forEach((doc) => {
       tocEntries.push(`- [${doc.title}](#${doc.title.toLowerCase().replace(/\s+/g, '-')})`)
     })
 
     sections.push(`\n# ${category.title}\n`)
 
-    categoryDocs.forEach(doc => {
+    categoryDocs.forEach((doc) => {
       const slug = doc.slug.replace('docs/', '')
       const level = slug.split('/').length
       const headerLevel = '#'.repeat(Math.min(level, 6))

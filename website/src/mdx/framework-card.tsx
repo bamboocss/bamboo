@@ -21,78 +21,78 @@ const logoMap = {
   nextjs: {
     name: 'Next.js',
     href: '/docs/installation/nextjs',
-    logo: NextjsLogo
+    logo: NextjsLogo,
   },
   gatsby: {
     name: 'Gatsby',
     logo: GatsbyLogo,
-    href: '/docs/installation/gatsby'
+    href: '/docs/installation/gatsby',
   },
   solid: {
     name: 'Solid',
     logo: SolidjsLogo,
-    href: '/docs/installation/solidjs'
+    href: '/docs/installation/solidjs',
   },
   vite: {
     name: 'Vite',
     logo: ViteLogo,
-    href: '/docs/installation/vite'
+    href: '/docs/installation/vite',
   },
   preact: {
     name: 'Preact',
     logo: PreactLogo,
-    href: '/docs/installation/preact'
+    href: '/docs/installation/preact',
   },
   svelte: {
     name: 'Svelte',
     logo: SvelteLogo,
-    href: '/docs/installation/svelte'
+    href: '/docs/installation/svelte',
   },
   astro: {
     name: 'Astro',
     logo: AstroLogo,
-    href: '/docs/installation/astro'
+    href: '/docs/installation/astro',
   },
   remix: {
     name: 'Remix',
     logo: RemixLogo,
-    href: '/docs/installation/remix'
+    href: '/docs/installation/remix',
   },
   reactrouter: {
     name: 'React Router',
     logo: ReactRouterLogo,
-    href: '/docs/installation/react-router'
+    href: '/docs/installation/react-router',
   },
   qwik: {
     name: 'Qwik',
     logo: QwikLogo,
-    href: '/docs/installation/qwik'
+    href: '/docs/installation/qwik',
   },
   redwood: {
     name: 'Redwood',
     logo: RedwoodLogo,
-    href: '/docs/installation/redwood'
+    href: '/docs/installation/redwood',
   },
   rsbuild: {
     name: 'Rsbuild',
     logo: RsbuildLogo,
-    href: '/docs/installation/rsbuild'
+    href: '/docs/installation/rsbuild',
   },
   vue: {
     name: 'Vue',
     logo: VueLogo,
-    href: '/docs/installation/vue'
+    href: '/docs/installation/vue',
   },
   storybook: {
     name: 'Storybook',
     logo: StorybookLogo,
-    href: '/docs/installation/storybook'
+    href: '/docs/installation/storybook',
   },
   ember: {
     name: 'Ember',
     logo: EmberLogo,
-    href: '/docs/installation/ember'
-  }
+    href: '/docs/installation/ember',
+  },
 }
 
 type Props = {
@@ -108,7 +108,7 @@ export const FrameworkCard = (props: Props) => {
         gap: '6',
         position: 'relative',
         direction: { base: 'column', sm: 'row' },
-        align: { base: 'flex-start', sm: 'center' }
+        align: { base: 'flex-start', sm: 'center' },
       })}
     >
       <div
@@ -116,7 +116,7 @@ export const FrameworkCard = (props: Props) => {
           size: '14',
           layerStyle: 'offShadow',
           shadowColor: { _dark: 'neutral.700' },
-          rounded: 'md'
+          rounded: 'md',
         })}
       >
         <Logo />
@@ -129,8 +129,8 @@ export const FrameworkCard = (props: Props) => {
               _before: {
                 content: '""',
                 position: 'absolute',
-                inset: '0'
-              }
+                inset: '0',
+              },
             })}
           >
             {name}
@@ -144,7 +144,7 @@ export const FrameworkCard = (props: Props) => {
 export const FrameworkCards = () => {
   return (
     <div className={grid({ columns: 3, gap: '8', mt: '8', mb: '16' })}>
-      {Object.keys(logoMap).map(framework => (
+      {Object.keys(logoMap).map((framework) => (
         <FrameworkCard key={framework} framework={framework as keyof typeof logoMap} />
       ))}
     </div>

@@ -6,13 +6,13 @@ import { Token, token } from '@/styled-system/tokens'
 export const Keyframes = () => {
   return (
     <div className={grid({ columns: 3, gap: '8', fontSize: 'sm' })}>
-      {Object.keys(defaultKeyframes).map(keyframe => {
+      {Object.keys(defaultKeyframes).map((keyframe) => {
         return (
           <div key={keyframe} className={stack()}>
             <div
               className={square({
                 size: '12',
-                bg: 'pink.200'
+                bg: 'pink.200',
               })}
               style={{ animation: token(`animations.${keyframe}` as Token) }}
             />

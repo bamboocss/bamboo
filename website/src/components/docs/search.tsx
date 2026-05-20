@@ -9,7 +9,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     color: 'fg',
-    minW: { sm: '200px' }
+    minW: { sm: '200px' },
   }),
 
   input: css({
@@ -24,7 +24,7 @@ const styles = {
     transition: 'shadow',
     textStyle: 'sm',
     lineHeight: 'tight',
-    bg: 'bg.muted'
+    bg: 'bg.muted',
   }),
 
   kbd: css({
@@ -45,9 +45,9 @@ const styles = {
     alignItems: 'center',
     opacity: 0,
     '&[data-mounted]': {
-      opacity: 1
-    }
-  })
+      opacity: 1,
+    },
+  }),
 }
 
 export const SearchButton = (props: React.ComponentProps<'button'>) => {
@@ -68,7 +68,7 @@ export const SearchButton = (props: React.ComponentProps<'button'>) => {
         className={center({
           boxSize: '7',
           hideFrom: 'sm',
-          _icon: { boxSize: '5' }
+          _icon: { boxSize: '5' },
         })}
       >
         <SearchIcon />

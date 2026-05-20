@@ -17,17 +17,12 @@ export const StartBuildingSection = () => {
               position: 'absolute',
               top: '-10',
               left: '50%',
-              transform: 'translateX(-50%)'
+              transform: 'translateX(-50%)',
             })}
           />
 
           <VStack gap="6">
-            <bamboo.span
-              textStyle="bamboo.h2"
-              letterSpacing="tight"
-              fontWeight="bold"
-              textAlign="center"
-            >
+            <bamboo.span textStyle="bamboo.h2" letterSpacing="tight" fontWeight="bold" textAlign="center">
               Start building with <br />
               Bamboo today
             </bamboo.span>
@@ -38,22 +33,10 @@ export const StartBuildingSection = () => {
               align={{ base: 'center', sm: 'unset' }}
               justify={{ sm: 'center' }}
             >
-              <ButtonLink
-                href="/docs"
-                size="lg"
-                color="main"
-                variant="funky"
-                w={{ base: 'full', sm: '240px' }}
-              >
+              <ButtonLink href="/docs" size="lg" color="main" variant="funky" w={{ base: 'full', sm: '240px' }}>
                 Get Started
               </ButtonLink>
-              <ButtonLink
-                href="/learn"
-                size="lg"
-                color="black"
-                variant="funky"
-                w={{ base: 'full', sm: '240px' }}
-              >
+              <ButtonLink href="/learn" size="lg" color="black" variant="funky" w={{ base: 'full', sm: '240px' }}>
                 Learn Bamboo
               </ButtonLink>
             </Stack>

@@ -13,7 +13,7 @@ import { css } from '../styled-system/css'
 
 const styles = css({
   paddingTop: '20px',
-  padding: '10px'
+  padding: '10px',
 })
 ```
 
@@ -80,8 +80,8 @@ export default {
   // ...
   transform: {
     '^.+\\.tsx?$': 'ts-jest',
-    '^.+\\.(ts|tsx|js|jsx)?$': 'ts-jest'
-  }
+    '^.+\\.(ts|tsx|js|jsx)?$': 'ts-jest',
+  },
 }
 ```
 
@@ -90,7 +90,7 @@ In your Bamboo config, set the `outExtension` to `js`:
 ```ts
 export default defineConfig({
   // ...
-  outExtension: 'js'
+  outExtension: 'js',
 })
 ```
 
@@ -121,7 +121,7 @@ your `tsconfig.json` file.
 // bamboo.config.js
 
 module.exports = {
-  importMap: '@my-path'
+  importMap: '@my-path',
 }
 ```
 
@@ -140,7 +140,7 @@ import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   // ...
-  dependencies: ['path/to/files/**.ts']
+  dependencies: ['path/to/files/**.ts'],
 })
 ```
 
@@ -230,7 +230,7 @@ function App() {
   return (
     <div
       style={{
-        background: token('colors.blue.200')
+        background: token('colors.blue.200'),
       }}
     />
   )
@@ -372,16 +372,16 @@ css({
   containerType: 'size',
   '@media (min-width: 10px)': {
     fontSize: 'xl',
-    color: 'blue.300'
+    color: 'blue.300',
   },
   '@container (min-width: 10px)': {
     fontSize: '2xl',
-    color: 'green.300'
+    color: 'green.300',
   },
   '@supports (display: flex)': {
     fontSize: '3xl',
-    color: 'red.300'
-  }
+    color: 'red.300',
+  },
 })
 ```
 

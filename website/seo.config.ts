@@ -9,25 +9,25 @@ const seoConfig = defineMetadata({
   metadataBase: new URL(publicUrl),
   title: {
     template: '%s - Bamboo CSS',
-    default: 'Bamboo CSS - Build modern websites using build time and type-safe CSS-in-JS'
+    default: 'Bamboo CSS - Build modern websites using build time and type-safe CSS-in-JS',
   },
   description: 'Build modern websites using build time and type-safe CSS-in-JS',
   themeColor: '#F6E458',
   openGraph: {
     images: `${publicUrl}/og`,
-    url: publicUrl
+    url: publicUrl,
   },
   manifest: '/site.webmanifest',
   icons: [
     { rel: 'icon', url: '/favicon.ico' },
     { rel: 'apple-touch-icon', url: '/apple-touch-icon.png' },
     { rel: 'mask-icon', url: '/favicon.ico' },
-    { rel: 'image/x-icon', url: '/favicon.ico' }
+    { rel: 'image/x-icon', url: '/favicon.ico' },
   ],
   twitter: {
     site: '@bamboo__css',
-    creator: '@thesegunadebayo'
-  }
+    creator: '@thesegunadebayo',
+  },
 })
 
 export default seoConfig

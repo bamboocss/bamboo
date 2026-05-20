@@ -21,12 +21,12 @@ import { ThemeSwitch } from './theme-switch'
 const classes = {
   link: css({ textStyle: 'sm' }),
   active: css({
-    fontWeight: 'medium'
+    fontWeight: 'medium',
   }),
   inactive: css({
     color: 'fg.muted',
-    _hover: { color: 'fg' }
-  })
+    _hover: { color: 'fg' },
+  }),
 }
 
 export const Navbar = () => {
@@ -46,7 +46,7 @@ export const Navbar = () => {
             data-part="logo-link"
             href={typeof docsConfig.logoUrl === 'string' ? docsConfig.logoUrl : '/'}
             className={css({
-              _hover: { opacity: 0.75 }
+              _hover: { opacity: 0.75 },
             })}
           >
             <Icon icon="LogoWithText" />
@@ -57,7 +57,7 @@ export const Navbar = () => {
           </div>
         )}
 
-        {items.map(item => {
+        {items.map((item) => {
           const active = item.href === pathname || pathname?.startsWith(item.href + '/')
           return (
             <Anchor
@@ -86,7 +86,7 @@ export const Navbar = () => {
             className={css({
               p: 2,
               color: 'currentColor',
-              _icon: { width: '4' }
+              _icon: { width: '4' },
             })}
             href={docsConfig.docsRepositoryBase}
             newWindow

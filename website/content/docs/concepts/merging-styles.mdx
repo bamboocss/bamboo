@@ -12,11 +12,11 @@ import { css } from 'styled-system/css'
 
 const style1 = {
   bg: 'red',
-  color: 'white'
+  color: 'white',
 }
 
 const style2 = {
-  bg: 'blue'
+  bg: 'blue',
 }
 
 const className = css(style1, style2) // => 'bg_blue text_white'
@@ -34,7 +34,7 @@ import { css } from 'styled-system/css'
 
 export const style1 = css.raw({
   bg: 'red',
-  color: 'white'
+  color: 'white',
 })
 
 // component.js
@@ -42,7 +42,7 @@ import { css } from 'styled-system/css'
 import { style1 } from './style.js'
 
 const style2 = css.raw({
-  bg: 'blue'
+  bg: 'blue',
 })
 
 const className = css(style1, style2) // => 'bg_blue text_white'
@@ -64,7 +64,7 @@ const baseStyles = css.raw({ margin: 0, padding: 0 })
 
 const component = css({
   '& p': { ...baseStyles, fontSize: '1rem' },
-  '& h1': { ...baseStyles, fontSize: '2rem' }
+  '& h1': { ...baseStyles, fontSize: '2rem' },
 })
 ```
 
@@ -78,8 +78,8 @@ const interactive = css.raw({ cursor: 'pointer', transition: 'all 0.2s' })
 const card = css({
   _hover: {
     ...interactive,
-    _dark: { ...interactive, color: 'white' }
-  }
+    _dark: { ...interactive, color: 'white' },
+  },
 })
 ```
 
@@ -92,26 +92,26 @@ import { css, cx, cva } from 'styled-system/css'
 
 const overrideStyles = css.raw({
   bg: 'red',
-  color: 'white'
+  color: 'white',
 })
 
 const buttonStyles = cva({
   base: {
     bg: 'blue',
-    border: '1px solid black'
+    border: '1px solid black',
   },
   variants: {
     size: {
-      small: { fontSize: '12px' }
-    }
-  }
+      small: { fontSize: '12px' },
+    },
+  },
 })
 
 const className = css(
   // returns the resolved style object
   buttonStyles.raw({ size: 'small' }),
   // add the override styles
-  overrideStyles
+  overrideStyles,
 )
 
 // => 'bg_red border_1px_solid_black color_white font-size_12px'
@@ -173,7 +173,7 @@ const className = cx(
   // returns the resolved class name: `button button--size-small`
   button({ size: 'small' }),
   // add the override styles
-  css({ bg: 'red' }) // => 'bg_red'
+  css({ bg: 'red' }), // => 'bg_red'
 )
 
 // => 'button button--size-small bg_red'
@@ -188,7 +188,7 @@ Using these techniques, you can apply them to a component by exposing a `css` pr
 ```jsx
 const cardStyles = css.raw({
   bg: 'red',
-  color: 'white'
+  color: 'white',
 })
 
 function Card({ title, description, css: cssProp }) {
@@ -213,7 +213,7 @@ the style object.
 ```jsx
 const cardStyles = css.raw({
   bg: 'red',
-  color: 'white'
+  color: 'white',
 })
 
 function Card({ title, description, style }) {

@@ -20,17 +20,16 @@ export default defineConfig({
     extend: {
       dark: '.dark &, [data-theme="dark"] &',
       light: '.light &',
-      supportsBackdrop:
-        '@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px)))'
-    }
+      supportsBackdrop: '@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px)))',
+    },
   },
   staticCss: {
     recipes: {
       // used in .mdx files, e.g. <Callout type="default" /> or with the blockquote sign like: `> Blabla`
       // ts-morph can't parse MDX properly, so we need to specify it here
       callout: [{ type: ['*'] }],
-      card: [{ variant: ['*'] }]
-    }
+      card: [{ variant: ['*'] }],
+    },
   },
   theme: {
     extend: {
@@ -39,15 +38,15 @@ export default defineConfig({
         md: '768px',
         lg: '1024px',
         xl: '1280px',
-        '2xl': '1536px'
+        '2xl': '1536px',
       },
       semanticTokens,
       tokens,
       recipes,
       textStyles,
       layerStyles,
-      keyframes
-    }
+      keyframes,
+    },
   },
-  globalCss
+  globalCss,
 })

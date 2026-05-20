@@ -2,14 +2,14 @@ import preset from '@bamboocss/preset-bamboo'
 import { TokenDictionary } from '@bamboocss/token-dictionary'
 
 const dictionary = new TokenDictionary({
-  tokens: preset.theme.tokens
+  tokens: preset.theme.tokens,
 }).init()
 
 const omit = new Set(['black', 'white', 'transparent', 'current'])
 
 export const defaultColors = Object.keys(preset.theme.tokens.colors)
-  .filter(key => !omit.has(key))
-  .map(key => {
+  .filter((key) => !omit.has(key))
+  .map((key) => {
     const values = dictionary.filter(({ type, path }) => type === 'color' && path[1] === key)
     return { key, values }
   })
@@ -21,28 +21,26 @@ export const defaultSpacings = dictionary
 export const defaultSizings = dictionary
   .filter(
     ({ extensions, value }) =>
-      !defaultSpacings.find(s => s.value === value) &&
-      extensions.category === 'sizes' &&
-      !extensions.isNegative
+      !defaultSpacings.find((s) => s.value === value) && extensions.category === 'sizes' && !extensions.isNegative,
   )
   .sort((a, b) => parseFloat(a.value) - parseFloat(b.value))
 
 export const defaultBorderRadius = dictionary.filter({
-  extensions: { category: 'radii' }
+  extensions: { category: 'radii' },
 })
 
 export const defaultFontSizes = dictionary.filter({
-  extensions: { category: 'fontSizes' }
+  extensions: { category: 'fontSizes' },
 })
 
 export const defaultFonts = dictionary.filter({
-  extensions: { category: 'fonts' }
+  extensions: { category: 'fonts' },
 })
 
 export const defaultBreakpoints = preset.theme.breakpoints
 
 export const defaultShadows = dictionary.filter({
-  extensions: { category: 'shadows' }
+  extensions: { category: 'shadows' },
 })
 
 export const defaultKeyframes = preset.theme.keyframes

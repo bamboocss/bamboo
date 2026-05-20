@@ -101,12 +101,12 @@ module.exports = function (defaults) {
           rules: [
             {
               test: /\.css$/i,
-              use: ['postcss-loader']
-            }
-          ]
-        }
-      }
-    }
+              use: ['postcss-loader'],
+            },
+          ],
+        },
+      },
+    },
     // other options...
   })
 }
@@ -120,9 +120,9 @@ Add the `.embroider` folder to the allow list so the Bamboo PostCSS plugin picks
 module.exports = {
   plugins: {
     '@bamboocss/dev/postcss': {
-      allow: [/node_modules\/.embroider/]
-    }
-  }
+      allow: [/node_modules\/.embroider/],
+    },
+  },
 }
 ```
 
@@ -166,14 +166,14 @@ export default defineConfig({
 
   // Useful for theme customization
   theme: {
-    extend: {}
+    extend: {},
   },
 
   // The output directory for your css system
   outdir: 'app/styled-system',
 
   // Configure the import map to use your project name
-  importMap: 'test-app/styled-system'
+  importMap: 'test-app/styled-system',
 })
 ```
 

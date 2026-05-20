@@ -1,11 +1,5 @@
 export const RsbuildLogo = () => (
-  <svg
-    fill="none"
-    width="32"
-    height="32"
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 2500 2345"
-  >
+  <svg fill="none" width="32" height="32" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2500 2345">
     <g clipPath="url(#a)">
       <path
         d="M298 1807a4381 4381 0 0 0-180 84l-36 41c-14 37-11 96-17 135l17 36 21-8s9-33 64-89l51-43s181-108 207-120l-127-36Z"
@@ -23,14 +17,8 @@ export const RsbuildLogo = () => (
         d="M902 1727c70 105 330 43 330-88 0 0-74-16-106-47l-71-86c-39 77-153 164-164 202l11 19Zm831-47c-5 106 163 156 244 106 4-99-8-205-70-285-19 22-21 70-72 116a350 350 0 0 1-102 63Z"
         fill="#F28773"
       />
-      <path
-        d="M1397 1632c16 55 100 69 160 79-51 17-108 9-155-16-26-11-48-54-5-63Z"
-        fill="#564341"
-      />
-      <path
-        d="M725 1848c-12-19-179 13-255 105-37 39 15 59 52 54 112-29 96-95 260-77 2 0-29-35-57-82Z"
-        fill="url(#c)"
-      />
+      <path d="M1397 1632c16 55 100 69 160 79-51 17-108 9-155-16-26-11-48-54-5-63Z" fill="#564341" />
+      <path d="M725 1848c-12-19-179 13-255 105-37 39 15 59 52 54 112-29 96-95 260-77 2 0-29-35-57-82Z" fill="url(#c)" />
       <path
         d="M800 1948c-77-29-196 2-256 82-21 28-54 111-17 103 93-21 160-20 172-31 43-41 74-69 186-73-14-18-57-70-85-81Z"
         fill="url(#d)"
@@ -47,10 +35,7 @@ export const RsbuildLogo = () => (
         d="M1808 2143c67-20 141 3 190 58 0 0 38 23 49 16 10-6-2-53-8-63-34-66-61-106-129-125-33 38-65 79-103 114Z"
         fill="url(#g)"
       />
-      <path
-        d="M1925 2025c93 30 68 63 153 83 5 1 6-23 6-28 0-27-72-88-111-113-16-11-56 56-48 58Z"
-        fill="url(#h)"
-      />
+      <path d="M1925 2025c93 30 68 63 153 83 5 1 6-23 6-28 0-27-72-88-111-113-16-11-56 56-48 58Z" fill="url(#h)" />
       <path
         d="M1565 949c5 31-5 121-5 121 264-69 624-461 91-385 56-82 171-126 214-220l-2-11a865 865 0 0 0-626 324l-12 35 16 40c109 33 227 24 340 33 0 0-19 53-16 63Z"
         fill="url(#i)"
@@ -97,10 +82,7 @@ export const RsbuildLogo = () => (
         d="M2049 1759c-111-252 17-502 305-498-67-44-122-50-200-54l-39 6-28-3c-48 14-110 27-146 64-1 22-14 72-19 94-6 16-25 64-24 81l28 67c20 39 31 54 40 98l18 67 9 47 56 31Z"
         fill="url(#s)"
       />
-      <path
-        d="M2142 1431c5-10 1-32-15-43-19-11-46-10-58 14-8 19 4 38 23 47 18 10 40 0 50-18Z"
-        fill="url(#t)"
-      />
+      <path d="M2142 1431c5-10 1-32-15-43-19-11-46-10-58 14-8 19 4 38 23 47 18 10 40 0 50-18Z" fill="url(#t)" />
       <path
         d="M2376 1422c-15 26-60 45-115 28-64-20-132-83-80-153 23-31 87-30 132-8 33 16 99 73 63 133Z"
         fill="url(#u)"
@@ -149,286 +131,118 @@ export const RsbuildLogo = () => (
       />
     </g>
     <defs>
-      <linearGradient
-        id="b"
-        x1="887.4"
-        y1="1515.4"
-        x2="1426.2"
-        y2="2354.9"
-        gradientUnits="userSpaceOnUse"
-      >
+      <linearGradient id="b" x1="887.4" y1="1515.4" x2="1426.2" y2="2354.9" gradientUnits="userSpaceOnUse">
         <stop stopColor="#FFBC9C" />
         <stop offset=".7" stopColor="#FFBC9C" />
         <stop offset="1" stopColor="#FFA67A" />
       </linearGradient>
-      <linearGradient
-        id="c"
-        x1="619.7"
-        y1="1842.9"
-        x2="570.9"
-        y2="2039.3"
-        gradientUnits="userSpaceOnUse"
-      >
+      <linearGradient id="c" x1="619.7" y1="1842.9" x2="570.9" y2="2039.3" gradientUnits="userSpaceOnUse">
         <stop stopColor="#F28773" />
         <stop offset=".3" stopColor="#F28773" />
         <stop offset="1" stopColor="#F6A66A" />
       </linearGradient>
-      <linearGradient
-        id="d"
-        x1="697.5"
-        y1="1937.2"
-        x2="637.8"
-        y2="2170.3"
-        gradientUnits="userSpaceOnUse"
-      >
+      <linearGradient id="d" x1="697.5" y1="1937.2" x2="637.8" y2="2170.3" gradientUnits="userSpaceOnUse">
         <stop stopColor="#F28773" />
         <stop offset=".3" stopColor="#F28773" />
         <stop offset="1" stopColor="#F6A66A" />
       </linearGradient>
-      <linearGradient
-        id="e"
-        x1="860.8"
-        y1="2032"
-        x2="767.6"
-        y2="2378.4"
-        gradientUnits="userSpaceOnUse"
-      >
+      <linearGradient id="e" x1="860.8" y1="2032" x2="767.6" y2="2378.4" gradientUnits="userSpaceOnUse">
         <stop stopColor="#F28773" />
         <stop offset=".3" stopColor="#F28773" />
         <stop offset="1" stopColor="#F6A66A" />
       </linearGradient>
-      <linearGradient
-        id="f"
-        x1="1837"
-        y1="2168.8"
-        x2="1891.9"
-        y2="2355.9"
-        gradientUnits="userSpaceOnUse"
-      >
+      <linearGradient id="f" x1="1837" y1="2168.8" x2="1891.9" y2="2355.9" gradientUnits="userSpaceOnUse">
         <stop stopColor="#F57A55" />
         <stop offset=".4" stopColor="#F28773" />
         <stop offset="1" stopColor="#FA9F6E" />
       </linearGradient>
-      <linearGradient
-        id="g"
-        x1="1929.1"
-        y1="2064.7"
-        x2="2011.7"
-        y2="2237.2"
-        gradientUnits="userSpaceOnUse"
-      >
+      <linearGradient id="g" x1="1929.1" y1="2064.7" x2="2011.7" y2="2237.2" gradientUnits="userSpaceOnUse">
         <stop stopColor="#F57A55" />
         <stop offset=".4" stopColor="#F28773" />
         <stop offset="1" stopColor="#FA9F6E" />
       </linearGradient>
-      <linearGradient
-        id="h"
-        x1="2003.9"
-        y1="1992.4"
-        x2="2071.1"
-        y2="2115.3"
-        gradientUnits="userSpaceOnUse"
-      >
+      <linearGradient id="h" x1="2003.9" y1="1992.4" x2="2071.1" y2="2115.3" gradientUnits="userSpaceOnUse">
         <stop stopColor="#F57A55" />
         <stop offset=".4" stopColor="#F28773" />
         <stop offset="1" stopColor="#FA9F6E" />
       </linearGradient>
-      <linearGradient
-        id="i"
-        x1="1575.7"
-        y1="453.7"
-        x2="1575.7"
-        y2="1070"
-        gradientUnits="userSpaceOnUse"
-      >
+      <linearGradient id="i" x1="1575.7" y1="453.7" x2="1575.7" y2="1070" gradientUnits="userSpaceOnUse">
         <stop stopColor="#FFE768" />
         <stop offset=".4" stopColor="#FFE768" />
         <stop offset=".7" stopColor="#FFBD4A" />
         <stop offset="1" stopColor="#FFBD4A" />
       </linearGradient>
-      <linearGradient
-        id="j"
-        x1="1707.5"
-        y1="1011.2"
-        x2="1992.3"
-        y2="1479.7"
-        gradientUnits="userSpaceOnUse"
-      >
+      <linearGradient id="j" x1="1707.5" y1="1011.2" x2="1992.3" y2="1479.7" gradientUnits="userSpaceOnUse">
         <stop stopColor="#564341" />
         <stop offset=".5" stopColor="#564341" />
         <stop offset="1" stopColor="#845750" />
       </linearGradient>
-      <linearGradient
-        id="k"
-        x1="1264"
-        y1="947.5"
-        x2="1550.6"
-        y2="1427.7"
-        gradientUnits="userSpaceOnUse"
-      >
+      <linearGradient id="k" x1="1264" y1="947.5" x2="1550.6" y2="1427.7" gradientUnits="userSpaceOnUse">
         <stop stopColor="#564341" />
         <stop offset=".5" stopColor="#564341" />
         <stop offset="1" stopColor="#845750" />
       </linearGradient>
-      <linearGradient
-        id="l"
-        x1="1945.7"
-        y1="1986.8"
-        x2="1977.7"
-        y2="2011.6"
-        gradientUnits="userSpaceOnUse"
-      >
+      <linearGradient id="l" x1="1945.7" y1="1986.8" x2="1977.7" y2="2011.6" gradientUnits="userSpaceOnUse">
         <stop stopColor="#C35C45" />
         <stop offset="1" stopColor="#B76455" />
       </linearGradient>
-      <linearGradient
-        id="m"
-        x1="1867.1"
-        y1="2077.2"
-        x2="1906.2"
-        y2="2128.2"
-        gradientUnits="userSpaceOnUse"
-      >
+      <linearGradient id="m" x1="1867.1" y1="2077.2" x2="1906.2" y2="2128.2" gradientUnits="userSpaceOnUse">
         <stop stopColor="#C35C45" />
         <stop offset="1" stopColor="#B76455" />
       </linearGradient>
-      <linearGradient
-        id="n"
-        x1="1126.5"
-        y1="2143.3"
-        x2="970.9"
-        y2="2406.2"
-        gradientUnits="userSpaceOnUse"
-      >
+      <linearGradient id="n" x1="1126.5" y1="2143.3" x2="970.9" y2="2406.2" gradientUnits="userSpaceOnUse">
         <stop stopColor="#AA6160" />
         <stop offset="1" stopColor="#B36F5F" />
       </linearGradient>
-      <linearGradient
-        id="o"
-        x1="1737.3"
-        y1="2177"
-        x2="1777.2"
-        y2="2265.9"
-        gradientUnits="userSpaceOnUse"
-      >
+      <linearGradient id="o" x1="1737.3" y1="2177" x2="1777.2" y2="2265.9" gradientUnits="userSpaceOnUse">
         <stop stopColor="#C35C45" />
         <stop offset="1" stopColor="#B76455" />
       </linearGradient>
-      <linearGradient
-        id="p"
-        x1="868.7"
-        y1="2003.4"
-        x2="755.2"
-        y2="2204.6"
-        gradientUnits="userSpaceOnUse"
-      >
+      <linearGradient id="p" x1="868.7" y1="2003.4" x2="755.2" y2="2204.6" gradientUnits="userSpaceOnUse">
         <stop stopColor="#AA6160" />
         <stop offset="1" stopColor="#B36F5F" />
       </linearGradient>
-      <linearGradient
-        id="q"
-        x1="757.6"
-        y1="1894.8"
-        x2="663.9"
-        y2="2066"
-        gradientUnits="userSpaceOnUse"
-      >
+      <linearGradient id="q" x1="757.6" y1="1894.8" x2="663.9" y2="2066" gradientUnits="userSpaceOnUse">
         <stop stopColor="#AA6160" />
         <stop offset="1" stopColor="#B36F5F" />
       </linearGradient>
-      <linearGradient
-        id="r"
-        x1="2394.3"
-        y1="1310.1"
-        x2="2004.9"
-        y2="1704.8"
-        gradientUnits="userSpaceOnUse"
-      >
+      <linearGradient id="r" x1="2394.3" y1="1310.1" x2="2004.9" y2="1704.8" gradientUnits="userSpaceOnUse">
         <stop stopColor="#FFCB87" />
         <stop offset=".1" stopColor="#FFCB87" />
         <stop offset=".4" stopColor="#FFBC9C" />
         <stop offset="1" stopColor="#FFBC9C" />
       </linearGradient>
-      <linearGradient
-        id="s"
-        x1="2354"
-        y1="1206.8"
-        x2="1867.7"
-        y2="1730.7"
-        gradientUnits="userSpaceOnUse"
-      >
+      <linearGradient id="s" x1="2354" y1="1206.8" x2="1867.7" y2="1730.7" gradientUnits="userSpaceOnUse">
         <stop stopColor="#FBC38C" />
         <stop offset=".3" stopColor="#F19675" />
         <stop offset=".7" stopColor="#F0876A" />
         <stop offset="1" stopColor="#ED8870" />
       </linearGradient>
-      <linearGradient
-        id="t"
-        x1="2105.3"
-        y1="1381.3"
-        x2="2105.3"
-        y2="1453.1"
-        gradientUnits="userSpaceOnUse"
-      >
+      <linearGradient id="t" x1="2105.3" y1="1381.3" x2="2105.3" y2="1453.1" gradientUnits="userSpaceOnUse">
         <stop stopColor="#FFFFFE" />
         <stop offset="1" stopColor="#fff" />
       </linearGradient>
-      <linearGradient
-        id="u"
-        x1="2274.5"
-        y1="1272.6"
-        x2="2274.5"
-        y2="1456.3"
-        gradientUnits="userSpaceOnUse"
-      >
+      <linearGradient id="u" x1="2274.5" y1="1272.6" x2="2274.5" y2="1456.3" gradientUnits="userSpaceOnUse">
         <stop stopColor="#FFFFFE" />
         <stop offset="1" stopColor="#fff" />
       </linearGradient>
-      <linearGradient
-        id="v"
-        x1="288.4"
-        y1="689.3"
-        x2="624.3"
-        y2="1846.7"
-        gradientUnits="userSpaceOnUse"
-      >
+      <linearGradient id="v" x1="288.4" y1="689.3" x2="624.3" y2="1846.7" gradientUnits="userSpaceOnUse">
         <stop stopColor="#FFCB87" />
         <stop offset=".2" stopColor="#FFCB87" />
         <stop offset=".7" stopColor="#FFBC9C" />
         <stop offset="1" stopColor="#FFBC9C" />
       </linearGradient>
-      <linearGradient
-        id="w"
-        x1="11.7"
-        y1="1035.8"
-        x2="616.7"
-        y2="1632"
-        gradientUnits="userSpaceOnUse"
-      >
+      <linearGradient id="w" x1="11.7" y1="1035.8" x2="616.7" y2="1632" gradientUnits="userSpaceOnUse">
         <stop stopColor="#FFCB87" />
         <stop offset=".3" stopColor="#F79E75" />
         <stop offset=".5" stopColor="#EF876D" />
         <stop offset="1" stopColor="#ED8870" />
       </linearGradient>
-      <linearGradient
-        id="x"
-        x1="578.3"
-        y1="1143.8"
-        x2="585.4"
-        y2="1348.2"
-        gradientUnits="userSpaceOnUse"
-      >
+      <linearGradient id="x" x1="578.3" y1="1143.8" x2="585.4" y2="1348.2" gradientUnits="userSpaceOnUse">
         <stop stopColor="#FFFFFE" />
         <stop offset="1" stopColor="#fff" />
       </linearGradient>
-      <linearGradient
-        id="y"
-        x1="367.8"
-        y1="852.8"
-        x2="381.3"
-        y2="1240.2"
-        gradientUnits="userSpaceOnUse"
-      >
+      <linearGradient id="y" x1="367.8" y1="852.8" x2="381.3" y2="1240.2" gradientUnits="userSpaceOnUse">
         <stop stopColor="#FFF9CE" />
         <stop offset="1" stopColor="#fff" />
       </linearGradient>

@@ -14,7 +14,7 @@ export interface GitHubUser {
 export async function fetchGitHubUser(username: string): Promise<GitHubUser | null> {
   try {
     const response = await fetch(`https://api.github.com/users/${username}`, {
-      next: { revalidate: 3600 } // Revalidate every hour
+      next: { revalidate: 3600 }, // Revalidate every hour
     })
     if (!response.ok) return null
     return await response.json()
@@ -25,7 +25,7 @@ export async function fetchGitHubUser(username: string): Promise<GitHubUser | nu
 }
 
 export async function fetchGithubUsers(usernames: string[]): Promise<GitHubUser[]> {
-  const userPromises = usernames.map(username => fetchGitHubUser(username))
+  const userPromises = usernames.map((username) => fetchGitHubUser(username))
   const users = await Promise.all(userPromises)
   return users.filter((user): user is GitHubUser => user !== null)
 }

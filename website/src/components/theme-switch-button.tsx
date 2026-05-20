@@ -22,7 +22,7 @@ function useThemeSwitch() {
     mounted,
     iconToUse,
     iconText,
-    toggleTheme
+    toggleTheme,
   }
 }
 
@@ -34,8 +34,8 @@ const switchStyle = css({
   letterSpacing: 'tight',
   rounded: 'md',
   _hover: {
-    bg: 'bg.emphasized.hover'
-  }
+    bg: 'bg.emphasized.hover',
+  },
 })
 
 export function ThemeSwitchButton() {
@@ -55,12 +55,7 @@ export function ThemeSwitchIconButton() {
   const { iconToUse, iconText, toggleTheme, mounted } = useThemeSwitch()
 
   return (
-    <button
-      style={{ opacity: mounted ? 1 : 0 }}
-      onClick={toggleTheme}
-      aria-label={iconText}
-      className={switchStyle}
-    >
+    <button style={{ opacity: mounted ? 1 : 0 }} onClick={toggleTheme} aria-label={iconText} className={switchStyle}>
       <ButtonIcon icon={iconToUse} />
     </button>
   )

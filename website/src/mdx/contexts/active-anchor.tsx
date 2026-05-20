@@ -14,9 +14,7 @@ type ActiveAnchor = Record<
 >
 
 const ActiveAnchorContext = createContext<ActiveAnchor>({})
-const SetActiveAnchorContext = createContext<React.Dispatch<React.SetStateAction<ActiveAnchor>>>(
-  v => v
-)
+const SetActiveAnchorContext = createContext<React.Dispatch<React.SetStateAction<ActiveAnchor>>>((v) => v)
 
 const IntersectionObserverContext = createContext<IntersectionObserver | null>(null)
 const slugs = new WeakMap()
@@ -40,8 +38,8 @@ export const ActiveAnchorProvider = ({ children }: { children: React.ReactNode }
 
     if (typeof window !== 'undefined' && !observer) {
       const newObserver = new IntersectionObserver(
-        entries => {
-          setActiveAnchor(f => {
+        (entries) => {
+          setActiveAnchor((f) => {
             const ret = { ...f }
 
             for (const entry of entries) {
@@ -54,7 +52,7 @@ export const ActiveAnchorProvider = ({ children }: { children: React.ReactNode }
                 ret[slug] = {
                   index,
                   aboveHalfViewport,
-                  insideHalfViewport
+                  insideHalfViewport,
                 }
               }
             }
@@ -84,8 +82,8 @@ export const ActiveAnchorProvider = ({ children }: { children: React.ReactNode }
         },
         {
           rootMargin: '0px 0px -50%',
-          threshold: [0, 1]
-        }
+          threshold: [0, 1],
+        },
       )
 
       setObserver(newObserver)
@@ -100,9 +98,7 @@ export const ActiveAnchorProvider = ({ children }: { children: React.ReactNode }
     <ActiveAnchorContext.Provider value={activeAnchor}>
       <SetActiveAnchorContext.Provider value={setActiveAnchor}>
         <SlugsContext.Provider value={slugs}>
-          <IntersectionObserverContext.Provider value={observer}>
-            {children}
-          </IntersectionObserverContext.Provider>
+          <IntersectionObserverContext.Provider value={observer}>{children}</IntersectionObserverContext.Provider>
         </SlugsContext.Provider>
       </SetActiveAnchorContext.Provider>
     </ActiveAnchorContext.Provider>

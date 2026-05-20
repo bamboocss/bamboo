@@ -34,13 +34,13 @@ const config = {
         description: 'A container that allows for scrolling',
         defaultValues: {
           direction: 'vertical',
-          hideScrollbar: true
+          hideScrollbar: true,
         },
         properties: {
           // The direction of the scroll
           direction: { type: 'enum', value: ['horizontal', 'vertical'] },
           // Whether to hide the scrollbar
-          hideScrollbar: { type: 'boolean' }
+          hideScrollbar: { type: 'boolean' },
         },
         // disallow the `overflow` property (in TypeScript)
         blocklist: ['overflow'],
@@ -53,14 +53,14 @@ const config = {
             scrollbarWidth: hideScrollbar ? 'none' : 'auto',
             WebkitOverflowScrolling: 'touch',
             '&::-webkit-scrollbar': {
-              display: hideScrollbar ? 'none' : 'auto'
+              display: hideScrollbar ? 'none' : 'auto',
             },
-            ...rest
+            ...rest,
           }
-        }
-      }
-    }
-  }
+        },
+      },
+    },
+  },
 }
 ```
 
@@ -121,11 +121,11 @@ export default defineConfig({
         properties: {
           // only allow row and column
           direction: { type: 'enum', value: ['row', 'column'] },
-          jsx: ['Flex', 'CustomFlex'] // 👈 match the `CustomFlex` component to this pattern
-        }
-      }
-    }
-  }
+          jsx: ['Flex', 'CustomFlex'], // 👈 match the `CustomFlex` component to this pattern
+        },
+      },
+    },
+  },
 })
 ```
 

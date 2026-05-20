@@ -10,7 +10,7 @@ export const nextraTabsRecipe = defineRecipe({
     root: {
       overflowX: 'auto',
       overflowY: 'hidden',
-      overscrollBehaviorX: 'contain'
+      overscrollBehaviorX: 'contain',
     },
     list: {
       position: 'relative',
@@ -21,7 +21,7 @@ export const nextraTabsRecipe = defineRecipe({
       borderBottomWidth: '1px',
       borderColor: 'neutral.200',
       pb: '1px',
-      _dark: { borderColor: 'neutral.800' }
+      _dark: { borderColor: 'neutral.800' },
     },
     trigger: {
       roundedTop: 'md',
@@ -36,24 +36,24 @@ export const nextraTabsRecipe = defineRecipe({
       borderBottomWidth: '2px',
       borderColor: 'transparent',
       _hover: {
-        borderColor: 'neutral.200'
+        borderColor: 'neutral.200',
       },
       _dark: {
         borderColor: 'transparent',
-        color: 'neutral.200'
+        color: 'neutral.200',
       },
       _selected: {
-        borderColor: 'neutral.500'
-      }
+        borderColor: 'neutral.500',
+      },
     },
     indicator: {
       height: '2px',
       bottom: '-1px',
-      background: 'neutral.600'
+      background: 'neutral.600',
     },
     content: {
       rounded: 'md',
-      pt: '6'
-    }
-  })
+      pt: '6',
+    },
+  }),
 })

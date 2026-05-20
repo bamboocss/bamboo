@@ -6,7 +6,7 @@ export const Footer = () => {
       className={css({
         bg: 'gray.100',
         pb: 'env(safe-area-inset-bottom)',
-        _dark: { bg: 'neutral.900' }
+        _dark: { bg: 'neutral.900' },
       })}
     >
       <hr className={css({ _dark: { borderColor: 'neutral.800' } })} />
@@ -20,12 +20,12 @@ export const Footer = () => {
             py: '12',
             color: 'gray.600',
             _dark: { color: 'gray.400' },
-            md: { justifyContent: 'flex-start' }
+            md: { justifyContent: 'flex-start' },
           }),
           css({
             pl: 'max(env(safe-area-inset-left),1.5rem)',
-            pr: 'max(env(safe-area-inset-right),1.5rem)'
-          })
+            pr: 'max(env(safe-area-inset-right),1.5rem)',
+          }),
         )}
       >
         <div
@@ -34,14 +34,11 @@ export const Footer = () => {
             justifyContent: 'space-between',
             gap: '4',
             width: '100%',
-            fontSize: 'sm'
+            fontSize: 'sm',
           })}
         >
           <span>Copyright © {new Date().getFullYear()}</span>
-          <a
-            className={css({ color: 'current', textDecoration: 'none' })}
-            href="https://www.adebayosegun.com/"
-          >
+          <a className={css({ color: 'current', textDecoration: 'none' })} href="https://www.adebayosegun.com/">
             Proudly made by the Chakra team
           </a>
         </div>

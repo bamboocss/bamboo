@@ -8,7 +8,7 @@ const tableStyles = css({
   display: 'block',
   overflowX: 'auto',
   mt: { base: '6', _first: '0' },
-  p: '0'
+  p: '0',
 })
 
 export const Table = ({ className = '', ...props }: React.ComponentProps<'table'>) => (
@@ -25,7 +25,7 @@ const thStyles = css({
   borderColor: 'border',
   px: '4',
   py: '2',
-  fontWeight: 'semibold'
+  fontWeight: 'semibold',
 })
 
 export const Th = ({ className = '', ...props }: React.ComponentProps<'th'>) => (
@@ -42,8 +42,8 @@ const trStyles = css({
   borderWidth: '1px',
   borderColor: 'border',
   _even: {
-    bg: 'bg.subtle'
-  }
+    bg: 'bg.subtle',
+  },
 })
 
 export const Tr = ({ className = '', ...props }: React.ComponentProps<'tr'>) => (
@@ -59,7 +59,7 @@ const tdStyles = css({
   borderWidth: '1px',
   borderColor: 'border',
   px: '4',
-  py: '2'
+  py: '2',
 })
 
 export const Td = ({ className = '', ...props }: React.ComponentProps<'td'>) => (

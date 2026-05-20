@@ -105,9 +105,7 @@ const ListItem = (props: React.ComponentProps<'li'>) => {
   return (
     <li {...props} className={flex({ gap: '4', align: 'center' })}>
       <BulletIcon />
-      <div className={css({ flex: '1', textStyle: 'xl', fontWeight: 'medium' })}>
-        {props.children}
-      </div>
+      <div className={css({ flex: '1', textStyle: 'xl', fontWeight: 'medium' })}>{props.children}</div>
     </li>
   )
 }
@@ -118,7 +116,7 @@ export const CourseSection = () => {
       className={css({
         bg: { base: '#FDFCF0', _dark: '#191919' },
         position: 'relative',
-        overflow: 'hidden'
+        overflow: 'hidden',
       })}
     >
       <Arc
@@ -127,7 +125,7 @@ export const CourseSection = () => {
           top: '-100px',
           left: '-100px',
           rotate: '135deg',
-          hideBelow: 'lg'
+          hideBelow: 'lg',
         })}
       />
       <Arc
@@ -136,7 +134,7 @@ export const CourseSection = () => {
           top: '-100px',
           right: '-100px',
           rotate: '-135deg',
-          hideBelow: 'lg'
+          hideBelow: 'lg',
         })}
       />
       <Container py="32">
@@ -149,7 +147,7 @@ export const CourseSection = () => {
               textStyle: '6xl',
               fontWeight: 'bold',
               textAlign: 'center',
-              letterSpacing: 'tight'
+              letterSpacing: 'tight',
             })}
           >
             The official Bamboo CSS course
@@ -158,7 +156,7 @@ export const CourseSection = () => {
             className={css({
               textStyle: '2xl',
               fontWeight: 'medium',
-              color: 'fg.muted'
+              color: 'fg.muted',
             })}
           >
             Bamboo Mastery - Created by the Bamboo team
@@ -173,7 +171,7 @@ export const CourseSection = () => {
             style={{ minWidth: '240px' }}
             className={button({
               color: { base: 'black', _dark: 'main' },
-              size: 'lg'
+              size: 'lg',
             })}
           >
             Watch Now

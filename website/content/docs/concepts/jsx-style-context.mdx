@@ -22,17 +22,17 @@ const card = sva({
   slots: ['root', 'label'],
   base: {
     root: {},
-    label: {}
+    label: {},
   },
   variants: {
     size: {
       sm: { root: {} },
-      md: { root: {} }
-    }
+      md: { root: {} },
+    },
   },
   defaultVariants: {
-    size: 'sm'
-  }
+    size: 'sm',
+  },
 })
 
 const { withProvider, withContext } = createStyleContext(card)
@@ -42,7 +42,7 @@ const Label = withContext('label', 'label')
 
 export const Card = {
   Root,
-  Label
+  Label,
 }
 ```
 
@@ -82,7 +82,7 @@ const Label = withContext('label', 'label')
 
 export const Card = {
   Root,
-  Label
+  Label,
 }
 ```
 
@@ -193,7 +193,7 @@ const Body = withContext('body', 'body')
 export const Card = {
   Root,
   Header,
-  Body
+  Body,
 }
 ```
 
@@ -206,7 +206,7 @@ const { withContext } = createStyleContext(card)
 
 export const CardHeader = withContext('header', 'header', {
   defaultProps: {
-    role: 'banner'
-  }
+    role: 'banner',
+  },
 })
 ```

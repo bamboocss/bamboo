@@ -14,8 +14,5 @@ export interface FlatTocEntry {
 export const flattenToc = (entries: TocEntry[] = [], depth = 0): FlatTocEntry[] =>
   entries.reduce<FlatTocEntry[]>((acc, entry) => {
     const { title, url, items } = entry
-    return acc.concat(
-      { title, url, depth, id: url.replace(/^#/, '') },
-      flattenToc(items, depth + 1)
-    )
+    return acc.concat({ title, url, depth, id: url.replace(/^#/, '') }, flattenToc(items, depth + 1))
   }, [])

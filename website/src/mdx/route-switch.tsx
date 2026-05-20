@@ -50,8 +50,8 @@ export const RouteSwitch = (props: RouteSwitchProps) => {
         value,
         values,
         rootId,
-        isActive: view => value === view,
-        getValue: index => values[index]
+        isActive: (view) => value === view,
+        getValue: (index) => values[index],
       }}
     >
       {children}
@@ -71,21 +71,21 @@ const linkStyles = cva({
     py: '2',
     cursor: 'pointer',
     rounded: 'md',
-    fontWeight: 'medium'
+    fontWeight: 'medium',
   },
   variants: {
     selected: {
       true: {
         bg: 'yellow.300',
-        color: 'gray.800'
+        color: 'gray.800',
       },
       false: {
         _hover: {
-          bg: { base: 'gray.200', _dark: 'neutral.800' }
-        }
-      }
-    }
-  }
+          bg: { base: 'gray.200', _dark: 'neutral.800' },
+        },
+      },
+    },
+  },
 })
 
 const RouteSwitchLink = (props: { value: string; children: React.ReactNode }) => {
@@ -124,7 +124,7 @@ const triggerStyles = flex({
   w: 'full',
   rounded: 'md',
   justify: 'stretch',
-  bg: { base: 'gray.100', _dark: 'neutral.700' }
+  bg: { base: 'gray.100', _dark: 'neutral.700' },
 })
 
 type TriggerProps = {

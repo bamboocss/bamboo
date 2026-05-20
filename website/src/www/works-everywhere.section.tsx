@@ -39,12 +39,7 @@ export const WorksEverywhereSection = () => {
           </Stack>
 
           <VStack maxW="560px" mx="auto">
-            <bamboo.span
-              textStyle="2xl"
-              fontWeight="medium"
-              letterSpacing="tight"
-              textAlign="center"
-            >
+            <bamboo.span textStyle="2xl" fontWeight="medium" letterSpacing="tight" textAlign="center">
               Bamboo works out of box with your favorite JS framework. Use it with Vite, Remix,{' '}
               <bamboo.mark bg="yellow.300" rounded="lg" px="2" py="1" boxDecorationBreak="clone">
                 Next.js (including app dir)

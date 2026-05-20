@@ -24,8 +24,8 @@ export const CodeBlock = (props: CodeBlockProps) => {
         '& pre.shiki': {
           roundedTop: '0!',
           roundedBottom: 'lg!',
-          shadow: 'none!'
-        }
+          shadow: 'none!',
+        },
       }}
     >
       <HStack bg="bg.muted" px="4" py="3" roundedTop="lg" borderBottomWidth="1px">
@@ -39,18 +39,7 @@ export const CodeBlock = (props: CodeBlockProps) => {
   )
 }
 
-type CodeLang =
-  | 'tsx'
-  | 'ts'
-  | 'js'
-  | 'jsx'
-  | 'css'
-  | 'json'
-  | 'astro'
-  | 'html'
-  | 'bash'
-  | 'vue-html'
-  | 'hbs'
+type CodeLang = 'tsx' | 'ts' | 'js' | 'jsx' | 'css' | 'json' | 'astro' | 'html' | 'bash' | 'vue-html' | 'hbs'
 
 interface CodeLangIconProps {
   type: CodeLang | (string & {})
@@ -59,8 +48,8 @@ interface CodeLangIconProps {
 const Svg = bamboo('svg', {
   base: {
     boxSize: '1em',
-    fontSize: 'md'
-  }
+    fontSize: 'md',
+  },
 })
 
 const CodeLangIcon = (props: CodeLangIconProps) => {
@@ -109,13 +98,7 @@ const CodeLangIcon = (props: CodeLangIconProps) => {
       )
     case 'astro':
       return (
-        <Svg
-          stroke="currentColor"
-          fill="currentColor"
-          strokeWidth="0"
-          viewBox="0 0 30 30"
-          translate="0 2px"
-        >
+        <Svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 30 30" translate="0 2px">
           <path d="M7.70883 25.5523C6.35819 24.3134 5.9639 21.7103 6.52661 19.8245C7.50233 21.0135 8.85426 21.3901 10.2546 21.6027C12.4164 21.9308 14.5395 21.8081 16.5477 20.8166C16.7774 20.7031 16.9897 20.5522 17.2407 20.3993C17.4292 20.9478 17.4782 21.5017 17.4124 22.0653C17.2524 23.4381 16.5716 24.4985 15.4887 25.3023C15.0557 25.6238 14.5975 25.9112 14.1503 26.2144C12.7765 27.1462 12.4048 28.2387 12.921 29.828C12.9333 29.8667 12.9443 29.9054 12.972 29.9999C12.2705 29.6849 11.7582 29.2263 11.3678 28.6232C10.9554 27.9867 10.7592 27.2826 10.7489 26.5208C10.7437 26.1501 10.7437 25.776 10.694 25.4106C10.5727 24.5195 10.1559 24.1205 9.37051 24.0975C8.56451 24.0739 7.92694 24.5739 7.75787 25.3613C7.74497 25.4217 7.72625 25.4814 7.70754 25.5516L7.70883 25.5523Z"></path>
           <path d="M0 19.5103C0 19.5103 3.99947 17.5552 8.01012 17.5552L11.034 8.16461C11.1472 7.71047 11.4778 7.40185 11.8509 7.40185C12.2241 7.40185 12.5547 7.71047 12.6679 8.16461L15.6918 17.5552C20.4418 17.5552 23.7019 19.5103 23.7019 19.5103C23.7019 19.5103 16.9085 0.939907 16.8952 0.902648C16.7002 0.353607 16.3711 0 15.9273 0H7.77531C7.33154 0 7.01567 0.353607 6.80741 0.902648C6.79274 0.939204 0 19.5103 0 19.5103Z"></path>
         </Svg>
@@ -147,10 +130,7 @@ const CodeLangIcon = (props: CodeLangIconProps) => {
     case 'vue-html':
       return (
         <Svg viewBox="0 0 128 128">
-          <path
-            fill="#42b883"
-            d="M78.8,10L64,35.4L49.2,10H0l64,110l64-110C128,10,78.8,10,78.8,10z"
-          ></path>
+          <path fill="#42b883" d="M78.8,10L64,35.4L49.2,10H0l64,110l64-110C128,10,78.8,10,78.8,10z"></path>
           <path fill="#35495e" d="M78.8,10L64,35.4L49.2,10H25.6L64,76l38.4-66H78.8z"></path>
         </Svg>
       )

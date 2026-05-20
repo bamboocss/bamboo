@@ -120,7 +120,7 @@ export default defineConfig({
   // Files to exclude
   exclude: [],
   // The output directory for your css system
-  outdir: 'styled-system'
+  outdir: 'styled-system',
 })
 ```
 
@@ -149,10 +149,10 @@ const preview: Preview = {
     controls: {
       matchers: {
         color: /(background|color)$/i,
-        date: /Date$/
-      }
-    }
-  }
+        date: /Date$/,
+      },
+    },
+  },
 }
 
 export default preview
@@ -210,7 +210,7 @@ export const Button = ({ children }: IButtonProps) => {
         px: '4',
         py: '3',
         borderRadius: 'md',
-        _hover: { bg: 'red.400' }
+        _hover: { bg: 'red.400' },
       })}
     >
       {children}
@@ -230,12 +230,12 @@ const meta = {
   component: Button,
   tags: ['autodocs'],
   decorators: [
-    Story => (
+    (Story) => (
       <div className={css({ m: 10 })}>
         <Story />
       </div>
-    )
-  ]
+    ),
+  ],
 } satisfies Meta<typeof Button>
 
 export default meta
@@ -243,8 +243,8 @@ type Story = StoryObj<typeof meta>
 
 export const Default: Story = {
   args: {
-    children: 'Hello 🎋!'
-  }
+    children: 'Hello 🎋!',
+  },
 }
 ```
 
@@ -270,11 +270,11 @@ const preview: Preview = {
     withThemeByClassName<ReactRenderer>({
       themes: {
         light: '',
-        dark: 'dark'
+        dark: 'dark',
       },
-      defaultTheme: 'light'
-    })
-  ]
+      defaultTheme: 'light',
+    }),
+  ],
 }
 
 export default preview
@@ -291,7 +291,7 @@ PostCSS config as follows:
 
 ```js filename="postcss.config.js"
 module.exports = {
-  plugins: [require('@bamboocss/dev/postcss')]
+  plugins: [require('@bamboocss/dev/postcss')],
 }
 ```
 
@@ -306,7 +306,7 @@ import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   // ...
-  dependencies: ['path/to/files/**.ts']
+  dependencies: ['path/to/files/**.ts'],
 })
 ```
 
@@ -328,8 +328,8 @@ export const Funky: Story = {
   args: button.raw({
     visual: 'funky',
     shape: 'circle',
-    size: 'sm'
-  })
+    size: 'sm',
+  }),
 }
 ```
 
@@ -349,7 +349,7 @@ import { defineConfig } from '@bamboocss/dev'
 export default defineConfig({
   // ...
   staticCss: {
-    recipes: '*'
-  }
+    recipes: '*',
+  },
 })
 ```

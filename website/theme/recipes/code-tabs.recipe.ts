@@ -13,8 +13,8 @@ export const codeTabsRecipe = defineRecipe({
       overflowY: 'hidden',
       overscrollBehaviorX: 'contain',
       '& > div > div': {
-        borderTopRadius: 'xl!'
-      }
+        borderTopRadius: 'xl!',
+      },
     },
     list: {
       display: 'flex',
@@ -22,7 +22,7 @@ export const codeTabsRecipe = defineRecipe({
       gap: 5,
       px: '4',
       py: '4',
-      rounded: 'xl'
+      rounded: 'xl',
     },
     trigger: {
       w: '100%',
@@ -34,24 +34,24 @@ export const codeTabsRecipe = defineRecipe({
       textStyle: 'md',
       _hover: {
         color: 'black',
-        bg: 'yellow.400'
+        bg: 'yellow.400',
       },
       _selected: {
         color: 'black',
-        bg: 'yellow.400'
-      }
+        bg: 'yellow.400',
+      },
     },
     content: {
       roundedBottom: '19px',
       '& > pre': {
-        roundedBottom: '19px'
+        roundedBottom: '19px',
       },
       '& code': {
         fontFamily: 'mono',
         fontSize: 'md',
         lineHeight: '1.7',
-        fontWeight: '500'
-      }
-    }
-  })
+        fontWeight: '500',
+      },
+    },
+  }),
 })

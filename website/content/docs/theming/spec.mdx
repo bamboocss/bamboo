@@ -87,10 +87,10 @@ import { grid } from 'styled-system/patterns'
 import tokens from 'styled-system/specs/tokens.json'
 
 const Demo = () => {
-  const colors = tokens.data.find(token => token.type === 'colors')
+  const colors = tokens.data.find((token) => token.type === 'colors')
   return (
     <div className={grid({ padding: '40px', columns: 3, gap: '4' })}>
-      {colors?.values.map(color => (
+      {colors?.values.map((color) => (
         <div key={color.name}>
           <p>{color.name}</p>
           <p>{color.value}</p>
@@ -99,7 +99,7 @@ const Demo = () => {
               width: '100px',
               height: '100px',
               background: color.value,
-              border: '1px solid lightgray'
+              border: '1px solid lightgray',
             }}
           />
         </div>
@@ -163,10 +163,10 @@ Here's an example of how to document semantic color tokens with their conditiona
 import semanticTokens from 'styled-system/specs/semantic-tokens.json'
 
 const Demo = () => {
-  const colors = semanticTokens.data.find(token => token.type === 'colors')
+  const colors = semanticTokens.data.find((token) => token.type === 'colors')
   return (
     <div>
-      {colors?.values.map(token => (
+      {colors?.values.map((token) => (
         <div key={token.name}>
           <p>{token.name}</p>
           <p>{token.cssVar}</p>
@@ -232,7 +232,7 @@ Here's an example of how to document a button recipe within a table:
 import recipes from 'styled-system/specs/recipes.json'
 
 const Demo = () => {
-  const buttonRecipe = recipes.data.find(recipe => recipe.name === 'button')
+  const buttonRecipe = recipes.data.find((recipe) => recipe.name === 'button')
   const defaultVariants = buttonRecipe?.defaultVariants || {}
 
   return (
@@ -252,7 +252,7 @@ const Demo = () => {
             <tr key={key}>
               <td>{key}</td>
               <td>
-                {(options as string[]).map(option => (
+                {(options as string[]).map((option) => (
                   <span key={option}>{option}</span>
                 ))}
               </td>
@@ -313,7 +313,7 @@ import textStyles from 'styled-system/specs/text-styles.json'
 const Demo = () => {
   return (
     <div>
-      {textStyles.data.map(style => (
+      {textStyles.data.map((style) => (
         <div key={style.name}>
           <span className={css({ textStyle: style.name })}>{style.name}</span>
           <p>The quick brown fox jumps over the lazy dog</p>
@@ -359,7 +359,7 @@ import layerStyles from 'styled-system/specs/layer-styles.json'
 const Demo = () => {
   return (
     <div>
-      {layerStyles.data.map(style => (
+      {layerStyles.data.map((style) => (
         <div key={style.name}>
           <div className={css({ layerStyle: style.name })} />
           <span>{style.name}</span>
@@ -415,7 +415,7 @@ import keyframes from 'styled-system/specs/keyframes.json'
 const Demo = () => {
   return (
     <div>
-      {keyframes.data.map(keyframe => (
+      {keyframes.data.map((keyframe) => (
         <div key={keyframe.name}>
           <div style={{ animation: `${keyframe.name} 1s ease-in-out infinite` }} />
           <span>{keyframe.name}</span>
@@ -473,7 +473,7 @@ import patterns from 'styled-system/specs/patterns.json'
 const Demo = () => {
   return (
     <div>
-      {patterns.data.map(pattern => (
+      {patterns.data.map((pattern) => (
         <div key={pattern.name}>
           <h3>{pattern.name}</h3>
           <span>
@@ -491,7 +491,7 @@ const Demo = () => {
                 </tr>
               </thead>
               <tbody>
-                {pattern.properties.map(prop => (
+                {pattern.properties.map((prop) => (
                   <tr key={prop.name}>
                     <td>{prop.name}</td>
                     <td>{prop.type}</td>

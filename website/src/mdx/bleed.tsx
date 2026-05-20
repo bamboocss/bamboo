@@ -5,16 +5,16 @@ const styles = cva({
   base: {
     position: 'relative',
     mx: { base: '-6', md: '-8', '2xl': '-24' },
-    mt: '-6'
+    mt: '-6',
   },
   variants: {
     full: {
       true: {
         ms: { xl: 'calc(50% - 50vw + 16rem)' },
-        me: { xl: 'calc(50% - 50vw)' }
-      }
-    }
-  }
+        me: { xl: 'calc(50% - 50vw)' },
+      },
+    },
+  },
 })
 
 type Props = {

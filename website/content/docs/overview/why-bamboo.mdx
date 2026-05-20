@@ -63,7 +63,7 @@ function App() {
         p: '4',
         rounded: 'md',
         shadow: 'lg',
-        bg: 'white'
+        bg: 'white',
       })}
     >
       <div className={circle({ size: '5rem', overflow: 'hidden' })}>
@@ -90,18 +90,18 @@ export default defineConfig({
     tokens: {
       colors: {
         gray50: { value: '#F9FAFB' },
-        gray100: { value: '#F3F4F6' }
-      }
+        gray100: { value: '#F3F4F6' },
+      },
     },
     semanticTokens: {
       colors: {
         primary: { value: '{colors.gray50}' },
         success: {
-          value: { _light: '{colors.green500}', _dark: '{colors.green200}' }
-        }
-      }
-    }
-  }
+          value: { _light: '{colors.green500}', _dark: '{colors.green200}' },
+        },
+      },
+    },
+  },
 })
 ```
 

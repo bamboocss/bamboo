@@ -10,14 +10,9 @@ const styles = css({
   textUnderlineOffset: '2px',
   textDecorationLine: 'underline',
   textDecorationThickness: 'from-font',
-  textUnderlinePosition: 'from-font'
+  textUnderlinePosition: 'from-font',
 })
 
 export const Link = ({ href = '', className, ...props }: AnchorProps) => (
-  <Anchor
-    href={href}
-    newWindow={EXTERNAL_HREF_REGEX.test(href)}
-    className={cx(styles, className)}
-    {...props}
-  />
+  <Anchor href={href} newWindow={EXTERNAL_HREF_REGEX.test(href)} className={cx(styles, className)} {...props} />
 )

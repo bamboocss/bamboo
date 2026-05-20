@@ -22,14 +22,14 @@ import localFont from 'next/font/local'
 export const MonaSans = localFont({
   src: '../fonts/Mona-Sans.woff2',
   display: 'swap',
-  variable: '--font-mona-sans'
+  variable: '--font-mona-sans',
 })
 
 export const FiraCode = Fira_Code({
   weight: ['400', '500', '700'],
   display: 'swap',
   subsets: ['latin'],
-  variable: '--font-fira-code'
+  variable: '--font-fira-code',
 })
 ```
 
@@ -135,9 +135,9 @@ export default defineConfig({
       src: 'url(/fonts/fira.woff2) format("woff2")',
       fontWeight: 400,
       fontStyle: 'normal',
-      fontDisplay: 'swap'
-    }
-  }
+      fontDisplay: 'swap',
+    },
+  },
 })
 ```
 
@@ -150,9 +150,9 @@ export default defineConfig({
       src: ['url(/fonts/fira.woff2) format("woff2")', 'url(/fonts/fira.woff) format("woff")'],
       fontWeight: 400,
       fontStyle: 'normal',
-      fontDisplay: 'swap'
-    }
-  }
+      fontDisplay: 'swap',
+    },
+  },
 })
 ```
 
@@ -166,16 +166,16 @@ export default defineConfig({
         src: 'url(/fonts/fira.woff2) format("woff2")',
         fontWeight: 400,
         fontStyle: 'normal',
-        fontDisplay: 'swap'
+        fontDisplay: 'swap',
       },
       {
         src: 'url(/fonts/fira-bold.woff2) format("woff2")',
         fontWeight: 700,
         fontStyle: 'normal',
-        fontDisplay: 'swap'
-      }
-    ]
-  }
+        fontDisplay: 'swap',
+      },
+    ],
+  },
 })
 ```
 
@@ -192,8 +192,8 @@ You can also use [globalVars](/docs/concepts/writing-styles#global-vars) in your
 ```js
 export default defineConfig({
   globalVars: {
-    '--font-fira-code': 'Fira Code Variable, monospace'
-  }
+    '--font-fira-code': 'Fira Code Variable, monospace',
+  },
 })
 ```
 
@@ -206,11 +206,11 @@ export default defineConfig({
       tokens: {
         fonts: {
           fira: { value: 'var(--font-fira-code), Menlo, monospace' },
-          mona: { value: 'var(--font-mona-sans), sans-serif' }
-        }
-      }
-    }
-  }
+          mona: { value: 'var(--font-mona-sans), sans-serif' },
+        },
+      },
+    },
+  },
 })
 ```
 

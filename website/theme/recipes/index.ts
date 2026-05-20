@@ -11,5 +11,5 @@ export const recipes = {
   card: cardRecipe,
   callout: calloutRecipe,
   navbar: navbarRecipe,
-  nextraTabs: nextraTabsRecipe
+  nextraTabs: nextraTabsRecipe,
 }

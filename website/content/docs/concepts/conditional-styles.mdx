@@ -13,7 +13,7 @@ say you want to change the background color of a button when it's hovered. You c
 <button
   className={css({
     bg: 'red.500',
-    _hover: { bg: 'red.700' }
+    _hover: { bg: 'red.700' },
   })}
 >
   Hover me
@@ -51,7 +51,7 @@ Let's say you want to change the background color of a button when it's focused 
 ```jsx
 <button
   className={css({
-    bg: { base: 'red.500', _hover: { _focus: 'red.700' } }
+    bg: { base: 'red.500', _hover: { _focus: 'red.700' } },
   })}
 >
   Hover me
@@ -80,7 +80,7 @@ const App = () => {
     <div
       className={css({
         '&[data-state=closed]': { color: 'red.300' },
-        '& > *': { margin: '2' }
+        '& > *': { margin: '2' },
       })}
     />
   )
@@ -98,15 +98,15 @@ const App = () => {
       <div
         className={css({
           '@media (min-width: 768px)': {
-            color: 'red.300'
+            color: 'red.300',
           },
           '@container (min-width: 10px)': {
-            color: 'green.300'
+            color: 'green.300',
           },
           '@supports (display: flex)': {
             fontSize: '3xl',
-            color: 'blue.300'
-          }
+            color: 'blue.300',
+          },
         })}
       />
     </div>
@@ -125,7 +125,7 @@ You can style the hover, active, focus, and disabled states of an element using 
   className={css({
     bg: 'red.500',
     _hover: { bg: 'red.700' },
-    _active: { bg: 'red.900' }
+    _active: { bg: 'red.900' },
   })}
 >
   Hover me
@@ -138,7 +138,7 @@ You can style the first, last, odd, and even elements of a group using their `_`
 
 ```jsx
 <ul>
-  {items.map(item => (
+  {items.map((item) => (
     <li key={item} className={css({ _first: { color: 'red.500' } })}>
       {item}
     </li>
@@ -151,12 +151,12 @@ You can also style even and odd elements using the `_even` and `_odd` modifier:
 ```jsx
 <table>
   <tbody>
-    {items.map(item => (
+    {items.map((item) => (
       <tr
         key={item}
         className={css({
           _even: { bg: 'gray.100' },
-          _odd: { bg: 'white' }
+          _odd: { bg: 'white' },
         })}
       >
         <td>{item}</td>
@@ -175,7 +175,7 @@ You can style the `::before` and `::after` pseudo elements of an element using t
 ```jsx
 <div
   className={css({
-    _before: { content: '"👋"' }
+    _before: { content: '"👋"' },
   })}
 >
   Hello
@@ -217,7 +217,7 @@ Style the placeholder text of any input or textarea using the `_placeholder` mod
 <input
   placeholder="Enter your name"
   className={css({
-    _placeholder: { color: 'gray.500' }
+    _placeholder: { color: 'gray.500' },
   })}
 />
 ```
@@ -230,7 +230,7 @@ Style the file input button using the `_file` modifier:
 <input
   type="file"
   className={css({
-    _file: { bg: 'gray.500', px: '4', py: '2', marginEnd: '3' }
+    _file: { bg: 'gray.500', px: '4', py: '2', marginEnd: '3' },
   })}
 />
 ```
@@ -245,7 +245,7 @@ Use the `_motionReduce` and `_motionSafe` modifiers to style an element based on
 <div
   className={css({
     _motionReduce: { transition: 'none' },
-    _motionSafe: { transition: 'all 0.3s' }
+    _motionSafe: { transition: 'all 0.3s' },
   })}
 >
   Hello
@@ -263,7 +263,7 @@ Use the `_osLight` and `_osDark` modifiers to style an element based on the user
 <div
   className={css({
     bg: 'white',
-    _osDark: { bg: 'black' }
+    _osDark: { bg: 'black' },
   })}
 >
   Hello
@@ -276,7 +276,7 @@ Let's say your app is dark by default, but you want to allow users to switch to 
 <div
   className={css({
     bg: 'black',
-    _osLight: { bg: 'white' }
+    _osLight: { bg: 'white' },
   })}
 >
   Hello
@@ -294,7 +294,7 @@ Use the `_highContrast` and `_lessContrast` modifiers to style an element based 
 <div
   className={css({
     bg: 'white',
-    _highContrast: { bg: 'black' }
+    _highContrast: { bg: 'black' },
   })}
 >
   Hello
@@ -311,7 +311,7 @@ Use the `_portrait` and `_landscape` modifiers to style an element based on the 
 <div
   className={css({
     pb: '4',
-    _portrait: { pb: '8' }
+    _portrait: { pb: '8' },
   })}
 >
   Hello
@@ -358,7 +358,7 @@ You can style an element based on the direction of the text using the `_ltr` and
   <div
     className={css({
       _ltr: { ml: '3' },
-      _rtl: { mr: '3' }
+      _rtl: { mr: '3' },
     })}
   >
     Hello
@@ -380,7 +380,7 @@ You can style an element based on its `data-{state}` attribute using the corresp
 <div
   data-loading
   className={css({
-    _loading: { bg: 'gray.500' }
+    _loading: { bg: 'gray.500' },
   })}
 >
   Hello
@@ -394,7 +394,7 @@ This also works for common states like `data-active`, `data-disabled`, `data-foc
 <div
   data-active
   className={css({
-    _active: { bg: 'gray.500' }
+    _active: { bg: 'gray.500' },
   })}
 >
   Hello
@@ -414,7 +414,7 @@ You can style an element based on its `data-orientation` attribute using the `_h
   data-orientation="horizontal"
   className={css({
     _horizontal: { bg: 'red.500' },
-    _vertical: { bg: 'blue.500' }
+    _vertical: { bg: 'blue.500' },
   })}
 >
   Hello
@@ -429,7 +429,7 @@ You can style an element based on its `aria-{state}=true` attribute using the co
 <div
   aria-expanded="true"
   className={css({
-    _expanded: { bg: 'gray.500' }
+    _expanded: { bg: 'gray.500' },
   })}
 >
   Hello
@@ -452,10 +452,10 @@ export default defineConfig({
       containerSizes: {
         xs: '40em',
         sm: '60em',
-        md: '80em'
-      }
-    }
-  }
+        md: '80em',
+      },
+    },
+  },
 })
 ```
 
@@ -474,7 +474,7 @@ export const containerSizes = {
   '5xl': '1024px',
   '6xl': '1152px',
   '7xl': '1280px',
-  '8xl': '1440px'
+  '8xl': '1440px',
 }
 ```
 

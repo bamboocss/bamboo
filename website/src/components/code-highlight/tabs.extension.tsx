@@ -5,7 +5,7 @@ import { CodeTabs, TabContent, TabsList } from './tabs'
 function TitleBarContent(brightProps: BrightProps) {
   const { subProps, title } = brightProps
 
-  const titles = subProps?.length ? subProps.map(subProp => subProp.title) : [title]
+  const titles = subProps?.length ? subProps.map((subProp) => subProp.title) : [title]
 
   return <TabsList titles={titles as string[]} />
 }
@@ -13,7 +13,7 @@ function TitleBarContent(brightProps: BrightProps) {
 function Root(brightProps: BrightProps) {
   const { subProps, title } = brightProps
 
-  const titles = subProps?.length ? subProps.map(subProp => subProp.title) : [title]
+  const titles = subProps?.length ? subProps.map((subProp) => subProp.title) : [title]
 
   return (
     <CodeTabs defaultValue={titles[0]} className={codeTabs()}>
@@ -28,7 +28,7 @@ function Content(brightProps: BrightProps) {
   const propsList = subProps?.length ? subProps : [brightProps]
   return (
     <>
-      {propsList.map(props => (
+      {propsList.map((props) => (
         <TabContent key={props.title} value={props.title!}>
           {/* @ts-expect-error Server Component */}
           <Code.Pre {...props} />
@@ -43,5 +43,5 @@ export const tabs = {
   name: 'tabs',
   Root,
   TitleBarContent,
-  Pre: Content
+  Pre: Content,
 }

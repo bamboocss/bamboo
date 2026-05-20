@@ -166,7 +166,7 @@ export default defineConfig({
   exclude: [],
 
   // The output directory for your css system
-  outdir: 'styled-system'
+  outdir: 'styled-system',
 })
 ```
 
@@ -189,9 +189,9 @@ const config = {
     // See https://kit.svelte.dev/docs/adapters for more information about adapters.
     adapter: adapter(),
     alias: {
-      'styled-system': './styled-system/*'
-    }
-  }
+      'styled-system': './styled-system/*',
+    },
+  },
 }
 
 export default config
@@ -210,9 +210,9 @@ export default defineConfig({
   plugins: [sveltekit()],
   server: {
     fs: {
-      allow: ['styled-system']
-    }
-  }
+      allow: ['styled-system'],
+    },
+  },
 })
 ```
 
@@ -226,18 +226,18 @@ import { defineConfig, mergeConfig } from 'vite'
 
 const config = {
   // other Storybook config...
-  viteFinal: async config => {
+  viteFinal: async (config) => {
     return mergeConfig(
       config,
       defineConfig({
         server: {
           fs: {
-            allow: ['styled-system']
-          }
-        }
-      })
+            allow: ['styled-system'],
+          },
+        },
+      }),
     )
-  }
+  },
 }
 export default config
 ```
@@ -325,12 +325,12 @@ const config = {
   kit: {
     // ...
     typescript: {
-      config: config => {
+      config: (config) => {
         config.include.push('../styled-system')
         return config
-      }
-    }
-  }
+      },
+    },
+  },
 }
 
 export default config

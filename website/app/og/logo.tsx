@@ -49,12 +49,7 @@ export const Logo = (props: React.SVGProps<SVGSVGElement>) => (
         <feComposite in2="hardAlpha" operator="out" />
         <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0" />
         <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_1567_292" />
-        <feBlend
-          mode="normal"
-          in="SourceGraphic"
-          in2="effect1_dropShadow_1567_292"
-          result="shape"
-        />
+        <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_1567_292" result="shape" />
       </filter>
     </defs>
   </svg>

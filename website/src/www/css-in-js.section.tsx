@@ -28,7 +28,7 @@ const codeSnippets = [
     }
 `,
     title: 'style-functions.tsx',
-    lang: 'tsx'
+    lang: 'tsx',
   },
   {
     code: outdent`
@@ -51,7 +51,7 @@ const codeSnippets = [
     }
     `,
     title: 'style-props.tsx',
-    lang: 'tsx'
+    lang: 'tsx',
   },
   {
     code: outdent`
@@ -81,26 +81,26 @@ const codeSnippets = [
 
     `,
     title: 'style-recipes.ts',
-    lang: 'ts'
-  }
+    lang: 'ts',
+  },
 ]
 
 const features: Array<{ title: string; description: string; icon: IconType }> = [
   {
     title: 'Zero runtime',
     description: 'Generates static CSS at build-time',
-    icon: 'FastForwardArrow'
+    icon: 'FastForwardArrow',
   },
   {
     title: 'Type safe',
     description: 'TypeScript support out of the box',
-    icon: 'TypescriptLogo'
+    icon: 'TypescriptLogo',
   },
   {
     title: 'Amazing DX',
     description: 'Low learning curve, great developer experience',
-    icon: 'Sparks'
-  }
+    icon: 'Sparks',
+  },
 ]
 
 export const CssInJSSection = () => {
@@ -108,11 +108,7 @@ export const CssInJSSection = () => {
     <bamboo.section bg="black" pt="10rem" pb="12rem" color="white" mt="2px">
       <bamboo.div maxW="8xl" mx="auto" px={{ base: '4', md: '6', lg: '8' }}>
         <VStack gap="16">
-          <bamboo.h2
-            textStyle="bamboo.h2"
-            fontWeight="semibold"
-            textAlign={{ base: 'center', lg: 'left' }}
-          >
+          <bamboo.h2 textStyle="bamboo.h2" fontWeight="semibold" textAlign={{ base: 'center', lg: 'left' }}>
             Styling library <bamboo.span color="yellow.300">you’ll enjoy</bamboo.span> using 🎋
           </bamboo.h2>
 

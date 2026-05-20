@@ -21,8 +21,8 @@ export const NavLink = (props: Props) => {
         fontWeight: 'semibold',
         letterSpacing: 'tight',
         _hover: {
-          bg: 'bg.emphasized.hover'
-        }
+          bg: 'bg.emphasized.hover',
+        },
       })}
     >
       {children}

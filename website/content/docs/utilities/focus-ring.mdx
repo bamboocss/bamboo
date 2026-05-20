@@ -60,7 +60,7 @@ You can customize focus ring appearance with additional utilities:
     focusRingColor: 'blue.500',
     focusRingWidth: '3px',
     focusRingStyle: 'dashed',
-    focusRingOffset: '4px'
+    focusRingOffset: '4px',
   })}
 >
   Custom focus ring
@@ -95,9 +95,9 @@ import { defineConfig } from '@bamboocss/dev'
 export default defineConfig({
   globalCss: {
     html: {
-      '--global-color-focus-ring': '#3b82f6'
-    }
-  }
+      '--global-color-focus-ring': '#3b82f6',
+    },
+  },
 })
 ```
 
@@ -135,7 +135,7 @@ function Button({ children }) {
         bg: 'blue.500',
         color: 'white',
         rounded: 'md',
-        focusRing: 'outside'
+        focusRing: 'outside',
       })}
     >
       {children}
@@ -159,7 +159,7 @@ function Input({ ...props }) {
         borderColor: 'gray.300',
         rounded: 'md',
         focusVisibleRing: 'outside',
-        focusRingColor: 'blue.500'
+        focusRingColor: 'blue.500',
       })}
       {...props}
     />
@@ -184,7 +184,7 @@ function CustomButton({ children }) {
         focusRing: 'mixed',
         focusRingColor: 'purple.400',
         focusRingWidth: '3px',
-        focusRingOffset: '3px'
+        focusRingOffset: '3px',
       })}
     >
       {children}

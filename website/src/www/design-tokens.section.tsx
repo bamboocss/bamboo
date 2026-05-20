@@ -41,7 +41,7 @@ const codeSnippets = {
         canvas: { value : '{colors.white}' }
       }
     }
-  }`
+  }`,
 }
 
 const CodePanel = (props: { title: string; children: string; className?: string }) => {
@@ -61,11 +61,7 @@ const CodePanel = (props: { title: string; children: string; className?: string 
         {title}
       </bamboo.span>
       <bamboo.div flexShrink="0">
-        <Code
-          lang="tsx"
-          style={{ borderRadius: token('radii.xl'), margin: '0' }}
-          codeClassName={codeStyle}
-        >
+        <Code lang="tsx" style={{ borderRadius: token('radii.xl'), margin: '0' }} codeClassName={codeStyle}>
           {children}
         </Code>
       </bamboo.div>

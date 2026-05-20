@@ -39,10 +39,10 @@ export default defineConfig({
   hooks: {
     'tokens:created': ({ configure }) => {
       configure({
-        formatTokenName: path => '$' + path.join('-')
+        formatTokenName: (path) => '$' + path.join('-'),
       })
-    }
-  }
+    },
+  },
 })
 ```
 
@@ -63,10 +63,10 @@ export default defineConfig({
           const splitConds = stringConds.split('_')
           const hashConds = splitConds.map(toHash)
           return hashConds.join('_')
-        }
+        },
       })
-    }
-  }
+    },
+  },
 })
 ```
 
@@ -83,8 +83,8 @@ export default defineConfig({
   hooks: {
     'config:resolved': ({ config, utils }) => {
       return utils.omit(config, ['patterns.stack'])
-    }
-  }
+    },
+  },
 })
 ```
 
@@ -104,8 +104,8 @@ export default defineConfig({
         return utils.omit(preset, ['theme.tokens.colors', 'theme.semanticTokens.colors'])
       }
       return preset
-    }
-  }
+    },
+  },
 })
 ```
 
@@ -130,12 +130,12 @@ export default defineConfig({
     'parser:before': ({ configure }) => {
       configure({
         // ignore the Select.Content entirely
-        matchTag: tag => tag !== 'Select.Content',
+        matchTag: (tag) => tag !== 'Select.Content',
         // ...or specifically ignore the `position` property
-        matchTagProp: (tag, prop) => tag === 'Select.Content' && prop !== 'position'
+        matchTagProp: (tag, prop) => tag === 'Select.Content' && prop !== 'position',
       })
-    }
-  }
+    },
+  },
 })
 ```
 
@@ -155,8 +155,8 @@ export default defineConfig({
       if (artifact === 'styles.css') {
         return removeUnusedCssVars(removeUnusedKeyframes(content))
       }
-    }
-  }
+    },
+  },
 })
 ```
 
@@ -189,12 +189,12 @@ export default defineConfig({
       hooks: {
         'tokens:created': ({ configure }) => {
           configure({
-            formatTokenName: path => '$' + path.join('-')
+            formatTokenName: (path) => '$' + path.join('-'),
           })
-        }
-      }
-    }
-  ]
+        },
+      },
+    },
+  ],
 })
 ```
 

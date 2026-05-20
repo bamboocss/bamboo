@@ -22,9 +22,9 @@ export const metadata: Metadata = {
       generateOgImageUrl({
         title: ogTitle,
         description: ogDescription,
-        category: 'Showcase'
-      })
-    ]
+        category: 'Showcase',
+      }),
+    ],
   },
   twitter: {
     card: 'summary_large_image',
@@ -34,10 +34,10 @@ export const metadata: Metadata = {
       generateOgImageUrl({
         title: ogTitle,
         description: ogDescription,
-        category: 'Showcase'
-      })
-    ]
-  }
+        category: 'Showcase',
+      }),
+    ],
+  },
 }
 
 interface Showcase {
@@ -56,8 +56,8 @@ const cardStyles = css({
   transition: 'transform 0.2s',
   _hover: {
     transform: 'translateY(-4px)',
-    shadow: 'lg'
-  }
+    shadow: 'lg',
+  },
 })
 
 const ShowcaseCard = ({ data }: { data: Showcase }) => {
@@ -74,7 +74,7 @@ const ShowcaseCard = ({ data }: { data: Showcase }) => {
           width: '100%',
           height: '200px',
           objectFit: 'cover',
-          borderTopRadius: 'md'
+          borderTopRadius: 'md',
         })}
       />
       <Stack gap="0" p="4" bg="bg">
@@ -95,11 +95,7 @@ export default function ShowcasePage() {
         <Container py="20">
           <Stack gap="6" align="center">
             <Stack align="center" textAlign="center">
-              <bamboo.h1
-                fontSize={{ base: '3xl', md: '5xl' }}
-                fontWeight="bold"
-                letterSpacing="tight"
-              >
+              <bamboo.h1 fontSize={{ base: '3xl', md: '5xl' }} fontWeight="bold" letterSpacing="tight">
                 Showcase
               </bamboo.h1>
             </Stack>
@@ -110,15 +106,14 @@ export default function ShowcasePage() {
               lineHeight="relaxed"
               textAlign="center"
             >
-              Explore the projects built with Bamboo CSS by the community and get inspired for your
-              next project.
+              Explore the projects built with Bamboo CSS by the community and get inspired for your next project.
             </bamboo.p>
           </Stack>
         </Container>
 
         <Container pb="20">
           <Grid columns={{ base: 1, md: 2, lg: 3 }} gap={{ base: '4', md: '8' }}>
-            {showcases.map(showcase => (
+            {showcases.map((showcase) => (
               <ShowcaseCard key={showcase.name} data={showcase} />
             ))}
           </Grid>

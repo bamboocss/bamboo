@@ -7,6 +7,6 @@ export const Blockquote = bamboo('blockquote', {
     fontStyle: 'italic',
     color: { base: 'gray.700', _dark: 'gray.400' },
     borderInlineStartWidth: '2',
-    paddingStart: '6'
-  }
+    paddingStart: '6',
+  },
 })

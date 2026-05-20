@@ -6,14 +6,14 @@ const BodyFont = Onest({
   style: 'normal',
   display: 'swap',
   subsets: ['latin'],
-  variable: '--font-sans'
+  variable: '--font-sans',
 })
 
 export const MonoFont = Source_Code_Pro({
   weight: 'variable',
   display: 'swap',
   subsets: ['latin'],
-  variable: '--font-mono'
+  variable: '--font-mono',
 })
 
 export const fontClassName = cx(MonoFont.variable, BodyFont.variable)

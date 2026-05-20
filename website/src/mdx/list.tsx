@@ -7,19 +7,19 @@ const listStyles = cva({
     ms: '6',
     // Remove or reduce mt for nested lists: target ul/ol within ul/ol
     '& ul, & ol': {
-      '--margin': 'spacing.2'
-    }
+      '--margin': 'spacing.2',
+    },
   },
   variants: {
     type: {
       ol: {
-        listStyleType: 'decimal'
+        listStyleType: 'decimal',
       },
       ul: {
-        listStyleType: 'disc'
-      }
-    }
-  }
+        listStyleType: 'disc',
+      },
+    },
+  },
 })
 
 export function UnorderedList(props: React.ComponentProps<'ul'>) {

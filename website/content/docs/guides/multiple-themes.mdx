@@ -22,8 +22,8 @@ const config = {
     light: '[data-color-mode=light] &',
     dark: '[data-color-mode=dark] &',
     pinkTheme: '[data-theme=pink] &',
-    blueTheme: '[data-theme=blue] &'
-  }
+    blueTheme: '[data-theme=blue] &',
+  },
 }
 ```
 
@@ -40,11 +40,11 @@ const theme = {
       text: {
         value: {
           _pinkTheme: '{colors.pink.500}',
-          _blueTheme: '{colors.blue.500}'
-        }
-      }
-    }
-  }
+          _blueTheme: '{colors.blue.500}',
+        },
+      },
+    },
+  },
 }
 ```
 
@@ -59,11 +59,11 @@ const theme = {
       text: {
         value: {
           _pinkTheme: { base: '{colors.pink.500}', _dark: '{colors.pink.300}' },
-          _blueTheme: { base: '{colors.blue.500}', _dark: '{colors.blue.300}' }
-        }
-      }
-    }
-  }
+          _blueTheme: { base: '{colors.blue.500}', _dark: '{colors.blue.300}' },
+        },
+      },
+    },
+  },
 }
 ```
 
@@ -106,28 +106,28 @@ export default defineConfig({
     extend: {
       tokens: {
         colors: {
-          text: { value: 'green' }
-        }
+          text: { value: 'green' },
+        },
       },
       semanticTokens: {
         colors: {
           body: {
             value: {
               base: '{colors.green.600}',
-              _osDark: '{colors.green.400}'
-            }
-          }
-        }
-      }
-    }
+              _osDark: '{colors.green.400}',
+            },
+          },
+        },
+      },
+    },
   },
   // alternative theme variants
   themes: {
     primary: {
       tokens: {
         colors: {
-          text: { value: 'red' }
-        }
+          text: { value: 'red' },
+        },
       },
       semanticTokens: {
         colors: {
@@ -135,17 +135,17 @@ export default defineConfig({
           body: {
             value: {
               base: '{colors.red.600}',
-              _osDark: '{colors.red.400}'
-            }
-          }
-        }
-      }
+              _osDark: '{colors.red.400}',
+            },
+          },
+        },
+      },
     },
     secondary: {
       tokens: {
         colors: {
-          text: { value: 'blue' }
-        }
+          text: { value: 'blue' },
+        },
       },
       semanticTokens: {
         colors: {
@@ -153,13 +153,13 @@ export default defineConfig({
           body: {
             value: {
               base: '{colors.blue.600}',
-              _osDark: '{colors.blue.400}'
-            }
-          }
-        }
-      }
-    }
-  }
+              _osDark: '{colors.blue.400}',
+            },
+          },
+        },
+      },
+    },
+  },
 })
 ```
 
@@ -175,8 +175,8 @@ import { defineConfig } from '@bamboocss/dev'
 export default defineConfig({
   // ...
   staticCss: {
-    themes: ['primary', 'secondary']
-  }
+    themes: ['primary', 'secondary'],
+  },
 })
 ```
 
@@ -315,9 +315,9 @@ import { defineThemeContract } from '@bamboocss/dev'
 const defineTheme = defineThemeContract({
   tokens: {
     colors: {
-      red: { value: '' } // theme implementations must have a red color
-    }
-  }
+      red: { value: '' }, // theme implementations must have a red color
+    },
+  },
 })
 
 defineTheme({
@@ -327,7 +327,7 @@ defineTheme({
       //
       // ✅ fixed with
       // red: { value: 'red' },
-    }
-  }
+    },
+  },
 })
 ```

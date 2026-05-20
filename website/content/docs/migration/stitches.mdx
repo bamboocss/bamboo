@@ -97,7 +97,7 @@ const Button = styled('button', {
 
   variants: {
     // variant styles
-  }
+  },
 })
 ```
 
@@ -110,11 +110,11 @@ const Button = styled('button', {
   // base styles
   base: {
     backgroundColor: 'gainsboro',
-    borderRadius: '9999px'
+    borderRadius: '9999px',
   },
   variants: {
     // variant styles
-  }
+  },
 })
 ```
 
@@ -137,8 +137,8 @@ import { styled } from '../styled-system/jsx'
 const Button = styled('button', {
   base: {
     backgroundColor: 'gainsboro',
-    borderRadius: '9999px'
-  }
+    borderRadius: '9999px',
+  },
 })
 // => <button class="bg_gainsboro rounded_999px">Button</button>
 ```
@@ -153,21 +153,21 @@ const buttonStyle = defineRecipe({
   className: 'button',
   base: {
     backgroundColor: 'gainsboro',
-    borderRadius: '9999px'
+    borderRadius: '9999px',
   },
   variants: {
     // variant styles
-  }
+  },
 })
 
 export default defineConfig({
   theme: {
     extend: {
       recipes: {
-        buttonStyle
-      }
-    }
-  }
+        buttonStyle,
+      },
+    },
+  },
 })
 ```
 
@@ -198,16 +198,16 @@ import { createStitches } from '@stitches/react'
 const { styled, css } = createStitches({
   media: {
     bp1: '(min-width: 640px)',
-    bp2: '(min-width: 768px)'
-  }
+    bp2: '(min-width: 768px)',
+  },
 })
 
 // usage
 const styles = css({
   backgroundColor: 'gainsboro',
   '@bp1': {
-    backgroundColor: 'tomato'
-  }
+    backgroundColor: 'tomato',
+  },
 })
 ```
 
@@ -221,10 +221,10 @@ export default defineConfig({
     extend: {
       breakpoints: {
         bp1: '640px',
-        bp2: '768px'
-      }
-    }
-  }
+        bp2: '768px',
+      },
+    },
+  },
 })
 
 // usage
@@ -234,7 +234,7 @@ const styles = css({
   bg: 'gainsboro',
   bp1: { bg: 'tomato' },
   // or
-  margin: { base: '10px', bp1: '20px' }
+  margin: { base: '10px', bp1: '20px' },
 })
 ```
 
@@ -255,16 +255,16 @@ const { styled, css } = createStitches({
   theme: {
     colors: {
       gray100: 'hsl(206,22%,99%)',
-      gray200: 'hsl(206,12%,97%)'
-    }
+      gray200: 'hsl(206,12%,97%)',
+    },
   },
   space: {},
-  fonts: {}
+  fonts: {},
 })
 
 // usage
 const styles = css({
-  backgroundColor: '$gray100'
+  backgroundColor: '$gray100',
 })
 ```
 
@@ -278,22 +278,22 @@ export default defineConfig({
     tokens: {
       colors: {
         gray100: { value: 'hsl(206,22%,99%)' },
-        gray200: { value: 'hsl(206,12%,97%)' }
+        gray200: { value: 'hsl(206,12%,97%)' },
       },
       spacing: {},
-      fonts: {}
+      fonts: {},
     },
     semanticTokens: {
       // ...
-    }
-  }
+    },
+  },
 })
 
 // usage
 import { css } from '../styled-system/css'
 
 const styles = css({
-  backgroundColor: 'gray100'
+  backgroundColor: 'gray100',
 })
 ```
 
@@ -321,10 +321,10 @@ export default defineConfig({
   hooks: {
     'tokens:created': ({ configure }) => {
       configure({
-        formatTokenName: path => '$' + path.join('-')
+        formatTokenName: (path) => '$' + path.join('-'),
       })
-    }
-  }
+    },
+  },
 })
 ```
 
@@ -362,14 +362,14 @@ export default defineConfig({
     semanticTokens: {
       colors: {
         gray100: {
-          value: { base: 'hsl(206,22%,99%)', _dark: 'hsl(206,8%,12%)' }
+          value: { base: 'hsl(206,22%,99%)', _dark: 'hsl(206,8%,12%)' },
         },
         gray200: {
-          value: { base: 'hsl(206,12%,97%)', _dark: 'hsl(206,7%,14%)' }
-        }
-      }
-    }
-  }
+          value: { base: 'hsl(206,12%,97%)', _dark: 'hsl(206,7%,14%)' },
+        },
+      },
+    },
+  },
 })
 ```
 
@@ -382,7 +382,7 @@ import { styled } from '@stitches/react'
 
 const Button = styled('button', {
   $$shadowColor: '$colors$pink500',
-  boxShadow: '0 0 0 15px $$shadowColor'
+  boxShadow: '0 0 0 15px $$shadowColor',
 })
 ```
 
@@ -395,8 +395,8 @@ import { styled } from '../styled-system/jsx'
 const Button = styled('button', {
   base: {
     '--shadowColor': 'colors.pink500',
-    boxShadow: '0 0 0 15px var(--shadowColor)'
-  }
+    boxShadow: '0 0 0 15px var(--shadowColor)',
+  },
 })
 ```
 
@@ -409,14 +409,14 @@ import { keyframes, styled } from '@stitches/react'
 
 const scaleUp = keyframes({
   '0%': { transform: 'scale(1)' },
-  '100%': { transform: 'scale(1.5)' }
+  '100%': { transform: 'scale(1.5)' },
 })
 
 // usage
 const Button = styled('button', {
   '&:hover': {
-    animation: `${scaleUp} 200ms`
-  }
+    animation: `${scaleUp} 200ms`,
+  },
 })
 ```
 
@@ -431,11 +431,11 @@ export default defineConfig({
       keyframes: {
         scaleUp: {
           '0%': { transform: 'scale(1)' },
-          '100%': { transform: 'scale(1.5)' }
-        }
-      }
-    }
-  }
+          '100%': { transform: 'scale(1.5)' },
+        },
+      },
+    },
+  },
 })
 
 // usage
@@ -443,8 +443,8 @@ import { css } from '../styled-system/css'
 
 const style = css({
   '&:hover': {
-    animation: 'scaleUp 200ms'
-  }
+    animation: 'scaleUp 200ms',
+  },
 })
 ```
 
@@ -458,9 +458,9 @@ import { createStitches, type PropertyValue } from '@stitches/react'
 const { styled, css } = createStitches({
   utils: {
     linearGradient: (value: PropertyValue<'backgroundImage'>) => ({
-      backgroundImage: `linear-gradient(${value})`
-    })
-  }
+      backgroundImage: `linear-gradient(${value})`,
+    }),
+  },
 })
 ```
 
@@ -483,12 +483,12 @@ export default defineConfig({
         // (optional): the shorthand name to use in the css
         shorthand: 'gradient',
         // (required): maps the value to the raw css object
-        transform: value => ({
-          backgroundImage: `linear-gradient(${value})`
-        })
-      }
-    }
-  }
+        transform: (value) => ({
+          backgroundImage: `linear-gradient(${value})`,
+        }),
+      },
+    },
+  },
 })
 ```
 
@@ -500,7 +500,7 @@ Then you can use the utility in your styles.
 import { css } from '../styled-system/css'
 
 const buttonClass = css({
-  linearGradient: '19deg, #21D4FD 0%, #B721FF 100%'
+  linearGradient: '19deg, #21D4FD 0%, #B721FF 100%',
 })
 ```
 
@@ -512,7 +512,7 @@ In Stitches, you define the global styles using the `globalCss` function, and th
 import { globalCss } from '@stitches/react'
 
 const globalStyles = globalCss({
-  '*': { margin: 0, padding: 0 }
+  '*': { margin: 0, padding: 0 },
 })
 
 // then in your app
@@ -527,12 +527,12 @@ In Bamboo, you define the global styles in the `bamboo.config.ts` using the `glo
 import { defineConfig, defineGlobalStyles } from '@bamboocss/dev'
 
 const globalCss = defineGlobalStyles({
-  '*': { margin: 0, padding: 0 }
+  '*': { margin: 0, padding: 0 },
 })
 
 export default defineConfig({
   // ...
-  globalCss
+  globalCss,
 })
 ```
 

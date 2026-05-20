@@ -9,11 +9,7 @@ export const FooterSection = () => {
   return (
     <bamboo.footer bg="bg.inverted">
       <Container py="10">
-        <Flex
-          gap="6"
-          direction={{ base: 'column', md: 'row' }}
-          align={{ base: 'center', md: 'unset' }}
-        >
+        <Flex gap="6" direction={{ base: 'column', md: 'row' }} align={{ base: 'center', md: 'unset' }}>
           <bamboo.p
             color="yellow.300"
             textStyle={{ base: '8xl', md: 'bamboo.h1' }}

@@ -27,14 +27,14 @@ export default defineConfig({
       tokens: {
         colors: {
           primary: { value: '#0FEE0F' },
-          secondary: { value: '#EE0F0F' }
+          secondary: { value: '#EE0F0F' },
         },
         fonts: {
-          body: { value: 'system-ui, sans-serif' }
-        }
-      }
-    }
-  }
+          body: { value: 'system-ui, sans-serif' },
+        },
+      },
+    },
+  },
 })
 ```
 
@@ -51,7 +51,7 @@ function App() {
     <p
       className={css({
         color: 'primary',
-        fontFamily: 'body'
+        fontFamily: 'body',
       })}
     >
       Hello World
@@ -71,11 +71,11 @@ export default defineConfig({
       colors: {
         danger: {
           value: '#EE0F0F',
-          description: 'Color for errors'
-        }
-      }
-    }
-  }
+          description: 'Color for errors',
+        },
+      },
+    },
+  },
 })
 ```
 
@@ -99,16 +99,16 @@ export default defineConfig({
     tokens: {
       colors: {
         red: { value: '#EE0F0F' },
-        green: { value: '#0FEE0F' }
-      }
+        green: { value: '#0FEE0F' },
+      },
     },
     semanticTokens: {
       colors: {
         danger: { value: '{colors.red}' },
-        success: { value: '{colors.green}' }
-      }
-    }
-  }
+        success: { value: '{colors.green}' },
+      },
+    },
+  },
 })
 ```
 
@@ -129,14 +129,14 @@ export default defineConfig({
     semanticTokens: {
       colors: {
         danger: {
-          value: { base: '{colors.red}', _dark: '{colors.darkred}' }
+          value: { base: '{colors.red}', _dark: '{colors.darkred}' },
         },
         success: {
-          value: { base: '{colors.green}', _dark: '{colors.darkgreen}' }
-        }
-      }
-    }
-  }
+          value: { base: '{colors.green}', _dark: '{colors.darkgreen}' },
+        },
+      },
+    },
+  },
 })
 ```
 
@@ -159,11 +159,11 @@ export default defineConfig({
       colors: {
         bg: {
           DEFAULT: { value: '{colors.gray.100}' },
-          muted: { value: '{colors.gray.100}' }
-        }
-      }
-    }
-  }
+          muted: { value: '{colors.gray.100}' },
+        },
+      },
+    },
+  },
 })
 ```
 
@@ -179,7 +179,7 @@ function App() {
         // 👇🏻 This will use the `DEFAULT` value
         bg: 'bg',
         // 👇🏻 This will use the `muted` value
-        color: 'bg.muted'
+        color: 'bg.muted',
       })}
     >
       Hello World
@@ -201,9 +201,9 @@ states. It is mostly defined as a string value or reference to other tokens.
 const theme = {
   tokens: {
     colors: {
-      red: { 100: { value: '#fff1f0' } }
-    }
-  }
+      red: { 100: { value: '#fff1f0' } },
+    },
+  },
 }
 ```
 
@@ -238,11 +238,11 @@ const theme = {
         value: {
           type: 'linear',
           placement: 'to right',
-          stops: ['red', 'blue']
-        }
-      }
-    }
-  }
+          stops: ['red', 'blue'],
+        },
+      },
+    },
+  },
 }
 ```
 
@@ -254,9 +254,9 @@ Size tokens represent the width and height of an element. Its value is defined a
 const theme = {
   tokens: {
     sizes: {
-      sm: { value: '12px' }
-    }
-  }
+      sm: { value: '12px' },
+    },
+  },
 }
 ```
 
@@ -270,9 +270,9 @@ Spacing tokens represent the margin and padding of an element. Its value is defi
 const theme = {
   tokens: {
     spacing: {
-      sm: { value: '12px' }
-    }
-  }
+      sm: { value: '12px' },
+    },
+  },
 }
 ```
 
@@ -287,9 +287,9 @@ const theme = {
   tokens: {
     fonts: {
       body: { value: 'Inter, sans-serif' },
-      heading: { value: ['Roboto Mono', 'sans-serif'] }
-    }
-  }
+      heading: { value: ['Roboto Mono', 'sans-serif'] },
+    },
+  },
 }
 ```
 
@@ -303,9 +303,9 @@ Font size tokens represent the size of a text element. Its value is defined as a
 const theme = {
   tokens: {
     fontSizes: {
-      sm: { value: '12px' }
-    }
-  }
+      sm: { value: '12px' },
+    },
+  },
 }
 ```
 
@@ -319,9 +319,9 @@ Font weight tokens represent the weight of a text element. Its value is defined 
 const theme = {
   tokens: {
     fontWeights: {
-      bold: { value: '700' }
-    }
-  }
+      bold: { value: '700' },
+    },
+  },
 }
 ```
 
@@ -335,9 +335,9 @@ Letter spacing tokens represent the spacing between letters in a text element. I
 const theme = {
   tokens: {
     letterSpacings: {
-      wide: { value: '0.1em' }
-    }
-  }
+      wide: { value: '0.1em' },
+    },
+  },
 }
 ```
 
@@ -351,9 +351,9 @@ Line height tokens represent the height of a line of text. Its value is defined 
 const theme = {
   tokens: {
     lineHeights: {
-      normal: { value: '1.5' }
-    }
-  }
+      normal: { value: '1.5' },
+    },
+  },
 }
 ```
 
@@ -367,9 +367,9 @@ Radii tokens represent the radius of a border. Its value is defined as a string.
 const theme = {
   tokens: {
     radii: {
-      sm: { value: '4px' }
-    }
-  }
+      sm: { value: '4px' },
+    },
+  },
 }
 ```
 
@@ -388,9 +388,9 @@ const theme = {
       // string value with reference to color token
       danger: { value: '1px solid {colors.red.400}' },
       // composite value
-      accent: { value: { width: '1px', color: 'red', style: 'solid' } }
-    }
-  }
+      accent: { value: { width: '1px', color: 'red', style: 'solid' } },
+    },
+  },
 }
 ```
 
@@ -407,9 +407,9 @@ const theme = {
     borderWidths: {
       thin: { value: '1px' },
       thick: { value: '2px' },
-      medium: { value: '1.5px' }
-    }
-  }
+      medium: { value: '1.5px' },
+    },
+  },
 }
 ```
 
@@ -444,15 +444,15 @@ const theme = {
           offsetY: 4,
           blur: 4,
           spread: 0,
-          color: 'rgba(0, 0, 0, 0.1)'
-        }
+          color: 'rgba(0, 0, 0, 0.1)',
+        },
       },
       // multiple string values
       realistic: {
-        value: ['0 1px 2px 0 rgba(0, 0, 0, 0.05)', '0 1px 4px 0 rgba(0, 0, 0, 0.1)']
-      }
-    }
-  }
+        value: ['0 1px 2px 0 rgba(0, 0, 0, 0.05)', '0 1px 4px 0 rgba(0, 0, 0, 0.1)'],
+      },
+    },
+  },
 }
 ```
 
@@ -470,9 +470,9 @@ const theme = {
       // string value
       easeIn: { value: 'cubic-bezier(0.4, 0, 0.2, 1)' },
       // array value
-      easeOut: { value: [0.4, 0, 0.2, 1] }
-    }
-  }
+      easeOut: { value: [0.4, 0, 0.2, 1] },
+    },
+  },
 }
 ```
 
@@ -486,9 +486,9 @@ Opacity tokens help you set the opacity of an element.
 const theme = {
   tokens: {
     opacity: {
-      50: { value: 0.5 }
-    }
-  }
+      50: { value: 0.5 },
+    },
+  },
 }
 ```
 
@@ -502,9 +502,9 @@ This token type represents the depth of an element's position on the z-axis.
 const theme = {
   tokens: {
     zIndex: {
-      modal: { value: 1000 }
-    }
-  }
+      modal: { value: 1000 },
+    },
+  },
 }
 ```
 
@@ -524,13 +524,13 @@ const theme = {
   tokens: {
     assets: {
       logo: {
-        value: { type: 'url', value: '/static/logo.png' }
+        value: { type: 'url', value: '/static/logo.png' },
       },
       checkmark: {
-        value: { type: 'svg', value: '<svg>...</svg>' }
-      }
-    }
-  }
+        value: { type: 'svg', value: '<svg>...</svg>' },
+      },
+    },
+  },
 }
 ```
 
@@ -545,9 +545,9 @@ value is defined as a string.
 const theme = {
   tokens: {
     durations: {
-      fast: { value: '100ms' }
-    }
-  }
+      fast: { value: '100ms' },
+    },
+  },
 }
 ```
 
@@ -562,10 +562,10 @@ const theme = {
   tokens: {
     animations: {
       spin: {
-        value: 'spin 1s linear infinite'
-      }
-    }
-  }
+        value: 'spin 1s linear infinite',
+      },
+    },
+  },
 }
 ```
 
@@ -580,9 +580,9 @@ const theme = {
   tokens: {
     aspectRatios: {
       '1:1': { value: '1 / 1' },
-      '16:9': { value: '16 / 9' }
-    }
-  }
+      '16:9': { value: '16 / 9' },
+    },
+  },
 }
 ```
 
@@ -599,9 +599,9 @@ const theme = {
       click: { value: 'pointer' },
       disabled: { value: 'not-allowed' },
       // custom value
-      custom: { value: 'url(cursor.svg), auto' }
-    }
-  }
+      custom: { value: 'url(cursor.svg), auto' },
+    },
+  },
 }
 ```
 
@@ -618,7 +618,7 @@ The generated CSS variables will be scoped using the `cssVarRoot` selector defin
 import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
-  cssVarRoot: ':where(:root, :host)'
+  cssVarRoot: ':where(:root, :host)',
   // ...
 })
 ```

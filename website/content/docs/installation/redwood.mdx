@@ -112,7 +112,7 @@ export default defineConfig({
   preflight: true,
   include: ['./src/**/*.{js,jsx,ts,tsx}'],
   exclude: [],
-  outdir: 'styled-system'
+  outdir: 'styled-system',
 })
 ```
 
@@ -151,7 +151,7 @@ const HomePage = () => {
         className={stack({
           bg: { base: 'red.300', _hover: 'red.500' },
           py: '12',
-          px: '8'
+          px: '8',
         })}
       >
         <h1 className={css({ fontSize: '4xl', fontWeight: 'bold' })}>HomePage</h1>

@@ -541,7 +541,7 @@ Ex object-literal:
 ```tsx
 const styles = css({
   backgroundColor: 'gainsboro',
-  padding: '10px 15px'
+  padding: '10px 15px',
 })
 ```
 
@@ -617,7 +617,7 @@ Ex `true`:
 ```tsx
 const styles = css({
   bgColor: 'gainsboro',
-  p: '10px 15px'
+  p: '10px 15px',
 })
 ```
 
@@ -626,7 +626,7 @@ Ex false:
 ```tsx
 const styles = css({
   backgroundColor: 'gainsboro',
-  padding: '10px 15px'
+  padding: '10px 15px',
 })
 ```
 
@@ -1041,11 +1041,11 @@ export default defineConfig({
       hooks: {
         'tokens:created': ({ configure }) => {
           configure({
-            formatTokenName: path => '$' + path.join('-')
+            formatTokenName: (path) => '$' + path.join('-'),
           })
-        }
-      }
-    }
-  ]
+        },
+      },
+    },
+  ],
 })
 ```

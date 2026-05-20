@@ -23,7 +23,7 @@ const typeMap = {
   breakpoints: Breakpoints,
   shadows: Shadows,
   keyframes: Keyframes,
-  sizing: Sizings
+  sizing: Sizings,
 }
 
 export const TokenDocs = (props: Props) => {

@@ -23,15 +23,13 @@ export const Header = ({ doc }: Props) => {
             fontSize: { base: '3xl', md: '4xl' },
             fontWeight: 'bold',
             lineHeight: 'tight',
-            mb: 2
+            mb: 2,
           })}
         >
           {doc.title}
         </h1>
         {doc.description && (
-          <p className={css({ fontSize: 'lg', color: 'fg.muted', maxW: '3xl' })}>
-            {doc.description}
-          </p>
+          <p className={css({ fontSize: 'lg', color: 'fg.muted', maxW: '3xl' })}>{doc.description}</p>
         )}
       </div>
 

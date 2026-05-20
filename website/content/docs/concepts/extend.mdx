@@ -32,8 +32,8 @@ export default defineConfig({
 
   // Useful for theme customization
   theme: {
-    extend: {} // 👈 it's already there! perfect, now you just need to add your customizations in this object
-  }
+    extend: {}, // 👈 it's already there! perfect, now you just need to add your customizations in this object
+  },
 
   // ...
 })
@@ -48,10 +48,10 @@ export default defineConfig({
   theme: {
     extend: {
       colors: {
-        primary: { value: '#ff0000' }
-      }
-    }
-  }
+        primary: { value: '#ff0000' },
+      },
+    },
+  },
 })
 ```
 
@@ -70,10 +70,10 @@ export default defineConfig({
         values: 'radii', // connect values to the radii tokens
         transform(value) {
           return { borderRadius: value }
-        }
-      }
-    }
-  }
+        },
+      },
+    },
+  },
 })
 ```
 
@@ -136,10 +136,10 @@ export default defineConfig({
   eject: true,
   patterns: {
     extend: {
-      ...bambooBasePresetPatterns
+      ...bambooBasePresetPatterns,
       // your customizations here
-    }
-  }
+    },
+  },
 })
 ```
 

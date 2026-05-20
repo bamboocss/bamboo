@@ -15,7 +15,7 @@ Let's say you want to change the font weight of a text on large screens, you can
 <span
   className={css({
     fontWeight: 'medium',
-    lg: { fontWeight: 'bold' }
+    lg: { fontWeight: 'bold' },
   })}
 >
   Text
@@ -33,7 +33,7 @@ const breakpoints = {
   md: '768px',
   lg: '1024px',
   xl: '1280px',
-  '2xl': '1536px'
+  '2xl': '1536px',
 }
 ```
 
@@ -63,7 +63,7 @@ array. Using our previous code as an example:
 ```jsx
 <span
   className={css({
-    fontWeight: ['medium', undefined, undefined, 'bold']
+    fontWeight: ['medium', undefined, undefined, 'bold'],
   })}
 >
   Text
@@ -86,7 +86,7 @@ Let's say we want to apply styles between the `md` and `xl` breakpoints, we use 
 ```jsx
 <span
   className={css({
-    fontWeight: { mdToXl: 'bold' }
+    fontWeight: { mdToXl: 'bold' },
   })}
 >
   Text
@@ -105,7 +105,7 @@ Let's say we want to apply styles only in the `lg` breakpoint, we use the `lgOnl
 ```jsx
 <span
   className={css({
-    fontWeight: { lgOnly: 'bold' }
+    fontWeight: { lgOnly: 'bold' },
   })}
 >
   Text
@@ -136,10 +136,10 @@ export default defineConfig({
         md: '768px',
         lg: '1024px',
         xl: '1280px',
-        '2xl': '1536px'
-      }
-    }
-  }
+        '2xl': '1536px',
+      },
+    },
+  },
 })
 ```
 

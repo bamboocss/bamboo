@@ -38,11 +38,7 @@ export const ModernCssSection = () => {
       <Container mb={{ lg: '-10rem' }}>
         <Flex direction={{ base: 'column', lg: 'row' }} gap="8" justify="space-between" py="20">
           <Stack position="relative" gap="14" maxW={{ lg: '560px' }} pt="10">
-            <Circle
-              size="94px"
-              className={button({ color: 'white', shape: 'circle' })}
-              position="relative"
-            >
+            <Circle size="94px" className={button({ color: 'white', shape: 'circle' })} position="relative">
               <Icon icon="Css3" />
               <bamboo.div position="absolute" top="-2" right="-5" color="fg">
                 <Icon icon="Sparks2" className={css({ w: '22px', h: '22px' })} />
@@ -54,8 +50,8 @@ export const ModernCssSection = () => {
                 Generates Modern CSS code at build time
               </bamboo.h3>
               <bamboo.h4 textStyle="bamboo.h4" fontWeight="medium" color="fg.muted">
-                Bamboo uses modern features like cascade layers, :where selectors and css variables
-                to give you best-in-class css output.
+                Bamboo uses modern features like cascade layers, :where selectors and css variables to give you
+                best-in-class css output.
               </bamboo.h4>
             </Stack>
 

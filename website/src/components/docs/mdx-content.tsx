@@ -44,7 +44,7 @@ const sharedComponents = {
         maxW: 'full',
         h: 'auto',
         rounded: 'md',
-        my: 6
+        my: 6,
       })}
     />
   ),
@@ -109,11 +109,11 @@ const sharedComponents = {
           my: 3,
           rounded: 'lg',
           bg: 'gray.100',
-          _dark: { bg: 'gray.800' }
+          _dark: { bg: 'gray.800' },
         })}
       />
     )
-  }
+  },
 }
 
 // Runtime MDX component compiler

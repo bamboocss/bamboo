@@ -10,13 +10,9 @@ const tabsStore = new SessionStore('docs-tabs')
 
 export const Tabs = (props: React.PropsWithChildren<{ items: string[] }>) => {
   const { items, children } = props
-  const storageKey = items.map(item => item).join('|')
+  const storageKey = items.map((item) => item).join('|')
 
-  const store = React.useSyncExternalStore(
-    tabsStore.subscribe,
-    tabsStore.getSnapshot,
-    tabsStore.getServerSnapshot
-  )
+  const store = React.useSyncExternalStore(tabsStore.subscribe, tabsStore.getSnapshot, tabsStore.getServerSnapshot)
 
   const persistentStore = React.useMemo(() => tabsStore.getParsedSnapshot(), [store])
   const value = persistentStore?.[storageKey] || items[0]
@@ -24,7 +20,7 @@ export const Tabs = (props: React.PropsWithChildren<{ items: string[] }>) => {
   return (
     <ArkTabs.Root
       value={value}
-      onValueChange={e => tabsStore.setValue(storageKey, e.value)}
+      onValueChange={(e) => tabsStore.setValue(storageKey, e.value)}
       className={cx('docs-scrollbar', nextraTabs())}
     >
       <ArkTabs.List>
@@ -41,7 +37,7 @@ export const Tabs = (props: React.PropsWithChildren<{ items: string[] }>) => {
         if (!React.isValidElement<ArkTabs.TriggerProps>(child)) return child
         return React.cloneElement(child, {
           ...child.props,
-          value: items[index]
+          value: items[index],
         })
       })}
     </ArkTabs.Root>

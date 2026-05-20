@@ -12,7 +12,7 @@ export const dialogSlotRecipe = sva({
       top: 0,
       w: '100dvw',
       h: '100dvh',
-      zIndex: 'var(--z-index)'
+      zIndex: 'var(--z-index)',
     },
     positioner: {
       display: 'flex',
@@ -25,7 +25,7 @@ export const dialogSlotRecipe = sva({
       '--dialog-z-index': '200',
       zIndex: 'calc(var(--dialog-z-index) + var(--layer-index, 0))',
       justifyContent: 'center',
-      overscrollBehaviorY: 'none'
+      overscrollBehaviorY: 'none',
     },
     content: {
       display: 'flex',
@@ -39,123 +39,123 @@ export const dialogSlotRecipe = sva({
       '--dialog-z-index': '200',
       zIndex: 'calc(var(--dialog-z-index) + var(--layer-index, 0))',
       bg: 'bg',
-      boxShadow: 'lg'
+      boxShadow: 'lg',
     },
     title: {
       textStyle: 'lg',
-      fontWeight: 'semibold'
+      fontWeight: 'semibold',
     },
     description: {
-      color: 'fg.muted'
+      color: 'fg.muted',
     },
     closeTrigger: {
       pos: 'absolute',
       top: '2',
-      insetEnd: '2'
-    }
+      insetEnd: '2',
+    },
   },
 
   variants: {
     placement: {
       center: {
         positioner: {
-          alignItems: 'center'
+          alignItems: 'center',
         },
         content: {
           '--dialog-base-margin': 'auto',
-          mx: 'auto'
-        }
+          mx: 'auto',
+        },
       },
       top: {
         positioner: {
-          alignItems: 'flex-start'
+          alignItems: 'flex-start',
         },
         content: {
           '--dialog-base-margin': 'spacing.16',
-          mx: 'auto'
-        }
+          mx: 'auto',
+        },
       },
       bottom: {
         positioner: {
-          alignItems: 'flex-end'
+          alignItems: 'flex-end',
         },
         content: {
           '--dialog-base-margin': 'spacing.16',
-          mx: 'auto'
-        }
-      }
+          mx: 'auto',
+        },
+      },
     },
 
     scrollBehavior: {
       inside: {
         positioner: {
-          overflow: 'hidden'
+          overflow: 'hidden',
         },
         content: {
-          maxH: 'calc(100% - 7.5rem)'
+          maxH: 'calc(100% - 7.5rem)',
         },
         body: {
-          overflow: 'auto'
-        }
+          overflow: 'auto',
+        },
       },
       outside: {
         positioner: {
           overflow: 'auto',
-          pointerEvents: 'auto'
-        }
-      }
+          pointerEvents: 'auto',
+        },
+      },
     },
 
     size: {
       xs: {
         content: {
-          maxW: 'sm'
-        }
+          maxW: 'sm',
+        },
       },
       sm: {
         content: {
-          maxW: 'md'
-        }
+          maxW: 'md',
+        },
       },
       md: {
         content: {
-          maxW: 'lg'
-        }
+          maxW: 'lg',
+        },
       },
       lg: {
         content: {
-          maxW: '2xl'
-        }
+          maxW: '2xl',
+        },
       },
       xl: {
         content: {
-          maxW: '4xl'
-        }
+          maxW: '4xl',
+        },
       },
       cover: {
         positioner: {
-          padding: '10'
+          padding: '10',
         },
         content: {
           width: '100%',
           height: '100%',
-          '--dialog-margin': '0'
-        }
+          '--dialog-margin': '0',
+        },
       },
       full: {
         content: {
           maxW: '100dvw',
           minH: '100dvh',
           '--dialog-margin': '0',
-          borderRadius: '0'
-        }
-      }
-    }
+          borderRadius: '0',
+        },
+      },
+    },
   },
 
   defaultVariants: {
     size: 'md',
     scrollBehavior: 'outside',
-    placement: 'top'
-  }
+    placement: 'top',
+  },
 })

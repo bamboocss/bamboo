@@ -13,13 +13,7 @@ export const CommunitySection = () => {
         right="-16%"
         pointerEvents="none"
       >
-        <Image
-          width="800"
-          height="800"
-          alt=""
-          src="/community.png"
-          style={{ height: '100%', width: '800px' }}
-        />
+        <Image width="800" height="800" alt="" src="/community.png" style={{ height: '100%', width: '800px' }} />
       </bamboo.div>
 
       <Container pt="32" pb="40">

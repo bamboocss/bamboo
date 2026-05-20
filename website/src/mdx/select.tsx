@@ -23,11 +23,7 @@ function SelectComponent({ options, selected, onChange, title, className }: Prop
   }, [options])
 
   return (
-    <Select.Root
-      lazyMount
-      collection={collection}
-      onValueChange={e => onChange(e.items[0] ?? null)}
-    >
+    <Select.Root lazyMount collection={collection} onValueChange={(e) => onChange(e.items[0] ?? null)}>
       <Select.Trigger
         className={cx(
           css({
@@ -45,19 +41,19 @@ function SelectComponent({ options, selected, onChange, title, className }: Prop
               color: 'gray.900',
               _dark: {
                 color: 'gray.50',
-                bg: 'whiteAlpha.300'
-              }
+                bg: 'whiteAlpha.300',
+              },
             },
             _hover: {
               bg: 'blackAlpha.200',
               color: 'gray.900',
               _dark: {
                 bg: 'rgb(219 234 254 / 0.1)',
-                color: 'gray.50'
-              }
-            }
+                color: 'gray.50',
+              },
+            },
           }),
-          className
+          className,
         )}
       >
         {(selected?.label as any) ?? title}
@@ -76,31 +72,31 @@ function SelectComponent({ options, selected, onChange, title, className }: Prop
             shadow: 'lg',
             _dark: {
               outlineColor: 'rgb(255 255 255 / 0.2)',
-              bg: 'neutral.800'
-            }
+              bg: 'neutral.800',
+            },
           })}
         >
           <Select.Content
             className={css({
-              zIndex: 20
+              zIndex: 20,
             })}
           >
-            {options.map(option => (
+            {options.map((option) => (
               <Select.Item
                 item={option}
                 key={option.value}
                 className={css({
                   color: 'gray.800',
                   _dark: {
-                    color: 'gray.100'
+                    color: 'gray.100',
                   },
                   _hover: {
                     bg: 'yellow.200',
                     color: 'black',
                     _dark: {
                       bg: 'yellow.300',
-                      color: 'black'
-                    }
+                      color: 'black',
+                    },
                   },
                   position: 'relative',
                   cursor: 'pointer',
@@ -108,7 +104,7 @@ function SelectComponent({ options, selected, onChange, title, className }: Prop
                   py: 1.5,
                   transition: 'colors',
                   ps: '3',
-                  pe: '9'
+                  pe: '9',
                 })}
               >
                 <Select.ItemText>{option.label}</Select.ItemText>
@@ -118,7 +114,7 @@ function SelectComponent({ options, selected, onChange, title, className }: Prop
                       position: 'absolute',
                       right: '3',
                       top: '2',
-                      insetEnd: '3'
+                      insetEnd: '3',
                     })}
                   />
                 </Select.ItemIndicator>

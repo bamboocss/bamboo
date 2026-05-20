@@ -25,9 +25,9 @@ export const metadata: Metadata = {
       generateOgImageUrl({
         title: ogTitle,
         description: ogDescription,
-        category: 'Team'
-      })
-    ]
+        category: 'Team',
+      }),
+    ],
   },
   twitter: {
     card: 'summary_large_image',
@@ -37,16 +37,16 @@ export const metadata: Metadata = {
       generateOgImageUrl({
         title: ogTitle,
         description: ogDescription,
-        category: 'Team'
-      })
-    ]
-  }
+        category: 'Team',
+      }),
+    ],
+  },
 }
 
 const iconMap = {
   github: <FaGithub />,
   twitter: <FaTwitter />,
-  blog: <FaGlobe />
+  blog: <FaGlobe />,
 }
 
 const SocialIcon = ({ platform, url }: { platform: string; url: string }) => {
@@ -57,7 +57,7 @@ const SocialIcon = ({ platform, url }: { platform: string; url: string }) => {
       rel="noopener noreferrer"
       className={css({
         color: 'var(--fg-muted)',
-        transition: 'color 0.2s'
+        transition: 'color 0.2s',
       })}
       aria-label={`${platform} profile`}
     >
@@ -71,7 +71,7 @@ const SocialIcon = ({ platform, url }: { platform: string; url: string }) => {
 }
 
 const TeamMemberCard = ({ member }: { member: GitHubUser }) => {
-  const teamMember = teamMembers.find(tm => tm.login === member.login)
+  const teamMember = teamMembers.find((tm) => tm.login === member.login)
   const role = teamMember?.role || 'Contributor'
 
   return (
@@ -84,7 +84,7 @@ const TeamMemberCard = ({ member }: { member: GitHubUser }) => {
       transition="transform 0.2s"
       _hover={{
         transform: 'translateY(-4px)',
-        shadow: 'lg'
+        shadow: 'lg',
       }}
     >
       <Stack gap="6" align="center" pt="4">
@@ -106,7 +106,7 @@ const TeamMemberCard = ({ member }: { member: GitHubUser }) => {
             className={css({
               objectFit: 'cover',
               width: '100%',
-              height: '100%'
+              height: '100%',
             })}
           />
         </bamboo.div>
@@ -121,9 +121,7 @@ const TeamMemberCard = ({ member }: { member: GitHubUser }) => {
           </bamboo.p>
         </Stack>
 
-        <bamboo.p fontSize="sm">
-          {member.bio || 'Contributing to the Bamboo CSS ecosystem'}
-        </bamboo.p>
+        <bamboo.p fontSize="sm">{member.bio || 'Contributing to the Bamboo CSS ecosystem'}</bamboo.p>
 
         <HStack gap="4" justify="center">
           <SocialIcon platform="github" url={member.html_url} />
@@ -142,7 +140,7 @@ const toHttps = (url: string) => {
 }
 
 export default async function TeamPage() {
-  const data = await fetchGithubUsers(teamMembers.map(member => member.login))
+  const data = await fetchGithubUsers(teamMembers.map((member) => member.login))
   return (
     <>
       <Navbar />
@@ -150,27 +148,18 @@ export default async function TeamPage() {
         <Container py="20">
           <Stack gap="16" align="center">
             <Stack gap="6" align="center" textAlign="center">
-              <bamboo.h1
-                fontSize={{ base: '3xl', md: '5xl' }}
-                fontWeight="bold"
-                letterSpacing="tight"
-              >
+              <bamboo.h1 fontSize={{ base: '3xl', md: '5xl' }} fontWeight="bold" letterSpacing="tight">
                 Meet our team
               </bamboo.h1>
-              <bamboo.p
-                fontSize={{ base: 'lg', md: 'xl' }}
-                color="fg.muted"
-                maxW="2xl"
-                lineHeight="relaxed"
-              >
-                Bamboo CSS is maintained by a passionate team of engineers. It also receives
-                contributions from engineers around the world.
+              <bamboo.p fontSize={{ base: 'lg', md: 'xl' }} color="fg.muted" maxW="2xl" lineHeight="relaxed">
+                Bamboo CSS is maintained by a passionate team of engineers. It also receives contributions from
+                engineers around the world.
               </bamboo.p>
             </Stack>
 
             <Grid columns={{ base: 1, md: 2, lg: 3 }} gap="8" w="full" maxW="6xl">
               {data.length > 0 ? (
-                data.map(member => <TeamMemberCard key={member.login} member={member} />)
+                data.map((member) => <TeamMemberCard key={member.login} member={member} />)
               ) : (
                 <bamboo.div gridColumn="1 / -1" textAlign="center" p="8" color="fg.muted">
                   Unable to load team members

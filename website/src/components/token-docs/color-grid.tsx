@@ -27,10 +27,7 @@ export const ColorGridToken = (props: ColorGridTokenProps) => {
   const { copied, copy } = useClipboard({ value: token.value })
   return (
     <div className={hstack({ cursor: 'pointer' })} onClick={copy}>
-      <div
-        className={square({ size: '8', rounded: 'sm' })}
-        style={{ background: token.extensions.varRef }}
-      />
+      <div className={square({ size: '8', rounded: 'sm' })} style={{ background: token.extensions.varRef }} />
       <div>
         <div className={css({ fontWeight: 'medium' })}>{token.extensions.prop}</div>
         <div className={colorTokenValue({ copied })}>{token.value}</div>
@@ -41,14 +38,14 @@ export const ColorGridToken = (props: ColorGridTokenProps) => {
 
 const colorTokenValue = cva({
   base: {
-    opacity: '0.6'
+    opacity: '0.6',
   },
   variants: {
     copied: {
       true: {
         opacity: '1',
-        color: 'green.500'
-      }
-    }
-  }
+        color: 'green.500',
+      },
+    },
+  },
 })

@@ -115,7 +115,7 @@ export default defineConfig({
   exclude: [],
 
   // The output directory for your css system
-  outdir: 'styled-system'
+  outdir: 'styled-system',
 })
 ```
 
@@ -168,7 +168,7 @@ import { css } from '../styled-system/css'
 @Component({
   selector: 'app-root',
   standalone: true,
-  template: ` <div [class]="redBg"></div> `
+  template: ` <div [class]="redBg"></div> `,
 })
 export class App {
   redBg = css({ bg: 'red.400' })

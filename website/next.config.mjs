@@ -4,8 +4,8 @@ const config = {
     return [
       {
         source: '/docs/:path*.mdx',
-        destination: '/llms.txt/:path*.mdx'
-      }
+        destination: '/llms.txt/:path*.mdx',
+      },
     ]
   },
   async redirects() {
@@ -13,28 +13,28 @@ const config = {
       {
         source: '/(docs|docs/getting-started)',
         destination: '/docs/overview/getting-started',
-        permanent: true
+        permanent: true,
       },
       {
         source: '/discord',
         destination: 'https://discord.gg/VQrkpsgSx7',
-        permanent: true
+        permanent: true,
       },
       {
         source: '/play',
         destination: 'https://play.bamboo-css.com',
-        permanent: true
+        permanent: true,
       },
       {
         source: '/learn',
         destination: 'https://pandamastery.com',
-        permanent: true
+        permanent: true,
       },
       {
         source: '/docs/overview/llms-txt',
         destination: '/docs/ai/llms-txt',
-        permanent: true
-      }
+        permanent: true,
+      },
     ]
   },
   reactStrictMode: true,
@@ -45,9 +45,9 @@ const config = {
       { hostname: 'coolcontrast.vercel.app' },
       { hostname: 's2.coinmarketcap.com' },
       { hostname: 'magic.link' },
-      { hostname: 'ark-ui.com' }
-    ]
-  }
+      { hostname: 'ark-ui.com' },
+    ],
+  },
 }
 
 export default config

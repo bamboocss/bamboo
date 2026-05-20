@@ -17,19 +17,19 @@ export async function generateStaticParams() {
     'customization',
     'guides',
     'migration',
-    'references'
+    'references',
   ]
 
   // Generate params for category pages
-  const categoryParams = categories.map(category => ({
-    slug: [category]
+  const categoryParams = categories.map((category) => ({
+    slug: [category],
   }))
 
   // Generate params for individual doc pages
-  const docParams = docs.map(doc => {
+  const docParams = docs.map((doc) => {
     const slugParts = doc.slug.replace('docs/', '').split('/')
     return {
-      slug: slugParts
+      slug: slugParts,
     }
   })
 
@@ -45,14 +45,14 @@ export async function GET(request: Request, context: RouteContext) {
   if (lastPart.endsWith('.mdx')) {
     slugParts = [
       ...slugParts.slice(0, -1),
-      lastPart.slice(0, -4) // Remove .mdx
+      lastPart.slice(0, -4), // Remove .mdx
     ]
   }
 
   // Check if this is a specific doc request (e.g., /installation/redwood)
   if (slugParts.length > 1) {
     const fullSlug = `docs/${slugParts.join('/')}`
-    const doc = docs.find(d => d.slug === fullSlug)
+    const doc = docs.find((d) => d.slug === fullSlug)
 
     if (!doc) {
       notFound()
@@ -64,8 +64,8 @@ export async function GET(request: Request, context: RouteContext) {
     return new Response(content, {
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
-        'Cache-Control': 'public, max-age=3600'
-      }
+        'Cache-Control': 'public, max-age=3600',
+      },
     })
   }
 
@@ -73,7 +73,7 @@ export async function GET(request: Request, context: RouteContext) {
   const category = slugParts[0]
 
   // Filter docs by category
-  const categoryDocs = docs.filter(doc => doc.slug.startsWith(`docs/${category}`))
+  const categoryDocs = docs.filter((doc) => doc.slug.startsWith(`docs/${category}`))
 
   if (categoryDocs.length === 0) {
     notFound()
@@ -88,8 +88,8 @@ export async function GET(request: Request, context: RouteContext) {
   return new Response(content, {
     headers: {
       'Content-Type': 'text/plain; charset=utf-8',
-      'Cache-Control': 'public, max-age=3600'
-    }
+      'Cache-Control': 'public, max-age=3600',
+    },
   })
 }
 
@@ -116,11 +116,11 @@ function generateCategoryContent(category: string, docs: typeof import('.velite'
     customization: 'Bamboo CSS Customization',
     guides: 'Bamboo CSS Guides',
     migration: 'Bamboo CSS Migration Guides',
-    references: 'Bamboo CSS References'
+    references: 'Bamboo CSS References',
   }
 
   const sections = docs
-    .map(doc => {
+    .map((doc) => {
       const title = doc.title
       const slug = doc.slug.replace('docs/', '')
       const level = slug.split('/').length - 1
@@ -142,7 +142,7 @@ ${doc.llm}
 
 ## Table of Contents
 
-${docs.map(doc => `- [${doc.title}](#${doc.title.toLowerCase().replace(/\s+/g, '-')})`).join('\n')}
+${docs.map((doc) => `- [${doc.title}](#${doc.title.toLowerCase().replace(/\s+/g, '-')})`).join('\n')}
 
 ---
 

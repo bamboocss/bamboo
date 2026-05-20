@@ -20,7 +20,7 @@ Enable or scope the reset styles.
 import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
-  preflight: true
+  preflight: true,
 })
 ```
 
@@ -30,7 +30,7 @@ Scope and level:
 import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
-  preflight: { scope: '.extension', level: 'element' }
+  preflight: { scope: '.extension', level: 'element' },
 })
 ```
 
@@ -61,9 +61,9 @@ export default defineConfig({
       '--global-color-border': 'colors.gray.400',
       '--global-color-placeholder': 'rgba(0,0,0,0.5)',
       '--global-color-selection': 'rgba(0,115,255,0.3)',
-      '--global-color-focus-ring': 'colors.blue.400'
-    }
-  }
+      '--global-color-focus-ring': 'colors.blue.400',
+    },
+  },
 })
 ```
 
@@ -98,9 +98,9 @@ export default defineConfig({
     '--button-color': {
       syntax: '<color>',
       inherits: false,
-      initialValue: 'blue'
-    }
-  }
+      initialValue: 'blue',
+    },
+  },
 })
 ```
 

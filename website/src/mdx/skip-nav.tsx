@@ -11,7 +11,7 @@ type SkipNavLinkProps = Omit<React.ComponentProps<'a'>, 'ref' | 'href' | 'childr
 
 export const SkipNavLink = forwardRef<HTMLAnchorElement, SkipNavLinkProps>(function (
   { className: providedClassName, id, label = DEFAULT_LABEL, styled, ...props },
-  forwardedRef
+  forwardedRef,
 ) {
   const className =
     providedClassName === undefined // Give the option to the user to pass a falsy other than undefined to remove the default styles
@@ -37,21 +37,15 @@ export const SkipNavLink = forwardRef<HTMLAnchorElement, SkipNavLinkProps>(funct
               _dark: {
                 color: 'gray.100',
                 bg: 'neutral.900',
-                borderColor: 'neutral.800'
-              }
-            }
+                borderColor: 'neutral.800',
+              },
+            },
           })
         : ''
       : providedClassName
 
   return (
-    <a
-      {...props}
-      ref={forwardedRef}
-      href={`#${id || DEFAULT_ID}`}
-      className={className}
-      data-reach-skip-link=""
-    >
+    <a {...props} ref={forwardedRef} href={`#${id || DEFAULT_ID}`} className={className} data-reach-skip-link="">
       {label}
     </a>
   )
@@ -63,7 +57,7 @@ type SkipNavContentProps = Omit<React.ComponentProps<'div'>, 'ref' | 'children'>
 
 export const SkipNavContent = forwardRef<HTMLDivElement, SkipNavContentProps>(function (
   { id, ...props },
-  forwardedRef
+  forwardedRef,
 ) {
   return <div {...props} ref={forwardedRef} id={id || DEFAULT_ID} />
 })

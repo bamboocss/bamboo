@@ -34,18 +34,18 @@ import { cva } from '../styled-system/css'
 
 const button = cva({
   base: {
-    display: 'flex'
+    display: 'flex',
   },
   variants: {
     visual: {
       solid: { bg: 'red.200', color: 'white' },
-      outline: { borderWidth: '1px', borderColor: 'red.200' }
+      outline: { borderWidth: '1px', borderColor: 'red.200' },
     },
     size: {
       sm: { padding: '4', fontSize: '12px' },
-      lg: { padding: '8', fontSize: '24px' }
-    }
-  }
+      lg: { padding: '8', fontSize: '24px' },
+    },
+  },
 })
 ```
 
@@ -96,22 +96,22 @@ import { cva } from '../styled-system/css'
 
 const button = cva({
   base: {
-    display: 'flex'
+    display: 'flex',
   },
   variants: {
     visual: {
       solid: { bg: 'red.200', color: 'white' },
-      outline: { borderWidth: '1px', borderColor: 'red.200' }
+      outline: { borderWidth: '1px', borderColor: 'red.200' },
     },
     size: {
       sm: { padding: '4', fontSize: '12px' },
-      lg: { padding: '8', fontSize: '24px' }
-    }
+      lg: { padding: '8', fontSize: '24px' },
+    },
   },
   defaultVariants: {
     visual: 'solid',
-    size: 'lg'
-  }
+    size: 'lg',
+  },
 })
 ```
 
@@ -131,40 +131,40 @@ const button = cva({
     padding: '8px 16px',
     borderRadius: '4px',
     fontSize: '16px',
-    fontWeight: 'bold'
+    fontWeight: 'bold',
   },
 
   variants: {
     size: {
       small: {
         fontSize: '14px',
-        padding: '4px 8px'
+        padding: '4px 8px',
       },
       medium: {
         fontSize: '16px',
-        padding: '8px 16px'
+        padding: '8px 16px',
       },
       large: {
         fontSize: '18px',
-        padding: '12px 24px'
-      }
+        padding: '12px 24px',
+      },
     },
     color: {
       primary: {
         backgroundColor: 'blue',
-        color: 'white'
+        color: 'white',
       },
       secondary: {
         backgroundColor: 'gray',
-        color: 'black'
-      }
+        color: 'black',
+      },
     },
     disabled: {
       true: {
         opacity: 0.5,
-        cursor: 'not-allowed'
-      }
-    }
+        cursor: 'not-allowed',
+      },
+    },
   },
 
   // compound variants
@@ -174,8 +174,8 @@ const button = cva({
       size: 'small',
       color: 'primary',
       css: {
-        border: '2px solid blue'
-      }
+        border: '2px solid blue',
+      },
     },
     // apply when both large size and secondary color are selected and the button is disabled
     {
@@ -185,18 +185,18 @@ const button = cva({
       css: {
         backgroundColor: 'lightgray',
         color: 'darkgray',
-        border: 'none'
-      }
+        border: 'none',
+      },
     },
     // apply when both small or medium size, and secondary color variants are applied
     {
       size: ['small', 'medium'],
       color: 'secondary',
       css: {
-        fontWeight: 'extrabold'
-      }
-    }
-  ]
+        fontWeight: 'extrabold',
+      },
+    },
+  ],
 })
 ```
 
@@ -230,18 +230,18 @@ import { cva, type RecipeVariant } from '../styled-system/css'
 const buttonStyle = cva({
   base: {
     color: 'red',
-    textAlign: 'center'
+    textAlign: 'center',
   },
   variants: {
     size: {
       small: {
-        fontSize: '1rem'
+        fontSize: '1rem',
       },
       large: {
-        fontSize: '2rem'
-      }
-    }
-  }
+        fontSize: '2rem',
+      },
+    },
+  },
 })
 
 export type ButtonVariants = RecipeVariant<typeof buttonStyle>
@@ -257,18 +257,18 @@ import { cva, type RecipeVariantProps } from '../styled-system/css'
 const buttonStyle = cva({
   base: {
     color: 'red',
-    textAlign: 'center'
+    textAlign: 'center',
   },
   variants: {
     size: {
       small: {
-        fontSize: '1rem'
+        fontSize: '1rem',
       },
       large: {
-        fontSize: '2rem'
-      }
-    }
-  }
+        fontSize: '2rem',
+      },
+    },
+  },
 })
 
 export type ButtonVariants = RecipeVariantProps<typeof buttonStyle>
@@ -292,18 +292,18 @@ import { styled } from '../styled-system/jsx'
 const buttonStyle = cva({
   base: {
     color: 'red',
-    textAlign: 'center'
+    textAlign: 'center',
   },
   variants: {
     size: {
       small: {
-        fontSize: '1rem'
+        fontSize: '1rem',
       },
       large: {
-        fontSize: '2rem'
-      }
-    }
-  }
+        fontSize: '2rem',
+      },
+    },
+  },
 })
 
 const Button = styled('button', buttonStyle)
@@ -339,27 +339,27 @@ export const buttonRecipe = defineRecipe({
   className: 'button',
   description: 'The styles for the Button component',
   base: {
-    display: 'flex'
+    display: 'flex',
   },
   variants: {
     visual: {
       funky: { bg: 'red.200', color: 'white' },
-      edgy: { border: '1px solid {colors.red.500}' }
+      edgy: { border: '1px solid {colors.red.500}' },
     },
     size: {
       sm: { padding: '4', fontSize: '12px' },
-      lg: { padding: '8', fontSize: '40px' }
+      lg: { padding: '8', fontSize: '40px' },
     },
     shape: {
       square: { borderRadius: '0' },
-      circle: { borderRadius: 'full' }
-    }
+      circle: { borderRadius: 'full' },
+    },
   },
   defaultVariants: {
     visual: 'funky',
     size: 'sm',
-    shape: 'circle'
-  }
+    shape: 'circle',
+  },
 })
 ```
 
@@ -377,10 +377,10 @@ export default defineConfig({
   theme: {
     extend: {
       recipes: {
-        button: buttonRecipe
-      }
-    }
-  }
+        button: buttonRecipe,
+      },
+    },
+  },
 })
 ```
 
@@ -519,13 +519,13 @@ import { defineRecipe } from '@bamboocss/dev'
 const button = defineRecipe({
   base: {
     color: 'red',
-    fontSize: '1.5rem'
+    fontSize: '1.5rem',
   },
   variants: {
     // ...
   },
   // Add the jsx hint to track the usage of the recipe in JSX, you can use regex to match multiple components
-  jsx: ['Button', 'PageButton']
+  jsx: ['Button', 'PageButton'],
 })
 ```
 
@@ -560,16 +560,16 @@ export default defineConfig({
           className: 'something-else', // 👈 override the className
           base: {
             color: 'red', // 👈 replace some part of the recipe
-            fontSize: '1.5rem' // or add new styles
+            fontSize: '1.5rem', // or add new styles
           },
           variants: {
             // ... // 👈 add or extend new variants
           },
-          jsx: ['Button', 'PageButton'] // 👈 extend the jsx tracking hint
-        }
-      }
-    }
-  }
+          jsx: ['Button', 'PageButton'], // 👈 extend the jsx tracking hint
+        },
+      },
+    },
+  },
 })
 ```
 
@@ -591,18 +591,18 @@ import { cva } from '../styled-system/css'
 const buttonRecipe = cva({
   base: {
     color: 'red',
-    fontSize: '1.5rem'
+    fontSize: '1.5rem',
   },
   variants: {
     size: {
       sm: {
-        fontSize: '1rem'
+        fontSize: '1rem',
       },
       md: {
-        fontSize: '2rem'
-      }
-    }
-  }
+        fontSize: '2rem',
+      },
+    },
+  },
 })
 
 buttonRecipe.variantKeys
@@ -629,14 +629,14 @@ export default {
     size: {
       control: {
         type: 'select',
-        options: buttonRecipe.variantMap.size
-      }
-    }
-  }
+        options: buttonRecipe.variantMap.size,
+      },
+    },
+  },
 }
 
 export const Demo = {
-  render: args => <Button {...args}>Click me</Button>
+  render: (args) => <Button {...args}>Click me</Button>,
 }
 ```
 
@@ -689,17 +689,17 @@ export const Demo = {
 const button = defineRecipe({
   base: {
     color: 'red',
-    fontSize: '1.5rem'
+    fontSize: '1.5rem',
   },
   variants: {
     size: {
       sm: {
-        fontSize: '1rem'
+        fontSize: '1rem',
       },
       md: {
-        fontSize: '2rem'
-      }
-    }
+        fontSize: '2rem',
+      },
+    },
   },
   // this  will disable responsive values for the variants
   compoundVariants: [
@@ -707,17 +707,17 @@ const button = defineRecipe({
       size: 'sm',
       visual: 'funky',
       css: {
-        color: 'blue'
-      }
+        color: 'blue',
+      },
     },
     {
       size: 'md',
       visual: 'funky',
       css: {
-        color: 'green'
-      }
-    }
-  ]
+        color: 'green',
+      },
+    },
+  ],
 })
 ```
 

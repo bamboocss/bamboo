@@ -49,9 +49,7 @@ function extractSectionContent(fullContent: string, toc: Doc['toc'], currentInde
   let endIndex = fullContent.length
   if (nextHeading) {
     const nextHeadingPattern = new RegExp(`#+\\s*${escapeRegExp(nextHeading.title)}`, 'i')
-    const nextMatch = fullContent
-      .slice(startIndex + currentMatch[0].length)
-      .match(nextHeadingPattern)
+    const nextMatch = fullContent.slice(startIndex + currentMatch[0].length).match(nextHeadingPattern)
     if (nextMatch) {
       endIndex = startIndex + currentMatch[0].length + nextMatch.index!
     }
@@ -99,7 +97,7 @@ export function getSearchIndex(docs: Doc[]): SearchIndex {
       content: doc.llm,
       type: 'page',
       description: doc.description || doc.llm.slice(0, 150) + '...',
-      breadcrumb: [doc.title]
+      breadcrumb: [doc.title],
     }
     searchRecords.push(pageRecord)
 
@@ -119,7 +117,7 @@ export function getSearchIndex(docs: Doc[]): SearchIndex {
           pageTitle: doc.title,
           headingLevel: heading.depth,
           description: sectionContent.slice(0, 150) + '...',
-          breadcrumb: [doc.title]
+          breadcrumb: [doc.title],
         }
         searchRecords.push(headingRecord)
       }
@@ -129,7 +127,7 @@ export function getSearchIndex(docs: Doc[]): SearchIndex {
   return {
     generated: new Date().toISOString(),
     totalRecords: searchRecords.length,
-    records: searchRecords
+    records: searchRecords,
   }
 }
 
@@ -144,8 +142,8 @@ export function convertToSearchItems(searchIndex: SearchIndex): SearchItem[] {
       category: record.breadcrumb?.join(' › ') || 'Documentation',
       description: record.description || '',
       content: record.content,
-      type: record.type
-    })
+      type: record.type,
+    }),
   )
 }
 
@@ -155,11 +153,11 @@ export function convertToSearchItems(searchIndex: SearchIndex): SearchItem[] {
 export function filterSearchItems(
   items: SearchItem[],
   _searchIndex: SearchIndex,
-  query: string
+  query: string,
 ): Record<string, SearchItem[]> {
   if (!query) {
     // Show recent or popular items when no search query
-    const popularItems = items.filter(item => item.type === 'page').slice(0, 5)
+    const popularItems = items.filter((item) => item.type === 'page').slice(0, 5)
 
     return popularItems.length ? { '': popularItems } : {}
   }
@@ -170,7 +168,7 @@ export function filterSearchItems(
       { name: 'label', weight: 0.5 }, // Title gets highest weight
       { name: 'description', weight: 0.2 }, // Description
       { name: 'content', weight: 0.2 }, // Content matching
-      { name: 'category', weight: 0.1 } // Category/breadcrumb
+      { name: 'category', weight: 0.1 }, // Category/breadcrumb
     ],
     threshold: 0.2, // More strict matching
     distance: 100, // Maximum allowed distance
@@ -180,7 +178,7 @@ export function filterSearchItems(
     includeMatches: true, // Include match details
     ignoreLocation: false, // Consider match position
     findAllMatches: true, // Find all matching patterns
-    useExtendedSearch: true // Enable advanced search patterns
+    useExtendedSearch: true, // Enable advanced search patterns
   }
 
   const fuse = new Fuse(items, fuseOptions)
@@ -196,7 +194,7 @@ export function filterSearchItems(
       // Then sort by Fuse score (lower score = better match)
       return (a.score || 1) - (b.score || 1)
     })
-    .map(result => result.item)
+    .map((result) => result.item)
     .slice(0, 15)
 
   return sortedResults.length > 0 ? { '': sortedResults } : {}

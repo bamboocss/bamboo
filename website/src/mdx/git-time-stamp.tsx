@@ -9,7 +9,7 @@ export const GitTimestamp = ({ timestamp }) => {
         {timestamp.toLocaleDateString(locale, {
           day: 'numeric',
           month: 'long',
-          year: 'numeric'
+          year: 'numeric',
         })}
       </time>
     </>

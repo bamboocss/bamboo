@@ -1,6 +1,6 @@
 module.exports = {
   plugins: {
     autoprefixer: {},
-    '@bamboocss/dev/postcss': {}
-  }
+    '@bamboocss/dev/postcss': {},
+  },
 }

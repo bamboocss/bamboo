@@ -33,9 +33,9 @@ const Tree = ({ children }: { children: React.ReactNode }) => (
         color: 'gray.300',
         _hover: {
           pt: 0,
-          color: 'gray.50'
-        }
-      }
+          color: 'gray.50',
+        },
+      },
     })}
   >
     <div
@@ -46,7 +46,7 @@ const Tree = ({ children }: { children: React.ReactNode }) => (
         borderWidth: '1px',
         px: 4,
         py: 2,
-        _dark: { borderColor: 'rgb(38 38 38 / 1)' }
+        _dark: { borderColor: 'rgb(38 38 38 / 1)' },
       })}
     >
       {children}
@@ -66,78 +66,71 @@ function Ident() {
   )
 }
 
-const Folder = memo<FolderProps>(
-  ({ label, name, open, children, defaultOpen = false, onToggle }) => {
-    const indent = useIndent()
-    const [isOpen, setIsOpen] = useState(defaultOpen)
+const Folder = memo<FolderProps>(({ label, name, open, children, defaultOpen = false, onToggle }) => {
+  const indent = useIndent()
+  const [isOpen, setIsOpen] = useState(defaultOpen)
 
-    const toggle = useCallback(() => {
-      onToggle?.(!isOpen)
-      setIsOpen(!isOpen)
-    }, [isOpen, onToggle])
+  const toggle = useCallback(() => {
+    onToggle?.(!isOpen)
+    setIsOpen(!isOpen)
+  }, [isOpen, onToggle])
 
-    const isFolderOpen = open === undefined ? isOpen : open
+  const isFolderOpen = open === undefined ? isOpen : open
 
-    return (
-      <li
+  return (
+    <li
+      className={css({
+        display: 'flex',
+        listStyle: 'none',
+        flexDirection: 'column',
+      })}
+    >
+      <a
+        onClick={toggle}
+        title={name}
         className={css({
-          display: 'flex',
-          listStyle: 'none',
-          flexDirection: 'column'
+          display: 'inline-flex',
+          cursor: 'pointer',
+          alignItems: 'center',
+          py: 1,
+          _hover: { opacity: 0.6 },
         })}
       >
-        <a
-          onClick={toggle}
-          title={name}
-          className={css({
-            display: 'inline-flex',
-            cursor: 'pointer',
-            alignItems: 'center',
-            py: 1,
-            _hover: { opacity: 0.6 }
-          })}
-        >
-          <Ident />
-          <svg width="1em" height="1em" viewBox="0 0 24 24">
-            <path
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d={
-                isFolderOpen
-                  ? 'M5 19a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4l2 2h4a2 2 0 0 1 2 2v1M5 19h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2Z'
-                  : 'M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-6l-2-2H5a2 2 0 0 0-2 2Z'
-              }
-            />
-          </svg>
-          <span className={css({ ml: 1 })}>{label ?? name}</span>
-        </a>
-        {isFolderOpen && (
-          <ul>
-            <ctx.Provider value={indent + 1}>{children}</ctx.Provider>
-          </ul>
-        )}
-      </li>
-    )
-  }
-)
+        <Ident />
+        <svg width="1em" height="1em" viewBox="0 0 24 24">
+          <path
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d={
+              isFolderOpen
+                ? 'M5 19a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4l2 2h4a2 2 0 0 1 2 2v1M5 19h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2Z'
+                : 'M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-6l-2-2H5a2 2 0 0 0-2 2Z'
+            }
+          />
+        </svg>
+        <span className={css({ ml: 1 })}>{label ?? name}</span>
+      </a>
+      {isFolderOpen && (
+        <ul>
+          <ctx.Provider value={indent + 1}>{children}</ctx.Provider>
+        </ul>
+      )}
+    </li>
+  )
+})
 Folder.displayName = 'Folder'
 
 const File = memo<FileProps>(({ label, name, active }) => (
-  <li
-    className={cx(
-      css({ display: 'flex', listStyle: 'none' }),
-      active && css({ color: 'primary.600' })
-    )}
-  >
+  <li className={cx(css({ display: 'flex', listStyle: 'none' }), active && css({ color: 'primary.600' }))}>
     <a
       className={css({
         display: 'inline-flex',
         cursor: 'default',
         alignItems: 'center',
-        py: 1
+        py: 1,
       })}
     >
       <Ident />

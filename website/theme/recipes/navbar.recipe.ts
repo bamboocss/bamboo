@@ -12,7 +12,7 @@ const anatomy = createAnatomy('navbar', [
   'navLinkText',
   'projectLink',
   'chatLink',
-  'mobileMenu'
+  'mobileMenu',
 ])
 
 const parts = defineParts(anatomy.build())
@@ -28,7 +28,7 @@ export const navbarRecipe = defineRecipe({
       zIndex: 20,
       w: 'calc(100% - var(--scrollbar-width, 0px))',
       bg: 'transparent',
-      _print: { display: 'none' }
+      _print: { display: 'none' },
     },
     blur: {
       pointerEvents: 'none',
@@ -42,9 +42,9 @@ export const navbarRecipe = defineRecipe({
         backdropFilter: 'blur(8px)',
         backgroundColor: 'rgba(255, 255, 255, 0.85) !important',
         _dark: {
-          backgroundColor: 'hsla(0,0%,7%,.8) !important'
-        }
-      }
+          backgroundColor: 'hsla(0,0%,7%,.8) !important',
+        },
+      },
     },
     nav: {
       mx: 'auto',
@@ -55,24 +55,24 @@ export const navbarRecipe = defineRecipe({
       justifyContent: 'flex-end',
       gap: '2',
       pl: 'max(env(safe-area-inset-left),1.5rem)',
-      pr: 'max(env(safe-area-inset-right),1.5rem)'
+      pr: 'max(env(safe-area-inset-right),1.5rem)',
     },
     logoLink: {
       display: 'flex',
       alignItems: 'center',
       _hover: { opacity: 0.75 },
-      marginEnd: 'auto'
+      marginEnd: 'auto',
     },
     menuLink: {
       textStyle: 'sm',
       display: 'flex',
-      gap: '1'
+      gap: '1',
     },
     menuLinkIcon: {
       h: '18px',
       minW: '18px',
       rounded: 'sm',
-      p: '0.5'
+      p: '0.5',
     },
     navLink: {
       textStyle: 'sm',
@@ -81,19 +81,19 @@ export const navbarRecipe = defineRecipe({
       display: 'none',
       whiteSpace: 'nowrap',
       p: '2',
-      md: { display: 'inline-block' }
+      md: { display: 'inline-block' },
     },
     navLinkText: {
       position: 'absolute',
       insetX: '0',
-      textAlign: 'center'
+      textAlign: 'center',
     },
     mobileMenu: {
       mr: '-2',
       rounded: 'sm',
       p: '2',
       hideFrom: 'lg',
-      _icon: { boxSize: '5' }
-    }
-  })
+      _icon: { boxSize: '5' },
+    },
+  }),
 })

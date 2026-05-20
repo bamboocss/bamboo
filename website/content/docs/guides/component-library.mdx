@@ -39,10 +39,10 @@ export const acmePreset = definePreset({
   theme: {
     extend: {
       tokens: {
-        colors: { primary: { value: 'blue.500' } }
-      }
-    }
-  }
+        colors: { primary: { value: 'blue.500' } },
+      },
+    },
+  },
 })
 ```
 
@@ -60,7 +60,7 @@ import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   //...
-  presets: ['@bamboocss/dev/presets', acmePreset]
+  presets: ['@bamboocss/dev/presets', acmePreset],
 })
 ```
 
@@ -128,7 +128,7 @@ This approach comes with a few downsides:
 
   export default defineConfig({
     //...
-    prefix: 'acme'
+    prefix: 'acme',
   })
   ```
 
@@ -241,7 +241,7 @@ import { defineConfig } from '@bamboocss/dev'
 export default defineConfig({
   //...
   importMap: '@acme-org/styled-system',
-  outdir: 'styled-system'
+  outdir: 'styled-system',
 })
 ```
 
@@ -263,7 +263,7 @@ export default defineConfig({
   //...
   include: ['../@acme-org/design-system/src/**/*.tsx', './src/**/*.{ts,tsx}'],
   importMap: '@acme-org/styled-system',
-  outdir: 'styled-system'
+  outdir: 'styled-system',
 })
 ```
 
@@ -300,7 +300,7 @@ import { defineConfig } from '@bamboocss/dev'
 export default defineConfig({
   //...
   importMap: '@acme-org/styled-system',
-  outdir: 'styled-system'
+  outdir: 'styled-system',
 })
 ```
 
@@ -320,7 +320,7 @@ export default defineConfig({
   //...
   include: ['./node_modules/@acme-org/design-system/dist/bamboo.buildinfo.json', './src/**/*.{ts,tsx}'],
   importMap: '@acme-org/styled-system',
-  outdir: 'styled-system'
+  outdir: 'styled-system',
 })
 ```
 
@@ -372,7 +372,7 @@ import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   //...
-  importMap: '@acme-org/styled-system'
+  importMap: '@acme-org/styled-system',
 })
 ```
 

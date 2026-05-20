@@ -33,12 +33,12 @@ import { ThemeProvider } from 'theme-ui'
 const theme = {
   fonts: {
     body: 'system-ui, sans-serif',
-    heading: '"Avenir Next", sans-serif'
+    heading: '"Avenir Next", sans-serif',
   },
   colors: {
     text: '#000',
-    background: '#fff'
-  }
+    background: '#fff',
+  },
 }
 
 export default function App({ Component, pageProps }) {
@@ -66,15 +66,15 @@ export default defineConfig({
       tokens: {
         fonts: {
           body: { value: 'system-ui, sans-serif' },
-          heading: { value: '"Avenir Next", sans-serif' }
+          heading: { value: '"Avenir Next", sans-serif' },
         },
         colors: {
           text: { value: '#000' },
-          background: { value: '#fff' }
-        }
-      }
-    }
-  }
+          background: { value: '#fff' },
+        },
+      },
+    },
+  },
 })
 ```
 
@@ -86,13 +86,13 @@ your file.
 ```jsx
 /** @jsxImportSource theme-ui */
 
-export const Demo = props => (
+export const Demo = (props) => (
   <div
     {...props}
     sx={{
       color: 'white',
       bg: 'primary',
-      fontSize: 4
+      fontSize: 4,
     }}
   />
 )
@@ -104,13 +104,13 @@ rename `sx` to `css`
 ```jsx
 import { styled } from 'styled-system/jsx'
 
-export const Demo = props => (
+export const Demo = (props) => (
   <styled.div
     {...props}
     css={{
       color: 'white',
       bg: 'primary',
-      fontSize: 4
+      fontSize: 4,
     }}
   />
 )
@@ -126,8 +126,8 @@ export const Demo = styled('div', {
   base: {
     color: 'white',
     bg: 'primary',
-    fontSize: 4
-  }
+    fontSize: 4,
+  },
 })
 ```
 
@@ -136,13 +136,13 @@ The simplest approach is to use the `css` function to write one-off styles.
 ```jsx
 import { css } from 'styled-system/css'
 
-export const Demo = props => (
+export const Demo = (props) => (
   <div
     {...props}
     className={css({
       color: 'white',
       bg: 'primary',
-      fontSize: 4
+      fontSize: 4,
     })}
   />
 )
@@ -199,30 +199,30 @@ import { cva } from 'styled-system/css'
 
 const buttonStyles = cva({
   base: {
-    display: 'inline-flex'
+    display: 'inline-flex',
   },
   variants: {
     variant: {
       primary: {
         color: 'white',
-        bg: 'primary'
+        bg: 'primary',
       },
       secondary: {
         color: 'white',
-        bg: 'secondary'
+        bg: 'secondary',
       },
       accent: {
         color: 'white',
-        bg: 'accent'
-      }
-    }
-  }
+        bg: 'accent',
+      },
+    },
+  },
 })
 
 const Demo = () => (
   <button
     className={buttonStyles({
-      variant: 'accent'
+      variant: 'accent',
     })}
   />
 )
@@ -246,13 +246,13 @@ export default defineConfig({
             variant: {
               primary: { color: 'white', bg: 'primary' },
               secondary: { color: 'white', bg: 'secondary' },
-              accent: { color: 'white', bg: 'accent' }
-            }
-          }
-        }
-      }
-    }
-  }
+              accent: { color: 'white', bg: 'accent' },
+            },
+          },
+        },
+      },
+    },
+  },
 })
 
 // Button.js
@@ -273,10 +273,10 @@ const theme = {
     primary: '#07c',
     modes: {
       dark: {
-        primary: '#0cf'
-      }
-    }
-  }
+        primary: '#0cf',
+      },
+    },
+  },
 }
 
 // Button.js
@@ -295,11 +295,11 @@ export default defineConfig({
     extend: {
       semanticTokens: {
         colors: {
-          primary: { value: { base: '#07c', _dark: '#0cf' } }
-        }
-      }
-    }
-  }
+          primary: { value: { base: '#07c', _dark: '#0cf' } },
+        },
+      },
+    },
+  },
 })
 
 // Button.js
@@ -308,7 +308,7 @@ import { css } from 'styled-system/css'
 const Demo = () => (
   <button
     className={css({
-      color: 'primary'
+      color: 'primary',
     })}
   />
 )
@@ -321,15 +321,15 @@ Theme UI offers a Global component (that wraps Emotion’s) for adding global CS
 ```jsx
 import { Global } from 'theme-ui'
 
-export default props => (
+export default (props) => (
   <Global
     styles={{
       button: {
         m: 0,
         bg: 'primary',
         color: 'background',
-        border: 0
-      }
+        border: 0,
+      },
     }}
   />
 )
@@ -347,9 +347,9 @@ export default defineConfig({
       m: 0,
       bg: 'primary',
       color: 'background',
-      border: 0
-    }
-  }
+      border: 0,
+    },
+  },
 })
 ```
 

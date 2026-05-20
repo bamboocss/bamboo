@@ -15,7 +15,7 @@ You can use it like this:
 ```ts
 css({
   bg: 'red.300/40',
-  color: 'white'
+  color: 'white',
 })
 ```
 
@@ -57,11 +57,11 @@ export default defineConfig({
         if (mix.invalid) return { background: value }
 
         return {
-          background: mix.value
+          background: mix.value,
         }
-      }
-    }
-  }
+      },
+    },
+  },
 })
 ```
 
@@ -80,7 +80,7 @@ export const createColorMixTransform =
     const cssVar = '--mix-' + prop
     return {
       [cssVar]: mix.value,
-      [prop]: `var(${cssVar}, ${mix.color})`
+      [prop]: `var(${cssVar}, ${mix.color})`,
     }
   }
 ```

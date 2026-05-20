@@ -15,12 +15,12 @@ export const drawerSlotRecipe = sva({
       zIndex: 'overlay',
       _open: {
         animationName: 'fade-in',
-        animationDuration: '200ms'
+        animationDuration: '200ms',
       },
       _closed: {
         animationName: 'fade-out',
-        animationDuration: '150ms'
-      }
+        animationDuration: '150ms',
+      },
     },
     positioner: {
       display: 'flex',
@@ -30,7 +30,7 @@ export const drawerSlotRecipe = sva({
       insetInlineStart: 0,
       top: 0,
       zIndex: 'modal',
-      overscrollBehaviorY: 'none'
+      overscrollBehaviorY: 'none',
     },
     content: {
       display: 'flex',
@@ -46,143 +46,143 @@ export const drawerSlotRecipe = sva({
       boxShadow: 'lg',
       _open: {
         animationDuration: '200ms',
-        animationTimingFunction: 'ease-in-out'
+        animationTimingFunction: 'ease-in-out',
       },
       _closed: {
         animationDuration: '150ms',
-        animationTimingFunction: 'ease-in-out'
-      }
+        animationTimingFunction: 'ease-in-out',
+      },
     },
     body: {
       px: '4',
       py: '4',
       flex: '1',
-      overflow: 'auto'
+      overflow: 'auto',
     },
     closeTrigger: {
       pos: 'absolute',
       top: '3',
-      insetEnd: '3'
-    }
+      insetEnd: '3',
+    },
   },
 
   variants: {
     size: {
       xs: {
         content: {
-          maxW: 'xs'
-        }
+          maxW: 'xs',
+        },
       },
       sm: {
         content: {
-          maxW: 'md'
-        }
+          maxW: 'md',
+        },
       },
       md: {
         content: {
-          maxW: 'lg'
-        }
+          maxW: 'lg',
+        },
       },
       lg: {
         content: {
-          maxW: '2xl'
-        }
+          maxW: '2xl',
+        },
       },
       xl: {
         content: {
-          maxW: '4xl'
-        }
+          maxW: '4xl',
+        },
       },
       full: {
         content: {
           maxW: '100vw',
-          h: '100dvh'
-        }
-      }
+          h: '100dvh',
+        },
+      },
     },
 
     placement: {
       start: {
         positioner: {
           justifyContent: 'flex-start',
-          alignItems: 'stretch'
+          alignItems: 'stretch',
         },
         content: {
           _open: {
             animationName: {
               base: 'slide-from-left-full, fade-in',
-              _rtl: 'slide-from-right-full, fade-in'
-            }
+              _rtl: 'slide-from-right-full, fade-in',
+            },
           },
           _closed: {
             animationName: {
               base: 'slide-to-left-full, fade-out',
-              _rtl: 'slide-to-right-full, fade-out'
-            }
-          }
-        }
+              _rtl: 'slide-to-right-full, fade-out',
+            },
+          },
+        },
       },
 
       end: {
         positioner: {
           justifyContent: 'flex-end',
-          alignItems: 'stretch'
+          alignItems: 'stretch',
         },
         content: {
           _open: {
             animationName: {
               base: 'slide-from-right-full, fade-in',
-              _rtl: 'slide-from-left-full, fade-in'
-            }
+              _rtl: 'slide-from-left-full, fade-in',
+            },
           },
           _closed: {
             animationName: {
               base: 'slide-to-right-full, fade-out',
-              _rtl: 'slide-to-left-full, fade-out'
-            }
-          }
-        }
+              _rtl: 'slide-to-left-full, fade-out',
+            },
+          },
+        },
       },
 
       top: {
         positioner: {
           justifyContent: 'stretch',
-          alignItems: 'flex-start'
+          alignItems: 'flex-start',
         },
         content: {
           maxW: '100%',
           _open: { animationName: 'slide-from-top-full, fade-in' },
-          _closed: { animationName: 'slide-to-top-full, fade-out' }
-        }
+          _closed: { animationName: 'slide-to-top-full, fade-out' },
+        },
       },
 
       bottom: {
         positioner: {
           justifyContent: 'stretch',
-          alignItems: 'flex-end'
+          alignItems: 'flex-end',
         },
         content: {
           maxW: '100%',
           _open: { animationName: 'slide-from-bottom-full, fade-in' },
-          _closed: { animationName: 'slide-to-bottom-full, fade-out' }
-        }
-      }
+          _closed: { animationName: 'slide-to-bottom-full, fade-out' },
+        },
+      },
     },
 
     contained: {
       true: {
         positioner: {
-          padding: '4'
+          padding: '4',
         },
         content: {
-          borderRadius: 'md'
-        }
-      }
-    }
+          borderRadius: 'md',
+        },
+      },
+    },
   },
 
   defaultVariants: {
     size: 'xs',
-    placement: 'end'
-  }
+    placement: 'end',
+  },
 })

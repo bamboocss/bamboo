@@ -17,8 +17,8 @@ export default {
     // the css properties you want to generate
     css: [],
     // the recipes you want to generate
-    recipes: {}
-  }
+    recipes: {},
+  },
 }
 ```
 
@@ -47,19 +47,19 @@ export default {
       {
         properties: {
           margin: ['*'],
-          padding: ['*', '50px', '80px']
+          padding: ['*', '50px', '80px'],
         },
-        responsive: true
+        responsive: true,
       },
       {
         properties: {
           color: ['*'],
-          backgroundColor: ['green.200', 'red.400']
+          backgroundColor: ['green.200', 'red.400'],
         },
-        conditions: ['light', 'dark']
-      }
-    ]
-  }
+        conditions: ['light', 'dark'],
+      },
+    ],
+  },
 }
 ```
 
@@ -74,14 +74,14 @@ export default {
       button: [
         {
           size: ['sm', 'md'],
-          responsive: true
+          responsive: true,
         },
-        { variant: ['*'] }
+        { variant: ['*'] },
       ],
       // shorthand for all variants
-      tooltip: ['*']
-    }
-  }
+      tooltip: ['*'],
+    },
+  },
 }
 ```
 
@@ -96,10 +96,10 @@ const card = defineRecipe({
   variants: {
     size: {
       small: { fontSize: '14px' },
-      large: { fontSize: '18px' }
-    }
+      large: { fontSize: '18px' },
+    },
   },
-  staticCss: [{ size: ['*'] }]
+  staticCss: [{ size: ['*'] }],
 })
 ```
 
@@ -113,10 +113,10 @@ export default defineConfig({
   staticCss: {
     recipes: {
       card: {
-        size: ['*']
-      }
-    }
-  }
+        size: ['*'],
+      },
+    },
+  },
 })
 ```
 
@@ -128,8 +128,8 @@ import { defineConfig } from '@bamboocss/dev'
 export default defineConfig({
   // ...
   staticCss: {
-    recipes: '*'
-  }
+    recipes: '*',
+  },
 })
 ```
 
@@ -157,12 +157,12 @@ export default {
           backgroundColor: ['*'],
           borderColor: ['*'],
           width: ['*'],
-          height: ['*']
+          height: ['*'],
           // ... 20+ more properties with wildcards
-        }
-      }
-    ]
-  }
+        },
+      },
+    ],
+  },
 }
 ```
 
@@ -178,11 +178,11 @@ export default {
           // Only the colors you actually use
           color: ['red.500', 'blue.500', 'gray.600'],
           backgroundColor: ['white', 'gray.50', 'blue.50'],
-          borderColor: ['gray.200', 'blue.500']
-        }
-      }
-    ]
-  }
+          borderColor: ['gray.200', 'blue.500'],
+        },
+      },
+    ],
+  },
 }
 ```
 
@@ -212,11 +212,11 @@ export default {
           color: ['red.500', 'blue.500'],
           backgroundColor: ['white', 'gray.50'],
           fontWeight: ['400', '500', '600'],
-          borderRadius: ['sm', 'md', 'lg']
-        }
-      }
-    ]
-  }
+          borderRadius: ['sm', 'md', 'lg'],
+        },
+      },
+    ],
+  },
 }
 ```
 
@@ -232,18 +232,18 @@ export default {
         properties: {
           display: ['none', 'block', 'flex'],
           flexDirection: ['row', 'column'],
-          width: ['full', '1/2', '1/3']
-        }
+          width: ['full', '1/2', '1/3'],
+        },
       },
       {
         // No responsive needed for colors/typography that stay the same
         properties: {
           color: ['red.500', 'blue.500'],
-          fontWeight: ['400', '500', '600']
-        }
-      }
-    ]
-  }
+          fontWeight: ['400', '500', '600'],
+        },
+      },
+    ],
+  },
 }
 ```
 

@@ -19,9 +19,9 @@ export default defineConfig({
       deprecated: true,
       transform(value) {
         return { textAlign: value }
-      }
-    }
-  }
+      },
+    },
+  },
 })
 ```
 
@@ -36,10 +36,10 @@ export default defineConfig({
   theme: {
     tokens: {
       spacing: {
-        lg: { value: '8px', deprecated: true }
-      }
-    }
-  }
+        lg: { value: '8px', deprecated: true },
+      },
+    },
+  },
 })
 ```
 
@@ -53,9 +53,9 @@ import { defineConfig } from '@bamboocss/dev'
 export default defineConfig({
   patterns: {
     customStack: {
-      deprecated: true
-    }
-  }
+      deprecated: true,
+    },
+  },
 })
 ```
 
@@ -70,10 +70,10 @@ export default defineConfig({
   theme: {
     recipes: {
       btn: {
-        deprecated: true
-      }
-    }
-  }
+        deprecated: true,
+      },
+    },
+  },
 })
 ```
 
@@ -89,10 +89,10 @@ export default defineConfig({
   theme: {
     tokens: {
       colors: {
-        primary: { value: 'blue.500', deprecated: 'use `blue.600` instead' }
-      }
-    }
-  }
+        primary: { value: 'blue.500', deprecated: 'use `blue.600` instead' },
+      },
+    },
+  },
 })
 ```
 
@@ -103,9 +103,9 @@ export default defineConfig({
   theme: {
     recipes: {
       btn: {
-        deprecated: 'will be removed in v2.0'
-      }
-    }
-  }
+        deprecated: 'will be removed in v2.0',
+      },
+    },
+  },
 })
 ```

@@ -20,89 +20,89 @@ export const buttonRecipe = defineRecipe({
     transition: 'all',
     '&:is(a, button)': {
       _hover: {
-        boxShadow: '6px 6px 0px 0px var(--shadow-color, black)'
-      }
+        boxShadow: '6px 6px 0px 0px var(--shadow-color, black)',
+      },
     },
     ...parts({
       leftIcon: {
-        marginRight: 3
+        marginRight: 3,
       },
       rightIcon: {
-        marginLeft: 3
-      }
-    })
+        marginLeft: 3,
+      },
+    }),
   },
   variants: {
     shape: {
       square: {},
       circle: {
         borderRadius: '50%',
-        flexShrink: 0
-      }
+        flexShrink: 0,
+      },
     },
     color: {
       main: {
         bg: 'bg.emphasized',
-        color: 'black'
+        color: 'black',
       },
       black: {
         bg: 'black',
         color: 'white',
-        boxShadow: 'none'
+        boxShadow: 'none',
       },
       white: {
         bg: 'white',
-        color: 'black'
+        color: 'black',
       },
       yellow: {
         bg: 'bg.main',
-        color: 'fg'
+        color: 'fg',
       },
       border: {
         bg: 'transparent',
         color: 'fg',
         borderColor: 'fg.headline',
-        boxShadowColor: 'fg.headline'
+        boxShadowColor: 'fg.headline',
       },
       ghost: {
         bg: 'transparent',
         border: 'none',
         shadow: 'none',
-        color: 'fg'
+        color: 'fg',
       },
       'ghost.white': {
         bg: 'transparent',
         border: 'none',
         shadow: 'none',
-        color: 'white'
-      }
+        color: 'white',
+      },
     },
     size: {
       sm: {
         paddingY: 3,
-        textStyle: 'lg'
+        textStyle: 'lg',
       },
       md: {
         textStyle: 'md',
         md: {
-          textStyle: 'lg'
+          textStyle: 'lg',
         },
         lg: {
-          textStyle: 'xl'
-        }
+          textStyle: 'xl',
+        },
       },
       lg: {
-        textStyle: '2xl'
+        textStyle: '2xl',
       },
       xl: {
         fontSize: '2rem',
-        fontWeight: 'bold'
-      }
-    }
+        fontWeight: 'bold',
+      },
+    },
   },
   defaultVariants: {
     shape: 'square',
     color: 'main',
-    size: 'md'
-  }
+    size: 'md',
+  },
 })

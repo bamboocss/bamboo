@@ -50,7 +50,7 @@ function getPagination(currentSlug: string): {
   const allPages = flattenNavigation(docsNavigation.items || [])
 
   // Find exact match - the slug should match the page URL exactly
-  const currentIndex = allPages.findIndex(page => {
+  const currentIndex = allPages.findIndex((page) => {
     return page.url === currentSlug
   })
 
@@ -60,7 +60,7 @@ function getPagination(currentSlug: string): {
 
   return {
     prev: currentIndex > 0 ? allPages[currentIndex - 1] : undefined,
-    next: currentIndex < allPages.length - 1 ? allPages[currentIndex + 1] : undefined
+    next: currentIndex < allPages.length - 1 ? allPages[currentIndex + 1] : undefined,
   }
 }
 
@@ -99,15 +99,13 @@ const PagationLink = (props: PagationLinkProps) => {
         borderWidth: '1px',
         cursor: 'pointer',
         color: 'fg.muted',
-        _icon: { boxSize: '4', flexShrink: '0' }
+        _icon: { boxSize: '4', flexShrink: '0' },
       })}
     >
       {type === 'prev' && <ChevronRightIcon className={css({ transform: 'rotate(180deg)' })} />}
       <Box textAlign="start" minW="0" flex="1">
         <Box className={css({ textStyle: 'sm', mb: '1' })}>{item.category}</Box>
-        <Box className={css({ fontWeight: 'medium', color: 'fg', truncate: true })}>
-          {item.title}
-        </Box>
+        <Box className={css({ fontWeight: 'medium', color: 'fg', truncate: true })}>{item.title}</Box>
       </Box>
       {type === 'next' && <ChevronRightIcon />}
     </Link>

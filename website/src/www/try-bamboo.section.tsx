@@ -7,16 +7,16 @@ import { ComponentPropsWithoutRef } from 'react'
 const installSteps = [
   {
     title: 'Install Bamboo in your project',
-    command: 'npm i -D @bamboocss/dev'
+    command: 'npm i -D @bamboocss/dev',
   },
   {
     title: 'Run the initialize command',
-    command: 'npx bamboo init --postcss'
+    command: 'npx bamboo init --postcss',
   },
   {
     title: 'Start using Bamboo in your project',
-    command: 'npm run dev'
-  }
+    command: 'npm run dev',
+  },
 ]
 
 export const TryBambooSection = () => {
@@ -24,14 +24,7 @@ export const TryBambooSection = () => {
     <bamboo.section bg={{ base: 'black', _dark: 'neutral.700' }}>
       <Container pt="28" pb="24">
         <HStack gap="12">
-          <bamboo.div
-            flex="1"
-            maxW="3xl"
-            bg="yellow.300"
-            color="black"
-            position="relative"
-            borderRadius="xl"
-          >
+          <bamboo.div flex="1" maxW="3xl" bg="yellow.300" color="black" position="relative" borderRadius="xl">
             <bamboo.h3 textStyle="bamboo.h2" fontWeight="bold" py="6" px="8">
               Love what you see? <br />
               Try Bamboo in 3 quick steps
@@ -43,7 +36,7 @@ export const TryBambooSection = () => {
                 top: '50%',
                 left: 'calc(100% - 2px)',
                 transform: 'translateY(-50%)',
-                color: 'yellow.300'
+                color: 'yellow.300',
               })}
             />
           </bamboo.div>
@@ -55,7 +48,7 @@ export const TryBambooSection = () => {
             alt="Yums the bamboo waving"
             className={css({
               display: { base: 'none', md: 'block' },
-              w: '56'
+              w: '56',
             })}
           />
         </HStack>
@@ -88,13 +81,7 @@ export const TryBambooSection = () => {
 }
 
 const ChatTip = (props: ComponentPropsWithoutRef<'svg'>) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="772.9 44.1775 49.2 95.92"
-    width="24"
-    height="44"
-    {...props}
-  >
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="772.9 44.1775 49.2 95.92" width="24" height="44" {...props}>
     <path
       d="M 773 140 L 821.118 53.3869 C 823.791 48.9638 819.994 43.4556 814.91 44.3801 L 773 52 Z"
       fill="currentColor"

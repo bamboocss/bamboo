@@ -6,22 +6,22 @@ const styles = cva({
     borderWidth: '1px',
     borderColor: {
       base: 'rgba(0, 0, 0, 0.04)',
-      _dark: 'rgba(255, 255, 255, 0.1)'
+      _dark: 'rgba(255, 255, 255, 0.1)',
     },
     bg: { base: 'rgba(0, 0, 0, 0.03)', _dark: 'rgba(255, 255, 255, 0.1)' },
     overflowWrap: 'break-word',
     fontFamily: 'mono',
     borderRadius: 'md',
     py: '0.5',
-    fontSize: '0.9em'
+    fontSize: '0.9em',
   },
   variants: {
     hasLineNumbers: {
       true: {
-        counterReset: 'line'
-      }
-    }
-  }
+        counterReset: 'line',
+      },
+    },
+  },
 })
 
 export const Code = (props: React.ComponentProps<'code'>): JSX.Element => {

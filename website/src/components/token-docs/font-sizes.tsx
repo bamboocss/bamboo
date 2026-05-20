@@ -5,7 +5,7 @@ import { hstack, stack } from '@/styled-system/patterns'
 export const FontSizes = () => {
   return (
     <div className={stack({ gap: '4', fontSize: 'sm' })}>
-      {defaultFontSizes.map(token => (
+      {defaultFontSizes.map((token) => (
         <div key={token.name} className={hstack()}>
           <p className={css({ width: '4rem', fontWeight: 'medium' })}>{token.extensions.prop}</p>
           <p className={css({ width: '6rem', opacity: '0.6' })}>{token.value}</p>

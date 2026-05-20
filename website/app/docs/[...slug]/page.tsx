@@ -17,24 +17,24 @@ interface DocsPageProps {
 }
 
 export async function generateStaticParams() {
-  return docs.map(doc => ({ slug: doc.slug.split('/').slice(1) }))
+  return docs.map((doc) => ({ slug: doc.slug.split('/').slice(1) }))
 }
 
 export async function generateMetadata({ params }: DocsPageProps) {
   const { slug } = await params
-  const doc = docs.find(doc => doc.slug.endsWith(slug.join('/')))
+  const doc = docs.find((doc) => doc.slug.endsWith(slug.join('/')))
 
   if (!doc) {
     return {
       title: 'Bamboo CSS',
-      description: 'Build modern websites using build time and type-safe CSS-in-JS'
+      description: 'Build modern websites using build time and type-safe CSS-in-JS',
     }
   }
 
   const ogImage = generateOgImageUrl({
     title: doc.title,
     description: doc.description,
-    category: 'Docs'
+    category: 'Docs',
   })
 
   return {
@@ -44,14 +44,14 @@ export async function generateMetadata({ params }: DocsPageProps) {
       title: doc.title,
       description: doc.description,
       type: 'article',
-      images: [ogImage]
+      images: [ogImage],
     },
     twitter: {
       card: 'summary_large_image',
       title: doc.title,
       description: doc.description,
-      images: [ogImage]
-    }
+      images: [ogImage],
+    },
   }
 }
 
@@ -59,7 +59,7 @@ export default async function DocsPage(props: DocsPageProps) {
   const params = await props.params
 
   const slug = params.slug.join('/')
-  const doc = docs.find(doc => doc.slug.endsWith(slug))
+  const doc = docs.find((doc) => doc.slug.endsWith(slug))
 
   if (!doc) {
     notFound()
@@ -90,7 +90,7 @@ export default async function DocsPage(props: DocsPageProps) {
           <div
             className={css({
               '& > *:first-child': { mt: 0 },
-              '& > *:last-child': { mb: 0 }
+              '& > *:last-child': { mb: 0 },
             })}
           >
             <MDXContent code={doc.code} />

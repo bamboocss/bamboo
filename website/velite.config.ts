@@ -5,7 +5,7 @@ import {
   transformerNotationDiff,
   transformerNotationFocus,
   transformerNotationHighlight,
-  transformerNotationWordHighlight
+  transformerNotationWordHighlight,
 } from '@shikijs/transformers'
 import rehypeAutolinkHeadings from 'rehype-autolink-headings'
 import rehypeSlug from 'rehype-slug'
@@ -36,9 +36,9 @@ function remarkCodeTitle() {
           hName: 'code-block',
           hProperties: {
             title: filename,
-            lang: node.lang
-          }
-        }
+            lang: node.lang,
+          },
+        },
       })
     })
   }
@@ -51,20 +51,18 @@ const transformerEmptyLineSpace: ShikiTransformer = {
     // Check if the line is empty (no children or only empty text nodes)
     const isEmpty =
       !node.children?.length ||
-      node.children.every(
-        child => child.type === 'text' && (!child.value || child.value.trim() === '')
-      )
+      node.children.every((child) => child.type === 'text' && (!child.value || child.value.trim() === ''))
 
     if (isEmpty) {
       // Set the line content to a single space
       node.children = [
         {
           type: 'text',
-          value: ' '
-        }
+          value: ' ',
+        },
       ]
     }
-  }
+  },
 }
 
 const docs = defineCollection({
@@ -76,7 +74,7 @@ const docs = defineCollection({
       description: s.string().optional(),
       metadata: s.metadata(),
       llm: s
-        .custom<string | undefined>(i => i === undefined || typeof i === 'string')
+        .custom<string | undefined>((i) => i === undefined || typeof i === 'string')
         .transform((_data, { meta }) => {
           return (meta.content as string) ?? ''
         }),
@@ -84,18 +82,18 @@ const docs = defineCollection({
       category: s.string().optional(),
       code: s.mdx(),
       toc: s.toc(),
-      hideToc: s.boolean().optional()
+      hideToc: s.boolean().optional(),
     })
-    .transform(data => ({
+    .transform((data) => ({
       ...data,
-      toc: flattenToc(data.toc)
-    }))
+      toc: flattenToc(data.toc),
+    })),
 })
 
 export default defineConfig({
   root: 'content',
   collections: {
-    docs
+    docs,
   },
   mdx: {
     remarkPlugins: [remarkCodeTitle],
@@ -106,9 +104,9 @@ export default defineConfig({
         {
           behavior: 'append',
           properties: {
-            className: ['subheading-anchor']
-          }
-        }
+            className: ['subheading-anchor'],
+          },
+        },
       ],
       [
         rehypeShiki,
@@ -120,15 +118,15 @@ export default defineConfig({
             transformerNotationWordHighlight(),
             transformerMetaHighlight(),
             transformerMetaWordHighlight(),
-            transformerEmptyLineSpace
+            transformerEmptyLineSpace,
           ],
           themes: {
             light: 'github-light',
-            dark: 'github-dark'
+            dark: 'github-dark',
           },
-          defaultColor: false
-        }
-      ]
-    ]
-  }
+          defaultColor: false,
+        },
+      ],
+    ],
+  },
 })

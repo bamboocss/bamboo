@@ -22,7 +22,7 @@ const Button = ({ children }) => (
       color: 'white',
       py: '2',
       px: '4',
-      rounded: 'md'
+      rounded: 'md',
     })}
   >
     {children}
@@ -55,7 +55,7 @@ import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   // ...
-  jsxFramework: 'react'
+  jsxFramework: 'react',
 })
 ```
 
@@ -192,20 +192,20 @@ const Button = styled('button', {
   base: {
     py: '2',
     px: '4',
-    rounded: 'md'
+    rounded: 'md',
   },
   variants: {
     variant: {
       primary: {
         bg: 'blue.500',
-        color: 'white'
+        color: 'white',
       },
       secondary: {
         bg: 'gray.500',
-        color: 'white'
-      }
-    }
-  }
+        color: 'white',
+      },
+    },
+  },
 })
 
 const App = () => (
@@ -254,8 +254,8 @@ import { button } from '../styled-system/recipes'
 const Button = styled('button', button, {
   defaultProps: {
     variant: 'secondary',
-    px: '10px'
-  }
+    px: '10px',
+  },
 })
 
 const App = () => <Button>Button</Button>
@@ -279,8 +279,8 @@ const StyledMotion = styled(
   {},
   {
     shouldForwardProp: (prop, variantKeys) =>
-      isValidMotionProp(prop) || (!variantKeys.includes(prop) && !isCssProperty(prop))
-  }
+      isValidMotionProp(prop) || (!variantKeys.includes(prop) && !isCssProperty(prop)),
+  },
 )
 ```
 
@@ -421,9 +421,9 @@ const Button = styled('button', {
   variants: {
     state: {
       error: { color: 'red' },
-      success: { color: 'green' }
-    }
-  }
+      success: { color: 'green' },
+    },
+  },
 })
 
 type ButtonVariantProps = StyledVariantProps<typeof Button>

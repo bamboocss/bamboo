@@ -19,9 +19,7 @@ function useTocState() {
 
   useEffect(() => {
     // Get all headings
-    const elements = Array.from(
-      document.querySelectorAll('article h2, article h3, article h4')
-    ).filter(el => el.id)
+    const elements = Array.from(document.querySelectorAll('article h2, article h3, article h4')).filter((el) => el.id)
 
     if (elements.length === 0) return
 
@@ -39,8 +37,8 @@ function useTocState() {
 
     // Set up intersection observer with sophisticated tracking
     observerRef.current = new IntersectionObserver(
-      entries => {
-        setHeadingStates(prevStates => {
+      (entries) => {
+        setHeadingStates((prevStates) => {
           const newStates = { ...prevStates }
 
           // Update states based on intersection entries
@@ -56,7 +54,7 @@ function useTocState() {
                 index,
                 aboveHalfViewport,
                 insideHalfViewport,
-                isActive: false
+                isActive: false,
               }
             }
           }
@@ -80,10 +78,7 @@ function useTocState() {
 
             // Look for the last heading that passed above the viewport
             for (const id in newStates) {
-              if (
-                newStates[id].aboveHalfViewport &&
-                newStates[id].index > largestIndexAboveViewport
-              ) {
+              if (newStates[id].aboveHalfViewport && newStates[id].index > largestIndexAboveViewport) {
                 largestIndexAboveViewport = newStates[id].index
                 fallbackId = id
               }
@@ -91,15 +86,12 @@ function useTocState() {
 
             // If still no heading found and we're near the bottom, activate the last heading
             if (!fallbackId) {
-              const isNearBottom =
-                window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 100
+              const isNearBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 100
 
               if (isNearBottom) {
                 const allIds = Object.keys(newStates)
                 if (allIds.length > 0) {
-                  fallbackId = allIds.reduce((maxId, id) =>
-                    newStates[id].index > newStates[maxId].index ? id : maxId
-                  )
+                  fallbackId = allIds.reduce((maxId, id) => (newStates[id].index > newStates[maxId].index ? id : maxId))
                 }
               }
             }
@@ -121,11 +113,11 @@ function useTocState() {
       },
       {
         rootMargin: '0px 0px -20%',
-        threshold: [0, 0.1]
-      }
+        threshold: [0, 0.1],
+      },
     )
 
-    elements.forEach(el => observerRef.current?.observe(el))
+    elements.forEach((el) => observerRef.current?.observe(el))
 
     return () => {
       if (observerRef.current) {
@@ -137,7 +129,7 @@ function useTocState() {
 
   useEffect(() => {
     // Find the active heading for auto-scrolling TOC
-    const activeId = Object.keys(headingStates).find(id => headingStates[id]?.isActive)
+    const activeId = Object.keys(headingStates).find((id) => headingStates[id]?.isActive)
     if (!activeId) return
 
     // Use requestAnimationFrame to ensure DOM is ready
@@ -154,7 +146,7 @@ function useTocState() {
             block: 'center',
             inline: 'center',
             scrollMode: 'if-needed',
-            boundary: scrollContainer
+            boundary: scrollContainer,
           })
         }
       }
@@ -170,7 +162,7 @@ function useTocState() {
         element.scrollIntoView({ behavior: 'smooth' })
         window.history.pushState(null, '', `#${id}`)
       }
-    }
+    },
   }
 }
 
@@ -192,14 +184,14 @@ export const Toc = (props: TocProps) => {
     <nav className={classes.root} aria-label="Table of contents">
       <h3 className={classes.title}>On this page</h3>
       <ul>
-        {data.map(item => (
+        {data.map((item) => (
           <li key={item.id} className={classes.item}>
             <Link
               href={`#${item.id}`}
               style={{ paddingInlineStart: item.depth * 12 }}
               data-current={isCurrent(item.id) || undefined}
               className={classes.link}
-              onClick={e => onLinkClick(e, item.id)}
+              onClick={(e) => onLinkClick(e, item.id)}
             >
               {item.title}
             </Link>
@@ -214,18 +206,18 @@ const tocRecipe = sva({
   slots: ['root', 'title', 'link', 'item'],
   base: {
     root: {
-      ps: '4'
+      ps: '4',
     },
     title: {
       textStyle: 'sm',
       fontWeight: 'medium',
       letterSpacing: 'tight',
-      mb: '4'
+      mb: '4',
     },
     item: {
       my: '2',
       scrollMarginY: '6',
-      scrollPaddingY: '6'
+      scrollPaddingY: '6',
     },
     link: {
       display: 'inline-flex',
@@ -236,11 +228,11 @@ const tocRecipe = sva({
       transitionDuration: '200ms',
       _current: {
         color: 'fg',
-        fontWeight: 'medium'
+        fontWeight: 'medium',
       },
       _hover: {
-        color: 'fg'
-      }
-    }
-  }
+        color: 'fg',
+      },
+    },
+  },
 })

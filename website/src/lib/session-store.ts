@@ -53,7 +53,7 @@ export class SessionStore<T = Record<string, any>> {
 
     return () => {
       window.removeEventListener('storage', handler)
-      this.callbacks = this.callbacks.filter(c => c !== callback)
+      this.callbacks = this.callbacks.filter((c) => c !== callback)
     }
   }
 
