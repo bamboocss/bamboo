@@ -1,5 +1,13 @@
 # @pandacss/preset-base
 
+## 1.11.3
+
+### Patch Changes
+
+- fix shared package producing chunk files that break codegen output
+- Updated dependencies
+  - @bamboocss/types@1.11.3
+
 ## 1.11.2
 
 ### Patch Changes
@@ -47,6 +55,7 @@
   `flex: 0 0 var(--spacing-5, 5)` — resolved spacing token
 
   Closes #3490
+
   - @pandacss/types@1.9.1
 
 ## 1.9.0
@@ -86,15 +95,16 @@
 
   ```jsx
   // ❌ Before: token references were ignored
-  css({ bgGradient: 'linear-gradient({colors.red.200}, {colors.blue.300})' })
+  css({ bgGradient: "linear-gradient({colors.red.200}, {colors.blue.300})" });
   // Output: background-image: linear-gradient(var(--gradient-stops))
 
   // ✅ After: token references are properly expanded
-  css({ bgGradient: 'linear-gradient({colors.red.200}, {colors.blue.300})' })
+  css({ bgGradient: "linear-gradient({colors.red.200}, {colors.blue.300})" });
   // Output: background-image: linear-gradient(var(--colors-red-200), var(--colors-blue-300))
   ```
 
   Both `token()` function syntax and brace syntax `{...}` now work correctly in gradient utilities.
+
   - @pandacss/types@1.7.3
 
 ## 1.7.2
@@ -183,18 +193,19 @@
 ### Minor Changes
 
 - 1c36121: Added new transition values and enhanced transition property utilities
+
   - `size` → `width, height, min-width, max-width, min-height, max-height`
   - `position` → `left, right, top, bottom, inset, inset-inline, inset-block`
   - `background` → `background, background-color, background-image, background-position`
 
   ```tsx
-  import { css } from 'styled-system/css'
+  import { css } from "styled-system/css";
 
   // Transition shorthand values
-  css({ transition: 'size' })
+  css({ transition: "size" });
 
   // Property groups
-  css({ transitionProperty: 'size', transitionDuration: '300ms' })
+  css({ transitionProperty: "size", transitionDuration: "300ms" });
   ```
 
 ### Patch Changes
@@ -207,6 +218,7 @@
 ### Minor Changes
 
 - 9964772: Add new utilities for managing focus rings with `focusRing` and `focusVisibleRing` properties
+
   - `focusRing`: Style focus states using `&:is(:focus, [data-focus])` selector with `outside`, `inside`, `mixed`, or
     `none` values
   - `focusVisibleRing`: Style keyboard-only focus using `&:is(:focus-visible, [data-focus-visible])` selector
@@ -216,9 +228,9 @@
   ```tsx
   <div
     className={css({
-      focusRing: 'outside',
-      focusVisibleRing: 'inside',
-      focusRingColor: 'blue.300',
+      focusRing: "outside",
+      focusVisibleRing: "inside",
+      focusRingColor: "blue.300",
     })}
   >
     Click me
@@ -264,43 +276,43 @@
   Add `createStyleContext` function to framework artifacts for React, Preact, Solid, and Vue frameworks
 
   ```tsx
-  import { sva } from 'styled-system/css'
-  import { createStyleContext } from 'styled-system/jsx'
+  import { sva } from "styled-system/css";
+  import { createStyleContext } from "styled-system/jsx";
 
   const card = sva({
-    slots: ['root', 'label'],
+    slots: ["root", "label"],
     base: {
       root: {
-        color: 'red',
-        bg: 'red.300',
+        color: "red",
+        bg: "red.300",
       },
       label: {
-        fontWeight: 'medium',
+        fontWeight: "medium",
       },
     },
     variants: {
       size: {
         sm: {
           root: {
-            padding: '10px',
+            padding: "10px",
           },
         },
         md: {
           root: {
-            padding: '20px',
+            padding: "20px",
           },
         },
       },
     },
     defaultVariants: {
-      size: 'sm',
+      size: "sm",
     },
-  })
+  });
 
-  const { withProvider, withContext } = createStyleContext(card)
+  const { withProvider, withContext } = createStyleContext(card);
 
-  const CardRoot = withProvider('div', 'root')
-  const CardLabel = withContext('label', 'label')
+  const CardRoot = withProvider("div", "root");
+  const CardLabel = withContext("label", "label");
   ```
 
   Then, use like this:
@@ -320,9 +332,9 @@
   ```tsx
   <div
     className={css({
-      bgLinear: 'to-r',
-      gradientFrom: 'cyan.500',
-      gradientTo: 'blue.500',
+      bgLinear: "to-r",
+      gradientFrom: "cyan.500",
+      gradientTo: "blue.500",
     })}
   />
   ```
@@ -332,10 +344,10 @@
   ```tsx
   <div
     className={css({
-      bgRadial: 'in srgb',
-      gradientFrom: 'pink.400',
-      gradientFromPosition: '40%',
-      gradientTo: 'fuchsia.700',
+      bgRadial: "in srgb",
+      gradientFrom: "pink.400",
+      gradientFromPosition: "40%",
+      gradientTo: "fuchsia.700",
     })}
   />
   ```
@@ -345,10 +357,10 @@
   ```tsx
   <div
     className={css({
-      bgConic: 'in srgb',
-      gradientFrom: 'blue.600',
-      gradientTo: 'sky.400',
-      gradientToPosition: '50%',
+      bgConic: "in srgb",
+      gradientFrom: "blue.600",
+      gradientTo: "sky.400",
+      gradientToPosition: "50%",
     })}
   />
   ```
@@ -356,7 +368,7 @@
   Add support for `boxSize` property that maps to `width` and `height` properties.
 
   ```tsx
-  <div className={css({ boxSize: '24' })} />
+  <div className={css({ boxSize: "24" })} />
   ```
 
 ### Patch Changes
@@ -506,80 +518,80 @@
   ```ts
   const utilities = {
     gridTemplateColumns: {
-      className: 'grid-tc',
-      group: 'Grid Layout',
+      className: "grid-tc",
+      group: "Grid Layout",
       values: {
-        '1': 'repeat(1, minmax(0, 1fr))',
-        '2': 'repeat(2, minmax(0, 1fr))',
-        '3': 'repeat(3, minmax(0, 1fr))',
-        '4': 'repeat(4, minmax(0, 1fr))',
-        '5': 'repeat(5, minmax(0, 1fr))',
-        '6': 'repeat(6, minmax(0, 1fr))',
-        '7': 'repeat(7, minmax(0, 1fr))',
-        '8': 'repeat(8, minmax(0, 1fr))',
-        '9': 'repeat(9, minmax(0, 1fr))',
-        '10': 'repeat(10, minmax(0, 1fr))',
-        '11': 'repeat(11, minmax(0, 1fr))',
-        '12': 'repeat(12, minmax(0, 1fr))',
+        "1": "repeat(1, minmax(0, 1fr))",
+        "2": "repeat(2, minmax(0, 1fr))",
+        "3": "repeat(3, minmax(0, 1fr))",
+        "4": "repeat(4, minmax(0, 1fr))",
+        "5": "repeat(5, minmax(0, 1fr))",
+        "6": "repeat(6, minmax(0, 1fr))",
+        "7": "repeat(7, minmax(0, 1fr))",
+        "8": "repeat(8, minmax(0, 1fr))",
+        "9": "repeat(9, minmax(0, 1fr))",
+        "10": "repeat(10, minmax(0, 1fr))",
+        "11": "repeat(11, minmax(0, 1fr))",
+        "12": "repeat(12, minmax(0, 1fr))",
       },
     },
     gridTemplateRows: {
-      className: 'grid-tr',
-      group: 'Grid Layout',
+      className: "grid-tr",
+      group: "Grid Layout",
       values: {
-        '1': 'repeat(1, minmax(0, 1fr))',
-        '2': 'repeat(2, minmax(0, 1fr))',
-        '3': 'repeat(3, minmax(0, 1fr))',
-        '4': 'repeat(4, minmax(0, 1fr))',
-        '5': 'repeat(5, minmax(0, 1fr))',
-        '6': 'repeat(6, minmax(0, 1fr))',
-        '7': 'repeat(7, minmax(0, 1fr))',
-        '8': 'repeat(8, minmax(0, 1fr))',
-        '9': 'repeat(9, minmax(0, 1fr))',
-        '10': 'repeat(10, minmax(0, 1fr))',
-        '11': 'repeat(11, minmax(0, 1fr))',
-        '12': 'repeat(12, minmax(0, 1fr))',
+        "1": "repeat(1, minmax(0, 1fr))",
+        "2": "repeat(2, minmax(0, 1fr))",
+        "3": "repeat(3, minmax(0, 1fr))",
+        "4": "repeat(4, minmax(0, 1fr))",
+        "5": "repeat(5, minmax(0, 1fr))",
+        "6": "repeat(6, minmax(0, 1fr))",
+        "7": "repeat(7, minmax(0, 1fr))",
+        "8": "repeat(8, minmax(0, 1fr))",
+        "9": "repeat(9, minmax(0, 1fr))",
+        "10": "repeat(10, minmax(0, 1fr))",
+        "11": "repeat(11, minmax(0, 1fr))",
+        "12": "repeat(12, minmax(0, 1fr))",
       },
     },
     gridColumn: {
-      className: 'grid-c',
-      group: 'Grid Layout',
+      className: "grid-c",
+      group: "Grid Layout",
       values: {
-        full: '1 / -1',
-        '1': 'span 1 / span 1',
-        '2': 'span 2 / span 2',
-        '3': 'span 3 / span 3',
-        '4': 'span 4 / span 4',
-        '5': 'span 5 / span 5',
-        '6': 'span 6 / span 6',
-        '7': 'span 7 / span 7',
-        '8': 'span 8 / span 8',
-        '9': 'span 9 / span 9',
-        '10': 'span 10 / span 10',
-        '11': 'span 11 / span 11',
-        '12': 'span 12 / span 12',
+        full: "1 / -1",
+        "1": "span 1 / span 1",
+        "2": "span 2 / span 2",
+        "3": "span 3 / span 3",
+        "4": "span 4 / span 4",
+        "5": "span 5 / span 5",
+        "6": "span 6 / span 6",
+        "7": "span 7 / span 7",
+        "8": "span 8 / span 8",
+        "9": "span 9 / span 9",
+        "10": "span 10 / span 10",
+        "11": "span 11 / span 11",
+        "12": "span 12 / span 12",
       },
     },
     gridRow: {
-      className: 'grid-r',
-      group: 'Grid Layout',
+      className: "grid-r",
+      group: "Grid Layout",
       values: {
-        full: '1 / -1',
-        '1': 'span 1 / span 1',
-        '2': 'span 2 / span 2',
-        '3': 'span 3 / span 3',
-        '4': 'span 4 / span 4',
-        '5': 'span 5 / span 5',
-        '6': 'span 6 / span 6',
-        '7': 'span 7 / span 7',
-        '8': 'span 8 / span 8',
-        '9': 'span 9 / span 9',
-        '10': 'span 10 / span 10',
-        '11': 'span 11 / span 11',
-        '12': 'span 12 / span 12',
+        full: "1 / -1",
+        "1": "span 1 / span 1",
+        "2": "span 2 / span 2",
+        "3": "span 3 / span 3",
+        "4": "span 4 / span 4",
+        "5": "span 5 / span 5",
+        "6": "span 6 / span 6",
+        "7": "span 7 / span 7",
+        "8": "span 8 / span 8",
+        "9": "span 9 / span 9",
+        "10": "span 10 / span 10",
+        "11": "span 11 / span 11",
+        "12": "span 12 / span 12",
       },
     },
-  }
+  };
   ```
 
 ### Patch Changes
@@ -701,7 +713,7 @@
   **Before**
 
   ```jsx
-  import { linkBox, linkOverlay } from 'styled-system/patterns'
+  import { linkBox, linkOverlay } from "styled-system/patterns";
 
   const App = () => {
     return (
@@ -711,26 +723,26 @@
           Link
         </a>
       </div>
-    )
-  }
+    );
+  };
   ```
 
   **After**
 
   ```jsx
-  import { css } from 'styled-system/css'
-  import { linkOverlay } from 'styled-system/patterns'
+  import { css } from "styled-system/css";
+  import { linkOverlay } from "styled-system/patterns";
 
   const App = () => {
     return (
-      <div className={css({ pos: 'relative' })}>
+      <div className={css({ pos: "relative" })}>
         <img src="https://via.placeholder.com/150" alt="placeholder" />
         <a href="#" className={linkOverlay()}>
           Link
         </a>
       </div>
-    )
-  }
+    );
+  };
   ```
 
 ### Patch Changes
@@ -769,9 +781,11 @@
 ### Minor Changes
 
 - bcfb5c5: ### Fixed
+
   - Fix className collisions between utilities by using unique class names per property in the default preset.
 
   ### Changed
+
   - **Color Mode Selectors**: Changed the default selectors for `_light` and `_dark` to target parent elements. This
     ensures consistent behavior with using these conditions to style pseudo elements (like `::before` and `::after`).
 
@@ -787,13 +801,14 @@
   - Changed `divideX` and `divideY` now maps to the `borderWidths` token group.
 
   ### Added
+
   - **Spacing Utilities**: Add new `spaceX` and `spaceY` utilities for applying margin between elements. Especially
     useful when applying negative margin to child elements.
 
   ```tsx
-  <div className={flex({ spaceX: '-1' })}>
-    <div className={circle({ size: '5', bg: 'red' })} />
-    <div className={circle({ size: '5', bg: 'pink' })} />
+  <div className={flex({ spaceX: "-1" })}>
+    <div className={circle({ size: "5", bg: "red" })} />
+    <div className={circle({ size: "5", bg: "pink" })} />
   </div>
   ```
 
@@ -805,13 +820,13 @@
   ```tsx
   <div
     className={css({
-      bgGradient: 'to-r',
+      bgGradient: "to-r",
       // from
-      gradientFrom: 'red',
-      gradientFromPosition: 'top left',
+      gradientFrom: "red",
+      gradientFromPosition: "top left",
       // to
-      gradientTo: 'blue',
-      gradientToPosition: 'bottom right',
+      gradientTo: "blue",
+      gradientToPosition: "bottom right",
     })}
   />
   ```
@@ -906,9 +921,9 @@
 
   ```ts
   css({
-    textShadow: '1px 1px 1px var(--text-shadow-color)',
-    textShadowColor: 'black',
-  })
+    textShadow: "1px 1px 1px var(--text-shadow-color)",
+    textShadowColor: "black",
+  });
   ```
 
 ### Patch Changes
@@ -960,9 +975,9 @@
 
   ```ts
   css({
-    bg: 'red.300/40',
-    color: 'white',
-  })
+    bg: "red.300/40",
+    color: "white",
+  });
   ```
 
   This will generate:
@@ -970,7 +985,11 @@
   ```css
   @layer utilities {
     .bg_red\.300\/40 {
-      --mix-background: color-mix(in srgb, var(--colors-red-300) 40%, transparent);
+      --mix-background: color-mix(
+        in srgb,
+        var(--colors-red-300) 40%,
+        transparent
+      );
       background: var(--mix-background, var(--colors-red-300));
     }
 
@@ -994,21 +1013,21 @@
   export default defineConfig({
     utilities: {
       background: {
-        shorthand: 'bg',
-        className: 'bg',
-        values: 'colors',
+        shorthand: "bg",
+        className: "bg",
+        values: "colors",
         transform(value, args) {
-          const mix = args.utils.colorMix(value)
+          const mix = args.utils.colorMix(value);
           // This can happen if the value format is invalid (e.g. `bg: red.300/invalid` or `bg: red.300//10`)
-          if (mix.invalid) return { background: value }
+          if (mix.invalid) return { background: value };
 
           return {
             background: mix.value,
-          }
+          };
         },
       },
     },
-  })
+  });
   ```
 
   ***
@@ -1017,21 +1036,21 @@
   property:
 
   ```ts
-  import type { PropertyTransform } from '@pandacss/types'
+  import type { PropertyTransform } from "@pandacss/types";
 
   export const createColorMixTransform =
     (prop: string): PropertyTransform =>
     (value, args) => {
-      const mix = args.utils.colorMix(value)
-      if (mix.invalid) return { [prop]: value }
+      const mix = args.utils.colorMix(value);
+      if (mix.invalid) return { [prop]: value };
 
-      const cssVar = '--mix-' + prop
+      const cssVar = "--mix-" + prop;
 
       return {
         [cssVar]: mix.value,
         [prop]: `var(${cssVar}, ${mix.color})`,
-      }
-    }
+      };
+    };
   ```
 
   then the same utility transform as above can be written like this:
@@ -1059,34 +1078,34 @@
     // ...
     theme: {
       extend: {
-        containerNames: ['sidebar', 'content'],
+        containerNames: ["sidebar", "content"],
         containerSizes: {
-          xs: '40em',
-          sm: '60em',
-          md: '80em',
+          xs: "40em",
+          sm: "60em",
+          md: "80em",
         },
       },
     },
-  })
+  });
   ```
 
   The default container sizes in the `@pandacss/preset-panda` preset are shown below:
 
   ```ts
   export const containerSizes = {
-    xs: '320px',
-    sm: '384px',
-    md: '448px',
-    lg: '512px',
-    xl: '576px',
-    '2xl': '672px',
-    '3xl': '768px',
-    '4xl': '896px',
-    '5xl': '1024px',
-    '6xl': '1152px',
-    '7xl': '1280px',
-    '8xl': '1440px',
-  }
+    xs: "320px",
+    sm: "384px",
+    md: "448px",
+    lg: "512px",
+    xl: "576px",
+    "2xl": "672px",
+    "3xl": "768px",
+    "4xl": "896px",
+    "5xl": "1024px",
+    "6xl": "1152px",
+    "7xl": "1280px",
+    "8xl": "1440px",
+  };
   ```
 
   Then use them in your styles by referencing using `@<container-name>/<container-size>` syntax:
@@ -1170,11 +1189,11 @@
     patterns: {
       extend: {
         stack: {
-          defaultValues: { gap: '20px' },
+          defaultValues: { gap: "20px" },
         },
       },
     },
-  })
+  });
   ```
 
 ### Patch Changes
@@ -1218,6 +1237,7 @@
 - 84304901: Improve performance, mostly for the CSS generation by removing a lot of `postcss` usage (and plugins).
 
   ## Public changes:
+
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
@@ -1225,6 +1245,7 @@
     this run.
 
   ## Internal changes:
+
   - `markImportant` fn from JS instead of walking through postcss AST nodes
   - use a fork of `stitches` `stringify` function instead of `postcss-css-in-js` to write the CSS string from a JS
     object
@@ -1243,13 +1264,13 @@
         // add aspect ratio tokens
         tokens: {
           aspectRatios: {
-            '1:1': '1',
-            '16:9': '16/9',
+            "1:1": "1",
+            "16:9": "16/9",
           },
         },
       },
     },
-  })
+  });
   ```
 
   Here's what the default aspect ratio tokens in the base preset looks like:
@@ -1577,15 +1598,15 @@
   `block` bleed to a child element, setting its value to match the parent's padding.
 
   ```tsx
-  import { css } from '../styled-system/css'
-  import { bleed } from '../styled-system/patterns'
+  import { css } from "../styled-system/css";
+  import { bleed } from "../styled-system/patterns";
 
   export function Page() {
     return (
-      <div class={css({ px: '6' })}>
-        <div class={bleed({ inline: '6' })}>Welcome</div>
+      <div class={css({ px: "6" })}>
+        <div class={bleed({ inline: "6" })}>Welcome</div>
       </div>
-    )
+    );
   }
   ```
 
@@ -1594,8 +1615,8 @@
   Visually hidden is a layout pattern used to hide content visually, but still make it available to screen readers.
 
   ```tsx
-  import { css } from '../styled-system/css'
-  import { visuallyHidden } from '../styled-system/patterns'
+  import { css } from "../styled-system/css";
+  import { visuallyHidden } from "../styled-system/patterns";
 
   export function Checkbox() {
     return (
@@ -1605,7 +1626,7 @@
         </input>
         <span>Checkbox</span>
       </label>
-    )
+    );
   }
   ```
 
@@ -1630,6 +1651,7 @@
 ### Minor Changes
 
 - c08de87f: ### Breaking
+
   - Renamed the `name` property of a config recipe to `className`. This is to ensure API consistency and express the
     intent of the property more clearly.
 
@@ -1656,26 +1678,26 @@
   Update the `jsx` property to be used for advanced tracking of custom pattern components.
 
   ```jsx
-  import { Circle } from 'styled-system/jsx'
+  import { Circle } from "styled-system/jsx";
   const CustomCircle = ({ children, ...props }) => {
-    return <Circle {...props}>{children}</Circle>
-  }
+    return <Circle {...props}>{children}</Circle>;
+  };
   ```
 
   To track the `CustomCircle` component, you can now use the `jsx` property.
 
   ```js
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from "@pandacss/dev";
 
   export default defineConfig({
     patterns: {
       extend: {
         circle: {
-          jsx: ['CustomCircle'],
+          jsx: ["CustomCircle"],
         },
       },
     },
-  })
+  });
   ```
 
 ### Patch Changes
@@ -1699,7 +1721,7 @@
   transition property, timing function and duration. This allows you to add transitions with a single property.
 
   ```jsx
-  <div className={css({ transition: 'background' })}>Content</div>
+  <div className={css({ transition: "background" })}>Content</div>
   ```
 
   This will generate the following css:
@@ -1727,6 +1749,7 @@
 ### Patch Changes
 
 - 08d33e0f: - Fix issue where `gridRows` has the wrong `className`
+
   - Fix issue where `gridItem` pattern did not use the `colStart` and `rowStart` values
 
 - f7aff8eb: Fix issue where `_even` and `_odd` map to incorrect selectors

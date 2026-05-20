@@ -1,5 +1,11 @@
 # @pandacss/is-valid-prop
 
+## 1.11.3
+
+### Patch Changes
+
+- fix shared package producing chunk files that break codegen output
+
 ## 1.11.2
 
 ### Patch Changes
@@ -22,6 +28,7 @@
 ### Patch Changes
 
 - 331d1a5: Update `csstype` from 3.1.3 to 3.2.3, which adds support for newer CSS properties including:
+
   - Anchor positioning: `anchorName`, `anchorScope`, `positionAnchor`, `positionArea`, `positionTry`,
     `positionTryFallbacks`, `positionTryOrder`, `positionVisibility`
   - Text wrapping: `textWrapMode`, `textWrapStyle`, `textSpacingTrim`
@@ -80,43 +87,43 @@
   Add `createStyleContext` function to framework artifacts for React, Preact, Solid, and Vue frameworks
 
   ```tsx
-  import { sva } from 'styled-system/css'
-  import { createStyleContext } from 'styled-system/jsx'
+  import { sva } from "styled-system/css";
+  import { createStyleContext } from "styled-system/jsx";
 
   const card = sva({
-    slots: ['root', 'label'],
+    slots: ["root", "label"],
     base: {
       root: {
-        color: 'red',
-        bg: 'red.300',
+        color: "red",
+        bg: "red.300",
       },
       label: {
-        fontWeight: 'medium',
+        fontWeight: "medium",
       },
     },
     variants: {
       size: {
         sm: {
           root: {
-            padding: '10px',
+            padding: "10px",
           },
         },
         md: {
           root: {
-            padding: '20px',
+            padding: "20px",
           },
         },
       },
     },
     defaultVariants: {
-      size: 'sm',
+      size: "sm",
     },
-  })
+  });
 
-  const { withProvider, withContext } = createStyleContext(card)
+  const { withProvider, withContext } = createStyleContext(card);
 
-  const CardRoot = withProvider('div', 'root')
-  const CardLabel = withContext('label', 'label')
+  const CardRoot = withProvider("div", "root");
+  const CardLabel = withContext("label", "label");
   ```
 
   Then, use like this:
@@ -230,12 +237,12 @@
     theme: {
       extend: {
         colors: {
-          primary: { value: 'blue' },
+          primary: { value: "blue" },
         },
         // borderWidths: {}, // ⚠️ nothing defined here
       },
     },
-  })
+  });
   ```
 
   ```ts
@@ -246,11 +253,12 @@
 
     // ✅ after this PR, TS will not throw an error anymore as you don't have any `borderWidths` tokens
     // if you add one, this will error again (as it's supposed to)
-    borderWidths: '123px',
-  })
+    borderWidths: "123px",
+  });
   ```
 
   ## Description
+
   - Simplify typings for the style properties.
   - Add the `csstype` comments for each property.
 
@@ -307,6 +315,7 @@
 - 84304901: Improve performance, mostly for the CSS generation by removing a lot of `postcss` usage (and plugins).
 
   ## Public changes:
+
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
@@ -314,6 +323,7 @@
     this run.
 
   ## Internal changes:
+
   - `markImportant` fn from JS instead of walking through postcss AST nodes
   - use a fork of `stitches` `stringify` function instead of `postcss-css-in-js` to write the CSS string from a JS
     object
@@ -411,6 +421,7 @@
   further reduce it.
 
   `config.jsxStyleProps`:
+
   - When set to 'all', all style props are allowed.
   - When set to 'minimal', only the `css` prop is allowed.
   - When set to 'none', no style props are allowed and therefore the `jsxFactory` will not be usable as a component:

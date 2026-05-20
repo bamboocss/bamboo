@@ -1,6 +1,6 @@
 {
   "name": "@bamboocss/plugin-vue",
-  "version": "1.11.2",
+  "version": "1.11.3",
   "description": "Bamboo CSS plugin for Vue single file component support",
   "homepage": "https://bamboo-css.com",
   "license": "MIT",

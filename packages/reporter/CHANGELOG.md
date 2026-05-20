@@ -1,5 +1,17 @@
 # @pandacss/reporter
 
+## 1.11.3
+
+### Patch Changes
+
+- fix shared package producing chunk files that break codegen output
+- Updated dependencies
+  - @bamboocss/core@1.11.3
+  - @bamboocss/generator@1.11.3
+  - @bamboocss/logger@1.11.3
+  - @bamboocss/shared@1.11.3
+  - @bamboocss/types@1.11.3
+
 ## 1.11.2
 
 ### Patch Changes
@@ -320,43 +332,43 @@
   Add `createStyleContext` function to framework artifacts for React, Preact, Solid, and Vue frameworks
 
   ```tsx
-  import { sva } from 'styled-system/css'
-  import { createStyleContext } from 'styled-system/jsx'
+  import { sva } from "styled-system/css";
+  import { createStyleContext } from "styled-system/jsx";
 
   const card = sva({
-    slots: ['root', 'label'],
+    slots: ["root", "label"],
     base: {
       root: {
-        color: 'red',
-        bg: 'red.300',
+        color: "red",
+        bg: "red.300",
       },
       label: {
-        fontWeight: 'medium',
+        fontWeight: "medium",
       },
     },
     variants: {
       size: {
         sm: {
           root: {
-            padding: '10px',
+            padding: "10px",
           },
         },
         md: {
           root: {
-            padding: '20px',
+            padding: "20px",
           },
         },
       },
     },
     defaultVariants: {
-      size: 'sm',
+      size: "sm",
     },
-  })
+  });
 
-  const { withProvider, withContext } = createStyleContext(card)
+  const { withProvider, withContext } = createStyleContext(card);
 
-  const CardRoot = withProvider('div', 'root')
-  const CardLabel = withContext('label', 'label')
+  const CardRoot = withProvider("div", "root");
+  const CardLabel = withContext("label", "label");
   ```
 
   Then, use like this:
@@ -551,6 +563,7 @@
 
 - fea78c7: Adds support for static analysis of used tokens and recipe variants. It helps to get a birds-eye view of how
   your design system is used and answers the following questions:
+
   - What tokens are most used?
   - What recipe variants are most used?
   - How many hardcoded values vs tokens do we have?

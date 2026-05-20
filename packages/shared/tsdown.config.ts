@@ -1,7 +1,10 @@
 import { defineConfig } from 'tsdown'
 
-export default defineConfig({
-  entry: ['src/index.ts', 'src/shared.ts', 'src/astish.ts', 'src/normalize-html.ts'],
-  splitting: false,
-  format: ['esm', 'cjs'],
-})
+const entries = ['src/index.ts', 'src/shared.ts', 'src/astish.ts', 'src/normalize-html.ts']
+
+export default defineConfig(
+  entries.map((entry) => ({
+    entry: [entry],
+    format: ['esm', 'cjs'] as const,
+  })),
+)

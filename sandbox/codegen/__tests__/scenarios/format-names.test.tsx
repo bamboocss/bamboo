@@ -90,7 +90,8 @@ describe('styled factory - cva', () => {
 
     expect(container.firstChild).toMatchInlineSnapshot(`
       <button
-        class="c-$red-500 bg-$blue-500 hover:c-$red-600 hover:bg-$blue-600 mx-2 custom-btn"
+        class="c-$red-500 bg-$blue-500 hover:c-$red-600 hover:bg-$blue-600 custom-btn"
+        mx="2"
       >
         Click me
       </button>
@@ -106,7 +107,8 @@ describe('styled factory - cva', () => {
 
     expect(container.firstChild).toMatchInlineSnapshot(`
       <button
-        class="c-$red-500 bg-$blue-500 hover:c-$red-600 hover:bg-$blue-600 fs-$sm px-$sm py-$xs mx-2 custom-btn"
+        class="c-$red-500 bg-$blue-500 hover:c-$red-600 hover:bg-$blue-600 fs-$sm px-$sm py-$xs custom-btn"
+        mx="2"
       >
         Click me
       </button>
@@ -122,7 +124,8 @@ describe('styled factory - cva', () => {
 
     expect(container.firstChild).toMatchInlineSnapshot(`
       <button
-        class="c-$red-100 bg-$blue-500 hover:c-$red-600 hover:bg-$blue-600 fs-$md custom-btn"
+        class="c-$red-500 bg-$blue-500 hover:c-$red-600 hover:bg-$blue-600 custom-btn"
+        css="[object Object]"
       >
         Click me
       </button>
@@ -138,7 +141,8 @@ describe('styled factory - cva', () => {
 
     expect(container.firstChild).toMatchInlineSnapshot(`
       <button
-        class="c-$red-100 bg-$blue-500 hover:c-$red-600 hover:bg-$blue-600 fs-$md px-$sm py-$xs custom-btn"
+        class="c-$red-500 bg-$blue-500 hover:c-$red-600 hover:bg-$blue-600 fs-$sm px-$sm py-$xs custom-btn"
+        css="[object Object]"
       >
         Click me
       </button>
@@ -154,7 +158,9 @@ describe('styled factory - cva', () => {
 
     expect(container.firstChild).toMatchInlineSnapshot(`
       <button
-        class="c-$red-200 bg-$blue-500 hover:c-$red-600 hover:bg-$blue-600 fs-$xl px-123px py-$md z-1 mx-$2 custom-btn"
+        class="c-$red-500 bg-$blue-500 hover:c-$red-600 hover:bg-$blue-600 fs-$lg px-123px py-$md z-1 custom-btn"
+        css="[object Object]"
+        mx="$2"
       >
         Click me
       </button>
@@ -214,7 +220,8 @@ describe('styled factory - button recipe', () => {
 
     expect(container.firstChild).toMatchInlineSnapshot(`
       <button
-        class="button button--visual-unstyled mx-2 custom-btn"
+        class="button button--visual-unstyled custom-btn"
+        mx="2"
       >
         Click me
       </button>
@@ -230,7 +237,8 @@ describe('styled factory - button recipe', () => {
 
     expect(container.firstChild).toMatchInlineSnapshot(`
       <button
-        class="button button--visual-unstyled button--size-sm mx-2 custom-btn"
+        class="button button--visual-unstyled button--size-sm custom-btn"
+        mx="2"
       >
         Click me
       </button>
@@ -246,7 +254,8 @@ describe('styled factory - button recipe', () => {
 
     expect(container.firstChild).toMatchInlineSnapshot(`
       <button
-        class="button button--visual-unstyled c-$red-100 fs-$md custom-btn"
+        class="button button--visual-unstyled custom-btn"
+        css="[object Object]"
       >
         Click me
       </button>
@@ -262,7 +271,8 @@ describe('styled factory - button recipe', () => {
 
     expect(container.firstChild).toMatchInlineSnapshot(`
       <button
-        class="button button--visual-unstyled button--size-sm c-$red-100 fs-$md custom-btn"
+        class="button button--visual-unstyled button--size-sm custom-btn"
+        css="[object Object]"
       >
         Click me
       </button>
@@ -278,7 +288,9 @@ describe('styled factory - button recipe', () => {
 
     expect(container.firstChild).toMatchInlineSnapshot(`
       <button
-        class="button button--visual-outline button--size-md c-$red-200 mx--$2 fs-$xl custom-btn"
+        class="button button--visual-outline button--size-md c-green custom-btn"
+        css="[object Object]"
+        mx="-$2"
       >
         Click me
       </button>

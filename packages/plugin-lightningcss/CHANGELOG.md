@@ -1,5 +1,14 @@
 # @pandacss/plugin-lightningcss
 
+## 1.11.3
+
+### Patch Changes
+
+- fix shared package producing chunk files that break codegen output
+- Updated dependencies
+  - @bamboocss/logger@1.11.3
+  - @bamboocss/types@1.11.3
+
 ## 1.11.2
 
 ### Patch Changes

@@ -1,5 +1,18 @@
 # @pandacss/parser
 
+## 1.11.3
+
+### Patch Changes
+
+- fix shared package producing chunk files that break codegen output
+- Updated dependencies
+  - @bamboocss/config@1.11.3
+  - @bamboocss/core@1.11.3
+  - @bamboocss/extractor@1.11.3
+  - @bamboocss/logger@1.11.3
+  - @bamboocss/shared@1.11.3
+  - @bamboocss/types@1.11.3
+
 ## 1.11.2
 
 ### Patch Changes
@@ -121,17 +134,19 @@
 
   ```tsx
   function Comp(props) {
-    const { inputCss, wrapperCss, children } = props
+    const { inputCss, wrapperCss, children } = props;
     return (
       <styled.div css={wrapperCss}>
         <styled.input css={inputCss} />
         {children}
       </styled.div>
-    )
+    );
   }
 
   // Usage - styles are statically extracted
-  const usage = <Comp inputCss={{ color: 'red.200' }} wrapperCss={{ display: 'flex' }} />
+  const usage = (
+    <Comp inputCss={{ color: "red.200" }} wrapperCss={{ display: "flex" }} />
+  );
   ```
 
   This works in both `all` and `minimal` JSX style prop modes, with no configuration needed.
@@ -241,29 +256,29 @@
   **Child selectors:**
 
   ```js
-  const baseStyles = css.raw({ margin: 0, padding: 0 })
+  const baseStyles = css.raw({ margin: 0, padding: 0 });
   const component = css({
-    '& p': { ...baseStyles, fontSize: '1rem' }, // Now works
-  })
+    "& p": { ...baseStyles, fontSize: "1rem" }, // Now works
+  });
   ```
 
   **Nested conditions:**
 
   ```js
-  const interactive = css.raw({ cursor: 'pointer', transition: 'all 0.2s' })
+  const interactive = css.raw({ cursor: "pointer", transition: "all 0.2s" });
   const card = css({
     _hover: {
       ...interactive, // Now works
-      _dark: { ...interactive, color: 'white' },
+      _dark: { ...interactive, color: "white" },
     },
-  })
+  });
   ```
 
   **CSS aliases:**
 
   ```js
-  import { css as xcss } from 'styled-system/css'
-  const styles = xcss.raw({ color: 'red' })
+  import { css as xcss } from "styled-system/css";
+  const styles = xcss.raw({ color: "red" });
   // xcss.raw now properly recognized
   ```
 
@@ -333,24 +348,24 @@
   the compiler.
 
   ```tsx
-  import { token } from 'styled-system/tokens'
-  import { css } from 'styled-system/css'
+  import { token } from "styled-system/tokens";
+  import { css } from "styled-system/css";
 
   css({
     // This didn't work before, but now it does
-    outline: `2px solid ${token('colors.gray.500')}`,
+    outline: `2px solid ${token("colors.gray.500")}`,
 
     // This has always worked
     outline: `2px solid token('colors.gray.500')`,
-  })
+  });
   ```
 
   This also supports fallback values.
 
   ```tsx
   css({
-    color: token('colors.brand.primary', '#3b82f6'),
-  })
+    color: token("colors.brand.primary", "#3b82f6"),
+  });
   ```
 
 - Updated dependencies [0679f6f]
@@ -457,43 +472,43 @@
   Add `createStyleContext` function to framework artifacts for React, Preact, Solid, and Vue frameworks
 
   ```tsx
-  import { sva } from 'styled-system/css'
-  import { createStyleContext } from 'styled-system/jsx'
+  import { sva } from "styled-system/css";
+  import { createStyleContext } from "styled-system/jsx";
 
   const card = sva({
-    slots: ['root', 'label'],
+    slots: ["root", "label"],
     base: {
       root: {
-        color: 'red',
-        bg: 'red.300',
+        color: "red",
+        bg: "red.300",
       },
       label: {
-        fontWeight: 'medium',
+        fontWeight: "medium",
       },
     },
     variants: {
       size: {
         sm: {
           root: {
-            padding: '10px',
+            padding: "10px",
           },
         },
         md: {
           root: {
-            padding: '20px',
+            padding: "20px",
           },
         },
       },
     },
     defaultVariants: {
-      size: 'sm',
+      size: "sm",
     },
-  })
+  });
 
-  const { withProvider, withContext } = createStyleContext(card)
+  const { withProvider, withContext } = createStyleContext(card);
 
-  const CardRoot = withProvider('div', 'root')
-  const CardLabel = withContext('label', 'label')
+  const CardRoot = withProvider("div", "root");
+  const CardLabel = withContext("label", "label");
   ```
 
   Then, use like this:
@@ -672,9 +687,9 @@
 
   ```ts
   const styles = sva({
-    className: 'foo',
-    slots: [...componentAnatomy.keys(), 'additional', 'slots', 'here'],
-  })
+    className: "foo",
+    slots: [...componentAnatomy.keys(), "additional", "slots", "here"],
+  });
   ```
 
   Panda will now infer the slots from the anatomy and add them to the recipe.
@@ -844,21 +859,21 @@
 - ec64819: Change recipes `className` to be optional, both for `recipes` and `slotRecipes`, with a fallback to its name.
 
   ```ts
-  import { defineConfig } from '@pandacss/core'
+  import { defineConfig } from "@pandacss/core";
 
   export default defineConfig({
     recipes: {
       button: {
-        className: 'button', // 👈 was mandatory, is now optional
+        className: "button", // 👈 was mandatory, is now optional
         variants: {
           size: {
-            sm: { padding: '2', borderRadius: 'sm' },
-            md: { padding: '4', borderRadius: 'md' },
+            sm: { padding: "2", borderRadius: "sm" },
+            md: { padding: "4", borderRadius: "md" },
           },
         },
       },
     },
-  })
+  });
   ```
 
 - Updated dependencies [e157dd1]
@@ -881,17 +896,17 @@
   generated
 
   ```ts
-  import { sva } from 'styled-system/css'
-  const parts = ['positioner', 'content']
+  import { sva } from "styled-system/css";
+  const parts = ["positioner", "content"];
 
   const card = sva({
     slots: [...parts], // <- spreading here was causing the below CSS not to be generated, it's now fixed ✅
     base: {
       root: {
-        p: '6',
+        p: "6",
       },
     },
-  })
+  });
   ```
 
 - Updated dependencies [2750261]
@@ -964,7 +979,7 @@
   **Before**
 
   ```jsx
-  import { linkBox, linkOverlay } from 'styled-system/patterns'
+  import { linkBox, linkOverlay } from "styled-system/patterns";
 
   const App = () => {
     return (
@@ -974,26 +989,26 @@
           Link
         </a>
       </div>
-    )
-  }
+    );
+  };
   ```
 
   **After**
 
   ```jsx
-  import { css } from 'styled-system/css'
-  import { linkOverlay } from 'styled-system/patterns'
+  import { css } from "styled-system/css";
+  import { linkOverlay } from "styled-system/patterns";
 
   const App = () => {
     return (
-      <div className={css({ pos: 'relative' })}>
+      <div className={css({ pos: "relative" })}>
         <img src="https://via.placeholder.com/150" alt="placeholder" />
         <a href="#" className={linkOverlay()}>
           Link
         </a>
       </div>
-    )
-  }
+    );
+  };
   ```
 
 ### Patch Changes
@@ -1017,23 +1032,28 @@
   This makes it even easier to merge styles from multiple sources.
 
   ```tsx
-  import { Stack, styled } from '../styled-system/jsx'
+  import { Stack, styled } from "../styled-system/jsx";
 
   const HeroSection = (props) => {
     return (
-      <Stack css={[{ color: 'blue.300', padding: '4' }, props.css]}>
-        <styled.div css={[{ fontSize: '2xl' }, props.hero]}>Hero Section</styled.div>
+      <Stack css={[{ color: "blue.300", padding: "4" }, props.css]}>
+        <styled.div css={[{ fontSize: "2xl" }, props.hero]}>
+          Hero Section
+        </styled.div>
       </Stack>
-    )
-  }
+    );
+  };
 
   const App = () => {
     return (
       <>
-        <HeroSection css={{ backgroundColor: 'yellow.300' }} hero={css.raw({ fontSize: '4xl', color: 'red.300' })} />
+        <HeroSection
+          css={{ backgroundColor: "yellow.300" }}
+          hero={css.raw({ fontSize: "4xl", color: "red.300" })}
+        />
       </>
-    )
-  }
+    );
+  };
   ```
 
   should render something like:
@@ -1075,21 +1095,21 @@
 - 99870bb: Fix issue where setting the pattern `jsx` option with dot notation didn't work.
 
   ```jsx
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from "@pandacss/dev";
 
   export default defineConfig({
     // ...
     patterns: {
       extend: {
         grid: {
-          jsx: ['Form.Group', 'Grid'],
+          jsx: ["Form.Group", "Grid"],
         },
         stack: {
-          jsx: ['Form.Action', 'Stack'],
+          jsx: ["Form.Action", "Stack"],
         },
       },
     },
-  })
+  });
   ```
 
 - Updated dependencies [88049c5]
@@ -1131,7 +1151,7 @@
 - 35bd134: Fix JSX matching with recipes after introducing namespace imports
 
   ```ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from "@pandacss/dev";
 
   export default defineConfig({
     // ...
@@ -1139,11 +1159,11 @@
       extend: {
         slotRecipes: {
           tabs: {
-            className: 'tabs',
-            slots: ['root', 'list', 'trigger', 'content', 'indicator'],
+            className: "tabs",
+            slots: ["root", "list", "trigger", "content", "indicator"],
             base: {
               root: {
-                display: 'flex',
+                display: "flex",
                 // ...
               },
             },
@@ -1151,7 +1171,7 @@
         },
       },
     },
-  })
+  });
   ```
 
   ```tsx
@@ -1167,8 +1187,8 @@
           <Tabs.Indicator />
         </Tabs.List>
       </Tabs.Root>
-    )
-  }
+    );
+  };
   ```
 
   We introduced a bug in [v0.34.2](https://github.com/bamboocss/panda/blob/main/CHANGELOG.md#0342---2024-03-08) where
@@ -1207,11 +1227,13 @@
 - c459b43: Fix extraction of JSX `styled` factory when using namespace imports
 
   ```tsx
-  import * as pandaJsx from '../styled-system/jsx'
+  import * as pandaJsx from "../styled-system/jsx";
 
   // ✅ this will work now
-  pandaJsx.styled('div', { base: { color: 'red' } })
-  const App = () => <pandaJsx.styled.span color="blue">Hello</pandaJsx.styled.span>
+  pandaJsx.styled("div", { base: { color: "red" } });
+  const App = () => (
+    <pandaJsx.styled.span color="blue">Hello</pandaJsx.styled.span>
+  );
   ```
 
 - Updated dependencies [50db354]
@@ -1243,18 +1265,18 @@
 - 0bf09f2: Allow using namespaced imports
 
   ```ts
-  import * as p from 'styled-system/patterns'
-  import * as recipes from 'styled-system/recipes'
-  import * as panda from 'styled-system/css'
+  import * as p from "styled-system/patterns";
+  import * as recipes from "styled-system/recipes";
+  import * as panda from "styled-system/css";
 
   // this will now be extracted
-  p.stack({ mt: '40px' })
+  p.stack({ mt: "40px" });
 
-  recipes.cardStyle({ rounded: true })
+  recipes.cardStyle({ rounded: true });
 
-  panda.css({ color: 'red' })
-  panda.cva({ base: { color: 'blue' } })
-  panda.sva({ base: { root: { color: 'green' } } })
+  panda.css({ color: "red" });
+  panda.cva({ base: { color: "blue" } });
+  panda.sva({ base: { root: { color: "green" } } });
   ```
 
 - Updated dependencies [0bf09f2]
@@ -1316,25 +1338,25 @@
 - 31071ba: Fix an issue for token names starting with '0'
 
   ```ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from "@pandacss/dev";
 
   export default defineConfig({
     theme: {
       tokens: {
         spacing: {
-          '025': {
-            value: '0.125rem',
+          "025": {
+            value: "0.125rem",
           },
         },
       },
     },
-  })
+  });
   ```
 
   and then using it like
 
   ```ts
-  css({ margin: '025' })
+  css({ margin: "025" });
   ```
 
   This would not generate the expected CSS because the parser would try to parse `025` as a number (`25`) instead of
@@ -1345,7 +1367,7 @@
   Given this config:
 
   ```ts
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from "@pandacss/dev";
 
   export default defineConfig({
     // ...
@@ -1356,13 +1378,13 @@
             bg: {
               primary: {
                 DEFAULT: {
-                  value: '{colors.red.500}',
+                  value: "{colors.red.500}",
                 },
                 base: {
-                  value: '{colors.green.500}',
+                  value: "{colors.green.500}",
                 },
                 hover: {
-                  value: '{colors.yellow.300}',
+                  value: "{colors.yellow.300}",
                 },
               },
             },
@@ -1370,17 +1392,17 @@
         },
       },
     },
-  })
+  });
   ```
 
   And this style usage:
 
   ```ts
-  import { css } from 'styled-system/css'
+  import { css } from "styled-system/css";
 
   css({
-    colorPalette: 'bg.primary',
-  })
+    colorPalette: "bg.primary",
+  });
   ```
 
   This is the difference in the generated css
@@ -1407,14 +1429,15 @@
   ```
 
 - f419993: - Prevent extracting style props of `styled` when not explicitly imported
+
   - Allow using multiple aliases for the same identifier for the `/css` entrypoints just like `/patterns` and `/recipes`
 
   ```ts
-  import { css } from '../styled-system/css'
-  import { css as css2 } from '../styled-system/css'
+  import { css } from "../styled-system/css";
+  import { css as css2 } from "../styled-system/css";
 
-  css({ display: 'flex' })
-  css2({ flexDirection: 'column' }) // this wasn't working before, now it does
+  css({ display: "flex" });
+  css2({ flexDirection: "column" }); // this wasn't working before, now it does
   ```
 
 - Updated dependencies [a032375]
@@ -1454,6 +1477,7 @@
 ### Minor Changes
 
 - f0296249: - Sort the longhand/shorthand atomic rules in a deterministic order to prevent property conflicts
+
   - Automatically merge the `base` object in the `css` root styles in the runtime
   - This may be a breaking change depending on how your styles are created
 
@@ -1461,10 +1485,10 @@
 
   ```ts
   css({
-    padding: '1px',
-    paddingTop: '3px',
-    paddingBottom: '4px',
-  })
+    padding: "1px",
+    paddingTop: "3px",
+    paddingBottom: "4px",
+  });
   ```
 
   Will now always generate the following css:
@@ -1524,16 +1548,17 @@
   export default defineConfig({
     // ...
     hooks: {
-      'parser:before': ({ configure }) => {
+      "parser:before": ({ configure }) => {
         configure({
           // ignore the Select.Content entirely
-          matchTag: (tag) => tag !== 'Select.Content',
+          matchTag: (tag) => tag !== "Select.Content",
           // ...or specifically ignore the `position` property
-          matchTagProp: (tag, prop) => tag === 'Select.Content' && prop !== 'position',
-        })
+          matchTagProp: (tag, prop) =>
+            tag === "Select.Content" && prop !== "position",
+        });
       },
     },
-  })
+  });
   ```
 
 - Updated dependencies [6b829cab]
@@ -1561,6 +1586,7 @@
 ### Patch Changes
 
 - d5977c24: - Add a `--logfile` flag to the `panda`, `panda codegen`, `panda cssgen` and `panda debug` commands.
+
   - Add a `logfile` option to the postcss plugin
 
   Logs will be streamed to the file specified by the `--logfile` flag or the `logfile` option. This is useful for
@@ -1573,11 +1599,11 @@
   ```js
   module.exports = {
     plugins: {
-      '@pandacss/dev/postcss': {
-        logfile: './logs/panda.log',
+      "@pandacss/dev/postcss": {
+        logfile: "./logs/panda.log",
       },
     },
-  }
+  };
   ```
 
 - Updated dependencies [0dd45b6a]
@@ -1616,10 +1642,10 @@
   css({
     // ✅ this is fine now, will resolve to something like
     // `@container (min-width: 56em)`
-    '@container (min-width: {sizes.4xl})': {
-      color: 'green',
+    "@container (min-width: {sizes.4xl})": {
+      color: "green",
     },
-  })
+  });
   ```
 
   Fix an issue where the curly token references would not be escaped if the token path was not found.
@@ -1642,6 +1668,7 @@
 ### Minor Changes
 
 - f58f6df2: Refactor `config.hooks` to be much more powerful, you can now:
+
   - Tweak the config after it has been resolved (after presets are loaded and merged), this could be used to dynamically
     load all `recipes` from a folder
   - Transform a source file's content before parsing it, this could be used to transform the file content to a
@@ -1660,39 +1687,54 @@
      * Called when the config is resolved, after all the presets are loaded and merged.
      * This is the first hook called, you can use it to tweak the config before the context is created.
      */
-    'config:resolved': (args: { conf: LoadConfigResult }) => MaybeAsyncReturn
+    "config:resolved": (args: { conf: LoadConfigResult }) => MaybeAsyncReturn;
     /**
      * Called when the Panda context has been created and the API is ready to be used.
      */
-    'context:created': (args: { ctx: ApiInterface; logger: LoggerInterface }) => void
+    "context:created": (args: {
+      ctx: ApiInterface;
+      logger: LoggerInterface;
+    }) => void;
     /**
      * Called when the config file or one of its dependencies (imports) has changed.
      */
-    'config:change': (args: { config: UserConfig }) => MaybeAsyncReturn
+    "config:change": (args: { config: UserConfig }) => MaybeAsyncReturn;
     /**
      * Called after reading the file content but before parsing it.
      * You can use this hook to transform the file content to a tsx-friendly syntax so that Panda's parser can parse it.
      * You can also use this hook to parse the file's content on your side using a custom parser, in this case you don't have to return anything.
      */
-    'parser:before': (args: { filePath: string; content: string }) => string | void
+    "parser:before": (args: {
+      filePath: string;
+      content: string;
+    }) => string | void;
     /**
      * Called after the file styles are extracted and processed into the resulting ParserResult object.
      * You can also use this hook to add your own extraction results from your custom parser to the ParserResult object.
      */
-    'parser:after': (args: { filePath: string; result: ParserResultInterface | undefined }) => void
+    "parser:after": (args: {
+      filePath: string;
+      result: ParserResultInterface | undefined;
+    }) => void;
     /**
      * Called after the codegen is completed
      */
-    'codegen:done': () => MaybeAsyncReturn
+    "codegen:done": () => MaybeAsyncReturn;
     /**
      * Called right before adding the design-system CSS (global, static, preflight, tokens, keyframes) to the final CSS
      * Called right before writing/injecting the final CSS (styles.css) that contains the design-system CSS and the parser CSS
      * You can use it to tweak the CSS content before it's written to disk or injected through the postcss plugin.
      */
-    'cssgen:done': (args: {
-      artifact: 'global' | 'static' | 'reset' | 'tokens' | 'keyframes' | 'styles.css'
-      content: string
-    }) => string | void
+    "cssgen:done": (args: {
+      artifact:
+        | "global"
+        | "static"
+        | "reset"
+        | "tokens"
+        | "keyframes"
+        | "styles.css";
+      content: string;
+    }) => string | void;
   }
   ```
 
@@ -1753,6 +1795,7 @@
 - 84304901: Improve performance, mostly for the CSS generation by removing a lot of `postcss` usage (and plugins).
 
   ## Public changes:
+
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
@@ -1760,6 +1803,7 @@
     this run.
 
   ## Internal changes:
+
   - `markImportant` fn from JS instead of walking through postcss AST nodes
   - use a fork of `stitches` `stringify` function instead of `postcss-css-in-js` to write the CSS string from a JS
     object
@@ -1829,8 +1873,8 @@
   ```jsx
   css({
     // This didn't work, but now it does
-    base: { color: 'blue' },
-  })
+    base: { color: "blue" },
+  });
   ```
 
 - Updated dependencies [59fd291c]
@@ -1874,38 +1918,38 @@
 
   ```ts
   const card = defineRecipe({
-    className: 'card',
-    base: { color: 'white' },
+    className: "card",
+    base: { color: "white" },
     variants: {
       size: {
-        small: { fontSize: '14px' },
-        large: { fontSize: '18px' },
+        small: { fontSize: "14px" },
+        large: { fontSize: "18px" },
       },
       visual: {
-        primary: { backgroundColor: 'blue' },
-        secondary: { backgroundColor: 'gray' },
+        primary: { backgroundColor: "blue" },
+        secondary: { backgroundColor: "gray" },
       },
     },
-  })
+  });
 
   export default defineConfig({
     // ...
     staticCss: {
       recipes: {
-        card: ['*'], // this
+        card: ["*"], // this
 
         // was equivalent to:
         card: [
           // notice how `responsive: true` was implicitly added
-          { size: ['*'], responsive: true },
-          { visual: ['*'], responsive: true },
+          { size: ["*"], responsive: true },
+          { visual: ["*"], responsive: true },
         ],
 
         //   will now correctly be equivalent to:
-        card: [{ size: ['*'] }, { visual: ['*'] }],
+        card: [{ size: ["*"] }, { visual: ["*"] }],
       },
     },
-  })
+  });
   ```
 
   Here's the diff in the generated CSS:
@@ -2029,30 +2073,30 @@
   another file, such as when using `Ark-UI` like `import { comboboxAnatomy } from '@ark-ui/anatomy'`
 
   ```ts
-  import { sva } from '../styled-system/css'
-  import { slots } from './slots'
+  import { sva } from "../styled-system/css";
+  import { slots } from "./slots";
 
   const card = sva({
     slots, // ❌ did NOT work -> ✅ will now work as expected
     base: {
       root: {
-        p: '6',
-        m: '4',
-        w: 'md',
-        boxShadow: 'md',
-        borderRadius: 'md',
-        _dark: { bg: '#262626', color: 'white' },
+        p: "6",
+        m: "4",
+        w: "md",
+        boxShadow: "md",
+        borderRadius: "md",
+        _dark: { bg: "#262626", color: "white" },
       },
       content: {
-        textStyle: 'lg',
+        textStyle: "lg",
       },
       title: {
-        textStyle: 'xl',
-        fontWeight: 'semibold',
-        pb: '2',
+        textStyle: "xl",
+        fontWeight: "semibold",
+        pb: "2",
       },
     },
-  })
+  });
   ```
 
 - b01eb049: Fix a parser issue where we didn't handle import aliases when using a {xxx}.raw() function.
@@ -2061,15 +2105,15 @@
 
   ```ts
   // button.stories.ts
-  import { button as buttonRecipe } from '@ui/styled-system/recipes'
+  import { button as buttonRecipe } from "@ui/styled-system/recipes";
 
   export const Primary: Story = {
     // ❌ this wouldn't be parsed as a recipe because of the alias + .raw()
     //  -> ✅ it's now fixed
     args: buttonRecipe.raw({
-      color: 'primary',
+      color: "primary",
     }),
-  }
+  };
   ```
 
 - a3b6ed5f: Fix & perf improvement: skip JSX parsing when not using `config.jsxFramework` / skip tagged template literal
@@ -2091,9 +2135,9 @@
 
   ```ts
   css({
-    borderWidth: '[2px!]',
-    width: '[2px !important]',
-  })
+    borderWidth: "[2px!]",
+    width: "[2px !important]",
+  });
   ```
 
 - Updated dependencies [8f4ce97c]
@@ -2321,9 +2365,9 @@
 
   ```ts
   interface FactoryOptions<TProps extends Dict> {
-    dataAttr?: boolean
-    defaultProps?: TProps
-    shouldForwardProp?(prop: string, variantKeys: string[]): boolean
+    dataAttr?: boolean;
+    defaultProps?: TProps;
+    shouldForwardProp?(prop: string, variantKeys: string[]): boolean;
   }
   ```
 
@@ -2331,16 +2375,16 @@
     This is useful for testing and debugging.
 
   ```jsx
-  import { styled } from '../styled-system/jsx'
-  import { button } from '../styled-system/recipes'
+  import { styled } from "../styled-system/jsx";
+  import { button } from "../styled-system/recipes";
 
-  const Button = styled('button', button, { dataAttr: true })
+  const Button = styled("button", button, { dataAttr: true });
 
   const App = () => (
     <Button variant="secondary" mt="10px">
       Button
     </Button>
-  )
+  );
   // Will render something like <button data-recipe="button" class="btn btn--variant_purple mt_10px">Button</button>
   ```
 
@@ -2348,17 +2392,17 @@
     override the default variants or base styles of a recipe.
 
   ```jsx
-  import { styled } from '../styled-system/jsx'
-  import { button } from '../styled-system/recipes'
+  import { styled } from "../styled-system/jsx";
+  import { button } from "../styled-system/recipes";
 
-  const Button = styled('button', button, {
+  const Button = styled("button", button, {
     defaultProps: {
-      variant: 'secondary',
-      px: '10px',
+      variant: "secondary",
+      px: "10px",
     },
-  })
+  });
 
-  const App = () => <Button>Button</Button>
+  const App = () => <Button>Button</Button>;
   // Will render something like <button class="btn btn--variant_secondary px_10px">Button</button>
   ```
 
@@ -2366,19 +2410,20 @@
     props except recipe variants and style props are forwarded.
 
   ```jsx
-  import { styled } from '../styled-system/jsx'
-  import { button } from '../styled-system/recipes'
-  import { isCssProperty } from '../styled-system/jsx'
-  import { motion, isValidMotionProp } from 'framer-motion'
+  import { styled } from "../styled-system/jsx";
+  import { button } from "../styled-system/recipes";
+  import { isCssProperty } from "../styled-system/jsx";
+  import { motion, isValidMotionProp } from "framer-motion";
 
   const StyledMotion = styled(
     motion.div,
     {},
     {
       shouldForwardProp: (prop, variantKeys) =>
-        isValidMotionProp(prop) || (!variantKeys.includes(prop) && !isCssProperty(prop)),
-    },
-  )
+        isValidMotionProp(prop) ||
+        (!variantKeys.includes(prop) && !isCssProperty(prop)),
+    }
+  );
   ```
 
 - 3a04a927: Fix static extraction of the
@@ -2478,42 +2523,42 @@
 
   ```ts
   export default defineConfig({
-    outdir: './outdir',
+    outdir: "./outdir",
     importMap: {
-      css: '#panda/styled-system/css',
-      recipes: '#panda/styled-system/recipes',
-      patterns: '#panda/styled-system/patterns',
-      jsx: '#panda/styled-system/jsx',
+      css: "#panda/styled-system/css",
+      recipes: "#panda/styled-system/recipes",
+      patterns: "#panda/styled-system/patterns",
+      jsx: "#panda/styled-system/jsx",
     },
-  })
+  });
   ```
 
   Or you could also make your outdir an actual package from your monorepo:
 
   ```ts
   export default defineConfig({
-    outdir: '../packages/styled-system',
+    outdir: "../packages/styled-system",
     importMap: {
-      css: '@monorepo/styled-system',
-      recipes: '@monorepo/styled-system',
-      patterns: '@monorepo/styled-system',
-      jsx: '@monorepo/styled-system',
+      css: "@monorepo/styled-system",
+      recipes: "@monorepo/styled-system",
+      patterns: "@monorepo/styled-system",
+      jsx: "@monorepo/styled-system",
     },
-  })
+  });
   ```
 
   Working with tsconfig paths aliases is easy:
 
   ```ts
   export default defineConfig({
-    outdir: 'styled-system',
+    outdir: "styled-system",
     importMap: {
-      css: 'styled-system/css',
-      recipes: 'styled-system/recipes',
-      patterns: 'styled-system/patterns',
-      jsx: 'styled-system/jsx',
+      css: "styled-system/css",
+      recipes: "styled-system/recipes",
+      patterns: "styled-system/patterns",
+      jsx: "styled-system/jsx",
     },
-  })
+  });
   ```
 
 - Updated dependencies [95b06bb1]
@@ -2548,20 +2593,20 @@
   so this will now work:
 
   ```ts
-  import { css } from 'styled-system/css'
+  import { css } from "styled-system/css";
 
   const paragraphSpacingStyle = css.raw({
-    '&:not(:first-child)': { marginBlockEnd: '1em' },
-  })
+    "&:not(:first-child)": { marginBlockEnd: "1em" },
+  });
 
   export const proseCss = css.raw({
-    maxWidth: '800px',
-    '& p': {
-      '&:not(:first-child)': { marginBlockStart: '1em' },
+    maxWidth: "800px",
+    "& p": {
+      "&:not(:first-child)": { marginBlockStart: "1em" },
     },
-    '& h1': paragraphSpacingStyle,
-    '& h2': paragraphSpacingStyle,
-  })
+    "& h1": paragraphSpacingStyle,
+    "& h2": paragraphSpacingStyle,
+  });
   ```
 
   & use ECMA preset for ts-evaluator: This means that no other globals than those that are defined in the ECMAScript
@@ -2569,35 +2614,35 @@
   this:
 
   ```ts
-  import { cva } from '.panda/css'
+  import { cva } from ".panda/css";
 
   const variants = () => {
     const spacingTokens = Object.entries({
-      s: 'token(spacing.1)',
-      m: 'token(spacing.2)',
-      l: 'token(spacing.3)',
-    })
+      s: "token(spacing.1)",
+      m: "token(spacing.2)",
+      l: "token(spacing.3)",
+    });
 
     const spacingProps = {
-      px: 'paddingX',
-      py: 'paddingY',
-    }
+      px: "paddingX",
+      py: "paddingY",
+    };
 
     // Generate variants programmatically
     return Object.entries(spacingProps)
       .map(([name, styleProp]) => {
         const variants = spacingTokens
           .map(([variant, token]) => ({ [variant]: { [styleProp]: token } }))
-          .reduce((_agg, kv) => ({ ..._agg, ...kv }))
+          .reduce((_agg, kv) => ({ ..._agg, ...kv }));
 
-        return { [name]: variants }
+        return { [name]: variants };
       })
-      .reduce((_agg, kv) => ({ ..._agg, ...kv }))
-  }
+      .reduce((_agg, kv) => ({ ..._agg, ...kv }));
+  };
 
   const baseStyle = cva({
     variants: variants(),
-  })
+  });
   ```
 
 - Updated dependencies [c40ae1b9]
@@ -2737,18 +2782,19 @@
 - a669f4d5: Introduce new slot recipe features.
 
   Slot recipes are useful for styling composite or multi-part components easily.
+
   - `sva`: the slot recipe version of `cva`
   - `defineSlotRecipe`: the slot recipe version of `defineRecipe`
 
   **Definition**
 
   ```jsx
-  import { sva } from 'styled-system/css'
+  import { sva } from "styled-system/css";
 
   const button = sva({
-    slots: ['label', 'icon'],
+    slots: ["label", "icon"],
     base: {
-      label: { color: 'red', textDecoration: 'underline' },
+      label: { color: "red", textDecoration: "underline" },
     },
     variants: {
       rounded: {
@@ -2756,33 +2802,33 @@
       },
       size: {
         sm: {
-          label: { fontSize: 'sm' },
-          icon: { fontSize: 'sm' },
+          label: { fontSize: "sm" },
+          icon: { fontSize: "sm" },
         },
         lg: {
-          label: { fontSize: 'lg' },
-          icon: { fontSize: 'lg', color: 'pink' },
+          label: { fontSize: "lg" },
+          icon: { fontSize: "lg", color: "pink" },
         },
       },
     },
     defaultVariants: {
-      size: 'sm',
+      size: "sm",
     },
-  })
+  });
   ```
 
   **Usage**
 
   ```jsx
   export function App() {
-    const btnClass = button({ size: 'lg', rounded: true })
+    const btnClass = button({ size: "lg", rounded: true });
 
     return (
       <button>
         <p class={btnClass.label}> Label</p>
         <p class={btnClass.icon}> Icon</p>
       </button>
-    )
+    );
   }
   ```
 
@@ -2804,6 +2850,7 @@
 ### Minor Changes
 
 - c08de87f: ### Breaking
+
   - Renamed the `name` property of a config recipe to `className`. This is to ensure API consistency and express the
     intent of the property more clearly.
 
@@ -2830,26 +2877,26 @@
   Update the `jsx` property to be used for advanced tracking of custom pattern components.
 
   ```jsx
-  import { Circle } from 'styled-system/jsx'
+  import { Circle } from "styled-system/jsx";
   const CustomCircle = ({ children, ...props }) => {
-    return <Circle {...props}>{children}</Circle>
-  }
+    return <Circle {...props}>{children}</Circle>;
+  };
   ```
 
   To track the `CustomCircle` component, you can now use the `jsx` property.
 
   ```js
-  import { defineConfig } from '@pandacss/dev'
+  import { defineConfig } from "@pandacss/dev";
 
   export default defineConfig({
     patterns: {
       extend: {
         circle: {
-          jsx: ['CustomCircle'],
+          jsx: ["CustomCircle"],
         },
       },
     },
-  })
+  });
   ```
 
 ### Patch Changes
@@ -2949,9 +2996,17 @@
   ```tsx
   const ComponentWithMultipleRecipes = ({ variant }) => {
     return (
-      <button className={cx(pinkRecipe({ variant }), greenRecipe({ variant }), blueRecipe({ variant }))}>Hello</button>
-    )
-  }
+      <button
+        className={cx(
+          pinkRecipe({ variant }),
+          greenRecipe({ variant }),
+          blueRecipe({ variant })
+        )}
+      >
+        Hello
+      </button>
+    );
+  };
   ```
 
   Given a `panda.config.ts` with recipes each including a common `jsx` tag name, such as:
@@ -3013,6 +3068,7 @@
 - a3d760ce: Do not allow all JSX properties to be extracted if none provided, rely on the `isStyleProp` fn instead
 
   This fixes cases when :
+
   - `eject: true` and only the `@pandacss/preset-base` is used (or none)
   - some non-styling JSX prop is extracted leading to an incorrect CSS rule being generated, ex:
 
@@ -3058,8 +3114,8 @@
   // panda.config.ts
   export default defineConfig({
     //...
-    syntax: 'template-literal',
-  })
+    syntax: "template-literal",
+  });
   ```
 
   > For existing projects, you might need to run the `panda codegen --clean`
@@ -3080,10 +3136,10 @@
   ```ts
   const Input = styled.input({
     base: {
-      color: 'blue.100',
-      bg: 'blue.900',
+      color: "blue.100",
+      bg: "blue.900",
     },
-  })
+  });
   ```
 
 - Updated dependencies [60df9bd1]
@@ -3152,6 +3208,7 @@
 ### Patch Changes
 
 - fb40fff2: Initial release of all packages
+
   - Internal AST parser for TS and TSX
   - Support for defining presets in config
   - Support for design tokens (core and semantic)

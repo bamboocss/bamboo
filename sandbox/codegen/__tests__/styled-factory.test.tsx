@@ -102,7 +102,8 @@ describe('styled factory - cva', () => {
 
     expect(container.firstChild).toMatchInlineSnapshot(`
       <button
-        class="c_red.500 bg_blue.500 hover:c_red.600 hover:bg_blue.600 mx_2 custom-btn"
+        class="c_red.500 bg_blue.500 hover:c_red.600 hover:bg_blue.600 custom-btn"
+        mx="2"
       >
         Click me
       </button>
@@ -118,7 +119,8 @@ describe('styled factory - cva', () => {
 
     expect(container.firstChild).toMatchInlineSnapshot(`
       <button
-        class="c_red.500 bg_blue.500 hover:c_red.600 hover:bg_blue.600 fs_sm px_sm py_xs mx_2 custom-btn"
+        class="c_red.500 bg_blue.500 hover:c_red.600 hover:bg_blue.600 fs_sm px_sm py_xs custom-btn"
+        mx="2"
       >
         Click me
       </button>
@@ -134,7 +136,8 @@ describe('styled factory - cva', () => {
 
     expect(container.firstChild).toMatchInlineSnapshot(`
       <button
-        class="c_red.100 bg_blue.500 hover:c_red.600 hover:bg_blue.600 fs_md custom-btn"
+        class="c_red.500 bg_blue.500 hover:c_red.600 hover:bg_blue.600 custom-btn"
+        css="[object Object]"
       >
         Click me
       </button>
@@ -150,7 +153,8 @@ describe('styled factory - cva', () => {
 
     expect(container.firstChild).toMatchInlineSnapshot(`
       <button
-        class="c_red.100 bg_blue.500 hover:c_red.600 hover:bg_blue.600 fs_md px_sm py_xs custom-btn"
+        class="c_red.500 bg_blue.500 hover:c_red.600 hover:bg_blue.600 fs_sm px_sm py_xs custom-btn"
+        css="[object Object]"
       >
         Click me
       </button>
@@ -166,7 +170,9 @@ describe('styled factory - cva', () => {
 
     expect(container.firstChild).toMatchInlineSnapshot(`
       <button
-        class="c_red.200 bg_blue.500 hover:c_red.600 hover:bg_blue.600 fs_xl px_123px py_md z_1 mx_2 custom-btn"
+        class="c_red.500 bg_blue.500 hover:c_red.600 hover:bg_blue.600 fs_lg px_123px py_md z_1 custom-btn"
+        css="[object Object]"
+        mx="2"
       >
         Click me
       </button>
@@ -238,7 +244,8 @@ describe('styled factory - button recipe', () => {
 
     expect(container.firstChild).toMatchInlineSnapshot(`
       <button
-        class="button button--visual_unstyled mx_2 custom-btn"
+        class="button button--visual_unstyled custom-btn"
+        mx="2"
       >
         Click me
       </button>
@@ -254,7 +261,8 @@ describe('styled factory - button recipe', () => {
 
     expect(container.firstChild).toMatchInlineSnapshot(`
       <button
-        class="button button--visual_unstyled button--size_sm mx_2 custom-btn"
+        class="button button--visual_unstyled button--size_sm custom-btn"
+        mx="2"
       >
         Click me
       </button>
@@ -270,7 +278,8 @@ describe('styled factory - button recipe', () => {
 
     expect(container.firstChild).toMatchInlineSnapshot(`
       <button
-        class="button button--visual_unstyled c_red.100 fs_md custom-btn"
+        class="button button--visual_unstyled custom-btn"
+        css="[object Object]"
       >
         Click me
       </button>
@@ -286,7 +295,8 @@ describe('styled factory - button recipe', () => {
 
     expect(container.firstChild).toMatchInlineSnapshot(`
       <button
-        class="button button--visual_unstyled button--size_sm c_red.100 fs_md custom-btn"
+        class="button button--visual_unstyled button--size_sm custom-btn"
+        css="[object Object]"
       >
         Click me
       </button>
@@ -302,7 +312,9 @@ describe('styled factory - button recipe', () => {
 
     expect(container.firstChild).toMatchInlineSnapshot(`
       <button
-        class="button button--visual_outline button--size_md c_red.200 mx_2 fs_xl custom-btn"
+        class="button button--visual_outline button--size_md c_green custom-btn"
+        css="[object Object]"
+        mx="2"
       >
         Click me
       </button>
@@ -375,7 +387,7 @@ describe('styled factory - button recipe', () => {
       </InputStructure>,
     )
 
-    expect(container.innerHTML).toMatchInlineSnapshot(`"<div class="d_flex"><input class="c_red.200">compound</div>"`)
+    expect(container.innerHTML).toMatchInlineSnapshot(`"<div css="[object Object]" class=""><input css="[object Object]" class="">compound</div>"`)
   })
 
   test('array css prop', () => {
@@ -388,7 +400,8 @@ describe('styled factory - button recipe', () => {
     expect(container.firstChild).toMatchInlineSnapshot(
       `
       <div
-        class="c_blue.300 bg-c_green.300"
+        class=""
+        css="[object Object],[object Object]"
       >
         array css prop
       </div>

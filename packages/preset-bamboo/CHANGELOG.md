@@ -1,5 +1,13 @@
 # @pandacss/preset-panda
 
+## 1.11.3
+
+### Patch Changes
+
+- fix shared package producing chunk files that break codegen output
+- Updated dependencies
+  - @bamboocss/types@1.11.3
+
 ## 1.11.2
 
 ### Patch Changes
@@ -190,43 +198,43 @@
   Add `createStyleContext` function to framework artifacts for React, Preact, Solid, and Vue frameworks
 
   ```tsx
-  import { sva } from 'styled-system/css'
-  import { createStyleContext } from 'styled-system/jsx'
+  import { sva } from "styled-system/css";
+  import { createStyleContext } from "styled-system/jsx";
 
   const card = sva({
-    slots: ['root', 'label'],
+    slots: ["root", "label"],
     base: {
       root: {
-        color: 'red',
-        bg: 'red.300',
+        color: "red",
+        bg: "red.300",
       },
       label: {
-        fontWeight: 'medium',
+        fontWeight: "medium",
       },
     },
     variants: {
       size: {
         sm: {
           root: {
-            padding: '10px',
+            padding: "10px",
           },
         },
         md: {
           root: {
-            padding: '20px',
+            padding: "20px",
           },
         },
       },
     },
     defaultVariants: {
-      size: 'sm',
+      size: "sm",
     },
-  })
+  });
 
-  const { withProvider, withContext } = createStyleContext(card)
+  const { withProvider, withContext } = createStyleContext(card);
 
-  const CardRoot = withProvider('div', 'root')
-  const CardLabel = withContext('label', 'label')
+  const CardRoot = withProvider("div", "root");
+  const CardLabel = withContext("label", "label");
   ```
 
   Then, use like this:
@@ -336,28 +344,28 @@
   Here's an example of this:
 
   ```jsx
-  import { defineAnimationStyles } from '@pandacss/dev'
+  import { defineAnimationStyles } from "@pandacss/dev";
 
   export const animationStyles = defineAnimationStyles({
-    'slide-fade-in': {
+    "slide-fade-in": {
       value: {
-        transformOrigin: 'var(--transform-origin)',
-        animationDuration: 'fast',
-        '&[data-placement^=top]': {
-          animationName: 'slide-from-top, fade-in',
+        transformOrigin: "var(--transform-origin)",
+        animationDuration: "fast",
+        "&[data-placement^=top]": {
+          animationName: "slide-from-top, fade-in",
         },
-        '&[data-placement^=bottom]': {
-          animationName: 'slide-from-bottom, fade-in',
+        "&[data-placement^=bottom]": {
+          animationName: "slide-from-bottom, fade-in",
         },
-        '&[data-placement^=left]': {
-          animationName: 'slide-from-left, fade-in',
+        "&[data-placement^=left]": {
+          animationName: "slide-from-left, fade-in",
         },
-        '&[data-placement^=right]': {
-          animationName: 'slide-from-right, fade-in',
+        "&[data-placement^=right]": {
+          animationName: "slide-from-right, fade-in",
         },
       },
     },
-  })
+  });
   ```
 
   With that defined, I can use it in my recipe or css like so:
@@ -368,14 +376,14 @@
     base: {
       content: {
         _open: {
-          animationStyle: 'scale-fade-in',
+          animationStyle: "scale-fade-in",
         },
         _closed: {
-          animationStyle: 'scale-fade-out',
+          animationStyle: "scale-fade-out",
         },
       },
     },
-  })
+  });
   ```
 
   This feature will drive consumers to lean in towards CSS for animations rather than JS. Composing animation names is a
@@ -694,6 +702,7 @@
 - 84304901: Improve performance, mostly for the CSS generation by removing a lot of `postcss` usage (and plugins).
 
   ## Public changes:
+
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
@@ -701,6 +710,7 @@
     this run.
 
   ## Internal changes:
+
   - `markImportant` fn from JS instead of walking through postcss AST nodes
   - use a fork of `stitches` `stringify` function instead of `postcss-css-in-js` to write the CSS string from a JS
     object
@@ -719,13 +729,13 @@
         // add aspect ratio tokens
         tokens: {
           aspectRatios: {
-            '1:1': '1',
-            '16:9': '16/9',
+            "1:1": "1",
+            "16:9": "16/9",
           },
         },
       },
     },
-  })
+  });
   ```
 
   Here's what the default aspect ratio tokens in the base preset looks like:

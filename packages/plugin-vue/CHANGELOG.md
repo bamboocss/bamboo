@@ -1,5 +1,13 @@
 # @pandacss/plugin-vue
 
+## 1.11.3
+
+### Patch Changes
+
+- fix shared package producing chunk files that break codegen output
+- Updated dependencies
+  - @bamboocss/types@1.11.3
+
 ## 1.11.2
 
 ### Patch Changes

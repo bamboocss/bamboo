@@ -1,6 +1,6 @@
 {
   "name": "@bamboocss/plugin-svelte",
-  "version": "1.11.2",
+  "version": "1.11.3",
   "description": "Bamboo CSS plugin for Svelte single file component support",
   "homepage": "https://bamboo-css.com",
   "license": "MIT",

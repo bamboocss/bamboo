@@ -1,5 +1,18 @@
 # @pandacss/studio
 
+## 1.11.3
+
+### Patch Changes
+
+- fix shared package producing chunk files that break codegen output
+- Updated dependencies
+  - @bamboocss/astro-plugin-studio@1.11.3
+  - @bamboocss/config@1.11.3
+  - @bamboocss/logger@1.11.3
+  - @bamboocss/shared@1.11.3
+  - @bamboocss/token-dictionary@1.11.3
+  - @bamboocss/types@1.11.3
+
 ## 1.11.2
 
 ### Patch Changes
