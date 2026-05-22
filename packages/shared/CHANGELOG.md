@@ -1,5 +1,11 @@
 # @bamboocss/shared
 
+## 1.12.2
+
+## 1.12.1
+
+## 1.12.0
+
 ## 1.11.5
 
 ## 1.11.4
@@ -30,7 +36,7 @@
 ### Patch Changes
 
 - c31f3a2: Improve error handling architecture across all packages.
-- 44457bb: Use TypeScript 6.0 or later with Panda. This release updates static analysis and codegen to ts-morph v28 and
+- 44457bb: Use TypeScript 6.0 or later with Bamboo. This release updates static analysis and codegen to ts-morph v28 and
   TypeScript 6.0.2.
 
 ## 1.9.1
@@ -65,8 +71,8 @@
 
 ### Patch Changes
 
-- 1290a27: Only log errors that are instances of `PandaError`, preventing test framework and other non-Panda errors from
-  being logged during development.
+- 1290a27: Only log errors that are instances of `BambooError`, preventing test framework and other non-Bamboo errors
+  from being logged during development.
 
 ## 1.4.1
 
@@ -90,7 +96,7 @@
 
 ### Major Changes
 
-- a3bcbea: Stable release of PandaCSS
+- a3bcbea: Stable release of BambooCSS
 
   ### Style Context
 
@@ -299,7 +305,7 @@
 - 935ec86: Allow passing arrays of `SystemStyleObject` to the `css(xxx, [aaa, bbb, ccc], yyy)` fn
 
   This is useful when you are creating your own styled component and want to benefit
-  [from the recent `css` array property support](https://github.com/bamboocss/panda/pull/2515).
+  [from the recent `css` array property support](https://github.com/bamboocss/bamboo/pull/2515).
 
   ```diff
   import { css } from 'styled-system/css'
@@ -470,8 +476,8 @@
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
-  - Add a `--lightningcss` flag to the `panda` and `panda cssgen` command to use `lightningcss` instead of `postcss` for
-    this run.
+  - Add a `--lightningcss` flag to the `bamboo` and `bamboo cssgen` command to use `lightningcss` instead of `postcss`
+    for this run.
 
   ## Internal changes:
   - `markImportant` fn from JS instead of walking through postcss AST nodes
@@ -487,7 +493,7 @@
   recipe/slot recipe, patterns)
 
   > See detailed breakdown of the performance improvements
-  > [here](https://github.com/bamboocss/panda/pull/1986#issuecomment-1887459483) based on the React Profiler.
+  > [here](https://github.com/bamboocss/bamboo/pull/1986#issuecomment-1887459483) based on the React Profiler.
 
 ## 0.26.2
 
@@ -655,7 +661,7 @@
 - f27146d6: Fix an issue where some JSX components wouldn't get matched to their corresponding recipes/patterns when
   using `Regex` in the `jsx` field of a config, resulting in some style props missing.
 
-  issue: https://github.com/bamboocss/panda/issues/1315
+  issue: https://github.com/bamboocss/bamboo/issues/1315
 
 ## 0.14.0
 
@@ -809,22 +815,22 @@
   This features is pure css approach to writing styles, and can be a great way to migrate from styled-components and
   emotion.
 
-  Set the `syntax` option to `template-literal` in the panda config to enable this feature.
+  Set the `syntax` option to `template-literal` in the bamboo config to enable this feature.
 
   ```js
-  // panda.config.ts
+  // bamboo.config.ts
   export default defineConfig({
     //...
     syntax: 'template-literal',
   })
   ```
 
-  > For existing projects, you might need to run the `panda codegen --clean`
+  > For existing projects, you might need to run the `bamboo codegen --clean`
 
   You can also use the `--syntax` option to specify the syntax type when using the CLI.
 
   ```sh
-  panda init -p --syntax template-literal
+  bamboo init -p --syntax template-literal
   ```
 
   To get autocomplete for token variables, consider using the
@@ -927,8 +933,8 @@ export default defineConfig({
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
-  - Add a `--lightningcss` flag to the `panda` and `panda cssgen` command to use `lightningcss` instead of `postcss` for
-    this run.
+  - Add a `--lightningcss` flag to the `bamboo` and `bamboo cssgen` command to use `lightningcss` instead of `postcss`
+    for this run.
 
   ## Internal changes:
   - `markImportant` fn from JS instead of walking through postcss AST nodes
@@ -944,7 +950,7 @@ export default defineConfig({
   recipe/slot recipe, patterns)
 
   > See detailed breakdown of the performance improvements
-  > [here](https://github.com/bamboocss/panda/pull/1986#issuecomment-1887459483) based on the React Profiler.
+  > [here](https://github.com/bamboocss/bamboo/pull/1986#issuecomment-1887459483) based on the React Profiler.
 
 ## 0.26.2
 
@@ -1112,7 +1118,7 @@ export default defineConfig({
 - f27146d6: Fix an issue where some JSX components wouldn't get matched to their corresponding recipes/patterns when
   using `Regex` in the `jsx` field of a config, resulting in some style props missing.
 
-  issue: https://github.com/bamboocss/panda/issues/1315
+  issue: https://github.com/bamboocss/bamboo/issues/1315
 
 ## 0.14.0
 
@@ -1266,22 +1272,22 @@ export default defineConfig({
   This features is pure css approach to writing styles, and can be a great way to migrate from styled-components and
   emotion.
 
-  Set the `syntax` option to `template-literal` in the panda config to enable this feature.
+  Set the `syntax` option to `template-literal` in the bamboo config to enable this feature.
 
   ```js
-  // panda.config.ts
+  // bamboo.config.ts
   export default defineConfig({
     //...
     syntax: 'template-literal',
   })
   ```
 
-  > For existing projects, you might need to run the `panda codegen --clean`
+  > For existing projects, you might need to run the `bamboo codegen --clean`
 
   You can also use the `--syntax` option to specify the syntax type when using the CLI.
 
   ```sh
-  panda init -p --syntax template-literal
+  bamboo init -p --syntax template-literal
   ```
 
   To get autocomplete for token variables, consider using the

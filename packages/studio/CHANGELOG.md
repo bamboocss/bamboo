@@ -1,5 +1,38 @@
 # @bamboocss/studio
 
+## 1.12.2
+
+### Patch Changes
+
+- @bamboocss/astro-plugin-studio@1.12.2
+- @bamboocss/config@1.12.2
+- @bamboocss/logger@1.12.2
+- @bamboocss/shared@1.12.2
+- @bamboocss/token-dictionary@1.12.2
+- @bamboocss/types@1.12.2
+
+## 1.12.1
+
+### Patch Changes
+
+- @bamboocss/astro-plugin-studio@1.12.1
+- @bamboocss/config@1.12.1
+- @bamboocss/logger@1.12.1
+- @bamboocss/shared@1.12.1
+- @bamboocss/token-dictionary@1.12.1
+- @bamboocss/types@1.12.1
+
+## 1.12.0
+
+### Patch Changes
+
+- @bamboocss/astro-plugin-studio@1.12.0
+- @bamboocss/config@1.12.0
+- @bamboocss/logger@1.12.0
+- @bamboocss/shared@1.12.0
+- @bamboocss/token-dictionary@1.12.0
+- @bamboocss/types@1.12.0
+
 ## 1.11.5
 
 ### Patch Changes
@@ -224,7 +257,7 @@
 ### Patch Changes
 
 - 9af6a12: ### Fixed
-  - Fix semantic tokens defined in `defineTheme` not showing in Panda Studio. We now show a theme selector in the token
+  - Fix semantic tokens defined in `defineTheme` not showing in Bamboo Studio. We now show a theme selector in the token
     pages for the theme-aware tokens.
   - Improve performance when searching for tokens.
   - @bamboocss/astro-plugin-studio@1.6.0
@@ -367,7 +400,7 @@
 
 ### Major Changes
 
-- a3bcbea: Stable release of PandaCSS
+- a3bcbea: Stable release of BambooCSS
 
   ### Style Context
 
@@ -872,14 +905,14 @@
   (mostly) Internal changes:
   - Add `deepResolveReference` in TokenDictionary, helpful to get the raw value from a semantic token by recursively
     traversing the token references.
-  - Added some exports in the `@bamboocss/token-dictionary` package, mostly useful when building tooling around Panda
+  - Added some exports in the `@bamboocss/token-dictionary` package, mostly useful when building tooling around Bamboo
     (Prettier/ESLint/VSCode plugin etc)
 
 - 885963c: - Fix an issue where the `compoundVariants` classes would not be present at runtime when using
   `config recipes`
 
   ```ts
-  // panda.config.ts
+  // bamboo.config.ts
   import { defineConfig } from "@bamboocss/dev";
 
   export default defineConfig({
@@ -1008,7 +1041,7 @@
   Example:
 
   ```ts
-  // panda.config.ts
+  // bamboo.config.ts
 
   export default defineConfig({
     // ...
@@ -1352,8 +1385,8 @@
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
-  - Add a `--lightningcss` flag to the `panda` and `panda cssgen` command to use `lightningcss` instead of `postcss` for
-    this run.
+  - Add a `--lightningcss` flag to the `bamboo` and `bamboo cssgen` command to use `lightningcss` instead of `postcss`
+    for this run.
 
   ## Internal changes:
   - `markImportant` fn from JS instead of walking through postcss AST nodes
@@ -1839,7 +1872,7 @@
 
   With this config recipe:
 
-  ```ts file="panda.config.ts"
+  ```ts file="bamboo.config.ts"
   const button = defineRecipe({
     className: 'btn',
     base: { color: 'green', fontSize: '16px' },
@@ -1888,7 +1921,7 @@
 
 - 26a788c0: - Switch to interface for runtime types
   - Create custom partial types for each config object property
-- f3c30d60: Fix issue where studio uses studio config, instead of custom panda config.
+- f3c30d60: Fix issue where studio uses studio config, instead of custom bamboo config.
 - Updated dependencies [f3c30d60]
 - Updated dependencies [26a788c0]
 - Updated dependencies [2645c2da]
@@ -1921,7 +1954,7 @@
 - f27146d6: Fix an issue where some JSX components wouldn't get matched to their corresponding recipes/patterns when
   using `Regex` in the `jsx` field of a config, resulting in some style props missing.
 
-  issue: https://github.com/bamboocss/panda/issues/1315
+  issue: https://github.com/bamboocss/bamboo/issues/1315
 
 - Updated dependencies [4bc515ea]
 - Updated dependencies [9f429d35]
@@ -1958,7 +1991,7 @@
 
 ### Patch Changes
 
-- 577dcb9d: Fix issue where Panda does not detect styles after nested template in vue
+- 577dcb9d: Fix issue where Bamboo does not detect styles after nested template in vue
 - Updated dependencies [d0fbc7cc]
   - @bamboocss/config@0.13.1
   - @bamboocss/node@0.13.1
@@ -2055,21 +2088,21 @@ export default defineConfig({
 })
 ```
 
-- d5977c24: - Add a `--logfile` flag to the `panda`, `panda codegen`, `panda cssgen` and `panda debug` commands.
+- d5977c24: - Add a `--logfile` flag to the `bamboo`, `bamboo codegen`, `bamboo cssgen` and `bamboo debug` commands.
   - Add a `logfile` option to the postcss plugin
 
   Logs will be streamed to the file specified by the `--logfile` flag or the `logfile` option. This is useful for
   debugging issues that occur during the build process.
 
   ```sh
-  panda --logfile ./logs/panda.log
+  bamboo --logfile ./logs/bamboo.log
   ```
 
   ```js
   module.exports = {
     plugins: {
       '@bamboocss/dev/postcss': {
-        logfile: './logs/panda.log',
+        logfile: './logs/bamboo.log',
       },
     },
   }
@@ -2176,8 +2209,8 @@ export default defineConfig({
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
-  - Add a `--lightningcss` flag to the `panda` and `panda cssgen` command to use `lightningcss` instead of `postcss` for
-    this run.
+  - Add a `--lightningcss` flag to the `bamboo` and `bamboo cssgen` command to use `lightningcss` instead of `postcss`
+    for this run.
 
   ## Internal changes:
   - `markImportant` fn from JS instead of walking through postcss AST nodes
@@ -2663,7 +2696,7 @@ export default defineConfig({
 
   With this config recipe:
 
-  ```ts file="panda.config.ts"
+  ```ts file="bamboo.config.ts"
   const button = defineRecipe({
     className: 'btn',
     base: { color: 'green', fontSize: '16px' },
@@ -2712,7 +2745,7 @@ export default defineConfig({
 
 - 26a788c0: - Switch to interface for runtime types
   - Create custom partial types for each config object property
-- f3c30d60: Fix issue where studio uses studio config, instead of custom panda config.
+- f3c30d60: Fix issue where studio uses studio config, instead of custom bamboo config.
 - Updated dependencies [f3c30d60]
 - Updated dependencies [26a788c0]
 - Updated dependencies [2645c2da]
@@ -2745,7 +2778,7 @@ export default defineConfig({
 - f27146d6: Fix an issue where some JSX components wouldn't get matched to their corresponding recipes/patterns when
   using `Regex` in the `jsx` field of a config, resulting in some style props missing.
 
-  issue: https://github.com/bamboocss/panda/issues/1315
+  issue: https://github.com/bamboocss/bamboo/issues/1315
 
 - Updated dependencies [4bc515ea]
 - Updated dependencies [9f429d35]
@@ -2782,7 +2815,7 @@ export default defineConfig({
 
 ### Patch Changes
 
-- 577dcb9d: Fix issue where Panda does not detect styles after nested template in vue
+- 577dcb9d: Fix issue where Bamboo does not detect styles after nested template in vue
 - Updated dependencies [d0fbc7cc]
   - @bamboocss/config@0.13.1
   - @bamboocss/node@0.13.1

@@ -1,0 +1,62 @@
+{
+  "name": "@bamboocss/eslint-plugin",
+  "version": "1.12.2",
+  "description": "ESLint plugin for Bamboo CSS",
+  "homepage": "https://bamboo-css.com",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bamboocss/bamboo.git",
+    "directory": "packages/eslint-plugin"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "default": "./dist/index.mjs",
+        "types": "./dist/index.d.mts"
+      },
+      "require": "./dist/index.js",
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "build-fast": "tsdown --dts=false",
+    "dev": "tsdown --watch"
+  },
+  "dependencies": {
+    "@bamboocss/config": "workspace:*",
+    "@bamboocss/generator": "workspace:*",
+    "@bamboocss/shared": "workspace:*",
+    "@typescript-eslint/scope-manager": "^8.43.0",
+    "@typescript-eslint/utils": "^8.21.0",
+    "micromatch": "^4.0.8",
+    "synckit": "^0.9.0"
+  },
+  "devDependencies": {
+    "@bamboocss/dev": "workspace:*",
+    "@bamboocss/preset-base": "workspace:*",
+    "@bamboocss/preset-bamboo": "workspace:*",
+    "@bamboocss/types": "workspace:*",
+    "@types/micromatch": "^4.0.10",
+    "@typescript-eslint/rule-tester": "^8.43.0",
+    "eslint": "^9.35.0",
+    "multiline-ts": "^4.0.1",
+    "typescript": "^5.7.2"
+  },
+  "peerDependencies": {
+    "eslint": "*"
+  }
+}

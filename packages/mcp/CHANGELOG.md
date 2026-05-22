@@ -1,5 +1,32 @@
 # @bamboocss/mcp
 
+## 1.12.2
+
+### Patch Changes
+
+- @bamboocss/logger@1.12.2
+- @bamboocss/node@1.12.2
+- @bamboocss/token-dictionary@1.12.2
+- @bamboocss/types@1.12.2
+
+## 1.12.1
+
+### Patch Changes
+
+- @bamboocss/logger@1.12.1
+- @bamboocss/node@1.12.1
+- @bamboocss/token-dictionary@1.12.1
+- @bamboocss/types@1.12.1
+
+## 1.12.0
+
+### Patch Changes
+
+- @bamboocss/logger@1.12.0
+- @bamboocss/node@1.12.0
+- @bamboocss/token-dictionary@1.12.0
+- @bamboocss/types@1.12.0
+
 ## 1.11.5
 
 ### Patch Changes
@@ -134,7 +161,7 @@
 - d7e46e0: **MCP Server [NEW]**: Added MCP server that exposes tools for AI agents.
 
   ```sh
-  panda init-mcp
+  bamboo init-mcp
   ```
 
   Available tools: `get_tokens`, `get_semantic_tokens`, `get_recipes`, `get_patterns`, `get_conditions`,

@@ -1,8 +1,8 @@
 import { createElement, forwardRef, useMemo } from 'react'
-import { css, cx, cva } from '../css/index.mjs'
-import { defaultShouldForwardProp, composeShouldForwardProps, composeCvaFn, getDisplayName } from './factory-helper.mjs'
-import { splitProps, normalizeHTMLProps } from '../helpers.mjs'
-import { isCssProperty } from './is-valid-prop.mjs'
+import { css, cx, cva } from '../css/index.mjs';
+import { defaultShouldForwardProp, composeShouldForwardProps, composeCvaFn, getDisplayName } from './factory-helper.mjs';
+import { splitProps, normalizeHTMLProps } from '../helpers.mjs';
+import { isCssProperty } from './is-valid-prop.mjs';
 
 function styledFn(Dynamic, configOrCva = {}, options = {}) {
   const cvaFn = configOrCva.__cva__ || configOrCva.__recipe__ ? configOrCva : cva(configOrCva)
@@ -12,7 +12,7 @@ function styledFn(Dynamic, configOrCva = {}, options = {}) {
     if (options.forwardProps?.includes(prop)) return true
     return forwardFn(prop, cvaFn.variantKeys)
   }
-
+  
   const defaultProps = Object.assign(
     options.dataAttr && configOrCva.__name__ ? { 'data-recipe': configOrCva.__name__ } : {},
     options.defaultProps,
@@ -28,23 +28,13 @@ function styledFn(Dynamic, configOrCva = {}, options = {}) {
     const combinedProps = useMemo(() => Object.assign({}, defaultProps, restProps), [restProps])
 
     const [htmlProps, forwardedProps, variantProps, styleProps, elementProps] = useMemo(() => {
-      return splitProps(
-        combinedProps,
-        normalizeHTMLProps.keys,
-        __shouldForwardProps__,
-        __cvaFn__.variantKeys,
-        isCssProperty,
-      )
+      return splitProps(combinedProps, normalizeHTMLProps.keys, __shouldForwardProps__, __cvaFn__.variantKeys, isCssProperty)
     }, [combinedProps])
 
     function recipeClass() {
       const { css: cssStyles, ...propStyles } = styleProps
       const compoundVariantStyles = __cvaFn__.__getCompoundVariantCss__?.(variantProps)
-      return cx(
-        __cvaFn__(variantProps, false),
-        css(compoundVariantStyles, propStyles, cssStyles),
-        combinedProps.className,
-      )
+      return cx(__cvaFn__(variantProps, false), css(compoundVariantStyles, propStyles, cssStyles), combinedProps.className)
     }
 
     function cvaClass() {
@@ -61,17 +51,13 @@ function styledFn(Dynamic, configOrCva = {}, options = {}) {
       return configOrCva.__recipe__ ? recipeClass() : cvaClass()
     }
 
-    return createElement(
-      Element,
-      {
-        ref,
-        ...forwardedProps,
-        ...elementProps,
-        ...normalizeHTMLProps(htmlProps),
-        className: classes(),
-      },
-      children ?? combinedProps.children,
-    )
+    return createElement(Element, {
+      ref,
+      ...forwardedProps,
+      ...elementProps,
+      ...normalizeHTMLProps(htmlProps),
+      className: classes(),
+    }, children ?? combinedProps.children)
   })
 
   const name = getDisplayName(__base__)

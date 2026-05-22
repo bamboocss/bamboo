@@ -1,5 +1,35 @@
 # @bamboocss/reporter
 
+## 1.12.2
+
+### Patch Changes
+
+- @bamboocss/core@1.12.2
+- @bamboocss/generator@1.12.2
+- @bamboocss/logger@1.12.2
+- @bamboocss/shared@1.12.2
+- @bamboocss/types@1.12.2
+
+## 1.12.1
+
+### Patch Changes
+
+- @bamboocss/core@1.12.1
+- @bamboocss/generator@1.12.1
+- @bamboocss/logger@1.12.1
+- @bamboocss/shared@1.12.1
+- @bamboocss/types@1.12.1
+
+## 1.12.0
+
+### Patch Changes
+
+- @bamboocss/core@1.12.0
+- @bamboocss/generator@1.12.0
+- @bamboocss/logger@1.12.0
+- @bamboocss/shared@1.12.0
+- @bamboocss/types@1.12.0
+
 ## 1.11.5
 
 ### Patch Changes
@@ -348,7 +378,7 @@
 
 ### Major Changes
 
-- a3bcbea: Stable release of PandaCSS
+- a3bcbea: Stable release of BambooCSS
 
   ### Style Context
 
@@ -591,7 +621,7 @@
   - How many hardcoded values vs tokens do we have?
 
   ```sh
-  panda analyze --scope=<token|recipe>
+  bamboo analyze --scope=<token|recipe>
   ```
 
   > Still work in progress but we're excited to get your feedback!

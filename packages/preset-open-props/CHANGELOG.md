@@ -1,5 +1,23 @@
 # @bamboocss/preset-open-props
 
+## 1.12.2
+
+### Patch Changes
+
+- @bamboocss/types@1.12.2
+
+## 1.12.1
+
+### Patch Changes
+
+- @bamboocss/types@1.12.1
+
+## 1.12.0
+
+### Patch Changes
+
+- @bamboocss/types@1.12.0
+
 ## 1.11.5
 
 ### Patch Changes
@@ -200,7 +218,7 @@
 
 ### Major Changes
 
-- a3bcbea: Stable release of PandaCSS
+- a3bcbea: Stable release of BambooCSS
 
   ### Style Context
 
@@ -654,8 +672,8 @@
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
-  - Add a `--lightningcss` flag to the `panda` and `panda cssgen` command to use `lightningcss` instead of `postcss` for
-    this run.
+  - Add a `--lightningcss` flag to the `bamboo` and `bamboo cssgen` command to use `lightningcss` instead of `postcss`
+    for this run.
 
   ## Internal changes:
   - `markImportant` fn from JS instead of walking through postcss AST nodes

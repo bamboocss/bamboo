@@ -1,20 +1,19 @@
-import { getPatternStyles, patternFns } from '../helpers.mjs'
-import { css } from '../css/index.mjs'
+import { getPatternStyles, patternFns } from '../helpers.mjs';
+import { css } from '../css/index.mjs';
 
 const vstackConfig = {
-  transform(props) {
-    const { justify, gap, ...rest } = props
-    return {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: justify,
-      gap,
-      flexDirection: 'column',
-      ...rest,
-    }
-  },
-  defaultValues: { gap: '8px' },
-}
+transform(props) {
+	const { justify, gap, ...rest } = props;
+	return {
+		display: "flex",
+		alignItems: "center",
+		justifyContent: justify,
+		gap,
+		flexDirection: "column",
+		...rest
+	};
+},
+defaultValues:{gap:'8px'}}
 
 export const getVstackStyle = (styles = {}) => {
   const _styles = getPatternStyles(vstackConfig, styles)

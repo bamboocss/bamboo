@@ -33,5 +33,5 @@ lerna-debug.log*
 *.sln
 *.sw?
 
-## Panda
+## Bamboo
 src/styled-system

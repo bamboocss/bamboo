@@ -1,5 +1,29 @@
 # @bamboocss/token-dictionary
 
+## 1.12.2
+
+### Patch Changes
+
+- @bamboocss/logger@1.12.2
+- @bamboocss/shared@1.12.2
+- @bamboocss/types@1.12.2
+
+## 1.12.1
+
+### Patch Changes
+
+- @bamboocss/logger@1.12.1
+- @bamboocss/shared@1.12.1
+- @bamboocss/types@1.12.1
+
+## 1.12.0
+
+### Patch Changes
+
+- @bamboocss/logger@1.12.0
+- @bamboocss/shared@1.12.0
+- @bamboocss/types@1.12.0
+
 ## 1.11.5
 
 ### Patch Changes
@@ -242,8 +266,8 @@
 
 ### Patch Changes
 
-- 1290a27: Only log errors that are instances of `PandaError`, preventing test framework and other non-Panda errors from
-  being logged during development.
+- 1290a27: Only log errors that are instances of `BambooError`, preventing test framework and other non-Bamboo errors
+  from being logged during development.
 - 70420dd: Fix issue where using `token()` or `token.var()` function from `styled-system/tokens` doesn't get resolved by
   the compiler.
 
@@ -336,7 +360,7 @@
 
 ### Major Changes
 
-- a3bcbea: Stable release of PandaCSS
+- a3bcbea: Stable release of BambooCSS
 
   ### Style Context
 
@@ -507,7 +531,7 @@
   This enables the use of semantic tokens in composite shadow properties.
 
   ```ts
-  // panda.config.ts
+  // bamboo.config.ts
 
   export default defineConfig({
     theme: {
@@ -577,10 +601,10 @@
 
 - 5e683ee: Add support for cursor token types. Useful for tokenizing cursor types for interactive components.
 
-  Here's an example of how to define a cursor token in your `panda.config.ts` file:
+  Here's an example of how to define a cursor token in your `bamboo.config.ts` file:
 
   ```ts
-  // panda.config.ts
+  // bamboo.config.ts
   export default defineConfig({
     theme: {
       extend: {
@@ -848,7 +872,7 @@
   (mostly) Internal changes:
   - Add `deepResolveReference` in TokenDictionary, helpful to get the raw value from a semantic token by recursively
     traversing the token references.
-  - Added some exports in the `@bamboocss/token-dictionary` package, mostly useful when building tooling around Panda
+  - Added some exports in the `@bamboocss/token-dictionary` package, mostly useful when building tooling around Bamboo
     (Prettier/ESLint/VSCode plugin etc)
 
 - Updated dependencies [885963c]
@@ -890,7 +914,7 @@
   Example:
 
   ```ts
-  // panda.config.ts
+  // bamboo.config.ts
   import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
@@ -963,7 +987,7 @@
   `staticCss.themes` to include them in the CSS output.
 
   ```ts
-  // panda.config.ts
+  // bamboo.config.ts
   import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
@@ -983,7 +1007,7 @@
       --colors-body: var(--colors-blue-600);
     }
 
-    [data-panda-theme='primary'] {
+    [data-bamboo-theme='primary'] {
       --colors-text: red;
       --colors-muted: var(--colors-red-200);
       --colors-body: var(--colors-red-600);
@@ -994,7 +1018,7 @@
         --colors-body: var(--colors-blue-400);
       }
 
-      [data-panda-theme='primary'] {
+      [data-bamboo-theme='primary'] {
         --colors-body: var(--colors-red-400);
       }
     }
@@ -1014,9 +1038,9 @@
   ```json
   {
     "name": "primary",
-    "id": "panda-themes-primary",
+    "id": "bamboo-themes-primary",
     "dataAttr": "primary",
-    "css": "[data-panda-theme=primary] { ... }"
+    "css": "[data-bamboo-theme=primary] { ... }"
   }
   ```
 
@@ -1060,7 +1084,7 @@
     const theme = themeName && (await getTheme(themeName))
 
     return (
-      <html lang="en" data-panda-theme={themeName ? themeName : undefined}>
+      <html lang="en" data-bamboo-theme={themeName ? themeName : undefined}>
         {themeName && (
           <head>
             <style type="text/css" id={theme.id} dangerouslySetInnerHTML={{ __html: theme.css }} />
@@ -1079,7 +1103,7 @@
       <>
         <button
           onClick={async () => {
-            const current = document.documentElement.dataset.pandaTheme
+            const current = document.documentElement.dataset.bambooTheme
             const next = current === 'primary' ? 'secondary' : 'primary'
             const theme = await getTheme(next)
             setCookie('theme', next, 7)
@@ -1588,8 +1612,8 @@
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
-  - Add a `--lightningcss` flag to the `panda` and `panda cssgen` command to use `lightningcss` instead of `postcss` for
-    this run.
+  - Add a `--lightningcss` flag to the `bamboo` and `bamboo cssgen` command to use `lightningcss` instead of `postcss`
+    for this run.
 
   ## Internal changes:
   - `markImportant` fn from JS instead of walking through postcss AST nodes
@@ -1599,7 +1623,7 @@
   - refactor `serializeStyle` to use the same code path as the rest of the pipeline with `StyleEncoder` / `StyleDecoder`
     and rename it to `transformStyles` to better convey what it does
 
-- bee3ec85: Add support for aspect ratio tokens in the panda config or preset. Aspect ratio tokens are used to define
+- bee3ec85: Add support for aspect ratio tokens in the bamboo config or preset. Aspect ratio tokens are used to define
   the aspect ratio of an element.
 
   ```js
@@ -2242,21 +2266,21 @@ export default defineConfig({
 })
 ```
 
-- d5977c24: - Add a `--logfile` flag to the `panda`, `panda codegen`, `panda cssgen` and `panda debug` commands.
+- d5977c24: - Add a `--logfile` flag to the `bamboo`, `bamboo codegen`, `bamboo cssgen` and `bamboo debug` commands.
   - Add a `logfile` option to the postcss plugin
 
   Logs will be streamed to the file specified by the `--logfile` flag or the `logfile` option. This is useful for
   debugging issues that occur during the build process.
 
   ```sh
-  panda --logfile ./logs/panda.log
+  bamboo --logfile ./logs/bamboo.log
   ```
 
   ```js
   module.exports = {
     plugins: {
       '@bamboocss/dev/postcss': {
-        logfile: './logs/panda.log',
+        logfile: './logs/bamboo.log',
       },
     },
   }
@@ -2347,8 +2371,8 @@ export default defineConfig({
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
-  - Add a `--lightningcss` flag to the `panda` and `panda cssgen` command to use `lightningcss` instead of `postcss` for
-    this run.
+  - Add a `--lightningcss` flag to the `bamboo` and `bamboo cssgen` command to use `lightningcss` instead of `postcss`
+    for this run.
 
   ## Internal changes:
   - `markImportant` fn from JS instead of walking through postcss AST nodes
@@ -2358,7 +2382,7 @@ export default defineConfig({
   - refactor `serializeStyle` to use the same code path as the rest of the pipeline with `StyleEncoder` / `StyleDecoder`
     and rename it to `transformStyles` to better convey what it does
 
-- bee3ec85: Add support for aspect ratio tokens in the panda config or preset. Aspect ratio tokens are used to define
+- bee3ec85: Add support for aspect ratio tokens in the bamboo config or preset. Aspect ratio tokens are used to define
   the aspect ratio of an element.
 
   ```js
@@ -3196,8 +3220,8 @@ Will now allow you to use the following syntax for token path:
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
-  - Add a `--lightningcss` flag to the `panda` and `panda cssgen` command to use `lightningcss` instead of `postcss` for
-    this run.
+  - Add a `--lightningcss` flag to the `bamboo` and `bamboo cssgen` command to use `lightningcss` instead of `postcss`
+    for this run.
 
   ## Internal changes:
   - `markImportant` fn from JS instead of walking through postcss AST nodes
@@ -3207,7 +3231,7 @@ Will now allow you to use the following syntax for token path:
   - refactor `serializeStyle` to use the same code path as the rest of the pipeline with `StyleEncoder` / `StyleDecoder`
     and rename it to `transformStyles` to better convey what it does
 
-- bee3ec85: Add support for aspect ratio tokens in the panda config or preset. Aspect ratio tokens are used to define
+- bee3ec85: Add support for aspect ratio tokens in the bamboo config or preset. Aspect ratio tokens are used to define
   the aspect ratio of an element.
 
   ```js
@@ -3850,21 +3874,21 @@ export default defineConfig({
 })
 ```
 
-- d5977c24: - Add a `--logfile` flag to the `panda`, `panda codegen`, `panda cssgen` and `panda debug` commands.
+- d5977c24: - Add a `--logfile` flag to the `bamboo`, `bamboo codegen`, `bamboo cssgen` and `bamboo debug` commands.
   - Add a `logfile` option to the postcss plugin
 
   Logs will be streamed to the file specified by the `--logfile` flag or the `logfile` option. This is useful for
   debugging issues that occur during the build process.
 
   ```sh
-  panda --logfile ./logs/panda.log
+  bamboo --logfile ./logs/bamboo.log
   ```
 
   ```js
   module.exports = {
     plugins: {
       '@bamboocss/dev/postcss': {
-        logfile: './logs/panda.log',
+        logfile: './logs/bamboo.log',
       },
     },
   }
@@ -3955,8 +3979,8 @@ export default defineConfig({
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
-  - Add a `--lightningcss` flag to the `panda` and `panda cssgen` command to use `lightningcss` instead of `postcss` for
-    this run.
+  - Add a `--lightningcss` flag to the `bamboo` and `bamboo cssgen` command to use `lightningcss` instead of `postcss`
+    for this run.
 
   ## Internal changes:
   - `markImportant` fn from JS instead of walking through postcss AST nodes
@@ -3966,7 +3990,7 @@ export default defineConfig({
   - refactor `serializeStyle` to use the same code path as the rest of the pipeline with `StyleEncoder` / `StyleDecoder`
     and rename it to `transformStyles` to better convey what it does
 
-- bee3ec85: Add support for aspect ratio tokens in the panda config or preset. Aspect ratio tokens are used to define
+- bee3ec85: Add support for aspect ratio tokens in the bamboo config or preset. Aspect ratio tokens are used to define
   the aspect ratio of an element.
 
   ```js

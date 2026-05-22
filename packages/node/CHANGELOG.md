@@ -1,5 +1,56 @@
 # @bamboocss/node
 
+## 1.12.2
+
+### Patch Changes
+
+- @bamboocss/config@1.12.2
+- @bamboocss/core@1.12.2
+- @bamboocss/generator@1.12.2
+- @bamboocss/logger@1.12.2
+- @bamboocss/parser@1.12.2
+- @bamboocss/plugin-lightningcss@1.12.2
+- @bamboocss/plugin-svelte@1.12.2
+- @bamboocss/plugin-vue@1.12.2
+- @bamboocss/reporter@1.12.2
+- @bamboocss/shared@1.12.2
+- @bamboocss/token-dictionary@1.12.2
+- @bamboocss/types@1.12.2
+
+## 1.12.1
+
+### Patch Changes
+
+- @bamboocss/config@1.12.1
+- @bamboocss/core@1.12.1
+- @bamboocss/generator@1.12.1
+- @bamboocss/logger@1.12.1
+- @bamboocss/parser@1.12.1
+- @bamboocss/plugin-lightningcss@1.12.1
+- @bamboocss/plugin-svelte@1.12.1
+- @bamboocss/plugin-vue@1.12.1
+- @bamboocss/reporter@1.12.1
+- @bamboocss/shared@1.12.1
+- @bamboocss/token-dictionary@1.12.1
+- @bamboocss/types@1.12.1
+
+## 1.12.0
+
+### Patch Changes
+
+- @bamboocss/config@1.12.0
+- @bamboocss/core@1.12.0
+- @bamboocss/generator@1.12.0
+- @bamboocss/logger@1.12.0
+- @bamboocss/parser@1.12.0
+- @bamboocss/plugin-lightningcss@1.12.0
+- @bamboocss/plugin-svelte@1.12.0
+- @bamboocss/plugin-vue@1.12.0
+- @bamboocss/reporter@1.12.0
+- @bamboocss/shared@1.12.0
+- @bamboocss/token-dictionary@1.12.0
+- @bamboocss/types@1.12.0
+
 ## 1.11.5
 
 ### Patch Changes
@@ -139,7 +190,7 @@
   - **@bamboocss/mcp**: bump `@modelcontextprotocol/sdk` to ^1.25.2.
   - **@bamboocss/astro-plugin-studio**: bump `astro` (dev) to 5.18.1.
 
-- 44457bb: Use TypeScript 6.0 or later with Panda. This release updates static analysis and codegen to ts-morph v28 and
+- 44457bb: Use TypeScript 6.0 or later with Bamboo. This release updates static analysis and codegen to ts-morph v28 and
   TypeScript 6.0.2.
 - Updated dependencies [c31f3a2]
 - Updated dependencies [bbaa8b3]
@@ -285,15 +336,15 @@
 
 ### Minor Changes
 
-- 86b30b1: Add `panda spec` command to generate specification files for your theme (useful for documentation). This
+- 86b30b1: Add `bamboo spec` command to generate specification files for your theme (useful for documentation). This
   command generates JSON specification files containing metadata, examples, and usage information.
 
   ```bash
   # Generate all spec files
-  panda spec
+  bamboo spec
 
   # Custom output directory
-  panda spec --outdir custom/specs
+  bamboo spec --outdir custom/specs
   ```
 
   **Token Spec Structure:**
@@ -381,7 +432,7 @@
   Usage:
 
   ```bash
-  panda cssgen --splitting
+  bamboo cssgen --splitting
   ```
 
 ### Patch Changes
@@ -590,7 +641,7 @@
 
 ### Major Changes
 
-- a3bcbea: Stable release of PandaCSS
+- a3bcbea: Stable release of BambooCSS
 
   ### Style Context
 
@@ -863,7 +914,7 @@
   - How many hardcoded values vs tokens do we have?
 
   ```sh
-  panda analyze --scope=<token|recipe>
+  bamboo analyze --scope=<token|recipe>
   ```
 
   > Still work in progress but we're excited to get your feedback!
@@ -1077,7 +1128,7 @@
 
 ### Patch Changes
 
-- 19c3a2c: Minor changes to the format of the `panda analyze --output coverage.json` file
+- 19c3a2c: Minor changes to the format of the `bamboo analyze --output coverage.json` file
 - ec64819: Change recipes `className` to be optional, both for `recipes` and `slotRecipes`, with a fallback to its name.
 
   ```ts
@@ -1135,7 +1186,7 @@
 
 ### Patch Changes
 
-- 48ff2b8: Improve `panda init --outdir=<x>` command to reflect `outdir` in generated panda config file.
+- 48ff2b8: Improve `bamboo init --outdir=<x>` command to reflect `outdir` in generated bamboo config file.
 - Updated dependencies [d2cc156]
   - @bamboocss/generator@0.40.1
   - @bamboocss/core@0.40.1
@@ -1153,11 +1204,11 @@
 
 - 5dcdae4: Improve monorepo setup DX by exposing some cli flags
 
-  ### `panda init`
+  ### `bamboo init`
   - Added new flag `--no-codegen` to skip codegen during initialization
   - Added new flag `--outdir` to specify the output directory for generated files
 
-  ### `panda emit-pkg`
+  ### `bamboo emit-pkg`
   - Added new `--base` flag to specify the base directory for the entrypoints in the generated `package.json#exports`
     field
 
@@ -1179,7 +1230,7 @@
 ### Patch Changes
 
 - 1f636eb: Fix a cache issue that leads to HMR growing slower in some cases
-- af15ae9: Fix `panda analyze` JSON output serialization
+- af15ae9: Fix `bamboo analyze` JSON output serialization
 - Updated dependencies [39c305f]
 - Updated dependencies [2f63a4c]
 - Updated dependencies [1f636eb]
@@ -1436,7 +1487,8 @@
 ### Patch Changes
 
 - 1968da5: Allow dynamically recording profiling session by pressing the `p` key in your terminal when using the
-  `--cpu-prof` flag for long-running sessions (with `-w` or `--watch` for `panda` / `panda cssgen` / `panda codegen`).
+  `--cpu-prof` flag for long-running sessions (with `-w` or `--watch` for `bamboo` / `bamboo cssgen` /
+  `bamboo codegen`).
 - Updated dependencies [34d94cf]
 - Updated dependencies [4736057]
 - Updated dependencies [e855c64]
@@ -1481,9 +1533,9 @@
 
 - de4d9ef: Allow `config.hooks` to be shared in `plugins`
 
-  For hooks that can transform Panda's internal state by returning something (like `cssgen:done` and `codegen:prepare`),
-  each hook instance will be called sequentially and the return result (if any) of the previous hook call is passed to
-  the next hook so that they can be chained together.
+  For hooks that can transform Bamboo's internal state by returning something (like `cssgen:done` and
+  `codegen:prepare`), each hook instance will be called sequentially and the return result (if any) of the previous hook
+  call is passed to the next hook so that they can be chained together.
 
 ### Patch Changes
 
@@ -1542,7 +1594,7 @@
 ### Patch Changes
 
 - 2d69b340: Fix `styled` factory nested composition with `cva`
-- ddeda8ac: Add missing log with the `panda -w` CLI, expose `resolveConfig` from `@bamboocss/config`
+- ddeda8ac: Add missing log with the `bamboo -w` CLI, expose `resolveConfig` from `@bamboocss/config`
 - Updated dependencies [8f36f9af]
 - Updated dependencies [f0296249]
 - Updated dependencies [e2ad0eed]
@@ -1619,7 +1671,7 @@
 
 ### Patch Changes
 
-- a5c75607: Fix an issue (introduced in v0.29) with `panda init` and add an assert on the new `colorMix` utility
+- a5c75607: Fix an issue (introduced in v0.29) with `bamboo init` and add an assert on the new `colorMix` utility
   function
 - Updated dependencies [a5c75607]
   - @bamboocss/core@0.29.1
@@ -1641,7 +1693,7 @@
   > We automatically track the config file and (transitive) files imported by the config file as much as possible, but
   > sometimes we might miss some. You can use this option as a workaround for those edge cases.
 
-  Set the `dependencies` option in `panda.config.ts` to a glob or list of files.
+  Set the `dependencies` option in `bamboo.config.ts` to a glob or list of files.
 
   ```ts
   export default defineConfig({
@@ -1650,8 +1702,8 @@
   })
   ```
 
-  - Invoke `config:change` hook in more situations (when the `--watch` flag is passed to `panda codegen`,
-    `panda cssgen`, `panda ship`)
+  - Invoke `config:change` hook in more situations (when the `--watch` flag is passed to `bamboo codegen`,
+    `bamboo cssgen`, `bamboo ship`)
 
   - Watch for more config options paths changes, so that the related artifacts will be regenerated a bit more reliably
     (ex: updating the `config.hooks` will now trigger a full regeneration of `styled-system`)
@@ -1683,8 +1735,8 @@
   - Tweak the config after it has been resolved (after presets are loaded and merged), this could be used to dynamically
     load all `recipes` from a folder
   - Transform a source file's content before parsing it, this could be used to transform the file content to a
-    `tsx`-friendly syntax so that Panda's parser can parse it.
-  - Implement your own parser logic and add the extracted results to the classic Panda pipeline, this could be used to
+    `tsx`-friendly syntax so that Bamboo's parser can parse it.
+  - Implement your own parser logic and add the extracted results to the classic Bamboo pipeline, this could be used to
     parse style usage from any template language
   - Tweak the CSS content for any `@layer` or even right before it's written to disk (if using the CLI) or injected
     through the postcss plugin, allowing all kinds of customizations like removing the unused CSS variables, etc.
@@ -1693,14 +1745,14 @@
   See the list of available `config.hooks` here:
 
   ```ts
-  export interface PandaHooks {
+  export interface BambooHooks {
     /**
      * Called when the config is resolved, after all the presets are loaded and merged.
      * This is the first hook called, you can use it to tweak the config before the context is created.
      */
     'config:resolved': (args: { conf: LoadConfigResult }) => MaybeAsyncReturn
     /**
-     * Called when the Panda context has been created and the API is ready to be used.
+     * Called when the Bamboo context has been created and the API is ready to be used.
      */
     'context:created': (args: { ctx: ApiInterface; logger: LoggerInterface }) => void
     /**
@@ -1709,7 +1761,7 @@
     'config:change': (args: { config: UserConfig }) => MaybeAsyncReturn
     /**
      * Called after reading the file content but before parsing it.
-     * You can use this hook to transform the file content to a tsx-friendly syntax so that Panda's parser can parse it.
+     * You can use this hook to transform the file content to a tsx-friendly syntax so that Bamboo's parser can parse it.
      * You can also use this hook to parse the file's content on your side using a custom parser, in this case you don't have to return anything.
      */
     'parser:before': (args: { filePath: string; content: string }) => string | void
@@ -1736,9 +1788,9 @@
 
 ### Patch Changes
 
-- f255342f: Add a `--cpu-prof` flag to `panda`, `panda cssgen`, `panda codegen` and `panda debug` commands This is
-  useful for debugging performance issues in `panda` itself. This will generate a
-  `panda-{command}-{timestamp}.cpuprofile` file in the current working directory, which can be opened in tools like
+- f255342f: Add a `--cpu-prof` flag to `bamboo`, `bamboo cssgen`, `bamboo codegen` and `bamboo debug` commands This is
+  useful for debugging performance issues in `bamboo` itself. This will generate a
+  `bamboo-{command}-{timestamp}.cpuprofile` file in the current working directory, which can be opened in tools like
   [Speedscope](https://www.speedscope.app/)
 
   This is mostly intended for maintainers or can be asked by maintainers to help debug issues.
@@ -1767,7 +1819,7 @@
 ### Patch Changes
 
 - 1ed4df77: Fix issue where HMR doesn't work when tsconfig paths is used.
-- 39d10c79: Fix `prettier` parser warning in panda config setup.
+- 39d10c79: Fix `prettier` parser warning in bamboo config setup.
 - Updated dependencies [1ed4df77]
   - @bamboocss/types@0.27.3
   - @bamboocss/core@0.27.3
@@ -1823,8 +1875,8 @@
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
-  - Add a `--lightningcss` flag to the `panda` and `panda cssgen` command to use `lightningcss` instead of `postcss` for
-    this run.
+  - Add a `--lightningcss` flag to the `bamboo` and `bamboo cssgen` command to use `lightningcss` instead of `postcss`
+    for this run.
 
   ## Internal changes:
   - `markImportant` fn from JS instead of walking through postcss AST nodes
@@ -1892,7 +1944,7 @@
 
 ### Patch Changes
 
-- 1bd7fbb7: Fix an edge-case for when the `config.outdir` would not be set in the `panda.config`
+- 1bd7fbb7: Fix an edge-case for when the `config.outdir` would not be set in the `bamboo.config`
 
   Internal details: The `outdir` would not have any value after a config change due to the fallback being set in the
   initial config resolving code path but not in context reloading code path, moving it inside the config loading
@@ -2053,11 +2105,11 @@
 
   **Scenarios**
   - Park UI went from 3500ms to 580ms (6x faster)
-  - Panda Website went from 2900ms to 208ms (14x faster)
+  - Bamboo Website went from 2900ms to 208ms (14x faster)
 
   **Potential Breaking Change**
 
-  If you use `hooks` in your `panda.config` file to listen for when css is extracted, we no longer return the `css`
+  If you use `hooks` in your `bamboo.config` file to listen for when css is extracted, we no longer return the `css`
   string for performance reasons. We might reconsider this in the future.
 
 - Updated dependencies [526c6e34]
@@ -2085,7 +2137,7 @@
 - 7f846be2: Add `configPath` and `cwd` options in the `@bamboocss/astro` integration just like in the
   `@bamboocss/postcss`
 
-  This can be useful with Nx monorepos where the `panda.config.ts` is not in the root of the project.
+  This can be useful with Nx monorepos where the `bamboo.config.ts` is not in the root of the project.
 
 - Updated dependencies [1464460f]
 - Updated dependencies [788aaba3]
@@ -2221,9 +2273,9 @@
 
 ### Patch Changes
 
-- 3010af28: Add a `--only-config` flag for the `panda debug` command, to skip writing app files and just output the
+- 3010af28: Add a `--only-config` flag for the `bamboo debug` command, to skip writing app files and just output the
   resolved config.
-- 866c12aa: Fix CLI interactive mode `syntax` question values and prettify the generated `panda.config.ts` file
+- 866c12aa: Fix CLI interactive mode `syntax` question values and prettify the generated `bamboo.config.ts` file
 - Updated dependencies [ba9e32fa]
 - Updated dependencies [b7cb2073]
 - Updated dependencies [336fd0b0]
@@ -2243,8 +2295,8 @@
 
 ### Patch Changes
 
-- 17f68b3f: Ensure dir exists before writing file for the `panda cssgen` / `panda ship` / `panda analyze` commands when
-  specifying an outfile.
+- 17f68b3f: Ensure dir exists before writing file for the `bamboo cssgen` / `bamboo ship` / `bamboo analyze` commands
+  when specifying an outfile.
 - Updated dependencies [6718f81b]
 - Updated dependencies [a6dfc944]
 - Updated dependencies [3ce70c37]
@@ -2379,9 +2431,9 @@
 
 ### Patch Changes
 
-- dd6811b3: Apply `config.logLevel` from the Panda config to the logger in every context.
+- dd6811b3: Apply `config.logLevel` from the Bamboo config to the logger in every context.
 
-  Fixes https://github.com/bamboocss/panda/issues/1451
+  Fixes https://github.com/bamboocss/bamboo/issues/1451
 
 - Updated dependencies [93996aaf]
 - Updated dependencies [12281ff8]
@@ -2406,28 +2458,28 @@
 
 - 36252b1d: ## --minimal flag
 
-  Adds a new `--minimal` flag for the CLI on the `panda cssgen` command to skip generating CSS for theme tokens,
+  Adds a new `--minimal` flag for the CLI on the `bamboo cssgen` command to skip generating CSS for theme tokens,
   preflightkeyframes, static and global css
 
   Thich means that the generated CSS will only contain the CSS related to the styles found in the included files.
 
   > Note that you can use a `glob` to override the `config.include` option like this:
-  > `panda cssgen "src/**/*.css" --minimal`
+  > `bamboo cssgen "src/**/*.css" --minimal`
 
   This is useful when you want to split your CSS into multiple files, for example if you want to split by pages.
 
   Use it like this:
 
   ```bash
-  panda cssgen "src/**/pages/*.css" --minimal --outfile dist/pages.css
+  bamboo cssgen "src/**/pages/*.css" --minimal --outfile dist/pages.css
   ```
 
   ***
 
   ## cssgen {type}
 
-  In addition to the optional `glob` that you can already pass to override the config.include option, the `panda cssgen`
-  command now accepts a new `{type}` argument to generate only a specific type of CSS:
+  In addition to the optional `glob` that you can already pass to override the config.include option, the
+  `bamboo cssgen` command now accepts a new `{type}` argument to generate only a specific type of CSS:
   - preflight
   - tokens
   - static
@@ -2439,12 +2491,12 @@
   You can use it like this:
 
   ```bash
-  panda cssgen "static" --outfile dist/static.css
+  bamboo cssgen "static" --outfile dist/static.css
   ```
 
 ### Patch Changes
 
-- 20f4e204: Apply a few optmizations on the resulting CSS generated from `panda cssgen` command
+- 20f4e204: Apply a few optmizations on the resulting CSS generated from `bamboo cssgen` command
 - Updated dependencies [2b5cbf73]
 - Updated dependencies [20f4e204]
 - Updated dependencies [36252b1d]
@@ -2525,7 +2577,7 @@
 
 ### Patch Changes
 
-- f3c30d60: Update supported panda config extensions
+- f3c30d60: Update supported bamboo config extensions
 - Updated dependencies [6d15776c]
 - Updated dependencies [26a788c0]
 - Updated dependencies [2645c2da]
@@ -2740,7 +2792,7 @@
 
 ### Patch Changes
 
-- cde9702e: Add an optional `glob` argument that overrides the config.include on the `panda cssgen` CLI command.
+- cde9702e: Add an optional `glob` argument that overrides the config.include on the `bamboo cssgen` CLI command.
 - Updated dependencies [dead08a2]
 - Updated dependencies [5b95caf5]
 - Updated dependencies [39b80b49]
@@ -2802,7 +2854,7 @@
 
 ### Patch Changes
 
-- 5d1d376b: Adding missing comma for generated panda config
+- 5d1d376b: Adding missing comma for generated bamboo config
 - be0ad578: Fix parser issue with TS path mappings
 - 78612d7f: Fix node evaluation in extractor process (can happen when using a BinaryExpression, simple CallExpression or
   conditions)
@@ -2858,7 +2910,7 @@
 
 ### Patch Changes
 
-- 032c152a: Fix issue where `panda cssgen --outfile` doesn't extract files to chunks before bundling them into the css
+- 032c152a: Fix issue where `bamboo cssgen --outfile` doesn't extract files to chunks before bundling them into the css
   out file
 - Updated dependencies [cd912f35]
 - Updated dependencies [dc4e80f7]
@@ -2886,15 +2938,15 @@
 - 5b09ab3b: Add support for `--outfile` flag in the `cssgen` command.
 
   ```bash
-  panda cssgen --outfile dist/styles.css
+  bamboo cssgen --outfile dist/styles.css
   ```
 
 - 78ed6ed4: Fix issue where using a nested outdir like `src/styled-system` with a baseUrl like `./src` would result on
   parser NOT matching imports like `import { container } from "styled-system/patterns";` cause it would expect the full
   path `src/styled-system`
 - e48b130a: - Remove `stack` from `box.toJSON()` so that generated JSON files have less noise, mostly useful to get make
-  the `panda debug` command easier to read
-  - Also use the `ParserResult.toJSON()` method on `panda debug` command for the same reason
+  the `bamboo debug` command easier to read
+  - Also use the `ParserResult.toJSON()` method on `bamboo debug` command for the same reason
 
   instead of:
 
@@ -2992,8 +3044,8 @@
       ],
   ```
 
-- 1a2c0e2b: Fix `panda.config.xxx` file dependencies detection when using the builder (= with PostCSS or with the VSCode
-  extension). It will now also properly resolve tsconfig path aliases.
+- 1a2c0e2b: Fix `bamboo.config.xxx` file dependencies detection when using the builder (= with PostCSS or with the
+  VSCode extension). It will now also properly resolve tsconfig path aliases.
 - Updated dependencies [6f03ead3]
 - Updated dependencies [8c670d60]
 - Updated dependencies [33198907]
@@ -3182,21 +3234,21 @@ export default defineConfig({
 })
 ```
 
-- d5977c24: - Add a `--logfile` flag to the `panda`, `panda codegen`, `panda cssgen` and `panda debug` commands.
+- d5977c24: - Add a `--logfile` flag to the `bamboo`, `bamboo codegen`, `bamboo cssgen` and `bamboo debug` commands.
   - Add a `logfile` option to the postcss plugin
 
   Logs will be streamed to the file specified by the `--logfile` flag or the `logfile` option. This is useful for
   debugging issues that occur during the build process.
 
   ```sh
-  panda --logfile ./logs/panda.log
+  bamboo --logfile ./logs/bamboo.log
   ```
 
   ```js
   module.exports = {
     plugins: {
       '@bamboocss/dev/postcss': {
-        logfile: './logs/panda.log',
+        logfile: './logs/bamboo.log',
       },
     },
   }
@@ -3222,7 +3274,7 @@ export default defineConfig({
 
 ### Patch Changes
 
-- a5c75607: Fix an issue (introduced in v0.29) with `panda init` and add an assert on the new `colorMix` utility
+- a5c75607: Fix an issue (introduced in v0.29) with `bamboo init` and add an assert on the new `colorMix` utility
   function
 - Updated dependencies [a5c75607]
   - @bamboocss/core@0.29.1
@@ -3244,7 +3296,7 @@ export default defineConfig({
   > We automatically track the config file and (transitive) files imported by the config file as much as possible, but
   > sometimes we might miss some. You can use this option as a workaround for those edge cases.
 
-  Set the `dependencies` option in `panda.config.ts` to a glob or list of files.
+  Set the `dependencies` option in `bamboo.config.ts` to a glob or list of files.
 
   ```ts
   export default defineConfig({
@@ -3253,8 +3305,8 @@ export default defineConfig({
   })
   ```
 
-  - Invoke `config:change` hook in more situations (when the `--watch` flag is passed to `panda codegen`,
-    `panda cssgen`, `panda ship`)
+  - Invoke `config:change` hook in more situations (when the `--watch` flag is passed to `bamboo codegen`,
+    `bamboo cssgen`, `bamboo ship`)
 
   - Watch for more config options paths changes, so that the related artifacts will be regenerated a bit more reliably
     (ex: updating the `config.hooks` will now trigger a full regeneration of `styled-system`)
@@ -3286,8 +3338,8 @@ export default defineConfig({
   - Tweak the config after it has been resolved (after presets are loaded and merged), this could be used to dynamically
     load all `recipes` from a folder
   - Transform a source file's content before parsing it, this could be used to transform the file content to a
-    `tsx`-friendly syntax so that Panda's parser can parse it.
-  - Implement your own parser logic and add the extracted results to the classic Panda pipeline, this could be used to
+    `tsx`-friendly syntax so that Bamboo's parser can parse it.
+  - Implement your own parser logic and add the extracted results to the classic Bamboo pipeline, this could be used to
     parse style usage from any template language
   - Tweak the CSS content for any `@layer` or even right before it's written to disk (if using the CLI) or injected
     through the postcss plugin, allowing all kinds of customizations like removing the unused CSS variables, etc.
@@ -3296,14 +3348,14 @@ export default defineConfig({
   See the list of available `config.hooks` here:
 
   ```ts
-  export interface PandaHooks {
+  export interface BambooHooks {
     /**
      * Called when the config is resolved, after all the presets are loaded and merged.
      * This is the first hook called, you can use it to tweak the config before the context is created.
      */
     'config:resolved': (args: { conf: LoadConfigResult }) => MaybeAsyncReturn
     /**
-     * Called when the Panda context has been created and the API is ready to be used.
+     * Called when the Bamboo context has been created and the API is ready to be used.
      */
     'context:created': (args: { ctx: ApiInterface; logger: LoggerInterface }) => void
     /**
@@ -3312,7 +3364,7 @@ export default defineConfig({
     'config:change': (args: { config: UserConfig }) => MaybeAsyncReturn
     /**
      * Called after reading the file content but before parsing it.
-     * You can use this hook to transform the file content to a tsx-friendly syntax so that Panda's parser can parse it.
+     * You can use this hook to transform the file content to a tsx-friendly syntax so that Bamboo's parser can parse it.
      * You can also use this hook to parse the file's content on your side using a custom parser, in this case you don't have to return anything.
      */
     'parser:before': (args: { filePath: string; content: string }) => string | void
@@ -3339,9 +3391,9 @@ export default defineConfig({
 
 ### Patch Changes
 
-- f255342f: Add a `--cpu-prof` flag to `panda`, `panda cssgen`, `panda codegen` and `panda debug` commands This is
-  useful for debugging performance issues in `panda` itself. This will generate a
-  `panda-{command}-{timestamp}.cpuprofile` file in the current working directory, which can be opened in tools like
+- f255342f: Add a `--cpu-prof` flag to `bamboo`, `bamboo cssgen`, `bamboo codegen` and `bamboo debug` commands This is
+  useful for debugging performance issues in `bamboo` itself. This will generate a
+  `bamboo-{command}-{timestamp}.cpuprofile` file in the current working directory, which can be opened in tools like
   [Speedscope](https://www.speedscope.app/)
 
   This is mostly intended for maintainers or can be asked by maintainers to help debug issues.
@@ -3370,7 +3422,7 @@ export default defineConfig({
 ### Patch Changes
 
 - 1ed4df77: Fix issue where HMR doesn't work when tsconfig paths is used.
-- 39d10c79: Fix `prettier` parser warning in panda config setup.
+- 39d10c79: Fix `prettier` parser warning in bamboo config setup.
 - Updated dependencies [1ed4df77]
   - @bamboocss/types@0.27.3
   - @bamboocss/core@0.27.3
@@ -3426,8 +3478,8 @@ export default defineConfig({
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
-  - Add a `--lightningcss` flag to the `panda` and `panda cssgen` command to use `lightningcss` instead of `postcss` for
-    this run.
+  - Add a `--lightningcss` flag to the `bamboo` and `bamboo cssgen` command to use `lightningcss` instead of `postcss`
+    for this run.
 
   ## Internal changes:
   - `markImportant` fn from JS instead of walking through postcss AST nodes
@@ -3495,7 +3547,7 @@ export default defineConfig({
 
 ### Patch Changes
 
-- 1bd7fbb7: Fix an edge-case for when the `config.outdir` would not be set in the `panda.config`
+- 1bd7fbb7: Fix an edge-case for when the `config.outdir` would not be set in the `bamboo.config`
 
   Internal details: The `outdir` would not have any value after a config change due to the fallback being set in the
   initial config resolving code path but not in context reloading code path, moving it inside the config loading
@@ -3656,11 +3708,11 @@ export default defineConfig({
 
   **Scenarios**
   - Park UI went from 3500ms to 580ms (6x faster)
-  - Panda Website went from 2900ms to 208ms (14x faster)
+  - Bamboo Website went from 2900ms to 208ms (14x faster)
 
   **Potential Breaking Change**
 
-  If you use `hooks` in your `panda.config` file to listen for when css is extracted, we no longer return the `css`
+  If you use `hooks` in your `bamboo.config` file to listen for when css is extracted, we no longer return the `css`
   string for performance reasons. We might reconsider this in the future.
 
 - Updated dependencies [526c6e34]
@@ -3688,7 +3740,7 @@ export default defineConfig({
 - 7f846be2: Add `configPath` and `cwd` options in the `@bamboocss/astro` integration just like in the
   `@bamboocss/postcss`
 
-  This can be useful with Nx monorepos where the `panda.config.ts` is not in the root of the project.
+  This can be useful with Nx monorepos where the `bamboo.config.ts` is not in the root of the project.
 
 - Updated dependencies [1464460f]
 - Updated dependencies [788aaba3]
@@ -3824,9 +3876,9 @@ export default defineConfig({
 
 ### Patch Changes
 
-- 3010af28: Add a `--only-config` flag for the `panda debug` command, to skip writing app files and just output the
+- 3010af28: Add a `--only-config` flag for the `bamboo debug` command, to skip writing app files and just output the
   resolved config.
-- 866c12aa: Fix CLI interactive mode `syntax` question values and prettify the generated `panda.config.ts` file
+- 866c12aa: Fix CLI interactive mode `syntax` question values and prettify the generated `bamboo.config.ts` file
 - Updated dependencies [ba9e32fa]
 - Updated dependencies [b7cb2073]
 - Updated dependencies [336fd0b0]
@@ -3846,8 +3898,8 @@ export default defineConfig({
 
 ### Patch Changes
 
-- 17f68b3f: Ensure dir exists before writing file for the `panda cssgen` / `panda ship` / `panda analyze` commands when
-  specifying an outfile.
+- 17f68b3f: Ensure dir exists before writing file for the `bamboo cssgen` / `bamboo ship` / `bamboo analyze` commands
+  when specifying an outfile.
 - Updated dependencies [6718f81b]
 - Updated dependencies [a6dfc944]
 - Updated dependencies [3ce70c37]
@@ -3982,9 +4034,9 @@ export default defineConfig({
 
 ### Patch Changes
 
-- dd6811b3: Apply `config.logLevel` from the Panda config to the logger in every context.
+- dd6811b3: Apply `config.logLevel` from the Bamboo config to the logger in every context.
 
-  Fixes https://github.com/bamboocss/panda/issues/1451
+  Fixes https://github.com/bamboocss/bamboo/issues/1451
 
 - Updated dependencies [93996aaf]
 - Updated dependencies [12281ff8]
@@ -4009,28 +4061,28 @@ export default defineConfig({
 
 - 36252b1d: ## --minimal flag
 
-  Adds a new `--minimal` flag for the CLI on the `panda cssgen` command to skip generating CSS for theme tokens,
+  Adds a new `--minimal` flag for the CLI on the `bamboo cssgen` command to skip generating CSS for theme tokens,
   preflightkeyframes, static and global css
 
   Thich means that the generated CSS will only contain the CSS related to the styles found in the included files.
 
   > Note that you can use a `glob` to override the `config.include` option like this:
-  > `panda cssgen "src/**/*.css" --minimal`
+  > `bamboo cssgen "src/**/*.css" --minimal`
 
   This is useful when you want to split your CSS into multiple files, for example if you want to split by pages.
 
   Use it like this:
 
   ```bash
-  panda cssgen "src/**/pages/*.css" --minimal --outfile dist/pages.css
+  bamboo cssgen "src/**/pages/*.css" --minimal --outfile dist/pages.css
   ```
 
   ***
 
   ## cssgen {type}
 
-  In addition to the optional `glob` that you can already pass to override the config.include option, the `panda cssgen`
-  command now accepts a new `{type}` argument to generate only a specific type of CSS:
+  In addition to the optional `glob` that you can already pass to override the config.include option, the
+  `bamboo cssgen` command now accepts a new `{type}` argument to generate only a specific type of CSS:
   - preflight
   - tokens
   - static
@@ -4042,12 +4094,12 @@ export default defineConfig({
   You can use it like this:
 
   ```bash
-  panda cssgen "static" --outfile dist/static.css
+  bamboo cssgen "static" --outfile dist/static.css
   ```
 
 ### Patch Changes
 
-- 20f4e204: Apply a few optmizations on the resulting CSS generated from `panda cssgen` command
+- 20f4e204: Apply a few optmizations on the resulting CSS generated from `bamboo cssgen` command
 - Updated dependencies [2b5cbf73]
 - Updated dependencies [20f4e204]
 - Updated dependencies [36252b1d]
@@ -4128,7 +4180,7 @@ export default defineConfig({
 
 ### Patch Changes
 
-- f3c30d60: Update supported panda config extensions
+- f3c30d60: Update supported bamboo config extensions
 - Updated dependencies [6d15776c]
 - Updated dependencies [26a788c0]
 - Updated dependencies [2645c2da]
@@ -4343,7 +4395,7 @@ export default defineConfig({
 
 ### Patch Changes
 
-- cde9702e: Add an optional `glob` argument that overrides the config.include on the `panda cssgen` CLI command.
+- cde9702e: Add an optional `glob` argument that overrides the config.include on the `bamboo cssgen` CLI command.
 - Updated dependencies [dead08a2]
 - Updated dependencies [5b95caf5]
 - Updated dependencies [39b80b49]
@@ -4405,7 +4457,7 @@ export default defineConfig({
 
 ### Patch Changes
 
-- 5d1d376b: Adding missing comma for generated panda config
+- 5d1d376b: Adding missing comma for generated bamboo config
 - be0ad578: Fix parser issue with TS path mappings
 - 78612d7f: Fix node evaluation in extractor process (can happen when using a BinaryExpression, simple CallExpression or
   conditions)
@@ -4461,7 +4513,7 @@ export default defineConfig({
 
 ### Patch Changes
 
-- 032c152a: Fix issue where `panda cssgen --outfile` doesn't extract files to chunks before bundling them into the css
+- 032c152a: Fix issue where `bamboo cssgen --outfile` doesn't extract files to chunks before bundling them into the css
   out file
 - Updated dependencies [cd912f35]
 - Updated dependencies [dc4e80f7]
@@ -4489,15 +4541,15 @@ export default defineConfig({
 - 5b09ab3b: Add support for `--outfile` flag in the `cssgen` command.
 
   ```bash
-  panda cssgen --outfile dist/styles.css
+  bamboo cssgen --outfile dist/styles.css
   ```
 
 - 78ed6ed4: Fix issue where using a nested outdir like `src/styled-system` with a baseUrl like `./src` would result on
   parser NOT matching imports like `import { container } from "styled-system/patterns";` cause it would expect the full
   path `src/styled-system`
 - e48b130a: - Remove `stack` from `box.toJSON()` so that generated JSON files have less noise, mostly useful to get make
-  the `panda debug` command easier to read
-  - Also use the `ParserResult.toJSON()` method on `panda debug` command for the same reason
+  the `bamboo debug` command easier to read
+  - Also use the `ParserResult.toJSON()` method on `bamboo debug` command for the same reason
 
   instead of:
 
@@ -4595,8 +4647,8 @@ export default defineConfig({
       ],
   ```
 
-- 1a2c0e2b: Fix `panda.config.xxx` file dependencies detection when using the builder (= with PostCSS or with the VSCode
-  extension). It will now also properly resolve tsconfig path aliases.
+- 1a2c0e2b: Fix `bamboo.config.xxx` file dependencies detection when using the builder (= with PostCSS or with the
+  VSCode extension). It will now also properly resolve tsconfig path aliases.
 - Updated dependencies [6f03ead3]
 - Updated dependencies [8c670d60]
 - Updated dependencies [33198907]

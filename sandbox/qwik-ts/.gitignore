@@ -37,6 +37,6 @@ lerna-debug.log*
 # Yarn
 .yarn/*
 !.yarn/releases
-## Panda
+## Bamboo
 styled-system
 styled-system-static

@@ -82,7 +82,7 @@ export const LineHeightsPage = createTokenPage('lineHeights', (tokens) => (
     fontTokens={tokens}
     token="lineHeight"
     largeText
-    text="Panda design system lineHeight specifies the vertical distance between two lines of text. You can preview this visually here."
+    text="Bamboo design system lineHeight specifies the vertical distance between two lines of text. You can preview this visually here."
   />
 ))
 

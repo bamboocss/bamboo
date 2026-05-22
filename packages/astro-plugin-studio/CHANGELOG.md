@@ -1,5 +1,26 @@
 # @bamboocss/astro-plugin-studio
 
+## 1.12.2
+
+### Patch Changes
+
+- @bamboocss/core@1.12.2
+- @bamboocss/node@1.12.2
+
+## 1.12.1
+
+### Patch Changes
+
+- @bamboocss/core@1.12.1
+- @bamboocss/node@1.12.1
+
+## 1.12.0
+
+### Patch Changes
+
+- @bamboocss/core@1.12.0
+- @bamboocss/node@1.12.0
+
 ## 1.11.5
 
 ### Patch Changes
@@ -119,7 +140,7 @@
 
 ### Patch Changes
 
-- 4627837: **Studio**: Fix React SSR errors when running Panda Studio.
+- 4627837: **Studio**: Fix React SSR errors when running Bamboo Studio.
   - `ReferenceError: module is not defined` - React's CJS entry point was loaded in an ESM context
   - `TypeError: dispatcher.getOwner is not a function` - React development/production builds were mixed during SSR
   - @bamboocss/node@1.7.3
@@ -253,7 +274,7 @@
 
 ### Major Changes
 
-- a3bcbea: Stable release of PandaCSS
+- a3bcbea: Stable release of BambooCSS
 
   ### Style Context
 
@@ -636,21 +657,21 @@
 
 ### Patch Changes
 
-- d5977c24: - Add a `--logfile` flag to the `panda`, `panda codegen`, `panda cssgen` and `panda debug` commands.
+- d5977c24: - Add a `--logfile` flag to the `bamboo`, `bamboo codegen`, `bamboo cssgen` and `bamboo debug` commands.
   - Add a `logfile` option to the postcss plugin
 
   Logs will be streamed to the file specified by the `--logfile` flag or the `logfile` option. This is useful for
   debugging issues that occur during the build process.
 
   ```sh
-  panda --logfile ./logs/panda.log
+  bamboo --logfile ./logs/bamboo.log
   ```
 
   ```js
   module.exports = {
     plugins: {
       '@bamboocss/dev/postcss': {
-        logfile: './logs/panda.log',
+        logfile: './logs/bamboo.log',
       },
     },
   }
@@ -715,8 +736,8 @@
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
-  - Add a `--lightningcss` flag to the `panda` and `panda cssgen` command to use `lightningcss` instead of `postcss` for
-    this run.
+  - Add a `--lightningcss` flag to the `bamboo` and `bamboo cssgen` command to use `lightningcss` instead of `postcss`
+    for this run.
 
   ## Internal changes:
   - `markImportant` fn from JS instead of walking through postcss AST nodes

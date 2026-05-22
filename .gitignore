@@ -23,10 +23,10 @@ __generated__
 .envrc
 .npmrc
 
-## Panda
+## Bamboo
 styled-system
 styled-system-static
-panda
+bamboo
 outdir
 ts-import-map-outdir
 

@@ -27,7 +27,7 @@ const config = {
       },
       {
         source: '/learn',
-        destination: 'https://pandamastery.com',
+        destination: 'https://bamboomastery.com',
         permanent: true,
       },
       {

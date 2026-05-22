@@ -1,5 +1,50 @@
 # @bamboocss/dev
 
+## 1.12.2
+
+### Patch Changes
+
+- @bamboocss/config@1.12.2
+- @bamboocss/logger@1.12.2
+- @bamboocss/mcp@1.12.2
+- @bamboocss/node@1.12.2
+- @bamboocss/postcss@1.12.2
+- @bamboocss/preset-bamboo@1.12.2
+- @bamboocss/preset-base@1.12.2
+- @bamboocss/shared@1.12.2
+- @bamboocss/token-dictionary@1.12.2
+- @bamboocss/types@1.12.2
+
+## 1.12.1
+
+### Patch Changes
+
+- @bamboocss/config@1.12.1
+- @bamboocss/logger@1.12.1
+- @bamboocss/mcp@1.12.1
+- @bamboocss/node@1.12.1
+- @bamboocss/postcss@1.12.1
+- @bamboocss/preset-bamboo@1.12.1
+- @bamboocss/preset-base@1.12.1
+- @bamboocss/shared@1.12.1
+- @bamboocss/token-dictionary@1.12.1
+- @bamboocss/types@1.12.1
+
+## 1.12.0
+
+### Patch Changes
+
+- @bamboocss/config@1.12.0
+- @bamboocss/logger@1.12.0
+- @bamboocss/mcp@1.12.0
+- @bamboocss/node@1.12.0
+- @bamboocss/postcss@1.12.0
+- @bamboocss/preset-bamboo@1.12.0
+- @bamboocss/preset-base@1.12.0
+- @bamboocss/shared@1.12.0
+- @bamboocss/token-dictionary@1.12.0
+- @bamboocss/types@1.12.0
+
 ## 1.11.5
 
 ### Patch Changes
@@ -89,7 +134,7 @@
   - @bamboocss/config@1.11.1
   - @bamboocss/logger@1.11.1
   - @bamboocss/preset-base@1.11.1
-  - @bamboocss/preset-panda@1.11.1
+  - @bamboocss/preset-bamboo@1.11.1
   - @bamboocss/token-dictionary@1.11.1
   - @bamboocss/shared@1.11.1
 
@@ -104,7 +149,7 @@
   - @bamboocss/logger@1.11.0
   - @bamboocss/mcp@1.11.0
   - @bamboocss/preset-base@1.11.0
-  - @bamboocss/preset-panda@1.11.0
+  - @bamboocss/preset-bamboo@1.11.0
   - @bamboocss/token-dictionary@1.11.0
   - @bamboocss/postcss@1.11.0
   - @bamboocss/shared@1.11.0
@@ -133,7 +178,7 @@
   - @bamboocss/token-dictionary@1.10.0
   - @bamboocss/mcp@1.10.0
   - @bamboocss/preset-base@1.10.0
-  - @bamboocss/preset-panda@1.10.0
+  - @bamboocss/preset-bamboo@1.10.0
   - @bamboocss/postcss@1.10.0
 
 ## 1.9.1
@@ -149,7 +194,7 @@
   - @bamboocss/config@1.9.1
   - @bamboocss/postcss@1.9.1
   - @bamboocss/logger@1.9.1
-  - @bamboocss/preset-panda@1.9.1
+  - @bamboocss/preset-bamboo@1.9.1
   - @bamboocss/shared@1.9.1
   - @bamboocss/types@1.9.1
 
@@ -163,7 +208,7 @@
 - @bamboocss/config@1.9.0
 - @bamboocss/logger@1.9.0
 - @bamboocss/preset-base@1.9.0
-- @bamboocss/preset-panda@1.9.0
+- @bamboocss/preset-bamboo@1.9.0
 - @bamboocss/shared@1.9.0
 - @bamboocss/token-dictionary@1.9.0
 - @bamboocss/types@1.9.0
@@ -179,7 +224,7 @@
   - @bamboocss/mcp@1.8.2
   - @bamboocss/node@1.8.2
   - @bamboocss/preset-base@1.8.2
-  - @bamboocss/preset-panda@1.8.2
+  - @bamboocss/preset-bamboo@1.8.2
   - @bamboocss/token-dictionary@1.8.2
   - @bamboocss/postcss@1.8.2
   - @bamboocss/shared@1.8.2
@@ -195,7 +240,7 @@
   - @bamboocss/mcp@1.8.1
   - @bamboocss/node@1.8.1
   - @bamboocss/preset-base@1.8.1
-  - @bamboocss/preset-panda@1.8.1
+  - @bamboocss/preset-bamboo@1.8.1
   - @bamboocss/token-dictionary@1.8.1
   - @bamboocss/postcss@1.8.1
   - @bamboocss/shared@1.8.1
@@ -207,7 +252,7 @@
 - d7e46e0: **MCP Server [NEW]**: Added MCP server that exposes tools for AI agents.
 
   ```sh
-  panda init-mcp
+  bamboo init-mcp
   ```
 
   Available tools: `get_tokens`, `get_semantic_tokens`, `get_recipes`, `get_patterns`, `get_conditions`,
@@ -222,7 +267,7 @@
   - @bamboocss/node@1.8.0
   - @bamboocss/postcss@1.8.0
   - @bamboocss/preset-base@1.8.0
-  - @bamboocss/preset-panda@1.8.0
+  - @bamboocss/preset-bamboo@1.8.0
   - @bamboocss/shared@1.8.0
   - @bamboocss/token-dictionary@1.8.0
   - @bamboocss/types@1.8.0
@@ -237,7 +282,7 @@
   - @bamboocss/node@1.7.3
   - @bamboocss/postcss@1.7.3
   - @bamboocss/logger@1.7.3
-  - @bamboocss/preset-panda@1.7.3
+  - @bamboocss/preset-bamboo@1.7.3
   - @bamboocss/shared@1.7.3
   - @bamboocss/token-dictionary@1.7.3
   - @bamboocss/types@1.7.3
@@ -252,7 +297,7 @@
   - @bamboocss/config@1.7.2
   - @bamboocss/logger@1.7.2
   - @bamboocss/preset-base@1.7.2
-  - @bamboocss/preset-panda@1.7.2
+  - @bamboocss/preset-bamboo@1.7.2
   - @bamboocss/shared@1.7.2
   - @bamboocss/token-dictionary@1.7.2
   - @bamboocss/types@1.7.2
@@ -268,7 +313,7 @@
   - @bamboocss/node@1.7.1
   - @bamboocss/postcss@1.7.1
   - @bamboocss/logger@1.7.1
-  - @bamboocss/preset-panda@1.7.1
+  - @bamboocss/preset-bamboo@1.7.1
   - @bamboocss/shared@1.7.1
   - @bamboocss/token-dictionary@1.7.1
   - @bamboocss/types@1.7.1
@@ -277,15 +322,15 @@
 
 ### Minor Changes
 
-- 86b30b1: Add `panda spec` command to generate specification files for your theme (useful for documentation). This
+- 86b30b1: Add `bamboo spec` command to generate specification files for your theme (useful for documentation). This
   command generates JSON specification files containing metadata, examples, and usage information.
 
   ```bash
   # Generate all spec files
-  panda spec
+  bamboo spec
 
   # Custom output directory
-  panda spec --outdir custom/specs
+  bamboo spec --outdir custom/specs
   ```
 
   **Token Spec Structure:**
@@ -327,7 +372,7 @@
   - @bamboocss/config@1.7.0
   - @bamboocss/logger@1.7.0
   - @bamboocss/preset-base@1.7.0
-  - @bamboocss/preset-panda@1.7.0
+  - @bamboocss/preset-bamboo@1.7.0
   - @bamboocss/token-dictionary@1.7.0
   - @bamboocss/shared@1.7.0
 
@@ -340,7 +385,7 @@
 - @bamboocss/config@1.6.1
 - @bamboocss/logger@1.6.1
 - @bamboocss/preset-base@1.6.1
-- @bamboocss/preset-panda@1.6.1
+- @bamboocss/preset-bamboo@1.6.1
 - @bamboocss/shared@1.6.1
 - @bamboocss/token-dictionary@1.6.1
 - @bamboocss/types@1.6.1
@@ -371,7 +416,7 @@
   Usage:
 
   ```bash
-  panda cssgen --splitting
+  bamboo cssgen --splitting
   ```
 
 ### Patch Changes
@@ -382,7 +427,7 @@
   - @bamboocss/config@1.6.0
   - @bamboocss/logger@1.6.0
   - @bamboocss/preset-base@1.6.0
-  - @bamboocss/preset-panda@1.6.0
+  - @bamboocss/preset-bamboo@1.6.0
   - @bamboocss/shared@1.6.0
   - @bamboocss/token-dictionary@1.6.0
   - @bamboocss/types@1.6.0
@@ -396,7 +441,7 @@
 - @bamboocss/config@1.5.1
 - @bamboocss/logger@1.5.1
 - @bamboocss/preset-base@1.5.1
-- @bamboocss/preset-panda@1.5.1
+- @bamboocss/preset-bamboo@1.5.1
 - @bamboocss/shared@1.5.1
 - @bamboocss/token-dictionary@1.5.1
 - @bamboocss/types@1.5.1
@@ -412,7 +457,7 @@
   - @bamboocss/logger@1.5.0
   - @bamboocss/node@1.5.0
   - @bamboocss/preset-base@1.5.0
-  - @bamboocss/preset-panda@1.5.0
+  - @bamboocss/preset-bamboo@1.5.0
   - @bamboocss/postcss@1.5.0
   - @bamboocss/shared@1.5.0
 
@@ -429,7 +474,7 @@
   - @bamboocss/config@1.4.3
   - @bamboocss/logger@1.4.3
   - @bamboocss/preset-base@1.4.3
-  - @bamboocss/preset-panda@1.4.3
+  - @bamboocss/preset-bamboo@1.4.3
   - @bamboocss/shared@1.4.3
   - @bamboocss/token-dictionary@1.4.3
   - @bamboocss/types@1.4.3
@@ -438,8 +483,8 @@
 
 ### Patch Changes
 
-- 1290a27: Only log errors that are instances of `PandaError`, preventing test framework and other non-Panda errors from
-  being logged during development.
+- 1290a27: Only log errors that are instances of `BambooError`, preventing test framework and other non-Bamboo errors
+  from being logged during development.
 - Updated dependencies [0679f6f]
 - Updated dependencies [1290a27]
 - Updated dependencies [70420dd]
@@ -450,7 +495,7 @@
   - @bamboocss/types@1.4.2
   - @bamboocss/postcss@1.4.2
   - @bamboocss/logger@1.4.2
-  - @bamboocss/preset-panda@1.4.2
+  - @bamboocss/preset-bamboo@1.4.2
 
 ## 1.4.1
 
@@ -460,7 +505,7 @@
 - @bamboocss/postcss@1.4.1
 - @bamboocss/config@1.4.1
 - @bamboocss/logger@1.4.1
-- @bamboocss/preset-panda@1.4.1
+- @bamboocss/preset-bamboo@1.4.1
 - @bamboocss/shared@1.4.1
 - @bamboocss/token-dictionary@1.4.1
 - @bamboocss/types@1.4.1
@@ -470,7 +515,7 @@
 ### Patch Changes
 
 - Updated dependencies [29cf719]
-  - @bamboocss/preset-panda@1.4.0
+  - @bamboocss/preset-bamboo@1.4.0
   - @bamboocss/node@1.4.0
   - @bamboocss/config@1.4.0
   - @bamboocss/postcss@1.4.0
@@ -487,7 +532,7 @@
 - @bamboocss/postcss@1.3.1
 - @bamboocss/config@1.3.1
 - @bamboocss/logger@1.3.1
-- @bamboocss/preset-panda@1.3.1
+- @bamboocss/preset-bamboo@1.3.1
 - @bamboocss/shared@1.3.1
 - @bamboocss/token-dictionary@1.3.1
 - @bamboocss/types@1.3.1
@@ -501,7 +546,7 @@
   - @bamboocss/node@1.3.0
   - @bamboocss/config@1.3.0
   - @bamboocss/logger@1.3.0
-  - @bamboocss/preset-panda@1.3.0
+  - @bamboocss/preset-bamboo@1.3.0
   - @bamboocss/token-dictionary@1.3.0
   - @bamboocss/postcss@1.3.0
   - @bamboocss/shared@1.3.0
@@ -511,7 +556,7 @@
 ### Patch Changes
 
 - Updated dependencies [ae7cc8d]
-  - @bamboocss/preset-panda@1.2.0
+  - @bamboocss/preset-bamboo@1.2.0
   - @bamboocss/config@1.2.0
   - @bamboocss/node@1.2.0
   - @bamboocss/postcss@1.2.0
@@ -531,7 +576,7 @@
   - @bamboocss/shared@1.1.0
   - @bamboocss/logger@1.1.0
   - @bamboocss/node@1.1.0
-  - @bamboocss/preset-panda@1.1.0
+  - @bamboocss/preset-bamboo@1.1.0
   - @bamboocss/token-dictionary@1.1.0
   - @bamboocss/postcss@1.1.0
 
@@ -543,7 +588,7 @@
 - @bamboocss/config@1.0.1
 - @bamboocss/postcss@1.0.1
 - @bamboocss/logger@1.0.1
-- @bamboocss/preset-panda@1.0.1
+- @bamboocss/preset-bamboo@1.0.1
 - @bamboocss/shared@1.0.1
 - @bamboocss/token-dictionary@1.0.1
 - @bamboocss/types@1.0.1
@@ -552,7 +597,7 @@
 
 ### Major Changes
 
-- a3bcbea: Stable release of PandaCSS
+- a3bcbea: Stable release of BambooCSS
 
   ### Style Context
 
@@ -613,7 +658,7 @@
   - @bamboocss/logger@1.0.0
   - @bamboocss/node@1.0.0
   - @bamboocss/postcss@1.0.0
-  - @bamboocss/preset-panda@1.0.0
+  - @bamboocss/preset-bamboo@1.0.0
   - @bamboocss/shared@1.0.0
   - @bamboocss/token-dictionary@1.0.0
   - @bamboocss/types@1.0.0
@@ -633,7 +678,7 @@
   - @bamboocss/config@0.54.0
   - @bamboocss/types@0.54.0
   - @bamboocss/logger@0.54.0
-  - @bamboocss/preset-panda@0.54.0
+  - @bamboocss/preset-bamboo@0.54.0
 
 ## 0.53.7
 
@@ -643,7 +688,7 @@
 - @bamboocss/postcss@0.53.7
 - @bamboocss/config@0.53.7
 - @bamboocss/logger@0.53.7
-- @bamboocss/preset-panda@0.53.7
+- @bamboocss/preset-bamboo@0.53.7
 - @bamboocss/shared@0.53.7
 - @bamboocss/token-dictionary@0.53.7
 - @bamboocss/types@0.53.7
@@ -656,7 +701,7 @@
 - @bamboocss/postcss@0.53.6
 - @bamboocss/config@0.53.6
 - @bamboocss/logger@0.53.6
-- @bamboocss/preset-panda@0.53.6
+- @bamboocss/preset-bamboo@0.53.6
 - @bamboocss/shared@0.53.6
 - @bamboocss/token-dictionary@0.53.6
 - @bamboocss/types@0.53.6
@@ -669,7 +714,7 @@
 - @bamboocss/config@0.53.5
 - @bamboocss/postcss@0.53.5
 - @bamboocss/logger@0.53.5
-- @bamboocss/preset-panda@0.53.5
+- @bamboocss/preset-bamboo@0.53.5
 - @bamboocss/shared@0.53.5
 - @bamboocss/token-dictionary@0.53.5
 - @bamboocss/types@0.53.5
@@ -682,7 +727,7 @@
 - @bamboocss/postcss@0.53.4
 - @bamboocss/config@0.53.4
 - @bamboocss/logger@0.53.4
-- @bamboocss/preset-panda@0.53.4
+- @bamboocss/preset-bamboo@0.53.4
 - @bamboocss/shared@0.53.4
 - @bamboocss/token-dictionary@0.53.4
 - @bamboocss/types@0.53.4
@@ -695,7 +740,7 @@
 - @bamboocss/node@0.53.3
 - @bamboocss/postcss@0.53.3
 - @bamboocss/logger@0.53.3
-- @bamboocss/preset-panda@0.53.3
+- @bamboocss/preset-bamboo@0.53.3
 - @bamboocss/shared@0.53.3
 - @bamboocss/token-dictionary@0.53.3
 - @bamboocss/types@0.53.3
@@ -709,7 +754,7 @@
   - @bamboocss/node@0.53.2
   - @bamboocss/postcss@0.53.2
   - @bamboocss/logger@0.53.2
-  - @bamboocss/preset-panda@0.53.2
+  - @bamboocss/preset-bamboo@0.53.2
   - @bamboocss/shared@0.53.2
   - @bamboocss/token-dictionary@0.53.2
   - @bamboocss/types@0.53.2
@@ -723,7 +768,7 @@
   - @bamboocss/postcss@0.53.1
   - @bamboocss/config@0.53.1
   - @bamboocss/logger@0.53.1
-  - @bamboocss/preset-panda@0.53.1
+  - @bamboocss/preset-bamboo@0.53.1
   - @bamboocss/shared@0.53.1
   - @bamboocss/token-dictionary@0.53.1
   - @bamboocss/types@0.53.1
@@ -737,7 +782,7 @@
   - @bamboocss/node@0.53.0
   - @bamboocss/config@0.53.0
   - @bamboocss/logger@0.53.0
-  - @bamboocss/preset-panda@0.53.0
+  - @bamboocss/preset-bamboo@0.53.0
   - @bamboocss/token-dictionary@0.53.0
   - @bamboocss/postcss@0.53.0
   - @bamboocss/shared@0.53.0
@@ -751,7 +796,7 @@
   - @bamboocss/config@0.52.0
   - @bamboocss/postcss@0.52.0
   - @bamboocss/logger@0.52.0
-  - @bamboocss/preset-panda@0.52.0
+  - @bamboocss/preset-bamboo@0.52.0
   - @bamboocss/shared@0.52.0
   - @bamboocss/token-dictionary@0.52.0
   - @bamboocss/types@0.52.0
@@ -798,7 +843,7 @@
   - @bamboocss/postcss@0.51.1
   - @bamboocss/config@0.51.1
   - @bamboocss/logger@0.51.1
-  - @bamboocss/preset-panda@0.51.1
+  - @bamboocss/preset-bamboo@0.51.1
   - @bamboocss/shared@0.51.1
   - @bamboocss/token-dictionary@0.51.1
   - @bamboocss/types@0.51.1
@@ -812,7 +857,7 @@
   - @bamboocss/types@0.51.0
   - @bamboocss/node@0.51.0
   - @bamboocss/logger@0.51.0
-  - @bamboocss/preset-panda@0.51.0
+  - @bamboocss/preset-bamboo@0.51.0
   - @bamboocss/token-dictionary@0.51.0
   - @bamboocss/postcss@0.51.0
   - @bamboocss/shared@0.51.0
@@ -828,7 +873,7 @@
   - How many hardcoded values vs tokens do we have?
 
   ```sh
-  panda analyze --scope=<token|recipe>
+  bamboo analyze --scope=<token|recipe>
   ```
 
   > Still work in progress but we're excited to get your feedback!
@@ -842,7 +887,7 @@
   - @bamboocss/token-dictionary@0.50.0
   - @bamboocss/config@0.50.0
   - @bamboocss/logger@0.50.0
-  - @bamboocss/preset-panda@0.50.0
+  - @bamboocss/preset-bamboo@0.50.0
   - @bamboocss/postcss@0.50.0
   - @bamboocss/shared@0.50.0
 
@@ -906,7 +951,7 @@
 ### Patch Changes
 
 - Updated dependencies [97a0e4d]
-  - @bamboocss/preset-panda@0.49.0
+  - @bamboocss/preset-bamboo@0.49.0
   - @bamboocss/types@0.49.0
   - @bamboocss/config@0.49.0
   - @bamboocss/node@0.49.0
@@ -924,7 +969,7 @@
   - @bamboocss/postcss@0.48.1
   - @bamboocss/config@0.48.1
   - @bamboocss/logger@0.48.1
-  - @bamboocss/preset-panda@0.48.1
+  - @bamboocss/preset-bamboo@0.48.1
   - @bamboocss/shared@0.48.1
   - @bamboocss/token-dictionary@0.48.1
   - @bamboocss/types@0.48.1
@@ -937,7 +982,7 @@
 - @bamboocss/node@0.48.0
 - @bamboocss/postcss@0.48.0
 - @bamboocss/logger@0.48.0
-- @bamboocss/preset-panda@0.48.0
+- @bamboocss/preset-bamboo@0.48.0
 - @bamboocss/shared@0.48.0
 - @bamboocss/token-dictionary@0.48.0
 - @bamboocss/types@0.48.0
@@ -953,7 +998,7 @@
   - @bamboocss/node@0.47.1
   - @bamboocss/config@0.47.1
   - @bamboocss/logger@0.47.1
-  - @bamboocss/preset-panda@0.47.1
+  - @bamboocss/preset-bamboo@0.47.1
   - @bamboocss/shared@0.47.1
   - @bamboocss/types@0.47.1
 
@@ -967,7 +1012,7 @@
   - @bamboocss/node@0.47.0
   - @bamboocss/config@0.47.0
   - @bamboocss/logger@0.47.0
-  - @bamboocss/preset-panda@0.47.0
+  - @bamboocss/preset-bamboo@0.47.0
   - @bamboocss/postcss@0.47.0
   - @bamboocss/shared@0.47.0
 
@@ -979,7 +1024,7 @@
 - @bamboocss/postcss@0.46.1
 - @bamboocss/config@0.46.1
 - @bamboocss/logger@0.46.1
-- @bamboocss/preset-panda@0.46.1
+- @bamboocss/preset-bamboo@0.46.1
 - @bamboocss/shared@0.46.1
 - @bamboocss/token-dictionary@0.46.1
 - @bamboocss/types@0.46.1
@@ -996,7 +1041,7 @@
   - @bamboocss/postcss@0.46.0
   - @bamboocss/types@0.46.0
   - @bamboocss/logger@0.46.0
-  - @bamboocss/preset-panda@0.46.0
+  - @bamboocss/preset-bamboo@0.46.0
 
 ## 0.45.2
 
@@ -1006,7 +1051,7 @@
 - @bamboocss/postcss@0.45.2
 - @bamboocss/config@0.45.2
 - @bamboocss/logger@0.45.2
-- @bamboocss/preset-panda@0.45.2
+- @bamboocss/preset-bamboo@0.45.2
 - @bamboocss/shared@0.45.2
 - @bamboocss/token-dictionary@0.45.2
 - @bamboocss/types@0.45.2
@@ -1022,7 +1067,7 @@
   - @bamboocss/postcss@0.45.1
   - @bamboocss/config@0.45.1
   - @bamboocss/logger@0.45.1
-  - @bamboocss/preset-panda@0.45.1
+  - @bamboocss/preset-bamboo@0.45.1
   - @bamboocss/shared@0.45.1
   - @bamboocss/types@0.45.1
 
@@ -1039,7 +1084,7 @@
   - @bamboocss/node@0.45.0
   - @bamboocss/config@0.45.0
   - @bamboocss/logger@0.45.0
-  - @bamboocss/preset-panda@0.45.0
+  - @bamboocss/preset-bamboo@0.45.0
   - @bamboocss/postcss@0.45.0
 
 ## 0.44.0
@@ -1052,7 +1097,7 @@
   - @bamboocss/types@0.44.0
   - @bamboocss/node@0.44.0
   - @bamboocss/logger@0.44.0
-  - @bamboocss/preset-panda@0.44.0
+  - @bamboocss/preset-bamboo@0.44.0
   - @bamboocss/token-dictionary@0.44.0
   - @bamboocss/postcss@0.44.0
   - @bamboocss/shared@0.44.0
@@ -1066,7 +1111,7 @@
   - @bamboocss/node@0.43.0
   - @bamboocss/config@0.43.0
   - @bamboocss/logger@0.43.0
-  - @bamboocss/preset-panda@0.43.0
+  - @bamboocss/preset-bamboo@0.43.0
   - @bamboocss/token-dictionary@0.43.0
   - @bamboocss/postcss@0.43.0
   - @bamboocss/shared@0.43.0
@@ -1075,7 +1120,7 @@
 
 ### Patch Changes
 
-- 19c3a2c: Minor changes to the format of the `panda analyze --output coverage.json` file
+- 19c3a2c: Minor changes to the format of the `bamboo analyze --output coverage.json` file
 - 17a1932: [BREAKING] Removed the legacy `config.optimize` option because it was redundant. Now, we always optimize the
   generated CSS where possible.
 - Updated dependencies [e157dd1]
@@ -1083,7 +1128,7 @@
 - Updated dependencies [f00ff88]
 - Updated dependencies [ec64819]
 - Updated dependencies [17a1932]
-  - @bamboocss/preset-panda@0.42.0
+  - @bamboocss/preset-bamboo@0.42.0
   - @bamboocss/types@0.42.0
   - @bamboocss/node@0.42.0
   - @bamboocss/config@0.42.0
@@ -1101,7 +1146,7 @@
 - @bamboocss/postcss@0.41.0
 - @bamboocss/config@0.41.0
 - @bamboocss/logger@0.41.0
-- @bamboocss/preset-panda@0.41.0
+- @bamboocss/preset-bamboo@0.41.0
 - @bamboocss/shared@0.41.0
 - @bamboocss/token-dictionary@0.41.0
 
@@ -1109,13 +1154,13 @@
 
 ### Patch Changes
 
-- 48ff2b8: Improve `panda init --outdir=<x>` command to reflect `outdir` in generated panda config file.
+- 48ff2b8: Improve `bamboo init --outdir=<x>` command to reflect `outdir` in generated bamboo config file.
 - Updated dependencies [48ff2b8]
   - @bamboocss/node@0.40.1
   - @bamboocss/postcss@0.40.1
   - @bamboocss/config@0.40.1
   - @bamboocss/logger@0.40.1
-  - @bamboocss/preset-panda@0.40.1
+  - @bamboocss/preset-bamboo@0.40.1
   - @bamboocss/shared@0.40.1
   - @bamboocss/token-dictionary@0.40.1
   - @bamboocss/types@0.40.1
@@ -1126,11 +1171,11 @@
 
 - 5dcdae4: Improve monorepo setup DX by exposing some cli flags
 
-  ### `panda init`
+  ### `bamboo init`
   - Added new flag `--no-codegen` to skip codegen during initialization
   - Added new flag `--outdir` to specify the output directory for generated files
 
-  ### `panda emit-pkg`
+  ### `bamboo emit-pkg`
   - Added new `--base` flag to specify the base directory for the entrypoints in the generated `package.json#exports`
     field
 
@@ -1141,7 +1186,7 @@
   - @bamboocss/postcss@0.40.0
   - @bamboocss/config@0.40.0
   - @bamboocss/logger@0.40.0
-  - @bamboocss/preset-panda@0.40.0
+  - @bamboocss/preset-bamboo@0.40.0
   - @bamboocss/shared@0.40.0
   - @bamboocss/token-dictionary@0.40.0
   - @bamboocss/types@0.40.0
@@ -1161,7 +1206,7 @@
   - @bamboocss/postcss@0.39.2
   - @bamboocss/types@0.39.2
   - @bamboocss/logger@0.39.2
-  - @bamboocss/preset-panda@0.39.2
+  - @bamboocss/preset-bamboo@0.39.2
 
 ## 0.39.1
 
@@ -1171,7 +1216,7 @@
 - @bamboocss/postcss@0.39.1
 - @bamboocss/config@0.39.1
 - @bamboocss/logger@0.39.1
-- @bamboocss/preset-panda@0.39.1
+- @bamboocss/preset-bamboo@0.39.1
 - @bamboocss/shared@0.39.1
 - @bamboocss/token-dictionary@0.39.1
 - @bamboocss/types@0.39.1
@@ -1188,7 +1233,7 @@
   - @bamboocss/config@0.39.0
   - @bamboocss/node@0.39.0
   - @bamboocss/logger@0.39.0
-  - @bamboocss/preset-panda@0.39.0
+  - @bamboocss/preset-bamboo@0.39.0
   - @bamboocss/token-dictionary@0.39.0
   - @bamboocss/postcss@0.39.0
 
@@ -1205,7 +1250,7 @@
   - @bamboocss/node@0.38.0
   - @bamboocss/config@0.38.0
   - @bamboocss/logger@0.38.0
-  - @bamboocss/preset-panda@0.38.0
+  - @bamboocss/preset-bamboo@0.38.0
   - @bamboocss/postcss@0.38.0
 
 ## 0.37.2
@@ -1221,7 +1266,7 @@
   - @bamboocss/postcss@0.37.2
   - @bamboocss/config@0.37.2
   - @bamboocss/logger@0.37.2
-  - @bamboocss/preset-panda@0.37.2
+  - @bamboocss/preset-bamboo@0.37.2
   - @bamboocss/token-dictionary@0.37.2
   - @bamboocss/shared@0.37.2
 
@@ -1239,7 +1284,7 @@
   - @bamboocss/shared@0.37.1
   - @bamboocss/node@0.37.1
   - @bamboocss/logger@0.37.1
-  - @bamboocss/preset-panda@0.37.1
+  - @bamboocss/preset-bamboo@0.37.1
   - @bamboocss/postcss@0.37.1
 
 ## 0.37.0
@@ -1255,7 +1300,7 @@
   - @bamboocss/config@0.37.0
   - @bamboocss/token-dictionary@0.37.0
   - @bamboocss/logger@0.37.0
-  - @bamboocss/preset-panda@0.37.0
+  - @bamboocss/preset-bamboo@0.37.0
   - @bamboocss/postcss@0.37.0
 
 ## 0.36.1
@@ -1267,7 +1312,7 @@
   - @bamboocss/node@0.36.1
   - @bamboocss/config@0.36.1
   - @bamboocss/logger@0.36.1
-  - @bamboocss/preset-panda@0.36.1
+  - @bamboocss/preset-bamboo@0.36.1
   - @bamboocss/token-dictionary@0.36.1
   - @bamboocss/postcss@0.36.1
   - @bamboocss/shared@0.36.1
@@ -1285,7 +1330,7 @@
   Example:
 
   ```ts
-  // panda.config.ts
+  // bamboo.config.ts
   import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
@@ -1358,7 +1403,7 @@
   `staticCss.themes` to include them in the CSS output.
 
   ```ts
-  // panda.config.ts
+  // bamboo.config.ts
   import { defineConfig } from '@bamboocss/dev'
 
   export default defineConfig({
@@ -1378,7 +1423,7 @@
       --colors-body: var(--colors-blue-600);
     }
 
-    [data-panda-theme='primary'] {
+    [data-bamboo-theme='primary'] {
       --colors-text: red;
       --colors-muted: var(--colors-red-200);
       --colors-body: var(--colors-red-600);
@@ -1389,7 +1434,7 @@
         --colors-body: var(--colors-blue-400);
       }
 
-      [data-panda-theme='primary'] {
+      [data-bamboo-theme='primary'] {
         --colors-body: var(--colors-red-400);
       }
     }
@@ -1409,9 +1454,9 @@
   ```json
   {
     "name": "primary",
-    "id": "panda-themes-primary",
+    "id": "bamboo-themes-primary",
     "dataAttr": "primary",
-    "css": "[data-panda-theme=primary] { ... }"
+    "css": "[data-bamboo-theme=primary] { ... }"
   }
   ```
 
@@ -1455,7 +1500,7 @@
     const theme = themeName && (await getTheme(themeName))
 
     return (
-      <html lang="en" data-panda-theme={themeName ? themeName : undefined}>
+      <html lang="en" data-bamboo-theme={themeName ? themeName : undefined}>
         {themeName && (
           <head>
             <style type="text/css" id={theme.id} dangerouslySetInnerHTML={{ __html: theme.css }} />
@@ -1474,7 +1519,7 @@
       <>
         <button
           onClick={async () => {
-            const current = document.documentElement.dataset.pandaTheme
+            const current = document.documentElement.dataset.bambooTheme
             const next = current === 'primary' ? 'secondary' : 'primary'
             const theme = await getTheme(next)
             setCookie('theme', next, 7)
@@ -1537,7 +1582,7 @@
   - @bamboocss/types@0.36.0
   - @bamboocss/node@0.36.0
   - @bamboocss/logger@0.36.0
-  - @bamboocss/preset-panda@0.36.0
+  - @bamboocss/preset-bamboo@0.36.0
   - @bamboocss/postcss@0.36.0
   - @bamboocss/shared@0.36.0
 
@@ -1556,7 +1601,7 @@
   - @bamboocss/postcss@0.35.0
   - @bamboocss/node@0.35.0
   - @bamboocss/logger@0.35.0
-  - @bamboocss/preset-panda@0.35.0
+  - @bamboocss/preset-bamboo@0.35.0
   - @bamboocss/shared@0.35.0
 
 ## 0.34.3
@@ -1567,7 +1612,7 @@
 - @bamboocss/postcss@0.34.3
 - @bamboocss/config@0.34.3
 - @bamboocss/logger@0.34.3
-- @bamboocss/preset-panda@0.34.3
+- @bamboocss/preset-bamboo@0.34.3
 - @bamboocss/shared@0.34.3
 - @bamboocss/token-dictionary@0.34.3
 - @bamboocss/types@0.34.3
@@ -1582,7 +1627,7 @@
   - @bamboocss/types@0.34.2
   - @bamboocss/postcss@0.34.2
   - @bamboocss/logger@0.34.2
-  - @bamboocss/preset-panda@0.34.2
+  - @bamboocss/preset-bamboo@0.34.2
   - @bamboocss/shared@0.34.2
   - @bamboocss/token-dictionary@0.34.2
 
@@ -1596,7 +1641,7 @@
   - @bamboocss/postcss@0.34.1
   - @bamboocss/config@0.34.1
   - @bamboocss/logger@0.34.1
-  - @bamboocss/preset-panda@0.34.1
+  - @bamboocss/preset-bamboo@0.34.1
   - @bamboocss/shared@0.34.1
   - @bamboocss/types@0.34.1
 
@@ -1613,7 +1658,7 @@
   - @bamboocss/types@0.34.0
   - @bamboocss/node@0.34.0
   - @bamboocss/logger@0.34.0
-  - @bamboocss/preset-panda@0.34.0
+  - @bamboocss/preset-bamboo@0.34.0
   - @bamboocss/postcss@0.34.0
   - @bamboocss/shared@0.34.0
 
@@ -1622,7 +1667,8 @@
 ### Patch Changes
 
 - 1968da5: Allow dynamically recording profiling session by pressing the `p` key in your terminal when using the
-  `--cpu-prof` flag for long-running sessions (with `-w` or `--watch` for `panda` / `panda cssgen` / `panda codegen`).
+  `--cpu-prof` flag for long-running sessions (with `-w` or `--watch` for `bamboo` / `bamboo cssgen` /
+  `bamboo codegen`).
 - 8feeb95: Add `definePlugin` config functions for type-safety around plugins, add missing `plugins` in config
   dependencies to trigger a config reload on `plugins` change
 - Updated dependencies [34d94cf]
@@ -1637,7 +1683,7 @@
   - @bamboocss/types@0.33.0
   - @bamboocss/postcss@0.33.0
   - @bamboocss/logger@0.33.0
-  - @bamboocss/preset-panda@0.33.0
+  - @bamboocss/preset-bamboo@0.33.0
   - @bamboocss/shared@0.33.0
 
 ## 0.32.1
@@ -1653,7 +1699,7 @@
   - @bamboocss/token-dictionary@0.32.1
   - @bamboocss/node@0.32.1
   - @bamboocss/logger@0.32.1
-  - @bamboocss/preset-panda@0.32.1
+  - @bamboocss/preset-bamboo@0.32.1
   - @bamboocss/postcss@0.32.1
   - @bamboocss/shared@0.32.1
 
@@ -1672,7 +1718,7 @@
   - @bamboocss/node@0.32.0
   - @bamboocss/token-dictionary@0.32.0
   - @bamboocss/logger@0.32.0
-  - @bamboocss/preset-panda@0.32.0
+  - @bamboocss/preset-bamboo@0.32.0
   - @bamboocss/postcss@0.32.0
 
 ## 0.31.0
@@ -1681,7 +1727,7 @@
 
 - a17fe387: - Add a `config.polyfill` option that will polyfill the CSS @layer at-rules using a
   [postcss plugin](https://www.npmjs.com/package/@csstools/postcss-cascade-layers)
-  - And `--polyfill` flag to `panda` and `panda cssgen` commands
+  - And `--polyfill` flag to `bamboo` and `bamboo cssgen` commands
 
 ### Patch Changes
 
@@ -1696,7 +1742,7 @@
   - @bamboocss/shared@0.31.0
   - @bamboocss/node@0.31.0
   - @bamboocss/logger@0.31.0
-  - @bamboocss/preset-panda@0.31.0
+  - @bamboocss/preset-bamboo@0.31.0
   - @bamboocss/token-dictionary@0.31.0
   - @bamboocss/postcss@0.31.0
 
@@ -1710,7 +1756,7 @@
   - @bamboocss/node@0.30.2
   - @bamboocss/config@0.30.2
   - @bamboocss/logger@0.30.2
-  - @bamboocss/preset-panda@0.30.2
+  - @bamboocss/preset-bamboo@0.30.2
   - @bamboocss/token-dictionary@0.30.2
   - @bamboocss/postcss@0.30.2
   - @bamboocss/shared@0.30.2
@@ -1724,7 +1770,7 @@
   - @bamboocss/node@0.30.1
   - @bamboocss/postcss@0.30.1
   - @bamboocss/logger@0.30.1
-  - @bamboocss/preset-panda@0.30.1
+  - @bamboocss/preset-bamboo@0.30.1
   - @bamboocss/shared@0.30.1
   - @bamboocss/token-dictionary@0.30.1
   - @bamboocss/types@0.30.1
@@ -1733,21 +1779,21 @@
 
 ### Patch Changes
 
-- d5977c24: - Add a `--logfile` flag to the `panda`, `panda codegen`, `panda cssgen` and `panda debug` commands.
+- d5977c24: - Add a `--logfile` flag to the `bamboo`, `bamboo codegen`, `bamboo cssgen` and `bamboo debug` commands.
   - Add a `logfile` option to the postcss plugin
 
   Logs will be streamed to the file specified by the `--logfile` flag or the `logfile` option. This is useful for
   debugging issues that occur during the build process.
 
   ```sh
-  panda --logfile ./logs/panda.log
+  bamboo --logfile ./logs/bamboo.log
   ```
 
   ```js
   module.exports = {
     plugins: {
       '@bamboocss/dev/postcss': {
-        logfile: './logs/panda.log',
+        logfile: './logs/bamboo.log',
       },
     },
   }
@@ -1767,7 +1813,7 @@
   - @bamboocss/shared@0.30.0
   - @bamboocss/postcss@0.30.0
   - @bamboocss/logger@0.30.0
-  - @bamboocss/preset-panda@0.30.0
+  - @bamboocss/preset-bamboo@0.30.0
 
 ## 0.29.1
 
@@ -1778,7 +1824,7 @@
   - @bamboocss/postcss@0.29.1
   - @bamboocss/config@0.29.1
   - @bamboocss/logger@0.29.1
-  - @bamboocss/preset-panda@0.29.1
+  - @bamboocss/preset-bamboo@0.29.1
   - @bamboocss/shared@0.29.1
   - @bamboocss/token-dictionary@0.29.1
   - @bamboocss/types@0.29.1
@@ -1792,7 +1838,7 @@
   > We automatically track the config file and (transitive) files imported by the config file as much as possible, but
   > sometimes we might miss some. You can use this option as a workaround for those edge cases.
 
-  Set the `dependencies` option in `panda.config.ts` to a glob or list of files.
+  Set the `dependencies` option in `bamboo.config.ts` to a glob or list of files.
 
   ```ts
   export default defineConfig({
@@ -1801,8 +1847,8 @@
   })
   ```
 
-  - Invoke `config:change` hook in more situations (when the `--watch` flag is passed to `panda codegen`,
-    `panda cssgen`, `panda ship`)
+  - Invoke `config:change` hook in more situations (when the `--watch` flag is passed to `bamboo codegen`,
+    `bamboo cssgen`, `bamboo ship`)
 
   - Watch for more config options paths changes, so that the related artifacts will be regenerated a bit more reliably
     (ex: updating the `config.hooks` will now trigger a full regeneration of `styled-system`)
@@ -1818,7 +1864,7 @@
   - @bamboocss/token-dictionary@0.29.0
   - @bamboocss/config@0.29.0
   - @bamboocss/node@0.29.0
-  - @bamboocss/preset-panda@0.29.0
+  - @bamboocss/preset-bamboo@0.29.0
   - @bamboocss/postcss@0.29.0
   - @bamboocss/logger@0.29.0
   - @bamboocss/shared@0.29.0
@@ -1831,8 +1877,8 @@
   - Tweak the config after it has been resolved (after presets are loaded and merged), this could be used to dynamically
     load all `recipes` from a folder
   - Transform a source file's content before parsing it, this could be used to transform the file content to a
-    `tsx`-friendly syntax so that Panda's parser can parse it.
-  - Implement your own parser logic and add the extracted results to the classic Panda pipeline, this could be used to
+    `tsx`-friendly syntax so that Bamboo's parser can parse it.
+  - Implement your own parser logic and add the extracted results to the classic Bamboo pipeline, this could be used to
     parse style usage from any template language
   - Tweak the CSS content for any `@layer` or even right before it's written to disk (if using the CLI) or injected
     through the postcss plugin, allowing all kinds of customizations like removing the unused CSS variables, etc.
@@ -1841,14 +1887,14 @@
   See the list of available `config.hooks` here:
 
   ```ts
-  export interface PandaHooks {
+  export interface BambooHooks {
     /**
      * Called when the config is resolved, after all the presets are loaded and merged.
      * This is the first hook called, you can use it to tweak the config before the context is created.
      */
     'config:resolved': (args: { conf: LoadConfigResult }) => MaybeAsyncReturn
     /**
-     * Called when the Panda context has been created and the API is ready to be used.
+     * Called when the Bamboo context has been created and the API is ready to be used.
      */
     'context:created': (args: { ctx: ApiInterface; logger: LoggerInterface }) => void
     /**
@@ -1857,7 +1903,7 @@
     'config:change': (args: { config: UserConfig }) => MaybeAsyncReturn
     /**
      * Called after reading the file content but before parsing it.
-     * You can use this hook to transform the file content to a tsx-friendly syntax so that Panda's parser can parse it.
+     * You can use this hook to transform the file content to a tsx-friendly syntax so that Bamboo's parser can parse it.
      * You can also use this hook to parse the file's content on your side using a custom parser, in this case you don't have to return anything.
      */
     'parser:before': (args: { filePath: string; content: string }) => string | void
@@ -1884,9 +1930,9 @@
 
 ### Patch Changes
 
-- f255342f: Add a `--cpu-prof` flag to `panda`, `panda cssgen`, `panda codegen` and `panda debug` commands This is
-  useful for debugging performance issues in `panda` itself. This will generate a
-  `panda-{command}-{timestamp}.cpuprofile` file in the current working directory, which can be opened in tools like
+- f255342f: Add a `--cpu-prof` flag to `bamboo`, `bamboo cssgen`, `bamboo codegen` and `bamboo debug` commands This is
+  useful for debugging performance issues in `bamboo` itself. This will generate a
+  `bamboo-{command}-{timestamp}.cpuprofile` file in the current working directory, which can be opened in tools like
   [Speedscope](https://www.speedscope.app/)
 
   This is mostly intended for maintainers or can be asked by maintainers to help debug issues.
@@ -1900,7 +1946,7 @@
   - @bamboocss/node@0.28.0
   - @bamboocss/shared@0.28.0
   - @bamboocss/token-dictionary@0.28.0
-  - @bamboocss/preset-panda@0.28.0
+  - @bamboocss/preset-bamboo@0.28.0
   - @bamboocss/postcss@0.28.0
   - @bamboocss/error@0.28.0
   - @bamboocss/logger@0.28.0
@@ -1914,7 +1960,7 @@
   - @bamboocss/types@0.27.3
   - @bamboocss/node@0.27.3
   - @bamboocss/config@0.27.3
-  - @bamboocss/preset-panda@0.27.3
+  - @bamboocss/preset-bamboo@0.27.3
   - @bamboocss/token-dictionary@0.27.3
   - @bamboocss/postcss@0.27.3
   - @bamboocss/error@0.27.3
@@ -1932,7 +1978,7 @@
   - @bamboocss/config@0.27.2
   - @bamboocss/error@0.27.2
   - @bamboocss/logger@0.27.2
-  - @bamboocss/preset-panda@0.27.2
+  - @bamboocss/preset-bamboo@0.27.2
   - @bamboocss/shared@0.27.2
   - @bamboocss/token-dictionary@0.27.2
   - @bamboocss/types@0.27.2
@@ -1946,7 +1992,7 @@
   - @bamboocss/node@0.27.1
   - @bamboocss/types@0.27.1
   - @bamboocss/config@0.27.1
-  - @bamboocss/preset-panda@0.27.1
+  - @bamboocss/preset-bamboo@0.27.1
   - @bamboocss/token-dictionary@0.27.1
   - @bamboocss/error@0.27.1
   - @bamboocss/logger@0.27.1
@@ -1962,8 +2008,8 @@
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
-  - Add a `--lightningcss` flag to the `panda` and `panda cssgen` command to use `lightningcss` instead of `postcss` for
-    this run.
+  - Add a `--lightningcss` flag to the `bamboo` and `bamboo cssgen` command to use `lightningcss` instead of `postcss`
+    for this run.
 
   ## Internal changes:
   - `markImportant` fn from JS instead of walking through postcss AST nodes
@@ -1980,7 +2026,7 @@
 - Updated dependencies [74ac0d9d]
 - Updated dependencies [c9195a4e]
   - @bamboocss/token-dictionary@0.27.0
-  - @bamboocss/preset-panda@0.27.0
+  - @bamboocss/preset-bamboo@0.27.0
   - @bamboocss/postcss@0.27.0
   - @bamboocss/config@0.27.0
   - @bamboocss/logger@0.27.0
@@ -1998,7 +2044,7 @@
 - @bamboocss/postcss@0.26.2
 - @bamboocss/error@0.26.2
 - @bamboocss/logger@0.26.2
-- @bamboocss/preset-panda@0.26.2
+- @bamboocss/preset-bamboo@0.26.2
 - @bamboocss/shared@0.26.2
 - @bamboocss/token-dictionary@0.26.2
 - @bamboocss/types@0.26.2
@@ -2012,7 +2058,7 @@
 - @bamboocss/config@0.26.1
 - @bamboocss/error@0.26.1
 - @bamboocss/logger@0.26.1
-- @bamboocss/preset-panda@0.26.1
+- @bamboocss/preset-bamboo@0.26.1
 - @bamboocss/shared@0.26.1
 - @bamboocss/token-dictionary@0.26.1
 - @bamboocss/types@0.26.1
@@ -2031,7 +2077,7 @@
   - @bamboocss/config@0.26.0
   - @bamboocss/node@0.26.0
   - @bamboocss/token-dictionary@0.26.0
-  - @bamboocss/preset-panda@0.26.0
+  - @bamboocss/preset-bamboo@0.26.0
   - @bamboocss/postcss@0.26.0
   - @bamboocss/error@0.26.0
   - @bamboocss/logger@0.26.0
@@ -2048,7 +2094,7 @@
   - @bamboocss/token-dictionary@0.25.0
   - @bamboocss/postcss@0.25.0
   - @bamboocss/config@0.25.0
-  - @bamboocss/preset-panda@0.25.0
+  - @bamboocss/preset-bamboo@0.25.0
   - @bamboocss/error@0.25.0
   - @bamboocss/logger@0.25.0
   - @bamboocss/shared@0.25.0
@@ -2057,7 +2103,7 @@
 
 ### Patch Changes
 
-- b2e00ca0: Fix an issue with the `panda init` command which didn't update existing `.gitignore` to include the
+- b2e00ca0: Fix an issue with the `bamboo init` command which didn't update existing `.gitignore` to include the
   `styled-system`
 - Updated dependencies [71e82a4e]
   - @bamboocss/shared@0.24.2
@@ -2065,7 +2111,7 @@
   - @bamboocss/config@0.24.2
   - @bamboocss/node@0.24.2
   - @bamboocss/token-dictionary@0.24.2
-  - @bamboocss/preset-panda@0.24.2
+  - @bamboocss/preset-bamboo@0.24.2
   - @bamboocss/postcss@0.24.2
   - @bamboocss/error@0.24.2
   - @bamboocss/logger@0.24.2
@@ -2080,7 +2126,7 @@
   - @bamboocss/config@0.24.1
   - @bamboocss/error@0.24.1
   - @bamboocss/logger@0.24.1
-  - @bamboocss/preset-panda@0.24.1
+  - @bamboocss/preset-bamboo@0.24.1
   - @bamboocss/shared@0.24.1
   - @bamboocss/token-dictionary@0.24.1
   - @bamboocss/types@0.24.1
@@ -2103,7 +2149,7 @@
   - @bamboocss/types@0.24.0
   - @bamboocss/postcss@0.24.0
   - @bamboocss/config@0.24.0
-  - @bamboocss/preset-panda@0.24.0
+  - @bamboocss/preset-bamboo@0.24.0
   - @bamboocss/token-dictionary@0.24.0
   - @bamboocss/error@0.24.0
   - @bamboocss/logger@0.24.0
@@ -2116,7 +2162,7 @@
 - 1efc4277: Add support for emit-pkg command to emit just the `package.json` file with the required entrypoints. If an
   existing `package.json` file is present, the `exports` field will be updated.
 
-  When setting up Panda in a monorepo, this command is useful in monorepo setups where you want the codegen to run only
+  When setting up Bamboo in a monorepo, this command is useful in monorepo setups where you want the codegen to run only
   in a dedicated workspace package.
 
 ### Patch Changes
@@ -2130,7 +2176,7 @@
   - @bamboocss/postcss@0.23.0
   - @bamboocss/config@0.23.0
   - @bamboocss/error@0.23.0
-  - @bamboocss/preset-panda@0.23.0
+  - @bamboocss/preset-bamboo@0.23.0
   - @bamboocss/shared@0.23.0
   - @bamboocss/token-dictionary@0.23.0
   - @bamboocss/types@0.23.0
@@ -2147,7 +2193,7 @@
   - @bamboocss/shared@0.22.1
   - @bamboocss/node@0.22.1
   - @bamboocss/config@0.22.1
-  - @bamboocss/preset-panda@0.22.1
+  - @bamboocss/preset-bamboo@0.22.1
   - @bamboocss/token-dictionary@0.22.1
   - @bamboocss/error@0.22.1
   - @bamboocss/logger@0.22.1
@@ -2164,7 +2210,7 @@
   - @bamboocss/shared@0.22.0
   - @bamboocss/node@0.22.0
   - @bamboocss/config@0.22.0
-  - @bamboocss/preset-panda@0.22.0
+  - @bamboocss/preset-bamboo@0.22.0
   - @bamboocss/token-dictionary@0.22.0
   - @bamboocss/postcss@0.22.0
   - @bamboocss/error@0.22.0
@@ -2184,7 +2230,7 @@
   - @bamboocss/postcss@0.21.0
   - @bamboocss/config@0.21.0
   - @bamboocss/token-dictionary@0.21.0
-  - @bamboocss/preset-panda@0.21.0
+  - @bamboocss/preset-bamboo@0.21.0
   - @bamboocss/error@0.21.0
   - @bamboocss/logger@0.21.0
 
@@ -2198,7 +2244,7 @@
 - @bamboocss/postcss@0.20.1
 - @bamboocss/error@0.20.1
 - @bamboocss/logger@0.20.1
-- @bamboocss/preset-panda@0.20.1
+- @bamboocss/preset-bamboo@0.20.1
 - @bamboocss/shared@0.20.1
 - @bamboocss/types@0.20.1
 
@@ -2208,14 +2254,14 @@
 
 - 24ee49a5: - Add support for granular config change detection
   - Improve the `codegen` experience by only rewriting files affecteds by a config change
-- da7a5d59: Add a --watch flag to the `panda ship` command
+- da7a5d59: Add a --watch flag to the `bamboo ship` command
 - Updated dependencies [24ee49a5]
 - Updated dependencies [904aec7b]
   - @bamboocss/postcss@0.20.0
   - @bamboocss/config@0.20.0
   - @bamboocss/types@0.20.0
   - @bamboocss/node@0.20.0
-  - @bamboocss/preset-panda@0.20.0
+  - @bamboocss/preset-bamboo@0.20.0
   - @bamboocss/token-dictionary@0.20.0
   - @bamboocss/error@0.20.0
   - @bamboocss/logger@0.20.0
@@ -2225,7 +2271,7 @@
 
 ### Minor Changes
 
-- b3ca8412: Require explicit installation of `@bamboocss/studio` to use the `panda studio` command.
+- b3ca8412: Require explicit installation of `@bamboocss/studio` to use the `bamboo studio` command.
 
 ### Patch Changes
 
@@ -2234,7 +2280,7 @@
   - @bamboocss/types@0.19.0
   - @bamboocss/node@0.19.0
   - @bamboocss/config@0.19.0
-  - @bamboocss/preset-panda@0.19.0
+  - @bamboocss/preset-bamboo@0.19.0
   - @bamboocss/token-dictionary@0.19.0
   - @bamboocss/postcss@0.19.0
   - @bamboocss/error@0.19.0
@@ -2252,7 +2298,7 @@
   - @bamboocss/config@0.18.3
   - @bamboocss/error@0.18.3
   - @bamboocss/logger@0.18.3
-  - @bamboocss/preset-panda@0.18.3
+  - @bamboocss/preset-bamboo@0.18.3
   - @bamboocss/shared@0.18.3
   - @bamboocss/token-dictionary@0.18.3
   - @bamboocss/types@0.18.3
@@ -2268,7 +2314,7 @@
 - @bamboocss/postcss@0.18.2
 - @bamboocss/error@0.18.2
 - @bamboocss/logger@0.18.2
-- @bamboocss/preset-panda@0.18.2
+- @bamboocss/preset-bamboo@0.18.2
 - @bamboocss/shared@0.18.2
 - @bamboocss/types@0.18.2
 
@@ -2286,7 +2332,7 @@
   - @bamboocss/postcss@0.18.1
   - @bamboocss/error@0.18.1
   - @bamboocss/logger@0.18.1
-  - @bamboocss/preset-panda@0.18.1
+  - @bamboocss/preset-bamboo@0.18.1
   - @bamboocss/shared@0.18.1
   - @bamboocss/types@0.18.1
 
@@ -2295,7 +2341,7 @@
 ### Patch Changes
 
 - 41563f56: Add `--strict-tokens` flag and question in the interactive CLI
-- 866c12aa: Fix CLI interactive mode `syntax` question values and prettify the generated `panda.config.ts` file
+- 866c12aa: Fix CLI interactive mode `syntax` question values and prettify the generated `bamboo.config.ts` file
 - Updated dependencies [ba9e32fa]
 - Updated dependencies [b840e469]
 - Updated dependencies [3010af28]
@@ -2309,7 +2355,7 @@
   - @bamboocss/config@0.18.0
   - @bamboocss/error@0.18.0
   - @bamboocss/logger@0.18.0
-  - @bamboocss/preset-panda@0.18.0
+  - @bamboocss/preset-bamboo@0.18.0
 
 ## 0.17.5
 
@@ -2323,7 +2369,7 @@
   - @bamboocss/config@0.17.5
   - @bamboocss/error@0.17.5
   - @bamboocss/logger@0.17.5
-  - @bamboocss/preset-panda@0.17.5
+  - @bamboocss/preset-bamboo@0.17.5
   - @bamboocss/shared@0.17.5
   - @bamboocss/token-dictionary@0.17.5
   - @bamboocss/types@0.17.5
@@ -2338,7 +2384,7 @@
   - @bamboocss/types@0.17.4
   - @bamboocss/config@0.17.4
   - @bamboocss/node@0.17.4
-  - @bamboocss/preset-panda@0.17.4
+  - @bamboocss/preset-bamboo@0.17.4
   - @bamboocss/token-dictionary@0.17.4
   - @bamboocss/postcss@0.17.4
   - @bamboocss/error@0.17.4
@@ -2359,7 +2405,7 @@
   - @bamboocss/node@0.17.3
   - @bamboocss/postcss@0.17.3
   - @bamboocss/config@0.17.3
-  - @bamboocss/preset-panda@0.17.3
+  - @bamboocss/preset-bamboo@0.17.3
   - @bamboocss/studio@0.17.3
   - @bamboocss/token-dictionary@0.17.3
   - @bamboocss/error@0.17.3
@@ -2390,7 +2436,7 @@
   - @bamboocss/error@0.17.2
   - @bamboocss/logger@0.17.2
   - @bamboocss/node@0.17.2
-  - @bamboocss/preset-panda@0.17.2
+  - @bamboocss/preset-bamboo@0.17.2
   - @bamboocss/shared@0.17.2
   - @bamboocss/studio@0.17.2
   - @bamboocss/token-dictionary@0.17.2
@@ -2415,7 +2461,7 @@
   - @bamboocss/config@0.17.1
   - @bamboocss/error@0.17.1
   - @bamboocss/logger@0.17.1
-  - @bamboocss/preset-panda@0.17.1
+  - @bamboocss/preset-bamboo@0.17.1
 
 ## 0.17.0
 
@@ -2431,7 +2477,7 @@
   - @bamboocss/token-dictionary@0.17.0
   - @bamboocss/postcss@0.17.0
   - @bamboocss/config@0.17.0
-  - @bamboocss/preset-panda@0.17.0
+  - @bamboocss/preset-bamboo@0.17.0
   - @bamboocss/error@0.17.0
   - @bamboocss/logger@0.17.0
 
@@ -2441,28 +2487,28 @@
 
 - 36252b1d: ## --minimal flag
 
-  Adds a new `--minimal` flag for the CLI on the `panda cssgen` command to skip generating CSS for theme tokens,
+  Adds a new `--minimal` flag for the CLI on the `bamboo cssgen` command to skip generating CSS for theme tokens,
   preflightkeyframes, static and global css
 
   Thich means that the generated CSS will only contain the CSS related to the styles found in the included files.
 
   > Note that you can use a `glob` to override the `config.include` option like this:
-  > `panda cssgen "src/**/*.css" --minimal`
+  > `bamboo cssgen "src/**/*.css" --minimal`
 
   This is useful when you want to split your CSS into multiple files, for example if you want to split by pages.
 
   Use it like this:
 
   ```bash
-  panda cssgen "src/**/pages/*.css" --minimal --outfile dist/pages.css
+  bamboo cssgen "src/**/pages/*.css" --minimal --outfile dist/pages.css
   ```
 
   ***
 
   ## cssgen {type}
 
-  In addition to the optional `glob` that you can already pass to override the config.include option, the `panda cssgen`
-  command now accepts a new `{type}` argument to generate only a specific type of CSS:
+  In addition to the optional `glob` that you can already pass to override the config.include option, the
+  `bamboo cssgen` command now accepts a new `{type}` argument to generate only a specific type of CSS:
   - preflight
   - tokens
   - static
@@ -2474,7 +2520,7 @@
   You can use it like this:
 
   ```bash
-  panda cssgen "static" --outfile dist/static.css
+  bamboo cssgen "static" --outfile dist/static.css
   ```
 
 ### Patch Changes
@@ -2488,7 +2534,7 @@
   - @bamboocss/token-dictionary@0.16.0
   - @bamboocss/error@0.16.0
   - @bamboocss/logger@0.16.0
-  - @bamboocss/preset-panda@0.16.0
+  - @bamboocss/preset-bamboo@0.16.0
   - @bamboocss/shared@0.16.0
   - @bamboocss/types@0.16.0
 
@@ -2503,7 +2549,7 @@
   - @bamboocss/config@0.15.5
   - @bamboocss/error@0.15.5
   - @bamboocss/logger@0.15.5
-  - @bamboocss/preset-panda@0.15.5
+  - @bamboocss/preset-bamboo@0.15.5
   - @bamboocss/shared@0.15.5
   - @bamboocss/token-dictionary@0.15.5
   - @bamboocss/types@0.15.5
@@ -2521,7 +2567,7 @@
   - @bamboocss/postcss@0.15.4
   - @bamboocss/error@0.15.4
   - @bamboocss/logger@0.15.4
-  - @bamboocss/preset-panda@0.15.4
+  - @bamboocss/preset-bamboo@0.15.4
   - @bamboocss/shared@0.15.4
   - @bamboocss/token-dictionary@0.15.4
 
@@ -2539,7 +2585,7 @@
   - @bamboocss/node@0.15.3
   - @bamboocss/token-dictionary@0.15.3
   - @bamboocss/config@0.15.3
-  - @bamboocss/preset-panda@0.15.3
+  - @bamboocss/preset-bamboo@0.15.3
   - @bamboocss/postcss@0.15.3
   - @bamboocss/error@0.15.3
   - @bamboocss/logger@0.15.3
@@ -2548,7 +2594,7 @@
 
 ### Patch Changes
 
-- f3c30d60: Fix issue where studio uses studio config, instead of custom panda config.
+- f3c30d60: Fix issue where studio uses studio config, instead of custom bamboo config.
 - Updated dependencies [f3c30d60]
 - Updated dependencies [26a788c0]
 - Updated dependencies [f3c30d60]
@@ -2558,7 +2604,7 @@
   - @bamboocss/types@0.15.2
   - @bamboocss/config@0.15.2
   - @bamboocss/postcss@0.15.2
-  - @bamboocss/preset-panda@0.15.2
+  - @bamboocss/preset-bamboo@0.15.2
   - @bamboocss/token-dictionary@0.15.2
   - @bamboocss/error@0.15.2
   - @bamboocss/logger@0.15.2
@@ -2580,7 +2626,7 @@
   - @bamboocss/config@0.15.1
   - @bamboocss/error@0.15.1
   - @bamboocss/logger@0.15.1
-  - @bamboocss/preset-panda@0.15.1
+  - @bamboocss/preset-bamboo@0.15.1
 
 ## 0.15.0
 
@@ -2595,7 +2641,7 @@
   - @bamboocss/studio@0.15.0
   - @bamboocss/node@0.15.0
   - @bamboocss/config@0.15.0
-  - @bamboocss/preset-panda@0.15.0
+  - @bamboocss/preset-bamboo@0.15.0
   - @bamboocss/token-dictionary@0.15.0
   - @bamboocss/postcss@0.15.0
   - @bamboocss/error@0.15.0
@@ -2619,7 +2665,7 @@
   - @bamboocss/types@0.14.0
   - @bamboocss/node@0.14.0
   - @bamboocss/config@0.14.0
-  - @bamboocss/preset-panda@0.14.0
+  - @bamboocss/preset-bamboo@0.14.0
   - @bamboocss/postcss@0.14.0
   - @bamboocss/error@0.14.0
   - @bamboocss/logger@0.14.0
@@ -2644,7 +2690,7 @@
   - @bamboocss/node@0.13.1
   - @bamboocss/postcss@0.13.1
   - @bamboocss/logger@0.13.1
-  - @bamboocss/preset-panda@0.13.1
+  - @bamboocss/preset-bamboo@0.13.1
   - @bamboocss/shared@0.13.1
   - @bamboocss/token-dictionary@0.13.1
   - @bamboocss/types@0.13.1
@@ -2654,7 +2700,7 @@
 ### Minor Changes
 
 - 04b5fd6c: - Add support for minification in `cssgen` command.
-  - Fix issue where `panda --minify` does not work.
+  - Fix issue where `bamboo --minify` does not work.
 
 ### Patch Changes
 
@@ -2664,7 +2710,7 @@
 - @bamboocss/config@0.13.0
 - @bamboocss/error@0.13.0
 - @bamboocss/logger@0.13.0
-- @bamboocss/preset-panda@0.13.0
+- @bamboocss/preset-bamboo@0.13.0
 - @bamboocss/shared@0.13.0
 - @bamboocss/token-dictionary@0.13.0
 - @bamboocss/types@0.13.0
@@ -2679,7 +2725,7 @@
 - @bamboocss/config@0.12.2
 - @bamboocss/error@0.12.2
 - @bamboocss/logger@0.12.2
-- @bamboocss/preset-panda@0.12.2
+- @bamboocss/preset-bamboo@0.12.2
 - @bamboocss/shared@0.12.2
 - @bamboocss/token-dictionary@0.12.2
 - @bamboocss/types@0.12.2
@@ -2694,7 +2740,7 @@
 - @bamboocss/config@0.12.1
 - @bamboocss/error@0.12.1
 - @bamboocss/logger@0.12.1
-- @bamboocss/preset-panda@0.12.1
+- @bamboocss/preset-bamboo@0.12.1
 - @bamboocss/shared@0.12.1
 - @bamboocss/token-dictionary@0.12.1
 - @bamboocss/types@0.12.1
@@ -2718,7 +2764,7 @@
   - @bamboocss/token-dictionary@0.12.0
   - @bamboocss/error@0.12.0
   - @bamboocss/logger@0.12.0
-  - @bamboocss/preset-panda@0.12.0
+  - @bamboocss/preset-bamboo@0.12.0
   - @bamboocss/shared@0.12.0
   - @bamboocss/types@0.12.0
 
@@ -2734,7 +2780,7 @@
   - @bamboocss/node@0.11.1
   - @bamboocss/token-dictionary@0.11.1
   - @bamboocss/config@0.11.1
-  - @bamboocss/preset-panda@0.11.1
+  - @bamboocss/preset-bamboo@0.11.1
   - @bamboocss/postcss@0.11.1
   - @bamboocss/error@0.11.1
   - @bamboocss/logger@0.11.1
@@ -2743,7 +2789,7 @@
 
 ### Patch Changes
 
-- cde9702e: Add an optional `glob` argument that overrides the config.include on the `panda cssgen` CLI command.
+- cde9702e: Add an optional `glob` argument that overrides the config.include on the `bamboo cssgen` CLI command.
 - 164fbf27: Remove astro plugin entrypoint in favor of installing `@bamboocss/astro` package
 - Updated dependencies [dead08a2]
 - Updated dependencies [cde9702e]
@@ -2753,7 +2799,7 @@
   - @bamboocss/types@0.11.0
   - @bamboocss/studio@0.11.0
   - @bamboocss/postcss@0.11.0
-  - @bamboocss/preset-panda@0.11.0
+  - @bamboocss/preset-bamboo@0.11.0
   - @bamboocss/token-dictionary@0.11.0
   - @bamboocss/error@0.11.0
   - @bamboocss/logger@0.11.0
@@ -2827,7 +2873,7 @@
   - @bamboocss/token-dictionary@0.10.0
   - @bamboocss/node@0.10.0
   - @bamboocss/config@0.10.0
-  - @bamboocss/preset-panda@0.10.0
+  - @bamboocss/preset-bamboo@0.10.0
   - @bamboocss/postcss@0.10.0
   - @bamboocss/astro@0.10.0
   - @bamboocss/error@0.10.0
@@ -2844,7 +2890,7 @@
   - @bamboocss/node@0.9.0
   - @bamboocss/config@0.9.0
   - @bamboocss/token-dictionary@0.9.0
-  - @bamboocss/preset-panda@0.9.0
+  - @bamboocss/preset-bamboo@0.9.0
   - @bamboocss/studio@0.9.0
   - @bamboocss/astro@0.9.0
   - @bamboocss/error@0.9.0
@@ -2855,8 +2901,8 @@
 
 ### Patch Changes
 
-- f7da0aea: Add `-w, --watch` flag on `panda cssgen`, `-o` shortcut for `--outfile` for both `panda cssgen` and
-  `panda ship`
+- f7da0aea: Add `-w, --watch` flag on `bamboo cssgen`, `-o` shortcut for `--outfile` for both `bamboo cssgen` and
+  `bamboo ship`
 - Updated dependencies [5d1d376b]
 - Updated dependencies [ac078416]
 - Updated dependencies [e1f6318a]
@@ -2868,7 +2914,7 @@
   - @bamboocss/studio@0.8.0
   - @bamboocss/types@0.8.0
   - @bamboocss/postcss@0.8.0
-  - @bamboocss/preset-panda@0.8.0
+  - @bamboocss/preset-bamboo@0.8.0
   - @bamboocss/astro@0.8.0
   - @bamboocss/error@0.8.0
   - @bamboocss/logger@0.8.0
@@ -2891,7 +2937,7 @@
   - @bamboocss/postcss@0.7.0
   - @bamboocss/studio@0.7.0
   - @bamboocss/token-dictionary@0.7.0
-  - @bamboocss/preset-panda@0.7.0
+  - @bamboocss/preset-bamboo@0.7.0
   - @bamboocss/astro@0.7.0
   - @bamboocss/error@0.7.0
   - @bamboocss/logger@0.7.0
@@ -2913,7 +2959,7 @@
   - @bamboocss/token-dictionary@0.6.0
   - @bamboocss/error@0.6.0
   - @bamboocss/logger@0.6.0
-  - @bamboocss/preset-panda@0.6.0
+  - @bamboocss/preset-bamboo@0.6.0
   - @bamboocss/shared@0.6.0
 
 ## 0.5.1
@@ -2923,11 +2969,11 @@
 - 5b09ab3b: Add support for `--outfile` flag in the `cssgen` command.
 
   ```bash
-  panda cssgen --outfile dist/styles.css
+  bamboo cssgen --outfile dist/styles.css
   ```
 
 - f9247e52: Provide better error logs:
-  - full stacktrace when using PANDA_DEBUG
+  - full stacktrace when using BAMBOO_DEBUG
   - specific CssSyntaxError to better spot the error
 
 - Updated dependencies [773565c4]
@@ -2948,7 +2994,7 @@
   - @bamboocss/shared@0.5.1
   - @bamboocss/logger@0.5.1
   - @bamboocss/postcss@0.5.1
-  - @bamboocss/preset-panda@0.5.1
+  - @bamboocss/preset-bamboo@0.5.1
   - @bamboocss/token-dictionary@0.5.1
   - @bamboocss/astro@0.5.1
   - @bamboocss/error@0.5.1
@@ -2962,7 +3008,7 @@
 - Updated dependencies [3a87cff8]
   - @bamboocss/shared@0.5.0
   - @bamboocss/types@0.5.0
-  - @bamboocss/preset-panda@0.5.0
+  - @bamboocss/preset-bamboo@0.5.0
   - @bamboocss/studio@0.5.0
   - @bamboocss/node@0.5.0
   - @bamboocss/token-dictionary@0.5.0
@@ -2977,11 +3023,11 @@
 ### Patch Changes
 
 - 8991b1e4: - Experimental support for `.vue` files and better `.svelte` support
-  - Fix issue where the `panda ship` command does not write to the correct path
+  - Fix issue where the `bamboo ship` command does not write to the correct path
 - a48e5b00: Add support for watch mode in codegen command via the `--watch` or `-w` flag.
 
   ```bash
-  panda codegen --watch
+  bamboo codegen --watch
   ```
 
 - Updated dependencies [d00eb17c]
@@ -2991,7 +3037,7 @@
   - @bamboocss/types@0.4.0
   - @bamboocss/config@0.4.0
   - @bamboocss/node@0.4.0
-  - @bamboocss/preset-panda@0.4.0
+  - @bamboocss/preset-bamboo@0.4.0
   - @bamboocss/token-dictionary@0.4.0
   - @bamboocss/postcss@0.4.0
   - @bamboocss/astro@0.4.0
@@ -3006,7 +3052,7 @@
 - c8bee958: Add support for config path in cli commands via the `--config` or `-c` flag.
 
   ```bash
-  panda init --config ./bamboocss.config.js
+  bamboo init --config ./bamboocss.config.js
   ```
 
 - Updated dependencies [24b78f7c]
@@ -3019,7 +3065,7 @@
   - @bamboocss/node@0.3.2
   - @bamboocss/error@0.3.2
   - @bamboocss/logger@0.3.2
-  - @bamboocss/preset-panda@0.3.2
+  - @bamboocss/preset-bamboo@0.3.2
   - @bamboocss/shared@0.3.2
   - @bamboocss/token-dictionary@0.3.2
   - @bamboocss/types@0.3.2
@@ -3037,7 +3083,7 @@
   - @bamboocss/logger@0.3.1
   - @bamboocss/node@0.3.1
   - @bamboocss/postcss@0.3.1
-  - @bamboocss/preset-panda@0.3.1
+  - @bamboocss/preset-bamboo@0.3.1
   - @bamboocss/shared@0.3.1
   - @bamboocss/studio@0.3.1
   - @bamboocss/token-dictionary@0.3.1
@@ -3051,7 +3097,7 @@
 - Updated dependencies [bd5c049b]
 - Updated dependencies [6d81ee9e]
   - @bamboocss/node@0.3.0
-  - @bamboocss/preset-panda@0.3.0
+  - @bamboocss/preset-bamboo@0.3.0
   - @bamboocss/types@0.3.0
   - @bamboocss/postcss@0.3.0
   - @bamboocss/studio@0.3.0

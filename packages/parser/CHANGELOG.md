@@ -1,5 +1,38 @@
 # @bamboocss/parser
 
+## 1.12.2
+
+### Patch Changes
+
+- @bamboocss/config@1.12.2
+- @bamboocss/core@1.12.2
+- @bamboocss/extractor@1.12.2
+- @bamboocss/logger@1.12.2
+- @bamboocss/shared@1.12.2
+- @bamboocss/types@1.12.2
+
+## 1.12.1
+
+### Patch Changes
+
+- @bamboocss/config@1.12.1
+- @bamboocss/core@1.12.1
+- @bamboocss/extractor@1.12.1
+- @bamboocss/logger@1.12.1
+- @bamboocss/shared@1.12.1
+- @bamboocss/types@1.12.1
+
+## 1.12.0
+
+### Patch Changes
+
+- @bamboocss/config@1.12.0
+- @bamboocss/core@1.12.0
+- @bamboocss/extractor@1.12.0
+- @bamboocss/logger@1.12.0
+- @bamboocss/shared@1.12.0
+- @bamboocss/types@1.12.0
+
 ## 1.11.5
 
 ### Patch Changes
@@ -64,8 +97,8 @@
     'parser:before': ({ configure }) => {
       configure({
         matchTagMode: 'override',
-        matchTag(tag, isPandaComponent) {
-          return isPandaComponent && tag !== 'Stack'
+        matchTag(tag, isBambooComponent) {
+          return isBambooComponent && tag !== 'Stack'
         },
       })
     },
@@ -93,8 +126,8 @@
   `compilerOptions` with string-form enum values like `target: "ESNext"`. They must be converted to numeric enum values
   via the TypeScript parser API.
 
-  Previously, panda forwarded the parsed-as-JSON `compilerOptions` from `get-tsconfig` straight to ts-morph, which
-  caused `panda` (codegen and any command that loads source files) to throw:
+  Previously, bamboo forwarded the parsed-as-JSON `compilerOptions` from `get-tsconfig` straight to ts-morph, which
+  caused `bamboo` (codegen and any command that loads source files) to throw:
 
   ```
   target is a string value; tsconfig JSON must be parsed with parseJsonSourceFileConfigFileContent
@@ -123,7 +156,7 @@
 
 ### Patch Changes
 
-- 44457bb: Use TypeScript 6.0 or later with Panda. This release updates static analysis and codegen to ts-morph v28 and
+- 44457bb: Use TypeScript 6.0 or later with Bamboo. This release updates static analysis and codegen to ts-morph v28 and
   TypeScript 6.0.2.
 - Updated dependencies [c31f3a2]
 - Updated dependencies [bbaa8b3]
@@ -365,8 +398,8 @@
 
 ### Patch Changes
 
-- 1290a27: Only log errors that are instances of `PandaError`, preventing test framework and other non-Panda errors from
-  being logged during development.
+- 1290a27: Only log errors that are instances of `BambooError`, preventing test framework and other non-Bamboo errors
+  from being logged during development.
 - 70420dd: Fix issue where using `token()` or `token.var()` function from `styled-system/tokens` doesn't get resolved by
   the compiler.
 
@@ -488,7 +521,7 @@
 
 ### Major Changes
 
-- a3bcbea: Stable release of PandaCSS
+- a3bcbea: Stable release of BambooCSS
 
   ### Style Context
 
@@ -715,7 +748,7 @@
   })
   ```
 
-  Panda will now infer the slots from the anatomy and add them to the recipe.
+  Bamboo will now infer the slots from the anatomy and add them to the recipe.
 
 - Updated dependencies [fea78c7]
 - Updated dependencies [ad89b90]
@@ -1082,7 +1115,7 @@
   </div>
   ```
 
-- 7a96298: Fix Panda imports detection when using `tsconfig`.`baseUrl` with an outdir that starts with `./`.
+- 7a96298: Fix Bamboo imports detection when using `tsconfig`.`baseUrl` with an outdir that starts with `./`.
 - Updated dependencies [96b47b3]
 - Updated dependencies [bc09d89]
 - Updated dependencies [7a96298]
@@ -1209,9 +1242,9 @@
   }
   ```
 
-  We introduced a bug in [v0.34.2](https://github.com/bamboocss/panda/blob/main/CHANGELOG.md#0342---2024-03-08) where
+  We introduced a bug in [v0.34.2](https://github.com/bamboocss/bamboo/blob/main/CHANGELOG.md#0342---2024-03-08) where
   the `Tabs.Trigger` component was not being matched to the `tabs` slot recipe, due to the
-  [new namespace import feature](https://github.com/bamboocss/panda/pull/2371).
+  [new namespace import feature](https://github.com/bamboocss/bamboo/pull/2371).
 
 - Updated dependencies [bd0cb07]
   - @bamboocss/types@0.36.1
@@ -1245,11 +1278,11 @@
 - c459b43: Fix extraction of JSX `styled` factory when using namespace imports
 
   ```tsx
-  import * as pandaJsx from '../styled-system/jsx'
+  import * as bambooJsx from '../styled-system/jsx'
 
   // ✅ this will work now
-  pandaJsx.styled('div', { base: { color: 'red' } })
-  const App = () => <pandaJsx.styled.span color="blue">Hello</pandaJsx.styled.span>
+  bambooJsx.styled('div', { base: { color: 'red' } })
+  const App = () => <bambooJsx.styled.span color="blue">Hello</bambooJsx.styled.span>
   ```
 
 - Updated dependencies [50db354]
@@ -1283,16 +1316,16 @@
   ```ts
   import * as p from 'styled-system/patterns'
   import * as recipes from 'styled-system/recipes'
-  import * as panda from 'styled-system/css'
+  import * as bamboo from 'styled-system/css'
 
   // this will now be extracted
   p.stack({ mt: '40px' })
 
   recipes.cardStyle({ rounded: true })
 
-  panda.css({ color: 'red' })
-  panda.cva({ base: { color: 'blue' } })
-  panda.sva({ base: { root: { color: 'green' } } })
+  bamboo.css({ color: 'red' })
+  bamboo.cva({ base: { color: 'blue' } })
+  bamboo.sva({ base: { root: { color: 'green' } } })
   ```
 
 - Updated dependencies [0bf09f2]
@@ -1542,7 +1575,7 @@
 
 ### Patch Changes
 
-- 6b829cab: Allow configuring the `matchTag` / `matchTagProp` functions to customize the way Panda extracts your JSX.
+- 6b829cab: Allow configuring the `matchTag` / `matchTagProp` functions to customize the way Bamboo extracts your JSX.
   This can be especially useful when working with libraries that have properties that look like CSS properties but are
   not and should be ignored.
 
@@ -1598,21 +1631,21 @@
 
 ### Patch Changes
 
-- d5977c24: - Add a `--logfile` flag to the `panda`, `panda codegen`, `panda cssgen` and `panda debug` commands.
+- d5977c24: - Add a `--logfile` flag to the `bamboo`, `bamboo codegen`, `bamboo cssgen` and `bamboo debug` commands.
   - Add a `logfile` option to the postcss plugin
 
   Logs will be streamed to the file specified by the `--logfile` flag or the `logfile` option. This is useful for
   debugging issues that occur during the build process.
 
   ```sh
-  panda --logfile ./logs/panda.log
+  bamboo --logfile ./logs/bamboo.log
   ```
 
   ```js
   module.exports = {
     plugins: {
       '@bamboocss/dev/postcss': {
-        logfile: './logs/panda.log',
+        logfile: './logs/bamboo.log',
       },
     },
   }
@@ -1683,8 +1716,8 @@
   - Tweak the config after it has been resolved (after presets are loaded and merged), this could be used to dynamically
     load all `recipes` from a folder
   - Transform a source file's content before parsing it, this could be used to transform the file content to a
-    `tsx`-friendly syntax so that Panda's parser can parse it.
-  - Implement your own parser logic and add the extracted results to the classic Panda pipeline, this could be used to
+    `tsx`-friendly syntax so that Bamboo's parser can parse it.
+  - Implement your own parser logic and add the extracted results to the classic Bamboo pipeline, this could be used to
     parse style usage from any template language
   - Tweak the CSS content for any `@layer` or even right before it's written to disk (if using the CLI) or injected
     through the postcss plugin, allowing all kinds of customizations like removing the unused CSS variables, etc.
@@ -1693,14 +1726,14 @@
   See the list of available `config.hooks` here:
 
   ```ts
-  export interface PandaHooks {
+  export interface BambooHooks {
     /**
      * Called when the config is resolved, after all the presets are loaded and merged.
      * This is the first hook called, you can use it to tweak the config before the context is created.
      */
     'config:resolved': (args: { conf: LoadConfigResult }) => MaybeAsyncReturn
     /**
-     * Called when the Panda context has been created and the API is ready to be used.
+     * Called when the Bamboo context has been created and the API is ready to be used.
      */
     'context:created': (args: { ctx: ApiInterface; logger: LoggerInterface }) => void
     /**
@@ -1709,7 +1742,7 @@
     'config:change': (args: { config: UserConfig }) => MaybeAsyncReturn
     /**
      * Called after reading the file content but before parsing it.
-     * You can use this hook to transform the file content to a tsx-friendly syntax so that Panda's parser can parse it.
+     * You can use this hook to transform the file content to a tsx-friendly syntax so that Bamboo's parser can parse it.
      * You can also use this hook to parse the file's content on your side using a custom parser, in this case you don't have to return anything.
      */
     'parser:before': (args: { filePath: string; content: string }) => string | void
@@ -1794,8 +1827,8 @@
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
-  - Add a `--lightningcss` flag to the `panda` and `panda cssgen` command to use `lightningcss` instead of `postcss` for
-    this run.
+  - Add a `--lightningcss` flag to the `bamboo` and `bamboo cssgen` command to use `lightningcss` instead of `postcss`
+    for this run.
 
   ## Internal changes:
   - `markImportant` fn from JS instead of walking through postcss AST nodes
@@ -2420,7 +2453,7 @@
   ```
 
 - 3a04a927: Fix static extraction of the
-  [Array Syntax](https://panda-css.com/docs/concepts/responsive-design#the-array-syntax) when used with runtime
+  [Array Syntax](https://bamboo-css.com/docs/concepts/responsive-design#the-array-syntax) when used with runtime
   conditions
 
   Given a component like this:
@@ -2518,10 +2551,10 @@
   export default defineConfig({
     outdir: './outdir',
     importMap: {
-      css: '#panda/styled-system/css',
-      recipes: '#panda/styled-system/recipes',
-      patterns: '#panda/styled-system/patterns',
-      jsx: '#panda/styled-system/jsx',
+      css: '#bamboo/styled-system/css',
+      recipes: '#bamboo/styled-system/recipes',
+      patterns: '#bamboo/styled-system/patterns',
+      jsx: '#bamboo/styled-system/jsx',
     },
   })
   ```
@@ -2607,7 +2640,7 @@
   this:
 
   ```ts
-  import { cva } from '.panda/css'
+  import { cva } from '.bamboo/css'
 
   const variants = () => {
     const spacingTokens = Object.entries({
@@ -2655,7 +2688,7 @@
 - f27146d6: Fix an issue where some JSX components wouldn't get matched to their corresponding recipes/patterns when
   using `Regex` in the `jsx` field of a config, resulting in some style props missing.
 
-  issue: https://github.com/bamboocss/panda/issues/1315
+  issue: https://github.com/bamboocss/bamboo/issues/1315
 
 - Updated dependencies [be24d1a0]
 - Updated dependencies [4bc515ea]
@@ -2688,7 +2721,7 @@
 
 ### Patch Changes
 
-- 577dcb9d: Fix issue where Panda does not detect styles after nested template in vue
+- 577dcb9d: Fix issue where Bamboo does not detect styles after nested template in vue
 - Updated dependencies [d0fbc7cc]
   - @bamboocss/config@0.13.1
   - @bamboocss/extractor@0.13.1
@@ -2930,20 +2963,20 @@
 
 ### Patch Changes
 
-- fb449016: Fix cases where Stitches `styled.withConfig` would be misinterpreted as a panda fn and lead to this error:
+- fb449016: Fix cases where Stitches `styled.withConfig` would be misinterpreted as a bamboo fn and lead to this error:
 
   ```ts
   TypeError: Cannot read properties of undefined (reading 'startsWith')
-      at /panda/packages/shared/dist/index.js:433:16
-      at get (/panda/packages/shared/dist/index.js:116:20)
-      at Utility.setClassName (/panda/packages/core/dist/index.js:1682:66)
-      at inner (/panda/packages/core/dist/index.js:1705:14)
-      at Utility.getOrCreateClassName (/panda/packages/core/dist/index.js:1709:12)
-      at AtomicRule.transform (/panda/packages/core/dist/index.js:1729:23)
-      at /panda/packages/core/dist/index.js:323:32
-      at inner (/panda/packages/shared/dist/index.js:219:12)
-      at walkObject (/panda/packages/shared/dist/index.js:221:10)
-      at AtomicRule.process (/panda/packages/core/dist/index.js:317:35)
+      at /bamboo/packages/shared/dist/index.js:433:16
+      at get (/bamboo/packages/shared/dist/index.js:116:20)
+      at Utility.setClassName (/bamboo/packages/core/dist/index.js:1682:66)
+      at inner (/bamboo/packages/core/dist/index.js:1705:14)
+      at Utility.getOrCreateClassName (/bamboo/packages/core/dist/index.js:1709:12)
+      at AtomicRule.transform (/bamboo/packages/core/dist/index.js:1729:23)
+      at /bamboo/packages/core/dist/index.js:323:32
+      at inner (/bamboo/packages/shared/dist/index.js:219:12)
+      at walkObject (/bamboo/packages/shared/dist/index.js:221:10)
+      at AtomicRule.process (/bamboo/packages/core/dist/index.js:317:35)
   ```
 
 - be0ad578: Fix parser issue with TS path mappings
@@ -2992,7 +3025,7 @@
   }
   ```
 
-  Given a `panda.config.ts` with recipes each including a common `jsx` tag name, such as:
+  Given a `bamboo.config.ts` with recipes each including a common `jsx` tag name, such as:
 
   ```ts
   recipes: {
@@ -3055,7 +3088,7 @@
   - some non-styling JSX prop is extracted leading to an incorrect CSS rule being generated, ex:
 
   ```sh
-  🐼 info [cli] Writing /Users/astahmer/dev/reproductions/remix-panda/styled-system/debug/app__routes___index.css
+  🐼 info [cli] Writing /Users/astahmer/dev/reproductions/remix-bamboo/styled-system/debug/app__routes___index.css
   🐼 error [serializer:css] Failed to serialize CSS: CssSyntaxError: <css input>:28:19: Missed semicolon
 
     26 |     }
@@ -3090,22 +3123,22 @@
   This features is pure css approach to writing styles, and can be a great way to migrate from styled-components and
   emotion.
 
-  Set the `syntax` option to `template-literal` in the panda config to enable this feature.
+  Set the `syntax` option to `template-literal` in the bamboo config to enable this feature.
 
   ```js
-  // panda.config.ts
+  // bamboo.config.ts
   export default defineConfig({
     //...
     syntax: 'template-literal',
   })
   ```
 
-  > For existing projects, you might need to run the `panda codegen --clean`
+  > For existing projects, you might need to run the `bamboo codegen --clean`
 
   You can also use the `--syntax` option to specify the syntax type when using the CLI.
 
   ```sh
-  panda init -p --syntax template-literal
+  bamboo init -p --syntax template-literal
   ```
 
   To get autocomplete for token variables, consider using the
@@ -3137,7 +3170,7 @@
 ### Patch Changes
 
 - 8991b1e4: - Experimental support for `.vue` files and better `.svelte` support
-  - Fix issue where the `panda ship` command does not write to the correct path
+  - Fix issue where the `bamboo ship` command does not write to the correct path
 - Updated dependencies [54a8913c]
 - Updated dependencies [c7b42325]
 - Updated dependencies [5b344b9c]

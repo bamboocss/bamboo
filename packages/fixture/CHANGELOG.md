@@ -253,8 +253,8 @@
   - Tweak the config after it has been resolved (after presets are loaded and merged), this could be used to dynamically
     load all `recipes` from a folder
   - Transform a source file's content before parsing it, this could be used to transform the file content to a
-    `tsx`-friendly syntax so that Panda's parser can parse it.
-  - Implement your own parser logic and add the extracted results to the classic Panda pipeline, this could be used to
+    `tsx`-friendly syntax so that Bamboo's parser can parse it.
+  - Implement your own parser logic and add the extracted results to the classic Bamboo pipeline, this could be used to
     parse style usage from any template language
   - Tweak the CSS content for any `@layer` or even right before it's written to disk (if using the CLI) or injected
     through the postcss plugin, allowing all kinds of customizations like removing the unused CSS variables, etc.
@@ -263,14 +263,14 @@
   See the list of available `config.hooks` here:
 
   ```ts
-  export interface PandaHooks {
+  export interface BambooHooks {
     /**
      * Called when the config is resolved, after all the presets are loaded and merged.
      * This is the first hook called, you can use it to tweak the config before the context is created.
      */
     'config:resolved': (args: { conf: LoadConfigResult }) => MaybeAsyncReturn
     /**
-     * Called when the Panda context has been created and the API is ready to be used.
+     * Called when the Bamboo context has been created and the API is ready to be used.
      */
     'context:created': (args: { ctx: ApiInterface; logger: LoggerInterface }) => void
     /**
@@ -279,7 +279,7 @@
     'config:change': (args: { config: UserConfig }) => MaybeAsyncReturn
     /**
      * Called after reading the file content but before parsing it.
-     * You can use this hook to transform the file content to a tsx-friendly syntax so that Panda's parser can parse it.
+     * You can use this hook to transform the file content to a tsx-friendly syntax so that Bamboo's parser can parse it.
      * You can also use this hook to parse the file's content on your side using a custom parser, in this case you don't have to return anything.
      */
     'parser:before': (args: { filePath: string; content: string }) => string | void
@@ -320,8 +320,8 @@
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
-  - Add a `--lightningcss` flag to the `panda` and `panda cssgen` command to use `lightningcss` instead of `postcss` for
-    this run.
+  - Add a `--lightningcss` flag to the `bamboo` and `bamboo cssgen` command to use `lightningcss` instead of `postcss`
+    for this run.
 
   ## Internal changes:
   - `markImportant` fn from JS instead of walking through postcss AST nodes
@@ -354,7 +354,7 @@
 - Updated dependencies [8f4ce97c]
   - @bamboocss/types@0.22.1
   - @bamboocss/preset-base@0.22.1
-  - @bamboocss/preset-panda@0.22.1
+  - @bamboocss/preset-bamboo@0.22.1
 
 ## 0.22.0
 
@@ -364,7 +364,7 @@
 - Updated dependencies [1cc8fcff]
   - @bamboocss/types@0.22.0
   - @bamboocss/preset-base@0.22.0
-  - @bamboocss/preset-panda@0.22.0
+  - @bamboocss/preset-bamboo@0.22.0
 
 ## 0.21.0
 
@@ -374,7 +374,7 @@
 - Updated dependencies [105f74ce]
   - @bamboocss/types@0.21.0
   - @bamboocss/preset-base@0.21.0
-  - @bamboocss/preset-panda@0.21.0
+  - @bamboocss/preset-bamboo@0.21.0
 
 ## 0.20.1
 
@@ -382,7 +382,7 @@
 
 - Updated dependencies [428e5401]
   - @bamboocss/preset-base@0.20.1
-  - @bamboocss/preset-panda@0.20.1
+  - @bamboocss/preset-bamboo@0.20.1
   - @bamboocss/types@0.20.1
 
 ## 0.20.0
@@ -393,7 +393,7 @@
 - Updated dependencies [904aec7b]
   - @bamboocss/types@0.20.0
   - @bamboocss/preset-base@0.20.0
-  - @bamboocss/preset-panda@0.20.0
+  - @bamboocss/preset-bamboo@0.20.0
 
 ## 0.19.0
 
@@ -403,14 +403,14 @@
 - Updated dependencies [89f86923]
   - @bamboocss/types@0.19.0
   - @bamboocss/preset-base@0.19.0
-  - @bamboocss/preset-panda@0.19.0
+  - @bamboocss/preset-bamboo@0.19.0
 
 ## 0.18.3
 
 ### Patch Changes
 
 - @bamboocss/preset-base@0.18.3
-- @bamboocss/preset-panda@0.18.3
+- @bamboocss/preset-bamboo@0.18.3
 - @bamboocss/types@0.18.3
 
 ## 0.18.2
@@ -419,7 +419,7 @@
 
 - Updated dependencies [3e1ea626]
   - @bamboocss/preset-base@0.18.2
-  - @bamboocss/preset-panda@0.18.2
+  - @bamboocss/preset-bamboo@0.18.2
   - @bamboocss/types@0.18.2
 
 ## 0.18.1
@@ -429,7 +429,7 @@
 - Updated dependencies [ce34ea45]
 - Updated dependencies [aac7b379]
   - @bamboocss/preset-base@0.18.1
-  - @bamboocss/preset-panda@0.18.1
+  - @bamboocss/preset-bamboo@0.18.1
   - @bamboocss/types@0.18.1
 
 ## 0.18.0
@@ -438,14 +438,14 @@
 
 - @bamboocss/types@0.18.0
 - @bamboocss/preset-base@0.18.0
-- @bamboocss/preset-panda@0.18.0
+- @bamboocss/preset-bamboo@0.18.0
 
 ## 0.17.5
 
 ### Patch Changes
 
 - @bamboocss/preset-base@0.17.5
-- @bamboocss/preset-panda@0.17.5
+- @bamboocss/preset-bamboo@0.17.5
 - @bamboocss/types@0.17.5
 
 ## 0.17.4
@@ -455,7 +455,7 @@
 - Updated dependencies [fa77080a]
   - @bamboocss/types@0.17.4
   - @bamboocss/preset-base@0.17.4
-  - @bamboocss/preset-panda@0.17.4
+  - @bamboocss/preset-bamboo@0.17.4
 
 ## 0.17.3
 
@@ -464,14 +464,14 @@
 - Updated dependencies [529a262e]
   - @bamboocss/types@0.17.3
   - @bamboocss/preset-base@0.17.3
-  - @bamboocss/preset-panda@0.17.3
+  - @bamboocss/preset-bamboo@0.17.3
 
 ## 0.17.2
 
 ### Patch Changes
 
 - @bamboocss/preset-base@0.17.2
-- @bamboocss/preset-panda@0.17.2
+- @bamboocss/preset-bamboo@0.17.2
 - @bamboocss/types@0.17.2
 
 ## 0.17.1
@@ -480,7 +480,7 @@
 
 - @bamboocss/types@0.17.1
 - @bamboocss/preset-base@0.17.1
-- @bamboocss/preset-panda@0.17.1
+- @bamboocss/preset-bamboo@0.17.1
 
 ## 0.17.0
 
@@ -489,7 +489,7 @@
 - Updated dependencies [fc4688e6]
   - @bamboocss/types@0.17.0
   - @bamboocss/preset-base@0.17.0
-  - @bamboocss/preset-panda@0.17.0
+  - @bamboocss/preset-bamboo@0.17.0
 
 ## 0.16.0
 
@@ -497,7 +497,7 @@
 
 - Updated dependencies [0f3bede5]
   - @bamboocss/preset-base@0.16.0
-  - @bamboocss/preset-panda@0.16.0
+  - @bamboocss/preset-bamboo@0.16.0
   - @bamboocss/types@0.16.0
 
 ## 0.15.5
@@ -505,7 +505,7 @@
 ### Patch Changes
 
 - @bamboocss/preset-base@0.15.5
-- @bamboocss/preset-panda@0.15.5
+- @bamboocss/preset-bamboo@0.15.5
 - @bamboocss/types@0.15.5
 
 ## 0.15.4
@@ -514,7 +514,7 @@
 
 - @bamboocss/types@0.15.4
 - @bamboocss/preset-base@0.15.4
-- @bamboocss/preset-panda@0.15.4
+- @bamboocss/preset-bamboo@0.15.4
 
 ## 0.15.3
 
@@ -524,7 +524,7 @@
 - Updated dependencies [58743bc4]
   - @bamboocss/types@0.15.3
   - @bamboocss/preset-base@0.15.3
-  - @bamboocss/preset-panda@0.15.3
+  - @bamboocss/preset-bamboo@0.15.3
 
 ## 0.15.2
 
@@ -533,7 +533,7 @@
 - Updated dependencies [26a788c0]
   - @bamboocss/types@0.15.2
   - @bamboocss/preset-base@0.15.2
-  - @bamboocss/preset-panda@0.15.2
+  - @bamboocss/preset-bamboo@0.15.2
 
 ## 0.15.1
 
@@ -541,7 +541,7 @@
 
 - @bamboocss/types@0.15.1
 - @bamboocss/preset-base@0.15.1
-- @bamboocss/preset-panda@0.15.1
+- @bamboocss/preset-bamboo@0.15.1
 
 ## 0.15.0
 
@@ -551,7 +551,7 @@
 - Updated dependencies [39298609]
   - @bamboocss/types@0.15.0
   - @bamboocss/preset-base@0.15.0
-  - @bamboocss/preset-panda@0.15.0
+  - @bamboocss/preset-bamboo@0.15.0
 
 ## 0.14.0
 
@@ -562,14 +562,14 @@
 - Updated dependencies [6f7ee198]
   - @bamboocss/types@0.14.0
   - @bamboocss/preset-base@0.14.0
-  - @bamboocss/preset-panda@0.14.0
+  - @bamboocss/preset-bamboo@0.14.0
 
 ## 0.13.1
 
 ### Patch Changes
 
 - @bamboocss/preset-base@0.13.1
-- @bamboocss/preset-panda@0.13.1
+- @bamboocss/preset-bamboo@0.13.1
 - @bamboocss/types@0.13.1
 
 ## 0.13.0
@@ -577,7 +577,7 @@
 ### Patch Changes
 
 - @bamboocss/preset-base@0.13.0
-- @bamboocss/preset-panda@0.13.0
+- @bamboocss/preset-bamboo@0.13.0
 - @bamboocss/types@0.13.0
 
 ## 0.12.2
@@ -585,7 +585,7 @@
 ### Patch Changes
 
 - @bamboocss/preset-base@0.12.2
-- @bamboocss/preset-panda@0.12.2
+- @bamboocss/preset-bamboo@0.12.2
 - @bamboocss/types@0.12.2
 
 ## 0.12.1
@@ -593,7 +593,7 @@
 ### Patch Changes
 
 - @bamboocss/preset-base@0.12.1
-- @bamboocss/preset-panda@0.12.1
+- @bamboocss/preset-bamboo@0.12.1
 - @bamboocss/types@0.12.1
 
 ## 0.12.0
@@ -602,7 +602,7 @@
 
 - Updated dependencies [bf2ff391]
   - @bamboocss/preset-base@0.12.0
-  - @bamboocss/preset-panda@0.12.0
+  - @bamboocss/preset-bamboo@0.12.0
   - @bamboocss/types@0.12.0
 
 ## 0.11.1
@@ -612,7 +612,7 @@
 - Updated dependencies [23b516f4]
   - @bamboocss/types@0.11.1
   - @bamboocss/preset-base@0.11.1
-  - @bamboocss/preset-panda@0.11.1
+  - @bamboocss/preset-bamboo@0.11.1
 
 ## 0.11.0
 
@@ -622,7 +622,7 @@
 - Updated dependencies [811f4fb1]
   - @bamboocss/types@0.11.0
   - @bamboocss/preset-base@0.11.0
-  - @bamboocss/preset-panda@0.11.0
+  - @bamboocss/preset-bamboo@0.11.0
 
 ## 0.10.0
 
@@ -689,7 +689,7 @@
 - Updated dependencies [a669f4d5]
   - @bamboocss/types@0.10.0
   - @bamboocss/preset-base@0.10.0
-  - @bamboocss/preset-panda@0.10.0
+  - @bamboocss/preset-bamboo@0.10.0
 
 ## 0.9.0
 
@@ -749,7 +749,7 @@
 - Updated dependencies [c08de87f]
   - @bamboocss/preset-base@0.9.0
   - @bamboocss/types@0.9.0
-  - @bamboocss/preset-panda@0.9.0
+  - @bamboocss/preset-bamboo@0.9.0
 
 ## 0.8.0
 
@@ -758,7 +758,7 @@
 - Updated dependencies [be0ad578]
   - @bamboocss/preset-base@0.8.0
   - @bamboocss/types@0.8.0
-  - @bamboocss/preset-panda@0.8.0
+  - @bamboocss/preset-bamboo@0.8.0
 
 ## 0.7.0
 
@@ -769,7 +769,7 @@
 - Updated dependencies [d9eeba60]
   - @bamboocss/preset-base@0.7.0
   - @bamboocss/types@0.7.0
-  - @bamboocss/preset-panda@0.7.0
+  - @bamboocss/preset-bamboo@0.7.0
 
 ## 0.6.0
 
@@ -780,7 +780,7 @@
 - Updated dependencies [f7aff8eb]
   - @bamboocss/preset-base@0.6.0
   - @bamboocss/types@0.6.0
-  - @bamboocss/preset-panda@0.6.0
+  - @bamboocss/preset-bamboo@0.6.0
 
 ## 0.5.1
 
@@ -791,7 +791,7 @@
 - Updated dependencies [78ed6ed4]
   - @bamboocss/types@0.5.1
   - @bamboocss/preset-base@0.5.1
-  - @bamboocss/preset-panda@0.5.1
+  - @bamboocss/preset-bamboo@0.5.1
 
 ## 0.5.0
 
@@ -800,7 +800,7 @@
 - Updated dependencies [ead9eaa3]
 - Updated dependencies [3a87cff8]
   - @bamboocss/types@0.5.0
-  - @bamboocss/preset-panda@0.5.0
+  - @bamboocss/preset-bamboo@0.5.0
   - @bamboocss/preset-base@0.5.0
 
 ## 0.4.0
@@ -816,14 +816,14 @@
 - Updated dependencies [5b344b9c]
   - @bamboocss/preset-base@0.4.0
   - @bamboocss/types@0.4.0
-  - @bamboocss/preset-panda@0.4.0
+  - @bamboocss/preset-bamboo@0.4.0
 
 ## 0.3.2
 
 ### Patch Changes
 
 - @bamboocss/preset-base@0.3.2
-- @bamboocss/preset-panda@0.3.2
+- @bamboocss/preset-bamboo@0.3.2
 - @bamboocss/types@0.3.2
 
 ## 0.3.1
@@ -833,7 +833,7 @@
 - efd79d83: Baseline release for the launch
 - Updated dependencies [efd79d83]
   - @bamboocss/preset-base@0.3.1
-  - @bamboocss/preset-panda@0.3.1
+  - @bamboocss/preset-bamboo@0.3.1
   - @bamboocss/types@0.3.1
 
 ## 0.3.0
@@ -843,7 +843,7 @@
 - Updated dependencies [bd5c049b]
 - Updated dependencies [6d81ee9e]
   - @bamboocss/preset-base@0.3.0
-  - @bamboocss/preset-panda@0.3.0
+  - @bamboocss/preset-bamboo@0.3.0
   - @bamboocss/types@0.3.0
 
 * path.join('-'), }) }, }, })
@@ -888,21 +888,21 @@ export default defineConfig({
 })
 ```
 
-- d5977c24: - Add a `--logfile` flag to the `panda`, `panda codegen`, `panda cssgen` and `panda debug` commands.
+- d5977c24: - Add a `--logfile` flag to the `bamboo`, `bamboo codegen`, `bamboo cssgen` and `bamboo debug` commands.
   - Add a `logfile` option to the postcss plugin
 
   Logs will be streamed to the file specified by the `--logfile` flag or the `logfile` option. This is useful for
   debugging issues that occur during the build process.
 
   ```sh
-  panda --logfile ./logs/panda.log
+  bamboo --logfile ./logs/bamboo.log
   ```
 
   ```js
   module.exports = {
     plugins: {
       '@bamboocss/dev/postcss': {
-        logfile: './logs/panda.log',
+        logfile: './logs/bamboo.log',
       },
     },
   }
@@ -1021,8 +1021,8 @@ export default defineConfig({
   - Tweak the config after it has been resolved (after presets are loaded and merged), this could be used to dynamically
     load all `recipes` from a folder
   - Transform a source file's content before parsing it, this could be used to transform the file content to a
-    `tsx`-friendly syntax so that Panda's parser can parse it.
-  - Implement your own parser logic and add the extracted results to the classic Panda pipeline, this could be used to
+    `tsx`-friendly syntax so that Bamboo's parser can parse it.
+  - Implement your own parser logic and add the extracted results to the classic Bamboo pipeline, this could be used to
     parse style usage from any template language
   - Tweak the CSS content for any `@layer` or even right before it's written to disk (if using the CLI) or injected
     through the postcss plugin, allowing all kinds of customizations like removing the unused CSS variables, etc.
@@ -1031,14 +1031,14 @@ export default defineConfig({
   See the list of available `config.hooks` here:
 
   ```ts
-  export interface PandaHooks {
+  export interface BambooHooks {
     /**
      * Called when the config is resolved, after all the presets are loaded and merged.
      * This is the first hook called, you can use it to tweak the config before the context is created.
      */
     'config:resolved': (args: { conf: LoadConfigResult }) => MaybeAsyncReturn
     /**
-     * Called when the Panda context has been created and the API is ready to be used.
+     * Called when the Bamboo context has been created and the API is ready to be used.
      */
     'context:created': (args: { ctx: ApiInterface; logger: LoggerInterface }) => void
     /**
@@ -1047,7 +1047,7 @@ export default defineConfig({
     'config:change': (args: { config: UserConfig }) => MaybeAsyncReturn
     /**
      * Called after reading the file content but before parsing it.
-     * You can use this hook to transform the file content to a tsx-friendly syntax so that Panda's parser can parse it.
+     * You can use this hook to transform the file content to a tsx-friendly syntax so that Bamboo's parser can parse it.
      * You can also use this hook to parse the file's content on your side using a custom parser, in this case you don't have to return anything.
      */
     'parser:before': (args: { filePath: string; content: string }) => string | void
@@ -1088,8 +1088,8 @@ export default defineConfig({
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
-  - Add a `--lightningcss` flag to the `panda` and `panda cssgen` command to use `lightningcss` instead of `postcss` for
-    this run.
+  - Add a `--lightningcss` flag to the `bamboo` and `bamboo cssgen` command to use `lightningcss` instead of `postcss`
+    for this run.
 
   ## Internal changes:
   - `markImportant` fn from JS instead of walking through postcss AST nodes
@@ -1122,7 +1122,7 @@ export default defineConfig({
 - Updated dependencies [8f4ce97c]
   - @bamboocss/types@0.22.1
   - @bamboocss/preset-base@0.22.1
-  - @bamboocss/preset-panda@0.22.1
+  - @bamboocss/preset-bamboo@0.22.1
 
 ## 0.22.0
 
@@ -1132,7 +1132,7 @@ export default defineConfig({
 - Updated dependencies [1cc8fcff]
   - @bamboocss/types@0.22.0
   - @bamboocss/preset-base@0.22.0
-  - @bamboocss/preset-panda@0.22.0
+  - @bamboocss/preset-bamboo@0.22.0
 
 ## 0.21.0
 
@@ -1142,7 +1142,7 @@ export default defineConfig({
 - Updated dependencies [105f74ce]
   - @bamboocss/types@0.21.0
   - @bamboocss/preset-base@0.21.0
-  - @bamboocss/preset-panda@0.21.0
+  - @bamboocss/preset-bamboo@0.21.0
 
 ## 0.20.1
 
@@ -1150,7 +1150,7 @@ export default defineConfig({
 
 - Updated dependencies [428e5401]
   - @bamboocss/preset-base@0.20.1
-  - @bamboocss/preset-panda@0.20.1
+  - @bamboocss/preset-bamboo@0.20.1
   - @bamboocss/types@0.20.1
 
 ## 0.20.0
@@ -1161,7 +1161,7 @@ export default defineConfig({
 - Updated dependencies [904aec7b]
   - @bamboocss/types@0.20.0
   - @bamboocss/preset-base@0.20.0
-  - @bamboocss/preset-panda@0.20.0
+  - @bamboocss/preset-bamboo@0.20.0
 
 ## 0.19.0
 
@@ -1171,14 +1171,14 @@ export default defineConfig({
 - Updated dependencies [89f86923]
   - @bamboocss/types@0.19.0
   - @bamboocss/preset-base@0.19.0
-  - @bamboocss/preset-panda@0.19.0
+  - @bamboocss/preset-bamboo@0.19.0
 
 ## 0.18.3
 
 ### Patch Changes
 
 - @bamboocss/preset-base@0.18.3
-- @bamboocss/preset-panda@0.18.3
+- @bamboocss/preset-bamboo@0.18.3
 - @bamboocss/types@0.18.3
 
 ## 0.18.2
@@ -1187,7 +1187,7 @@ export default defineConfig({
 
 - Updated dependencies [3e1ea626]
   - @bamboocss/preset-base@0.18.2
-  - @bamboocss/preset-panda@0.18.2
+  - @bamboocss/preset-bamboo@0.18.2
   - @bamboocss/types@0.18.2
 
 ## 0.18.1
@@ -1197,7 +1197,7 @@ export default defineConfig({
 - Updated dependencies [ce34ea45]
 - Updated dependencies [aac7b379]
   - @bamboocss/preset-base@0.18.1
-  - @bamboocss/preset-panda@0.18.1
+  - @bamboocss/preset-bamboo@0.18.1
   - @bamboocss/types@0.18.1
 
 ## 0.18.0
@@ -1206,14 +1206,14 @@ export default defineConfig({
 
 - @bamboocss/types@0.18.0
 - @bamboocss/preset-base@0.18.0
-- @bamboocss/preset-panda@0.18.0
+- @bamboocss/preset-bamboo@0.18.0
 
 ## 0.17.5
 
 ### Patch Changes
 
 - @bamboocss/preset-base@0.17.5
-- @bamboocss/preset-panda@0.17.5
+- @bamboocss/preset-bamboo@0.17.5
 - @bamboocss/types@0.17.5
 
 ## 0.17.4
@@ -1223,7 +1223,7 @@ export default defineConfig({
 - Updated dependencies [fa77080a]
   - @bamboocss/types@0.17.4
   - @bamboocss/preset-base@0.17.4
-  - @bamboocss/preset-panda@0.17.4
+  - @bamboocss/preset-bamboo@0.17.4
 
 ## 0.17.3
 
@@ -1232,14 +1232,14 @@ export default defineConfig({
 - Updated dependencies [529a262e]
   - @bamboocss/types@0.17.3
   - @bamboocss/preset-base@0.17.3
-  - @bamboocss/preset-panda@0.17.3
+  - @bamboocss/preset-bamboo@0.17.3
 
 ## 0.17.2
 
 ### Patch Changes
 
 - @bamboocss/preset-base@0.17.2
-- @bamboocss/preset-panda@0.17.2
+- @bamboocss/preset-bamboo@0.17.2
 - @bamboocss/types@0.17.2
 
 ## 0.17.1
@@ -1248,7 +1248,7 @@ export default defineConfig({
 
 - @bamboocss/types@0.17.1
 - @bamboocss/preset-base@0.17.1
-- @bamboocss/preset-panda@0.17.1
+- @bamboocss/preset-bamboo@0.17.1
 
 ## 0.17.0
 
@@ -1257,7 +1257,7 @@ export default defineConfig({
 - Updated dependencies [fc4688e6]
   - @bamboocss/types@0.17.0
   - @bamboocss/preset-base@0.17.0
-  - @bamboocss/preset-panda@0.17.0
+  - @bamboocss/preset-bamboo@0.17.0
 
 ## 0.16.0
 
@@ -1265,7 +1265,7 @@ export default defineConfig({
 
 - Updated dependencies [0f3bede5]
   - @bamboocss/preset-base@0.16.0
-  - @bamboocss/preset-panda@0.16.0
+  - @bamboocss/preset-bamboo@0.16.0
   - @bamboocss/types@0.16.0
 
 ## 0.15.5
@@ -1273,7 +1273,7 @@ export default defineConfig({
 ### Patch Changes
 
 - @bamboocss/preset-base@0.15.5
-- @bamboocss/preset-panda@0.15.5
+- @bamboocss/preset-bamboo@0.15.5
 - @bamboocss/types@0.15.5
 
 ## 0.15.4
@@ -1282,7 +1282,7 @@ export default defineConfig({
 
 - @bamboocss/types@0.15.4
 - @bamboocss/preset-base@0.15.4
-- @bamboocss/preset-panda@0.15.4
+- @bamboocss/preset-bamboo@0.15.4
 
 ## 0.15.3
 
@@ -1292,7 +1292,7 @@ export default defineConfig({
 - Updated dependencies [58743bc4]
   - @bamboocss/types@0.15.3
   - @bamboocss/preset-base@0.15.3
-  - @bamboocss/preset-panda@0.15.3
+  - @bamboocss/preset-bamboo@0.15.3
 
 ## 0.15.2
 
@@ -1301,7 +1301,7 @@ export default defineConfig({
 - Updated dependencies [26a788c0]
   - @bamboocss/types@0.15.2
   - @bamboocss/preset-base@0.15.2
-  - @bamboocss/preset-panda@0.15.2
+  - @bamboocss/preset-bamboo@0.15.2
 
 ## 0.15.1
 
@@ -1309,7 +1309,7 @@ export default defineConfig({
 
 - @bamboocss/types@0.15.1
 - @bamboocss/preset-base@0.15.1
-- @bamboocss/preset-panda@0.15.1
+- @bamboocss/preset-bamboo@0.15.1
 
 ## 0.15.0
 
@@ -1319,7 +1319,7 @@ export default defineConfig({
 - Updated dependencies [39298609]
   - @bamboocss/types@0.15.0
   - @bamboocss/preset-base@0.15.0
-  - @bamboocss/preset-panda@0.15.0
+  - @bamboocss/preset-bamboo@0.15.0
 
 ## 0.14.0
 
@@ -1330,14 +1330,14 @@ export default defineConfig({
 - Updated dependencies [6f7ee198]
   - @bamboocss/types@0.14.0
   - @bamboocss/preset-base@0.14.0
-  - @bamboocss/preset-panda@0.14.0
+  - @bamboocss/preset-bamboo@0.14.0
 
 ## 0.13.1
 
 ### Patch Changes
 
 - @bamboocss/preset-base@0.13.1
-- @bamboocss/preset-panda@0.13.1
+- @bamboocss/preset-bamboo@0.13.1
 - @bamboocss/types@0.13.1
 
 ## 0.13.0
@@ -1345,7 +1345,7 @@ export default defineConfig({
 ### Patch Changes
 
 - @bamboocss/preset-base@0.13.0
-- @bamboocss/preset-panda@0.13.0
+- @bamboocss/preset-bamboo@0.13.0
 - @bamboocss/types@0.13.0
 
 ## 0.12.2
@@ -1353,7 +1353,7 @@ export default defineConfig({
 ### Patch Changes
 
 - @bamboocss/preset-base@0.12.2
-- @bamboocss/preset-panda@0.12.2
+- @bamboocss/preset-bamboo@0.12.2
 - @bamboocss/types@0.12.2
 
 ## 0.12.1
@@ -1361,7 +1361,7 @@ export default defineConfig({
 ### Patch Changes
 
 - @bamboocss/preset-base@0.12.1
-- @bamboocss/preset-panda@0.12.1
+- @bamboocss/preset-bamboo@0.12.1
 - @bamboocss/types@0.12.1
 
 ## 0.12.0
@@ -1370,7 +1370,7 @@ export default defineConfig({
 
 - Updated dependencies [bf2ff391]
   - @bamboocss/preset-base@0.12.0
-  - @bamboocss/preset-panda@0.12.0
+  - @bamboocss/preset-bamboo@0.12.0
   - @bamboocss/types@0.12.0
 
 ## 0.11.1
@@ -1380,7 +1380,7 @@ export default defineConfig({
 - Updated dependencies [23b516f4]
   - @bamboocss/types@0.11.1
   - @bamboocss/preset-base@0.11.1
-  - @bamboocss/preset-panda@0.11.1
+  - @bamboocss/preset-bamboo@0.11.1
 
 ## 0.11.0
 
@@ -1390,7 +1390,7 @@ export default defineConfig({
 - Updated dependencies [811f4fb1]
   - @bamboocss/types@0.11.0
   - @bamboocss/preset-base@0.11.0
-  - @bamboocss/preset-panda@0.11.0
+  - @bamboocss/preset-bamboo@0.11.0
 
 ## 0.10.0
 
@@ -1457,7 +1457,7 @@ export default defineConfig({
 - Updated dependencies [a669f4d5]
   - @bamboocss/types@0.10.0
   - @bamboocss/preset-base@0.10.0
-  - @bamboocss/preset-panda@0.10.0
+  - @bamboocss/preset-bamboo@0.10.0
 
 ## 0.9.0
 
@@ -1517,7 +1517,7 @@ export default defineConfig({
 - Updated dependencies [c08de87f]
   - @bamboocss/preset-base@0.9.0
   - @bamboocss/types@0.9.0
-  - @bamboocss/preset-panda@0.9.0
+  - @bamboocss/preset-bamboo@0.9.0
 
 ## 0.8.0
 
@@ -1526,7 +1526,7 @@ export default defineConfig({
 - Updated dependencies [be0ad578]
   - @bamboocss/preset-base@0.8.0
   - @bamboocss/types@0.8.0
-  - @bamboocss/preset-panda@0.8.0
+  - @bamboocss/preset-bamboo@0.8.0
 
 ## 0.7.0
 
@@ -1537,7 +1537,7 @@ export default defineConfig({
 - Updated dependencies [d9eeba60]
   - @bamboocss/preset-base@0.7.0
   - @bamboocss/types@0.7.0
-  - @bamboocss/preset-panda@0.7.0
+  - @bamboocss/preset-bamboo@0.7.0
 
 ## 0.6.0
 
@@ -1548,7 +1548,7 @@ export default defineConfig({
 - Updated dependencies [f7aff8eb]
   - @bamboocss/preset-base@0.6.0
   - @bamboocss/types@0.6.0
-  - @bamboocss/preset-panda@0.6.0
+  - @bamboocss/preset-bamboo@0.6.0
 
 ## 0.5.1
 
@@ -1559,7 +1559,7 @@ export default defineConfig({
 - Updated dependencies [78ed6ed4]
   - @bamboocss/types@0.5.1
   - @bamboocss/preset-base@0.5.1
-  - @bamboocss/preset-panda@0.5.1
+  - @bamboocss/preset-bamboo@0.5.1
 
 ## 0.5.0
 
@@ -1568,7 +1568,7 @@ export default defineConfig({
 - Updated dependencies [ead9eaa3]
 - Updated dependencies [3a87cff8]
   - @bamboocss/types@0.5.0
-  - @bamboocss/preset-panda@0.5.0
+  - @bamboocss/preset-bamboo@0.5.0
   - @bamboocss/preset-base@0.5.0
 
 ## 0.4.0
@@ -1584,14 +1584,14 @@ export default defineConfig({
 - Updated dependencies [5b344b9c]
   - @bamboocss/preset-base@0.4.0
   - @bamboocss/types@0.4.0
-  - @bamboocss/preset-panda@0.4.0
+  - @bamboocss/preset-bamboo@0.4.0
 
 ## 0.3.2
 
 ### Patch Changes
 
 - @bamboocss/preset-base@0.3.2
-- @bamboocss/preset-panda@0.3.2
+- @bamboocss/preset-bamboo@0.3.2
 - @bamboocss/types@0.3.2
 
 ## 0.3.1
@@ -1601,7 +1601,7 @@ export default defineConfig({
 - efd79d83: Baseline release for the launch
 - Updated dependencies [efd79d83]
   - @bamboocss/preset-base@0.3.1
-  - @bamboocss/preset-panda@0.3.1
+  - @bamboocss/preset-bamboo@0.3.1
   - @bamboocss/types@0.3.1
 
 ## 0.3.0
@@ -1611,5 +1611,5 @@ export default defineConfig({
 - Updated dependencies [bd5c049b]
 - Updated dependencies [6d81ee9e]
   - @bamboocss/preset-base@0.3.0
-  - @bamboocss/preset-panda@0.3.0
+  - @bamboocss/preset-bamboo@0.3.0
   - @bamboocss/types@0.3.0

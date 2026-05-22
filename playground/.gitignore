@@ -34,7 +34,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-## Panda
+## Bamboo
 styled-system
 styled-system-static
 
