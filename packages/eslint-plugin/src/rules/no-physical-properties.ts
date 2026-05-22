@@ -1,96 +1,75 @@
-import { createRule } from '../utils';
-import {
-  isBambooAttribute,
-  isBambooProp as isBambooProperty,
-  isRecipeVariant,
-  resolveLonghand,
-} from '../utils/helpers';
-import {
-  isIdentifier,
-  isJSXExpressionContainer,
-  isJSXIdentifier,
-  isLiteral,
-} from '../utils/nodes';
-import {
-  physicalProperties,
-  physicalPropertyValues,
-} from '../utils/physical-properties';
-import { type TSESLint, type TSESTree } from '@typescript-eslint/utils';
+import { createRule } from '../utils'
+import { isBambooAttribute, isBambooProp as isBambooProperty, isRecipeVariant, resolveLonghand } from '../utils/helpers'
+import { isIdentifier, isJSXExpressionContainer, isJSXIdentifier, isLiteral } from '../utils/nodes'
+import { physicalProperties, physicalPropertyValues } from '../utils/physical-properties'
+import { type TSESLint, type TSESTree } from '@typescript-eslint/utils'
 
-type CacheMap<K extends object, V> = WeakMap<K, undefined | V>;
-type IdentifierNode = TSESTree.Identifier | TSESTree.JSXIdentifier;
-type RuleContextType = TSESLint.RuleContext<
-  keyof typeof MESSAGES,
-  [{ whitelist: string[] }]
->;
-type ValueNode = TSESTree.JSXAttribute['value'] | TSESTree.Property['value'];
+type CacheMap<K extends object, V> = WeakMap<K, undefined | V>
+type IdentifierNode = TSESTree.Identifier | TSESTree.JSXIdentifier
+type RuleContextType = TSESLint.RuleContext<keyof typeof MESSAGES, [{ whitelist: string[] }]>
+type ValueNode = TSESTree.JSXAttribute['value'] | TSESTree.Property['value']
 
-export const RULE_NAME = 'no-physical-properties';
+export const RULE_NAME = 'no-physical-properties'
 
 const MESSAGES = {
-  physical:
-    'Use logical property instead of {{physical}}. Prefer `{{logical}}`.',
-  physicalValue:
-    'Use logical value instead of {{physical}}. Prefer `{{logical}}`.',
+  physical: 'Use logical property instead of {{physical}}. Prefer `{{logical}}`.',
+  physicalValue: 'Use logical value instead of {{physical}}. Prefer `{{logical}}`.',
   replace: 'Replace `{{physical}}` with `{{logical}}`.',
-} as const;
+} as const
 
 class PropertyCache {
-  private longhandCache = new Map<string, string>();
+  private longhandCache = new Map<string, string>()
 
-  private bambooAttributeCache: CacheMap<TSESTree.Property, boolean> =
-    new WeakMap();
+  private bambooAttributeCache: CacheMap<TSESTree.Property, boolean> = new WeakMap()
 
-  private bambooPropCache: CacheMap<TSESTree.JSXAttribute, boolean> =
-    new WeakMap();
+  private bambooPropCache: CacheMap<TSESTree.JSXAttribute, boolean> = new WeakMap()
 
-  private recipeVariantCache: CacheMap<TSESTree.Property, boolean> =
-    new WeakMap();
+  private recipeVariantCache: CacheMap<TSESTree.Property, boolean> = new WeakMap()
 
   getLonghand(name: string, context: RuleContextType): string {
     if (this.longhandCache.has(name)) {
-      return this.longhandCache.get(name)!;
+      return this.longhandCache.get(name)!
     }
 
-    const longhand = resolveLonghand(name, context) ?? name;
-    this.longhandCache.set(name, longhand);
-    return longhand;
+    const longhand = resolveLonghand(name, context) ?? name
+    this.longhandCache.set(name, longhand)
+    return longhand
   }
 
   isBambooAttribute(node: TSESTree.Property, context: RuleContextType): boolean {
     if (this.bambooAttributeCache.has(node)) {
-      return this.bambooAttributeCache.get(node)!;
+      return this.bambooAttributeCache.get(node)!
     }
 
-    const result = isBambooAttribute(node, context);
-    this.bambooAttributeCache.set(node, result);
-    return Boolean(result);
+    const result = isBambooAttribute(node, context)
+    this.bambooAttributeCache.set(node, result)
+    return Boolean(result)
   }
 
   isBambooProp(node: TSESTree.JSXAttribute, context: RuleContextType): boolean {
     if (this.bambooPropCache.has(node)) {
-      return this.bambooPropCache.get(node)!;
+      return this.bambooPropCache.get(node)!
     }
 
-    const result = isBambooProperty(node, context);
-    this.bambooPropCache.set(node, result);
-    return Boolean(result);
+    const result = isBambooProperty(node, context)
+    this.bambooPropCache.set(node, result)
+    return Boolean(result)
   }
 
   isRecipeVariant(node: TSESTree.Property, context: RuleContextType): boolean {
     if (this.recipeVariantCache.has(node)) {
-      return this.recipeVariantCache.get(node)!;
+      return this.recipeVariantCache.get(node)!
     }
 
-    const result = isRecipeVariant(node, context);
-    this.recipeVariantCache.set(node, result);
-    return Boolean(result);
+    const result = isRecipeVariant(node, context)
+    this.recipeVariantCache.set(node, result)
+    return Boolean(result)
   }
 }
 
 const extractStringLiteralValue = (valueNode: ValueNode): null | string => {
   if (isLiteral(valueNode) && typeof valueNode.value === 'string') {
-    return valueNode.value;
+    return valueNode.value
   }
 
   if (
@@ -98,11 +77,11 @@ const extractStringLiteralValue = (valueNode: ValueNode): null | string => {
     isLiteral(valueNode.expression) &&
     typeof valueNode.expression.value === 'string'
   ) {
-    return valueNode.expression.value;
+    return valueNode.expression.value
   }
 
-  return null;
-};
+  return null
+}
 
 const createPropertyReport = (
   node: IdentifierNode,
@@ -110,7 +89,7 @@ const createPropertyReport = (
   logical: string,
   context: RuleContextType,
 ) => {
-  const physicalName = `\`${node.name}\`${longhandName !== node.name ? ` (resolved to \`${longhandName}\`)` : ''}`;
+  const physicalName = `\`${node.name}\`${longhandName !== node.name ? ` (resolved to \`${longhandName}\`)` : ''}`
 
   context.report({
     data: { logical, physical: physicalName },
@@ -123,8 +102,8 @@ const createPropertyReport = (
         messageId: 'replace',
       },
     ],
-  });
-};
+  })
+}
 
 const createValueReport = (
   valueNode: NonNullable<ValueNode>,
@@ -141,101 +120,95 @@ const createValueReport = (
         data: { logical: `"${logical}"`, physical: `"${valueText}"` },
         fix: (fixer: TSESLint.RuleFixer) => {
           if (isLiteral(valueNode)) {
-            return fixer.replaceText(valueNode, `"${logical}"`);
+            return fixer.replaceText(valueNode, `"${logical}"`)
           }
 
-          if (
-            isJSXExpressionContainer(valueNode) &&
-            isLiteral(valueNode.expression)
-          ) {
-            return fixer.replaceText(valueNode.expression, `"${logical}"`);
+          if (isJSXExpressionContainer(valueNode) && isLiteral(valueNode.expression)) {
+            return fixer.replaceText(valueNode.expression, `"${logical}"`)
           }
 
-          return null;
+          return null
         },
         messageId: 'replace',
       },
     ],
-  });
-};
+  })
+}
 
 const rule = createRule({
   create(context) {
-    const whitelist: string[] = context.options[0]?.whitelist ?? [];
-    const cache = new PropertyCache();
+    const whitelist: string[] = context.options[0]?.whitelist ?? []
+    const cache = new PropertyCache()
 
     const checkPropertyName = (node: IdentifierNode) => {
       if (whitelist.includes(node.name)) {
-        return;
+        return
       }
 
-      const longhandName = cache.getLonghand(node.name, context);
+      const longhandName = cache.getLonghand(node.name, context)
       if (!(longhandName in physicalProperties)) {
-        return;
+        return
       }
 
-      const logical = physicalProperties[longhandName];
-      createPropertyReport(node, longhandName, logical, context);
-    };
+      const logical = physicalProperties[longhandName]
+      createPropertyReport(node, longhandName, logical, context)
+    }
 
-    const checkPropertyValue = (
-      keyNode: IdentifierNode,
-      valueNode: NonNullable<ValueNode>,
-    ): boolean => {
-      const propertyName = keyNode.name;
+    const checkPropertyValue = (keyNode: IdentifierNode, valueNode: NonNullable<ValueNode>): boolean => {
+      const propertyName = keyNode.name
       if (!(propertyName in physicalPropertyValues)) {
-        return false;
+        return false
       }
 
-      const valueText = extractStringLiteralValue(valueNode);
+      const valueText = extractStringLiteralValue(valueNode)
       if (valueText === null) {
-        return false;
+        return false
       }
 
-      const valueMap = physicalPropertyValues[propertyName];
+      const valueMap = physicalPropertyValues[propertyName]
       if (!valueMap[valueText]) {
-        return false;
+        return false
       }
 
-      createValueReport(valueNode, valueText, valueMap[valueText], context);
-      return true;
-    };
+      createValueReport(valueNode, valueText, valueMap[valueText], context)
+      return true
+    }
 
     return {
       JSXAttribute(node: TSESTree.JSXAttribute) {
         if (!isJSXIdentifier(node.name)) {
-          return;
+          return
         }
 
         if (!cache.isBambooProp(node, context)) {
-          return;
+          return
         }
 
-        checkPropertyName(node.name);
+        checkPropertyName(node.name)
         if (node.value) {
-          checkPropertyValue(node.name, node.value);
+          checkPropertyValue(node.name, node.value)
         }
       },
 
       Property(node: TSESTree.Property) {
         if (!isIdentifier(node.key)) {
-          return;
+          return
         }
 
         if (!cache.isBambooAttribute(node, context)) {
-          return;
+          return
         }
 
         if (cache.isRecipeVariant(node, context)) {
-          return;
+          return
         }
 
-        checkPropertyName(node.key);
+        checkPropertyName(node.key)
         if (node.value) {
-          checkPropertyValue(node.key, node.value);
+          checkPropertyValue(node.key, node.value)
         }
       },
-    };
+    }
   },
   defaultOptions: [{ whitelist: [] }],
   meta: {
@@ -264,6 +237,6 @@ const rule = createRule({
     type: 'suggestion',
   },
   name: RULE_NAME,
-});
+})
 
-export default rule;
+export default rule

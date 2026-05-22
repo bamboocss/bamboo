@@ -1,21 +1,22 @@
-import { getPatternStyles, patternFns } from '../helpers.mjs';
-import { css } from '../css/index.mjs';
+import { getPatternStyles, patternFns } from '../helpers.mjs'
+import { css } from '../css/index.mjs'
 
 const flexConfig = {
-transform(props) {
-	const { direction, align, justify, wrap, basis, grow, shrink, ...rest } = props;
-	return {
-		display: "flex",
-		flexDirection: direction,
-		alignItems: align,
-		justifyContent: justify,
-		flexWrap: wrap,
-		flexBasis: basis,
-		flexGrow: grow,
-		flexShrink: shrink,
-		...rest
-	};
-}}
+  transform(props) {
+    const { direction, align, justify, wrap, basis, grow, shrink, ...rest } = props
+    return {
+      display: 'flex',
+      flexDirection: direction,
+      alignItems: align,
+      justifyContent: justify,
+      flexWrap: wrap,
+      flexBasis: basis,
+      flexGrow: grow,
+      flexShrink: shrink,
+      ...rest,
+    }
+  },
+}
 
 export const getFlexStyle = (styles = {}) => {
   const _styles = getPatternStyles(flexConfig, styles)

@@ -1,24 +1,16 @@
-import rule, { RULE_NAME } from '../src/rules/no-debug';
-import rule2, {
-  RULE_NAME as RULE_NAME2,
-} from '../src/rules/no-dynamic-styling';
-import rule3, { RULE_NAME as RULE_NAME3 } from '../src/rules/no-escape-hatch';
-import rule6, {
-  RULE_NAME as RULE_NAME6,
-} from '../src/rules/no-invalid-nesting';
-import rule5, {
-  RULE_NAME as RULE_NAME5,
-} from '../src/rules/no-invalid-token-paths';
-import rule4, {
-  RULE_NAME as RULE_NAME4,
-} from '../src/rules/no-unsafe-token-fn-usage';
-import { eslintTester } from '../test-utils';
-import { getArbitraryValue } from '@bamboocss/shared';
+import rule, { RULE_NAME } from '../src/rules/no-debug'
+import rule2, { RULE_NAME as RULE_NAME2 } from '../src/rules/no-dynamic-styling'
+import rule3, { RULE_NAME as RULE_NAME3 } from '../src/rules/no-escape-hatch'
+import rule6, { RULE_NAME as RULE_NAME6 } from '../src/rules/no-invalid-nesting'
+import rule5, { RULE_NAME as RULE_NAME5 } from '../src/rules/no-invalid-token-paths'
+import rule4, { RULE_NAME as RULE_NAME4 } from '../src/rules/no-unsafe-token-fn-usage'
+import { eslintTester } from '../test-utils'
+import { getArbitraryValue } from '@bamboocss/shared'
 
 //* This test is just to ensure that the plugin correctly recognises bamboo in various kinds of code.
 
 const imports = `import { css } from './bamboo/css';
-import { styled, Circle } from './bamboo/jsx';\n\n`;
+import { styled, Circle } from './bamboo/jsx';\n\n`
 
 // ? For testing correct parsing
 
@@ -32,7 +24,7 @@ const valids = [
   {
     code: `const BambooComp = styled(div); function App(){ const a = 1;  return (<BambooComp someProp={{ debug: true }} />)}`,
   },
-];
+]
 
 const invalids = [
   {
@@ -61,7 +53,7 @@ const invalids = [
   return <BambooComp css={{ debug: true }} />;
 }`,
   },
-];
+]
 
 eslintTester.run(RULE_NAME, rule as any, {
   // @ts-expect-error - we're only testing detection, not the actual fixes
@@ -72,7 +64,7 @@ eslintTester.run(RULE_NAME, rule as any, {
   valid: valids.map(({ code }) => ({
     code: imports + code,
   })),
-});
+})
 
 const valids2 = [
   'const styles = css({ bg: "red" })',
@@ -83,13 +75,9 @@ const valids2 = [
   '<Circle color={"red"} />',
   '<Circle color={`red`} />',
   '<Circle _hover={{ bg: "red.100" }} />',
-];
+]
 
-const invalids2 = [
-  'const styles = css({ bg: color })',
-  '<Circle debug={bool} />',
-  '<styled.div color={color} />',
-];
+const invalids2 = ['const styles = css({ bg: color })', '<Circle debug={bool} />', '<styled.div color={color} />']
 
 eslintTester.run(RULE_NAME2, rule2 as any, {
   invalid: invalids2.map((code) => ({
@@ -99,7 +87,7 @@ eslintTester.run(RULE_NAME2, rule2 as any, {
   valid: valids2.map((code) => ({
     code: imports + code,
   })),
-});
+})
 
 // ? Testing multiline arbitrary expressions
 
@@ -117,7 +105,7 @@ const namedGridLines = `
     minmax(16px, 1fr)
   [full-end]
 ]
-`;
+`
 
 const valids3 = [
   `const layout = css({
@@ -126,7 +114,7 @@ const valids3 = [
     });
     `,
   `<Circle gridTemplateColumns={\`${getArbitraryValue(namedGridLines)}\`} />`,
-];
+]
 
 const invalids3 = [
   {
@@ -139,7 +127,7 @@ const invalids3 = [
   {
     code: `<Circle gridTemplateColumns={\`${namedGridLines}\`} />`,
   },
-];
+]
 
 eslintTester.run(RULE_NAME3, rule3 as any, {
   // @ts-expect-error - we're only testing detection, not the actual fixes
@@ -150,18 +138,18 @@ eslintTester.run(RULE_NAME3, rule3 as any, {
   valid: valids3.map((code) => ({
     code: imports + code,
   })),
-});
+})
 
 // ? Testing aliased imports
 
 const imports4 = `import { css } from './bamboo/css';
 import { token as tk } from './bamboo/tokens'
-import { Circle } from './bamboo/jsx';\n\n`;
+import { Circle } from './bamboo/jsx';\n\n`
 
 const valids4 = [
   'const styles = css({ bg: "token(colors.red.300) 50%" })',
   'const styles = css({ border: "solid 1px {colors.red.300}" })',
-];
+]
 
 const invalids4 = [
   {
@@ -172,7 +160,7 @@ const invalids4 = [
   },
 
   { code: '<Circle bg={tk("colors.red.300")} />' },
-];
+]
 
 eslintTester.run(RULE_NAME4, rule4 as any, {
   // @ts-expect-error - we're only testing detection, not the actual fixes
@@ -183,12 +171,12 @@ eslintTester.run(RULE_NAME4, rule4 as any, {
   valid: valids4.map((code) => ({
     code: imports4 + code,
   })),
-});
+})
 
 // ? Testing token paths in template literals syntax
 
 const imports5 = `import { css } from './bamboo/css';
-import { Circle, styled } from './bamboo/jsx';\n\n`;
+import { Circle, styled } from './bamboo/jsx';\n\n`
 
 const valids5 = [
   'const className = css`\n  font-size: {fontSizes.md};`',
@@ -199,7 +187,7 @@ const valids5 = [
       grid-template-columns: auto 450px;
     }
   \``,
-];
+]
 
 const invalids5 = [
   { code: 'const className = css`\n  font-size: {fontSizes.emd};`' },
@@ -209,7 +197,7 @@ const invalids5 = [
     code: 'const Comp = styled(Circle)`\n  margin: {sizess.4} {sizes.f4};`',
     errors: 2,
   },
-];
+]
 
 eslintTester.run(RULE_NAME5, rule5 as any, {
   invalid: invalids5.map(({ code, errors = 1 }) => ({
@@ -219,11 +207,11 @@ eslintTester.run(RULE_NAME5, rule5 as any, {
   valid: valids5.map((code) => ({
     code: imports5 + code,
   })),
-});
+})
 
 // ? Testing nesting in sva and cva
 
-const imports6 = `import { cva, sva } from './bamboo/css';`;
+const imports6 = `import { cva, sva } from './bamboo/css';`
 
 const valids6 = [
   `const heading = cva({
@@ -255,7 +243,7 @@ const valids6 = [
     },
   },
 })`,
-];
+]
 
 const invalids6 = [
   {
@@ -299,7 +287,7 @@ const invalids6 = [
   },
 })`,
   },
-];
+]
 
 eslintTester.run(RULE_NAME6, rule6 as any, {
   invalid: invalids6.map(({ code }) => ({
@@ -309,4 +297,4 @@ eslintTester.run(RULE_NAME6, rule6 as any, {
   valid: valids6.map((code) => ({
     code: imports6 + code,
   })),
-});
+})

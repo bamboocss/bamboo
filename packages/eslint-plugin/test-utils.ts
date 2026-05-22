@@ -1,4 +1,4 @@
-import { RuleTester } from '@typescript-eslint/rule-tester';
+import { RuleTester } from '@typescript-eslint/rule-tester'
 
 export const eslintTester = new RuleTester({
   languageOptions: {
@@ -8,4 +8,4 @@ export const eslintTester = new RuleTester({
       sourceType: 'module',
     },
   },
-});
+})

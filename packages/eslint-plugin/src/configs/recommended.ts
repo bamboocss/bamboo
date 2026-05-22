@@ -14,4 +14,4 @@ export default {
     'bamboo/no-property-renaming': 'warn',
     'bamboo/no-unsafe-token-fn-usage': 'warn',
   },
-};
+}

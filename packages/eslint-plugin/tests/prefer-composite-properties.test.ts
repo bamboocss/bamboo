@@ -1,6 +1,6 @@
-import rule, { RULE_NAME } from '../src/rules/prefer-composite-properties';
-import { eslintTester } from '../test-utils';
-import multiline from 'multiline-ts';
+import rule, { RULE_NAME } from '../src/rules/prefer-composite-properties'
+import { eslintTester } from '../test-utils'
+import multiline from 'multiline-ts'
 
 eslintTester.run(RULE_NAME, rule, {
   invalid: [
@@ -29,11 +29,7 @@ eslintTester.run(RULE_NAME, rule, {
   function App(){
     return <Circle _hover={{  borderTopStyle: 'solid', borderTopWidth: '1px', borderTopColor: 'blue' }} />;
   }`,
-      errors: [
-        { messageId: 'composite' },
-        { messageId: 'composite' },
-        { messageId: 'composite' },
-      ],
+      errors: [{ messageId: 'composite' }, { messageId: 'composite' }, { messageId: 'composite' }],
     },
   ],
   valid: [
@@ -62,4 +58,4 @@ eslintTester.run(RULE_NAME, rule, {
   }`,
     },
   ],
-});
+})

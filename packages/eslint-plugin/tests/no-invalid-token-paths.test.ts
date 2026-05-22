@@ -1,10 +1,9 @@
-import rule, { RULE_NAME } from '../src/rules/no-invalid-token-paths';
-import { eslintTester } from '../test-utils';
-import multiline from 'multiline-ts';
+import rule, { RULE_NAME } from '../src/rules/no-invalid-token-paths'
+import { eslintTester } from '../test-utils'
+import multiline from 'multiline-ts'
 
-const validLiteral = 'const className = css`\n  font-size: {fontSizes.md};\n`';
-const invalidLiteral =
-  'const className = css`\n  font-size: {fontSizes.emd};\n`';
+const validLiteral = 'const className = css`\n  font-size: {fontSizes.md};\n`'
+const invalidLiteral = 'const className = css`\n  font-size: {fontSizes.emd};\n`'
 
 eslintTester.run(RULE_NAME, rule, {
   invalid: [
@@ -36,10 +35,7 @@ eslintTester.run(RULE_NAME, rule, {
     // \`1\` does not exist in borderWidths, and \`grays\` is not a valid color token. Assuming we're using the default bamboo presets
     return <Circle _hover={{  border: 'solid {borderWidths.1} token(colors.grays.100, #F3F4F6)' }} />;
   }`,
-      errors: [
-        { messageId: 'noInvalidTokenPaths' },
-        { messageId: 'noInvalidTokenPaths' },
-      ],
+      errors: [{ messageId: 'noInvalidTokenPaths' }, { messageId: 'noInvalidTokenPaths' }],
     },
 
     {
@@ -83,4 +79,4 @@ eslintTester.run(RULE_NAME, rule, {
   ${validLiteral}`,
     },
   ],
-});
+})

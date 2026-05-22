@@ -1,6 +1,6 @@
-import rule, { RULE_NAME } from '../src/rules/no-config-function-in-source';
-import { eslintTester } from '../test-utils';
-import multiLine from 'multiline-ts';
+import rule, { RULE_NAME } from '../src/rules/no-config-function-in-source'
+import { eslintTester } from '../test-utils'
+import multiLine from 'multiline-ts'
 
 eslintTester.run(RULE_NAME, rule, {
   invalid: [
@@ -64,4 +64,4 @@ eslintTester.run(RULE_NAME, rule, {
       filename: 'bamboo.config.ts',
     },
   ],
-});
+})

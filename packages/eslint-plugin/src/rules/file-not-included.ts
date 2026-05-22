@@ -1,40 +1,40 @@
-import { createRule } from '../utils';
-import { isBambooImport, isValidFile } from '../utils/helpers';
-import { type TSESTree } from '@typescript-eslint/utils';
+import { createRule } from '../utils'
+import { isBambooImport, isValidFile } from '../utils/helpers'
+import { type TSESTree } from '@typescript-eslint/utils'
 
-export const RULE_NAME = 'file-not-included';
+export const RULE_NAME = 'file-not-included'
 
 const rule = createRule({
   create(context) {
     // Determine if the current file is included in the Bamboo CSS configuration
-    const isFileIncluded = isValidFile(context);
+    const isFileIncluded = isValidFile(context)
 
     // If the file is included, no need to proceed
     if (isFileIncluded) {
-      return {};
+      return {}
     }
 
-    let hasReported = false;
+    let hasReported = false
 
     return {
       ImportDeclaration(node: TSESTree.ImportDeclaration) {
         if (hasReported) {
-          return;
+          return
         }
 
         if (!isBambooImport(node, context)) {
-          return;
+          return
         }
 
         // Report only on the first import declaration
         context.report({
           messageId: 'include',
           node,
-        });
+        })
 
-        hasReported = true;
+        hasReported = true
       },
-    };
+    }
   },
   defaultOptions: [],
   meta: {
@@ -50,6 +50,6 @@ const rule = createRule({
     type: 'problem',
   },
   name: RULE_NAME,
-});
+})
 
-export default rule;
+export default rule

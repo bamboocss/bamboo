@@ -1,5 +1,16 @@
 # @bamboocss/studio
 
+## 1.12.3
+
+### Patch Changes
+
+- @bamboocss/astro-plugin-studio@1.12.3
+- @bamboocss/config@1.12.3
+- @bamboocss/logger@1.12.3
+- @bamboocss/shared@1.12.3
+- @bamboocss/token-dictionary@1.12.3
+- @bamboocss/types@1.12.3
+
 ## 1.12.2
 
 ### Patch Changes

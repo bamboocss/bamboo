@@ -1,6 +1,6 @@
 {
   "name": "@bamboocss/eslint-plugin",
-  "version": "1.12.2",
+  "version": "1.12.3",
   "description": "ESLint plugin for Bamboo CSS",
   "homepage": "https://bamboo-css.com",
   "license": "MIT",
@@ -13,18 +13,18 @@
     "dist"
   ],
   "sideEffects": false,
-  "main": "dist/index.js",
+  "main": "dist/index.cjs",
   "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "types": "dist/index.d.cts",
   "exports": {
     ".": {
-      "import": {
-        "default": "./dist/index.mjs",
-        "types": "./dist/index.d.mts"
-      },
-      "require": "./dist/index.js",
       "source": "./src/index.ts",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.cts",
+      "require": "./dist/index.cjs",
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      }
     },
     "./package.json": "./package.json"
   },
@@ -47,8 +47,8 @@
   },
   "devDependencies": {
     "@bamboocss/dev": "workspace:*",
-    "@bamboocss/preset-base": "workspace:*",
     "@bamboocss/preset-bamboo": "workspace:*",
+    "@bamboocss/preset-base": "workspace:*",
     "@bamboocss/types": "workspace:*",
     "@types/micromatch": "^4.0.10",
     "@typescript-eslint/rule-tester": "^8.43.0",

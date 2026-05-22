@@ -1,9 +1,9 @@
-import { fixturePreset } from './config';
-import { mergeConfigs } from '@bamboocss/config';
-import { defineConfig } from '@bamboocss/dev';
-import { Generator } from '@bamboocss/generator';
-import { parseJson, stringifyJson } from '@bamboocss/shared';
-import { type LoadConfigResult, type UserConfig } from '@bamboocss/types';
+import { fixturePreset } from './config'
+import { mergeConfigs } from '@bamboocss/config'
+import { defineConfig } from '@bamboocss/dev'
+import { Generator } from '@bamboocss/generator'
+import { parseJson, stringifyJson } from '@bamboocss/shared'
+import { type LoadConfigResult, type UserConfig } from '@bamboocss/types'
 
 const sandboxConfig = defineConfig({
   exclude: [],
@@ -118,7 +118,7 @@ const sandboxConfig = defineConfig({
       },
     },
   },
-});
+})
 
 const config: UserConfig = {
   ...fixturePreset,
@@ -127,7 +127,7 @@ const config: UserConfig = {
   include: [],
   jsxFramework: 'react',
   outdir: 'styled-system',
-};
+}
 
 const fixtureDefaults = {
   config,
@@ -136,11 +136,9 @@ const fixtureDefaults = {
   hooks: {},
   path: '',
   serialized: stringifyJson(config),
-} as LoadConfigResult;
+} as LoadConfigResult
 
-export const createGeneratorContext = (
-  userConfig?: Record<string, unknown>,
-) => {
+export const createGeneratorContext = (userConfig?: Record<string, unknown>) => {
   const resolvedConfig = mergeConfigs([
     // @ts-expect-error - TODO explain why this is needed
     fixtureDefaults.config as unknown,
@@ -148,11 +146,11 @@ export const createGeneratorContext = (
     sandboxConfig as unknown,
     { importMap: './bamboo' },
     ...(userConfig ? [userConfig] : []),
-  ]) as unknown as UserConfig;
+  ]) as unknown as UserConfig
 
   return new Generator({
     ...fixtureDefaults,
     // @ts-expect-error - TODO explain why this is needed
     config: resolvedConfig,
-  });
-};
+  })
+}

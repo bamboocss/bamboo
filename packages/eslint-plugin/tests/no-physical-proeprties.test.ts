@@ -1,6 +1,6 @@
-import rule, { RULE_NAME } from '../src/rules/no-physical-properties';
-import { eslintTester } from '../test-utils';
-import multiline from 'multiline-ts';
+import rule, { RULE_NAME } from '../src/rules/no-physical-properties'
+import { eslintTester } from '../test-utils'
+import multiline from 'multiline-ts'
 
 eslintTester.run(RULE_NAME, rule, {
   invalid: [
@@ -235,4 +235,4 @@ eslintTester.run(RULE_NAME, rule, {
   }`,
     },
   ],
-});
+})

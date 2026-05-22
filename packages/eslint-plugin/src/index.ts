@@ -1,7 +1,7 @@
-import { name, version } from '../package.json';
-import all from './configs/all';
-import recommended from './configs/recommended';
-import { rules } from './rules';
+import { name, version } from '../package.json'
+import all from './configs/all'
+import recommended from './configs/recommended'
+import { rules } from './rules'
 
 const plugin = {
   configs: {
@@ -13,6 +13,6 @@ const plugin = {
     version,
   },
   rules,
-};
+}
 
-module.exports = plugin;
+export default plugin

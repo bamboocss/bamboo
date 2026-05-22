@@ -1,6 +1,6 @@
-import rule, { RULE_NAME } from '../src/rules/prefer-unified-property-style';
-import { eslintTester } from '../test-utils';
-import multiline from 'multiline-ts';
+import rule, { RULE_NAME } from '../src/rules/prefer-unified-property-style'
+import { eslintTester } from '../test-utils'
+import multiline from 'multiline-ts'
 
 eslintTester.run(RULE_NAME, rule, {
   invalid: [
@@ -39,4 +39,4 @@ eslintTester.run(RULE_NAME, rule, {
   }`,
     },
   ],
-});
+})

@@ -1,9 +1,9 @@
-import { recipes } from './recipes';
-import { semanticTokens } from './semantic-tokens';
-import { slotRecipes } from './slot-recipes';
-import presetBase from '@bamboocss/preset-base';
-import presetBamboo from '@bamboocss/preset-bamboo';
-import { type PresetCore, type Theme } from '@bamboocss/types';
+import { recipes } from './recipes'
+import { semanticTokens } from './semantic-tokens'
+import { slotRecipes } from './slot-recipes'
+import presetBase from '@bamboocss/preset-base'
+import presetBamboo from '@bamboocss/preset-bamboo'
+import { type PresetCore, type Theme } from '@bamboocss/types'
 
 const conditions = {
   ...presetBase.conditions,
@@ -11,9 +11,9 @@ const conditions = {
   light: '[data-theme=light] &, .light &, &.light, &[data-theme=light]',
   materialTheme: '[data-color=material] &',
   pastelTheme: '[data-color=pastel] &',
-};
+}
 
-const theme = presetBamboo.theme;
+const theme = presetBamboo.theme
 const tokens = {
   ...theme.tokens,
   colors: {
@@ -34,7 +34,7 @@ const tokens = {
       },
     },
   },
-} as Theme['tokens'];
+} as Theme['tokens']
 
 const textStyles = {
   headline: {
@@ -51,7 +51,7 @@ const textStyles = {
       },
     },
   },
-};
+}
 
 export const fixturePreset: Omit<PresetCore, 'globalCss' | 'staticCss'> = {
   ...presetBase,
@@ -64,4 +64,4 @@ export const fixturePreset: Omit<PresetCore, 'globalCss' | 'staticCss'> = {
     textStyles,
     tokens,
   },
-};
+}

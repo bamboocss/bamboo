@@ -1,46 +1,37 @@
-import { createRule } from '../utils';
-import {
-  isBambooAttribute,
-  isBambooProp as isBambooProperty,
-  isRecipeVariant,
-} from '../utils/helpers';
-import {
-  isIdentifier,
-  isJSXExpressionContainer,
-  isLiteral,
-  isTemplateLiteral,
-} from '../utils/nodes';
-import { getArbitraryValue } from '@bamboocss/shared';
-import { type TSESTree } from '@typescript-eslint/utils';
+import { createRule } from '../utils'
+import { isBambooAttribute, isBambooProp as isBambooProperty, isRecipeVariant } from '../utils/helpers'
+import { isIdentifier, isJSXExpressionContainer, isLiteral, isTemplateLiteral } from '../utils/nodes'
+import { getArbitraryValue } from '@bamboocss/shared'
+import { type TSESTree } from '@typescript-eslint/utils'
 
-export const RULE_NAME = 'no-escape-hatch';
+export const RULE_NAME = 'no-escape-hatch'
 
 const rule = createRule({
   create(context) {
     // Helper function to adjust the range for fixing (removing brackets)
     const removeBrackets = (range: readonly [number, number]) => {
-      const [start, end] = range;
-      return [start + 1, end - 1] as const;
-    };
+      const [start, end] = range
+      return [start + 1, end - 1] as const
+    }
 
     // Function to check if a value contains escape hatch syntax
     const hasEscapeHatch = (value: string | undefined): boolean => {
       if (!value) {
-        return false;
+        return false
       }
 
       // Early return if the value doesn't contain brackets
       if (!value.includes('[')) {
-        return false;
+        return false
       }
 
-      return getArbitraryValue(value) !== value.trim();
-    };
+      return getArbitraryValue(value) !== value.trim()
+    }
 
     // Unified function to handle reporting
     const handleNodeValue = (node: TSESTree.Node, value: string) => {
       if (!hasEscapeHatch(value)) {
-        return;
+        return
       }
 
       context.report({
@@ -49,70 +40,67 @@ const rule = createRule({
         suggest: [
           {
             fix: (fixer) => {
-              return fixer.replaceTextRange(
-                removeBrackets(node.range as [number, number]),
-                getArbitraryValue(value),
-              );
+              return fixer.replaceTextRange(removeBrackets(node.range as [number, number]), getArbitraryValue(value))
             },
             messageId: 'remove',
           },
         ],
-      });
-    };
+      })
+    }
 
     return {
       JSXAttribute(node: TSESTree.JSXAttribute) {
         if (!node.value) {
-          return;
+          return
         }
 
         // Ensure the attribute is a Bamboo prop
         if (!isBambooProperty(node, context)) {
-          return;
+          return
         }
 
-        const { value } = node;
+        const { value } = node
 
         if (isLiteral(value)) {
-          const value_ = value.value?.toString() ?? '';
-          handleNodeValue(value, value_);
+          const value_ = value.value?.toString() ?? ''
+          handleNodeValue(value, value_)
         } else if (isJSXExpressionContainer(value)) {
-          const expr = value.expression;
+          const expr = value.expression
           if (isLiteral(expr)) {
-            const value_ = expr.value?.toString() ?? '';
-            handleNodeValue(expr, value_);
+            const value_ = expr.value?.toString() ?? ''
+            handleNodeValue(expr, value_)
           } else if (isTemplateLiteral(expr) && expr.expressions.length === 0) {
-            const value_ = expr.quasis[0].value.raw;
-            handleNodeValue(expr.quasis[0], value_);
+            const value_ = expr.quasis[0].value.raw
+            handleNodeValue(expr.quasis[0], value_)
           }
         }
       },
 
       Property(node: TSESTree.Property) {
         if (!isIdentifier(node.key)) {
-          return;
+          return
         }
 
         // Ensure the property is a Bamboo attribute
         if (!isBambooAttribute(node, context)) {
-          return;
+          return
         }
 
         // Exclude recipe variants
         if (isRecipeVariant(node, context)) {
-          return;
+          return
         }
 
-        const value = node.value;
+        const value = node.value
         if (isLiteral(value)) {
-          const value_ = value.value?.toString() ?? '';
-          handleNodeValue(value, value_);
+          const value_ = value.value?.toString() ?? ''
+          handleNodeValue(value, value_)
         } else if (isTemplateLiteral(value) && value.expressions.length === 0) {
-          const value_ = value.quasis[0].value.raw;
-          handleNodeValue(value.quasis[0], value_);
+          const value_ = value.quasis[0].value.raw
+          handleNodeValue(value.quasis[0], value_)
         }
       },
-    };
+    }
   },
   defaultOptions: [],
   meta: {
@@ -129,6 +117,6 @@ const rule = createRule({
     type: 'problem',
   },
   name: RULE_NAME,
-});
+})
 
-export default rule;
+export default rule

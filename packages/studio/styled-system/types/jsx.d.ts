@@ -1,7 +1,7 @@
 /* eslint-disable */
 import type { ElementType, JSX, ComponentPropsWithRef, ComponentType, Component } from 'react'
-import type { RecipeDefinition, RecipeSelection, RecipeVariantRecord } from './recipe';
-import type { Assign, DistributiveOmit, DistributiveUnion, JsxHTMLProps, JsxStyleProps, Pretty } from './system-types';
+import type { RecipeDefinition, RecipeSelection, RecipeVariantRecord } from './recipe'
+import type { Assign, DistributiveOmit, DistributiveUnion, JsxHTMLProps, JsxStyleProps, Pretty } from './system-types'
 
 interface Dict {
   [k: string]: unknown
@@ -43,19 +43,28 @@ export interface JsxFactoryOptions<TProps extends Dict> {
   forwardProps?: string[]
 }
 
-export type JsxRecipeProps<T extends ElementType, P extends Dict> = JsxHTMLProps<ComponentProps<T> & UnstyledProps & AsProps, P>;
+export type JsxRecipeProps<T extends ElementType, P extends Dict> = JsxHTMLProps<
+  ComponentProps<T> & UnstyledProps & AsProps,
+  P
+>
 
-export type JsxElement<T extends ElementType, P extends Dict> = T extends BambooComponent<infer A, infer B>
-  ? BambooComponent<A, Pretty<DistributiveUnion<P, B>>>
-  : BambooComponent<T, P>
+export type JsxElement<T extends ElementType, P extends Dict> =
+  T extends BambooComponent<infer A, infer B>
+    ? BambooComponent<A, Pretty<DistributiveUnion<P, B>>>
+    : BambooComponent<T, P>
 
 export interface JsxFactory {
   <T extends ElementType>(component: T): BambooComponent<T, {}>
-  <T extends ElementType, P extends RecipeVariantRecord>(component: T, recipe: RecipeDefinition<P>, options?: JsxFactoryOptions<JsxRecipeProps<T, RecipeSelection<P>>>): JsxElement<
-    T,
-    RecipeSelection<P>
-  >
-  <T extends ElementType, P extends RecipeFn>(component: T, recipeFn: P, options?: JsxFactoryOptions<JsxRecipeProps<T, P['__type']>>): JsxElement<T, P['__type']>
+  <T extends ElementType, P extends RecipeVariantRecord>(
+    component: T,
+    recipe: RecipeDefinition<P>,
+    options?: JsxFactoryOptions<JsxRecipeProps<T, RecipeSelection<P>>>,
+  ): JsxElement<T, RecipeSelection<P>>
+  <T extends ElementType, P extends RecipeFn>(
+    component: T,
+    recipeFn: P,
+    options?: JsxFactoryOptions<JsxRecipeProps<T, P['__type']>>,
+  ): JsxElement<T, P['__type']>
 }
 
 export type JsxElements = {
@@ -64,6 +73,10 @@ export type JsxElements = {
 
 export type Bamboo = JsxFactory & JsxElements
 
-export type HTMLBambooProps<T extends ElementType> = JsxHTMLProps<ComponentProps<T> & UnstyledProps & AsProps, JsxStyleProps>
+export type HTMLBambooProps<T extends ElementType> = JsxHTMLProps<
+  ComponentProps<T> & UnstyledProps & AsProps,
+  JsxStyleProps
+>
 
-export type BambooVariantProps<T extends BambooComponent<any, any>> = T extends BambooComponent<any, infer Props> ? Props : never
+export type BambooVariantProps<T extends BambooComponent<any, any>> =
+  T extends BambooComponent<any, infer Props> ? Props : never

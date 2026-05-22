@@ -31,7 +31,7 @@ export const physicalProperties: Record<string, string> = {
   paddingTop: 'paddingBlockStart',
   right: 'insetInlineEnd',
   top: 'insetBlockStart',
-};
+}
 
 // Map of property names to their physical values and corresponding logical values
 export const physicalPropertyValues: Record<string, Record<string, string>> = {
@@ -40,4 +40,4 @@ export const physicalPropertyValues: Record<string, Record<string, string>> = {
     left: 'start',
     right: 'end',
   },
-};
+}

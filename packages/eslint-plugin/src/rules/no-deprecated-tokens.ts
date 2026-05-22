@@ -1,49 +1,36 @@
-import { createRule } from '../utils';
+import { createRule } from '../utils'
 import {
   getDeprecatedTokens,
   isBambooAttribute,
   isBambooProp as isBambooProperty,
   isRecipeVariant,
-} from '../utils/helpers';
-import {
-  isIdentifier,
-  isJSXExpressionContainer,
-  isLiteral,
-  isTemplateLiteral,
-} from '../utils/nodes';
-import { type DeprecatedToken } from '../utils/worker';
-import { AST_NODE_TYPES, type TSESTree } from '@typescript-eslint/utils';
-import { isNodeOfTypes } from '@typescript-eslint/utils/ast-utils';
+} from '../utils/helpers'
+import { isIdentifier, isJSXExpressionContainer, isLiteral, isTemplateLiteral } from '../utils/nodes'
+import { type DeprecatedToken } from '../utils/worker'
+import { AST_NODE_TYPES, type TSESTree } from '@typescript-eslint/utils'
+import { isNodeOfTypes } from '@typescript-eslint/utils/ast-utils'
 
-export const RULE_NAME = 'no-deprecated-tokens';
+export const RULE_NAME = 'no-deprecated-tokens'
 
 const rule = createRule({
   create(context) {
     // Cache for deprecated tokens to avoid redundant computations
-    const deprecatedTokensCache = new Map<
-      string,
-      DeprecatedToken[] | undefined
-    >();
+    const deprecatedTokensCache = new Map<string, DeprecatedToken[] | undefined>()
 
-    const sendReport = (
-      property: string,
-      node: TSESTree.Node,
-      value: string | undefined,
-    ) => {
+    const sendReport = (property: string, node: TSESTree.Node, value: string | undefined) => {
       if (!value) {
-        return;
+        return
       }
 
-      let tokens: DeprecatedToken[] | undefined =
-        deprecatedTokensCache.get(value);
+      let tokens: DeprecatedToken[] | undefined = deprecatedTokensCache.get(value)
 
       if (!tokens) {
-        tokens = getDeprecatedTokens(property, value, context);
-        deprecatedTokensCache.set(value, tokens);
+        tokens = getDeprecatedTokens(property, value, context)
+        deprecatedTokensCache.set(value, tokens)
       }
 
       if (!tokens || tokens.length === 0) {
-        return;
+        return
       }
 
       for (const token of tokens) {
@@ -52,71 +39,61 @@ const rule = createRule({
             category: typeof token === 'string' ? undefined : token.category,
             token: typeof token === 'string' ? token : token.value,
           },
-          messageId:
-            typeof token === 'string'
-              ? 'noDeprecatedTokenPaths'
-              : 'noDeprecatedTokens',
+          messageId: typeof token === 'string' ? 'noDeprecatedTokenPaths' : 'noDeprecatedTokens',
           node,
-        });
+        })
       }
-    };
+    }
 
-    const handleLiteralOrTemplate = (
-      property: string,
-      node: TSESTree.Node | undefined,
-    ) => {
+    const handleLiteralOrTemplate = (property: string, node: TSESTree.Node | undefined) => {
       if (!node) {
-        return;
+        return
       }
 
       if (isLiteral(node)) {
-        const value = node.value?.toString();
-        sendReport(property, node, value);
+        const value = node.value?.toString()
+        sendReport(property, node, value)
       } else if (isTemplateLiteral(node) && node.expressions.length === 0) {
-        const value = node.quasis[0].value.raw;
-        sendReport(property, node.quasis[0], value);
+        const value = node.quasis[0].value.raw
+        sendReport(property, node.quasis[0], value)
       }
-    };
+    }
 
     return {
       JSXAttribute(node: TSESTree.JSXAttribute) {
         if (!node.value || !isBambooProperty(node, context)) {
-          return;
+          return
         }
 
-        const property = node.name.name as string;
+        const property = node.name.name as string
 
         if (isLiteral(node.value)) {
-          handleLiteralOrTemplate(property, node.value);
+          handleLiteralOrTemplate(property, node.value)
         } else if (isJSXExpressionContainer(node.value)) {
-          handleLiteralOrTemplate(property, node.value.expression);
+          handleLiteralOrTemplate(property, node.value.expression)
         }
       },
 
       Property(node: TSESTree.Property) {
         if (
           !isIdentifier(node.key) ||
-          !isNodeOfTypes([
-            AST_NODE_TYPES.Literal,
-            AST_NODE_TYPES.TemplateLiteral,
-          ])(node.value) ||
+          !isNodeOfTypes([AST_NODE_TYPES.Literal, AST_NODE_TYPES.TemplateLiteral])(node.value) ||
           !isBambooAttribute(node, context) ||
           isRecipeVariant(node, context)
         ) {
-          return;
+          return
         }
 
-        const property = node.key.name as string;
+        const property = node.key.name as string
 
-        handleLiteralOrTemplate(property, node.value);
+        handleLiteralOrTemplate(property, node.value)
       },
-    };
+    }
   },
   defaultOptions: [],
   meta: {
     docs: {
-      description:
-        'Disallow the use of deprecated tokens within token function syntax.',
+      description: 'Disallow the use of deprecated tokens within token function syntax.',
     },
     messages: {
       noDeprecatedTokenPaths: '`{{token}}` is a deprecated token.',
@@ -126,6 +103,6 @@ const rule = createRule({
     type: 'problem',
   },
   name: RULE_NAME,
-});
+})
 
-export default rule;
+export default rule

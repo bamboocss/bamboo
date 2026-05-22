@@ -1,6 +1,6 @@
-import rule, { RULE_NAME } from '../src/rules/no-deprecated-tokens';
-import { eslintTester } from '../test-utils';
-import multiline from 'multiline-ts';
+import rule, { RULE_NAME } from '../src/rules/no-deprecated-tokens'
+import { eslintTester } from '../test-utils'
+import multiline from 'multiline-ts'
 
 eslintTester.run(RULE_NAME, rule, {
   invalid: [
@@ -21,4 +21,4 @@ eslintTester.run(RULE_NAME, rule, {
   const styles = css({ color: 'red.100' })`,
     },
   ],
-});
+})
