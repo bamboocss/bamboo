@@ -31,7 +31,7 @@ export function generateCssFn(ctx: Context) {
     export declare const css: CssFunction;
     `,
     js: outdent`
-    ${ctx.file.import('createCss, createMergeCss, hypenateProperty, withoutSpace', '../helpers')}
+    ${ctx.file.import('createCss, createMergeCss, hypenateProperty, memo, mergeProps, withoutSpace', '../helpers')}
     ${ctx.file.import('sortConditions, finalizeConditions', './conditions')}
 
     const utilities = "${utility
@@ -121,8 +121,10 @@ export function generateCssFn(ctx: Context) {
     }
 
     const cssFn = createCss(context)
-    export const css = (...styles) => cssFn(mergeCss(...styles))
-    css.raw = (...styles) => mergeCss(...styles)
+    export const css = /* @__PURE__ */ memo((...styles) => cssFn(mergeCss(...styles)))
+    // Deep copy: the merged result is cached and shared, so a caller mutating a
+    // nested condition object would otherwise poison it for everyone after them.
+    css.raw = (...styles) => mergeProps({}, mergeCss(...styles))
 
     export const { mergeCss, assignCss } = createMergeCss(context)
     `,

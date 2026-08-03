@@ -1,4 +1,4 @@
-import { getPatternStyles, patternFns } from '../helpers.mjs'
+import { getPatternStyles, patternFns, memo } from '../helpers.mjs'
 import { css } from '../css/index.mjs'
 
 const wrapConfig = {
@@ -22,5 +22,5 @@ export const getWrapStyle = (styles = {}) => {
   return wrapConfig.transform(_styles, patternFns)
 }
 
-export const wrap = (styles) => css(getWrapStyle(styles))
+export const wrap = /* @__PURE__ */ memo((styles) => css(getWrapStyle(styles)))
 wrap.raw = getWrapStyle

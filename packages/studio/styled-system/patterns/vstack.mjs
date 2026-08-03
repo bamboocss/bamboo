@@ -1,4 +1,4 @@
-import { getPatternStyles, patternFns } from '../helpers.mjs'
+import { getPatternStyles, patternFns, memo } from '../helpers.mjs'
 import { css } from '../css/index.mjs'
 
 const vstackConfig = {
@@ -21,5 +21,5 @@ export const getVstackStyle = (styles = {}) => {
   return vstackConfig.transform(_styles, patternFns)
 }
 
-export const vstack = (styles) => css(getVstackStyle(styles))
+export const vstack = /* @__PURE__ */ memo((styles) => css(getVstackStyle(styles)))
 vstack.raw = getVstackStyle

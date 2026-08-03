@@ -1,4 +1,4 @@
-import { getPatternStyles, patternFns } from '../helpers.mjs'
+import { getPatternStyles, patternFns, memo } from '../helpers.mjs'
 import { css } from '../css/index.mjs'
 
 const spacerConfig = {
@@ -21,5 +21,5 @@ export const getSpacerStyle = (styles = {}) => {
   return spacerConfig.transform(_styles, patternFns)
 }
 
-export const spacer = (styles) => css(getSpacerStyle(styles))
+export const spacer = /* @__PURE__ */ memo((styles) => css(getSpacerStyle(styles)))
 spacer.raw = getSpacerStyle

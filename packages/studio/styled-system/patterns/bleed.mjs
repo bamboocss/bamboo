@@ -1,4 +1,4 @@
-import { getPatternStyles, patternFns } from '../helpers.mjs'
+import { getPatternStyles, patternFns, memo } from '../helpers.mjs'
 import { css } from '../css/index.mjs'
 
 const bleedConfig = {
@@ -21,5 +21,5 @@ export const getBleedStyle = (styles = {}) => {
   return bleedConfig.transform(_styles, patternFns)
 }
 
-export const bleed = (styles) => css(getBleedStyle(styles))
+export const bleed = /* @__PURE__ */ memo((styles) => css(getBleedStyle(styles)))
 bleed.raw = getBleedStyle

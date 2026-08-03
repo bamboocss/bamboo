@@ -1,4 +1,4 @@
-import { getPatternStyles, patternFns } from '../helpers.mjs'
+import { getPatternStyles, patternFns, memo } from '../helpers.mjs'
 import { css } from '../css/index.mjs'
 
 const linkOverlayConfig = {
@@ -21,5 +21,5 @@ export const getLinkOverlayStyle = (styles = {}) => {
   return linkOverlayConfig.transform(_styles, patternFns)
 }
 
-export const linkOverlay = (styles) => css(getLinkOverlayStyle(styles))
+export const linkOverlay = /* @__PURE__ */ memo((styles) => css(getLinkOverlayStyle(styles)))
 linkOverlay.raw = getLinkOverlayStyle

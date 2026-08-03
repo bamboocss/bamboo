@@ -1,4 +1,4 @@
-import { getPatternStyles, patternFns } from '../helpers.mjs'
+import { getPatternStyles, patternFns, memo } from '../helpers.mjs'
 import { css } from '../css/index.mjs'
 
 const cqConfig = {
@@ -18,5 +18,5 @@ export const getCqStyle = (styles = {}) => {
   return cqConfig.transform(_styles, patternFns)
 }
 
-export const cq = (styles) => css(getCqStyle(styles))
+export const cq = /* @__PURE__ */ memo((styles) => css(getCqStyle(styles)))
 cq.raw = getCqStyle

@@ -1,4 +1,4 @@
-import { getPatternStyles, patternFns } from '../helpers.mjs'
+import { getPatternStyles, patternFns, memo } from '../helpers.mjs'
 import { css } from '../css/index.mjs'
 
 const floatConfig = {
@@ -76,5 +76,5 @@ export const getFloatStyle = (styles = {}) => {
   return floatConfig.transform(_styles, patternFns)
 }
 
-export const float = (styles) => css(getFloatStyle(styles))
+export const float = /* @__PURE__ */ memo((styles) => css(getFloatStyle(styles)))
 float.raw = getFloatStyle

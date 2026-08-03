@@ -15,7 +15,7 @@ export function generatePattern(ctx: Context, filters?: ArtifactFilters) {
 
     const patternConfigFn = stringify(compact({ transform, defaultValues })) ?? ''
 
-    const helperImports = ['getPatternStyles, patternFns']
+    const helperImports = ['getPatternStyles, patternFns, memo']
     // depending on the esbuild result, sometimes the transform function couldi include polyfills (e.g. __spreadValues)
     if (patternConfigFn.includes('__spreadValues')) {
       helperImports.push('__spreadValues')
@@ -83,7 +83,7 @@ export function generatePattern(ctx: Context, filters?: ArtifactFilters) {
       return ${baseName}Config.transform(_styles, patternFns)
     }
 
-    export const ${baseName} = (styles) => css(${styleFnName}(styles))
+    export const ${baseName} = /* @__PURE__ */ memo((styles) => css(${styleFnName}(styles)))
     ${baseName}.raw = ${styleFnName}
     `,
     }

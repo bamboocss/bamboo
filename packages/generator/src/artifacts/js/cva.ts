@@ -60,7 +60,7 @@ export function generateCvaFn(ctx: Context) {
         __cva__: true,
         variantMap,
         variantKeys,
-        raw: resolve,
+        raw: (...args) => mergeProps({}, resolve(...args)),
         config,
         merge,
         splitVariantProps,

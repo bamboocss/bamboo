@@ -1,4 +1,4 @@
-import { getPatternStyles, patternFns } from '../helpers.mjs'
+import { getPatternStyles, patternFns, memo } from '../helpers.mjs'
 import { css } from '../css/index.mjs'
 
 const stackConfig = {
@@ -21,5 +21,5 @@ export const getStackStyle = (styles = {}) => {
   return stackConfig.transform(_styles, patternFns)
 }
 
-export const stack = (styles) => css(getStackStyle(styles))
+export const stack = /* @__PURE__ */ memo((styles) => css(getStackStyle(styles)))
 stack.raw = getStackStyle

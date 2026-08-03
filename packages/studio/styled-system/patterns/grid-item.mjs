@@ -1,4 +1,4 @@
-import { getPatternStyles, patternFns } from '../helpers.mjs'
+import { getPatternStyles, patternFns, memo } from '../helpers.mjs'
 import { css } from '../css/index.mjs'
 
 const gridItemConfig = {
@@ -22,5 +22,5 @@ export const getGridItemStyle = (styles = {}) => {
   return gridItemConfig.transform(_styles, patternFns)
 }
 
-export const gridItem = (styles) => css(getGridItemStyle(styles))
+export const gridItem = /* @__PURE__ */ memo((styles) => css(getGridItemStyle(styles)))
 gridItem.raw = getGridItemStyle

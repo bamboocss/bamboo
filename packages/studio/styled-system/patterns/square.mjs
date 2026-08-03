@@ -1,4 +1,4 @@
-import { getPatternStyles, patternFns } from '../helpers.mjs'
+import { getPatternStyles, patternFns, memo } from '../helpers.mjs'
 import { css } from '../css/index.mjs'
 
 const squareConfig = {
@@ -21,5 +21,5 @@ export const getSquareStyle = (styles = {}) => {
   return squareConfig.transform(_styles, patternFns)
 }
 
-export const square = (styles) => css(getSquareStyle(styles))
+export const square = /* @__PURE__ */ memo((styles) => css(getSquareStyle(styles)))
 square.raw = getSquareStyle

@@ -1,4 +1,4 @@
-import { getPatternStyles, patternFns } from '../helpers.mjs'
+import { getPatternStyles, patternFns, memo } from '../helpers.mjs'
 import { css } from '../css/index.mjs'
 
 const visuallyHiddenConfig = {
@@ -15,5 +15,5 @@ export const getVisuallyHiddenStyle = (styles = {}) => {
   return visuallyHiddenConfig.transform(_styles, patternFns)
 }
 
-export const visuallyHidden = (styles) => css(getVisuallyHiddenStyle(styles))
+export const visuallyHidden = /* @__PURE__ */ memo((styles) => css(getVisuallyHiddenStyle(styles)))
 visuallyHidden.raw = getVisuallyHiddenStyle

@@ -1,4 +1,4 @@
-import { getPatternStyles, patternFns } from '../helpers.mjs'
+import { getPatternStyles, patternFns, memo } from '../helpers.mjs'
 import { css } from '../css/index.mjs'
 
 const hstackConfig = {
@@ -21,5 +21,5 @@ export const getHstackStyle = (styles = {}) => {
   return hstackConfig.transform(_styles, patternFns)
 }
 
-export const hstack = (styles) => css(getHstackStyle(styles))
+export const hstack = /* @__PURE__ */ memo((styles) => css(getHstackStyle(styles)))
 hstack.raw = getHstackStyle

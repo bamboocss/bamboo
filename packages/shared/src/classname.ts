@@ -135,5 +135,12 @@ export function createMergeCss(context: CreateCssContext) {
     return Object.assign({}, ...resolve(styles))
   }
 
+  // Memoized for the internal callers that dominate this path — the JSX factories
+  // merge style props with the `css` prop on every render, and `cva` merges while
+  // resolving variants. Those callers treat the result as read-only.
+  //
+  // The result is a shared instance, so anything that hands it to user code must
+  // copy first: `css.raw()` does, since a caller mutating what it received would
+  // otherwise poison this cache for everyone.
   return { mergeCss: memo(mergeCss), assignCss }
 }

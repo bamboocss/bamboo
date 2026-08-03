@@ -11,6 +11,13 @@ export function mergeProps<T extends Record<string, unknown>>(...sources: T[]): 
       const value = obj[key]
       if (isObject(prevValue) && isObject(value)) {
         prev[key] = mergeProps(prevValue, value)
+      } else if (isObject(value)) {
+        // Copy rather than alias. The merged object is cached and handed to user
+        // code, so keeping a reference to a source's nested object lets one caller
+        // mutate a value that a later, unrelated caller reads back.
+        prev[key] = mergeProps({}, value)
+      } else if (Array.isArray(value)) {
+        prev[key] = value.slice()
       } else {
         prev[key] = value
       }

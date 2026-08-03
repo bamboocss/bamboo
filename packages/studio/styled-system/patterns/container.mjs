@@ -1,4 +1,4 @@
-import { getPatternStyles, patternFns } from '../helpers.mjs'
+import { getPatternStyles, patternFns, memo } from '../helpers.mjs'
 import { css } from '../css/index.mjs'
 
 const containerConfig = {
@@ -22,5 +22,5 @@ export const getContainerStyle = (styles = {}) => {
   return containerConfig.transform(_styles, patternFns)
 }
 
-export const container = (styles) => css(getContainerStyle(styles))
+export const container = /* @__PURE__ */ memo((styles) => css(getContainerStyle(styles)))
 container.raw = getContainerStyle

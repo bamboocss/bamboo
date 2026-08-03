@@ -33,7 +33,7 @@ test('should generate pattern', () => {
 
     export declare const box: BoxPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns } from '../helpers.mjs';
+        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
 
     const boxConfig = {
@@ -46,7 +46,7 @@ test('should generate pattern', () => {
       return boxConfig.transform(_styles, patternFns)
     }
 
-    export const box = (styles) => css(getBoxStyle(styles))
+    export const box = /* @__PURE__ */ memo((styles) => css(getBoxStyle(styles)))
     box.raw = getBoxStyle",
         "name": "box",
       },
@@ -77,7 +77,7 @@ test('should generate pattern', () => {
 
     export declare const flex: FlexPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns } from '../helpers.mjs';
+        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
 
     const flexConfig = {
@@ -101,7 +101,7 @@ test('should generate pattern', () => {
       return flexConfig.transform(_styles, patternFns)
     }
 
-    export const flex = (styles) => css(getFlexStyle(styles))
+    export const flex = /* @__PURE__ */ memo((styles) => css(getFlexStyle(styles)))
     flex.raw = getFlexStyle",
         "name": "flex",
       },
@@ -129,7 +129,7 @@ test('should generate pattern', () => {
 
     export declare const stack: StackPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns } from '../helpers.mjs';
+        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
 
     const stackConfig = {
@@ -151,7 +151,7 @@ test('should generate pattern', () => {
       return stackConfig.transform(_styles, patternFns)
     }
 
-    export const stack = (styles) => css(getStackStyle(styles))
+    export const stack = /* @__PURE__ */ memo((styles) => css(getStackStyle(styles)))
     stack.raw = getStackStyle",
         "name": "stack",
       },
@@ -177,7 +177,7 @@ test('should generate pattern', () => {
 
     export declare const vstack: VstackPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns } from '../helpers.mjs';
+        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
 
     const vstackConfig = {
@@ -199,7 +199,7 @@ test('should generate pattern', () => {
       return vstackConfig.transform(_styles, patternFns)
     }
 
-    export const vstack = (styles) => css(getVstackStyle(styles))
+    export const vstack = /* @__PURE__ */ memo((styles) => css(getVstackStyle(styles)))
     vstack.raw = getVstackStyle",
         "name": "vstack",
       },
@@ -225,7 +225,7 @@ test('should generate pattern', () => {
 
     export declare const hstack: HstackPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns } from '../helpers.mjs';
+        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
 
     const hstackConfig = {
@@ -247,7 +247,7 @@ test('should generate pattern', () => {
       return hstackConfig.transform(_styles, patternFns)
     }
 
-    export const hstack = (styles) => css(getHstackStyle(styles))
+    export const hstack = /* @__PURE__ */ memo((styles) => css(getHstackStyle(styles)))
     hstack.raw = getHstackStyle",
         "name": "hstack",
       },
@@ -272,7 +272,7 @@ test('should generate pattern', () => {
 
     export declare const spacer: SpacerPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns } from '../helpers.mjs';
+        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
 
     const spacerConfig = {
@@ -295,7 +295,7 @@ test('should generate pattern', () => {
       return spacerConfig.transform(_styles, patternFns)
     }
 
-    export const spacer = (styles) => css(getSpacerStyle(styles))
+    export const spacer = /* @__PURE__ */ memo((styles) => css(getSpacerStyle(styles)))
     spacer.raw = getSpacerStyle",
         "name": "spacer",
       },
@@ -320,7 +320,7 @@ test('should generate pattern', () => {
 
     export declare const square: SquarePatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns } from '../helpers.mjs';
+        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
 
     const squareConfig = {
@@ -342,7 +342,7 @@ test('should generate pattern', () => {
       return squareConfig.transform(_styles, patternFns)
     }
 
-    export const square = (styles) => css(getSquareStyle(styles))
+    export const square = /* @__PURE__ */ memo((styles) => css(getSquareStyle(styles)))
     square.raw = getSquareStyle",
         "name": "square",
       },
@@ -367,7 +367,7 @@ test('should generate pattern', () => {
 
     export declare const circle: CirclePatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns } from '../helpers.mjs';
+        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
 
     const circleConfig = {
@@ -390,7 +390,7 @@ test('should generate pattern', () => {
       return circleConfig.transform(_styles, patternFns)
     }
 
-    export const circle = (styles) => css(getCircleStyle(styles))
+    export const circle = /* @__PURE__ */ memo((styles) => css(getCircleStyle(styles)))
     circle.raw = getCircleStyle",
         "name": "circle",
       },
@@ -415,7 +415,7 @@ test('should generate pattern', () => {
 
     export declare const center: CenterPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns } from '../helpers.mjs';
+        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
 
     const centerConfig = {
@@ -434,7 +434,7 @@ test('should generate pattern', () => {
       return centerConfig.transform(_styles, patternFns)
     }
 
-    export const center = (styles) => css(getCenterStyle(styles))
+    export const center = /* @__PURE__ */ memo((styles) => css(getCenterStyle(styles)))
     center.raw = getCenterStyle",
         "name": "center",
       },
@@ -459,7 +459,7 @@ test('should generate pattern', () => {
 
     export declare const linkOverlay: LinkOverlayPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns } from '../helpers.mjs';
+        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
 
     const linkOverlayConfig = {
@@ -481,7 +481,7 @@ test('should generate pattern', () => {
       return linkOverlayConfig.transform(_styles, patternFns)
     }
 
-    export const linkOverlay = (styles) => css(getLinkOverlayStyle(styles))
+    export const linkOverlay = /* @__PURE__ */ memo((styles) => css(getLinkOverlayStyle(styles)))
     linkOverlay.raw = getLinkOverlayStyle",
         "name": "link-overlay",
       },
@@ -506,7 +506,7 @@ test('should generate pattern', () => {
 
     export declare const aspectRatio: AspectRatioPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns } from '../helpers.mjs';
+        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
 
     const aspectRatioConfig = {
@@ -542,7 +542,7 @@ test('should generate pattern', () => {
       return aspectRatioConfig.transform(_styles, patternFns)
     }
 
-    export const aspectRatio = (styles) => css(getAspectRatioStyle(styles))
+    export const aspectRatio = /* @__PURE__ */ memo((styles) => css(getAspectRatioStyle(styles)))
     aspectRatio.raw = getAspectRatioStyle",
         "name": "aspect-ratio",
       },
@@ -571,7 +571,7 @@ test('should generate pattern', () => {
 
     export declare const grid: GridPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns } from '../helpers.mjs';
+        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
 
     const gridConfig = {
@@ -596,7 +596,7 @@ test('should generate pattern', () => {
       return gridConfig.transform(_styles, patternFns)
     }
 
-    export const grid = (styles) => css(getGridStyle(styles))
+    export const grid = /* @__PURE__ */ memo((styles) => css(getGridStyle(styles)))
     grid.raw = getGridStyle",
         "name": "grid",
       },
@@ -626,7 +626,7 @@ test('should generate pattern', () => {
 
     export declare const gridItem: GridItemPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns } from '../helpers.mjs';
+        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
 
     const gridItemConfig = {
@@ -649,7 +649,7 @@ test('should generate pattern', () => {
       return gridItemConfig.transform(_styles, patternFns)
     }
 
-    export const gridItem = (styles) => css(getGridItemStyle(styles))
+    export const gridItem = /* @__PURE__ */ memo((styles) => css(getGridItemStyle(styles)))
     gridItem.raw = getGridItemStyle",
         "name": "grid-item",
       },
@@ -678,7 +678,7 @@ test('should generate pattern', () => {
 
     export declare const wrap: WrapPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns } from '../helpers.mjs';
+        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
 
     const wrapConfig = {
@@ -701,7 +701,7 @@ test('should generate pattern', () => {
       return wrapConfig.transform(_styles, patternFns)
     }
 
-    export const wrap = (styles) => css(getWrapStyle(styles))
+    export const wrap = /* @__PURE__ */ memo((styles) => css(getWrapStyle(styles)))
     wrap.raw = getWrapStyle",
         "name": "wrap",
       },
@@ -726,7 +726,7 @@ test('should generate pattern', () => {
 
     export declare const container: ContainerPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns } from '../helpers.mjs';
+        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
 
     const containerConfig = {
@@ -745,7 +745,7 @@ test('should generate pattern', () => {
       return containerConfig.transform(_styles, patternFns)
     }
 
-    export const container = (styles) => css(getContainerStyle(styles))
+    export const container = /* @__PURE__ */ memo((styles) => css(getContainerStyle(styles)))
     container.raw = getContainerStyle",
         "name": "container",
       },
@@ -772,7 +772,7 @@ test('should generate pattern', () => {
 
     export declare const divider: DividerPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns } from '../helpers.mjs';
+        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
 
     const dividerConfig = {
@@ -795,7 +795,7 @@ test('should generate pattern', () => {
       return dividerConfig.transform(_styles, patternFns)
     }
 
-    export const divider = (styles) => css(getDividerStyle(styles))
+    export const divider = /* @__PURE__ */ memo((styles) => css(getDividerStyle(styles)))
     divider.raw = getDividerStyle",
         "name": "divider",
       },
@@ -823,7 +823,7 @@ test('should generate pattern', () => {
 
     export declare const float: FloatPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns } from '../helpers.mjs';
+        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
 
     const floatConfig = {
@@ -873,7 +873,7 @@ test('should generate pattern', () => {
       return floatConfig.transform(_styles, patternFns)
     }
 
-    export const float = (styles) => css(getFloatStyle(styles))
+    export const float = /* @__PURE__ */ memo((styles) => css(getFloatStyle(styles)))
     float.raw = getFloatStyle",
         "name": "float",
       },
@@ -899,7 +899,7 @@ test('should generate pattern', () => {
 
     export declare const bleed: BleedPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns } from '../helpers.mjs';
+        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
 
     const bleedConfig = {
@@ -921,7 +921,7 @@ test('should generate pattern', () => {
       return bleedConfig.transform(_styles, patternFns)
     }
 
-    export const bleed = (styles) => css(getBleedStyle(styles))
+    export const bleed = /* @__PURE__ */ memo((styles) => css(getBleedStyle(styles)))
     bleed.raw = getBleedStyle",
         "name": "bleed",
       },
@@ -946,7 +946,7 @@ test('should generate pattern', () => {
 
     export declare const visuallyHidden: VisuallyHiddenPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns } from '../helpers.mjs';
+        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
 
     const visuallyHiddenConfig = {
@@ -962,7 +962,7 @@ test('should generate pattern', () => {
       return visuallyHiddenConfig.transform(_styles, patternFns)
     }
 
-    export const visuallyHidden = (styles) => css(getVisuallyHiddenStyle(styles))
+    export const visuallyHidden = /* @__PURE__ */ memo((styles) => css(getVisuallyHiddenStyle(styles)))
     visuallyHidden.raw = getVisuallyHiddenStyle",
         "name": "visually-hidden",
       },
@@ -988,7 +988,7 @@ test('should generate pattern', () => {
 
     export declare const cq: CqPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns } from '../helpers.mjs';
+        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
 
     const cqConfig = {
@@ -1007,7 +1007,7 @@ test('should generate pattern', () => {
       return cqConfig.transform(_styles, patternFns)
     }
 
-    export const cq = (styles) => css(getCqStyle(styles))
+    export const cq = /* @__PURE__ */ memo((styles) => css(getCqStyle(styles)))
     cq.raw = getCqStyle",
         "name": "cq",
       },

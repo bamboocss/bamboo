@@ -1,4 +1,4 @@
-import { getPatternStyles, patternFns } from '../helpers.mjs'
+import { getPatternStyles, patternFns, memo } from '../helpers.mjs'
 import { css } from '../css/index.mjs'
 
 const circleConfig = {
@@ -22,5 +22,5 @@ export const getCircleStyle = (styles = {}) => {
   return circleConfig.transform(_styles, patternFns)
 }
 
-export const circle = (styles) => css(getCircleStyle(styles))
+export const circle = /* @__PURE__ */ memo((styles) => css(getCircleStyle(styles)))
 circle.raw = getCircleStyle

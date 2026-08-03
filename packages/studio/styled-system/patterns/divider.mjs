@@ -1,4 +1,4 @@
-import { getPatternStyles, patternFns } from '../helpers.mjs'
+import { getPatternStyles, patternFns, memo } from '../helpers.mjs'
 import { css } from '../css/index.mjs'
 
 const dividerConfig = {
@@ -22,5 +22,5 @@ export const getDividerStyle = (styles = {}) => {
   return dividerConfig.transform(_styles, patternFns)
 }
 
-export const divider = (styles) => css(getDividerStyle(styles))
+export const divider = /* @__PURE__ */ memo((styles) => css(getDividerStyle(styles)))
 divider.raw = getDividerStyle

@@ -1,4 +1,4 @@
-import { createCss, createMergeCss, hypenateProperty, withoutSpace } from '../helpers.mjs'
+import { createCss, createMergeCss, hypenateProperty, memo, mergeProps, withoutSpace } from '../helpers.mjs'
 import { sortConditions, finalizeConditions } from './conditions.mjs'
 
 const utilities =
@@ -38,7 +38,9 @@ const context = {
 }
 
 const cssFn = createCss(context)
-export const css = (...styles) => cssFn(mergeCss(...styles))
-css.raw = (...styles) => mergeCss(...styles)
+export const css = /* @__PURE__ */ memo((...styles) => cssFn(mergeCss(...styles)))
+// Deep copy: the merged result is cached and shared, so a caller mutating a
+// nested condition object would otherwise poison it for everyone after them.
+css.raw = (...styles) => mergeProps({}, mergeCss(...styles))
 
 export const { mergeCss, assignCss } = createMergeCss(context)

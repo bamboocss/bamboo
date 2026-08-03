@@ -1,4 +1,4 @@
-import { getPatternStyles, patternFns } from '../helpers.mjs'
+import { getPatternStyles, patternFns, memo } from '../helpers.mjs'
 import { css } from '../css/index.mjs'
 
 const centerConfig = {
@@ -18,5 +18,5 @@ export const getCenterStyle = (styles = {}) => {
   return centerConfig.transform(_styles, patternFns)
 }
 
-export const center = (styles) => css(getCenterStyle(styles))
+export const center = /* @__PURE__ */ memo((styles) => css(getCenterStyle(styles)))
 center.raw = getCenterStyle

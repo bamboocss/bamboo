@@ -1,4 +1,4 @@
-import { getPatternStyles, patternFns } from '../helpers.mjs'
+import { getPatternStyles, patternFns, memo } from '../helpers.mjs'
 import { css } from '../css/index.mjs'
 
 const boxConfig = {
@@ -12,5 +12,5 @@ export const getBoxStyle = (styles = {}) => {
   return boxConfig.transform(_styles, patternFns)
 }
 
-export const box = (styles) => css(getBoxStyle(styles))
+export const box = /* @__PURE__ */ memo((styles) => css(getBoxStyle(styles)))
 box.raw = getBoxStyle

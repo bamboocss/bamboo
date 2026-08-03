@@ -1,4 +1,4 @@
-import { getPatternStyles, patternFns } from '../helpers.mjs'
+import { getPatternStyles, patternFns, memo } from '../helpers.mjs'
 import { css } from '../css/index.mjs'
 
 const flexConfig = {
@@ -23,5 +23,5 @@ export const getFlexStyle = (styles = {}) => {
   return flexConfig.transform(_styles, patternFns)
 }
 
-export const flex = (styles) => css(getFlexStyle(styles))
+export const flex = /* @__PURE__ */ memo((styles) => css(getFlexStyle(styles)))
 flex.raw = getFlexStyle

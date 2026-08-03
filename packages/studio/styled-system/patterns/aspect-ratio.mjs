@@ -1,4 +1,4 @@
-import { getPatternStyles, patternFns } from '../helpers.mjs'
+import { getPatternStyles, patternFns, memo } from '../helpers.mjs'
 import { css } from '../css/index.mjs'
 
 const aspectRatioConfig = {
@@ -33,5 +33,5 @@ export const getAspectRatioStyle = (styles = {}) => {
   return aspectRatioConfig.transform(_styles, patternFns)
 }
 
-export const aspectRatio = (styles) => css(getAspectRatioStyle(styles))
+export const aspectRatio = /* @__PURE__ */ memo((styles) => css(getAspectRatioStyle(styles)))
 aspectRatio.raw = getAspectRatioStyle
