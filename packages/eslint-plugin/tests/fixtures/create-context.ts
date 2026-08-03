@@ -150,7 +150,6 @@ export const createGeneratorContext = (userConfig?: Record<string, unknown>) => 
 
   return new Generator({
     ...fixtureDefaults,
-    // @ts-expect-error - TODO explain why this is needed
     config: resolvedConfig,
   })
 }
