@@ -254,10 +254,10 @@ export async function main() {
           if (event === 'unlink') {
             ctx.project.removeSourceFile(ctx.runtime.path.abs(cwd, file))
           } else if (event === 'change') {
-            ctx.project.reloadSourceFile(file)
+            ctx.project.reloadSourceFile(ctx.runtime.path.abs(cwd, file))
             await cssgen(ctx, options)
           } else if (event === 'add') {
-            ctx.project.createSourceFile(file)
+            ctx.project.createSourceFile(ctx.runtime.path.abs(cwd, file))
             await cssgen(ctx, options)
           }
         })
@@ -530,10 +530,10 @@ export async function main() {
           if (event === 'unlink') {
             ctx.project.removeSourceFile(ctx.runtime.path.abs(cwd, file))
           } else if (event === 'change') {
-            ctx.project.reloadSourceFile(file)
+            ctx.project.reloadSourceFile(ctx.runtime.path.abs(cwd, file))
             await buildInfo(ctx, outfile)
           } else if (event === 'add') {
-            ctx.project.createSourceFile(file)
+            ctx.project.createSourceFile(ctx.runtime.path.abs(cwd, file))
             await buildInfo(ctx, outfile)
           }
         })

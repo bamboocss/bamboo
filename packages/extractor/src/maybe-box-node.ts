@@ -27,9 +27,27 @@ import type { BoxContext, EvaluatedObjectResult, LiteralValue, MatchFnPropArgs, 
 import { isNotNullish, isObject, trimWhitespace, unwrapExpression } from './utils'
 import { getObjectLiteralExpressionPropPairs } from './get-object-literal-expression-prop-pairs'
 
-const cacheMap = new WeakMap<Node, MaybeBoxNodeReturn>()
+let cacheMap = new WeakMap<Node, MaybeBoxNodeReturn>()
 const isCached = (node: Node) => cacheMap.has(node)
 const getCached = (node: Node) => cacheMap.get(node)
+
+/**
+ * Drops every memoized resolution.
+ *
+ * The cache is keyed on AST nodes, and a node's resolved value can depend on
+ * another file: `css(button)` folds whatever `./styles` exports. Editing that file
+ * replaces only its own nodes, so an importer's nodes stay identical and would
+ * otherwise keep serving the value read before the edit.
+ */
+export const clearBoxNodeCache = () => {
+  // Cheap when nothing has been memoized since the last clear, so the callers that
+  // fire once per file while a project is being loaded cost nothing.
+  if (!hasCachedEntries) return
+  cacheMap = new WeakMap<Node, MaybeBoxNodeReturn>()
+  hasCachedEntries = false
+}
+
+let hasCachedEntries = false
 
 const isPlusSyntax = (op: SyntaxKind) => op === ts.SyntaxKind.PlusToken
 const isLogicalSyntax = (op: SyntaxKind) =>
@@ -68,6 +86,7 @@ export function maybeBoxNode(
 ): MaybeBoxNodeReturn {
   const cache = (value: MaybeBoxNodeReturn) => {
     cacheMap.set(node, value)
+    hasCachedEntries = true
     return value
   }
 

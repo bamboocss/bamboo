@@ -124,7 +124,7 @@ export function createParser(context: ParserOptions) {
           }),
         }
       },
-      flags: { skipTraverseFiles: true },
+      flags: { skipTraverseFiles: false },
     })
 
     extractResultByName.forEach((result, alias) => {

@@ -43,14 +43,18 @@ export function getDeclarationFor(
   ) {
     declarationStack.push(parent)
     declaration = parent
-  } else if (Node.isImportSpecifier(parent) && parent.getNameNode() == node) {
+    // `getNameNode()` is the exported name and `getAliasNode()` the local binding,
+    // so `import { button as btn }` reaches here as the alias node.
+  } else if (Node.isImportSpecifier(parent) && (parent.getNameNode() == node || parent.getAliasNode() == node)) {
     if (ctx.flags?.skipTraverseFiles) return
 
     const sourceFile = getModuleSpecifierSourceFile(parent.getImportDeclaration())
 
     if (sourceFile) {
       const exportStack = [parent, sourceFile] as Node[]
-      const maybeVar = getExportedVarDeclarationWithName(node.getText(), sourceFile, exportStack, ctx)
+      // Always look up the *exported* name, which differs from the local one when aliased.
+      const exportedName = parent.getNameNode().getText()
+      const maybeVar = getExportedVarDeclarationWithName(exportedName, sourceFile, exportStack, ctx)
 
       if (maybeVar) {
         declarationStack.push(...exportStack.concat(maybeVar))

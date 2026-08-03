@@ -15,6 +15,7 @@ import {
   ts,
   type ProjectOptions as TsProjectOptions,
 } from 'ts-morph'
+import { clearBoxNodeCache } from '@bamboocss/extractor'
 import { classifyProject } from './classify'
 import { createParser } from './parser'
 import { ParserResult } from './parser-result'
@@ -69,12 +70,122 @@ export class Project {
     return this.options.getFiles()
   }
 
+  /**
+   * Reverse dependency graph: imported file -> files importing it, both keyed on
+   * the source file's own normalized path so lookups match regardless of whether
+   * the caller passed a relative, aliased or platform-specific path.
+   *
+   * Populated while parsing. Cross-file extraction folds imported values into the
+   * importer's output, so editing a shared style file has to re-parse everyone who
+   * imports it — re-parsing only the changed file leaves consumers stale.
+   */
+  private dependents = new Map<string, Set<string>>()
+
+  /** Forward edges, so a re-parse can retract exactly the previous ones. */
+  private dependencies = new Map<string, Set<string>>()
+
+  /**
+   * Path as a caller spells it -> the source file's own path.
+   *
+   * The graph is keyed on the latter, but callers pass whatever the watcher gave
+   * them. Resolving through the project covers that while the file is loaded;
+   * this keeps it resolvable afterwards too, so asking which files imported a
+   * *deleted* file still works and the unlink path does not depend on querying
+   * before removal.
+   */
+  private canonicalPaths = new Map<string, string>()
+
+  /**
+   * Files holding at least one import whose specifier resolved to nothing.
+   *
+   * A broken or not-yet-created import produces no edge, so when the file it wants
+   * finally appears there is nothing in the graph connecting them. These importers
+   * are the only candidates for that, and the set is normally empty.
+   */
+  private unresolvedImporters = new Set<string>()
+
+  /** Files whose imports did not all resolve when they were last parsed. */
+  getUnresolvedImporters = (): string[] => [...this.unresolvedImporters]
+
   getSourceFile = (filePath: string): SourceFile | undefined => {
     return this.project.getSourceFile(filePath)
   }
 
+  /** ts-morph reports forward slashes; normalize callers' paths to match on Windows. */
+  private normalizePath = (filePath: string) => filePath.replaceAll('\\', '/')
+
+  private trackDependencies = (filePath: string, sourceFile: SourceFile) => {
+    const importer = this.normalizePath(sourceFile.getFilePath())
+    this.canonicalPaths.set(this.normalizePath(filePath), importer)
+
+    // Retract this file's previous edges, so an import removed by an edit stops
+    // forcing a rebuild of a file it no longer depends on. Walking the forward
+    // edges keeps this proportional to the file's own imports rather than to the
+    // size of the whole graph, which would make a full parse quadratic.
+    for (const previous of this.dependencies.get(importer) ?? []) {
+      this.dependents.get(previous)?.delete(importer)
+    }
+    const current = new Set<string>()
+
+    // Re-exports (`export { base } from './tokens'`) carry a module specifier too,
+    // and are how a barrel file forwards styles, so they are dependencies as well.
+    const declarations = [...sourceFile.getImportDeclarations(), ...sourceFile.getExportDeclarations()]
+
+    let unresolved = false
+
+    for (const decl of declarations) {
+      const imported = decl.getModuleSpecifierSourceFile()
+      if (!imported) {
+        // Bare package specifiers are never going to resolve into the project, so
+        // they must not keep this file on the pending list forever.
+        if (decl.getModuleSpecifierValue()?.startsWith('.')) unresolved = true
+        continue
+      }
+      const importedPath = this.normalizePath(imported.getFilePath())
+      if (importedPath === importer) continue
+      const importers = this.dependents.get(importedPath) ?? new Set<string>()
+      importers.add(importer)
+      this.dependents.set(importedPath, importers)
+      current.add(importedPath)
+    }
+
+    this.dependencies.set(importer, current)
+
+    if (unresolved) this.unresolvedImporters.add(importer)
+    else this.unresolvedImporters.delete(importer)
+  }
+
+  /**
+   * Every file that transitively imports `filePath`, so a watcher can re-parse the
+   * consumers of an edited file. Excludes `filePath` itself.
+   */
+  getDependents = (filePath: string): string[] => {
+    // Callers pass whatever the watcher handed them — relative, aliased, or
+    // platform-specific. The graph is keyed on the source file's own path, so
+    // resolve through the project first rather than string-matching.
+    const given = this.normalizePath(filePath)
+    const resolved = this.project.getSourceFile(filePath)?.getFilePath()
+    const start = resolved ? this.normalizePath(resolved) : (this.canonicalPaths.get(given) ?? given)
+    const seen = new Set<string>()
+    const queue = [start]
+
+    while (queue.length) {
+      const current = queue.shift()!
+      for (const importer of this.dependents.get(current) ?? []) {
+        if (importer === start || seen.has(importer)) continue
+        seen.add(importer)
+        queue.push(importer)
+      }
+    }
+
+    return [...seen]
+  }
+
   createSourceFile = (filePath: string): SourceFile => {
     const { readFile } = this.options
+    // A file appearing can satisfy an import that previously resolved to nothing,
+    // and this overwrites when the path already exists.
+    clearBoxNodeCache()
     return this.project.createSourceFile(filePath, readFile(filePath), {
       overwrite: true,
       scriptKind: ScriptKind.TSX,
@@ -89,6 +200,8 @@ export class Project {
   }
 
   addSourceFile = (filePath: string, content: string): SourceFile => {
+    // Resolutions memoized against other files' nodes can now be out of date.
+    clearBoxNodeCache()
     return this.project.createSourceFile(filePath, content, {
       overwrite: true,
       scriptKind: ScriptKind.TSX,
@@ -98,17 +211,27 @@ export class Project {
   removeSourceFile = (filePath: string): boolean => {
     const sourceFile = this.project.getSourceFile(filePath)
     if (sourceFile) {
+      // Importers memoized the values this file exported; without dropping them
+      // they would keep emitting styles from a file that no longer exists.
+      clearBoxNodeCache()
       return this.project.removeSourceFile(sourceFile)
     }
     return false
   }
 
   reloadSourceFile = (filePath: string): FileSystemRefreshResult | undefined => {
+    // Same reason as `addSourceFile`: this is the watch-mode entry point for an
+    // edit, and importers' memoized resolutions must not survive it.
+    clearBoxNodeCache()
     return this.getSourceFile(filePath)?.refreshFromFileSystemSync()
   }
 
   reloadSourceFiles = () => {
     const files = this.getFiles()
+
+    // Once for the batch rather than per file: every file is about to be re-read,
+    // so any resolution memoized against another file's contents is suspect.
+    clearBoxNodeCache()
 
     for (const file of files) {
       const source = this.getSourceFile(file)
@@ -143,6 +266,8 @@ export class Project {
 
     const sourceFile = this.project.getSourceFile(filePath)
     if (!sourceFile) return
+
+    this.trackDependencies(filePath, sourceFile)
 
     const original = sourceFile.getText()
 

@@ -44,32 +44,59 @@ export async function generate(config: Config, configPath?: string) {
       { cwd, poll },
     )
 
-    const bundleStyles = async (ctx: BambooContext, changedFilePath: string) => {
-      const outfile = ctx.runtime.path.join(...ctx.paths.root, 'styles.css')
-      const parserResult = ctx.project.parseSourceFile(changedFilePath)
-
-      if (parserResult) {
-        const done = logger.time.info(ctx.messages.buildComplete(1))
-        const sheet = ctx.createSheet()
-        ctx.appendLayerParams(sheet)
-        ctx.appendBaselineCss(sheet)
-        ctx.appendParserCss(sheet)
-        const css = ctx.getCss(sheet)
-        await ctx.runtime.fs.writeFile(outfile, css)
-        done()
+    /**
+     * Re-parses every affected file, then builds and writes the stylesheet once.
+     *
+     * One edit can affect many files — a shared style file is folded into all of
+     * its importers — and the sheet is rebuilt from the whole parser result, not
+     * per file. Writing per file would run the optimize pipeline and hit the disk
+     * once per importer for a single keystroke.
+     */
+    const bundleStyles = async (ctx: BambooContext, changedFilePaths: string[]) => {
+      let parsed = 0
+      for (const filePath of changedFilePaths) {
+        if (ctx.project.parseSourceFile(filePath)) parsed++
       }
+
+      if (parsed === 0) return
+
+      const outfile = ctx.runtime.path.join(...ctx.paths.root, 'styles.css')
+      const done = logger.time.info(ctx.messages.buildComplete(parsed))
+      const sheet = ctx.createSheet()
+      ctx.appendLayerParams(sheet)
+      ctx.appendBaselineCss(sheet)
+      ctx.appendParserCss(sheet)
+      const css = ctx.getCss(sheet)
+      await ctx.runtime.fs.writeFile(outfile, css)
+      done()
     }
 
     ctx.watchFiles(async (event, file) => {
       const filePath = ctx.runtime.path.abs(cwd, file)
       if (event === 'unlink') {
+        // Consumers folded this file's styles into their own output, so they have
+        // to be rebuilt to stop emitting them.
+        const dependents = ctx.project.getDependents(filePath)
         ctx.project.removeSourceFile(filePath)
+        await bundleStyles(ctx, dependents)
       } else if (event === 'change') {
-        ctx.project.reloadSourceFile(file)
-        await bundleStyles(ctx, filePath)
+        // Absolute, like every other call here: a relative specifier is not
+        // guaranteed to match the file the project holds, and a reload that
+        // silently matched nothing would leave the edit unread.
+        ctx.project.reloadSourceFile(filePath)
+        // Styles imported from this file are folded into its consumers' output, so
+        // they have to be re-parsed too or they keep emitting the previous values.
+        await bundleStyles(ctx, [filePath, ...ctx.project.getDependents(filePath)])
       } else if (event === 'add') {
-        ctx.project.createSourceFile(file)
-        await bundleStyles(ctx, filePath)
+        ctx.project.createSourceFile(filePath)
+        // A new file can satisfy an import that previously resolved to nothing.
+        // Those importers have no edge to this path yet — the specifier resolved to
+        // nowhere when they were parsed — so they are tracked separately.
+        await bundleStyles(ctx, [
+          filePath,
+          ...ctx.project.getDependents(filePath),
+          ...ctx.project.getUnresolvedImporters(),
+        ])
       }
     })
   }
