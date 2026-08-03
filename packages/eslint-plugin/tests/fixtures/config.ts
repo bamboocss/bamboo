@@ -1,9 +1,9 @@
-import { recipes } from './recipes'
-import { semanticTokens } from './semantic-tokens'
-import { slotRecipes } from './slot-recipes'
+import { recipes } from './recipes.ts'
+import { semanticTokens } from './semantic-tokens.ts'
+import { slotRecipes } from './slot-recipes.ts'
 import presetBase from '@bamboocss/preset-base'
 import presetBamboo from '@bamboocss/preset-bamboo'
-import { type PresetCore, type Theme } from '@bamboocss/types'
+import type { PresetCore, Theme } from '@bamboocss/types'
 
 const conditions = {
   ...presetBase.conditions,

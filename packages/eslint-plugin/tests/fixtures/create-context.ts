@@ -1,9 +1,9 @@
-import { fixturePreset } from './config'
+import { fixturePreset } from './config.ts'
 import { mergeConfigs } from '@bamboocss/config'
 import { defineConfig } from '@bamboocss/dev'
 import { Generator } from '@bamboocss/generator'
 import { parseJson, stringifyJson } from '@bamboocss/shared'
-import { type LoadConfigResult, type UserConfig } from '@bamboocss/types'
+import type { LoadConfigResult, UserConfig } from '@bamboocss/types'
 
 const sandboxConfig = defineConfig({
   exclude: [],

@@ -22,7 +22,7 @@ export type DeprecatedToken =
 
 export async function getContext(options: Options) {
   if (process.env.NODE_ENV === 'test') {
-    const { createGeneratorContext } = await import('../../tests/fixtures/create-context')
+    const { createGeneratorContext } = await import('../../tests/fixtures/create-context.ts')
     const context = createGeneratorContext({
       exclude: ['**/Invalid.tsx', '**/bamboo.config.ts'],
       importMap: './bamboo',

@@ -1,4 +1,4 @@
-import { type SemanticTokens } from '@bamboocss/types'
+import type { SemanticTokens } from '@bamboocss/types'
 
 export const semanticTokens: SemanticTokens = {
   colors: {
