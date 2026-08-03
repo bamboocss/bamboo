@@ -100,6 +100,11 @@ const flatHashOrNull = (args) => {
       else h = (h * 33) ^ 3
       continue
     }
+    if (Array.isArray(obj)) h = (h * 33) ^ 7
+    else {
+      const proto = Object.getPrototypeOf(obj)
+      if (proto !== Object.prototype && proto !== null) return null
+    }
     for (const k in obj) {
       const v = obj[k]
       const tv = typeof v
@@ -133,7 +138,7 @@ const snapshotArgs = (args) => {
   for (let i = 0; i < args.length; i++) {
     const o = args[i]
     if (o !== null && typeof o === 'object') {
-      const copy = {}
+      const copy = Array.isArray(o) ? [] : {}
       let n = 0
       for (const k in o) {
         copy[k] = o[k]
@@ -163,6 +168,7 @@ const flatArgsEqual = (a, b, bCounts) => {
     const ob = b[i]
     if (oa === ob) continue
     if (oa === null || ob === null || typeof oa !== 'object' || typeof ob !== 'object') return false
+    if (Array.isArray(oa) !== Array.isArray(ob)) return false
     let n = 0
     for (const k in oa) {
       if (oa[k] !== ob[k]) return false

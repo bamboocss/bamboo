@@ -110,6 +110,33 @@ describe('memo', () => {
     expect(fn(undefined)).toBe('undefined')
   })
 
+  test('an array is not conflated with a numerically keyed object', () => {
+    // Both enumerate as key '0', but the wrapped function reads them differently.
+    let calls = 0
+    const fn = memo((...args: any[]) => {
+      calls++
+      return JSON.stringify(args)
+    })
+
+    expect(fn(['x'])).toBe('[["x"]]')
+    expect(fn({ 0: 'x' })).toBe('[{"0":"x"}]')
+    expect(calls).toBe(2)
+  })
+
+  test('inherited properties are not treated as the object own', () => {
+    // The memo must see what `Object.keys`/`JSON.stringify` see, not what a
+    // prototype walk sees.
+    let calls = 0
+    const fn = memo((...args: any[]) => {
+      calls++
+      return JSON.stringify(args)
+    })
+
+    expect(fn(Object.create({ color: 'red' }))).toBe('[{}]')
+    expect(fn({ color: 'red' })).toBe('[{"color":"red"}]')
+    expect(calls).toBe(2)
+  })
+
   test('cache is bounded so a long-lived process cannot grow without limit', () => {
     let calls = 0
     const fn = memo((o: any) => {

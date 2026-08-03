@@ -62,6 +62,19 @@ const flatHashOrNull = (args: readonly any[]): number | null => {
       }
       continue
     }
+    // An array and an object with the same numeric keys enumerate identically, so
+    // distinguish them or `['x']` and `{ 0: 'x' }` share an entry.
+    if (Array.isArray(obj)) {
+      h = (h * 33) ^ 7
+    } else {
+      // `for...in` walks the prototype chain while the wrapped function reads own
+      // keys, so anything carrying a custom prototype goes to the string key, which
+      // sees exactly what the function does. One check per object is far cheaper
+      // than guarding every key, and plain objects — every style object in
+      // practice — take the fast path unchanged.
+      const proto = Object.getPrototypeOf(obj)
+      if (proto !== Object.prototype && proto !== null) return null
+    }
     for (const k in obj) {
       const v = obj[k]
       const tv = typeof v
@@ -101,7 +114,9 @@ const snapshotArgs = (args: readonly any[]): { values: any[]; counts: number[] }
   for (let i = 0; i < args.length; i++) {
     const o = args[i]
     if (o !== null && typeof o === 'object') {
-      const copy: any = {}
+      // Copy an array as an array, so the stored side keeps the shape the equality
+      // check compares against.
+      const copy: any = Array.isArray(o) ? [] : {}
       let n = 0
       for (const k in o) {
         copy[k] = o[k]
@@ -129,6 +144,9 @@ const flatArgsEqual = (a: readonly any[], b: readonly any[], bCounts: readonly n
     const ob = b[i]
     if (oa === ob) continue
     if (oa === null || ob === null || typeof oa !== 'object' || typeof ob !== 'object') return false
+    // `['x']` and `{ 0: 'x' }` enumerate the same; the wrapped function does not
+    // read them the same.
+    if (Array.isArray(oa) !== Array.isArray(ob)) return false
     let n = 0
     for (const k in oa) {
       if (oa[k] !== ob[k]) return false
