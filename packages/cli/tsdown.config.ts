@@ -1,4 +1,4 @@
-import { defineConfig } from 'tsdown'
+import { defineConfig, type UserConfig } from 'tsdown'
 
 const entries = [
   'src/cli-default.ts',
@@ -11,9 +11,11 @@ const entries = [
 ]
 
 export default defineConfig(
-  entries.map((entry) => ({
-    entry: [entry],
-    format: ['esm', 'cjs'] as const,
-    shims: true,
-  })),
+  entries.map(
+    (entry): UserConfig => ({
+      entry: [entry],
+      format: ['esm', 'cjs'],
+      shims: true,
+    }),
+  ),
 )
