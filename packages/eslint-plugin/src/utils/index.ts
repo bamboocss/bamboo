@@ -9,10 +9,13 @@ export const createRule = ESLintUtils.RuleCreator(
   (name) => `https://github.com/bamboocss/bamboo/blob/main/packages/eslint-plugin/docs/rules/${name}.md`,
 )
 
-// Determine the distribution directory
-const isBase = process.env.NODE_ENV !== 'test' || import.meta.url.endsWith('dist/index.js')
+// Determine the distribution directory. Under test the plugin is loaded from
+// `src/utils/index.ts`, so the built worker sits two levels up in `dist`; when
+// published it is `dist/index.mjs` alongside `dist/utils`. Deriving this from
+// the module URL keeps it independent of NODE_ENV, which consumers may set.
+const isSourceRun = import.meta.url.endsWith('/src/utils/index.ts')
 
-const distDir = fileURLToPath(new URL(isBase ? './' : '../../dist', import.meta.url))
+const distDir = fileURLToPath(new URL(isSourceRun ? '../../dist' : './', import.meta.url))
 
 // Create synchronous function using synckit
 const _syncAction = createSyncFn(join(distDir, 'utils/worker.mjs'))

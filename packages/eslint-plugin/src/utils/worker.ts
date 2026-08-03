@@ -23,9 +23,15 @@ export type DeprecatedToken =
       value: string
     }
 
+// Set by this repo's own test suite to the module that builds a Generator from
+// the fixture config. Never set for consumers of the published package, which
+// ships `dist` only — keying this off NODE_ENV would break anyone linting with
+// NODE_ENV=test, since the fixtures are not published.
+const testContextModule = process.env.BAMBOO_ESLINT_TEST_CONTEXT
+
 export async function getContext(options: Options) {
-  if (process.env.NODE_ENV === 'test') {
-    const { createGeneratorContext } = await import('../../tests/fixtures/create-context.ts')
+  if (testContextModule) {
+    const { createGeneratorContext } = await import(testContextModule)
     const context = createGeneratorContext({
       exclude: ['**/Invalid.tsx', '**/bamboo.config.ts'],
       importMap: './bamboo',

@@ -17,6 +17,12 @@ export default defineConfig({
     globals: true,
     testTimeout: 15_000,
     setupFiles: ['tests-setup.ts'],
+    // Tells @bamboocss/eslint-plugin's synckit worker to build its context from
+    // the test fixtures instead of discovering a real bamboo config on disk.
+    env: {
+      BAMBOO_ESLINT_TEST_CONTEXT: new URL('./packages/eslint-plugin/tests/fixtures/create-context.ts', import.meta.url)
+        .href,
+    },
     hideSkippedTests: true,
     environment: 'happy-dom',
     // https://vitest.dev/config/#exclude defaults + sandbox/codegen/frameworks
