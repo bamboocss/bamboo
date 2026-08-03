@@ -1,4 +1,7 @@
-import { type ImportResult } from '.'
+// Must stay a fully type-only import: under `verbatimModuleSyntax` an
+// `import { type X }` survives as a runtime import, which pulls the plugin
+// entry — and its `createSyncFn` call — into this worker's bundle.
+import type { ImportResult } from '.'
 import { findConfig, loadConfig } from '@bamboocss/config'
 import { resolveTsPathPattern } from '@bamboocss/config/ts-path'
 import { Generator } from '@bamboocss/generator'
