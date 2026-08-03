@@ -18,6 +18,9 @@ allowBuilds:
   svelte-preprocess: true
   unrs-resolver: true
   core-js: false
+  # Dev-only template-literal helper pulled in by the eslint plugin; its build
+  # script is not needed, but pnpm fails the install unless the decision is stated.
+  multiline-ts: false
   core-js-pure: false
   es5-ext: false
   gatsby: false
