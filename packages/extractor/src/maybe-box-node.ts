@@ -801,12 +801,24 @@ export const getExportedVarDeclarationWithName = (
   sourceFile: SourceFile,
   stack: Node[],
   ctx: BoxContext,
+  /**
+   * Files already being searched for this name, so a cycle of re-exporting files
+   * terminates. Re-exports can form one — including a barrel that re-exports
+   * itself — and a name that never resolves inside the cycle would otherwise walk
+   * it forever. `export *` is the worst case, since it matches every name.
+   */
+  visited: Set<SourceFile> = new Set(),
 ): VariableDeclaration | undefined => {
+  // Guard the entry rather than the recursive call, so a file re-exporting itself
+  // is caught on the way in.
+  if (visited.has(sourceFile)) return
+  visited.add(sourceFile)
+
   const maybeVar = sourceFile.getVariableDeclaration(varName)
 
   if (maybeVar) return maybeVar
 
-  const exportDeclaration = resolveVarDeclarationFromExportWithName(varName, sourceFile, stack, ctx)
+  const exportDeclaration = resolveVarDeclarationFromExportWithName(varName, sourceFile, stack, ctx, visited)
   if (!exportDeclaration) return
 
   return exportDeclaration
@@ -861,6 +873,7 @@ function resolveVarDeclarationFromExportWithName(
   sourceFile: SourceFile,
   stack: Node[],
   ctx: BoxContext,
+  visited: Set<SourceFile>,
 ): VariableDeclaration | undefined {
   for (const exportDeclaration of sourceFile.getExportDeclarations()) {
     const exportStack = [exportDeclaration] as Node[]
@@ -870,7 +883,7 @@ function resolveVarDeclarationFromExportWithName(
     if (!maybeFile) continue
 
     exportStack.push(maybeFile)
-    const maybeVar = getExportedVarDeclarationWithName(symbolName, maybeFile, stack, ctx)
+    const maybeVar = getExportedVarDeclarationWithName(symbolName, maybeFile, stack, ctx, visited)
     if (maybeVar) {
       stack.push(...exportStack.concat(maybeVar))
       return maybeVar

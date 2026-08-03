@@ -208,6 +208,10 @@ describe('cross-file: unsupported forms degrade silently', () => {
     ).not.toThrow()
   })
 
+  // NOTE: this topology short-circuits before it ever recurses, so it is not cycle
+  // coverage. Export lookup matches on the source name, so searching a.ts for `a`
+  // compares it against `b` — the only export declaration — misses, and returns.
+  // The tests below are the ones that actually walk a cycle.
   test('a circular re-export does not recurse forever', () => {
     expect(() =>
       extract(
@@ -221,6 +225,71 @@ describe('cross-file: unsupported forms degrade silently', () => {
         'app/src/app.tsx',
       ),
     ).not.toThrow()
+  })
+})
+
+describe('cross-file: unresolvable names inside re-export cycles', () => {
+  // Importing a name that never resolves inside a cycle — a typo, a stale import,
+  // a type-only export — used to walk the cycle until the stack blew, taking the
+  // whole build with it. Each must degrade to the inline half of the style.
+  const app = `${CSS_IMPORT}
+    import { gone } from './a'
+    export const App = () => <div className={css(gone, { margin: '2' })} />`
+
+  test('a star re-export cycle across three files terminates', () => {
+    expect(
+      extract(
+        {
+          'app/src/a.ts': `export * from './b'`,
+          'app/src/b.ts': `export * from './c'`,
+          'app/src/c.ts': `export * from './a'`,
+          'app/src/app.tsx': app,
+        },
+        'app/src/app.tsx',
+      ),
+    ).toEqual([[{}, { margin: '2' }]])
+  })
+
+  test('a same-name re-export cycle across two files terminates', () => {
+    expect(
+      extract(
+        {
+          'app/src/a.ts': `export { gone } from './b'`,
+          'app/src/b.ts': `export { gone } from './a'`,
+          'app/src/app.tsx': app,
+        },
+        'app/src/app.tsx',
+      ),
+    ).toEqual([[{}, { margin: '2' }]])
+  })
+
+  test('a barrel that re-exports itself terminates', () => {
+    expect(
+      extract(
+        {
+          'app/src/a.ts': `export * from './a'`,
+          'app/src/app.tsx': app,
+        },
+        'app/src/app.tsx',
+      ),
+    ).toEqual([[{}, { margin: '2' }]])
+  })
+
+  test('a resolvable name is still found through a star re-export cycle', () => {
+    // The guard must stop the walk, not truncate a lookup that would succeed.
+    expect(
+      extract(
+        {
+          'app/src/a.ts': `export * from './b'`,
+          'app/src/b.ts': `export * from './a'
+           export const found = { color: 'red.500' }`,
+          'app/src/app.tsx': `${CSS_IMPORT}
+           import { found } from './a'
+           export const App = () => <div className={css(found, { margin: '2' })} />`,
+        },
+        'app/src/app.tsx',
+      ),
+    ).toEqual([[{ color: 'red.500' }, { margin: '2' }]])
   })
 })
 
