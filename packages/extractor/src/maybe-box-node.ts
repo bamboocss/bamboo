@@ -802,17 +802,23 @@ export const getExportedVarDeclarationWithName = (
   stack: Node[],
   ctx: BoxContext,
   /**
-   * Files already being searched for this name, so a cycle of re-exporting files
+   * The `(file, name)` pairs already searched, so a cycle of re-exporting files
    * terminates. Re-exports can form one — including a barrel that re-exports
    * itself — and a name that never resolves inside the cycle would otherwise walk
-   * it forever. `export *` is the worst case, since it matches every name.
+   * it forever. `export *` is the worst case, since it forwards every name.
+   *
+   * Keyed on the pair, not the file: a renaming re-export changes the name being
+   * searched from one hop to the next, so the same file can legitimately be visited
+   * for two different names. Keying on the file alone would truncate the second
+   * search and lose a value that is genuinely reachable.
    */
-  visited: Set<SourceFile> = new Set(),
+  visited: Set<string> = new Set(),
 ): VariableDeclaration | undefined => {
   // Guard the entry rather than the recursive call, so a file re-exporting itself
   // is caught on the way in.
-  if (visited.has(sourceFile)) return
-  visited.add(sourceFile)
+  const key = `${sourceFile.getFilePath()}:${varName}`
+  if (visited.has(key)) return
+  visited.add(key)
 
   const maybeVar = sourceFile.getVariableDeclaration(varName)
 
@@ -824,19 +830,32 @@ export const getExportedVarDeclarationWithName = (
   return exportDeclaration
 }
 
-const hasNamedExportWithName = (name: string, exportDeclaration: ExportDeclaration) => {
+/**
+ * Given the name a module exposes, the name to look for in the module it came from.
+ * Returns `undefined` when this declaration does not provide `name` at all.
+ *
+ * For `export { btn as button } from './styles'` the two differ: `getAliasNode()`
+ * is `button`, the name this module exports, and `getNameNode()` is `btn`, the name
+ * to search for in `./styles`. Matching on the wrong one both hides names the
+ * module does export and resolves names it does not.
+ */
+const resolveExportedName = (name: string, exportDeclaration: ExportDeclaration): string | undefined => {
   const namedExports = exportDeclaration.getNamedExports()
 
-  // no namedExports means it's a full re-export like this: `export * from "xxx"`
-  if (namedExports.length === 0) return true
+  // no namedExports means it's a full re-export like this: `export * from "xxx"`,
+  // which forwards every name unchanged
+  if (namedExports.length === 0) return name
 
   for (const namedExport of namedExports) {
-    const exportedName = namedExport.getNameNode().getText()
+    const alias = namedExport.getAliasNode()
+    const exposedName = (alias ?? namedExport.getNameNode()).getText()
 
-    if (exportedName === name) {
-      return true
+    if (exposedName === name) {
+      return namedExport.getNameNode().getText()
     }
   }
+
+  return undefined
 }
 
 /**
@@ -873,17 +892,29 @@ function resolveVarDeclarationFromExportWithName(
   sourceFile: SourceFile,
   stack: Node[],
   ctx: BoxContext,
-  visited: Set<SourceFile>,
+  visited: Set<string>,
 ): VariableDeclaration | undefined {
   for (const exportDeclaration of sourceFile.getExportDeclarations()) {
     const exportStack = [exportDeclaration] as Node[]
-    if (!hasNamedExportWithName(symbolName, exportDeclaration)) continue
+    // The name to search for upstream, which differs from the requested one when
+    // the re-export renames.
+    const sourceName = resolveExportedName(symbolName, exportDeclaration)
+    if (sourceName === undefined) continue
 
     const maybeFile = getModuleSpecifierSourceFile(exportDeclaration)
-    if (!maybeFile) continue
+    if (!maybeFile) {
+      // No module specifier: `const btn = …; export { btn as button }`. The value
+      // is declared here under its pre-alias name.
+      const localVar = sourceFile.getVariableDeclaration(sourceName)
+      if (localVar) {
+        stack.push(...exportStack.concat(localVar))
+        return localVar
+      }
+      continue
+    }
 
     exportStack.push(maybeFile)
-    const maybeVar = getExportedVarDeclarationWithName(symbolName, maybeFile, stack, ctx, visited)
+    const maybeVar = getExportedVarDeclarationWithName(sourceName, maybeFile, stack, ctx, visited)
     if (maybeVar) {
       stack.push(...exportStack.concat(maybeVar))
       return maybeVar

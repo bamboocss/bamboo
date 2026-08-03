@@ -208,10 +208,9 @@ describe('cross-file: unsupported forms degrade silently', () => {
     ).not.toThrow()
   })
 
-  // NOTE: this topology short-circuits before it ever recurses, so it is not cycle
-  // coverage. Export lookup matches on the source name, so searching a.ts for `a`
-  // compares it against `b` — the only export declaration — misses, and returns.
-  // The tests below are the ones that actually walk a cycle.
+  // This one does walk the cycle now that lookup matches the exposed name: `a` in
+  // a.ts matches the alias, recurses into b.ts for `b`, which matches there and
+  // comes back to a.ts for `a`. The guard stops it on the repeated (file, name).
   test('a circular re-export does not recurse forever', () => {
     expect(() =>
       extract(
@@ -314,5 +313,102 @@ describe('cross-file: tsconfig path aliases', () => {
 
     const data = ctx.project.parseSourceFile('app/src/app.tsx')!
     expect([...data.css].map((c: any) => c.data)).toEqual([[{ borderWidth: '2px' }, { margin: '2' }]])
+  })
+})
+
+describe('cross-file: renaming re-exports', () => {
+  const STYLES = `${CSS_IMPORT}
+     export const btn = css.raw({ color: 'red.500' })`
+  const app = (name: string) => `${CSS_IMPORT}
+     import { ${name} } from './barrel'
+     export const App = () => <div className={css(${name}, { margin: '2' })} />`
+
+  test('a plain re-export still resolves', () => {
+    expect(
+      extract(
+        {
+          'app/src/styles.ts': STYLES,
+          'app/src/barrel.ts': `export { btn } from './styles'`,
+          'app/src/app.tsx': app('btn'),
+        },
+        'app/src/app.tsx',
+      ),
+    ).toEqual([[{ color: 'red.500' }, { margin: '2' }]])
+  })
+
+  test('a renamed re-export resolves under the name it exposes', () => {
+    expect(
+      extract(
+        {
+          'app/src/styles.ts': STYLES,
+          'app/src/barrel.ts': `export { btn as button } from './styles'`,
+          'app/src/app.tsx': app('button'),
+        },
+        'app/src/app.tsx',
+      ),
+    ).toEqual([[{ color: 'red.500' }, { margin: '2' }]])
+  })
+
+  test('a renamed re-export does not resolve under its pre-alias name', () => {
+    // `btn` is not exported by the barrel — TypeScript rejects this import, and
+    // extraction must not quietly resolve it either.
+    expect(
+      extract(
+        {
+          'app/src/styles.ts': STYLES,
+          'app/src/barrel.ts': `export { btn as button } from './styles'`,
+          'app/src/app.tsx': app('btn'),
+        },
+        'app/src/app.tsx',
+      ),
+    ).toEqual([[{}, { margin: '2' }]])
+  })
+
+  test('a star re-export over a renaming barrel resolves', () => {
+    expect(
+      extract(
+        {
+          'app/src/styles.ts': STYLES,
+          'app/src/mid.ts': `export { btn as button } from './styles'`,
+          'app/src/barrel.ts': `export * from './mid'`,
+          'app/src/app.tsx': app('button'),
+        },
+        'app/src/app.tsx',
+      ),
+    ).toEqual([[{ color: 'red.500' }, { margin: '2' }]])
+  })
+
+  test('a locally declared value renamed on export resolves', () => {
+    expect(
+      extract(
+        {
+          'app/src/barrel.ts': `${CSS_IMPORT}
+           const btn = css.raw({ color: 'red.500' })
+           export { btn as button }`,
+          'app/src/app.tsx': app('button'),
+        },
+        'app/src/app.tsx',
+      ),
+    ).toEqual([[{ color: 'red.500' }, { margin: '2' }]])
+  })
+
+  test('a file searched for one name is still searched for another', () => {
+    // The first declaration sends `p` into b.ts and on into c.ts, where it fails.
+    // Keying the cycle guard on the file alone would then block the second
+    // declaration from finding `q` in that same file, which is genuinely there.
+    expect(
+      extract(
+        {
+          'app/src/a.ts': `export { p as q } from './b'
+           export * from './c'`,
+          'app/src/b.ts': `export * from './c'`,
+          'app/src/c.ts': `export const q = { color: 'red.500' }`,
+          'app/src/app.tsx': `${CSS_IMPORT}
+           import { q } from './a'
+           export const App = () => <div className={css(q, { margin: '2' })} />`,
+        },
+        'app/src/app.tsx',
+      ),
+    ).toEqual([[{ color: 'red.500' }, { margin: '2' }]])
   })
 })
