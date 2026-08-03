@@ -4,6 +4,7 @@
 
 export { isObject } from './assert'
 export { createCss, createMergeCss } from './classname'
+export { cloneStyles } from './clone-styles'
 export { compact } from './compact'
 export { filterBaseConditions, isBaseCondition } from './condition'
 export { withoutSpace } from './important'

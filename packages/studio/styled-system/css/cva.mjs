@@ -1,4 +1,4 @@
-import { compact, mergeProps, memo, splitProps, uniq } from '../helpers.mjs'
+import { cloneStyles, compact, mergeProps, memo, splitProps, uniq } from '../helpers.mjs'
 import { css, mergeCss } from './css.mjs'
 
 const defaults = (conf) => ({
@@ -52,7 +52,7 @@ export function cva(config) {
     __cva__: true,
     variantMap,
     variantKeys,
-    raw: (...args) => mergeProps({}, resolve(...args)),
+    raw: (...args) => cloneStyles(resolve(...args)),
     config,
     merge,
     splitVariantProps,

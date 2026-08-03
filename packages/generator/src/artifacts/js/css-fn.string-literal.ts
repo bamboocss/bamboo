@@ -30,7 +30,7 @@ export function generateStringLiteralCssFn(ctx: Context) {
     export declare const css: CssFunction;
     `,
     js: outdent`
-    ${ctx.file.import('astish, createCss, isObject, mergeProps, withoutSpace', '../helpers')}
+    ${ctx.file.import('astish, cloneStyles, createCss, isObject, mergeProps, withoutSpace', '../helpers')}
     ${ctx.file.import('finalizeConditions, sortConditions', './conditions')}
 
     function transform(prop, value) {
@@ -60,7 +60,9 @@ export function generateStringLiteralCssFn(ctx: Context) {
 
     const fn = (style) => (isObject(style) ? style : astish(style[0]))
     export const css = (...styles) => cssFn(mergeProps(...styles.filter(Boolean).map(fn)))
-    css.raw = (...styles) => mergeProps(...styles.filter(Boolean).map(fn))
+    // Same independence guarantee as the object-syntax css.raw(), so the public
+    // API behaves identically across both syntaxes.
+    css.raw = (...styles) => cloneStyles(mergeProps(...styles.filter(Boolean).map(fn)))
     `,
   }
 }

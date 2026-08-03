@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import { createCss, createMergeCss } from '../src/classname'
 import { memo } from '../src/memo'
-import { mergeProps } from '../src/merge-props'
+import { cloneStyles } from '../src/clone-styles'
 
 const makeContext = () => ({
   hash: false,
@@ -21,7 +21,7 @@ const buildCss = () => {
   const { mergeCss } = createMergeCss(ctx)
   // Mirrors the shape `generateCssFn` emits, including the copy on `.raw`.
   const css: any = memo((...styles: any[]) => cssFn(mergeCss(...styles)))
-  css.raw = (...styles: any[]) => mergeProps({}, mergeCss(...styles))
+  css.raw = (...styles: any[]) => cloneStyles(mergeCss(...styles))
   return css
 }
 
@@ -240,19 +240,16 @@ describe('css runtime caching', () => {
     expect(css({ color: 'red' })).toBe('color_red')
   })
 
-  test('a merged result does not alias its sources nested objects', () => {
+  test('the raw boundary, not the merge, is what breaks aliasing', () => {
     const ctx = makeContext()
     const { mergeCss } = createMergeCss(ctx)
 
+    // Merging stays cheap and aliases its sources — it runs on every cache miss.
     const source = { _hover: { color: 'red.500' } }
-    const merged: any = mergeCss(source)
+    expect((mergeCss(source) as any)._hover).toBe(source._hover)
 
-    // The cache holds this result and hands it out again, so it must not point at
-    // the caller's own nested object.
-    expect(merged._hover).not.toBe(source._hover)
-
-    merged._hover.color = 'MUTATED'
-    expect(source._hover.color).toBe('red.500')
+    // The copy that protects the cache happens where the value reaches user code.
+    expect((cloneStyles(mergeCss(source)) as any)._hover).not.toBe(source._hover)
   })
 
   test('css.raw hands out a deep copy, so nested mutation cannot poison the cache', () => {
@@ -267,15 +264,15 @@ describe('css runtime caching', () => {
     expect(css({ _hover: { color: 'red.500' } })).not.toContain('MUTATED')
   })
 
-  test('arrays in a merged result are copied, not shared', () => {
+  test('arrays reaching user code are copied, not shared', () => {
     const ctx = makeContext()
     const { mergeCss } = createMergeCss(ctx)
 
     const source = { padding: ['1', '2'] }
-    const merged: any = mergeCss(source)
+    const raw: any = cloneStyles(mergeCss(source))
 
-    expect(merged.padding).not.toBe(source.padding)
-    expect(merged.padding).toEqual(['1', '2'])
+    expect(raw.padding).not.toBe(source.padding)
+    expect(raw.padding).toEqual(['1', '2'])
   })
 
   test('mutating a style object between css() calls yields the new class', () => {
