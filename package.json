@@ -63,6 +63,9 @@
   },
   "packageManager": "pnpm@11.0.8",
   "pnpm": {
+    "ignoredBuiltDependencies": [
+      "multiline-ts"
+    ],
     "overrides": {
       "@swc/helpers@~0.4": "0.4.36",
       "picomatch@4.0.3": "4.0.4"
