@@ -77,6 +77,9 @@
     "packages/token-dictionary": {
       "project": ["src/**/*.ts"]
     },
+    "packages/vite": {
+      "project": ["src/**/*.ts"]
+    },
     "packages/types": {
       "project": ["src/**/*.ts"],
       "ignoreDependencies": ["csstype", "ts-morph"]

@@ -59,6 +59,10 @@ describe('file filtering', () => {
     '/app/src/logo.svg',
     '/app/index.html',
     '/app/src/data.json',
+    // Virtual modules: no file on disk for the extractor to read, so a class folded
+    // here would have nothing emitting a rule for it.
+    '\0virtual:generated.tsx',
+    '\0plugin-virtual:entry.ts',
   ]
 
   test.each(ignored)('%s is not transformed even when enabled', async (id) => {

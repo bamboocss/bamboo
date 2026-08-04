@@ -83,6 +83,86 @@ describe('callee shapes', () => {
     expect(result.code).toBe(code)
   })
 
+  /**
+   * Every binding form that can put a same-named local between the import and the
+   * call. A miss here is the worst failure this transform has: the call is not
+   * bamboo's, so rewriting it to a class string silently changes what the user's own
+   * code returns. Destructuring is the realistic one — `({ css }) => …` is just a
+   * component taking a `css` prop — and the rest are here so the scan is closed
+   * rather than closed-for-the-cases-someone-thought-of.
+   */
+  const shadowingForms: Array<{ name: string; body: string }> = [
+    {
+      name: 'destructured parameter',
+      body: `export const El = ({ css }) => css({ color: 'red.300' })`,
+    },
+    {
+      name: 'renamed destructured parameter',
+      body: `export const El = ({ styles: css }) => css({ color: 'red.300' })`,
+    },
+    {
+      name: 'nested destructured parameter',
+      body: `export const El = ({ props: { css } }) => css({ color: 'red.300' })`,
+    },
+    {
+      name: 'array-destructured parameter',
+      body: `export const El = ([css]) => css({ color: 'red.300' })`,
+    },
+    {
+      name: 'rest element in a destructured parameter',
+      body: `export const El = ({ a, ...css }) => css({ color: 'red.300' })`,
+    },
+    {
+      name: 'destructured local const',
+      body: `export function render(p) {\n        const { css } = p\n        return css({ color: 'red.300' })\n      }`,
+    },
+    {
+      name: 'catch clause binding',
+      body: `export function render(g) {\n        try { g() } catch (css) { return css({ color: 'red.300' }) }\n      }`,
+    },
+    {
+      name: 'for-of binding',
+      body: `export function render(xs) {\n        for (const css of xs) return css({ color: 'red.300' })\n      }`,
+    },
+    {
+      name: 'for-in binding',
+      body: `export function render(xs) {\n        for (const css in xs) return css({ color: 'red.300' })\n      }`,
+    },
+    {
+      name: 'classic for binding',
+      body: `export function render(f) {\n        for (let css = f; ;) return css({ color: 'red.300' })\n      }`,
+    },
+  ]
+
+  test.each(shadowingForms)('$name shadowing the import is not folded', ({ body }) => {
+    const { fold } = createFoldFixture()
+
+    const code = `
+      import { css } from 'styled-system/css'
+      ${body}
+    `
+
+    const result = fold(code)
+
+    expect(result.code).toBe(code)
+    expect(result.folded).toHaveLength(0)
+    expect(result.skipped.map((s) => s.reason)).toContain('not-imported')
+  })
+
+  test('a destructured binding of another name does not block the fold', () => {
+    const { fold } = createFoldFixture()
+
+    // The scan must reject shadowed calls without becoming a blanket "any
+    // destructuring nearby disables folding".
+    const result = fold(`
+      import { css } from 'styled-system/css'
+      export const El = ({ color }) => css({ color: 'red.300' })
+    `)
+
+    expect(result.folded).toHaveLength(1)
+    expect(result.code).toContain('=> "c_red.300"')
+  })
+
   test('the same file still folds unshadowed calls', () => {
     const { fold } = createFoldFixture()
 

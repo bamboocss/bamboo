@@ -30,6 +30,11 @@ const DEFAULT_EXTENSIONS = /\.(?:[cm]?[jt]sx?)$/
 const NODE_MODULES = /node_modules/
 
 const shouldTransform = (id: string) => {
+  // Rollup marks a virtual module by prefixing its id with a NUL. Those have no file
+  // on disk, so the CSS extractor never reads them and a class folded here could have
+  // no rule behind it — besides which, the id is not a path ts-morph should be given.
+  if (id.startsWith('\0')) return false
+
   const [filePath] = id.split('?')
   if (!filePath) return false
   if (NODE_MODULES.test(filePath)) return false

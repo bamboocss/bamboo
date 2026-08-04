@@ -344,12 +344,34 @@ const isShadowed = (call: Node, name: string): boolean => {
   return false
 }
 
+/**
+ * Does a binding name introduce `name`?
+ *
+ * A plain identifier check is not enough: destructuring is the likeliest way a
+ * same-named local reaches a call, since `({ css }) => css(…)` is what a component
+ * taking a `css` prop looks like. Nested and rest elements bind too, so the pattern
+ * is walked rather than inspected at the top level.
+ */
+const bindingIntroduces = (nameNode: Node | undefined, name: string): boolean => {
+  if (!nameNode) return false
+  if (Node.isIdentifier(nameNode)) return nameNode.getText() === name
+
+  if (Node.isObjectBindingPattern(nameNode) || Node.isArrayBindingPattern(nameNode)) {
+    return nameNode
+      .getElements()
+      .some((element) => Node.isBindingElement(element) && bindingIntroduces(element.getNameNode(), name))
+  }
+
+  return false
+}
+
+const declarationsBind = (list: Node | undefined, name: string): boolean =>
+  Node.isVariableDeclarationList(list) &&
+  list.getDeclarations().some((declaration) => bindingIntroduces(declaration.getNameNode(), name))
+
 const bindsName = (scope: Node, name: string): boolean => {
   if (Node.isBlock(scope)) {
-    for (const statement of scope.getStatements()) {
-      if (statementBinds(statement, name)) return true
-    }
-    return false
+    return scope.getStatements().some((statement) => statementBinds(statement, name))
   }
 
   if (
@@ -358,10 +380,17 @@ const bindsName = (scope: Node, name: string): boolean => {
     Node.isFunctionExpression(scope) ||
     Node.isMethodDeclaration(scope)
   ) {
-    for (const parameter of scope.getParameters()) {
-      const nameNode = parameter.getNameNode()
-      if (Node.isIdentifier(nameNode) && nameNode.getText() === name) return true
-    }
+    return scope.getParameters().some((parameter) => bindingIntroduces(parameter.getNameNode(), name))
+  }
+
+  // `catch` and the three `for` heads bind in their own scope rather than in the
+  // block they enclose, so walking blocks alone never sees them.
+  if (Node.isCatchClause(scope)) {
+    return bindingIntroduces(scope.getVariableDeclaration()?.getNameNode(), name)
+  }
+
+  if (Node.isForStatement(scope) || Node.isForOfStatement(scope) || Node.isForInStatement(scope)) {
+    return declarationsBind(scope.getInitializer(), name)
   }
 
   return false
@@ -369,11 +398,7 @@ const bindsName = (scope: Node, name: string): boolean => {
 
 const statementBinds = (statement: Node, name: string): boolean => {
   if (Node.isVariableStatement(statement)) {
-    for (const declaration of statement.getDeclarations()) {
-      const nameNode = declaration.getNameNode()
-      if (Node.isIdentifier(nameNode) && nameNode.getText() === name) return true
-    }
-    return false
+    return statement.getDeclarations().some((declaration) => bindingIntroduces(declaration.getNameNode(), name))
   }
 
   if (Node.isFunctionDeclaration(statement) || Node.isClassDeclaration(statement)) {
@@ -461,6 +486,16 @@ export const foldSource = (options: FoldOptions): FoldResult => {
 
     const start = call.getStart()
     const end = call.getEnd()
+
+    // Offsets are only meaningful against the module being rewritten, and a box can
+    // carry nodes from any module the extractor resolved through. Text equality is
+    // the check that this call really is this module's — cheap, and independent of
+    // how the caller spells `filePath`. Without it a foreign node's offsets would
+    // reach `magic.overwrite` and corrupt the output at a plausible-looking position.
+    if (code.slice(start, end) !== call.getText()) {
+      skipped.push({ name, reason: 'no-call-expression', start: 0, end: 0 })
+      continue
+    }
 
     // The parser can record the same call more than once; fold it once.
     const rangeKey = `${start}:${end}`
