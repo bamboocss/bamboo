@@ -26,7 +26,7 @@ body:
       label: 'Link to Reproduction'
       description: |
         A link to a minimal Bamboo playground or if really needed a Stackblitz reproduction which demonstrates the bug
-        https://play.bamboo-css.com/ or https://stackblitz.com/edit/vitejs-vite-lfwyue?file=src%2FApp.tsx&terminal=dev
+        https://play.bamboocss.com/ or https://stackblitz.com/edit/vitejs-vite-lfwyue?file=src%2FApp.tsx&terminal=dev
       placeholder: 'https://stackblitz.com/edit/vitejs-vite-lfwyue?file=src%2FApp.tsx&terminal=dev'
     validations:
       required: true

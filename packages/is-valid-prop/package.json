@@ -2,7 +2,7 @@
   "name": "@bamboocss/is-valid-prop",
   "version": "1.12.3",
   "description": "Common error messages for css bamboo",
-  "homepage": "https://bamboo-css.com",
+  "homepage": "https://bamboocss.com",
   "license": "MIT",
   "author": "Segun Adebayo <joseshegs@gmail.com>",
   "repository": {

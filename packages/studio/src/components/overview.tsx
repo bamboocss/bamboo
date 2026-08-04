@@ -55,7 +55,7 @@ export default function Overview() {
           <a href={getUrl('colors')} className={buttonRecipe({ variant: 'solid' })}>
             Get Started
           </a>
-          <a href="https://bamboo-css.com?ref=studio" target="_blank" className={buttonRecipe({ variant: 'outline' })}>
+          <a href="https://bamboocss.com?ref=studio" target="_blank" className={buttonRecipe({ variant: 'outline' })}>
             View Docs
           </a>
         </div>

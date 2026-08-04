@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 const defineMetadata = <T extends Metadata>(metadata: T) => metadata
 
 const seoConfig = defineMetadata({
-  metadataBase: new URL('https://play.bamboo-css.com'),
+  metadataBase: new URL('https://play.bamboocss.com'),
   title: {
     template: '%s - Bamboo Playground',
     default: 'Bamboo Playground',
@@ -11,7 +11,7 @@ const seoConfig = defineMetadata({
   description: 'Explore Bamboo CSS with an interactive playground. Create and share your own Bamboo CSS snippets.',
   openGraph: {
     images: '/og-image.png',
-    url: 'https://play.bamboo-css.com',
+    url: 'https://play.bamboocss.com',
   },
   manifest: '/site.webmanifest',
   icons: [

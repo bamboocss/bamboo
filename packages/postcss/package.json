@@ -2,7 +2,7 @@
   "name": "@bamboocss/postcss",
   "version": "1.12.3",
   "description": "PostCSS integration for Bamboo CSS",
-  "homepage": "https://bamboo-css.com",
+  "homepage": "https://bamboocss.com",
   "license": "MIT",
   "author": "Segun Adebayo <joseshegs@gmail.com>",
   "repository": {

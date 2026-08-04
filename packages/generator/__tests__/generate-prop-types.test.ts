@@ -236,8 +236,8 @@ describe('generate property types', () => {
        *   fontSize: '[123px]', // ⚠️ will not throw even if you haven't defined 123px as a token
        * })
        *
-       * @see https://bamboo-css.com/docs/concepts/writing-styles#stricttokens
-       * @see https://bamboo-css.com/docs/concepts/writing-styles#strictpropertyvalues
+       * @see https://bamboocss.com/docs/concepts/writing-styles#stricttokens
+       * @see https://bamboocss.com/docs/concepts/writing-styles#strictpropertyvalues
        */
       export type WithEscapeHatch<T> = T | \`[\${string}]\` | WithColorOpacityModifier<T> | WithImportant<T>
 
@@ -249,7 +249,7 @@ describe('generate property types', () => {
        *   display: 'abc', // ❌ will throw
        * })
        *
-       * @see https://bamboo-css.com/docs/concepts/writing-styles#strictpropertyvalues
+       * @see https://bamboocss.com/docs/concepts/writing-styles#strictpropertyvalues
        */
       export type OnlyKnown<Key, Value> = Value extends boolean
         ? Value
@@ -308,8 +308,8 @@ describe('generate property types', () => {
        *   fontSize: '[123px]', // ⚠️ will not throw even if you haven't defined 123px as a token
        * })
        *
-       * @see https://bamboo-css.com/docs/concepts/writing-styles#stricttokens
-       * @see https://bamboo-css.com/docs/concepts/writing-styles#strictpropertyvalues
+       * @see https://bamboocss.com/docs/concepts/writing-styles#stricttokens
+       * @see https://bamboocss.com/docs/concepts/writing-styles#strictpropertyvalues
        */
       export type WithEscapeHatch<T> = T | \`[\${string}]\` | WithColorOpacityModifier<T> | WithImportant<T>
 
@@ -321,7 +321,7 @@ describe('generate property types', () => {
        *   display: 'abc', // ❌ will throw
        * })
        *
-       * @see https://bamboo-css.com/docs/concepts/writing-styles#strictpropertyvalues
+       * @see https://bamboocss.com/docs/concepts/writing-styles#strictpropertyvalues
        */
       export type OnlyKnown<Key, Value> = Value extends boolean
         ? Value

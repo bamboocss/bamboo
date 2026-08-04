@@ -2,7 +2,7 @@
   "name": "@bamboocss/eslint-plugin",
   "version": "1.12.3",
   "description": "ESLint plugin for Bamboo CSS",
-  "homepage": "https://bamboo-css.com",
+  "homepage": "https://bamboocss.com",
   "license": "MIT",
   "repository": {
     "type": "git",
