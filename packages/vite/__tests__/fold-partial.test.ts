@@ -405,4 +405,52 @@ describe('splitting inside a block', () => {
     expect(fold(code).folded).toHaveLength(0)
     expect(fold(code).code).toBe(code)
   })
+
+  test.each([
+    ['a shorthand colliding inside the block', `_hover: { mx: '4', marginInline: p }`, "mx: '4'"],
+    ['a spread inside the block', `_hover: { color: 'red.300', ...rest }`, '...rest'],
+    ['a computed key inside the block', `_hover: { color: 'red.300', [k]: p }`, '[k]: p'],
+  ])('%s sends the whole block to the runtime rather than splitting it', (_name, inner, marker) => {
+    const { fold } = createFoldFixture()
+    // Without a static sibling these decline for having no static half at all, so they
+    // do not pin the rule they are named for. With one, the split proceeds and the block
+    // has to travel whole.
+    const result = fold(src(`export const f = (p, k, rest) => css({ margin: '2', ${inner} })`))
+
+    expect(result.folded).toHaveLength(1)
+    expect(result.folded[0]!.className).toBe('m_2')
+    expect(result.code).toContain(marker)
+  })
+
+  test('a duplicated key declines rather than emitting both halves', () => {
+    const { fold } = createFoldFixture()
+    const code = src(`export const f = (p) => css({ _hover: { color: 'red.300', bg: p }, _hover: { margin: '2' } })`)
+
+    // Object literals are last-wins, so `css()` only ever sees the second `_hover` and
+    // returns `hover:m_2`. Splitting emitted the discarded block's classes alongside it.
+    expect(fold(code).folded).toHaveLength(0)
+    expect(fold(code).code).toBe(code)
+  })
+
+  test('a duplicated key declines whichever order it is written in', () => {
+    const { fold } = createFoldFixture()
+    const code = src(`export const f = (p) => css({ _hover: { margin: '2' }, _hover: { color: 'red.300', bg: p } })`)
+
+    // This order happened to come out right, which made the bug intermittent by spelling.
+    expect(fold(code).folded).toHaveLength(0)
+  })
+
+  test('a duplicated key declines across quoting styles', () => {
+    const { fold } = createFoldFixture()
+    const code = src(`export const f = (p) => css({ '_hover': { color: 'red.300', bg: p }, _hover: { margin: '2' } })`)
+
+    expect(fold(code).folded).toHaveLength(0)
+  })
+
+  test('a duplicated key at the top level declines', () => {
+    const { fold } = createFoldFixture()
+    const code = src(`export const f = (p) => css({ margin: '2', color: p, margin: '4' })`)
+
+    expect(fold(code).folded).toHaveLength(0)
+  })
 })

@@ -224,6 +224,9 @@ const partitionObject = (
   const dynamicKeys: string[] = []
   const staticStyles: Dict = {}
   const dynamicText: string[] = []
+  /** Keys the recursion split, as opposed to keys that merely appear on both sides. */
+  const splitKeys = new Set<string>()
+  const seenKeys = new Set<string>()
 
   for (const property of node.getProperties()) {
     // A spread contributes keys that cannot be attributed to either half.
@@ -236,6 +239,12 @@ const partitionObject = (
       Node.isStringLiteral(nameNode) || Node.isNumericLiteral(nameNode)
         ? String(nameNode.getLiteralValue())
         : nameNode.getText()
+
+    // Object literals are last-wins, so a repeated key means the earlier one is
+    // discarded. A split emits both halves and cannot express that, and the box holds
+    // only the surviving value — so there is no reading of a duplicate that is safe.
+    if (seenKeys.has(key)) return undefined
+    seenKeys.add(key)
 
     const value = Node.isPropertyAssignment(property) ? property.getInitializer() : undefined
     const valueBox = boxNode.value.get(key)
@@ -263,6 +272,7 @@ const partitionObject = (
       staticKeys.push(key)
       staticStyles[key] = nested.staticStyles
       dynamicKeys.push(key)
+      splitKeys.add(key)
       dynamicText.push(`${property.getNameNode().getText()}: { ${nested.dynamicText.join(', ')} }`)
       continue
     }
@@ -274,9 +284,12 @@ const partitionObject = (
   // Nothing to gain from a split that is entirely one side.
   if (!staticKeys.length || !dynamicText.length) return undefined
 
-  // A key appearing on both sides is a block that was split, which is the point; only
-  // distinct keys can collide.
-  const contested = dynamicKeys.filter((key) => !staticKeys.includes(key))
+  // Only the keys the recursion actually split are exempt. Inferring that from "appears
+  // on both sides" was wrong: a duplicated key lands on both sides too, and exempting it
+  // let a discarded property emit classes. Duplicates now decline above, so this set is
+  // the only way a key is on both sides — which is the point of tracking it directly
+  // rather than deducing it.
+  const contested = dynamicKeys.filter((key) => !splitKeys.has(key))
   if (collides(staticKeys, contested, ctx)) return undefined
 
   return { staticStyles, dynamicText }
