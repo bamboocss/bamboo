@@ -51,7 +51,35 @@ with workspace support.
 - The test `packages/core/__tests__/atomic-rule.test.ts` is the primary CSS output validator
 - CSS output consistency is more important than using latest package versions
 
+### 🚨 Verify Before Reporting
+
+**A pipeline's exit code is the last command's.** `pnpm check 2>&1 | tail -20` exits 0 whether the check passed or
+failed, and `… | grep FAIL` exits 1 when it merely found nothing. Both were reported as results in one session — once as
+a green check that was actually failing. Capture the real one:
+
+```bash
+pnpm check > /tmp/check.log 2>&1; echo "EXIT=$?"
+```
+
+**`git checkout HEAD -- <file>` discards uncommitted work, with no reflog entry to recover it.** So does a `git stash`
+whose flag is malformed — `--keep-index=false` is not a valid form, and the stash silently does not happen, which leaves
+a "before" measurement that is really the "after" tree. Commit or copy to a scratch directory first, then confirm the
+state actually changed (`grep` for something the change added) before trusting anything measured against it.
+
+**The pre-commit hook regenerates from `dist`, not from the working tree** — `.husky/pre-commit` runs `prepare-studio`,
+`fmt:fix`, then `git add -A`. Committing source that has not been rebuilt sweeps in artifacts generated from a different
+revision. Run `pnpm build` before committing anything that changes what the generator emits.
+
 ### Testing Workflow
+
+🚨 **The codegen and sandbox suites run against generated artifacts on disk, and their test commands do not regenerate
+them.** A stale `styled-system/` fails tests the current source passes; it can equally pass tests the current source
+fails. Twice in one session this read as a regression that did not exist. Regenerate before believing a result there:
+
+```bash
+pnpm --filter=./sandbox/codegen exec tsx ./cli.ts codegen     # all scenarios
+pnpm --filter=./sandbox/<name> exec bamboo codegen --clean    # one sandbox
+```
 
 🚨 **`pnpm test` alone does not cover the framework artifacts.** The root `vitest.config.ts` excludes
 `sandbox/codegen/__tests__/frameworks`, so the Solid, Vue, Preact and Qwik suites run only under `pnpm test:codegen`.
@@ -131,6 +159,14 @@ something the change added) before trusting either reading. Patching the generat
 
 Read the `rme` and `samples` columns before believing a diff: a bench reporting ±15% cannot show you a 10% regression,
 and one reporting a handful of samples cannot show you anything.
+
+**Read the control in every run.** Each bench file pairs the path under test with a control that the change cannot touch
+— `parse only` against `parse + fold`. If the control moved between the two readings, the machine did, and the
+comparison is void however clean the numbers look. One A/B here ran at load average 12 and moved its control 3.6x.
+
+**Measure the unit you changed, not the thing containing it.** `parse + fold` is dominated by parsing, so a 178x
+improvement in the fold showed up there as noise; subtracting the control exposed it. If the thing you changed is a
+small fraction of what you are timing, you are measuring the fraction you did not change.
 
 Back-to-back runs of an unchanged tree currently agree to within ~5%, so **treat anything under ~10% as noise.** The one
 exception is `rule set 3 only (base styles)`, which is sub-0.1ms and swings further. Three things keep it there, and are
