@@ -197,20 +197,61 @@ describe('nested calls', () => {
 })
 
 describe('config recipe calls', () => {
-  test('a static recipe call is reported rather than silently skipped', () => {
+  test('a static recipe call folds to its class string', () => {
     const { fold } = createFoldFixture()
-
-    const code = `
+    const result = fold(`
       import { buttonStyle } from 'styled-system/recipes'
       export const cls = buttonStyle({ size: 'sm' })
+    `)
+
+    expect(result.folded).toHaveLength(1)
+    expect(result.code).toContain('export const cls = "')
+    expect(result.folded[0]!.className).toContain('buttonStyle--size_sm')
+  })
+
+  test('default variants are applied', () => {
+    const { fold } = createFoldFixture()
+    const withNone = fold(`
+      import { buttonStyle } from 'styled-system/recipes'
+      export const cls = buttonStyle({})
+    `)
+
+    // The base class is always present, and the defaults resolve without being passed.
+    expect(withNone.folded[0]!.className).toContain('buttonStyle')
+  })
+
+  test('a dynamic variant does not fold', () => {
+    const { fold } = createFoldFixture()
+    const code = `
+      import { buttonStyle } from 'styled-system/recipes'
+      export const make = (s) => buttonStyle({ size: s })
     `
 
-    const result = fold(code)
+    expect(fold(code).folded).toHaveLength(0)
+    expect(fold(code).code).toBe(code)
+  })
 
-    expect(result.code).toBe(code)
-    // Distinct from `not-foldable`: a recipe call does resolve to a class string,
-    // so this is a "not yet" the user can see, not a silent omission.
-    expect(result.skipped.map((s) => s.reason)).toContain('unsupported-kind')
+  test('a slot recipe is left to the runtime', () => {
+    const { fold } = createFoldFixture()
+    const code = `
+      import { checkbox } from 'styled-system/recipes'
+      export const cls = checkbox({ size: 'sm' })
+    `
+
+    // A slot recipe resolves to one class per slot, not to a single string.
+    expect(fold(code).folded).toHaveLength(0)
+    expect(fold(code).skipped.map((s) => s.reason)).toContain('unsupported-kind')
+  })
+
+  test('a recipe.raw call is left alone', () => {
+    const { fold } = createFoldFixture()
+    const code = `
+      import { buttonStyle } from 'styled-system/recipes'
+      export const styles = buttonStyle.raw({ size: 'sm' })
+    `
+
+    expect(fold(code).folded).toHaveLength(0)
+    expect(fold(code).skipped.map((s) => s.reason)).toContain('raw-call')
   })
 
   test('a recipe call does not block a css() fold in the same file', () => {
@@ -223,8 +264,7 @@ describe('config recipe calls', () => {
       export const b = css({ color: 'red.300' })
     `)
 
-    expect(result.folded).toHaveLength(1)
-    expect(result.code).toContain(`buttonStyle({ size: 'sm' })`)
+    expect(result.folded).toHaveLength(2)
     expect(result.code).toContain('export const b = "c_red.300"')
   })
 })

@@ -4,7 +4,7 @@ import type { Dict, ParserResultInterface, ResultItem } from '@bamboocss/types'
 import MagicString from 'magic-string'
 import { Node, type SourceFile } from 'ts-morph'
 import { type JsxEdit, planJsxFold, planPatternFold } from './fold-jsx'
-import { createRuntimeCss, type RuntimeCss } from './runtime-css'
+import { createRuntimeCss, createRuntimeRecipe, type RuntimeCss } from './runtime-css'
 
 /**
  * Why a call site was left alone. Surfaced through `panda`-style diagnostics so a
@@ -70,7 +70,7 @@ export interface FoldOptions {
  * collapse to a class string. Their *invocations* could, but those are separate call
  * sites the parser does not record as such.
  */
-const FOLDABLE_TYPES = new Set(['css', 'pattern'])
+const FOLDABLE_TYPES = new Set(['css', 'pattern', 'recipe'])
 
 /**
  * Kinds that can never collapse to a class string, as opposed to config recipes,
@@ -459,6 +459,7 @@ const argumentsAccountedFor = (call: Node, boxNode: BoxNode): boolean => {
 
 export const foldSource = (options: FoldOptions): FoldResult => {
   const { ctx, code, parserResult, jsx = true, runtimeCss = createRuntimeCss(ctx) } = options
+  const runtimeRecipe = createRuntimeRecipe(ctx, runtimeCss)
 
   const folded: FoldedCall[] = []
   const skipped: SkippedCall[] = []
@@ -542,10 +543,6 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       // Only report kinds that are calls at all; JSX entries are a different surface.
       if (call && UNFOLDABLE_TYPES.has(type)) {
         skipped.push({ name, reason: 'not-foldable', start: call.getStart(), end: call.getEnd() })
-      } else if (call && type === 'recipe') {
-        // A config recipe call does resolve to a class string, so unlike cva/sva this
-        // is a "not yet", not a "never". Reported so it is visible rather than silent.
-        skipped.push({ name, reason: 'unsupported-kind', start: call.getStart(), end: call.getEnd() })
       }
       continue
     }
@@ -637,10 +634,20 @@ export const foldSource = (options: FoldOptions): FoldResult => {
 
     let className: string
     try {
-      className =
-        item.type === 'pattern'
-          ? runtimeCss(...item.data.map((entry) => ctx.patterns.transform(name, entry as Dict)))
-          : runtimeCss(...(item.data as Dict[]))
+      if (item.type === 'pattern') {
+        className = runtimeCss(...item.data.map((entry) => ctx.patterns.transform(name, entry as Dict)))
+      } else if (item.type === 'recipe') {
+        // A recipe call takes one variant object; anything else is not a shape the
+        // generated recipe function accepts.
+        const resolved = item.data.length === 1 ? runtimeRecipe(name, item.data[0] as Dict) : undefined
+        if (resolved == null) {
+          skipped.push({ name, reason: 'unsupported-kind', start, end })
+          continue
+        }
+        className = resolved
+      } else {
+        className = runtimeCss(...(item.data as Dict[]))
+      }
     } catch {
       skipped.push({ name, reason: 'dynamic', start, end })
       continue

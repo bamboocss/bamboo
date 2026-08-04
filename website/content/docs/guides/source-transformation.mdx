@@ -61,6 +61,9 @@ css({ color: 'red.300', padding: '2' }, { color: 'blue.500' })
 // ✅ pattern calls
 stack({ gap: '4', align: 'center' })
 
+// ✅ config recipe calls, default and compound variants included
+buttonStyle({ size: 'sm' })
+
 // ✅ inside a JSX expression, which is still a call site
 <div className={css({ px: '4' })} />
 ```
@@ -211,17 +214,15 @@ The reasons are:
 | `dynamic`            | Some part of the arguments could not be resolved at build time. |
 | `raw-call`           | A `.raw()` call, which must keep returning a style object.      |
 | `not-foldable`       | `cva`, `sva`, or `token` — cannot evaluate to a class string.   |
-| `unsupported-kind`   | A config recipe call — could fold, but does not yet.            |
+| `unsupported-kind`   | A slot recipe call, or a shape this phase does not handle.      |
 | `not-imported`       | The callee is not a Bamboo import (see below).                  |
 | `empty`              | Resolved, but produced no class names.                          |
 | `overlapping`        | Nested inside another folded call.                              |
 | `no-call-expression` | The call site could not be located in the source.               |
 
 `not-foldable` and `unsupported-kind` are deliberately separate. The first is permanent — `cva` and `sva` return
-functions and `token` returns a value, so there is no class string to fold to. The second is a limitation: a config
-recipe call like `buttonStyle({ size: 'sm' })` does resolve to a class string, and folding it needs the recipe-specific
-`createCss` transform and the compound-variant matcher, which the generated recipe artifact builds inline rather than
-importing from `@bamboocss/shared`. Lifting those two is the prerequisite.
+functions and `token` returns a value, so there is no class string to fold to. The second is a limitation of this phase,
+such as a slot recipe, which resolves to one class per slot rather than to a single string.
 
 You can also just read the output bundle: a folded call is a string literal, an unfolded one still says `css(`.
 
