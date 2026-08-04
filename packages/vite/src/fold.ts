@@ -4,6 +4,7 @@ import type { Dict, ParserResultInterface, ResultItem } from '@bamboocss/types'
 import MagicString from 'magic-string'
 import { Node, type SourceFile } from 'ts-morph'
 import { type JsxEdit, planJsxFold, planPatternFold } from './fold-jsx'
+import { ensureCxImport, planPartialFold } from './fold-partial'
 import { createRuntimeCss, createRuntimeRecipe, type RuntimeCss } from './runtime-css'
 
 /**
@@ -63,6 +64,11 @@ export interface FoldOptions {
    * JSX factory is where most style resolution happens at runtime.
    */
   jsx?: boolean
+  /**
+   * Split a `css()` call that is only partly static, keeping the dynamic half at runtime.
+   * On by default.
+   */
+  partial?: boolean
 }
 
 /**
@@ -468,8 +474,72 @@ const argumentsAccountedFor = (call: Node, boxNode: BoxNode): boolean => {
 }
 
 export const foldSource = (options: FoldOptions): FoldResult => {
-  const { ctx, code, parserResult, jsx = true, runtimeCss = createRuntimeCss(ctx) } = options
+  const { ctx, code, parserResult, jsx = true, partial: partial_ = true, runtimeCss = createRuntimeCss(ctx) } = options
+
+  /**
+   * Recover the static half of a call the whole-call path gave up on. Only a
+   * single-argument `css()` qualifies: a pattern or recipe call takes props rather than a
+   * style object, and a multi-argument `css` is later-wins across the whole object.
+   */
+  const tryPartial = (item: ResultItem, call: Node, rootName: string | undefined) => {
+    if (item.type !== 'css' || !rootName) return undefined
+    if (!Node.isCallExpression(call)) return undefined
+
+    const args = call.getArguments()
+    if (args.length !== 1) return undefined
+
+    // `item.data` is `[...conditions, raw, ...spreadConditions]`, so `data[0]` is a
+    // *condition projection* rather than the object as written whenever a ternary is
+    // present. Splitting off that projection would attribute one branch's values to the
+    // static half. `isStaticBox` happens to reject those keys today, but resting on a
+    // coincidence is not the same as reading the right object, so anything with more
+    // than one entry is left to the whole-call path.
+    if (item.data.length !== 1) return undefined
+
+    const argument = args[0]
+    if (!argument || !Node.isObjectLiteralExpression(argument)) return undefined
+
+    let plan: ReturnType<typeof planPartialFold>
+    try {
+      plan = planPartialFold(argument, item.box, (item.data?.[0] ?? {}) as Dict, {
+        ctx,
+        runtimeCss,
+        isAccounted: accountsForSource,
+        isStatic: (boxNode) => isStaticBox(boxNode),
+      })
+    } catch {
+      // The whole-call path downgrades a throwing resolve to a skip; do the same here
+      // rather than letting one call take down the file.
+      return undefined
+    }
+    if (!plan) return undefined
+
+    const cx = ensureCxImport(call, rootName, isBambooCssModule, isShadowed)
+    if (!cx) return undefined
+
+    const callee = call.getExpression().getText()
+
+    return {
+      className: plan.className,
+      replacement: `${cx.name}(${JSON.stringify(plan.className)}, ${callee}(${plan.dynamicText}))`,
+      insert: cx.insert,
+    }
+  }
   const runtimeRecipe = createRuntimeRecipe(ctx, runtimeCss)
+
+  /**
+   * Does this specifier name a module that exports the css API, exactly?
+   *
+   * `ImportMap.match` is substring-based, which is right for deciding whether a call is
+   * bamboo's and wrong for deciding whether a module can be imported *from*:
+   * `styled-system/css/css` matches while exporting no `cx`. Compared against the
+   * configured entries after dropping any relative prefix.
+   */
+  const cssModules = ctx.imports.matchers.css?.mods ?? []
+  const isBambooCssModule = (mod: string) => {
+    const normalized = mod.replaceAll('\\', '/').replace(/^(?:\.\.?\/)+/, '')
+    return cssModules.some((entry) => normalized === entry.replaceAll('\\', '/').replace(/^(?:\.\.?\/)+/, ''))
+  }
 
   const folded: FoldedCall[] = []
   const skipped: SkippedCall[] = []
@@ -481,6 +551,9 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     /** Pre-planned edits and class, for a JSX element. */
     edits?: JsxEdit[]
     className?: string
+    /** Replacement text for a partially folded call, in place of a bare class string. */
+    replacement?: string
+    insert?: { pos: number; text: string }
     node: Node
     start: number
     end: number
@@ -592,6 +665,13 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     }
 
     if (!isStaticBox(item.box) || !hasStyles(item.data) || !argumentsAccountedFor(call, item.box)) {
+      const partial = partial_ ? tryPartial(item, call, rootName) : undefined
+
+      if (partial) {
+        candidates.push({ item, call, node: call, start, end, ...partial })
+        continue
+      }
+
       skipped.push({ name, reason: 'dynamic', start, end })
       continue
     }
@@ -612,6 +692,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
   candidates.sort((a, b) => a.start - b.start || b.end - a.end)
 
   const magic = new MagicString(code)
+  let insertedCx = false
 
   // Applied edit ranges, not candidate ranges. A `styled.*` element only rewrites its two
   // tags, so anything between them — a nested element, a `css()` call in the children —
@@ -631,6 +712,20 @@ export const foldSource = (options: FoldOptions): FoldResult => {
 
     if (collides(ranges)) {
       skipped.push({ name, reason: 'overlapping', start, end })
+      continue
+    }
+
+    if (candidate.replacement) {
+      magic.overwrite(start, end, candidate.replacement)
+      // One insert per file however many calls split, or the module ends up with
+      // `import { css, cx, cx }` and does not parse.
+      if (candidate.insert && !insertedCx) {
+        magic.appendLeft(candidate.insert.pos, candidate.insert.text)
+        insertedCx = true
+      }
+      applied.push(...ranges)
+      folded.push({ name, className: candidate.className!, start, end })
+      collectSourceFiles(item.box, dependencyScan)
       continue
     }
 

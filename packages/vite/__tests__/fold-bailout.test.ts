@@ -5,11 +5,13 @@ import { createFoldFixture } from './fixture'
  * Bailout guards, ported from the constructs Panda v2 covers in
  * `crates/pandacss_project/tests/transform/{advanced,css_mixed,edges,recipe_inline}.rs`.
  *
- * All of these already behave correctly — they are here because of what happens next,
- * not what is broken now. Partial folding is the planned follow-up, and it works by
- * relaxing exactly the two rules these exercise: "every declared property must be
- * accounted for" and "no spread that is not an inline object literal". The moment
- * someone loosens either, this file is what says whether they loosened it too far.
+ * Partial folding has since landed, and it relaxed the first of the two rules these were
+ * written to guard: a top-level static sibling now splits away from a dynamic one instead
+ * of the whole call bailing. Those two cases were updated in place, and the detailed
+ * coverage of the split lives in `fold-partial.test.ts`.
+ *
+ * What remains here is the spread rule and the shapes that still bail outright. Read this
+ * file as "these must never fold", not as the full tripwire for partial folding.
  *
  * A wrong fold is silent. It does not throw, it does not fail a build, it ships a
  * component with missing styles. That asymmetry is why the declining cases get more
@@ -39,8 +41,16 @@ describe('partially dynamic objects', () => {
   // The extractor omits what it cannot evaluate rather than flagging it, so a
   // partially dynamic object looks fully static from the box alone. Each nesting
   // depth is a separate opportunity to lose that check.
-  test('a dynamic value at the top level bails', () => {
-    expectUnchanged(withImport(`export const f = (t) => css({ padding: '2', color: t })`))
+  test('a dynamic value at the top level splits rather than bailing', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(withImport(`export const f = (t) => css({ padding: '2', color: t })`))
+
+    // Partial folding is what changed here. The static half becomes a literal and the
+    // dynamic half keeps its runtime call — nothing is dropped, which is what the bail
+    // was protecting against. The nested cases below still bail, because only top-level
+    // properties are partitioned.
+    expect(result.folded).toHaveLength(1)
+    expect(result.code).toContain('cx("p_2", css({ color: t }))')
   })
 
   test('a dynamic value inside a condition bails', () => {
@@ -51,10 +61,15 @@ describe('partially dynamic objects', () => {
     expectUnchanged(withImport(`export const f = (t) => css({ _hover: { _dark: { color: t } } })`))
   })
 
-  test('a static sibling does not rescue a dynamic nested value', () => {
-    // The dangerous shape: enough resolves that a careless check reads it as static,
-    // and folding would drop the `_hover` branch entirely.
-    expectUnchanged(withImport(`export const f = (t) => css({ padding: '2', _hover: { color: t } })`))
+  test('a static sibling splits away from a dynamic nested value rather than absorbing it', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(withImport(`export const f = (t) => css({ padding: '2', _hover: { color: t } })`))
+
+    // Once partial folding exists this is a split, not a bail — and the distinction that
+    // matters is that the `_hover` branch survives as a runtime call rather than being
+    // dropped, which is what a careless "enough of this resolved" check would have done.
+    expect(result.folded).toHaveLength(1)
+    expect(result.code).toContain('cx("p_2", css({ _hover: { color: t } }))')
   })
 
   test('a dynamic value inside a nested selector bails', () => {

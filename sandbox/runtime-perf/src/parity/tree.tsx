@@ -76,7 +76,9 @@ export const Tree = ({ tone, rest }: { tone: string; rest: Record<string, unknow
     {/* folds as a call site, not an element */}
     <div className={css({ color: 'blue800', padding: 'xs' })}>call site</div>
 
-    {/* declines as a call site: runtime value */}
+    {/* partially folds: the static half becomes a literal, the dynamic half stays */}
+    <div className={css({ color: 'blue600', padding: 'xs', backgroundColor: tone })}>partial</div>
+
     <div className={css({ color: tone })}>dynamic call site</div>
   </styled.div>
 )
