@@ -163,6 +163,36 @@ describe('callee shapes', () => {
     expect(result.code).toContain('=> "c_red.300"')
   })
 
+  /**
+   * Being imported is not enough — it has to be imported from bamboo. The parser matches
+   * a call by name and asks nothing about the module, so a same-named export from another
+   * styling library reaches the fold looking exactly like the real one.
+   *
+   * Emotion is the case worth naming: `css({ … })` there returns an emotion class, and a
+   * project migrating between the two has both in the tree at once. The element surface
+   * closed this hole for `<Stack>` from a component library; call sites had it open.
+   */
+  const foreignModules: Array<{ name: string; body: string }> = [
+    { name: 'emotion css', body: `import { css } from '@emotion/css'\nexport const cls = css({ color: 'red.300' })` },
+    {
+      name: 'a styled-components style helper',
+      body: `import { css } from 'styled-components'\nexport const cls = css({ color: 'red.300' })`,
+    },
+    {
+      name: 'an aliased foreign import',
+      body: `import { css as cx2 } from '@emotion/css'\nexport const cls = cx2({ color: 'red.300' })`,
+    },
+  ]
+
+  test.each(foreignModules)('$name is not folded', ({ body }) => {
+    const { fold } = createFoldFixture()
+    const code = `${body}\n`
+    const result = fold(code)
+
+    expect(result.folded).toHaveLength(0)
+    expect(result.code).toBe(code)
+  })
+
   test('the same file still folds unshadowed calls', () => {
     const { fold } = createFoldFixture()
 

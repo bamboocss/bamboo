@@ -326,26 +326,36 @@ const tagRootName = (element: Node): string | undefined => {
 }
 
 /**
- * Names a module imports, computed once per file.
+ * Local names a module binds to an import of bamboo's own generated system.
  *
- * The parser matches style calls by name and does not require an import — a
- * deliberate choice, since for CSS extraction the worst case is a few unused rules.
- * A source transform cannot be that relaxed: it would rewrite a user's own
- * `const css = (styles) => JSON.stringify(styles)` into a class string and silently
- * change what their code does.
+ * The parser matches by name and asks neither question this does — deliberately, since
+ * for CSS extraction the worst case is a few unused rules. A transform cannot be that
+ * relaxed, and it needs both halves:
+ *
+ * - imported at all, or a user's `const css = (s) => JSON.stringify(s)` gets rewritten
+ * - imported *from bamboo*, or `import { css } from '@emotion/css'` does, which is the
+ *   likelier accident of the two since a migrating project has both in the tree
+ *
+ * Answered together and once per file, because the scan is the expensive part and both
+ * answers fall out of the same pass. Per call site instead of per file, this scan
+ * measured +74% on the largest sandbox module.
  */
-const importedNames = (sourceFile: SourceFile): Set<string> => {
+const bambooImportedNames = (sourceFile: SourceFile, ctx: Context): Set<string> => {
   const names = new Set<string>()
 
   for (const declaration of sourceFile.getImportDeclarations()) {
-    const defaultImport = declaration.getDefaultImport()
-    if (defaultImport) names.add(defaultImport.getText())
-
-    const namespaceImport = declaration.getNamespaceImport()
-    if (namespaceImport) names.add(namespaceImport.getText())
+    const mod = declaration.getModuleSpecifierValue()
 
     for (const named of declaration.getNamedImports()) {
-      names.add((named.getAliasNode() ?? named.getNameNode()).getText())
+      const name = named.getNameNode().getText()
+      const alias = named.getAliasNode()?.getText() ?? name
+      if (ctx.imports.match({ mod, name, alias })) names.add(alias)
+    }
+
+    const namespace = declaration.getNamespaceImport()
+    if (namespace) {
+      const alias = namespace.getText()
+      if (ctx.imports.match({ mod, name: alias, alias, kind: 'namespace' })) names.add(alias)
     }
   }
 
@@ -479,12 +489,12 @@ export const foldSource = (options: FoldOptions): FoldResult => {
   const candidates: Candidate[] = []
   const seenRanges = new Set<string>()
 
-  // One import scan per file rather than per call site.
+  // One import scan per file, shared by every call site and element in it.
   const importCache = new Map<SourceFile, Set<string>>()
   const importsFor = (sourceFile: SourceFile) => {
     let names = importCache.get(sourceFile)
     if (!names) {
-      names = importedNames(sourceFile)
+      names = bambooImportedNames(sourceFile, ctx)
       importCache.set(sourceFile, names)
     }
     return names

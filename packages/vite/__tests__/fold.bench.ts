@@ -47,6 +47,34 @@ export function dynamic(tone: string) {
 }
 `
 
+/**
+ * A JSX-heavy module, which the sandbox files above barely are — between them they hold
+ * two factory elements, so nothing there exercises the element surface.
+ *
+ * That surface is per-element work rather than per-call work, and a component file is
+ * where elements come in bulk, so this is the shape that shows what it costs.
+ */
+const JSX_MODULE = `
+import { styled, Stack, Box, HStack } from 'styled-system/jsx'
+
+export const View = ({ tone, rest }) => (
+  <styled.div padding="4" backgroundColor="gray.100">
+    ${Array.from(
+      { length: 12 },
+      (_, i) => `<styled.span color="blue.500" fontWeight="bold" id="s${i}">plain ${i}</styled.span>`,
+    ).join('\n    ')}
+    <styled.div color="gray.800" _hover={{ color: 'red.300' }} fontSize={{ base: 'sm', md: 'lg' }}>conditions</styled.div>
+    <styled.div as="section" color="red.300">as</styled.div>
+    <styled.div color={tone}>dynamic</styled.div>
+    <styled.div color="green.300" {...rest}>spread</styled.div>
+    <Stack gap="4">
+      <Box padding="2" backgroundColor="white">box</Box>
+      <HStack gap="1" color="gray.700">hstack</HStack>
+    </Stack>
+  </styled.div>
+)
+`
+
 const ctx = createContext()
 const runtimeCss = createRuntimeCss(ctx)
 
@@ -75,6 +103,14 @@ describe('per-module transform cost', () => {
 
   bench('parse + fold (synthetic module)', () => {
     parseAndFold(SYNTHETIC)
+  })
+
+  bench('parse only (jsx module)', () => {
+    parseOnly(JSX_MODULE)
+  })
+
+  bench('parse + fold (jsx module)', () => {
+    parseAndFold(JSX_MODULE)
   })
 
   for (const { file, code } of SANDBOX_FILES) {
