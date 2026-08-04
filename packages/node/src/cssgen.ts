@@ -1,6 +1,7 @@
 import { logger } from '@bamboocss/logger'
 import type { CssArtifactType } from '@bamboocss/types'
 import type { BambooContext } from './create-context'
+import { collectTokenReferences } from './token-references'
 
 export interface CssGenOptions {
   cwd: string
@@ -30,7 +31,7 @@ export const cssgen = async (ctx: BambooContext, options: CssGenOptions) => {
 
     done()
   } else {
-    const { files } = ctx.parseFiles()
+    const { files, results } = ctx.parseFiles()
 
     const done = logger.time.info(ctx.messages.buildComplete(files.length))
     if (!minimal) {
@@ -39,6 +40,13 @@ export const cssgen = async (ctx: BambooContext, options: CssGenOptions) => {
     }
 
     ctx.appendParserCss(sheet)
+
+    // Only now does the sheet hold everything that could reference a token. `minimal`
+    // omits the token layer altogether, so there is nothing to prune. Gathering the
+    // references reads every source file, so it stays behind the flag.
+    if (!minimal && ctx.config.pruneUnusedTokens) {
+      ctx.pruneTokens(sheet, collectTokenReferences(ctx, results))
+    }
 
     if (splitting) {
       await ctx.writeSplitCss(sheet)

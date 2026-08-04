@@ -630,6 +630,35 @@ const styles = css({
 })
 ```
 
+### pruneUnusedTokens
+
+**Type**: `boolean`
+
+**Default**: `false`
+
+Whether to drop token css variables that nothing in the generated css can reach.
+
+The token layer declares every token in your theme, and an app typically uses a small fraction of them, so this is
+usually the largest single saving in render-blocking css. It scales with the size of your design system rather than the
+size of your app.
+
+```json
+{
+  "pruneUnusedTokens": true
+}
+```
+
+A variable is kept when the generated css references it, when a kept variable's own value references it, or when it is
+named by `token()`, `token.var()`, or a literal `var(--x)` anywhere under [`include`](#include).
+
+It is opt-in because reachability cannot be proven for every reference. Three things stay invisible to it:
+
+- A token named by a path your source does not spell out as a string literal, such as `token.var(key)`.
+- A token referenced only from a stylesheet outside `include`.
+- A token consumed by a separate package that treats your output as design tokens.
+
+Use [`staticCss`](#staticcss) to keep those.
+
 ### cssVarRoot
 
 **Type**: `string`

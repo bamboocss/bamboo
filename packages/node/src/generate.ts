@@ -3,6 +3,7 @@ import type { ArtifactId, Config } from '@bamboocss/types'
 import { codegen } from './codegen'
 import { loadConfigAndCreateContext } from './config'
 import { BambooContext } from './create-context'
+import { collectTokenReferences } from './token-references'
 
 async function build(ctx: BambooContext, artifactIds?: ArtifactId[]) {
   await codegen(ctx, artifactIds)
@@ -18,6 +19,11 @@ async function build(ctx: BambooContext, artifactIds?: ArtifactId[]) {
   ctx.appendBaselineCss(sheet)
   const parsed = ctx.parseFiles()
   ctx.appendParserCss(sheet)
+
+  // Gathering the references reads every source file, so it stays behind the flag.
+  if (ctx.config.pruneUnusedTokens) {
+    ctx.pruneTokens(sheet, collectTokenReferences(ctx, parsed.results))
+  }
 
   await ctx.writeCss(sheet)
   done(ctx.messages.buildComplete(parsed.files.length))
@@ -66,6 +72,15 @@ export async function generate(config: Config, configPath?: string) {
       ctx.appendLayerParams(sheet)
       ctx.appendBaselineCss(sheet)
       ctx.appendParserCss(sheet)
+
+      // Scan every file, not just the ones that changed, so a token stops being kept only
+      // once its last reference is gone. Parser results are deliberately not gathered
+      // here: `parseFiles` would encode every style into the running encoder a second
+      // time on each change.
+      if (ctx.config.pruneUnusedTokens) {
+        ctx.pruneTokens(sheet, collectTokenReferences(ctx, []))
+      }
+
       const css = ctx.getCss(sheet)
       await ctx.runtime.fs.writeFile(outfile, css)
       done()

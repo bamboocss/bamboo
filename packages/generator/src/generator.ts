@@ -1,4 +1,5 @@
-import { Context, type StyleDecoder, type Stylesheet } from '@bamboocss/core'
+import { Context, pruneTokenVars, type StyleDecoder, type Stylesheet } from '@bamboocss/core'
+import { logger } from '@bamboocss/logger'
 import { dashCase, BambooError } from '@bamboocss/shared'
 import type { ArtifactId, CssArtifactType, LoadConfigResult, SpecFile, SpecType, SpecTypeMap } from '@bamboocss/types'
 import { match } from 'ts-pattern'
@@ -82,6 +83,71 @@ export class Generator extends Context {
   appendParserCss = (sheet: Stylesheet) => {
     const decoder = this.decoder.collect(this.encoder)
     sheet.processDecoder(decoder)
+  }
+
+  /**
+   * Drop token css variables nothing can reach. Call this only once the sheet holds the
+   * whole stylesheet — a baseline-only sheet has no utilities to reference anything, so
+   * every token would look unused.
+   *
+   * `keep` carries references this cannot see for itself; see `collectTokenReferences`.
+   */
+  pruneTokens = (sheet: Stylesheet, keep?: Set<string>) => {
+    if (!this.config.pruneUnusedTokens) return
+
+    const layers = sheet.layers
+
+    const result = pruneTokenVars({
+      scan: [
+        layers.reset,
+        layers.base,
+        layers.tokens,
+        layers.recipes,
+        layers.recipes_base,
+        layers.recipes_slots,
+        layers.recipes_slots_base,
+        layers.utilities,
+        layers.compositions,
+      ],
+      target: layers.tokens,
+      tokenVars: this.getTokenVarNames(),
+      keep: new Set([...this.getAlwaysKeptTokenVars(), ...(keep ?? [])]),
+    })
+
+    logger.debug('prune:tokens', `Removed ${result.removed} unused token css variable(s)`)
+
+    return result
+  }
+
+  /**
+   * Every custom property the token system declares. Used as the allow-list of what may
+   * be removed, so custom properties from `globalCss` are never touched.
+   */
+  private getTokenVarNames = () => {
+    const names = new Set<string>()
+    for (const values of this.tokens.view.vars.values()) {
+      for (const name of values.keys()) names.add(name)
+    }
+    return names
+  }
+
+  /**
+   * Tokens whose javascript value is a `var()` reference rather than a literal: virtual
+   * tokens, and any token carrying a condition. `token('colors.text')` hands those to the
+   * caller as a reference, so the declaration has to survive whether or not the generated
+   * css mentions it. Ordinary tokens resolve to a literal in javascript and need no such
+   * exemption.
+   */
+  private getAlwaysKeptTokenVars = () => {
+    const names = new Set<string>()
+
+    this.tokens.allTokens.forEach((token) => {
+      const { isVirtual, condition, var: varName } = token.extensions
+      if (!isVirtual && (!condition || condition === 'base')) return
+      if (varName) names.add(varName.startsWith('--') ? varName : `--${varName}`)
+    })
+
+    return names
   }
 
   getParserCss = (decoder: StyleDecoder) => {

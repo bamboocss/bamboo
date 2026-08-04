@@ -9,6 +9,7 @@ import { codegen } from './codegen'
 import { loadConfigAndCreateContext } from './config'
 import { BambooContext } from './create-context'
 import { parseDependency } from './parse-dependency'
+import { collectTokenReferences } from './token-references'
 
 const fileModifiedMap = new Map<string, number>()
 
@@ -194,6 +195,14 @@ export class Builder {
     const ctx = this.getContextOrThrow()
     const sheet = ctx.createSheet()
     ctx.appendBaselineCss(sheet)
+
+    // `extract` has already run, so this sheet carries the utilities and recipes too.
+    // Parser results are not retained across that call, so the reference set comes from
+    // the source scan alone; re-parsing here would encode every style a second time.
+    if (ctx.config.pruneUnusedTokens) {
+      ctx.pruneTokens(sheet, collectTokenReferences(ctx, []))
+    }
+
     const css = ctx.getCss(sheet)
 
     root.append(css)

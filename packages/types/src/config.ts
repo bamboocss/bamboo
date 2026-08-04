@@ -350,6 +350,21 @@ interface CssgenOptions {
    */
   minify?: boolean
   /**
+   * Whether to drop token css variables that nothing in the generated css can reach.
+   *
+   * The token layer declares every token in the theme, and an app typically uses a small
+   * fraction of them, so this is usually the largest single saving in render-blocking css.
+   *
+   * It is opt-in because reachability cannot be proven for every reference. `token()` and
+   * `token.var()` calls are read out of the source, as is any literal `var(--x)` written
+   * by hand, but a token referenced only from a stylesheet outside `include`, or by a
+   * separate package consuming the output as design tokens, is invisible here. Use
+   * `staticCss` to keep those.
+   *
+   * @default false
+   */
+  pruneUnusedTokens?: boolean
+  /**
    * The root selector for the css variables.
    * @default ':where(:host, :root)'
    */
