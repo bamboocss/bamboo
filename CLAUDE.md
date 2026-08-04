@@ -53,6 +53,14 @@ with workspace support.
 
 ### Testing Workflow
 
+🚨 **`pnpm test` alone does not cover the framework artifacts.** The root `vitest.config.ts` excludes
+`sandbox/codegen/__tests__/frameworks`, so the Solid, Vue, Preact and Qwik suites run only under `pnpm test:codegen`.
+That is where a change to the shared runtime shows up as a broken framework: assigning props instead of copying their
+descriptors passed everything else and broke Solid's `createStyleContext`, because Solid compiles props to accessors and
+reading one eagerly builds a component's children before its provider exists.
+
+`pnpm check` now runs it. CI has always run both (`.github/workflows/quality.yml`), so the gap was local only.
+
 **Always run tests from the project root:**
 
 ```bash
@@ -109,6 +117,17 @@ To measure a change, take both readings on the same idle machine:
 git stash && pnpm bench:baseline    # unchanged tree
 git stash pop && pnpm bench:compare # changed tree
 ```
+
+🚨 **`git stash` only reverts source, so a bench that runs through a build measures the same code twice.** Two paths do:
+
+- The `sandbox/*/styled-system` artifacts bundle `@bamboocss/shared` from its **dist**. Editing `packages/shared/src`
+  and re-running a sandbox bench changes nothing until
+  `pnpm --filter=@bamboocss/shared build && pnpm --filter=./sandbox/<name> exec bamboo codegen`.
+- `bamboo codegen` uses the **built** generator, so stashing `packages/generator/src` does not change what it emits.
+
+Both fail silently — identical numbers read as "no regression" rather than as a broken measurement. When the A/B lands
+inside ~1%, assume the harness before believing the result, and confirm the artifact actually differs (`grep` for
+something the change added) before trusting either reading. Patching the generated file directly is the reliable A/B.
 
 Read the `rme` and `samples` columns before believing a diff: a bench reporting ±15% cannot show you a 10% regression,
 and one reporting a handful of samples cannot show you anything.
