@@ -80,6 +80,11 @@ A `styled.*` element collapses to the intrinsic tag it renders:
 This is the one that matters most at runtime. The factory runs `splitProps`, `css()` and `cx` for every element on every
 render, inside a `forwardRef` component — folding removes all of it, including the component layer.
 
+Measured on `sandbox/runtime-perf`, rendering a mixed tree fifty times: **2.6× faster**, warm. Half the elements in that
+tree deliberately decline, so a fully-foldable tree does better and a mostly-dynamic one does worse. Both sides are
+warmed first, which is the conservative reading — the runtime's style memo is full, so this is the steady-state win
+rather than the cold-start one, and cold start is where the gap is widest.
+
 Props are handled the way the factory handles them. For a factory with no recipe attached, `defaultShouldForwardProp`
 reduces to "css properties are consumed, everything else reaches the DOM unchanged", so `onClick` and `id` pass through
 verbatim while `color` becomes part of the class. A static `className` is appended, in the position `cx` would have put

@@ -36,7 +36,7 @@ export default defineConfig({
     // bench files concurrently, and the resulting CPU contention inflates rme far
     // past the effect sizes these are meant to catch.
     benchmark: {
-      include: ['packages/*/__tests__/**/*.bench.ts'],
+      include: ['{packages,sandbox}/*/__tests__/**/*.bench.ts'],
       outputJson: 'bench/latest.json',
     },
     // https://vitest.dev/config/#exclude defaults + sandbox/codegen/frameworks
