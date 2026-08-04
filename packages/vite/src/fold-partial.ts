@@ -178,13 +178,54 @@ export const planPartialFold = (
   styles: Dict,
   { ctx, runtimeCss, isAccounted, isStatic }: PartialFoldContext,
 ): PartialFold | undefined => {
+  const partition = partitionObject(argument, boxNode, styles, { ctx, runtimeCss, isAccounted, isStatic })
+  if (!partition) return undefined
+
+  const className = runtimeCss(partition.staticStyles)
+  if (!className) return undefined
+
+  return { className, dynamicText: `{ ${partition.dynamicText.join(', ')} }` }
+}
+
+interface Partition {
+  /** Style object for the half that resolves now. */
+  staticStyles: Dict
+  /** Source text of the properties left for the runtime. */
+  dynamicText: string[]
+}
+
+/**
+ * Split one object level, recursing into a block that is part static and part dynamic.
+ *
+ * Without the recursion a single dynamic leaf sends its whole block to the runtime:
+ * `{ _hover: { color: 'red.300', bg: p } }` loses the resolved `color` even though
+ * nothing about it depends on `p`. That is a precision loss rather than a wrong answer,
+ * but it costs exactly the calls a component re-renders most.
+ *
+ * A class is identified by its condition path *and* its property, so `_hover.color` in
+ * one half and `_hover.bg` in the other cannot collide, and neither can `color` against
+ * `_hover.color`. Collision is therefore checked per level, among siblings.
+ *
+ * The static subtree is read from the extracted data rather than rebuilt: the extractor
+ * has already dropped the unresolvable leaves, so `styles[key]` for a mixed block is
+ * exactly the resolvable part. The dynamic side is taken from source text, so nothing
+ * depends on that pruning being complete.
+ */
+const partitionObject = (
+  node: ObjectLiteralExpression,
+  boxNode: BoxNode | undefined,
+  styles: Dict,
+  deps: PartialFoldContext,
+): Partition | undefined => {
   if (!box.isMap(boxNode)) return undefined
 
+  const { ctx, isAccounted, isStatic } = deps
   const staticKeys: string[] = []
   const dynamicKeys: string[] = []
+  const staticStyles: Dict = {}
   const dynamicText: string[] = []
 
-  for (const property of argument.getProperties()) {
+  for (const property of node.getProperties()) {
     // A spread contributes keys that cannot be attributed to either half.
     if (!Node.isPropertyAssignment(property) && !Node.isShorthandPropertyAssignment(property)) return undefined
 
@@ -204,10 +245,25 @@ export const planPartialFold = (
     // branch, and `accountsForSource` answers "are the declared keys present", not "is
     // every leaf resolvable". `isStaticBox` is the one that rejects a `conditional` or
     // `unresolvable` box, including one nested in a responsive array.
-    const resolved = key in styles && isStatic(valueBox) && isAccounted(value, valueBox)
-
-    if (resolved) {
+    if (key in styles && isStatic(valueBox) && isAccounted(value, valueBox)) {
       staticKeys.push(key)
+      staticStyles[key] = styles[key]
+      continue
+    }
+
+    // Part static, part dynamic, and nothing hidden from the box — worth going into.
+    // `isAccounted` is what rules out a spread here: it reports the block as unaccounted
+    // for, and a spread's keys belong to neither half.
+    const nested =
+      value && Node.isObjectLiteralExpression(value) && isAccounted(value, valueBox)
+        ? partitionObject(value, valueBox, (styles[key] ?? {}) as Dict, deps)
+        : undefined
+
+    if (nested && Object.keys(nested.staticStyles).length && nested.dynamicText.length) {
+      staticKeys.push(key)
+      staticStyles[key] = nested.staticStyles
+      dynamicKeys.push(key)
+      dynamicText.push(`${property.getNameNode().getText()}: { ${nested.dynamicText.join(', ')} }`)
       continue
     }
 
@@ -216,17 +272,14 @@ export const planPartialFold = (
   }
 
   // Nothing to gain from a split that is entirely one side.
-  if (!staticKeys.length || !dynamicKeys.length) return undefined
+  if (!staticKeys.length || !dynamicText.length) return undefined
 
-  if (collides(staticKeys, dynamicKeys, ctx)) return undefined
+  // A key appearing on both sides is a block that was split, which is the point; only
+  // distinct keys can collide.
+  const contested = dynamicKeys.filter((key) => !staticKeys.includes(key))
+  if (collides(staticKeys, contested, ctx)) return undefined
 
-  const staticStyles: Dict = {}
-  for (const key of staticKeys) staticStyles[key] = styles[key]
-
-  const className = runtimeCss(staticStyles)
-  if (!className) return undefined
-
-  return { className, dynamicText: `{ ${dynamicText.join(', ')} }` }
+  return { staticStyles, dynamicText }
 }
 
 /**

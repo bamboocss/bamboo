@@ -336,3 +336,73 @@ describe('a configured importMap wrapper', () => {
     expect(result.code).toContain('cx("c_red.300"')
   })
 })
+
+/**
+ * A single dynamic leaf used to send its whole block to the runtime, losing every
+ * resolved sibling with it. A class is identified by its condition path *and* its
+ * property, so `_hover.color` and `_hover.bg` cannot collide and the block can be split.
+ */
+describe('splitting inside a block', () => {
+  const cases: Array<{ name: string; styles: string; staticHalf: Record<string, unknown>; runtime: string }> = [
+    {
+      name: 'a condition block',
+      styles: `{ _hover: { color: 'red.300', bg: p } }`,
+      staticHalf: { _hover: { color: 'red.300' } },
+      runtime: 'css({ _hover: { bg: p } })',
+    },
+    {
+      name: 'a condition block beside a static sibling',
+      styles: `{ margin: '2', _hover: { color: 'red.300', bg: p } }`,
+      staticHalf: { margin: '2', _hover: { color: 'red.300' } },
+      runtime: 'css({ _hover: { bg: p } })',
+    },
+    {
+      name: 'two conditions deep',
+      styles: `{ _hover: { _dark: { color: 'red.300', bg: p } } }`,
+      staticHalf: { _hover: { _dark: { color: 'red.300' } } },
+      runtime: 'css({ _hover: { _dark: { bg: p } } })',
+    },
+    {
+      name: 'a nested selector',
+      styles: `{ '& > p': { color: 'red.300', bg: p } }`,
+      staticHalf: { '& > p': { color: 'red.300' } },
+      runtime: `css({ '& > p': { bg: p } })`,
+    },
+  ]
+
+  test.each(cases)('$name splits', ({ styles, staticHalf, runtime }) => {
+    const { fold, runtimeCss } = createFoldFixture()
+    const result = fold(src(`export const f = (p) => css(${styles})`))
+
+    expect(result.folded).toHaveLength(1)
+    // The static half has to equal what the runtime produces for exactly that subtree,
+    // so a class cannot be invented or dropped by the reconstruction.
+    expect(result.folded[0]!.className).toBe(runtimeCss(staticHalf))
+    expect(result.code).toContain(runtime)
+  })
+
+  test('the two halves together equal the whole', () => {
+    const { fold, runtimeCss } = createFoldFixture()
+    const result = fold(src(`export const f = (p) => css({ margin: '2', _hover: { color: 'red.300', bg: p } })`))
+
+    // With the dynamic value resolved, split output and whole output must carry the same
+    // classes — the property this whole feature rests on.
+    const whole = runtimeCss({ margin: '2', _hover: { color: 'red.300', bg: 'blue.500' } })
+    const split = [result.folded[0]!.className, runtimeCss({ _hover: { bg: 'blue.500' } })].join(' ')
+
+    expect(split.split(' ').sort()).toEqual(whole.split(' ').sort())
+  })
+
+  test.each([
+    ['a shorthand colliding inside the block', `{ _hover: { mx: '4', marginInline: p } }`],
+    ['a spread inside the block', `{ _hover: { color: 'red.300', ...rest } }`],
+    ['a computed key inside the block', `{ _hover: { color: 'red.300', [k]: p } }`],
+    ['a base key inside a conditional value map', `{ fontSize: { base: 'sm', md: p } }`],
+  ])('declines %s', (_name, styles) => {
+    const { fold } = createFoldFixture()
+    const code = src(`export const f = (p, k, rest) => css(${styles})`)
+
+    expect(fold(code).folded).toHaveLength(0)
+    expect(fold(code).code).toBe(code)
+  })
+})
