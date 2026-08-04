@@ -179,23 +179,26 @@ export const b = (q) => css({ display: 'flex', margin: q })`),
     expect(result.code).not.toContain('cx, cx')
   })
 
-  test('a ternary value is not folded to one of its branches', () => {
+  test('a ternary keeps both branches', () => {
     const { fold } = createFoldFixture()
-    const code = src(`export const f = (flag, p) => css({ color: flag ? 'red.300' : 'blue.500', padding: p })`)
+    const result = fold(src(`export const f = (flag, p) => css({ color: flag ? 'red.300' : 'blue.500', padding: p })`))
 
-    // The extracted data is a projection that already picked `whenTrue`, so classifying
-    // on it alone silently discarded the other branch.
-    expect(fold(code).folded).toHaveLength(0)
-    expect(fold(code).code).toBe(code)
+    // The extracted data is a projection that has already picked `whenTrue`, so reading
+    // it would discard the other branch. Both branches are resolved instead.
+    expect(result.code).toContain(`flag ? "c_red.300" : "c_blue.500"`)
+    expect(result.code).toContain('css({ padding: p })')
   })
 
-  test('a ternary nested in a condition block is not folded', () => {
+  test('a ternary nested in a condition block goes to the runtime', () => {
     const { fold } = createFoldFixture()
-    const code = src(
-      `export const f = (flag) => css({ margin: '2', _hover: { color: flag ? 'red.300' : 'blue.500' } })`,
+    const result = fold(
+      src(`export const f = (flag) => css({ margin: '2', _hover: { color: flag ? 'red.300' : 'blue.500' } })`),
     )
 
-    expect(fold(code).folded).toHaveLength(0)
+    // Only a top-level ternary lowers; a nested one would need its condition path folded
+    // into each branch's class, so the block travels whole.
+    expect(result.code).toContain(`css({ _hover: { color: flag ? 'red.300' : 'blue.500' } })`)
+    expect(result.folded[0]!.className).toBe('m_2')
   })
 
   test('a dynamic element in a responsive array is not dropped', () => {
@@ -259,13 +262,14 @@ export const b = (q) => css({ display: 'flex', margin: q })`),
     expect(fold(code).folded).toHaveLength(0)
   })
 
-  test('a call whose data carries condition projections is not split', () => {
+  test('the static half is read from raw, not from a condition projection', () => {
     const { fold } = createFoldFixture()
-    const code = src(`export const f = (a, p) => css({ color: a ? 'red.300' : 'blue.500', padding: p })`)
+    const result = fold(src(`export const f = (a) => css({ margin: '2', color: a ? 'red.300' : 'blue.500' })`))
 
-    // `data[0]` is the first condition rather than the object as written, so the static
-    // half would be drawn from a branch projection.
-    expect(fold(code).folded).toHaveLength(0)
+    // `data[0]` is the first *condition* once a ternary is present, so it holds
+    // `{ color: 'red.300' }` and not `{ margin: '2' }`. Drawing the static half from it
+    // would both invent a class and lose one.
+    expect(result.folded[0]!.className).toBe('m_2')
   })
 
   test('a type-only cx import is not reused', () => {
@@ -452,5 +456,89 @@ describe('splitting inside a block', () => {
     const code = src(`export const f = (p) => css({ margin: '2', color: p, margin: '4' })`)
 
     expect(fold(code).folded).toHaveLength(0)
+  })
+})
+
+/**
+ * A ternary is finite, not dynamic: both branches are known, so each resolves now and the
+ * choice becomes a ternary between two literals. Independent conditionals stay linear —
+ * two properties give two ternaries, not four combinations — which is sound only because
+ * `collides()` rules out two properties resolving to the same class.
+ */
+describe('finite branches', () => {
+  test('a lone ternary lowers to a ternary of literals', () => {
+    const { fold, runtimeCss } = createFoldFixture()
+    const result = fold(src(`export const f = (e) => css({ margin: '2', color: e ? 'red.300' : 'blue.500' })`))
+
+    expect(result.code).toContain(`cx("m_2", e ? "c_red.300" : "c_blue.500")`)
+    // Each branch has to equal what the runtime produces for that branch's value.
+    expect(runtimeCss({ color: 'red.300' })).toBe('c_red.300')
+    expect(runtimeCss({ color: 'blue.500' })).toBe('c_blue.500')
+  })
+
+  test('either branch recombines to the whole', () => {
+    const { fold, runtimeCss } = createFoldFixture()
+    const result = fold(src(`export const f = (e) => css({ margin: '2', color: e ? 'red.300' : 'blue.500' })`))
+
+    for (const value of ['red.300', 'blue.500']) {
+      const whole = runtimeCss({ margin: '2', color: value })
+      const split = ['m_2', runtimeCss({ color: value })].join(' ')
+      expect(split.split(' ').sort()).toEqual(whole.split(' ').sort())
+    }
+    expect(result.folded).toHaveLength(1)
+  })
+
+  test('two independent conditionals stay linear', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(
+      src(`export const f = (a, b) => css({ color: a ? 'red.300' : 'blue.500', margin: b ? '1' : '2' })`),
+    )
+
+    // Two ternaries, not four combinations.
+    expect(result.code).toContain(`cx(a ? "c_red.300" : "c_blue.500", b ? "m_1" : "m_2")`)
+  })
+
+  test('a ternary beside a dynamic value keeps both mechanisms', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(src(`export const f = (e, p) => css({ color: e ? 'red.300' : 'blue.500', padding: p })`))
+
+    expect(result.code).toContain(`cx(e ? "c_red.300" : "c_blue.500", css({ padding: p }))`)
+  })
+
+  test('a ternary with a dynamic branch does not lower', () => {
+    const { fold } = createFoldFixture()
+    const code = src(`export const f = (e, x) => css({ margin: '2', color: e ? 'red.300' : x })`)
+
+    // One branch unresolvable means the choice is not finite.
+    expect(fold(code).code).toContain(`color: e ? 'red.300' : x`)
+  })
+
+  test('a lone ternary removes the call entirely', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(src(`export const f = (e) => css({ color: e ? 'red.300' : 'blue.500' })`))
+
+    // Nothing static to pair it with, but the runtime call is still gone. `cx` stays
+    // around the ternary: splicing a bare conditional into the call's position would
+    // reassociate against a neighbouring operator.
+    expect(result.code).toContain(`cx(e ? "c_red.300" : "c_blue.500")`)
+    expect(result.code).not.toContain('css(')
+  })
+
+  test('a fully dynamic call is left alone', () => {
+    const { fold } = createFoldFixture()
+    const code = src(`export const f = (c, p) => css({ color: c, padding: p })`)
+
+    // No static half and no finite branch, so a split would only re-wrap the same call.
+    expect(fold(code).code).toBe(code)
+  })
+
+  test('a ternary colliding with a static sibling declines', () => {
+    const { fold } = createFoldFixture()
+    const code = src(`export const f = (e) => css({ mx: '4', marginInline: e ? '1' : '2' })`)
+
+    // Both resolve to one property, so emitting a literal and a ternary for it would
+    // apply two classes where the runtime applies one.
+    expect(fold(code).folded).toHaveLength(0)
+    expect(fold(code).code).toBe(code)
   })
 })

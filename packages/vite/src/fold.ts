@@ -1,6 +1,6 @@
 import { resolveTsPathPattern } from '@bamboocss/config/ts-path'
 import type { Context } from '@bamboocss/core'
-import { type BoxNode, box } from '@bamboocss/extractor'
+import { type BoxNode, box, unbox } from '@bamboocss/extractor'
 import type { Dict, ParserResultInterface, ResultItem } from '@bamboocss/types'
 import MagicString from 'magic-string'
 import { Node, type SourceFile } from 'ts-morph'
@@ -61,13 +61,13 @@ export interface FoldOptions {
   /** Reuse one runtime `css` across files in a build. */
   runtimeCss?: RuntimeCss
   /**
-   * Also collapse `styled.*` elements to their intrinsic tag. On by default, since the
-   * JSX factory is where most style resolution happens at runtime.
+   * Also collapse `styled.*` and pattern elements to the tag they render. On by default,
+   * since the JSX factory is where most style resolution happens at runtime.
    */
   jsx?: boolean
   /**
-   * Split a `css()` call that is only partly static, keeping the dynamic half at runtime.
-   * On by default.
+   * Split a `css()` call or a `styled.*` element that is only partly static, keeping the
+   * dynamic half at runtime. On by default.
    */
   partial?: boolean
 }
@@ -80,15 +80,9 @@ export interface FoldOptions {
 const FOLDABLE_TYPES = new Set(['css', 'pattern', 'recipe'])
 
 /**
- * Kinds that can never collapse to a class string, as opposed to config recipes,
- * which could but are not folded yet.
- *
- * A recipe call resolves to `cx(recipeCss(variants), css(compoundVariantStyles))`.
- * Both halves are reachable: `cx` is a plain string concatenation here, and
- * `getCompoundVariantCss` is a short pure function whose only dependency, `mergeCss`,
- * already lives in `@bamboocss/shared`. What is missing is the recipe-specific
- * `createCss` transform (`name--prop_value`), which the generated artifact builds
- * inline. Lifting that alongside the compound-variant matcher is the prerequisite.
+ * The kinds reported as `not-foldable`, which is permanent rather than a limit of this
+ * phase — hence separate from `unsupported-kind`, where a slot recipe lands because it
+ * resolves to one class per slot rather than to a single string.
  */
 const UNFOLDABLE_TYPES = new Set(['cva', 'sva', 'token'])
 
@@ -376,18 +370,21 @@ export const foldSource = (options: FoldOptions): FoldResult => {
 
     // `item.data` is `[...conditions, raw, ...spreadConditions]`, so `data[0]` is a
     // *condition projection* rather than the object as written whenever a ternary is
-    // present. Splitting off that projection would attribute one branch's values to the
-    // static half. `isStaticBox` happens to reject those keys today, but resting on a
-    // coincidence is not the same as reading the right object, so anything with more
-    // than one entry is left to the whole-call path.
-    if (item.data.length !== 1) return undefined
+    // present. The partition therefore reads `raw` directly rather than trusting the
+    // first entry — attributing one branch's values to the static half is exactly the
+    // bug that made ternaries unsafe here before.
+    const unboxed = box.isMap(item.box) ? (unbox(item.box) as { raw?: Dict; spreadConditions?: unknown[] }) : undefined
+    if (!unboxed?.raw) return undefined
+
+    // A spread whose contribution could not be attributed is still out of reach.
+    if (unboxed.spreadConditions?.length) return undefined
 
     const argument = args[0]
     if (!argument || !Node.isObjectLiteralExpression(argument)) return undefined
 
     let plan: ReturnType<typeof planPartialFold>
     try {
-      plan = planPartialFold(argument, item.box, (item.data?.[0] ?? {}) as Dict, {
+      plan = planPartialFold(argument, item.box, unboxed.raw, {
         ctx,
         runtimeCss,
         isAccounted: accountsForSource,
@@ -405,9 +402,26 @@ export const foldSource = (options: FoldOptions): FoldResult => {
 
     const callee = call.getExpression().getText()
 
+    // Static literal, then one ternary per finite property, then whatever is genuinely
+    // left for the runtime. Each part is omitted when it has nothing to contribute, so a
+    // call that is entirely static plus finite emits no `css()` at all.
+    const runtimePart = plan.dynamicText ? `${callee}(${plan.dynamicText})` : undefined
+    const parts = [
+      ...(plan.className ? [JSON.stringify(plan.className)] : []),
+      ...plan.finite,
+      ...(runtimePart ? [runtimePart] : []),
+    ]
+
+    // Nothing gained if the only thing produced is the call that was already there. A
+    // lone ternary is a gain, though: it is the call, removed.
+    if (!parts.length || (parts.length === 1 && runtimePart)) return undefined
+
+    // `cx` is kept even around a single ternary. Splicing a bare conditional in would put
+    // it wherever the call sat, and `css(x) + y` does not mean `a ? b : c + y`.
+
     return {
       className: plan.className,
-      replacement: `${cx.name}(${JSON.stringify(plan.className)}, ${callee}(${plan.dynamicText}))`,
+      replacement: `${cx.name}(${parts.join(', ')})`,
       insert: cx.insert,
     }
   }

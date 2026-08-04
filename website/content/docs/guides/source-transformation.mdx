@@ -126,7 +126,8 @@ Pattern elements only fold under the default `jsxStyleProps: 'all'`. Under `mini
 reach the factory through the `css` prop rather than being spread, which reverses which side wins when a prop is set in
 both places.
 
-Turn it off on its own with `jsx: false` if you want call-site folding without it.
+`jsx: false` turns element folding off altogether — both `styled.*` and pattern elements — leaving call sites folding on
+their own.
 
 ## What does not fold
 
@@ -288,9 +289,14 @@ its style calls pre-resolved. So the transform stays where it pays for itself.
   per-call CPU saving; the runtime still ships.
 - **It does not remove the now-unused import.** `import { css } from 'styled-system/css'` stays after its last call
   folds. Bundlers tree-shake it.
-- **It does not fold JSX style props.** `<Box color="red.300" />` is a different surface and keeps its runtime path. A
-  `css()` call _inside_ JSX — including compiled `_jsx(...)` output — is still a call site and does fold.
-- **It does not fold config recipe calls yet.** See `unsupported-kind` above.
+- **It does not fold recipe elements.** A config recipe's `jsx` components — `<Button size="sm" />` — keep their runtime
+  path, even though the equivalent `buttonStyle({ size: 'sm' })` call folds. `styled.*` and pattern elements are the two
+  element surfaces that fold. A recipe element is not counted in the coverage summary either, so a project using them
+  reads as having fewer sites than it has.
+- **It does not fold slot recipe calls.** One resolves to a class per slot rather than to a single string, so there is
+  no single literal to substitute. Reported as `unsupported-kind`.
+- **It only sees JSX written as JSX.** Element folding matches tags in the source, so an element already compiled to
+  `_jsx(...)` keeps its runtime path. A `css()` call _inside_ that output is still a call site and does fold.
 
 ## How it stays correct
 

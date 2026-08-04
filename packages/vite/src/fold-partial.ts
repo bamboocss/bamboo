@@ -1,5 +1,5 @@
 import type { Context } from '@bamboocss/core'
-import { type BoxNode, box } from '@bamboocss/extractor'
+import { type BoxNode, box, unbox } from '@bamboocss/extractor'
 import type { Dict } from '@bamboocss/types'
 import { Node, type ObjectLiteralExpression } from 'ts-morph'
 
@@ -154,8 +154,61 @@ export const accountsForSource = (node: Node | undefined, boxNode: BoxNode | und
 export interface PartialFold {
   /** Class string for the statically resolvable half. */
   className: string
-  /** Source text of the object literal holding what is left for the runtime. */
-  dynamicText: string
+  /**
+   * Source text of the object literal holding what is left for the runtime, or absent
+   * when the split left nothing behind.
+   */
+  dynamicText?: string
+  /**
+   * Ternary expressions for properties whose value is a conditional with resolvable
+   * branches — `isError ? "c_red.500" : "c_green.500"`.
+   */
+  finite: string[]
+}
+
+/**
+ * A property whose value is a ternary is not dynamic, it is *finite*: both branches are
+ * known, so each can be resolved now and the choice left to a ternary between two
+ * literals. That removes the `css()` call without needing to know which branch runs.
+ *
+ * Independent conditionals stay linear rather than multiplying, because each property
+ * contributes its own ternary. Two conditionals give two ternaries, not four
+ * combinations — which is only sound because `collides()` already rules out two
+ * properties resolving to the same class, so no combination can interact with another.
+ */
+const finiteBranches = (
+  key: string,
+  boxNode: BoxNode | undefined,
+  runtimeCss: (...styles: Dict[]) => string,
+): string | undefined => {
+  if (!box.isConditional(boxNode)) return undefined
+
+  const node = boxNode.getNode()
+  if (!Node.isConditionalExpression(node)) return undefined
+
+  const branches = [boxNode.whenTrue, boxNode.whenFalse].map((branch) => {
+    if (!isStaticBox(branch)) return undefined
+
+    const value = (unbox(branch) as { raw?: unknown }).raw
+    // An `undefined` branch contributes no declaration, which is a legitimate class of
+    // its own rather than a failure to resolve.
+    if (value === undefined) return ''
+
+    try {
+      return runtimeCss({ [key]: value } as Dict)
+    } catch {
+      return undefined
+    }
+  })
+
+  const [whenTrue, whenFalse] = branches
+  if (whenTrue === undefined || whenFalse === undefined) return undefined
+  // Both branches empty means the property contributes nothing either way, which the
+  // runtime would also drop — but emitting `cond ? "" : ""` keeps the condition's side
+  // effects, and dropping it would not.
+  if (!whenTrue && !whenFalse) return undefined
+
+  return `${node.getCondition().getText()} ? ${JSON.stringify(whenTrue)} : ${JSON.stringify(whenFalse)}`
 }
 
 export interface PartialFoldContext {
@@ -182,9 +235,16 @@ export const planPartialFold = (
   if (!partition) return undefined
 
   const className = runtimeCss(partition.staticStyles)
-  if (!className) return undefined
 
-  return { className, dynamicText: `{ ${partition.dynamicText.join(', ')} }` }
+  // A call may be entirely static plus finite, with nothing left for the runtime, so an
+  // empty class is only a failure when there are no branches to carry either.
+  if (!className && !partition.finite.length) return undefined
+
+  return {
+    className,
+    dynamicText: partition.dynamicText.length ? `{ ${partition.dynamicText.join(', ')} }` : undefined,
+    finite: partition.finite,
+  }
 }
 
 interface Partition {
@@ -192,6 +252,8 @@ interface Partition {
   staticStyles: Dict
   /** Source text of the properties left for the runtime. */
   dynamicText: string[]
+  /** Ternary expressions for properties with resolvable branches. */
+  finite: string[]
 }
 
 /**
@@ -216,6 +278,7 @@ const partitionObject = (
   boxNode: BoxNode | undefined,
   styles: Dict,
   deps: PartialFoldContext,
+  topLevel = true,
 ): Partition | undefined => {
   if (!box.isMap(boxNode)) return undefined
 
@@ -227,6 +290,8 @@ const partitionObject = (
   /** Keys the recursion split, as opposed to keys that merely appear on both sides. */
   const splitKeys = new Set<string>()
   const seenKeys = new Set<string>()
+  const finiteKeys: string[] = []
+  const finite: string[] = []
 
   for (const property of node.getProperties()) {
     // A spread contributes keys that cannot be attributed to either half.
@@ -260,12 +325,24 @@ const partitionObject = (
       continue
     }
 
+    // A ternary is finite rather than dynamic: both branches resolve, so the choice can
+    // be a ternary between two literals instead of a runtime call. Only at this level —
+    // a nested one would need its condition path carried into the class.
+    if (topLevel) {
+      const branches = finiteBranches(key, valueBox, deps.runtimeCss)
+      if (branches) {
+        finiteKeys.push(key)
+        finite.push(branches)
+        continue
+      }
+    }
+
     // Part static, part dynamic, and nothing hidden from the box — worth going into.
     // `isAccounted` is what rules out a spread here: it reports the block as unaccounted
     // for, and a spread's keys belong to neither half.
     const nested =
       value && Node.isObjectLiteralExpression(value) && isAccounted(value, valueBox)
-        ? partitionObject(value, valueBox, (styles[key] ?? {}) as Dict, deps)
+        ? partitionObject(value, valueBox, (styles[key] ?? {}) as Dict, deps, false)
         : undefined
 
     if (nested && Object.keys(nested.staticStyles).length && nested.dynamicText.length) {
@@ -281,8 +358,10 @@ const partitionObject = (
     dynamicText.push(property.getText())
   }
 
-  // Nothing to gain from a split that is entirely one side.
-  if (!staticKeys.length || !dynamicText.length) return undefined
+  // Nothing to gain unless something resolves and something is left over. A finite
+  // branch counts as both: it resolves, and it replaces what would have been a call.
+  if (!staticKeys.length && !finite.length) return undefined
+  if (!dynamicText.length && !finite.length) return undefined
 
   // Only the keys the recursion actually split are exempt. Inferring that from "appears
   // on both sides" was wrong: a duplicated key lands on both sides too, and exempting it
@@ -292,7 +371,11 @@ const partitionObject = (
   const contested = dynamicKeys.filter((key) => !splitKeys.has(key))
   if (collides(staticKeys, contested, ctx)) return undefined
 
-  return { staticStyles, dynamicText }
+  // A finite branch emits a class for its property in both arms, so it collides with the
+  // other halves exactly as a static or dynamic key would.
+  if (collides(finiteKeys, [...staticKeys, ...contested], ctx)) return undefined
+
+  return { staticStyles, dynamicText, finite }
 }
 
 /**

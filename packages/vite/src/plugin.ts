@@ -16,6 +16,25 @@ export interface BambooVitePluginOptions {
    * @default false
    */
   transform?: boolean
+  /**
+   * Also collapse `styled.*` and pattern elements to the tag they render, rather than
+   * folding call sites alone.
+   *
+   * On by default, and the larger of the two wins: the factory runs `splitProps`,
+   * `css()` and `cx` for every element on every render, inside a `forwardRef` component.
+   *
+   * @default true
+   */
+  jsx?: boolean
+  /**
+   * Split a call or element that is only partly static, so the resolvable half becomes a
+   * literal and only the rest keeps its runtime call. On by default.
+   *
+   * Without it a single dynamic value declines the whole site.
+   *
+   * @default true
+   */
+  partial?: boolean
   /** Path to `bamboo.config.ts`. Resolved the same way the CLI resolves it. */
   configPath?: string
   cwd?: string
@@ -100,7 +119,9 @@ const formatSkipped = (id: string, skipped: SkippedCall[]) => {
  * with no matching rule.
  */
 export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin => {
-  const { transform = false, configPath, cwd, reportSkipped = false, reportSummary = true } = options
+  // `jsx` and `partial` are forwarded undefined rather than defaulted here, so `foldSource`
+  // stays the one place their default is written down.
+  const { transform = false, jsx, partial, configPath, cwd, reportSkipped = false, reportSummary = true } = options
 
   /** Totals across the build, for the summary. */
   const totals = { folded: 0, files: 0, filesWithFolds: 0, skipped: new Map<string, number>() }
@@ -161,7 +182,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin => {
         const parserResult = ctx.project.parseSourceFile(filePath)
         if (!parserResult || parserResult.isEmpty()) return null
 
-        result = foldSource({ ctx, code, parserResult, filePath, runtimeCss })
+        result = foldSource({ ctx, code, parserResult, filePath, runtimeCss, jsx, partial })
       } catch (error) {
         logger.caughtError('vite:transform', `Failed to fold ${filePath}`, error)
         return null

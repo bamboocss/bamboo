@@ -58,11 +58,13 @@ const skipCases: Array<{ name: string; code: string; reason?: string }> = [
     `,
   },
   {
-    name: 'ternary value',
+    // A ternary between two resolvable values lowers to a ternary between two classes;
+    // one unresolvable branch makes the choice infinite again.
+    name: 'ternary with a dynamic branch',
     reason: 'dynamic',
     code: `
       import { css } from 'styled-system/css'
-      export const make = (on) => css({ color: on ? 'red.300' : 'blue.500' })
+      export const make = (on, tone) => css({ color: on ? 'red.300' : tone })
     `,
   },
   {
