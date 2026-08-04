@@ -17,7 +17,12 @@ It is **off by default** and changes nothing until switched on.
 A variable is kept when the generated css references it, when a kept variable's own value references it, or when it is
 named by `token()` or `token.var()` or a literal `var(--x)` anywhere under `include`. Tokens that javascript receives as
 a reference rather than a literal — virtual tokens, and any token carrying a condition — are always kept, because
-`token('colors.text')` hands the caller a `var()` whether or not the css mentions it.
+`token('colors.text')` hands the caller a `var()` whether or not the css mentions it. So is anything a theme refers to:
+a theme is a separate artifact injected at runtime, so nothing in the sheet points at what it needs.
+
+The walk follows any custom property, not only the removable ones. A colour palette is what forces that:
+`colorPalette: 'red'` emits `--colors-color-palette-300: var(--colors-red-300)`, and those palette properties are
+virtual, so stopping at them would leave the rule pointing at colours that had been removed.
 
 Two limits are deliberate:
 

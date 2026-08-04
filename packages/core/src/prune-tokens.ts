@@ -68,8 +68,13 @@ export function pruneTokenVars(options: PruneOptions) {
   const reachable = new Set<string>()
   const queue: string[] = []
 
+  // Traversal follows any custom property, not only the ones eligible for removal. A
+  // colour palette is the case that forces this: `colorPalette: 'red'` emits
+  // `--colors-color-palette-300: var(--colors-red-300)`, and those palette properties are
+  // virtual, so they are absent from `tokenVars`. Stopping at them would leave the real
+  // colours looking unreferenced while the rule pointing at them survives.
   const visit = (name: string) => {
-    if (reachable.has(name) || !tokenVars.has(name)) return
+    if (reachable.has(name)) return
     reachable.add(name)
     queue.push(name)
   }

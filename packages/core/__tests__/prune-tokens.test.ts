@@ -59,6 +59,21 @@ describe('pruneTokenVars', () => {
     expect(css).not.toContain('--colors-gray-100')
   })
 
+  /**
+   * A colour palette maps virtual properties onto real ones. Those virtual properties are
+   * not themselves removable, so the walk has to pass through them; stopping there leaves
+   * the rule pointing at colours that are no longer declared.
+   */
+  test('follows a chain through a custom property it cannot remove', () => {
+    const { css } = prune(':root{--colors-red-300:#f00;--colors-blue-300:#00f}', {
+      uses: '.cp_red{--colors-color-palette-300:var(--colors-red-300)}.c{color:var(--colors-color-palette-300)}',
+      tokenVars: ['--colors-red-300', '--colors-blue-300'],
+    })
+
+    expect(css).toContain('--colors-red-300')
+    expect(css).not.toContain('--colors-blue-300')
+  })
+
   test('does not treat a reference from an unreachable token as a use', () => {
     const { css, removed } = prune(':root{--a:var(--b);--b:#000}', { tokenVars: ['--a', '--b'] })
 

@@ -111,7 +111,7 @@ export class Generator extends Context {
       ],
       target: layers.tokens,
       tokenVars: this.getTokenVarNames(),
-      keep: new Set([...this.getAlwaysKeptTokenVars(), ...(keep ?? [])]),
+      keep: new Set([...this.getAlwaysKeptTokenVars(), ...this.getThemeTokenVars(), ...(keep ?? [])]),
     })
 
     logger.debug('prune:tokens', `Removed ${result.removed} unused token css variable(s)`)
@@ -128,6 +128,28 @@ export class Generator extends Context {
     for (const values of this.tokens.view.vars.values()) {
       for (const name of values.keys()) names.add(name)
     }
+    return names
+  }
+
+  /**
+   * Everything the themes refer to.
+   *
+   * A theme is emitted as its own artifact and injected at runtime, so its css is not in
+   * the sheet being pruned and nothing there points at what it needs. A theme that maps a
+   * token onto a base colour would otherwise be left referring to a declaration that has
+   * been removed.
+   */
+  private getThemeTokenVars = () => {
+    const names = new Set<string>()
+    const themes = this.config.themes
+    if (!themes) return names
+
+    for (const themeName of Object.keys(themes)) {
+      for (const match of getThemeCss(this, themeName).matchAll(/var\(\s*(--[^\s,)]+)/g)) {
+        names.add(match[1])
+      }
+    }
+
     return names
   }
 

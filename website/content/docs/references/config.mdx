@@ -649,7 +649,8 @@ size of your app.
 ```
 
 A variable is kept when the generated css references it, when a kept variable's own value references it, or when it is
-named by `token()`, `token.var()`, or a literal `var(--x)` anywhere under [`include`](#include).
+named by `token()`, `token.var()`, or a literal `var(--x)` anywhere under [`include`](#include). Anything a theme refers
+to is kept as well, since themes ship as separate artifacts injected at runtime.
 
 It is opt-in because reachability cannot be proven for every reference. Three things stay invisible to it:
 
