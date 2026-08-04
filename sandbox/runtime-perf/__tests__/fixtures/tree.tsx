@@ -1,5 +1,5 @@
 import { css } from '../../styled-system/css'
-import { styled } from '../../styled-system/jsx'
+import { Box, HStack, Stack, styled } from '../../styled-system/jsx'
 
 /**
  * A tree covering both halves of the fold: shapes that collapse to an intrinsic tag,
@@ -54,6 +54,24 @@ export const Tree = ({ tone, rest }: { tone: string; rest: Record<string, unknow
 
     {/* declines: css prop */}
     <styled.div css={{ color: 'gray600' }}>css prop</styled.div>
+
+    {/* folds: pattern elements collapse the pattern and the factory together */}
+    <Stack gap="sm">
+      <Box padding="xs" backgroundColor="white" id="boxed">
+        box
+      </Box>
+      <HStack gap="xxs" color="gray700">
+        hstack
+      </HStack>
+    </Stack>
+
+    {/* folds: a pattern with a static as prop */}
+    <Stack gap="xxs" as="nav">
+      nav stack
+    </Stack>
+
+    {/* declines: a dynamic pattern prop */}
+    <Stack gap={tone}>dynamic pattern</Stack>
 
     {/* folds as a call site, not an element */}
     <div className={css({ color: 'blue800', padding: 'xs' })}>call site</div>

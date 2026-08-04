@@ -80,7 +80,7 @@ A `styled.*` element collapses to the intrinsic tag it renders:
 This is the one that matters most at runtime. The factory runs `splitProps`, `css()` and `cx` for every element on every
 render, inside a `forwardRef` component — folding removes all of it, including the component layer.
 
-Measured on `sandbox/runtime-perf`, rendering a mixed tree fifty times: **2.6× faster**, warm. Half the elements in that
+Measured on `sandbox/runtime-perf`, rendering a mixed tree fifty times: **3.3× faster**, warm. Half the elements in that
 tree deliberately decline, so a fully-foldable tree does better and a mostly-dynamic one does worse. Both sides are
 warmed first, which is the conservative reading — the runtime's style memo is full, so this is the steady-state win
 rather than the cold-start one, and cold start is where the gap is widest.
@@ -103,7 +103,25 @@ An `as` only known at runtime still bails.
 
 An element bails if it carries anything else the factory gives extra meaning to: a spread, a dynamic style prop,
 `unstyled`, `css`, `ref`, `key`, an explicit `children`, a dynamic `className`, or one of the `html*` props that
-`normalizeHTMLProps` renames. Pattern components like `<Stack>` are not folded yet.
+`normalizeHTMLProps` renames.
+
+### Pattern elements
+
+`<Stack>`, `<Box>`, `<HStack>` and the rest fold too, and they save more than a `styled.*` element does. A pattern
+component is a second layer: it splits its own props out, runs them through the pattern's transform, and hands the
+result to `styled.<jsxElement>`, which then does everything above. Folding collapses both layers at once.
+
+```tsx
+<Stack gap="sm" id="x">hi</Stack>
+<div id="x" className={"d_flex flex-d_column gap_sm"}>hi</div>
+```
+
+Pattern props and style props are both consumed; anything else passes through. `as` and a static `className` behave as
+they do on a `styled.*` element.
+
+Pattern elements only fold under the default `jsxStyleProps: 'all'`. Under `minimal` and `none` the pattern's styles
+reach the factory through the `css` prop rather than being spread, which reverses which side wins when a prop is set in
+both places.
 
 Turn it off on its own with `jsx: false` if you want call-site folding without it.
 

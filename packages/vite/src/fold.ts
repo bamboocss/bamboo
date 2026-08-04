@@ -3,7 +3,7 @@ import { type BoxNode, box } from '@bamboocss/extractor'
 import type { Dict, ParserResultInterface, ResultItem } from '@bamboocss/types'
 import MagicString from 'magic-string'
 import { Node, type SourceFile } from 'ts-morph'
-import { type JsxEdit, planJsxFold } from './fold-jsx'
+import { type JsxEdit, planJsxFold, planPatternFold } from './fold-jsx'
 import { createRuntimeCss, type RuntimeCss } from './runtime-css'
 
 /**
@@ -86,7 +86,7 @@ const FOLDABLE_TYPES = new Set(['css', 'pattern'])
 const UNFOLDABLE_TYPES = new Set(['cva', 'sva', 'token'])
 
 /** Element surfaces `foldJsx` handles, as opposed to call sites. */
-const JSX_TYPES = new Set(['jsx-factory'])
+const JSX_TYPES = new Set(['jsx-factory', 'jsx-pattern'])
 
 /**
  * Statically resolvable means: every box in the tree carries a known value.
@@ -520,7 +520,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
         continue
       }
 
-      const plan = planJsxFold(item, ctx, runtimeCss)
+      const plan = type === 'jsx-pattern' ? planPatternFold(item, ctx, runtimeCss) : planJsxFold(item, ctx, runtimeCss)
 
       if ('reason' in plan) {
         skipped.push({ name, reason: plan.reason, start: elementStart, end: elementEnd })

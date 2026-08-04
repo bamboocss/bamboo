@@ -113,14 +113,6 @@ describe('declines', () => {
     expect(fold(code).code).toBe(code)
   })
 
-  test('a pattern component is left to the runtime', () => {
-    const { fold } = createFoldFixture()
-    const code = `import { Stack } from 'styled-system/jsx'\nexport const A = () => <Stack gap="4">hi</Stack>\n`
-
-    expect(fold(code).folded).toHaveLength(0)
-    expect(fold(code).code).toBe(code)
-  })
-
   test('the jsx option turns it off', () => {
     const { ctx } = createFoldFixture()
     const code = jsx(`export const A = () => <styled.div color="red.300" />`)
@@ -361,5 +353,82 @@ describe('the as prop', () => {
     const result = fold(jsx(`export const A = () => <styled.div as="my-widget" color="red.300" />`))
 
     expect(result.code).toContain('<my-widget className={"c_red.300"} />')
+  })
+})
+
+const pat = (body: string) => `import { Box, Stack, HStack, Circle } from 'styled-system/jsx'\n${body}\n`
+
+describe('pattern elements', () => {
+  test('a pattern element collapses to the tag it renders', () => {
+    const { fold, ctx, runtimeCss } = createFoldFixture()
+    const result = fold(pat(`export const A = () => <Stack gap="4">hi</Stack>`))
+
+    expect(result.folded).toHaveLength(1)
+    // Same call the encoder makes, so the class is backed by an emitted rule.
+    expect(result.folded[0]!.className).toBe(runtimeCss(ctx.patterns.transform('stack', { gap: '4' })))
+    expect(result.code).toContain('>hi</div>')
+  })
+
+  test('the folded class is backed by emitted CSS', () => {
+    const { fold, getCss } = createFoldFixture()
+    const result = fold(pat(`export const A = () => <Stack gap="4" align="center" />`))
+
+    const css = getCss()
+    for (const selector of selectorsFor(result.folded[0]!.className)) expect(css).toContain(selector)
+  })
+
+  test('style props alongside pattern props are consumed', () => {
+    const { fold, ctx, runtimeCss } = createFoldFixture()
+    const result = fold(pat(`export const A = () => <Stack gap="4" color="red.300" />`))
+
+    expect(result.folded[0]!.className).toBe(
+      runtimeCss(ctx.patterns.transform('stack', { gap: '4', color: 'red.300' })),
+    )
+  })
+
+  test('non-style props pass through', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(pat(`export const A = () => <Box padding="4" id="x" onClick={fn} />`))
+
+    expect(result.code).toContain('id="x"')
+    expect(result.code).toContain('onClick={fn}')
+  })
+
+  test('a static as prop names the tag', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(pat(`export const A = () => <Stack gap="4" as="section">hi</Stack>`))
+
+    expect(result.code).toContain('<section className={')
+    expect(result.code).toContain('</section>')
+  })
+
+  test('a static className is appended', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(pat(`export const A = () => <Box padding="4" className="mine" />`))
+
+    expect(result.folded[0]!.className.endsWith(' mine')).toBe(true)
+  })
+
+  test.each([
+    ['a spread', `export const A = ({ rest }) => <Stack gap="4" {...rest} />`],
+    ['a dynamic pattern prop', `export const A = ({ g }) => <Stack gap={g} />`],
+    ['a dynamic style prop', `export const A = ({ t }) => <Stack gap="4" color={t} />`],
+    ['a css prop', `export const A = () => <Stack gap="4" css={{ color: 'red.300' }} />`],
+    ['a ref', `export const A = ({ r }) => <Stack gap="4" ref={r} />`],
+  ])('declines %s', (_name, body) => {
+    const { fold } = createFoldFixture()
+    const code = pat(body)
+
+    expect(fold(code).folded).toHaveLength(0)
+    expect(fold(code).code).toBe(code)
+  })
+
+  test('declines when jsxStyleProps is not all', () => {
+    // Under `minimal`/`none` the pattern styles reach the factory through the css prop,
+    // which reverses which side wins for a prop set in both places.
+    const { fold } = createFoldFixture({ jsxStyleProps: 'minimal' })
+    const code = pat(`export const A = () => <Stack gap="4" />`)
+
+    expect(fold(code).folded).toHaveLength(0)
   })
 })

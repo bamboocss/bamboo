@@ -118,6 +118,88 @@ const intrinsicTag = (tagName: string, factoryName: string): string | undefined 
   return tag
 }
 
+/**
+ * Collapse a pattern element (`<Stack gap="4">`) to the tag it renders.
+ *
+ * A pattern component is a second layer on top of the factory: it splits its own props
+ * out, runs them through the pattern's transform, and hands the result to
+ * `styled.<jsxElement>`, which then does everything described above. Folding one removes
+ * both layers.
+ *
+ * The class is computed through `patterns.transform`, the same call the encoder makes
+ * when it decides what css to emit — so a folded pattern class is backed by a rule by
+ * construction, and the render-parity test is what confirms it also matches the runtime.
+ *
+ * Only the default `jsxStyleProps: 'all'` folds. Under `minimal` and `none` the pattern's
+ * styles reach the factory through the `css` prop instead of being spread, which reverses
+ * which side wins when a prop is set in both places.
+ */
+export const planPatternFold = (
+  item: ResultItem,
+  ctx: Context,
+  runtimeCss: RuntimeCss,
+): JsxFoldPlan | { reason: JsxSkipReason } => {
+  const node = (item.box as BoxNode | undefined)?.getNode?.()
+
+  if (!node || (!Node.isJsxOpeningElement(node) && !Node.isJsxSelfClosingElement(node))) {
+    return { reason: 'unsupported-kind' }
+  }
+
+  if (ctx.jsx.styleProps !== 'all') return { reason: 'unsupported-kind' }
+
+  const jsxName = node.getTagNameNode().getText()
+  const detail = ctx.patterns.details.find((entry) => entry.jsxName === jsxName)
+  if (!detail) return { reason: 'unsupported-kind' }
+
+  const styles = (item.data?.[0] ?? {}) as Dict
+  const passthrough: string[] = []
+  let staticClassName = ''
+  let tag = detail.config.jsxElement ?? 'div'
+
+  for (const attribute of node.getAttributes()) {
+    if (!Node.isJsxAttribute(attribute)) return { reason: 'dynamic' }
+
+    const name = attribute.getNameNode().getText()
+
+    if (name === 'className') {
+      const initializer = attribute.getInitializer()
+      if (!initializer || !Node.isStringLiteral(initializer)) return { reason: 'dynamic' }
+      staticClassName = initializer.getLiteralValue()
+      continue
+    }
+
+    if (name === 'as') {
+      const resolved = asTag(attribute)
+      if (!resolved) return { reason: 'dynamic' }
+      tag = resolved
+      continue
+    }
+
+    if (RESERVED_PROPS.has(name) || HTML_PROPS.has(name)) return { reason: 'dynamic' }
+
+    // A pattern prop and a style prop are both consumed; what matters is only that the
+    // extractor resolved it, since anything it dropped would be silently lost.
+    if (detail.props.includes(name) || ctx.isValidProperty(name)) {
+      if (!(name in styles)) return { reason: 'dynamic' }
+      continue
+    }
+
+    passthrough.push(attribute.getText())
+  }
+
+  let resolved: string
+  try {
+    resolved = runtimeCss(ctx.patterns.transform(detail.baseName, styles))
+  } catch {
+    return { reason: 'dynamic' }
+  }
+
+  const className = [resolved, staticClassName].filter(Boolean).join(' ')
+  if (!className) return { reason: 'dynamic' }
+
+  return buildEdits(node, tag, passthrough, className)
+}
+
 export const planJsxFold = (
   item: ResultItem,
   ctx: Context,
@@ -175,6 +257,16 @@ export const planJsxFold = (
   const className = [runtimeCss(styles), staticClassName].filter(Boolean).join(' ')
   if (!className) return { reason: 'dynamic' }
 
+  return buildEdits(node, tag, passthrough, className)
+}
+
+/** Rewrite the opening element, and the closing one when there is a pair. */
+const buildEdits = (
+  node: Node,
+  tag: string,
+  passthrough: string[],
+  className: string,
+): JsxFoldPlan | { reason: JsxSkipReason } => {
   const attributes = [...passthrough, `className={${JSON.stringify(className)}}`].join(' ')
   const selfClosing = Node.isJsxSelfClosingElement(node)
 

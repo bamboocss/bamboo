@@ -157,18 +157,16 @@ describe('sandbox/vite-ts parity', () => {
     }
   })
 
-  test('regions outside a fold are preserved verbatim', () => {
+  test('every call the fold declined survives verbatim', () => {
     const { results } = parseAll(true)
 
+    // What "left alone" has to mean. Comparing spans between folds does not express it:
+    // an element fold rewrites only its two tags, so the text around one legitimately
+    // changes while everything it declined stays put.
     for (const { code, result } of results) {
-      let cursor = 0
-      const sorted = [...result.folded].sort((a, b) => a.start - b.start)
-
-      for (const call of sorted) {
-        // Text between the previous fold and this one must appear unchanged.
-        const between = code.slice(cursor, call.start)
-        if (between.trim()) expect(result.code).toContain(between.trim().split('\n')[0]!.trim())
-        cursor = call.end
+      for (const skip of result.skipped) {
+        if (skip.end <= skip.start) continue
+        expect(result.code, `${skip.reason} @ ${skip.start}`).toContain(code.slice(skip.start, skip.end))
       }
     }
   })
