@@ -114,6 +114,42 @@ export class Project {
   /** ts-morph reports forward slashes; normalize callers' paths to match on Windows. */
   private normalizePath = (filePath: string) => filePath.replaceAll('\\', '/')
 
+  /**
+   * Resolves a module specifier to a file already in the project.
+   *
+   * Deliberately not `decl.getModuleSpecifierSourceFile()`: that goes through the
+   * symbol table, which forces `initializeTypeChecker` on first use and costs
+   * hundreds of ms on a cold build. `ts.resolveModuleName` is purely a filesystem
+   * lookup, and a shared cache keeps repeat specifiers off the disk.
+   *
+   * Looks the result up rather than adding it, so resolving `react` cannot pull a
+   * `.d.ts` into the project. The graph only tracks files bamboo already scans.
+   */
+  private moduleResolutionCache: ts.ModuleResolutionCache | undefined
+
+  private resolveImport = (decl: { getModuleSpecifierValue(): string | undefined; getSourceFile(): SourceFile }) => {
+    const moduleName = decl.getModuleSpecifierValue()
+    if (!moduleName) return
+
+    const compilerOptions = this.project.getCompilerOptions()
+    this.moduleResolutionCache ??= ts.createModuleResolutionCache(
+      this.project.getFileSystem().getCurrentDirectory(),
+      (f) => f,
+      compilerOptions,
+    )
+
+    const resolved = ts.resolveModuleName(
+      moduleName,
+      decl.getSourceFile().getFilePath(),
+      compilerOptions,
+      this.project.getModuleResolutionHost(),
+      this.moduleResolutionCache,
+    )
+
+    const name = resolved.resolvedModule?.resolvedFileName
+    return name ? this.project.getSourceFile(name) : undefined
+  }
+
   private trackDependencies = (filePath: string, sourceFile: SourceFile) => {
     const importer = this.normalizePath(sourceFile.getFilePath())
     this.canonicalPaths.set(this.normalizePath(filePath), importer)
@@ -134,7 +170,7 @@ export class Project {
     let unresolved = false
 
     for (const decl of declarations) {
-      const imported = decl.getModuleSpecifierSourceFile()
+      const imported = this.resolveImport(decl)
       if (!imported) {
         // Bare package specifiers are never going to resolve into the project, so
         // they must not keep this file on the pending list forever.
