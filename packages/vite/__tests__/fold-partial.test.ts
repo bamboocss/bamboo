@@ -19,14 +19,14 @@ describe('splits a partly static call', () => {
     const result = fold(src(`export const f = (p) => css({ color: 'red.300', padding: p })`))
 
     expect(result.folded).toHaveLength(1)
-    expect(result.code).toContain('cx("c_red.300", css({ padding: p }))')
+    expect(result.code).toContain('cx("c_red.300", cssLeaf("p_", "padding", p))')
   })
 
-  test('cx is added to the import that already brings in css', () => {
+  test('the helpers are added to the import that already brings in css', () => {
     const { fold } = createFoldFixture()
     const result = fold(src(`export const f = (p) => css({ color: 'red.300', padding: p })`))
 
-    expect(result.code).toContain(`import { css, cx } from 'styled-system/css'`)
+    expect(result.code).toContain(`import { css, cx, cssLeaf } from 'styled-system/css'`)
   })
 
   test('an existing cx import is reused rather than re-added', () => {
@@ -43,11 +43,13 @@ describe('splits a partly static call', () => {
 
   test('an aliased css callee keeps its alias in the runtime half', () => {
     const { fold } = createFoldFixture()
+    // A responsive array rather than a bare value, so a runtime half survives to carry
+    // the alias: a scalar would lower to the leaf helper and leave no call to check.
     const result = fold(
-      `import { css as xcss } from 'styled-system/css'\nexport const f = (p) => xcss({ color: 'red.300', padding: p })\n`,
+      `import { css as xcss } from 'styled-system/css'\nexport const f = (p) => xcss({ color: 'red.300', padding: ['1', p] })\n`,
     )
 
-    expect(result.code).toContain('xcss({ padding: p })')
+    expect(result.code).toContain(`xcss({ padding: ['1', p] })`)
   })
 
   test('several static properties fold together', () => {
@@ -62,7 +64,7 @@ describe('splits a partly static call', () => {
     const result = fold(src(`export const f = (p) => css({ _hover: { color: 'red.300' }, padding: p })`))
 
     expect(result.folded[0]!.className).toBe(runtimeCss({ _hover: { color: 'red.300' } }))
-    expect(result.code).toContain('css({ padding: p })')
+    expect(result.code).toContain('cssLeaf("p_", "padding", p)')
   })
 })
 
@@ -108,12 +110,15 @@ describe('refuses to split where the halves could collide', () => {
     expect(fold(code).folded).toHaveLength(0)
   })
 
-  test('a fully dynamic call is left alone', () => {
+  test('a fully dynamic call lowers every property rather than being left alone', () => {
     const { fold } = createFoldFixture()
     const code = src(`export const f = (c, p) => css({ color: c, padding: p })`)
 
-    expect(fold(code).folded).toHaveLength(0)
-    expect(fold(code).code).toBe(code)
+    // Nothing resolves, but each property is still one class built from one value, so
+    // both lower and the call goes. The collision rule still applies to them.
+    expect(fold(code).folded).toHaveLength(1)
+    expect(fold(code).code).toContain('cx(cssLeaf("c_", "color", c), cssLeaf("p_", "padding", p))')
+    expect(fold(code).code).not.toContain('css({')
   })
 
   test('a fully static call still folds whole, not split', () => {
@@ -176,8 +181,9 @@ export const b = (q) => css({ display: 'flex', margin: q })`),
     // Two inserts at the same offset produced `import { css, cx, cx }`, which is a
     // SyntaxError -- and any component with two prop-driven calls hits it.
     expect(result.folded).toHaveLength(2)
-    expect(result.code).toContain(`import { css, cx } from 'styled-system/css'`)
+    expect(result.code).toContain(`import { css, cx, cssLeaf } from 'styled-system/css'`)
     expect(result.code).not.toContain('cx, cx')
+    expect(result.code).not.toContain('cssLeaf, cssLeaf')
   })
 
   test('a ternary keeps both branches', () => {
@@ -187,7 +193,7 @@ export const b = (q) => css({ display: 'flex', margin: q })`),
     // The extracted data is a projection that has already picked `whenTrue`, so reading
     // it would discard the other branch. Both branches are resolved instead.
     expect(result.code).toContain(`flag ? "c_red.300" : "c_blue.500"`)
-    expect(result.code).toContain('css({ padding: p })')
+    expect(result.code).toContain('cssLeaf("p_", "padding", p)')
   })
 
   test('a ternary nested in a condition block goes to the runtime', () => {
@@ -207,7 +213,9 @@ export const b = (q) => css({ display: 'flex', margin: q })`),
     const code = src(`export const f = (p, q) => css({ padding: ['1', p], color: q })`)
 
     // Folding the static half emitted only `p_1`, losing the breakpoint class entirely.
-    expect(fold(code).folded).toHaveLength(0)
+    // The array still travels whole -- it expands to one class per breakpoint, which no
+    // single prefix describes -- while the scalar sibling lowers beside it.
+    expect(fold(code).code).toContain(`cx(css({ padding: ['1', p] }), cssLeaf("c_", "color", q))`)
   })
 
   test('a base block disqualifies the split', () => {
@@ -324,6 +332,16 @@ export const b = (q) => css({ display: 'flex', margin: q })`),
     expect(second.code).not.toContain('css, cx')
   })
 
+  test('a module-scope cssLeaf blocks the leaf lowering without blocking the split', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(src(`const cssLeaf = 1\nexport const f = (p) => css({ color: 'red.300', padding: p })`))
+
+    // The leaf binding cannot be added, so those properties stay in the runtime call —
+    // but the static half is still worth hoisting.
+    expect(result.code).toContain('cx("c_red.300", css({ padding: p }))')
+    expect(result.code).not.toContain('cssLeaf(')
+  })
+
   test('a cx parameter in scope blocks the split', () => {
     const { fold } = createFoldFixture()
     const code = src(`export const f = (p, cx) => css({ color: 'red.300', padding: p })`)
@@ -398,7 +416,7 @@ describe('tsconfig path aliases', () => {
     )
 
     expect(result.folded).toHaveLength(1)
-    expect(result.code).toContain(`import { css, cx } from '@site/styled-system/css'`)
+    expect(result.code).toContain(`import { css, cx, cssLeaf } from '@site/styled-system/css'`)
   })
 
   test('an alias resolving somewhere else is still refused', () => {
@@ -609,15 +627,18 @@ describe('finite branches', () => {
     const { fold } = createFoldFixture()
     const result = fold(src(`export const f = (e, p) => css({ color: e ? 'red.300' : 'blue.500', padding: p })`))
 
-    expect(result.code).toContain(`cx(e ? "c_red.300" : "c_blue.500", css({ padding: p }))`)
+    expect(result.code).toContain(`cx(e ? "c_red.300" : "c_blue.500", cssLeaf("p_", "padding", p))`)
   })
 
-  test('a ternary with a dynamic branch does not lower', () => {
+  test('a ternary with a dynamic branch does not lower to a ternary of literals', () => {
     const { fold } = createFoldFixture()
     const code = src(`export const f = (e, x) => css({ margin: '2', color: e ? 'red.300' : x })`)
 
-    // One branch unresolvable means the choice is not finite.
-    expect(fold(code).code).toContain(`color: e ? 'red.300' : x`)
+    // One branch unresolvable means the choice is not finite. It still lowers as a leaf,
+    // which is a different mechanism: the whole ternary is evaluated at runtime and the
+    // class built from its result, so no branch is chosen here.
+    expect(fold(code).code).toContain(`cssLeaf("c_", "color", e ? 'red.300' : x)`)
+    expect(fold(code).code).not.toContain('c_red.300"')
   })
 
   test('a lone ternary removes the call entirely', () => {
@@ -635,8 +656,10 @@ describe('finite branches', () => {
     const { fold } = createFoldFixture()
     const code = src(`export const f = (c, p) => css({ color: c, padding: p })`)
 
-    // No static half and no finite branch, so a split would only re-wrap the same call.
-    expect(fold(code).code).toBe(code)
+    // No static half and no finite branch, but each property is still one class built
+    // from one value, so both lower and the call goes entirely.
+    expect(fold(code).code).toContain('cx(cssLeaf("c_", "color", c), cssLeaf("p_", "padding", p))')
+    expect(fold(code).code).not.toContain('css({')
   })
 
   test('a ternary colliding with a static sibling declines', () => {
@@ -654,19 +677,22 @@ describe('finite branches', () => {
 
     // Interleaved with dynamic values, so the condition cannot be hoisted without
     // reordering it. The property returns to the call; `bg` is still worth hoisting.
+    //
+    // Responsive arrays for the surrounding values: a scalar would lower to a leaf, and
+    // with nothing dynamic left to interleave with there would be no demotion to test.
     const interleaved = fold(
       src(
-        `export const f = (p, e, m) => css({ bg: 'red.300', padding: p, color: e ? 'red.300' : 'blue.500', margin: m })`,
+        `export const f = (p, e, m) => css({ bg: 'red.300', padding: ['1', p], color: e ? 'red.300' : 'blue.500', margin: ['1', m] })`,
       ),
     )
     expect(interleaved.code).toContain(
-      `cx("bg_red.300", css({ padding: p, color: e ? 'red.300' : 'blue.500', margin: m }))`,
+      `cx("bg_red.300", css({ padding: ['1', p], color: e ? 'red.300' : 'blue.500', margin: ['1', m] }))`,
     )
 
     // Same for a nested split, which must not be lost either.
     const nested = fold(
       src(
-        `export const f = (p, e) => css({ _hover: { bg: 'red.300', padding: p }, color: e ? 'red.300' : 'blue.500', margin: p })`,
+        `export const f = (p, e) => css({ _hover: { bg: 'red.300', padding: p }, color: e ? 'red.300' : 'blue.500', margin: ['1', p] })`,
       ),
     )
     expect(nested.code).toContain('cx("hover:bg_red.300", css({ _hover: { padding: p },')
@@ -725,20 +751,22 @@ describe('finite branches', () => {
 
     // Both are arbitrary expressions, so which runs first is observable. Written after
     // the dynamic value, the ternary has to stay after the call.
+    // Responsive arrays for the dynamic values, so they stay in the call rather than
+    // lowering -- what is under test is the ternary's position relative to them.
     const after = fold(
-      src(`export const f = (p, e) => css({ padding: log(p), color: log(e) ? 'red.300' : 'blue.500' })`),
+      src(`export const f = (p, e) => css({ padding: ['1', log(p)], color: log(e) ? 'red.300' : 'blue.500' })`),
     )
-    expect(after.code).toContain(`cx(css({ padding: log(p) }), log(e) ? "c_red.300" : "c_blue.500")`)
+    expect(after.code).toContain(`cx(css({ padding: ['1', log(p)] }), log(e) ? "c_red.300" : "c_blue.500")`)
 
     // Written before it, before.
     const before = fold(
-      src(`export const f = (p, e) => css({ color: log(e) ? 'red.300' : 'blue.500', padding: log(p) })`),
+      src(`export const f = (p, e) => css({ color: log(e) ? 'red.300' : 'blue.500', padding: ['1', log(p)] })`),
     )
-    expect(before.code).toContain(`cx(log(e) ? "c_red.300" : "c_blue.500", css({ padding: log(p) }))`)
+    expect(before.code).toContain(`cx(log(e) ? "c_red.300" : "c_blue.500", css({ padding: ['1', log(p)] }))`)
 
     // Interleaved, neither order holds, so the lowering is declined outright.
     const between = src(
-      `export const f = (p, q, e) => css({ padding: log(p), color: log(e) ? 'red.300' : 'blue.500', margin: log(q) })`,
+      `export const f = (p, q, e) => css({ padding: ['1', log(p)], color: log(e) ? 'red.300' : 'blue.500', margin: ['1', log(q)] })`,
     )
     expect(fold(between).code).toContain(`color: log(e) ? 'red.300' : 'blue.500'`)
   })
@@ -767,7 +795,9 @@ describe('finite branches', () => {
     // `flag ?` still appears in the declaration, which is untouched; what must not appear
     // is the lowered form, where the condition has been moved into `f`.
     expect(fold(local).code).not.toContain('flag ? "c_red.300"')
-    expect(fold(local).code).toContain('css({ color: v })')
+    // It lowers as a leaf instead, which reads `v` where it sits rather than copying the
+    // conditional -- the condition stays evaluated once, at the declaration.
+    expect(fold(local).code).toContain('cssLeaf("c_", "color", v)')
   })
 
   test('a conditional in a key position is not read as the value', () => {
@@ -779,7 +809,7 @@ describe('finite branches', () => {
       `const palette = { a: 'red.300', b: 'blue.500' }\nexport const f = (e) => css({ margin: '2', color: palette[e ? 'a' : 'b'] })`,
     )
 
-    expect(fold(code).code).toContain(`css({ color: palette[e ? 'a' : 'b'] })`)
+    expect(fold(code).code).toContain(`cssLeaf("c_", "color", palette[e ? 'a' : 'b'])`)
     expect(fold(code).code).not.toContain('c_red.300')
   })
 
@@ -862,6 +892,68 @@ describe('finite branches', () => {
  * The tell is the arms rather than the condition: it guessed exactly when one produced a
  * box and the other did not.
  */
+describe('lowering an open-ended value', () => {
+  test('a scalar becomes a prefix and the value', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(src(`export const f = (tone) => css({ margin: '2', color: tone })`))
+
+    expect(result.code).toContain('cx("m_2", cssLeaf("c_", "color", tone))')
+  })
+
+  test('the prefix is what the runtime would have built', () => {
+    const { fold, runtimeCss } = createFoldFixture()
+    const result = fold(src(`export const f = (v) => css({ p: v })`))
+
+    // Derived rather than asserted: whatever the runtime names this property, the lowered
+    // prefix has to be that name up to the value.
+    const [prefix] = runtimeCss({ p: 'SENTINEL' }).split('SENTINEL')
+    expect(result.code).toContain(`cssLeaf(${JSON.stringify(prefix)}, "p", v)`)
+  })
+
+  test('a configured class prefix is carried into it', () => {
+    const { fold } = createFoldFixture({ prefix: 'pfx' })
+    const result = fold(src(`export const f = (tone) => css({ color: tone })`))
+
+    expect(result.code).toContain('cssLeaf("pfx-c_", "color", tone)')
+  })
+
+  test('hashed class names decline, since the value is not appended to a prefix', () => {
+    const { fold } = createFoldFixture({ hash: true })
+    const result = fold(src(`export const f = (tone) => css({ margin: '2', color: tone })`))
+
+    expect(result.code).not.toContain('cssLeaf')
+    expect(result.code).toContain('css({ color: tone })')
+  })
+
+  test('grouped mode declines for the same reason', () => {
+    const { fold } = createFoldFixture({ cssMode: 'grouped' })
+    const result = fold(src(`export const f = (tone) => css({ margin: '2', color: tone })`))
+
+    expect(result.code).not.toContain('cssLeaf')
+    expect(result.code).toContain('css({ color: tone })')
+  })
+
+  test('a condition key is declined rather than lowered', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(src(`export const f = (block) => css({ margin: '2', _hover: block })`))
+
+    // Its value is an object in every real use, so lowering only buys a wasted call
+    // before `leafClass` hands it back.
+    expect(result.code).not.toContain('cssLeaf')
+    expect(result.code).toContain('css({ _hover: block })')
+  })
+
+  test('a collision demotes the leaf rather than emitting two classes', () => {
+    const { fold } = createFoldFixture()
+    const code = src(`export const f = (v) => css({ mx: '4', marginInline: v })`)
+
+    // Both resolve to one property; a literal plus a leaf would apply two classes where
+    // the runtime applies one.
+    expect(fold(code).folded).toHaveLength(0)
+    expect(fold(code).code).toBe(code)
+  })
+})
+
 describe('choices the extractor could not decide', () => {
   test('a ternary whose other arm did not evaluate is not folded to this one', () => {
     const { fold } = createFoldFixture()
@@ -869,9 +961,11 @@ describe('choices the extractor could not decide', () => {
 
     // The box is a plain literal holding `'red.300'` — indistinguishable from a value
     // that was actually written there, which is what made this fold silently wrong.
-    expect(result.code).toContain(`color: e ? 'red.300' : fn()`)
+    // Lowering the property to a leaf keeps the choice intact rather than picking an arm:
+    // the class is built from whatever the ternary evaluates to, at runtime.
+    expect(result.code).toContain(`cssLeaf("c_", "color", e ? 'red.300' : fn())`)
     expect(result.code).not.toContain('c_red.300')
-    // The sibling still folds, so this is a declined property and not a declined file.
+    // The sibling still folds, so this is a lowered property and not a declined file.
     expect(result.code).toContain('cx("m_2"')
   })
 
@@ -883,7 +977,8 @@ describe('choices the extractor could not decide', () => {
     // that means trusting an evaluation the extractor did not do — and `({ on = true })`
     // is a condition the extractor deliberately treats as undecided while a plain read
     // of it says `true`. Asking only about the arms avoids having to match that rule.
-    expect(fold(code).code).toContain(`color: on ? 'red.300' : fn()`)
+    expect(fold(code).code).toContain(`cssLeaf("c_", "color", on ? 'red.300' : fn())`)
+    expect(fold(code).code).not.toContain('c_red.300')
     expect(fold(code).code).toContain('cx("m_2"')
   })
 
@@ -895,9 +990,9 @@ describe('choices the extractor could not decide', () => {
     // This declines because `fn()` does not resolve, not because the condition was
     // judged — the rule never looks at the condition. It is kept as a guard against
     // going back to one that does, which is where this shape was getting folded.
-    expect(fold(code).code).toContain(`color: on ? 'red.300' : fn()`)
+    expect(fold(code).code).toContain(`cssLeaf("c_", "color", on ? 'red.300' : fn())`)
     expect(fold(code).code).not.toContain('c_red.300')
-    // The sibling still folds, so this is a declined property rather than a declined file.
+    // The sibling still folds, so this is a lowered property rather than a declined file.
     expect(fold(code).code).toContain('cx("m_2"')
   })
 
@@ -911,7 +1006,10 @@ describe('choices the extractor could not decide', () => {
 
       expect(result.code, value).toContain(value)
       expect(result.code, value).toContain('cx("m_2"')
-      expect(result.code.replace(value, ''), value).not.toContain('c_')
+      // The arm the extractor guessed must not become a class either way round. `c_` on
+      // its own now appears as the lowered leaf's prefix, so the arms are what to check.
+      expect(result.code, value).not.toContain('c_red.300')
+      expect(result.code, value).not.toContain('c_blue.500')
     }
   })
 
@@ -976,7 +1074,10 @@ describe('choices the extractor could not decide', () => {
       )
 
       expect(result.code, value).toContain(value)
-      expect(result.code, value).not.toContain('trunc_')
+      // `trunc_` on its own is now the lowered leaf's prefix, so what must not appear is
+      // a *class* built from an operand. The reported literals are the check: a leaf
+      // contributes none, because its class is only known at runtime.
+      expect(result.folded[0]!.classNames, value).toEqual(['m_2'])
       expect(result.code, value).toContain('cx("m_2"')
     }
 
@@ -1157,6 +1258,8 @@ describe('choices the extractor could not decide', () => {
     )
     expect(spread.code).toContain('_hover: base')
     expect(spread.code).not.toContain('hover:c_red.300')
+    // The sibling lowers, so this is a declined property rather than a declined file.
+    expect(spread.code).toContain('cssLeaf("p_", "padding", p)')
 
     // Including through a shorthand, where the name is the whole property.
     const shorthand = fold(src(`const _hover = { color: 'red.300', ...o }\nexport const f = () => css({ _hover })`))
@@ -1180,11 +1283,11 @@ describe('choices the extractor could not decide', () => {
 
     expect(
       fold(src(`const base = { color: 'red.300' }\nexport const f = (p) => css({ _hover: base, padding: p })`)).code,
-    ).toContain('cx("hover:c_red.300", css({ padding: p }))')
+    ).toContain('cx("hover:c_red.300", cssLeaf("p_", "padding", p))')
 
     // Shorthands too, or the fix above would have closed the hole by declining everything.
     expect(
       fold(src(`const _hover = { color: 'red.300' }\nexport const f = (p) => css({ _hover, padding: p })`)).code,
-    ).toContain('cx("hover:c_red.300", css({ padding: p }))')
+    ).toContain('cx("hover:c_red.300", cssLeaf("p_", "padding", p))')
   })
 })

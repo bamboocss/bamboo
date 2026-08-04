@@ -20,3 +20,9 @@ interface CssFunction {
 }
 
 export declare const css: CssFunction;
+
+/**
+ * Internal. Emitted for the source transform, which rewrites a single dynamic style
+ * leaf into a call to this. Not part of the authoring API.
+ */
+export declare const cssLeaf: (prefix: string, prop: string, value: unknown) => string;

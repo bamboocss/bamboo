@@ -1,5 +1,14 @@
 const importantRegex = /\s*!(important)?/i
 
+/**
+ * Collapse every run of whitespace to a single space, which is what the class name is
+ * built from. Exported because `leafClass` has to reproduce this exact pipeline, and a
+ * second copy of it would be free to drift from the one `createCss` runs.
+ */
+export function sanitize<T>(value: T): T {
+  return typeof value === 'string' ? (value.replaceAll(/[\n\s]+/g, ' ') as T) : value
+}
+
 export function isImportant<T extends string | number | boolean>(value: T) {
   return typeof value === 'string' ? importantRegex.test(value) : false
 }

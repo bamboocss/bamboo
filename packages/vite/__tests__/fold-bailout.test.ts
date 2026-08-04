@@ -49,11 +49,11 @@ describe('partially dynamic objects', () => {
     const result = fold(withImport(`export const f = (t) => css({ padding: '2', color: t })`))
 
     // Partial folding is what changed here. The static half becomes a literal and the
-    // dynamic half keeps its runtime call — nothing is dropped, which is what the bail
-    // was protecting against. The nested cases below still bail, because only top-level
-    // properties are partitioned.
+    // dynamic half is lowered to the leaf helper — nothing is dropped, which is what the
+    // bail was protecting against. The nested cases below still keep their runtime call,
+    // because only top-level properties are partitioned.
     expect(result.folded).toHaveLength(1)
-    expect(result.code).toContain('cx("p_2", css({ color: t }))')
+    expect(result.code).toContain('cx("p_2", cssLeaf("c_", "color", t))')
   })
 
   test('a dynamic value inside a condition bails', () => {
@@ -93,12 +93,24 @@ describe('partially dynamic objects', () => {
     expect(result.code).toContain(`cx("p_2", css({ _hover: { color: 'red.300', ...rest } }))`)
   })
 
-  test('a member expression value bails', () => {
-    expectUnchanged(withImport(`export const f = (theme) => css({ color: theme.color })`))
+  // These two used to bail. They lower now, and what makes that safe is that the value is
+  // moved verbatim into the argument position rather than being read: a member expression
+  // that is a getter, and a template literal holding a call, are each evaluated exactly
+  // once, where they were written.
+  test('a member expression value is lowered, and read once', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(withImport(`export const f = (theme) => css({ color: theme.color })`))
+
+    expect(result.code).toContain('cx(cssLeaf("c_", "color", theme.color))')
+    expect(result.code.match(/theme\.color/g)).toHaveLength(1)
   })
 
-  test('a dynamic template literal value bails', () => {
-    expectUnchanged(withImport('export const f = (x) => css({ width: `${x}px` })'))
+  test('a dynamic template literal value is lowered, and evaluated once', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(withImport('export const f = (x) => css({ width: `${x}px` })'))
+
+    expect(result.code).toContain('cx(cssLeaf("w_", "width", `${x}px`))')
+    expect(result.code.match(/\$\{x\}px/g)).toHaveLength(1)
   })
 
   test('a getter bails', () => {
@@ -199,17 +211,19 @@ describe('values the extractor resolves to nothing', () => {
     const result = fold(withImport('export const f = (x) => css({ color: `red.300`, width: `${x}px` })'))
 
     // The whole-call path used to fold this to `"c_red.300"` and lose `width` entirely.
-    // It now declines, and partial folding routes `width` to the runtime half instead —
+    // It declines now, and the partial path lowers `width` rather than dropping it —
     // which is the outcome that keeps the property rather than merely refusing to act.
-    expect(result.code).toContain('cx("c_red.300", css({ width: `${x}px` }))')
+    expect(result.code).toContain('cx("c_red.300", cssLeaf("w_", "width", `${x}px`))')
   })
 
-  test('the single-property spelling bails for the accounting reason, not by luck', () => {
+  test('the single-property spelling keeps its value too', () => {
     const { fold } = createFoldFixture()
     const result = fold(withImport('export const f = (x) => css({ width: `${x}px` })'))
 
     // Previously this bailed only because the resulting class string was empty, which is
-    // why it never caught the case above.
-    expect(result.skipped.map((s) => s.reason)).toContain('dynamic')
+    // why it never caught the case above. Now nothing is skipped and nothing is lost:
+    // the property is lowered with its expression intact.
+    expect(result.skipped).toHaveLength(0)
+    expect(result.code).toContain('cssLeaf("w_", "width", `${x}px`)')
   })
 })

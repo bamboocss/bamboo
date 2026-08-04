@@ -36,6 +36,14 @@ function toHash(value) {
 //#endregion
 //#region src/important.ts
 const importantRegex = /\s*!(important)?/i;
+/**
+* Collapse every run of whitespace to a single space, which is what the class name is
+* built from. Exported because `leafClass` has to reproduce this exact pipeline, and a
+* second copy of it would be free to drift from the one `createCss` runs.
+*/
+function sanitize(value) {
+	return typeof value === "string" ? value.replaceAll(/[\n\s]+/g, " ") : value;
+}
 function isImportant(value) {
 	return typeof value === "string" ? importantRegex.test(value) : false;
 }
@@ -360,7 +368,6 @@ const fallbackCondition = {
 	finalize: (v) => v,
 	breakpoints: { keys: [] }
 };
-const sanitize = (value) => typeof value === "string" ? value.replaceAll(/[\n\s]+/g, " ") : value;
 const ENTRY_SEP = "]___[";
 const COND_SEP = "<___>";
 function createCss(context) {
@@ -454,6 +461,57 @@ function cloneStyles(styles) {
 		out[key] = cloneStyles(styles[key]);
 	}
 	return out;
+}
+//#endregion
+//#region src/leaf-class.ts
+/**
+* The class a single dynamic style leaf resolves to, given the prefix its property and
+* condition path produce.
+*
+* ## Why this can exist at all
+*
+* `css()` builds a class from the value alone — `utility.transform` is string
+* construction over a static map, and nothing consults which rules were actually emitted.
+* So `css({ color: tone })` already returns `c_<tone>` for a value the extractor never
+* saw, with no CSS behind it. Reproducing that string here cannot be less correct than
+* the call it replaces; it just skips the object literal, the merge and the memo.
+*
+* ## Why it is not a template literal
+*
+* Three shapes do not reduce to `prefix + value`, and all three return `undefined` so the
+* caller runs `css()` instead:
+*
+* - An array is expanded to a responsive object by `normalizeStyleObject`, so it produces
+*   one class per breakpoint rather than one class.
+* - An object is a condition block, walked into for the same reason.
+* - `null` and `undefined` are skipped by the walk entirely, which is an empty string
+*   rather than a class — that one is answered here, since it needs no `css()` call.
+*
+* ## Why the character scan
+*
+* The remaining work — collapsing whitespace, stripping `!important`, turning spaces into
+* underscores — is three regexes, and paying them per call makes this *slower* than a
+* memo hit. Almost no token value contains whitespace or `!`, so one scan for the
+* characters that make any of it necessary sends the common value straight to a
+* concatenation. A false positive only costs the slow path, so the scan errs wide.
+*/
+function leafClass(prefix, value) {
+	if (value == null) return "";
+	const type = typeof value;
+	if (type === "number" || type === "boolean") return `${prefix}${value}`;
+	if (type !== "string") return void 0;
+	const str = value;
+	for (let index = 0; index < str.length; index++) {
+		const code = str.charCodeAt(index);
+		if (code <= 33 || code === 160 || code === 5760 || code >= 8192) return slowLeaf(prefix, str);
+	}
+	return `${prefix}${str}`;
+}
+/** The full pipeline `createCss` runs, for a value that needs it. */
+function slowLeaf(prefix, value) {
+	const important = isImportant(value);
+	const className = `${prefix}${withoutSpace(withoutImportant(sanitize(value)))}`;
+	return important ? `${className}!` : className;
 }
 //#endregion
 //#region src/hypenate-property.ts
@@ -573,7 +631,7 @@ const uniq = (...items) => {
 	return Array.from(set);
 };
 //#endregion
-export { cloneStyles, compact, createCss, createMergeCss, filterBaseConditions, getPatternStyles, getSlotCompoundVariant, getSlotRecipes, hypenateProperty, isBaseCondition, isObject, mapObject, memo, mergeProps, patternFns, splitProps, toHash, uniq, walkObject, withoutSpace };
+export { cloneStyles, compact, createCss, createMergeCss, filterBaseConditions, getPatternStyles, getSlotCompoundVariant, getSlotRecipes, hypenateProperty, isBaseCondition, isObject, leafClass, mapObject, memo, mergeProps, patternFns, splitProps, toHash, uniq, walkObject, withoutSpace };
 
 
 

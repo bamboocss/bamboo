@@ -67,8 +67,10 @@ describe('vite plugin, real build', () => {
     // And the dynamic pattern element is still the pattern component.
     expect(code).toContain('Stack, { gap: tone')
 
-    // The dynamic call site keeps its runtime call while the static one beside it folded.
-    expect(code).toContain('css({ color: tone })')
+    // The dynamic call site is lowered rather than keeping its call. Matched by its
+    // arguments rather than by the helper's name, which the bundler is free to rename.
+    expect(code).toMatch(/\w+\("c_", "color", tone\)/)
+    expect(code).not.toContain('css({ color: tone })')
 
     // A lowered ternary, both arms resolved, through a real build.
     expect(code).toContain('flag ? "c_red600" : "c_green600"')

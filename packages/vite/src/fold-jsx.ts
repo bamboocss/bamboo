@@ -36,7 +36,7 @@ export interface JsxFoldPlan {
   start: number
   end: number
   /** Import edit for a split that needed a `cx` binding added. */
-  insert?: { pos: number; text: string }
+  insert?: { pos: number; names: string[] }
 }
 
 /** Callbacks a split needs, threaded in so this file stays free of context plumbing. */

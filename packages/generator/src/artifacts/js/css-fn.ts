@@ -29,9 +29,18 @@ export function generateCssFn(ctx: Context) {
     }
 
     export declare const css: CssFunction;
+
+    /**
+     * Internal. Emitted for the source transform, which rewrites a single dynamic style
+     * leaf into a call to this. Not part of the authoring API.
+     */
+    export declare const cssLeaf: (prefix: string, prop: string, value: unknown) => string;
     `,
     js: outdent`
-    ${ctx.file.import('cloneStyles, createCss, createMergeCss, hypenateProperty, memo, withoutSpace', '../helpers')}
+    ${ctx.file.import(
+      'cloneStyles, createCss, createMergeCss, hypenateProperty, leafClass, memo, withoutSpace',
+      '../helpers',
+    )}
     ${ctx.file.import('sortConditions, finalizeConditions', './conditions')}
 
     const utilities = "${utility
@@ -125,6 +134,15 @@ export function generateCssFn(ctx: Context) {
     // The merged result is cached and shared, so a caller mutating a nested
     // condition object would otherwise poison it for everyone after them.
     css.raw = (...styles) => cloneStyles(mergeCss(...styles))
+
+    // Emitted for the source transform, which rewrites a single dynamic style leaf into a
+    // call to this rather than leaving a \`css()\` behind. \`prefix\` is the class up to the
+    // value, resolved at build time; \`prop\` is only used for the shapes \`leafClass\`
+    // declines, which have to run the real thing.
+    export const cssLeaf = (prefix, prop, value) => {
+      const className = leafClass(prefix, value)
+      return className === undefined ? css({ [prop]: value }) : className
+    }
 
     export const { mergeCss, assignCss } = createMergeCss(context)
     `,

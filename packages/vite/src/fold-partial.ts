@@ -349,16 +349,26 @@ export interface PartialFold {
    * when the split left nothing behind.
    */
   dynamicText?: string
+  /** Expressions emitted in place of properties that did not resolve to a literal. */
+  finite: Lowered[]
   /**
-   * Ternary expressions for properties whose value is a conditional with resolvable
-   * branches — `isError ? "c_red.500" : "c_green.500"`.
-   */
-  finite: string[]
-  /**
-   * Whether the ternaries come before the runtime call. Both a ternary's condition and a
-   * dynamic value are arbitrary expressions, so which is written first is observable.
+   * Whether the lowered expressions come before the runtime call. A ternary's condition, a
+   * leaf's value and a dynamic property are all arbitrary expressions, so which is written
+   * first is observable.
    */
   finiteFirst: boolean
+}
+
+/** One property lowered to an expression rather than left in the runtime call. */
+export interface Lowered {
+  expression: string
+  /**
+   * Whether the expression's string literals are class names. A ternary's two arms are;
+   * a leaf call's arguments are a class *prefix* and a property name, which are not
+   * classes and must not be reported as ones — the class it builds is only known at
+   * runtime, and legitimately may have no rule behind it.
+   */
+  emitsLiterals: boolean
 }
 
 /**
@@ -424,242 +434,8 @@ const finiteBranches = (
   return `${node.getCondition().getText()} ? ${JSON.stringify(whenTrue)} : ${JSON.stringify(whenFalse)}`
 }
 
-export interface PartialFoldContext {
-  ctx: Context
-  runtimeCss: (...styles: Dict[]) => string
-  /** Whether a property's value is fully accounted for by the extractor. */
-  isAccounted: (value: Node | undefined, boxNode: BoxNode | undefined) => boolean
-  /** Whether every leaf under a box carries a known value. */
-  isStatic: (boxNode: BoxNode | undefined) => boolean
-}
-
-/**
- * Properties are partitioned whole rather than recursed into. A top-level property is
- * either entirely static or entirely dynamic, which keeps the reconstructed object a
- * verbatim slice of the source and avoids rebuilding nested conditions by hand.
- */
-export const planPartialFold = (
-  argument: ObjectLiteralExpression,
-  boxNode: BoxNode | undefined,
-  styles: Dict,
-  { ctx, runtimeCss, isAccounted, isStatic }: PartialFoldContext,
-): PartialFold | undefined => {
-  const partition = partitionObject(argument, boxNode, styles, { ctx, runtimeCss, isAccounted, isStatic })
-  if (!partition) return undefined
-
-  const className = runtimeCss(partition.staticStyles)
-
-  // A call may be entirely static plus finite, with nothing left for the runtime, so an
-  // empty class is only a failure when there are no branches to carry either.
-  if (!className && !partition.finite.length) return undefined
-
-  return {
-    className,
-    dynamicText: partition.dynamicText.length ? `{ ${partition.dynamicText.join(', ')} }` : undefined,
-    finite: partition.finite,
-    finiteFirst: partition.finiteFirst,
-  }
-}
-
-/** One property that did not resolve outright, before it is assigned to a half. */
-interface Slot {
-  key: string
-  kind: 'dynamic' | 'finite'
-  /** Source text of the property, used when it goes to the runtime call. */
-  text: string
-  /** The ternary to emit, while this stays finite. */
-  lowered?: string
-  /** A block the recursion split, which therefore appears on both sides legitimately. */
-  split?: boolean
-}
-
-interface Partition {
-  /** Style object for the half that resolves now. */
-  staticStyles: Dict
-  /** Source text of the properties left for the runtime. */
-  dynamicText: string[]
-  /** Ternary expressions for properties with resolvable branches. */
-  finite: string[]
-  /** Whether every ternary is written before every dynamic property. */
-  finiteFirst: boolean
-}
-
-/**
- * Split one object level, recursing into a block that is part static and part dynamic.
- *
- * Without the recursion a single dynamic leaf sends its whole block to the runtime:
- * `{ _hover: { color: 'red.300', bg: p } }` loses the resolved `color` even though
- * nothing about it depends on `p`. That is a precision loss rather than a wrong answer,
- * but it costs exactly the calls a component re-renders most.
- *
- * A class is identified by its condition path *and* its property, so `_hover.color` in
- * one half and `_hover.bg` in the other cannot collide, and neither can `color` against
- * `_hover.color`. Collision is therefore checked per level, among siblings.
- *
- * The static subtree is read from the extracted data rather than rebuilt: the extractor
- * has already dropped the unresolvable leaves, so `styles[key]` for a mixed block is
- * exactly the resolvable part. The dynamic side is taken from source text, so nothing
- * depends on that pruning being complete.
- */
-const partitionObject = (
-  node: ObjectLiteralExpression,
-  boxNode: BoxNode | undefined,
-  styles: Dict,
-  deps: PartialFoldContext,
-  topLevel = true,
-): Partition | undefined => {
-  if (!box.isMap(boxNode)) return undefined
-
-  const { ctx, isAccounted, isStatic } = deps
-  const staticKeys: string[] = []
-  const staticStyles: Dict = {}
-  const seenKeys = new Set<string>()
-  /**
-   * Everything not resolved outright, in source order. Kept as one list because a ternary
-   * that cannot be lowered has to become a runtime property *in its original position*,
-   * and because whether the two kinds interleave is a property of that order.
-   */
-  const slots: Slot[] = []
-
-  for (const property of node.getProperties()) {
-    // A spread contributes keys that cannot be attributed to either half.
-    if (!Node.isPropertyAssignment(property) && !Node.isShorthandPropertyAssignment(property)) return undefined
-
-    const nameNode = property.getNameNode()
-    if (Node.isComputedPropertyName(nameNode)) return undefined
-
-    const key =
-      Node.isStringLiteral(nameNode) || Node.isNumericLiteral(nameNode)
-        ? String(nameNode.getLiteralValue())
-        : nameNode.getText()
-
-    // Object literals are last-wins, so a repeated key means the earlier one is
-    // discarded. A split emits both halves and cannot express that, and the box holds
-    // only the surviving value — so there is no reading of a duplicate that is safe.
-    if (seenKeys.has(key)) return undefined
-    seenKeys.add(key)
-
-    const value = valueOf(property)
-    const valueBox = boxNode.value.get(key)
-
-    // Three separate questions, and only asking the first two is how a ternary gets
-    // folded to its `whenTrue` branch: `styles` is a projection that already picked a
-    // branch, and `accountsForSource` answers "are the declared keys present", not "is
-    // every leaf resolvable". `isStaticBox` is the one that rejects a `conditional` or
-    // `unresolvable` box, including one nested in a responsive array.
-    if (key in styles && isStatic(valueBox) && isAccounted(value, valueBox)) {
-      staticKeys.push(key)
-      staticStyles[key] = styles[key]
-      continue
-    }
-
-    // A ternary is finite rather than dynamic: both branches resolve, so the choice can
-    // be a ternary between two literals instead of a runtime call. Only at this level —
-    // a nested one would need its condition path carried into the class.
-    if (topLevel) {
-      const branches = finiteBranches(key, value, valueBox, deps)
-      if (branches) {
-        slots.push({ key, kind: 'finite', lowered: branches, text: property.getText() })
-        continue
-      }
-    }
-
-    // Part static, part dynamic, and nothing hidden from the box — worth going into.
-    // `isAccounted` is what rules out a spread here: it reports the block as unaccounted
-    // for, and a spread's keys belong to neither half.
-    const nested =
-      value && Node.isObjectLiteralExpression(value) && isAccounted(value, valueBox)
-        ? partitionObject(value, valueBox, (styles[key] ?? {}) as Dict, deps, false)
-        : undefined
-
-    if (nested && Object.keys(nested.staticStyles).length && nested.dynamicText.length) {
-      staticKeys.push(key)
-      staticStyles[key] = nested.staticStyles
-      slots.push({
-        key,
-        kind: 'dynamic',
-        split: true,
-        text: `${property.getNameNode().getText()}: { ${nested.dynamicText.join(', ')} }`,
-      })
-      continue
-    }
-
-    slots.push({ key, kind: 'dynamic', text: property.getText() })
-  }
-
-  // A lowering that cannot be kept sends its property back to the runtime call, rather
-  // than abandoning the split: the static half is still worth hoisting, and every other
-  // declined lowering already falls through to exactly that.
-  const demote = (slot: Slot) => {
-    slot.kind = 'dynamic'
-    slot.lowered = undefined
-  }
-
-  // Only the keys the recursion actually split are exempt from the collision check.
-  // Inferring that from "appears on both sides" was wrong: a duplicated key lands on both
-  // sides too, and exempting it let a discarded property emit classes.
-  const contested = () => slots.filter((slot) => slot.kind === 'dynamic' && !slot.split).map((slot) => slot.key)
-
-  // A finite branch emits a class for its property in both arms, so it collides with the
-  // other halves exactly as a static or dynamic key would — and with the ternaries kept
-  // before it, since two on `mx` and `marginInline` would each emit a class for
-  // margin-inline where the object keeps only the last.
-  // To a fixed point, because demoting one makes it a dynamic key the ones already kept
-  // have not been checked against: `{ mx: a ? … , marginInline: b ? … }` demotes the
-  // second and then the first, ending with neither lowered rather than with a pair that
-  // still emits two classes for margin-inline.
-  for (;;) {
-    const lowered = slots.filter((slot) => slot.kind === 'finite')
-    const dynamic = contested()
-    const offender = lowered.find((slot, index) =>
-      collides([slot.key], [...staticKeys, ...dynamic, ...lowered.slice(0, index).map((kept) => kept.key)], ctx),
-    )
-
-    if (!offender) break
-    demote(offender)
-  }
-
-  // A ternary's condition leaves the object, so it is evaluated relative to the dynamic
-  // values rather than among them. That is expressible while the two do not interleave —
-  // ternaries before the call, or after it. Demoting from the end is what restores it,
-  // and keeps the ternaries that were already on one side.
-  const written = () => slots.map((slot) => (slot.kind === 'finite' ? 'f' : 'd')).join('')
-  while (!/^f*d*$/.test(written()) && !/^d*f*$/.test(written())) {
-    demote(slots.findLast((slot) => slot.kind === 'finite')!)
-  }
-
-  const dynamicText = slots.filter((slot) => slot.kind === 'dynamic').map((slot) => slot.text)
-  const finite = slots.filter((slot) => slot.kind === 'finite').map((slot) => slot.lowered!)
-
-  // Nothing to gain unless something resolves and something is left over. A finite branch
-  // counts as both: it resolves, and it replaces what would have been a call.
-  if (!staticKeys.length && !finite.length) return undefined
-  if (!dynamicText.length && !finite.length) return undefined
-
-  // Last, because a demoted ternary is a dynamic key it did not used to be.
-  if (collides(staticKeys, contested(), ctx)) return undefined
-
-  return { staticStyles, dynamicText, finite, finiteFirst: !written().startsWith('d') }
-}
-
-/**
- * Do the two halves resolve to a shared property?
- *
- * Compared after shorthand resolution, since that is where distinct keys become the same
- * property. An unrecognised key resolves to itself, so two distinct unknown keys are read
- * as distinct — which is right for atomic output, where one class is emitted per key.
- */
-export const collides = (staticKeys: string[], dynamicKeys: string[], ctx: Context): boolean => {
-  // `createCss` does `const { base, ...styles } = obj; Object.assign(styles, base)`, so a
-  // top-level `base` block overrides its siblings whatever they are named. Comparing key
-  // names cannot see that, so its mere presence disqualifies the split.
-  if (staticKeys.includes('base') || dynamicKeys.includes('base')) return true
-
-  const resolve = (key: string) => (ctx.utility.hasShorthand ? ctx.utility.resolveShorthand(key) : key)
-  const resolvedStatic = new Set(staticKeys.map(resolve))
-
-  return dynamicKeys.some((key) => resolvedStatic.has(resolve(key)))
-}
+/** The binding the leaf fold calls, exported by the generated css module. */
+export const LEAF_HELPER = 'cssLeaf'
 
 /**
  * Every name declared at module scope, which is what an added import could collide with.
@@ -804,6 +580,362 @@ const declaredAtModuleScope = (sourceFile: SourceFile): Set<string> => {
 }
 
 /**
+ * The local name an already-imported bamboo binding goes by.
+ *
+ * `ensureCxImport` answers this too, but it also decides whether a *missing* binding can
+ * be added, which needs `getLocals()` — the compiler's binder over the whole module. This
+ * runs for every candidate whether it folds or not, so it stops at what the import
+ * declarations already say and never forces that.
+ */
+export const findBambooBinding = (
+  call: Node,
+  imported: string,
+  isBambooCssModule: (mod: string) => boolean,
+  isShadowed: (call: Node, name: string) => boolean,
+): string | undefined => {
+  for (const declaration of call.getSourceFile().getImportDeclarations()) {
+    if (declaration.isTypeOnly() || !isBambooCssModule(declaration.getModuleSpecifierValue())) continue
+
+    for (const named of declaration.getNamedImports()) {
+      if (named.isTypeOnly() || named.getNameNode().getText() !== imported) continue
+
+      const local = (named.getAliasNode() ?? named.getNameNode()).getText()
+      return isShadowed(call, local) ? undefined : local
+    }
+  }
+
+  return undefined
+}
+
+/**
+ * A value that survives the class pipeline unchanged, so the class built around it is the
+ * prefix and nothing else: no whitespace for `sanitize` to collapse, no `!` for the
+ * important regex, no space for `withoutSpace`, and nothing a token or condition could
+ * plausibly be named.
+ */
+const LEAF_SENTINEL = 'bamboo0leaf0sentinel0'
+
+/**
+ * A property the extractor could not resolve is *open-ended* rather than finite — but its
+ * class is still `prefix + value`, and the prefix is known now.
+ *
+ * `utility.transform` is string construction over a table fixed at build time, and
+ * nothing consults which rules were emitted. So `css({ color: tone })` already returns
+ * `c_<tone>` for a value the extractor never saw, with no CSS behind it. Emitting that
+ * string directly cannot be less correct than the call it replaces.
+ *
+ * The prefix is read off the real implementation rather than rebuilt: resolving a
+ * sentinel through `runtimeCss` applies the shorthand table and the utility's class name
+ * in one step. It also self-gates — a hashed or grouped class does not contain the
+ * sentinel, so both modes decline here without this having to read the config.
+ *
+ * Top level only, like the finite lowering beside it. A nested leaf's class carries its
+ * condition path, which the prefix would describe correctly — but the helper's fallback
+ * rebuilds `{ [prop]: value }` to hand back to `css()`, and that reconstruction has to
+ * carry the same path or the declined shape resolves without its condition.
+ */
+const dynamicLeaf = (key: string, value: Node | undefined, deps: PartialFoldContext): string | undefined => {
+  if (!deps.allowLeaf || !value || deps.ctx.isTemplateLiteralSyntax) return undefined
+
+  // A condition key names a block, not a declaration. Its value is an object in every
+  // real use, which `leafClass` declines at runtime — so lowering one only buys a wasted
+  // call before the fallback, and gives it a prefix (`_hover_`) that describes a shape
+  // nobody writes.
+  if (deps.ctx.conditions.isCondition(key)) return undefined
+
+  // Written as an object or an array, this is a condition block or a responsive list:
+  // one class per entry rather than one class. The runtime shapes that do the same are
+  // caught by `leafClass`, which declines them back to `css()`.
+  const inner = unwrapExpression(value)
+  if (Node.isObjectLiteralExpression(inner) || Node.isArrayLiteralExpression(inner)) return undefined
+
+  let resolved: string
+  try {
+    resolved = deps.runtimeCss({ [key]: LEAF_SENTINEL })
+  } catch {
+    return undefined
+  }
+
+  if (!resolved.endsWith(LEAF_SENTINEL)) return undefined
+
+  const prefix = resolved.slice(0, -LEAF_SENTINEL.length)
+  // A space means the property resolved to more than one class, so no single prefix
+  // describes it. An empty prefix means it resolved to nothing recognisable.
+  if (!prefix || prefix.includes(' ')) return undefined
+
+  return `${deps.leafName ?? LEAF_HELPER}(${JSON.stringify(prefix)}, ${JSON.stringify(key)}, ${value.getText()})`
+}
+
+export interface PartialFoldContext {
+  ctx: Context
+  runtimeCss: (...styles: Dict[]) => string
+  /** Whether a property's value is fully accounted for by the extractor. */
+  isAccounted: (value: Node | undefined, boxNode: BoxNode | undefined) => boolean
+  /** Whether every leaf under a box carries a known value. */
+  isStatic: (boxNode: BoxNode | undefined) => boolean
+  /**
+   * Whether an open-ended leaf may be lowered. False when the helper it calls cannot be
+   * imported into this file, which leaves those properties in the runtime call rather
+   * than abandoning the split that hoists the static half.
+   */
+  allowLeaf?: boolean
+  /**
+   * The name to call the leaf helper by. Not always `cssLeaf`: a file that already
+   * imports it under an alias has to be called through that alias, since the emitted
+   * call has to resolve against the binding this module actually has.
+   */
+  leafName?: string
+}
+
+/**
+ * Properties are partitioned whole rather than recursed into. A top-level property is
+ * either entirely static or entirely dynamic, which keeps the reconstructed object a
+ * verbatim slice of the source and avoids rebuilding nested conditions by hand.
+ */
+export const planPartialFold = (
+  argument: ObjectLiteralExpression,
+  boxNode: BoxNode | undefined,
+  styles: Dict,
+  deps: PartialFoldContext,
+): PartialFold | undefined => {
+  const partition = partitionObject(argument, boxNode, styles, deps)
+  if (!partition) return undefined
+
+  const className = deps.runtimeCss(partition.staticStyles)
+
+  // A call may be entirely static plus finite, with nothing left for the runtime, so an
+  // empty class is only a failure when there are no branches to carry either.
+  if (!className && !partition.finite.length) return undefined
+
+  return {
+    className,
+    dynamicText: partition.dynamicText.length ? `{ ${partition.dynamicText.join(', ')} }` : undefined,
+    finite: partition.finite,
+    finiteFirst: partition.finiteFirst,
+  }
+}
+
+/** One property that did not resolve outright, before it is assigned to a half. */
+interface Slot {
+  key: string
+  kind: 'dynamic' | 'finite'
+  /** Source text of the property, used when it goes to the runtime call. */
+  text: string
+  /** The expression to emit, while this stays finite. */
+  lowered?: Lowered
+  /** A block the recursion split, which therefore appears on both sides legitimately. */
+  split?: boolean
+}
+
+interface Partition {
+  /** Style object for the half that resolves now. */
+  staticStyles: Dict
+  /** Source text of the properties left for the runtime. */
+  dynamicText: string[]
+  /** Expressions for properties lowered rather than left in the runtime call. */
+  finite: Lowered[]
+  /** Whether every ternary is written before every dynamic property. */
+  finiteFirst: boolean
+}
+
+/**
+ * Split one object level, recursing into a block that is part static and part dynamic.
+ *
+ * Without the recursion a single dynamic leaf sends its whole block to the runtime:
+ * `{ _hover: { color: 'red.300', bg: p } }` loses the resolved `color` even though
+ * nothing about it depends on `p`. That is a precision loss rather than a wrong answer,
+ * but it costs exactly the calls a component re-renders most.
+ *
+ * A class is identified by its condition path *and* its property, so `_hover.color` in
+ * one half and `_hover.bg` in the other cannot collide, and neither can `color` against
+ * `_hover.color`. Collision is therefore checked per level, among siblings.
+ *
+ * The static subtree is read from the extracted data rather than rebuilt: the extractor
+ * has already dropped the unresolvable leaves, so `styles[key]` for a mixed block is
+ * exactly the resolvable part. The dynamic side is taken from source text, so nothing
+ * depends on that pruning being complete.
+ */
+const partitionObject = (
+  node: ObjectLiteralExpression,
+  boxNode: BoxNode | undefined,
+  styles: Dict,
+  deps: PartialFoldContext,
+  topLevel = true,
+): Partition | undefined => {
+  if (!box.isMap(boxNode)) return undefined
+
+  const { ctx, isAccounted, isStatic } = deps
+  const staticKeys: string[] = []
+  const staticStyles: Dict = {}
+  const seenKeys = new Set<string>()
+  /**
+   * Everything not resolved outright, in source order. Kept as one list because a ternary
+   * that cannot be lowered has to become a runtime property *in its original position*,
+   * and because whether the two kinds interleave is a property of that order.
+   */
+  const slots: Slot[] = []
+
+  for (const property of node.getProperties()) {
+    // A spread contributes keys that cannot be attributed to either half.
+    if (!Node.isPropertyAssignment(property) && !Node.isShorthandPropertyAssignment(property)) return undefined
+
+    const nameNode = property.getNameNode()
+    if (Node.isComputedPropertyName(nameNode)) return undefined
+
+    const key =
+      Node.isStringLiteral(nameNode) || Node.isNumericLiteral(nameNode)
+        ? String(nameNode.getLiteralValue())
+        : nameNode.getText()
+
+    // Object literals are last-wins, so a repeated key means the earlier one is
+    // discarded. A split emits both halves and cannot express that, and the box holds
+    // only the surviving value — so there is no reading of a duplicate that is safe.
+    if (seenKeys.has(key)) return undefined
+    seenKeys.add(key)
+
+    const value = valueOf(property)
+    const valueBox = boxNode.value.get(key)
+
+    // Three separate questions, and only asking the first two is how a ternary gets
+    // folded to its `whenTrue` branch: `styles` is a projection that already picked a
+    // branch, and `accountsForSource` answers "are the declared keys present", not "is
+    // every leaf resolvable". `isStaticBox` is the one that rejects a `conditional` or
+    // `unresolvable` box, including one nested in a responsive array.
+    if (key in styles && isStatic(valueBox) && isAccounted(value, valueBox)) {
+      staticKeys.push(key)
+      staticStyles[key] = styles[key]
+      continue
+    }
+
+    // A ternary is finite rather than dynamic: both branches resolve, so the choice can
+    // be a ternary between two literals instead of a runtime call. Only at this level —
+    // a nested one would need its condition path carried into the class.
+    if (topLevel) {
+      const branches = finiteBranches(key, value, valueBox, deps)
+      if (branches) {
+        slots.push({
+          key,
+          kind: 'finite',
+          lowered: { expression: branches, emitsLiterals: true },
+          text: property.getText(),
+        })
+        continue
+      }
+
+      // Not finite, but still lowerable: an open-ended value whose class is the prefix
+      // resolved here plus whatever it holds at runtime. Lowered as `finite` because it
+      // is the same thing to everything downstream — one property, replaced by one
+      // expression that emits one class, evaluated where it was written.
+      const leaf = dynamicLeaf(key, value, deps)
+      if (leaf) {
+        slots.push({
+          key,
+          kind: 'finite',
+          lowered: { expression: leaf, emitsLiterals: false },
+          text: property.getText(),
+        })
+        continue
+      }
+    }
+
+    // Part static, part dynamic, and nothing hidden from the box — worth going into.
+    // `isAccounted` is what rules out a spread here: it reports the block as unaccounted
+    // for, and a spread's keys belong to neither half.
+    const nested =
+      value && Node.isObjectLiteralExpression(value) && isAccounted(value, valueBox)
+        ? partitionObject(value, valueBox, (styles[key] ?? {}) as Dict, deps, false)
+        : undefined
+
+    if (nested && Object.keys(nested.staticStyles).length && nested.dynamicText.length) {
+      staticKeys.push(key)
+      staticStyles[key] = nested.staticStyles
+      slots.push({
+        key,
+        kind: 'dynamic',
+        split: true,
+        text: `${property.getNameNode().getText()}: { ${nested.dynamicText.join(', ')} }`,
+      })
+      continue
+    }
+
+    slots.push({ key, kind: 'dynamic', text: property.getText() })
+  }
+
+  // A lowering that cannot be kept sends its property back to the runtime call, rather
+  // than abandoning the split: the static half is still worth hoisting, and every other
+  // declined lowering already falls through to exactly that.
+  const demote = (slot: Slot) => {
+    slot.kind = 'dynamic'
+    slot.lowered = undefined
+  }
+
+  // Only the keys the recursion actually split are exempt from the collision check.
+  // Inferring that from "appears on both sides" was wrong: a duplicated key lands on both
+  // sides too, and exempting it let a discarded property emit classes.
+  const contested = () => slots.filter((slot) => slot.kind === 'dynamic' && !slot.split).map((slot) => slot.key)
+
+  // A finite branch emits a class for its property in both arms, so it collides with the
+  // other halves exactly as a static or dynamic key would — and with the ternaries kept
+  // before it, since two on `mx` and `marginInline` would each emit a class for
+  // margin-inline where the object keeps only the last.
+  // To a fixed point, because demoting one makes it a dynamic key the ones already kept
+  // have not been checked against: `{ mx: a ? … , marginInline: b ? … }` demotes the
+  // second and then the first, ending with neither lowered rather than with a pair that
+  // still emits two classes for margin-inline.
+  for (;;) {
+    const lowered = slots.filter((slot) => slot.kind === 'finite')
+    const dynamic = contested()
+    const offender = lowered.find((slot, index) =>
+      collides([slot.key], [...staticKeys, ...dynamic, ...lowered.slice(0, index).map((kept) => kept.key)], ctx),
+    )
+
+    if (!offender) break
+    demote(offender)
+  }
+
+  // A ternary's condition leaves the object, so it is evaluated relative to the dynamic
+  // values rather than among them. That is expressible while the two do not interleave —
+  // ternaries before the call, or after it. Demoting from the end is what restores it,
+  // and keeps the ternaries that were already on one side.
+  const written = () => slots.map((slot) => (slot.kind === 'finite' ? 'f' : 'd')).join('')
+  while (!/^f*d*$/.test(written()) && !/^d*f*$/.test(written())) {
+    demote(slots.findLast((slot) => slot.kind === 'finite')!)
+  }
+
+  const dynamicText = slots.filter((slot) => slot.kind === 'dynamic').map((slot) => slot.text)
+  const finite = slots.filter((slot) => slot.kind === 'finite').map((slot) => slot.lowered!)
+
+  // Nothing to gain unless something resolves and something is left over. A finite branch
+  // counts as both: it resolves, and it replaces what would have been a call.
+  if (!staticKeys.length && !finite.length) return undefined
+  if (!dynamicText.length && !finite.length) return undefined
+
+  // Last, because a demoted ternary is a dynamic key it did not used to be.
+  if (collides(staticKeys, contested(), ctx)) return undefined
+
+  return { staticStyles, dynamicText, finite, finiteFirst: !written().startsWith('d') }
+}
+
+/**
+ * Do the two halves resolve to a shared property?
+ *
+ * Compared after shorthand resolution, since that is where distinct keys become the same
+ * property. An unrecognised key resolves to itself, so two distinct unknown keys are read
+ * as distinct — which is right for atomic output, where one class is emitted per key.
+ */
+export const collides = (staticKeys: string[], dynamicKeys: string[], ctx: Context): boolean => {
+  // `createCss` does `const { base, ...styles } = obj; Object.assign(styles, base)`, so a
+  // top-level `base` block overrides its siblings whatever they are named. Comparing key
+  // names cannot see that, so its mere presence disqualifies the split.
+  if (staticKeys.includes('base') || dynamicKeys.includes('base')) return true
+
+  const resolve = (key: string) => (ctx.utility.hasShorthand ? ctx.utility.resolveShorthand(key) : key)
+  const resolvedStatic = new Set(staticKeys.map(resolve))
+
+  return dynamicKeys.some((key) => resolvedStatic.has(resolve(key)))
+}
+
+/**
  * The `cx` binding to call, adding it to the import that already brings in the style
  * helper when it is not there yet.
  *
@@ -817,8 +949,11 @@ export const ensureCxImport = (
   isBambooCssModule: (mod: string) => boolean,
   isGeneratedCssModule: (mod: string) => boolean,
   isShadowed: (call: Node, name: string) => boolean,
-): { name: string; insert?: { pos: number; text: string } } | undefined => {
+  extra: string[] = [],
+): { name: string; names: Record<string, string>; insert?: { pos: number; names: string[] } } | undefined => {
   const sourceFile = call.getSourceFile()
+  const wanted = ['cx', ...extra]
+  const resolved: Record<string, string> = {}
 
   let host: ReturnType<typeof sourceFile.getImportDeclarations>[number] | undefined
 
@@ -827,19 +962,24 @@ export const ensureCxImport = (
 
     for (const named of declaration.getNamedImports()) {
       const local = (named.getAliasNode() ?? named.getNameNode()).getText()
+      const imported = named.getNameNode().getText()
 
-      if (named.getNameNode().getText() === 'cx') {
-        // A `cx` that is not bamboo's, or is erased at runtime, or is shadowed where the
-        // call sits, would be called instead of the concatenation this relies on.
+      // First occurrence wins, matching the single-binding lookup this replaced.
+      if (wanted.includes(imported) && !(imported in resolved)) {
+        // A binding that is not bamboo's, or is erased at runtime, or is shadowed where
+        // the call sits, would be called instead of the one this relies on.
         if (declaration.isTypeOnly() || named.isTypeOnly()) return undefined
         if (!isBambooCssModule(mod)) return undefined
         if (isShadowed(call, local)) return undefined
-        return { name: local }
+        resolved[imported] = local
       }
 
       if (local === calleeRoot) host = declaration
     }
   }
+
+  const missing = wanted.filter((name) => !(name in resolved))
+  if (!missing.length) return { name: resolved.cx!, names: resolved }
 
   if (!host) return undefined
 
@@ -848,14 +988,19 @@ export const ensureCxImport = (
   // wrapper re-exporting `css` need not re-export `cx`.
   if (!isGeneratedCssModule(host.getModuleSpecifierValue())) return undefined
 
-  // A module-scope `cx` would collide with the binding being added, and one in scope at
-  // the call site would be reached instead of it.
-  if (isShadowed(call, 'cx') || declaredAtModuleScope(sourceFile).has('cx')) return undefined
+  // A module-scope binding of the same name would collide with the one being added, and
+  // one in scope at the call site would be reached instead of it.
+  const declared = declaredAtModuleScope(sourceFile)
+
+  for (const name of missing) {
+    if (declared.has(name) || isShadowed(call, name)) return undefined
+    resolved[name] = name
+  }
 
   const last = host.getNamedImports().at(-1)
   if (!last) return undefined
 
-  return { name: 'cx', insert: { pos: last.getEnd(), text: ', cx' } }
+  return { name: resolved.cx!, names: resolved, insert: { pos: last.getEnd(), names: missing } }
 }
 
 /**
@@ -873,7 +1018,7 @@ export const resolveCssHelpers = (
   isBambooCssModule: (mod: string) => boolean,
   isGeneratedCssModule: (mod: string) => boolean,
   isShadowed: (node: Node, name: string) => boolean,
-): { css: string; cx: string; insert?: { pos: number; text: string } } | undefined => {
+): { css: string; cx: string; insert?: { pos: number; names: string[] } } | undefined => {
   const sourceFile = node.getSourceFile()
 
   for (const declaration of sourceFile.getImportDeclarations()) {
@@ -904,7 +1049,7 @@ export const resolveCssHelpers = (
     const last = named.at(-1)
     if (!last) return undefined
 
-    return { css: cssName, cx: 'cx', insert: { pos: last.getEnd(), text: ', cx' } }
+    return { css: cssName, cx: 'cx', insert: { pos: last.getEnd(), names: ['cx'] } }
   }
 
   return undefined

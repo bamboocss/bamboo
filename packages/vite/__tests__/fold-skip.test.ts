@@ -42,11 +42,13 @@ const skipCases: Array<{ name: string; code: string; reason?: string }> = [
     `,
   },
   {
-    name: 'runtime variable value',
+    // A bare `color: tone` lowers to the leaf helper now. A responsive array does not:
+    // it expands to one class per breakpoint, which no single prefix describes.
+    name: 'runtime variable in a responsive array',
     reason: 'dynamic',
     code: `
       import { css } from 'styled-system/css'
-      export const make = (tone) => css({ color: tone })
+      export const make = (tone, other) => css({ color: [tone, other] })
     `,
   },
   {
@@ -59,12 +61,13 @@ const skipCases: Array<{ name: string; code: string; reason?: string }> = [
   },
   {
     // A ternary between two resolvable values lowers to a ternary between two classes;
-    // one unresolvable branch makes the choice infinite again.
-    name: 'ternary with a dynamic branch',
+    // one unresolvable branch makes the choice infinite again. At the top level it would
+    // still lower as a leaf, so this is nested, where neither mechanism applies.
+    name: 'ternary with a dynamic branch inside a condition',
     reason: 'dynamic',
     code: `
       import { css } from 'styled-system/css'
-      export const make = (on, tone) => css({ color: on ? 'red.300' : tone })
+      export const make = (on, tone) => css({ _hover: { color: on ? 'red.300' : tone } })
     `,
   },
   {
@@ -84,11 +87,11 @@ const skipCases: Array<{ name: string; code: string; reason?: string }> = [
     `,
   },
   {
-    name: 'value from a function call',
+    name: 'value from a function call in a responsive array',
     reason: 'dynamic',
     code: `
       import { css } from 'styled-system/css'
-      export const make = (n) => css({ padding: compute(n) })
+      export const make = (n) => css({ padding: [compute(n), '2'] })
     `,
   },
   {
@@ -126,14 +129,14 @@ describe('mixed modules', () => {
     const code = `
       import { css } from 'styled-system/css'
       export const fixed = css({ color: 'red.300' })
-      export const dynamic = (tone) => css({ color: tone })
+      export const dynamic = (tone, other) => css({ color: [tone, other] })
     `
 
     const result = fold(code)
 
     expect(result.folded).toHaveLength(1)
     expect(result.code).toContain('export const fixed = "c_red.300"')
-    expect(result.code).toContain('export const dynamic = (tone) => css({ color: tone })')
+    expect(result.code).toContain('export const dynamic = (tone, other) => css({ color: [tone, other] })')
   })
 
   test('css.raw beside a foldable css() does not confuse the fold', () => {

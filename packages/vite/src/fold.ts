@@ -5,7 +5,14 @@ import type { Dict, ParserResultInterface, ResultItem } from '@bamboocss/types'
 import MagicString from 'magic-string'
 import { Node, type SourceFile } from 'ts-morph'
 import { type JsxEdit, planJsxFold, planPatternFold } from './fold-jsx'
-import { accountsForSource, ensureCxImport, isStaticBox, planPartialFold } from './fold-partial'
+import {
+  accountsForSource,
+  ensureCxImport,
+  findBambooBinding,
+  isStaticBox,
+  LEAF_HELPER,
+  planPartialFold,
+} from './fold-partial'
 import { createRuntimeCss, createRuntimeRecipe, type RuntimeCss } from './runtime-css'
 
 /**
@@ -392,6 +399,8 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     // bug that made ternaries unsafe here before.
     const unboxed = box.isMap(item.box) ? (unbox(item.box) as { raw?: Dict; spreadConditions?: unknown[] }) : undefined
     if (!unboxed?.raw) return undefined
+    // Bound so the narrowing survives into the planning closure below.
+    const raw = unboxed.raw
 
     // A spread whose contribution could not be attributed is still out of reach.
     if (unboxed.spreadConditions?.length) return undefined
@@ -399,22 +408,52 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     const argument = args[0]
     if (!argument || !Node.isObjectLiteralExpression(argument)) return undefined
 
-    let plan: ReturnType<typeof planPartialFold>
-    try {
-      plan = planPartialFold(argument, item.box, unboxed.raw, {
-        ctx,
-        runtimeCss,
-        isAccounted: accountsForSource,
-        isStatic: (boxNode) => isStaticBox(boxNode),
-      })
-    } catch {
-      // The whole-call path downgrades a throwing resolve to a skip; do the same here
-      // rather than letting one call take down the file.
-      return undefined
+    // The local name an already-imported leaf helper goes by, so a plan can call it by the
+    // name this file gave it. A scan of the import declarations only — no binder — because
+    // this runs for every candidate, foldable or not.
+    const leafName = findBambooBinding(call, LEAF_HELPER, isBambooCssModule, isShadowed)
+
+    const plan_ = (allowLeaf: boolean) => {
+      try {
+        return planPartialFold(argument, item.box, raw, {
+          ctx,
+          runtimeCss,
+          isAccounted: accountsForSource,
+          isStatic: (boxNode) => isStaticBox(boxNode),
+          allowLeaf,
+          leafName: leafName ?? LEAF_HELPER,
+        })
+      } catch {
+        // The whole-call path downgrades a throwing resolve to a skip; do the same here
+        // rather than letting one call take down the file.
+        return undefined
+      }
     }
+
+    // Planned before the bindings are resolved, because resolving them can mean adding one,
+    // and that decision is only needed once a plan exists. The rare case where a lowered
+    // leaf turns out to be unimportable re-plans without it, which keeps the static half
+    // rather than abandoning the split.
+    let plan = plan_(true)
     if (!plan) return undefined
 
-    const cx = ensureCxImport(call, rootName, isBambooCssModule, isGeneratedCssModule, isShadowed)
+    const usesLeaf = () => plan!.finite.some((entry) => !entry.emitsLiterals)
+
+    let cx = ensureCxImport(
+      call,
+      rootName,
+      isBambooCssModule,
+      isGeneratedCssModule,
+      isShadowed,
+      usesLeaf() ? [LEAF_HELPER] : [],
+    )
+
+    if (!cx && usesLeaf()) {
+      plan = plan_(false)
+      if (!plan) return undefined
+      cx = ensureCxImport(call, rootName, isBambooCssModule, isGeneratedCssModule, isShadowed)
+    }
+
     if (!cx) return undefined
 
     const callee = call.getExpression().getText()
@@ -424,12 +463,13 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     // call that is entirely static plus finite emits no `css()` at all.
     const runtimePart = plan.dynamicText ? `${callee}(${plan.dynamicText})` : undefined
     const runtimeParts = runtimePart ? [runtimePart] : []
+    const lowered = plan.finite.map((entry) => entry.expression)
     const parts = [
       // The literal first: it holds no expressions, so it cannot be observed out of order.
       ...(plan.className ? [JSON.stringify(plan.className)] : []),
       // The rest keeps the order the properties were written in, since a condition and a
       // dynamic value are both arbitrary expressions.
-      ...(plan.finiteFirst ? [...plan.finite, ...runtimeParts] : [...runtimeParts, ...plan.finite]),
+      ...(plan.finiteFirst ? [...lowered, ...runtimeParts] : [...runtimeParts, ...lowered]),
     ]
 
     // Nothing gained if the only thing produced is the call that was already there. A
@@ -441,8 +481,13 @@ export const foldSource = (options: FoldOptions): FoldResult => {
 
     return {
       className: plan.className,
-      // Both arms of every ternary, so nothing the fold wrote is invisible downstream.
-      classNames: [plan.className, ...plan.finite.flatMap(literalsIn)].filter(Boolean),
+      // Both arms of every ternary, so nothing the fold wrote is invisible downstream. A
+      // lowered leaf contributes nothing: its literals are a class prefix and a property
+      // name, and the class it builds is only known at runtime.
+      classNames: [
+        plan.className,
+        ...plan.finite.filter((entry) => entry.emitsLiterals).flatMap((entry) => literalsIn(entry.expression)),
+      ].filter(Boolean),
       replacement: `${cx.name}(${parts.join(', ')})`,
       insert: cx.insert,
     }
@@ -518,7 +563,8 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     classNames?: string[]
     /** Replacement text for a partially folded call, in place of a bare class string. */
     replacement?: string
-    insert?: { pos: number; text: string }
+    /** Bindings to add to an existing import, by name so duplicates can be dropped. */
+    insert?: { pos: number; names: string[] }
     node: Node
     start: number
     end: number
@@ -661,7 +707,25 @@ export const foldSource = (options: FoldOptions): FoldResult => {
   candidates.sort((a, b) => a.start - b.start || b.end - a.end)
 
   const magic = new MagicString(code)
-  let insertedCx = false
+
+  // Which bindings have already been added, for the whole module rather than per insertion
+  // point. A module-level binding is in scope everywhere in the file, so one is enough
+  // however many calls need it — and a file importing the css module twice has two
+  // insertion points, which keyed per position would each get their own `cx` and emit
+  // `Identifier 'cx' has already been declared`.
+  //
+  // Tracked by name rather than as a single flag, because calls in the same file need
+  // different sets: one needs `cx` alone, the next also needs the leaf helper.
+  const insertedNames = new Set<string>()
+  const applyInsert = (insert: { pos: number; names: string[] } | undefined) => {
+    if (!insert) return
+
+    const missing = insert.names.filter((name) => !insertedNames.has(name))
+    if (!missing.length) return
+
+    magic.appendLeft(insert.pos, missing.map((name) => `, ${name}`).join(''))
+    for (const name of missing) insertedNames.add(name)
+  }
 
   // Applied edit ranges, not candidate ranges. A `styled.*` element only rewrites its two
   // tags, so anything between them — a nested element, a `css()` call in the children —
@@ -686,12 +750,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
 
     if (candidate.replacement) {
       magic.overwrite(start, end, candidate.replacement)
-      // One insert per file however many calls split, or the module ends up with
-      // `import { css, cx, cx }` and does not parse.
-      if (candidate.insert && !insertedCx) {
-        magic.appendLeft(candidate.insert.pos, candidate.insert.text)
-        insertedCx = true
-      }
+      applyInsert(candidate.insert)
       applied.push(...ranges)
       folded.push({
         name,
@@ -706,10 +765,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
 
     if (candidate.edits) {
       for (const edit of candidate.edits) magic.overwrite(edit.start, edit.end, edit.text)
-      if (candidate.insert && !insertedCx) {
-        magic.appendLeft(candidate.insert.pos, candidate.insert.text)
-        insertedCx = true
-      }
+      applyInsert(candidate.insert)
       applied.push(...ranges)
       folded.push({
         name,

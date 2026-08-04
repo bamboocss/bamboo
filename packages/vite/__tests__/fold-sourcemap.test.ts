@@ -18,9 +18,10 @@ describe('source maps', () => {
   test('no map is produced when nothing folds', () => {
     const { fold } = createFoldFixture()
 
+    // A responsive array, since a bare `color: tone` lowers to the leaf helper now.
     const result = fold(`
       import { css } from 'styled-system/css'
-      export const make = (tone) => css({ color: tone })
+      export const make = (tone, other) => css({ color: [tone, other] })
     `)
 
     expect(result.map).toBeNull()

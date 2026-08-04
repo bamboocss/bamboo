@@ -2,7 +2,7 @@ import { isObject } from './assert'
 import { compact } from './compact'
 import { filterBaseConditions } from './condition'
 import { toHash } from './hash'
-import { isImportant, withoutImportant } from './important'
+import { isImportant, sanitize, withoutImportant } from './important'
 import { memo } from './memo'
 import { mergeProps } from './merge-props'
 import { normalizeStyleObject } from './normalize-style-object'
@@ -36,8 +36,6 @@ const fallbackCondition: NonNullable<CreateCssContext['conditions']> = {
   finalize: (v) => v,
   breakpoints: { keys: [] },
 }
-
-const sanitize = (value: any) => (typeof value === 'string' ? value.replaceAll(/[\n\s]+/g, ' ') : value)
 
 const ENTRY_SEP = ']___['
 const COND_SEP = '<___>'
