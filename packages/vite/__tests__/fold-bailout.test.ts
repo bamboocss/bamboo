@@ -10,8 +10,11 @@ import { createFoldFixture } from './fixture'
  * of the whole call bailing. Those two cases were updated in place, and the detailed
  * coverage of the split lives in `fold-partial.test.ts`.
  *
- * What remains here is the spread rule and the shapes that still bail outright. Read this
- * file as "these must never fold", not as the full tripwire for partial folding.
+ * What remains here is the spread rule and the shapes that still bail outright — plus the
+ * one case that still reaches `accountsForSource` through the partial path, since after
+ * the split landed most nested shapes are rejected earlier, for having no static key at
+ * all. Read this file as "these must never fold", with the split's own coverage in
+ * `fold-partial.test.ts`.
  *
  * A wrong fold is silent. It does not throw, it does not fail a build, it ships a
  * component with missing styles. That asymmetry is why the declining cases get more
@@ -74,6 +77,20 @@ describe('partially dynamic objects', () => {
 
   test('a dynamic value inside a nested selector bails', () => {
     expectUnchanged(withImport(`export const f = (t) => css({ '& > p': { color: t } })`))
+  })
+
+  test('a spread nested under a static sibling is routed to the runtime, not absorbed', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(
+      withImport(`export const f = (rest) => css({ padding: '2', _hover: { color: 'red.300', ...rest } })`),
+    )
+
+    // The one shape that still reaches `accountsForSource` through the partial path. The
+    // `_hover` box looks fully resolvable — the spread contributed nothing to it — so
+    // only comparing it against the source reveals that something is missing. That check
+    // is what sends `_hover` to the dynamic half; without it the split would keep the
+    // resolved half of `_hover` and drop whatever `rest` carried.
+    expect(result.code).toContain(`cx("p_2", css({ _hover: { color: 'red.300', ...rest } }))`)
   })
 
   test('a member expression value bails', () => {

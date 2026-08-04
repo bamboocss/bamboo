@@ -521,7 +521,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     }
     if (!plan) return undefined
 
-    const cx = ensureCxImport(call, rootName, isBambooCssModule, isShadowed)
+    const cx = ensureCxImport(call, rootName, isBambooCssModule, isGeneratedCssModule, isShadowed)
     if (!cx) return undefined
 
     const callee = call.getExpression().getText()
@@ -548,6 +548,16 @@ export const foldSource = (options: FoldOptions): FoldResult => {
    * diagnostics from a genuinely dynamic call.
    */
   const cssModules = ctx.imports.matchers.css?.mods ?? []
+
+  /**
+   * The generated css module, the only one whose exports are known.
+   *
+   * A configured `importMap.css` points at the user's own wrapper, and a wrapper that
+   * re-exports `css` need not re-export `cx` — adding one there imports a binding that
+   * may not exist. Reusing a `cx` the user already imported from it stays fine, since
+   * that binding demonstrably resolves; only *adding* one is restricted.
+   */
+  const generatedCssModule = [ctx.imports.outdir, 'css'].join('/')
   const pathMappings = ctx.conf.tsOptions?.pathMappings
   const trim = (value: string) =>
     value
@@ -555,7 +565,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       .replace(/^(?:\.\.?\/)+/, '')
       .replace(/\/$/, '')
 
-  const isBambooCssModule = (mod: string) => {
+  const matchesModule = (mod: string, entries: string[]) => {
     const candidates = [mod]
 
     if (pathMappings) {
@@ -566,14 +576,17 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     return candidates.some((candidate) => {
       const normalized = trim(candidate)
 
-      return cssModules.some((entry) => {
+      return entries.some((entry) => {
         const target = trim(entry)
-        // An alias resolves to an absolute path, so the configured entry is compared as
-        // the tail of it rather than as the whole string.
+        // An alias resolves to a path rather than the configured entry, so the entry is
+        // compared as its tail rather than as the whole string.
         return normalized === target || normalized.endsWith(`/${target}`)
       })
     })
   }
+
+  const isBambooCssModule = (mod: string) => matchesModule(mod, cssModules)
+  const isGeneratedCssModule = (mod: string) => matchesModule(mod, [generatedCssModule])
 
   const folded: FoldedCall[] = []
   const skipped: SkippedCall[] = []

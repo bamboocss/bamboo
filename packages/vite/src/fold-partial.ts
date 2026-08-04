@@ -139,6 +139,7 @@ export const ensureCxImport = (
   call: Node,
   calleeRoot: string,
   isBambooCssModule: (mod: string) => boolean,
+  isGeneratedCssModule: (mod: string) => boolean,
   isShadowed: (call: Node, name: string) => boolean,
 ): { name: string; insert?: { pos: number; text: string } } | undefined => {
   const sourceFile = call.getSourceFile()
@@ -166,12 +167,10 @@ export const ensureCxImport = (
 
   if (!host) return undefined
 
-  // Inserting only works if that module actually exports `cx`, and `ImportMap.match` is
-  // too loose to answer that: it is substring-based, so `styled-system/css/css` matches
-  // the css entry while exporting no `cx` at all, and the recipe and pattern matchers
-  // accept any name so their modules match too. An exact specifier is the only form
-  // that can be vouched for.
-  if (!isBambooCssModule(host.getModuleSpecifierValue())) return undefined
+  // Adding an import is only safe against the module whose exports are known — the one
+  // bamboo generates. A configured `importMap.css` names the user's own wrapper, and a
+  // wrapper re-exporting `css` need not re-export `cx`.
+  if (!isGeneratedCssModule(host.getModuleSpecifierValue())) return undefined
 
   // A local `cx` anywhere in scope would collide with the binding being added, or be
   // reached instead of it. `getLocals` is compiler internals that ts-morph documents as

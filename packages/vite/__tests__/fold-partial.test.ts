@@ -308,3 +308,31 @@ describe('tsconfig path aliases', () => {
     expect(fold(code).folded).toHaveLength(0)
   })
 })
+
+describe('a configured importMap wrapper', () => {
+  /**
+   * `importMap.css` points at the user's own module. A wrapper that re-exports `css` need
+   * not re-export `cx`, so adding one there imports a binding that may not exist — the
+   * same failure class as the deep-path case, reached a different way.
+   */
+  const wrapped = () => createFoldFixture({ importMap: { css: ['@/lib/style'] } } as never)
+
+  test('cx is not added to a wrapper module', () => {
+    const { fold } = wrapped()
+    const code = `import { css } from '@/lib/style'\nexport const f = (p) => css({ color: 'red.300', padding: p })\n`
+
+    expect(fold(code).folded).toHaveLength(0)
+    expect(fold(code).code).toBe(code)
+  })
+
+  test('a cx the user already imported from the wrapper is reused', () => {
+    const { fold } = wrapped()
+    const result = fold(
+      `import { css, cx } from '@/lib/style'\nexport const f = (p) => css({ color: 'red.300', padding: p })\n`,
+    )
+
+    // That binding demonstrably resolves, so only *adding* one is restricted.
+    expect(result.folded).toHaveLength(1)
+    expect(result.code).toContain('cx("c_red.300"')
+  })
+})
