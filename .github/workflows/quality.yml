@@ -39,6 +39,33 @@ jobs:
       - name: Run tests
         run: pnpm test && pnpm test:codegen
 
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install
+        uses: ./.github/composite-actions/install
+
+      # `pnpm install` runs `prepare`, which is `build-fast` -- no type declarations and
+      # none of the `postbuild` steps that write the prebuilt artifacts under
+      # `packages/generator/src/artifacts/generated`. So nothing here exercises the full
+      # build, and a broken postbuild script leaves CI green.
+      - name: Run build
+        run: pnpm build
+
+      # Those artifacts and `packages/studio/styled-system` are generated *and* tracked,
+      # so a build that regenerates them differently means the committed copies are
+      # stale. Left unchecked they flip back and forth on every build.
+      - name: Check generated output is committed
+        run: |
+          if ! git diff --exit-code; then
+            echo "::error::Generated output differs after a build. Run 'pnpm build' and commit the result."
+            exit 1
+          fi
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
