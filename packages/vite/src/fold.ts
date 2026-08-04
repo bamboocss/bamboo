@@ -1,3 +1,4 @@
+import { resolveTsPathPattern } from '@bamboocss/config/ts-path'
 import type { Context } from '@bamboocss/core'
 import { type BoxNode, box } from '@bamboocss/extractor'
 import type { Dict, ParserResultInterface, ResultItem } from '@bamboocss/types'
@@ -538,13 +539,40 @@ export const foldSource = (options: FoldOptions): FoldResult => {
    *
    * `ImportMap.match` is substring-based, which is right for deciding whether a call is
    * bamboo's and wrong for deciding whether a module can be imported *from*:
-   * `styled-system/css/css` matches while exporting no `cx`. Compared against the
-   * configured entries after dropping any relative prefix.
+   * `styled-system/css/css` matches while exporting no `cx`. So the comparison is
+   * equality, not containment.
+   *
+   * A tsconfig path alias is resolved first, the same way `ImportMap.match` does. Without
+   * that, `@site/styled-system/css` — the spelling this repo's own website uses — fails
+   * the check and silently loses partial folding, which is indistinguishable in the
+   * diagnostics from a genuinely dynamic call.
    */
   const cssModules = ctx.imports.matchers.css?.mods ?? []
+  const pathMappings = ctx.conf.tsOptions?.pathMappings
+  const trim = (value: string) =>
+    value
+      .replaceAll('\\', '/')
+      .replace(/^(?:\.\.?\/)+/, '')
+      .replace(/\/$/, '')
+
   const isBambooCssModule = (mod: string) => {
-    const normalized = mod.replaceAll('\\', '/').replace(/^(?:\.\.?\/)+/, '')
-    return cssModules.some((entry) => normalized === entry.replaceAll('\\', '/').replace(/^(?:\.\.?\/)+/, ''))
+    const candidates = [mod]
+
+    if (pathMappings) {
+      const resolved = resolveTsPathPattern(pathMappings, mod)
+      if (resolved) candidates.push(resolved)
+    }
+
+    return candidates.some((candidate) => {
+      const normalized = trim(candidate)
+
+      return cssModules.some((entry) => {
+        const target = trim(entry)
+        // An alias resolves to an absolute path, so the configured entry is compared as
+        // the tail of it rather than as the whole string.
+        return normalized === target || normalized.endsWith(`/${target}`)
+      })
+    })
   }
 
   const folded: FoldedCall[] = []

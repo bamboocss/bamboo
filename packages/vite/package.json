@@ -38,6 +38,7 @@
     "dev": "pnpm build-fast --watch"
   },
   "dependencies": {
+    "@bamboocss/config": "workspace:*",
     "@bamboocss/core": "workspace:*",
     "@bamboocss/extractor": "workspace:*",
     "@bamboocss/logger": "workspace:*",

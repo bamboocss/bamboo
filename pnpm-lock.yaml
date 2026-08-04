@@ -858,6 +858,9 @@ importers:
 
   packages/vite:
     dependencies:
+      '@bamboocss/config':
+        specifier: workspace:*
+        version: link:../config
       '@bamboocss/core':
         specifier: workspace:*
         version: link:../core

@@ -6,7 +6,7 @@ import { createRuntimeCss } from '../src/runtime-css'
 
 export const FILE_PATH = 'app/src/test.tsx'
 
-export const createFoldFixture = (userConfig?: Config) => {
+export const createFoldFixture = (userConfig?: Parameters<typeof createContext>[0]) => {
   const ctx = createContext(userConfig)
   const runtimeCss = createRuntimeCss(ctx)
 

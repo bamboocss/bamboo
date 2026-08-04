@@ -37,7 +37,7 @@ export const createGeneratorContext = (userConfig?: Config) => {
   return new Generator({ ...fixtureDefaults, config: resolvedConfig })
 }
 
-export const createContext = (userConfig?: Config & Pick<Partial<LoadConfigResult>, 'tsconfig'>) => {
+export const createContext = (userConfig?: Config & Pick<Partial<LoadConfigResult>, 'tsconfig' | 'tsOptions'>) => {
   let resolvedConfig = mergeConfigs([userConfig?.eject ? {} : fixtureDefaults.config, userConfig ?? {}]) as UserConfig
 
   const hooks = userConfig?.hooks ?? {}
@@ -60,6 +60,9 @@ export const createContext = (userConfig?: Config & Pick<Partial<LoadConfigResul
   return new BambooContext({
     ...fixtureDefaults,
     hooks: userConfig?.hooks ?? {},
+    // Path mappings reach the context through `conf`, not through the config, so a test
+    // exercising alias resolution has to supply them here.
+    ...(userConfig?.tsOptions ? { tsOptions: userConfig.tsOptions } : {}),
     config: Object.assign({}, defaults, resolvedConfig),
     tsconfig: {
       ...userConfig?.tsconfig,

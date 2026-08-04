@@ -276,3 +276,35 @@ export const b = (q) => css({ display: 'flex', margin: q })`),
     expect(fold(code).folded).toHaveLength(0)
   })
 })
+
+describe('tsconfig path aliases', () => {
+  /**
+   * `ImportMap.match` resolves a path alias before deciding whether an import is bamboo's,
+   * so extraction has always understood these. The module check for the `cx` insert did
+   * not, which turned partial folding off for any project importing through an alias —
+   * `@site/styled-system/css` is the spelling this repo's own website uses. It failed
+   * silently, reported as `dynamic`, indistinguishable from a call that genuinely cannot
+   * be resolved.
+   */
+  const aliased = () =>
+    createFoldFixture({
+      tsOptions: { pathMappings: [{ pattern: /^@site\/(.*)$/, paths: ['styled-system/$1'] }] },
+    } as never)
+
+  test('a call imported through an alias still splits', () => {
+    const { fold } = aliased()
+    const result = fold(
+      `import { css } from '@site/styled-system/css'\nexport const f = (p) => css({ color: 'red.300', padding: p })\n`,
+    )
+
+    expect(result.folded).toHaveLength(1)
+    expect(result.code).toContain(`import { css, cx } from '@site/styled-system/css'`)
+  })
+
+  test('an alias resolving somewhere else is still refused', () => {
+    const { fold } = aliased()
+    const code = `import { css } from '@site/lib/other'\nexport const f = (p) => css({ color: 'red.300', padding: p })\n`
+
+    expect(fold(code).folded).toHaveLength(0)
+  })
+})
