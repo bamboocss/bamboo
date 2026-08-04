@@ -34,3 +34,6 @@ ts-import-map-outdir
 packages/studio/src/lib/analysis.json
 
 storybook-static
+
+## Benchmark results (machine-specific, see `pnpm bench`)
+bench

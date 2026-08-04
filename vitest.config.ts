@@ -25,6 +25,20 @@ export default defineConfig({
     },
     hideSkippedTests: true,
     environment: 'happy-dom',
+    // `pnpm bench`. Benchmarks are reported, not asserted — wall-clock numbers are
+    // machine- and load-dependent, so they are not part of `pnpm check` or CI. To
+    // measure a change, take a baseline on the same machine and compare against it:
+    //
+    //   pnpm bench:baseline   # on the unchanged tree
+    //   pnpm bench:compare    # on the changed tree
+    //
+    // The bench scripts pass --no-file-parallelism: the default worker pool runs
+    // bench files concurrently, and the resulting CPU contention inflates rme far
+    // past the effect sizes these are meant to catch.
+    benchmark: {
+      include: ['packages/*/__tests__/**/*.bench.ts'],
+      outputJson: 'bench/latest.json',
+    },
     // https://vitest.dev/config/#exclude defaults + sandbox/codegen/frameworks
     exclude: [
       '**/node_modules/**',

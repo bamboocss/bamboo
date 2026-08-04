@@ -73,6 +73,44 @@ pnpm build                    # Build all packages
 pnpm build-fast               # Fast build without type definitions
 ```
 
+### Benchmarks
+
+Perf-sensitive code has Vitest benchmarks in `packages/*/__tests__/*.bench.ts` (core `static-css`, extractor, parser
+`ts-eval`, generator runtime `css()`).
+
+```bash
+pnpm bench                    # Run all benchmarks
+pnpm bench <path>             # Run one suite, e.g. pnpm bench extract-speed
+pnpm bench:baseline           # Record a baseline to bench/baseline.json
+pnpm bench:compare            # Re-run and diff against that baseline
+```
+
+**Benchmarks are reported, not asserted.** Wall-clock numbers depend on the machine and its load, so they are
+deliberately excluded from `pnpm check` and CI — a threshold would fail on a busy runner rather than on a real
+regression. Behaviour that must not regress is locked down deterministically instead (e.g.
+`packages/shared/__tests__/memo.test.ts` counts serialization work rather than timing it).
+
+To measure a change, take both readings on the same idle machine:
+
+```bash
+git stash && pnpm bench:baseline    # unchanged tree
+git stash pop && pnpm bench:compare # changed tree
+```
+
+Read the `rme` and `samples` columns before believing a diff: a bench reporting ±15% cannot show you a 10% regression,
+and one reporting a handful of samples cannot show you anything.
+
+Back-to-back runs of an unchanged tree currently agree to within ~5%, so **treat anything under ~10% as noise.** The one
+exception is `rule set 3 only (base styles)`, which is sub-0.1ms and swings further. Three things keep it there, and are
+worth preserving when editing benches:
+
+- The scripts pass `--no-file-parallelism`. Vitest otherwise runs bench files concurrently, and the CPU contention
+  inflates rme past the effect sizes these exist to catch. It is also no slower overall.
+- `warmupIterations` has to cover lazy init, not just JIT. Whichever expensive bench runs first pays for module init of
+  the path under test; at one warmup iteration the same bench read 750ms in one run and 198ms in the next.
+- `iterations` is a floor on sample count, _not_ a cap, and `time` (default 500ms) is the sampling budget. Raise `time`
+  for fast cases and `iterations` for cases slow enough that 500ms only buys a few samples.
+
 ### Package Management
 
 **Use `--ignore-scripts` for dependency updates:**

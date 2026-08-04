@@ -36,7 +36,9 @@ describe('ts-eval', () => {
 
       parseAndExtract(code)
     },
-    { iterations: 50 },
+    // Warm explicitly: the first parse in a process pays ts-morph's lazy init, which
+    // is large enough next to a ~5ms parse to drift the mean between runs.
+    { warmupIterations: 20, iterations: 50 },
   )
 
   bench(
@@ -51,6 +53,6 @@ describe('ts-eval', () => {
 
       parseAndExtract(code)
     },
-    { iterations: 50 },
+    { warmupIterations: 20, iterations: 50 },
   )
 })

@@ -6,7 +6,7 @@ import { default as BigThemeSampleInlined } from './samples/BigThemeSampleInline
 const project = createProject()
 const getExtract = (code: string, options: TestExtractOptions) => getTestExtract(project, code, options)
 
-// pnpm vitest bench extract-speed --reporter=json  --outputFile=./file.json
+// pnpm bench extract-speed
 bench(
   'extract big theme',
   () => {

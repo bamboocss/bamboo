@@ -345,7 +345,15 @@ describe('static-css real-world performance', () => {
       const staticCss = ctx.staticCss.clone()
       staticCss.process(realWorldConfig)
     },
-    { warmupIterations: 1, iterations: 5 },
+    // `iterations` is a floor on sample count, not a cap. These cases run in the
+    // hundreds of ms, so the default 500ms budget alone would settle for a handful
+    // of samples — too few for the reported rme to mean anything when diffing runs.
+    //
+    // The warmup floor matters just as much here: whichever of these runs first in a
+    // process pays for JIT and lazy init of the whole `process()` path, which is worth
+    // several hundred ms. Warming for one iteration left that cost inside the samples
+    // and made the same bench read 750ms in one run and 200ms in the next.
+    { warmupIterations: 5, iterations: 20 },
   )
 
   bench(
@@ -354,7 +362,7 @@ describe('static-css real-world performance', () => {
       // Reuse same instance to test wildcard memoization benefit
       ctx.staticCss.process(realWorldConfig)
     },
-    { warmupIterations: 2, iterations: 10 },
+    { warmupIterations: 5, iterations: 20 },
   )
 
   bench(
@@ -365,7 +373,7 @@ describe('static-css real-world performance', () => {
         css: [realWorldConfig.css![0]],
       })
     },
-    { warmupIterations: 2, iterations: 10 },
+    { warmupIterations: 5, iterations: 20 },
   )
 
   bench(
@@ -376,7 +384,7 @@ describe('static-css real-world performance', () => {
         css: [realWorldConfig.css![1]],
       })
     },
-    { warmupIterations: 1, iterations: 5 },
+    { warmupIterations: 5, iterations: 25 },
   )
 
   bench(
@@ -399,7 +407,7 @@ describe('static-css real-world performance', () => {
       staticCss.process({ css: [realWorldConfig.css![1]] })
       staticCss.process({ css: [realWorldConfig.css![1]] })
     },
-    { warmupIterations: 2, iterations: 10 },
+    { warmupIterations: 5, iterations: 20 },
   )
 
   // Test container query performance
@@ -432,6 +440,8 @@ describe('static-css real-world performance', () => {
       // Force evaluation
       css.length
     },
-    { warmupIterations: 1, iterations: 3 },
+    // ~2s per iteration, so this is the run's dominant cost. 10 is the floor worth
+    // paying for: below that the spread is too wide to read a regression off.
+    { warmupIterations: 3, iterations: 10 },
   )
 })

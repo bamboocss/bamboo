@@ -73,7 +73,13 @@ describe('css() runtime', () => {
 
   // Worst case for a bounded cache: every call is a distinct style, so nothing is
   // reusable and the cache can only cost. Tracked so a bound change shows up here.
-  bench(`high-cardinality css() x${ITERATIONS}`, () => {
-    for (let i = 0; i < ITERATIONS; i++) css({ color: 'red', width: `${i}px` })
-  })
+  // ~45x slower per iteration than the cached cases above, so the default 500ms
+  // budget only buys ~15 samples and the rme swamps anything worth seeing.
+  bench(
+    `high-cardinality css() x${ITERATIONS}`,
+    () => {
+      for (let i = 0; i < ITERATIONS; i++) css({ color: 'red', width: `${i}px` })
+    },
+    { time: 2000 },
+  )
 })
