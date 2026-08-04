@@ -1,7 +1,14 @@
 import type { Context } from '@bamboocss/core'
-import { type BoxNode, box, unbox } from '@bamboocss/extractor'
+import { type BoxContext, type BoxNode, box, maybeBoxNode, unbox } from '@bamboocss/extractor'
 import type { Dict } from '@bamboocss/types'
-import { Node, type ObjectLiteralExpression } from 'ts-morph'
+import {
+  type BinaryExpression,
+  type ConditionalExpression,
+  type Expression,
+  Node,
+  type ObjectLiteralExpression,
+  SyntaxKind,
+} from 'ts-morph'
 
 /**
  * Statically resolvable means: every box in the tree carries a known value.
@@ -63,6 +70,140 @@ const unwrapExpression = (node: Node): Node =>
     : node
 
 /**
+ * Mirrors the parser's evaluator environment, so re-boxing an operand here gets the same
+ * answer the extraction did. Left to its default, ts-evaluator presets to `NODE` and
+ * would resolve expressions the parser cannot see — making this check *more* permissive
+ * than the extraction it is auditing, which is the one thing it must never be.
+ */
+const REBOXED: BoxContext = { getEvaluateOptions: () => ({ environment: { preset: 'ECMA' } }) }
+
+// Unwrapped first, because the extractor unwraps before boxing and `maybeBoxNode` has no
+// case for a wrapper node — handing it one reports `('red.300')` or `'red.300' as const`
+// as unresolvable, which is neither true nor what extraction concluded.
+const rebox = (node: Node) => maybeBoxNode(unwrapExpression(node) as Expression, [], REBOXED)
+
+/**
+ * Did this operand resolve to a value the program will actually produce?
+ *
+ * Producing a box is not enough when the operand is itself a choice: `a || b || c` parses
+ * as `(a || b) || c`, so the outer operator is handed whatever the inner one answered —
+ * including an arm the extractor invented. Asking only "is there a box" reads that
+ * invention as an ordinary literal.
+ */
+const resolvesExactly = (node: Node): boolean => {
+  const inner = unwrapExpression(node)
+  const boxed = rebox(inner)
+  if (!boxed) return false
+
+  // The ternary half of this is defensive: with operands required to be written here, an
+  // operand that is a ternary is refused before it can be asked, and in the arm positions
+  // an unjudged nested ternary is caught by the sibling arm failing instead. I could not
+  // construct a shape that needs it — it is kept so the two positions stay symmetric if
+  // `isWrittenHere` is ever loosened.
+  return Node.isConditionalExpression(inner) || isCollapsedBinary(inner) ? decidedAtBuildTime(inner) : true
+}
+
+/**
+ * Is this operand's value written here, rather than named?
+ *
+ * A box records what the extractor resolved a name *through* — a `let`'s initializer, a
+ * parameter's default — none of which is what the operand holds when the call runs.
+ * `let m = '1'; m = undefined` still boxes as `'1'`, and `({ c = 'red.300' })` still boxes
+ * as `'red.300'` for a caller that passed something else. Only a value written at the call
+ * site is what it appears to be, so only that can be judged truthy or nullish here.
+ */
+const isWrittenHere = (node: Node): boolean => {
+  const inner = unwrapExpression(node)
+
+  return (
+    Node.isStringLiteral(inner) ||
+    Node.isNumericLiteral(inner) ||
+    Node.isNoSubstitutionTemplateLiteral(inner) ||
+    Node.isObjectLiteralExpression(inner) ||
+    Node.isArrayLiteralExpression(inner) ||
+    Node.isTrueLiteral(inner) ||
+    Node.isFalseLiteral(inner) ||
+    inner.getKind() === SyntaxKind.NullKeyword ||
+    // `-1`, which the parser gives as an operator over a numeric literal.
+    (Node.isPrefixUnaryExpression(inner) && Node.isNumericLiteral(inner.getOperand()))
+  )
+}
+
+/** An inline value's truthiness, which its box carries directly. */
+const isTruthy = (boxNode: BoxNode): boolean =>
+  box.isLiteral(boxNode) ? Boolean(boxNode.value) : box.isMap(boxNode) || box.isArray(boxNode) || box.isObject(boxNode)
+
+/**
+ * Did the extractor *decide* this choice, or guess at it?
+ *
+ * `a ? b : c`, `a || b` and `a && b` are asked "what styles could this produce", and when
+ * one arm does not evaluate the extractor answers with the other rather than refusing
+ * (`maybe-box-node.ts`, `whenTrueValue && !whenFalseValue`). That is right for generating
+ * CSS — emit rules for whatever might be used — and wrong for rewriting source, where the
+ * arm it kept becomes the only one that runs.
+ *
+ * For a ternary the tell is the arms: it guessed exactly when one produced a box and the
+ * other did not. For a short-circuit the answer is always the left operand, so what has to
+ * be established is that the left is the side that wins.
+ */
+const decidedAtBuildTime = (node: ConditionalExpression | BinaryExpression): boolean => {
+  if (Node.isConditionalExpression(node)) {
+    return resolvesExactly(node.getWhenTrue()) && resolvesExactly(node.getWhenFalse())
+  }
+
+  const operator = node.getOperatorToken().getKind()
+
+  // A comparison's value is a boolean, and the extractor never computes one: it routes
+  // `===` and the rest through the same collapse as a choice and answers with an operand.
+  // So its answer is that operand, never the comparison — `false === false` comes back as
+  // `false`. There is no shape of answer that would be right, so none is accepted.
+  if (!SHORT_CIRCUIT.includes(operator)) return false
+
+  // The left has to be written here. A box reached through a name records the declaration
+  // rather than the value, and truthiness is exactly what that distinction changes.
+  if (!isWrittenHere(node.getLeft())) return false
+
+  const left = rebox(node.getLeft())
+  if (!left) return false
+
+  // `||` and `??` answer with the left, so once the left wins the right is dead code and
+  // whether it resolves does not matter. A falsy left under `||` gets the wrong side back.
+  if (operator === SyntaxKind.BarBarToken) return isTruthy(left)
+  if (operator === SyntaxKind.QuestionQuestionToken) return !box.isLiteral(left) || left.value != null
+
+  // `&&` with a falsy left also yields the left, which is what the extractor returned.
+  // With a truthy left the result is the right, so that is what has to resolve.
+  return isTruthy(left) ? resolvesExactly(node.getRight()) : true
+}
+
+const SHORT_CIRCUIT = [SyntaxKind.AmpersandAmpersandToken, SyntaxKind.BarBarToken, SyntaxKind.QuestionQuestionToken]
+
+/**
+ * Every binary form the extractor collapses to one operand — the short-circuits plus the
+ * comparisons, which `isLogicalSyntax` sends down the same path even though their value is
+ * a boolean rather than either side.
+ *
+ * Hoisted rather than built per call: `accountsForSource` asks this for every property of
+ * every candidate, and rebuilding a thirteen-element list each time is not free.
+ */
+const COLLAPSED_BINARY = new Set([
+  ...SHORT_CIRCUIT,
+  SyntaxKind.EqualsEqualsToken,
+  SyntaxKind.EqualsEqualsEqualsToken,
+  SyntaxKind.ExclamationEqualsToken,
+  SyntaxKind.ExclamationEqualsEqualsToken,
+  SyntaxKind.GreaterThanToken,
+  SyntaxKind.GreaterThanEqualsToken,
+  SyntaxKind.LessThanToken,
+  SyntaxKind.LessThanEqualsToken,
+  SyntaxKind.InKeyword,
+  SyntaxKind.InstanceOfKeyword,
+])
+
+const isCollapsedBinary = (node: Node): node is BinaryExpression =>
+  Node.isBinaryExpression(node) && COLLAPSED_BINARY.has(node.getOperatorToken().getKind())
+
+/**
  * Does the extracted box account for every property the source declares?
  *
  * `isStaticBox` is not sufficient on its own. The extractor *omits* what it cannot
@@ -83,10 +224,32 @@ const unwrapExpression = (node: Node): Node =>
  * fail to. Rather than guess, phase 1 declines them. Partial folding is where this
  * gets revisited.
  */
+/**
+ * What a property's value is written as. A shorthand names it, so the name *is* the
+ * expression — reading an initializer that is not there reports the property as having no
+ * source, and everything hidden behind the name goes unchecked.
+ */
+const valueOf = (property: Node): Node | undefined =>
+  Node.isPropertyAssignment(property)
+    ? property.getInitializer()
+    : Node.isShorthandPropertyAssignment(property)
+      ? property.getNameNode()
+      : undefined
+
 export const accountsForSource = (node: Node | undefined, boxNode: BoxNode | undefined): boolean => {
   if (!node) return true
 
   const unwrapped = unwrapExpression(node)
+
+  // A choice the extractor collapsed to one arm without being able to decide it. The box
+  // looks like a plain value, so nothing downstream can tell it apart from one.
+  if (
+    (Node.isConditionalExpression(unwrapped) || isCollapsedBinary(unwrapped)) &&
+    !box.isConditional(boxNode) &&
+    !decidedAtBuildTime(unwrapped)
+  ) {
+    return false
+  }
 
   if (Node.isArrayLiteralExpression(unwrapped)) {
     if (!box.isArray(boxNode)) return false
@@ -95,7 +258,16 @@ export const accountsForSource = (node: Node | undefined, boxNode: BoxNode | und
     return elements.every((element, index) => accountsForSource(element, boxNode.value[index]))
   }
 
-  if (!Node.isObjectLiteralExpression(unwrapped)) return true
+  if (!Node.isObjectLiteralExpression(unwrapped)) {
+    // The source may only *name* the object — `_hover: shared`. The box records the
+    // literal it was actually built from, and that is what has to be checked: a spread or
+    // a computed key inside the declaration is invisible from the name alone.
+    const origin = box.isMap(boxNode) ? boxNode.getNode() : undefined
+
+    return !origin || origin === unwrapped || !Node.isObjectLiteralExpression(origin)
+      ? true
+      : accountsForSource(origin, boxNode)
+  }
 
   // An object literal in source must have produced a map.
   if (!box.isMap(boxNode)) return false
@@ -127,7 +299,7 @@ export const accountsForSource = (node: Node | undefined, boxNode: BoxNode | und
         ? String(nameNode.getLiteralValue())
         : nameNode.getText()
 
-    const value = Node.isPropertyAssignment(property) ? property.getInitializer() : undefined
+    const value = valueOf(property)
 
     // `{ display: undefined }` contributes nothing and is dropped by the encoder too,
     // so its absence from the map is expected rather than a lost value.
@@ -366,7 +538,7 @@ const partitionObject = (
     if (seenKeys.has(key)) return undefined
     seenKeys.add(key)
 
-    const value = Node.isPropertyAssignment(property) ? property.getInitializer() : undefined
+    const value = valueOf(property)
     const valueBox = boxNode.value.get(key)
 
     // Three separate questions, and only asking the first two is how a ternary gets

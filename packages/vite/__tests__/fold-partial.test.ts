@@ -757,3 +757,339 @@ describe('finite branches', () => {
     expect(result.code).toContain(`cx("hover:c_red.300", css({ _hover: { padding: p } }), e ? "m_1" : "m_2")`)
   })
 })
+
+/**
+ * The extractor answers "what styles could this produce", so when one arm of a choice
+ * does not evaluate it returns the other rather than refusing. Generating CSS for a
+ * branch that might run is right; *replacing source* with it is not, because the arm it
+ * kept becomes the only one there is.
+ *
+ * The tell is the arms rather than the condition: it guessed exactly when one produced a
+ * box and the other did not.
+ */
+describe('choices the extractor could not decide', () => {
+  test('a ternary whose other arm did not evaluate is not folded to this one', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(src(`export const f = (e) => css({ margin: '2', color: e ? 'red.300' : fn() })`))
+
+    // The box is a plain literal holding `'red.300'` — indistinguishable from a value
+    // that was actually written there, which is what made this fold silently wrong.
+    expect(result.code).toContain(`color: e ? 'red.300' : fn()`)
+    expect(result.code).not.toContain('c_red.300')
+    // The sibling still folds, so this is a declined property and not a declined file.
+    expect(result.code).toContain('cx("m_2"')
+  })
+
+  test('a decided condition does not rescue an arm that did not evaluate', () => {
+    const { fold } = createFoldFixture()
+    const code = src(`const on = true\nexport const f = () => css({ margin: '2', color: on ? 'red.300' : fn() })`)
+
+    // `on` is known, so `'red.300'` is in fact the value. Reading the condition to prove
+    // that means trusting an evaluation the extractor did not do — and `({ on = true })`
+    // is a condition the extractor deliberately treats as undecided while a plain read
+    // of it says `true`. Asking only about the arms avoids having to match that rule.
+    expect(fold(code).code).toContain(`color: on ? 'red.300' : fn()`)
+    expect(fold(code).code).toContain('cx("m_2"')
+  })
+
+  test('a default binding is not read as a decided condition', () => {
+    const { fold } = createFoldFixture()
+    const code = src(`export const f = ({ on = true }) => css({ margin: '2', color: on ? 'red.300' : fn() })`)
+
+    // `f({ on: false })` runs `fn()`, while a plain read of the initializer says `true`.
+    // This declines because `fn()` does not resolve, not because the condition was
+    // judged — the rule never looks at the condition. It is kept as a guard against
+    // going back to one that does, which is where this shape was getting folded.
+    expect(fold(code).code).toContain(`color: on ? 'red.300' : fn()`)
+    expect(fold(code).code).not.toContain('c_red.300')
+    // The sibling still folds, so this is a declined property rather than a declined file.
+    expect(fold(code).code).toContain('cx("m_2"')
+  })
+
+  test('a guess in either arm position declines', () => {
+    const { fold } = createFoldFixture()
+
+    // The extractor answers with whichever arm evaluated, so the failing one can be
+    // either. Only checking the second would leave half the rule unpinned.
+    for (const value of [`e ? fn() : 'blue.500'`, `e ? 'red.300' : fn()`]) {
+      const result = fold(src(`export const f = (e) => css({ margin: '2', color: ${value} })`))
+
+      expect(result.code, value).toContain(value)
+      expect(result.code, value).toContain('cx("m_2"')
+      expect(result.code.replace(value, ''), value).not.toContain('c_')
+    }
+  })
+
+  test('a chain of short-circuits is judged all the way down', () => {
+    const { fold } = createFoldFixture()
+
+    // `a || b || c` parses as `(a || b) || c`, so the outer operator is handed whatever
+    // the inner one answered — here an arm the extractor invented, which looks like an
+    // ordinary literal by the time the outer sees it.
+    for (const value of [`fn() || 'red.300' || 'blue.500'`, `fn() ?? 'red.300' ?? 'blue.500'`]) {
+      const result = fold(src(`export const f = () => css({ margin: '2', color: ${value} })`))
+
+      expect(result.code, value).toContain(value)
+      expect(result.code, value).not.toContain('c_red.300')
+      expect(result.code, value).toContain('cx("m_2"')
+    }
+  })
+
+  test('a chain is judged on the element surface too', () => {
+    const { fold } = createFoldFixture()
+    // `css` is imported because element splitting needs `cx` alongside it, and the fold
+    // will not add an import to a file that has neither.
+    const code = `import { css } from 'styled-system/css'\nimport { styled } from 'styled-system/jsx'\nexport const El = () => <styled.div margin="2" color={fn() || 'red.300' || 'blue.500'} />\n`
+    const result = fold(code)
+
+    // The same guard runs for style props, and an element fold writes the class straight
+    // into the attribute where nothing downstream would notice it was invented.
+    expect(result.code).not.toContain('c_red.300')
+    // The static half still folds, so an element that folded nothing would not pass.
+    expect(result.code).toContain('m_2')
+  })
+
+  test('a comparison is not folded to one of its operands', () => {
+    const { fold } = createFoldFixture()
+
+    // A comparison's value is a boolean, and the extractor never computes one — it
+    // collapses the expression the same way it collapses a choice and answers with an
+    // operand. So no shape of answer could be right, a boolean least of all: the operand
+    // *is* one, and `false === false` comes back as `false` where the value is `true`.
+    //
+    // Every operator `isLogicalSyntax` collapses is here, because dropping any one of
+    // them from the list re-opens a fold that is wrong.
+    for (const value of [
+      `fn() === 'red.300'`,
+      `'red.300' in fn()`,
+      `(fn() === 'red.300') || 'blue.500'`,
+      `empty === fn()`,
+      `false === false`,
+      `true !== true`,
+      `flag === fn()`,
+      `flag == fn()`,
+      `flag != fn()`,
+      `flag !== fn()`,
+      `flag < fn()`,
+      `flag > fn()`,
+      `flag <= fn()`,
+      `flag >= fn()`,
+      `flag instanceof fn()`,
+    ]) {
+      const result = fold(
+        src(`const empty = ''\nconst flag = false\nexport const f = () => css({ margin: '2', truncate: ${value} })`),
+      )
+
+      expect(result.code, value).toContain(value)
+      expect(result.code, value).not.toContain('trunc_')
+      expect(result.code, value).toContain('cx("m_2"')
+    }
+
+    // A comparison in a *condition* is a different position: what gets judged there is
+    // the ternary, and the extractor did resolve which of its arms runs.
+    const decided = fold(
+      src(
+        `const mode = 'dark'\nexport const f = () => css({ margin: '2', color: mode === 'light' ? 'red.300' : 'blue.500' })`,
+      ),
+    )
+    expect(decided.code).toContain(`"m_2 c_blue.500"`)
+  })
+
+  test('a nested choice in a ternary arm is judged too', () => {
+    const { fold } = createFoldFixture()
+    const code = src(`export const f = (e, g) => css({ margin: '2', color: e ? (g ? 'red.300' : fn()) : 'blue.500' })`)
+
+    // The arm positions need the same recursion the operand positions do, or an arm that
+    // is itself a guess passes for a resolved one.
+    expect(fold(code).code).toContain(`g ? 'red.300' : fn()`)
+    expect(fold(code).code).not.toContain('c_red.300')
+    expect(fold(code).code).toContain('cx("m_2"')
+  })
+
+  test('an operand box is not read as the value at this call site', () => {
+    const { fold } = createFoldFixture()
+
+    // The box says the declaration was an object; it says nothing about what the operand
+    // holds here. A default binding can be overridden and a `let` reassigned, and either
+    // way the box is unchanged while the value is nullish.
+    const bound = src(
+      `export const f = ({ o = { color: 'red.300' } }) => css({ padding: '2', _hover: o || { color: 'blue.500' } })`,
+    )
+    expect(fold(bound).code).toContain('o || {')
+    expect(fold(bound).code).toContain('cx("p_2"')
+
+    const reassigned = src(
+      `let m = ['1', '2']\nm = undefined\nexport const f = () => css({ padding: '2', margin: m || '2' })`,
+    )
+    expect(fold(reassigned).code).toContain(`m || '2'`)
+    expect(fold(reassigned).code).toContain('cx("p_2"')
+
+    // A *literal* reached through a name has the same problem, so the line is not
+    // literal-versus-object — it is written-here versus named.
+    const literal = src(`let m = '1'\nm = undefined\nexport const f = () => css({ padding: '2', margin: m || '2' })`)
+    expect(fold(literal).code).toContain(`m || '2'`)
+
+    const defaulted = src(`export const f = ({ c = 'red.300' }) => css({ padding: '2', color: c || 'blue.500' })`)
+    expect(fold(defaulted).code).toContain(`c || 'blue.500'`)
+    expect(fold(reassigned).code).toContain('cx("p_2"')
+  })
+
+  test('a left that decides the result does not wait on the right', () => {
+    const { fold } = createFoldFixture()
+
+    // `||` and `??` answer with the left, so once the left wins the right is dead code and
+    // whether it resolves is irrelevant. `&&` is the mirror: a falsy left is the result.
+    const cases: Array<[string, string]> = [
+      [`'red.300' || fn()`, 'c_red.300'],
+      [`false && fn()`, 'c_false'],
+      // A left that is a nested choice staying conditional is neither literal nor object,
+      // and the outer literal still decides it.
+      [`'red.300' || ((e ? '1' : '2') || 'green.400')`, 'c_red.300'],
+    ]
+
+    for (const [value, expected] of cases) {
+      const result = fold(src(`export const f = (e) => css({ padding: '2', color: ${value} })`))
+      expect(result.code, value).toContain(`"p_2 ${expected}"`)
+    }
+  })
+
+  test('a wrapped arm is still resolved', () => {
+    const { fold } = createFoldFixture()
+
+    // The extractor unwraps before boxing, so re-boxing has to as well. Reading these as
+    // unresolvable declines folds that were never in doubt — `as const` on a style value
+    // is ordinary TypeScript.
+    const arms = [`('red.300')`, `'red.300' as const`, `('red.300' satisfies string)`]
+
+    for (const arm of arms) {
+      const code = src(`const on = true\nexport const f = () => css({ margin: '2', color: on ? ${arm} : 'blue.500' })`)
+      expect(fold(code).code, arm).toContain(`export const f = () => "m_2 c_red.300"`)
+    }
+
+    const wrappedLeft = src(`export const f = () => css({ margin: '2', color: ('red.300') || 'blue.500' })`)
+    expect(fold(wrappedLeft).code).toContain(`export const f = () => "m_2 c_red.300"`)
+  })
+
+  test('each short-circuit operator gets its own answer', () => {
+    const { fold } = createFoldFixture()
+    const prelude = `const named = 'red.300'`
+    const call = (property: string, value: string) =>
+      src(`${prelude}\nexport const f = () => css({ padding: '2', ${property}: ${value} })`)
+
+    // These reach the operator rules rather than exiting early on an operand that did not
+    // resolve, which is what makes the three rules distinguishable at all.
+    const folds: Array<[string, string, string]> = [
+      // `||` answers with the left, and a truthy left is what wins.
+      ['color', `'red.300' || fn()`, 'c_red.300'],
+      // `??` answers with a left that is merely non-nullish, which `||` would not: this
+      // is the pair that separates the two rules.
+      ['margin', `0 ?? fn()`, 'm_0'],
+      // An object or array written here is truthy, so `||` yields it.
+      ['margin', `['1', '2'] || '2'`, 'm_1 sm:m_2'],
+      ['_hover', `{ color: 'red.300' } || { color: 'blue.500' }`, 'hover:c_red.300'],
+      // `&&` with a falsy left yields the left, so the right never has to resolve.
+      ['color', `false && fn()`, 'c_false'],
+    ]
+
+    for (const [property, value, expected] of folds) {
+      expect(fold(call(property, value)).code, value).toContain(`"p_2 ${expected}"`)
+    }
+
+    // `||` answers with the left only when it is truthy, `??` only when it is not nullish.
+    for (const [property, value] of [
+      ['color', `null ?? 'blue.500'`],
+      ['color', `'' || fn()`],
+      // A named left records its declaration, not what the operand holds here — a `let`
+      // can be reassigned and a parameter default overridden, and the box sees neither.
+      ['color', `named || 'blue.500'`],
+    ] as const) {
+      const result = fold(call(property, value))
+
+      expect(result.code, value).toContain(value)
+      expect(result.code, value).toContain('cx("p_2"')
+    }
+  })
+
+  test('an operand that did not resolve declines whatever the operator', () => {
+    const { fold } = createFoldFixture()
+
+    for (const value of [
+      // Left unevaluatable: whichever side wins is unknown.
+      `fn() || 'blue.500'`,
+      `fn() && 'blue.500'`,
+      `fn() ?? 'blue.500'`,
+      // Right unevaluatable, and `&&` with a truthy left yields the *right*. The extractor
+      // answers with the left, which is the one value it cannot be.
+      `on && fn()`,
+    ]) {
+      const code = src(`const on = 'red.300'\nexport const f = () => css({ padding: '2', color: ${value} })`)
+
+      expect(fold(code).code, value).toContain(value)
+      expect(fold(code).code, value).toContain('cx("p_2"')
+    }
+  })
+
+  test('a choice with two resolvable arms is still folded', () => {
+    const { fold } = createFoldFixture()
+
+    // Nothing is guessed at when both arms evaluate: the extractor either decided the
+    // choice or the arms agreed. Declining these would trade real folds for no safety.
+    const named = fold(
+      src(
+        `const on = true\nconst c = 'red.300'\nexport const f = () => css({ margin: '2', color: on ? c : 'blue.500' })`,
+      ),
+    )
+    expect(named.code).toContain(`export const f = () => "m_2 c_red.300"`)
+
+    const compared = fold(
+      src(
+        `const mode = 'dark'\nexport const f = () => css({ margin: '2', color: mode === 'light' ? 'red.300' : 'blue.500' })`,
+      ),
+    )
+    expect(compared.code).toContain(`export const f = () => "m_2 c_blue.500"`)
+
+    const same = fold(src(`export const f = (e) => css({ margin: '2', color: e ? 'red.300' : 'red.300' })`))
+    expect(same.code).toContain(`export const f = (e) => "m_2 c_red.300"`)
+  })
+
+  test('an object reached by name is checked where it was written', () => {
+    const { fold } = createFoldFixture()
+
+    // `base` accounts for its box trivially — it is an identifier, not a literal — so the
+    // spread inside the declaration is invisible unless the box's own node is followed.
+    const spread = fold(
+      src(`const base = { color: 'red.300', ...o }\nexport const f = (p) => css({ _hover: base, padding: p })`),
+    )
+    expect(spread.code).toContain('_hover: base')
+    expect(spread.code).not.toContain('hover:c_red.300')
+
+    // Including through a shorthand, where the name is the whole property.
+    const shorthand = fold(src(`const _hover = { color: 'red.300', ...o }\nexport const f = () => css({ _hover })`))
+    expect(shorthand.code).toContain('css({ _hover })')
+    expect(shorthand.code).not.toContain('hover:c_red.300')
+
+    // And as a ternary arm.
+    const arm = fold(
+      src(
+        `const warm = { color: 'red.300', ...o }\nexport const f = (e, p) => css({ margin: '2', padding: p, _hover: e ? warm : { color: 'blue.500' } })`,
+      ),
+    )
+    // The sibling still folds, so a file that folded nothing would not pass this.
+    expect(arm.code).toContain('cx(')
+    expect(arm.code).toContain('e ? warm :')
+    expect(arm.code).not.toContain('hover:c_red.300')
+  })
+
+  test('an object reached by name still folds when nothing is hidden in it', () => {
+    const { fold } = createFoldFixture()
+
+    expect(
+      fold(src(`const base = { color: 'red.300' }\nexport const f = (p) => css({ _hover: base, padding: p })`)).code,
+    ).toContain('cx("hover:c_red.300", css({ padding: p }))')
+
+    // Shorthands too, or the fix above would have closed the hole by declining everything.
+    expect(
+      fold(src(`const _hover = { color: 'red.300' }\nexport const f = (p) => css({ _hover, padding: p })`)).code,
+    ).toContain('cx("hover:c_red.300", css({ padding: p }))')
+  })
+})
