@@ -21,6 +21,7 @@
     "test": "vitest",
     "codegen": "pnpm --filter=./sandbox/codegen",
     "test:codegen": "pnpm codegen test && pnpm codegen typecheck",
+    "test:browser": "BROWSER_PARITY=1 vitest run sandbox/runtime-perf/__tests__/browser-parity.test.ts",
     "test-watch": "vitest --watch -u",
     "bench": "vitest bench --run --no-file-parallelism",
     "bench:baseline": "vitest bench --run --no-file-parallelism --outputJson=bench/baseline.json",

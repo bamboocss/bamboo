@@ -47,6 +47,15 @@ export default defineConfig({
       '**/.{idea,git,cache,output,temp}/**',
       '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsdown,build}.config.*',
       'sandbox/codegen/__tests__/frameworks',
+      // Browser parity runs two full Vite builds and drives Chromium, so it needs a
+      // browser on the machine and costs far more than the rest of the suite combined.
+      // Out of the default run for the same reason benchmarks are: `pnpm test` is the
+      // inner loop, and a check that cannot run everywhere does not belong in it. CI
+      // gives it a job of its own that installs Chromium first.
+      //
+      //   pnpm --filter sandbox-runtime-perf test:browser
+      //
+      ...(process.env.BROWSER_PARITY ? [] : ['**/browser-parity.test.ts']),
     ],
   },
   resolve: {

@@ -90,8 +90,11 @@ jobs:
       # a real browser computed. This is the only check that shows a folded class actually
       # *resolves* -- identical markup with a class the stylesheet does not carry looks
       # correct everywhere else.
+      #
+      # Run through the root script, which sets the flag the root vitest config gates this
+      # file on. The Unit Tests job has no browser, so it must not pick this up.
       - name: Run browser parity
-        run: pnpm test sandbox/runtime-perf/__tests__/browser-parity.test.ts
+        run: pnpm test:browser
 
   lint:
     name: Lint
