@@ -8,10 +8,20 @@ const tokenVars: Record<string, string> = {
   'spacing.-4': 'calc(var(--spacing-4) * -1)',
 }
 
-const createContext = (files: Record<string, string>) =>
+/**
+ * `files` sit on disk; `tracked` are the ones the project has already parsed and holds in
+ * memory. Most tests leave the project empty so the disk fallback stays exercised.
+ */
+const createContext = (files: Record<string, string>, tracked: Record<string, string> = {}) =>
   ({
     config: { cwd: '/app' },
-    getFiles: () => Object.keys(files),
+    getFiles: () => Object.keys({ ...files, ...tracked }),
+    project: {
+      getSourceFile: (file: string) => {
+        const content = tracked[file.replace('/app/', '')]
+        return content == null ? undefined : { getFullText: () => content }
+      },
+    },
     runtime: {
       fs: {
         readFileSync: (file: string) => {
@@ -75,5 +85,18 @@ describe('collectTokenReferences', () => {
    */
   test('keeps every reference in a resolved value, not only the first', () => {
     expect(collect({ 'a.tsx': `token('spacing.-4')` })).toEqual(new Set(['--spacing-4']))
+  })
+
+  test('reads text the project already holds instead of going to disk', () => {
+    // Absent from `files`, so a disk read would throw ENOENT and skip the file.
+    const ctx = createContext({}, { 'a.tsx': `token.var('colors.pink.400')` })
+
+    expect(collectTokenReferences(ctx, [])).toEqual(new Set(['--colors-pink-400']))
+  })
+
+  test('falls back to disk for a file the project does not track', () => {
+    const ctx = createContext({ 'styles.css': `.a{color:var(--colors-teal-300)}` }, { 'a.tsx': `token('spacing.4')` })
+
+    expect(collectTokenReferences(ctx, [])).toEqual(new Set(['--colors-teal-300', '--spacing-4']))
   })
 })

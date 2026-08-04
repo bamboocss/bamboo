@@ -44,13 +44,21 @@ export function collectTokenReferences(ctx: BambooContext, results: ParserResult
   }
 
   for (const file of ctx.getFiles()) {
-    let content: string
+    const filePath = ctx.runtime.path.abs(ctx.config.cwd, file)
 
-    try {
-      content = ctx.runtime.fs.readFileSync(ctx.runtime.path.abs(ctx.config.cwd, file))
-    } catch {
-      // A file removed between the glob and this read is not worth failing a build over.
-      continue
+    // The project already holds the text of every file it parsed, and every caller syncs
+    // it before getting here, so reading from disk again would repeat the io on each
+    // watch rebuild. Files the project does not track — css under `include`, say — still
+    // have to be read.
+    let content = ctx.project.getSourceFile(filePath)?.getFullText()
+
+    if (content == null) {
+      try {
+        content = ctx.runtime.fs.readFileSync(filePath)
+      } catch {
+        // A file removed between the glob and this read is not worth failing a build over.
+        continue
+      }
     }
 
     for (const match of content.matchAll(TOKEN_CALL)) paths.add(match[1])
