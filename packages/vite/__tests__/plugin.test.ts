@@ -2,7 +2,7 @@ import { logger } from '@bamboocss/logger'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
-import { bamboocss } from '../src/plugin'
+import { bamboocss, isGeneratedOutput } from '../src/plugin'
 
 /**
  * The plugin wrapper, separate from the fold itself.
@@ -73,6 +73,48 @@ describe('file filtering', () => {
 
     // Returns before touching the context, so no config resolution is attempted.
     await expect(callTransform(plugin, SOURCE, id)).resolves.toBeNull()
+  })
+})
+
+/**
+ * The generated `styled-system` is bamboo's own runtime rather than user source, and it
+ * is not in the project's `include`, so handing it to the fold only produces parse
+ * errors. Which files those are is decided by `outdir`, which is a user setting — so the
+ * question is where the boundary sits, not whether one exists.
+ */
+describe('generated output', () => {
+  const ctx = (cwd: string, outdir: string) => ({ config: { cwd, outdir } })
+
+  test('the default outdir is recognised', () => {
+    expect(isGeneratedOutput('/app/styled-system/css/css.mjs', ctx('/app', 'styled-system'))).toBe(true)
+    expect(isGeneratedOutput('/app/src/Button.tsx', ctx('/app', 'styled-system'))).toBe(false)
+  })
+
+  test('a nested outdir is recognised', () => {
+    expect(isGeneratedOutput('/app/src/styled-system/jsx/index.mjs', ctx('/app', 'src/styled-system'))).toBe(true)
+  })
+
+  /**
+   * The case a bare last-segment match gets wrong. Generating into `src/styles` must not
+   * make every directory called `styles` generated — that is where an app is most likely
+   * to keep the style calls this transform exists to fold, and the loss would be silent.
+   */
+  test('a directory sharing the outdir name elsewhere in the tree is user source', () => {
+    const config = ctx('/app', 'src/styles')
+
+    expect(isGeneratedOutput('/app/src/styles/css/css.mjs', config)).toBe(true)
+    expect(isGeneratedOutput('/app/packages/ui/styles/Button.tsx', config)).toBe(false)
+    expect(isGeneratedOutput('/app/src/features/styles/theme.ts', config)).toBe(false)
+  })
+
+  test('a sibling whose name merely starts with the outdir is user source', () => {
+    // `styled-system-studio` sits next to `styled-system` and is not it.
+    expect(isGeneratedOutput('/app/styled-system-studio/app.tsx', ctx('/app', 'styled-system'))).toBe(false)
+  })
+
+  test('an absolute outdir is honoured rather than appended to the cwd', () => {
+    expect(isGeneratedOutput('/generated/css/css.mjs', ctx('/app', '/generated'))).toBe(true)
+    expect(isGeneratedOutput('/app/generated/css/css.mjs', ctx('/app', '/generated'))).toBe(false)
   })
 })
 

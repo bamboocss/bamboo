@@ -1,3 +1,5 @@
+import { resolve } from 'node:path'
+
 import { logger } from '@bamboocss/logger'
 import { loadConfigAndCreateContext } from '@bamboocss/node'
 import type { Plugin } from 'vite'
@@ -54,14 +56,25 @@ const shouldTransform = (id: string) => {
 /**
  * Is this file part of the generated `styled-system` rather than the user's source?
  *
- * Compared as a path segment, so an app directory that merely ends in the same letters
- * is not swept up with it.
+ * Resolved to a path and compared as a prefix, rather than by looking for the outdir's
+ * last segment somewhere in the file's path. `outdir` is a user setting: a project that
+ * generates into `src/styles` would otherwise have *every* directory named `styles`
+ * treated as generated, and folding would quietly stop happening in the one place an app
+ * is most likely to keep its style calls.
+ *
+ * `resolve` rather than `join`, so an absolute `outdir` is honoured rather than appended
+ * to the cwd.
  */
-const isGeneratedOutput = (filePath: string, ctx: { config: { outdir: string } }) => {
-  const outdir = ctx.config.outdir?.replaceAll('\\', '/').replace(/^\.\//, '').replace(/\/$/, '')
+export const isGeneratedOutput = (filePath: string, ctx: { config: { cwd: string; outdir: string } }) => {
+  const { cwd, outdir } = ctx.config
   if (!outdir) return false
 
-  return filePath.replaceAll('\\', '/').split('/').includes(outdir.split('/').pop()!)
+  const slashed = (value: string) => value.replaceAll('\\', '/').replace(/\/$/, '')
+
+  const root = slashed(resolve(cwd, outdir))
+  const file = slashed(filePath)
+
+  return file === root || file.startsWith(`${root}/`)
 }
 
 const formatSkipped = (id: string, skipped: SkippedCall[]) => {
