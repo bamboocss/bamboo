@@ -118,39 +118,4 @@ export class RuleProcessor {
       toCss: this.toCss.bind(this),
     }
   }
-
-  /**
-   * Class names for a set of style props, as a JSX factory or pattern would resolve
-   * them. Scoped to this call, so it is safe on a processor shared across call sites.
-   */
-  styleProps(props: SystemStyleObject, grouped = false): AtomicRule {
-    const { encoder, decoder } = this.getParamsOrThrow()
-
-    const scope = encoder.withScope(() => encoder.processStyleProps(props, grouped))
-    decoder.collect(encoder)
-
-    return {
-      styles: props,
-      getClassNames: () => decoder.filterClassNames(scope),
-      toCss: this.toCss.bind(this),
-    }
-  }
-
-  /**
-   * Class names for a pattern call (`stack({ gap: '4' })`), scoped to this call.
-   */
-  pattern(name: string, props: SystemStyleObject, jsxName?: string): AtomicRule {
-    const { encoder, decoder } = this.getParamsOrThrow()
-
-    const scope = encoder.withScope(() =>
-      encoder.processPattern(name, props, jsxName ? 'jsx-pattern' : 'pattern', jsxName),
-    )
-    decoder.collect(encoder)
-
-    return {
-      styles: props,
-      getClassNames: () => decoder.filterClassNames(scope),
-      toCss: this.toCss.bind(this),
-    }
-  }
 }

@@ -56,5 +56,4 @@ calls.
 
 Also scopes `RuleProcessor`'s `css`/`grouped`/`cva`/`sva`/`recipe` results to the call that produced them. They
 previously reported every class name the decoder had accumulated, which is correct for a processor used once and wrong
-for one shared across call sites. Adds `styleProps()` and `pattern()` accessors alongside them. No change to CSS output
-or to any single-call result.
+for one shared across call sites. No change to CSS output or to any single-call result.

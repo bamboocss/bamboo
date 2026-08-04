@@ -152,29 +152,6 @@ describe('rule processor scoping', () => {
     expect(second.getClassNames()).toEqual(first.getClassNames())
   })
 
-  test('pattern() resolves a pattern call to its own class names', () => {
-    const processor = createRuleProcessor()
-
-    processor.css({ color: 'blue.500' })
-    const stack = processor.pattern('stack', { gap: '4' })
-
-    expect(stack.getClassNames()).toEqual(createRuleProcessor().pattern('stack', { gap: '4' }).getClassNames())
-    expect(stack.getClassNames().length).toBeGreaterThan(0)
-  })
-
-  test('styleProps() resolves JSX-shaped props, css prop included', () => {
-    const processor = createRuleProcessor()
-
-    processor.css({ margin: '10' })
-    const scoped = processor.styleProps({ color: 'red.300', css: { display: 'flex' } })
-
-    expect(scoped.getClassNames()).toEqual(
-      createRuleProcessor()
-        .styleProps({ color: 'red.300', css: { display: 'flex' } })
-        .getClassNames(),
-    )
-  })
-
   test('CSS emission still sees every call on the shared processor', () => {
     const processor = createRuleProcessor()
 
