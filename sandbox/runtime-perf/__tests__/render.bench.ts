@@ -19,8 +19,8 @@ import { bench, describe } from 'vitest'
  */
 const here = dirname(fileURLToPath(import.meta.url))
 const cwd = join(here, '..')
-const source = join(here, 'fixtures/tree.tsx')
-const foldedPath = join(here, 'fixtures/tree.bench.folded.tsx')
+const source = join(here, '../src/parity/tree.tsx')
+const foldedPath = join(here, '../src/parity/tree.bench.folded.tsx')
 
 const ctx = await loadConfigAndCreateContext({ cwd })
 const code = readFileSync(source, 'utf8')

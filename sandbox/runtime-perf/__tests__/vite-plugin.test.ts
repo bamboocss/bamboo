@@ -24,7 +24,7 @@ const bundle = async (options: Parameters<typeof bamboocss>[0]) => {
     build: {
       write: false,
       minify: false,
-      lib: { entry: join(here, 'fixtures/tree.tsx'), formats: ['es'], fileName: 'tree' },
+      lib: { entry: join(here, '../src/parity/tree.tsx'), formats: ['es'], fileName: 'tree' },
       rollupOptions: { external: [/^react/, /styled-system/] },
     },
   })) as Rollup.RollupOutput[]

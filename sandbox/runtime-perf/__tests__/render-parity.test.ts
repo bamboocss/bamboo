@@ -20,8 +20,8 @@ import { afterAll, beforeAll, describe, expect, test } from 'vitest'
  */
 const here = dirname(fileURLToPath(import.meta.url))
 const cwd = join(here, '..')
-const source = join(here, 'fixtures/tree.tsx')
-const foldedPath = join(here, 'fixtures/tree.folded.tsx')
+const source = join(here, '../src/parity/tree.tsx')
+const foldedPath = join(here, '../src/parity/tree.folded.tsx')
 
 let foldedCode = ''
 let foldedCount = 0
@@ -90,7 +90,7 @@ describe('render parity', () => {
     const original = await import(/* @vite-ignore */ source)
     const before = renderToStaticMarkup(createElement(original.Tree, props))
 
-    const brokenPath = join(here, 'fixtures/tree.broken.tsx')
+    const brokenPath = join(here, '../src/parity/tree.broken.tsx')
     writeFileSync(brokenPath, foldedCode.replace('className={"', 'className={"x '), 'utf8')
 
     try {

@@ -37,3 +37,4 @@ storybook-static
 
 ## Benchmark results (machine-specific, see `pnpm bench`)
 bench
+dist-parity-*

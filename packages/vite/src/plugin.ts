@@ -51,6 +51,19 @@ const shouldTransform = (id: string) => {
   return DEFAULT_EXTENSIONS.test(filePath)
 }
 
+/**
+ * Is this file part of the generated `styled-system` rather than the user's source?
+ *
+ * Compared as a path segment, so an app directory that merely ends in the same letters
+ * is not swept up with it.
+ */
+const isGeneratedOutput = (filePath: string, ctx: { config: { outdir: string } }) => {
+  const outdir = ctx.config.outdir?.replaceAll('\\', '/').replace(/^\.\//, '').replace(/\/$/, '')
+  if (!outdir) return false
+
+  return filePath.replaceAll('\\', '/').split('/').includes(outdir.split('/').pop()!)
+}
+
 const formatSkipped = (id: string, skipped: SkippedCall[]) => {
   const counts = new Map<string, number>()
   for (const entry of skipped) {
@@ -123,6 +136,11 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin => {
       if (!ctx || !runtimeCss) return null
 
       const [filePath] = id.split('?')
+
+      // The generated styled-system is bamboo's own runtime, not user code. It is not in
+      // the project's `include`, so parsing it fails, and folding it would be meaningless
+      // even if it did not.
+      if (isGeneratedOutput(filePath, ctx)) return null
 
       let result: ReturnType<typeof foldSource>
       try {

@@ -73,6 +73,26 @@ jobs:
             exit 1
           fi
 
+  browser:
+    name: Browser Parity
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install
+        uses: ./.github/composite-actions/install
+
+      - name: Install Chromium
+        run: pnpm --filter sandbox-runtime-perf exec playwright install --with-deps chromium
+
+      # Builds the sandbox twice, with and without the source transform, and compares what
+      # a real browser computed. This is the only check that shows a folded class actually
+      # *resolves* -- identical markup with a class the stylesheet does not carry looks
+      # correct everywhere else.
+      - name: Run browser parity
+        run: pnpm test sandbox/runtime-perf/__tests__/browser-parity.test.ts
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
