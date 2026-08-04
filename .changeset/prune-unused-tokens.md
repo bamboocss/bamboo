@@ -3,6 +3,7 @@
 '@bamboocss/types': minor
 '@bamboocss/core': minor
 '@bamboocss/node': minor
+'@bamboocss/shared': minor
 ---
 
 Add `pruneUnusedTokens`, dropping token css variables nothing can reach.
@@ -23,8 +24,8 @@ is anything a theme refers to: a theme is a separate artifact injected at runtim
 what it needs.
 
 The negative-token rule is the one with a visible price, and there is no opt-out. A spacing scale generates one negative
-per entry, so the whole scale is pinned whether or not the app uses it: on the default preset an app referencing a single
-colour keeps 37 spacing variables, about a third of everything that survives. Presets with large spacing scales
+per entry, so the whole scale is pinned whether or not the app uses it: on the default preset an app referencing a
+single colour keeps 37 spacing variables, about a third of everything that survives. Presets with large spacing scales
 therefore see less than the numbers above.
 
 The walk follows any custom property, not only the removable ones. A colour palette is what forces that:

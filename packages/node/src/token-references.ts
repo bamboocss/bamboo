@@ -1,4 +1,5 @@
 import type { ParserResult } from '@bamboocss/parser'
+import { cssVarRefs } from '@bamboocss/shared'
 import type { BambooContext } from './create-context'
 
 /**
@@ -9,9 +10,6 @@ import type { BambooContext } from './create-context'
  * built somewhere the extractor cannot follow.
  */
 const TOKEN_CALL = /\btoken(?:\s*\.\s*var)?\s*\(\s*['"`]([^'"`]+)['"`]/g
-
-/** A custom property written by hand, in an inline style or a template literal. */
-const RAW_VAR = /var\(\s*(--[^\s,)]+)/g
 
 /**
  * Collect token references that reading the generated css cannot reveal.
@@ -62,7 +60,7 @@ export function collectTokenReferences(ctx: BambooContext, results: ParserResult
     }
 
     for (const match of content.matchAll(TOKEN_CALL)) paths.add(match[1])
-    for (const match of content.matchAll(RAW_VAR)) vars.add(match[1])
+    for (const name of cssVarRefs(content)) vars.add(name)
   }
 
   // Token paths resolve to a css variable name through the dictionary; a path that names
@@ -72,7 +70,7 @@ export function collectTokenReferences(ctx: BambooContext, results: ParserResult
     const ref = ctx.tokens.view.getVar(path)
     if (!ref) continue
 
-    for (const match of String(ref).matchAll(RAW_VAR)) vars.add(match[1])
+    for (const name of cssVarRefs(ref)) vars.add(name)
   }
 
   return vars

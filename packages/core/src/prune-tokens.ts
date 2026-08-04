@@ -1,6 +1,5 @@
+import { cssVarRefs } from '@bamboocss/shared'
 import type { Container } from 'postcss'
-
-const VAR_REF = /var\(\s*(--[^\s,)]+)/g
 
 interface PruneOptions {
   /**
@@ -52,15 +51,15 @@ export function pruneTokenVars(options: PruneOptions) {
     container.walkDecls((decl) => {
       const isCustomProperty = decl.prop.startsWith('--')
 
-      for (const match of decl.value.matchAll(VAR_REF)) {
+      for (const name of cssVarRefs(decl.value)) {
         if (!isCustomProperty) {
-          direct.add(match[1])
+          direct.add(name)
           continue
         }
 
         let refs = byDeclaration.get(decl.prop)
         if (!refs) byDeclaration.set(decl.prop, (refs = new Set()))
-        refs.add(match[1])
+        refs.add(name)
       }
     })
   }

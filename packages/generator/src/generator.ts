@@ -1,6 +1,6 @@
 import { Context, pruneTokenVars, type StyleDecoder, type Stylesheet } from '@bamboocss/core'
 import { logger } from '@bamboocss/logger'
-import { dashCase, BambooError } from '@bamboocss/shared'
+import { cssVarRefs, dashCase, BambooError } from '@bamboocss/shared'
 import type { ArtifactId, CssArtifactType, LoadConfigResult, SpecFile, SpecType, SpecTypeMap } from '@bamboocss/types'
 import { match } from 'ts-pattern'
 import { generateArtifacts } from './artifacts'
@@ -30,9 +30,6 @@ export interface SplitCssArtifact {
   /** Directory relative to styles/ */
   dir?: string
 }
-
-/** A `var()` reference, including the whitespace a formatter may leave behind. */
-const VAR_REF = /var\(\s*(--[^\s,)]+)/g
 
 export interface SplitCssResult {
   /** Layer CSS files (reset, global, tokens, utilities) */
@@ -148,8 +145,8 @@ export class Generator extends Context {
     if (!themes) return names
 
     for (const themeName of Object.keys(themes)) {
-      for (const match of getThemeCss(this, themeName).matchAll(VAR_REF)) {
-        names.add(match[1])
+      for (const name of cssVarRefs(getThemeCss(this, themeName))) {
+        names.add(name)
       }
     }
 
@@ -183,8 +180,8 @@ export class Generator extends Context {
 
       if (!isNegative) return
 
-      for (const match of String(token.value).matchAll(VAR_REF)) {
-        names.add(match[1])
+      for (const name of cssVarRefs(token.value)) {
+        names.add(name)
       }
     })
 

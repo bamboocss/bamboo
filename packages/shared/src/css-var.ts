@@ -21,6 +21,23 @@ export interface CssVarOptions {
   hash?: boolean
 }
 
+const varRefRegex = /var\(\s*(--[^\s,)]+)/g
+
+/**
+ * Every custom property a value refers to, including the whitespace a formatter may leave
+ * behind and every link of a nested fallback chain — `var(--a, var(--b))` yields both.
+ *
+ * The name stops where a custom property can rather than at `[a-z0-9-]`, because a token
+ * name may carry an escape: `spacing.0.5` is declared as `--spacing-0\.5`, and truncating
+ * it to `--spacing-0` invents a name that collides with a real, unrelated token. Anything
+ * deciding what to keep and what to drop has to agree on that, so they share this.
+ */
+export function cssVarRefs(value: unknown): string[] {
+  const refs: string[] = []
+  for (const match of String(value).matchAll(varRefRegex)) refs.push(match[1])
+  return refs
+}
+
 export function cssVar(name: string, options: CssVarOptions = {}): CssVar {
   const { fallback = '', prefix = '', hash } = options
 
