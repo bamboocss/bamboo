@@ -3,6 +3,7 @@ import { type BoxNode, box } from '@bamboocss/extractor'
 import type { Dict, ParserResultInterface, ResultItem } from '@bamboocss/types'
 import MagicString from 'magic-string'
 import { Node, type SourceFile } from 'ts-morph'
+import { type JsxEdit, planJsxFold } from './fold-jsx'
 import { createRuntimeCss, type RuntimeCss } from './runtime-css'
 
 /**
@@ -57,6 +58,11 @@ export interface FoldOptions {
   filePath: string
   /** Reuse one runtime `css` across files in a build. */
   runtimeCss?: RuntimeCss
+  /**
+   * Also collapse `styled.*` elements to their intrinsic tag. On by default, since the
+   * JSX factory is where most style resolution happens at runtime.
+   */
+  jsx?: boolean
 }
 
 /**
@@ -78,6 +84,9 @@ const FOLDABLE_TYPES = new Set(['css', 'pattern'])
  * inline. Lifting that alongside the compound-variant matcher is the prerequisite.
  */
 const UNFOLDABLE_TYPES = new Set(['cva', 'sva', 'token'])
+
+/** Element surfaces `foldJsx` handles, as opposed to call sites. */
+const JSX_TYPES = new Set(['jsx-factory'])
 
 /**
  * Statically resolvable means: every box in the tree carries a known value.
@@ -433,14 +442,19 @@ const argumentsAccountedFor = (call: Node, boxNode: BoxNode): boolean => {
 }
 
 export const foldSource = (options: FoldOptions): FoldResult => {
-  const { ctx, code, parserResult, runtimeCss = createRuntimeCss(ctx) } = options
+  const { ctx, code, parserResult, jsx = true, runtimeCss = createRuntimeCss(ctx) } = options
 
   const folded: FoldedCall[] = []
   const skipped: SkippedCall[] = []
 
   interface Candidate {
     item: ResultItem
-    call: Node
+    /** The call to replace, for a call site. Absent for a JSX element. */
+    call?: Node
+    /** Pre-planned edits and class, for a JSX element. */
+    edits?: JsxEdit[]
+    className?: string
+    node: Node
     start: number
     end: number
   }
@@ -466,6 +480,26 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     if (!item.box) continue
 
     const call = findCallExpression(item.box)
+
+    if (jsx && JSX_TYPES.has(type)) {
+      const plan = planJsxFold(item, ctx, runtimeCss)
+
+      if ('reason' in plan) {
+        const node = item.box?.getNode?.()
+        if (node) skipped.push({ name, reason: plan.reason, start: node.getStart(), end: node.getEnd() })
+        continue
+      }
+
+      candidates.push({
+        item,
+        node: item.box!.getNode!(),
+        edits: plan.edits,
+        className: plan.className,
+        start: plan.start,
+        end: plan.end,
+      })
+      continue
+    }
 
     if (!FOLDABLE_TYPES.has(type)) {
       // Only report kinds that are calls at all; JSX entries are a different surface.
@@ -518,7 +552,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       continue
     }
 
-    candidates.push({ item, call, start, end })
+    candidates.push({ item, call, node: call, start, end })
   }
 
   if (candidates.length === 0) {
@@ -527,21 +561,40 @@ export const foldSource = (options: FoldOptions): FoldResult => {
 
   // Compare by `SourceFile` identity rather than by path, since `options.filePath`
   // may be spelled differently by the caller than ts-morph spells it.
-  const dependencyScan = createDependencyScan(candidates[0]!.call.getSourceFile())
+  const dependencyScan = createDependencyScan(candidates[0]!.node.getSourceFile())
 
   // Outermost-first, so a nested candidate can be detected and dropped rather than
   // producing an overlapping overwrite (which magic-string rejects).
   candidates.sort((a, b) => a.start - b.start || b.end - a.end)
 
   const magic = new MagicString(code)
-  let lastEnd = -1
+
+  // Applied edit ranges, not candidate ranges. A `styled.*` element only rewrites its two
+  // tags, so anything between them — a nested element, a `css()` call in the children —
+  // is still free to fold. Gating on the element's whole span would reject those for an
+  // overlap that never happens.
+  const applied: Array<[number, number]> = []
+  const collides = (edits: Array<[number, number]>) =>
+    edits.some(([start, end]) => applied.some(([from, to]) => start < to && from < end))
 
   for (const candidate of candidates) {
     const { item, start, end } = candidate
     const name = item.name ?? item.type ?? ''
 
-    if (start < lastEnd) {
+    const ranges: Array<[number, number]> = candidate.edits
+      ? candidate.edits.map((edit) => [edit.start, edit.end])
+      : [[start, end]]
+
+    if (collides(ranges)) {
       skipped.push({ name, reason: 'overlapping', start, end })
+      continue
+    }
+
+    if (candidate.edits) {
+      for (const edit of candidate.edits) magic.overwrite(edit.start, edit.end, edit.text)
+      applied.push(...ranges)
+      folded.push({ name, className: candidate.className!, start, end })
+      collectSourceFiles(item.box, dependencyScan)
       continue
     }
 
@@ -564,9 +617,9 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     // JSON.stringify escapes the backslashes bamboo puts in class names for escaped
     // characters, and any quote an arbitrary value introduced.
     magic.overwrite(start, end, JSON.stringify(className))
+    applied.push(...ranges)
     folded.push({ name, className, start, end })
     collectSourceFiles(item.box, dependencyScan)
-    lastEnd = end
   }
 
   if (folded.length === 0) {

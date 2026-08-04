@@ -65,6 +65,32 @@ stack({ gap: '4', align: 'center' })
 <div className={css({ px: '4' })} />
 ```
 
+### JSX elements
+
+A `styled.*` element collapses to the intrinsic tag it renders:
+
+```tsx
+// you write
+<styled.div color="red.300" onClick={fn}>hi</styled.div>
+
+// the bundle gets
+<div onClick={fn} className={"c_red.300"}>hi</div>
+```
+
+This is the one that matters most at runtime. The factory runs `splitProps`, `css()` and `cx` for every element on every
+render, inside a `forwardRef` component — folding removes all of it, including the component layer.
+
+Props are handled the way the factory handles them. For a factory with no recipe attached, `defaultShouldForwardProp`
+reduces to "css properties are consumed, everything else reaches the DOM unchanged", so `onClick` and `id` pass through
+verbatim while `color` becomes part of the class. A static `className` is appended, in the position `cx` would have put
+it.
+
+An element bails if it carries anything the factory gives extra meaning to: a spread, a dynamic style prop, `as`,
+`unstyled`, `css`, `ref`, `key`, an explicit `children`, a dynamic `className`, or one of the `html*` props that
+`normalizeHTMLProps` renames. Pattern components like `<Stack>` are not folded yet.
+
+Turn it off on its own with `jsx: false` if you want call-site folding without it.
+
 ## What does not fold
 
 Everything else is left byte-identical. A call Bamboo cannot fully resolve keeps its runtime behaviour.

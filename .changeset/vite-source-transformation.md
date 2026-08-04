@@ -29,6 +29,18 @@ export default defineConfig({
 
 The plugin does not emit CSS. Keep your existing PostCSS setup for that.
 
+`styled.*` elements collapse to the intrinsic tag they render, which is where most style resolution happens at runtime —
+the factory runs `splitProps`, `css()` and `cx` per element per render inside a `forwardRef`:
+
+```tsx
+<styled.div color="red.300" onClick={fn}>hi</styled.div>
+<div onClick={fn} className={"c_red.300"}>hi</div>
+```
+
+Props follow the factory's own rule: with no recipe attached, css properties are consumed and everything else reaches
+the DOM unchanged. Elements carrying `as`, `unstyled`, `css`, `ref`, a spread, a dynamic prop or an `html*` prop are
+left alone. Pass `jsx: false` for call-site folding only.
+
 Values composed across files fold too, since the extractor already resolves them — an imported `css.raw()` value, a
 plain exported object, an aliased import, or a pure local helper including an IIFE. When a fold reads from another
 module the plugin registers it as a watch dependency, so editing that module re-transforms its consumers instead of
