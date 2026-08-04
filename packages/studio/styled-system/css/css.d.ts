@@ -1,5 +1,5 @@
 /* eslint-disable */
-import type { SystemStyleObject } from '../types/index'
+import type { SystemStyleObject } from '../types/index';
 
 type Styles = SystemStyleObject | undefined | null | false
 
@@ -19,4 +19,4 @@ interface CssFunction {
   raw: CssRawFunction
 }
 
-export declare const css: CssFunction
+export declare const css: CssFunction;

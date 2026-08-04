@@ -1,17 +1,16 @@
-import { getPatternStyles, patternFns, memo } from '../helpers.mjs'
-import { css } from '../css/index.mjs'
+import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
+import { css } from '../css/index.mjs';
 
 const centerConfig = {
-  transform(props) {
-    const { inline, ...rest } = props
-    return {
-      display: inline ? 'inline-flex' : 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      ...rest,
-    }
-  },
-}
+transform(props) {
+	const { inline, ...rest } = props;
+	return {
+		display: inline ? "inline-flex" : "flex",
+		alignItems: "center",
+		justifyContent: "center",
+		...rest
+	};
+}}
 
 export const getCenterStyle = (styles = {}) => {
   const _styles = getPatternStyles(centerConfig, styles)

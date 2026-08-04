@@ -41,7 +41,9 @@ export async function main() {
       result.comments = comments
     }
 
-    writeFileSync(outPath, JSON.stringify(result, null, 2), 'utf8')
+    // Trailing newline, so the formatter has nothing to add and a build leaves the
+    // tree clean. See the note in `packages/shared/scripts/postbuild.ts`.
+    writeFileSync(outPath, JSON.stringify(result, null, 2) + '\n', 'utf8')
   })
 
   console.log('[postbuild] Copied types to packages/generator/src/artifacts ✅')

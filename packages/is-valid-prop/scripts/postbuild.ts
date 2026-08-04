@@ -11,7 +11,9 @@ async function main() {
     const packagesDir = join(__dirname, '..', '..')
     const generatorPath = join(packagesDir, 'generator')
     const outPath = join(generatorPath, 'src', 'artifacts', 'generated', outfile + '.json')
-    writeFileSync(outPath, JSON.stringify({ content }, null, 2), 'utf8')
+    // Trailing newline, so the formatter has nothing to add and a build leaves the
+    // tree clean. See the note in `packages/shared/scripts/postbuild.ts`.
+    writeFileSync(outPath, JSON.stringify({ content }, null, 2) + '\n', 'utf8')
   })
   console.log('[postbuild] Copied code to packages/generator/src/artifacts ✅')
 }
