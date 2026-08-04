@@ -25,6 +25,43 @@ import { Recipes } from './recipes'
 
 const urlRegex = /^https?:\/\//
 
+/**
+ * The subset of an encoder's work that a single `process*` call is responsible for.
+ *
+ * The encoder accumulates across calls — that is what lets one stylesheet be built
+ * from many sources. A caller that wants the class names for *its* styles (rather
+ * than for everything encoded so far) records a scope and resolves it against the
+ * decoder. See `StyleDecoder.filterClassNames`.
+ *
+ * Membership is recorded even when the underlying hash was already present, since
+ * the class name still belongs to this call's result.
+ */
+export interface EncoderScope {
+  atomic: Set<string>
+  grouped: Set<string>
+  /** recipe name -> variant hashes contributed by this call */
+  recipes: Map<string, Set<string>>
+  /** recipe keys (`name` or `name{slotSeparator}slot`) whose base belongs to this call */
+  recipes_base: Set<string>
+}
+
+const createScope = (): EncoderScope => ({
+  atomic: new Set(),
+  grouped: new Set(),
+  recipes: new Map(),
+  recipes_base: new Set(),
+})
+
+const mergeScope = (target: EncoderScope, source: EncoderScope) => {
+  source.atomic.forEach((hash) => target.atomic.add(hash))
+  source.grouped.forEach((id) => target.grouped.add(id))
+  source.recipes_base.forEach((key) => target.recipes_base.add(key))
+  source.recipes.forEach((hashes, name) => {
+    const set = getOrCreateSet(target.recipes, name)
+    hashes.forEach((hash) => set.add(hash))
+  })
+}
+
 export class StyleEncoder {
   static separator = ']___['
   static conditionSeparator = '<___>'
@@ -35,6 +72,31 @@ export class StyleEncoder {
   recipes = new Map<string, Set<string>>()
   recipes_base = new Map<string, Set<string>>()
   grouped = new Map<string, Set<string>>()
+
+  /**
+   * Scope being recorded by the innermost `withScope` on the stack, if any.
+   * Encoding is synchronous, so a single field is enough to thread this through
+   * nested `process*` calls without changing their signatures.
+   */
+  private activeScope: EncoderScope | null = null
+
+  /**
+   * Run `fn` and report the work it encoded. Nested scopes merge into their parent,
+   * so `processAtomicRecipe` recording through `processAtomic` still attributes
+   * every hash to the outer call.
+   */
+  withScope = (fn: () => void): EncoderScope => {
+    const parent = this.activeScope
+    const scope = createScope()
+    this.activeScope = scope
+    try {
+      fn()
+    } finally {
+      this.activeScope = parent
+    }
+    if (parent) mergeScope(parent, scope)
+    return scope
+  }
 
   constructor(
     private context: Pick<
@@ -143,7 +205,20 @@ export class StyleEncoder {
   }
 
   processAtomic = (styles: StyleResultObject) => {
-    this.hashStyleObject(this.atomic, styles)
+    const scope = this.activeScope
+    if (!scope) {
+      this.hashStyleObject(this.atomic, styles)
+      return
+    }
+
+    // Hash into a local set first, so this call's contribution stays separable from
+    // whatever the encoder already holds.
+    const set = new Set<string>()
+    this.hashStyleObject(set, styles)
+    set.forEach((hash) => {
+      this.atomic.add(hash)
+      scope.atomic.add(hash)
+    })
   }
 
   processGrouped = (styles: StyleResultObject) => {
@@ -154,6 +229,8 @@ export class StyleEncoder {
 
     const sortedHashes = Array.from(groupSet).sort()
     const groupId = sortedHashes.join('|')
+
+    this.activeScope?.grouped.add(groupId)
 
     const existing = this.grouped.get(groupId)
     if (existing) return
@@ -187,7 +264,12 @@ export class StyleEncoder {
       const recipeKey = this.context.recipes.getSlotKey(recipeName, slot)
 
       const slotBase = config.base?.[slot]
-      if (!slotBase || this.recipes_base.has(recipeKey)) return
+      if (!slotBase) return
+
+      // Record before the early return: the base class belongs to this call's result
+      // whether or not this call is the one that encoded it.
+      this.activeScope?.recipes_base.add(recipeKey)
+      if (this.recipes_base.has(recipeKey)) return
 
       const base_set = getOrCreateSet(this.recipes_base, recipeKey)
       this.hashStyleObject(base_set, slotBase, { recipe: recipeName, slot })
@@ -202,9 +284,8 @@ export class StyleEncoder {
     this.processConfigSlotRecipeBase(recipeName, config)
 
     // process variants
-    const set = getOrCreateSet(this.recipes, recipeName)
     const computedVariants = Object.assign({}, config.defaultVariants, variants)
-    this.hashStyleObject(set, computedVariants, { recipe: recipeName, variants: true })
+    this.hashVariants(recipeName, computedVariants, { recipe: recipeName, variants: true })
 
     // process compound variants
     if (!config.compoundVariants || this.compound_variants.has(recipeName)) return
@@ -218,8 +299,40 @@ export class StyleEncoder {
     })
   }
 
+  /**
+   * Hash a recipe's computed variants into the shared per-recipe set, recording the
+   * hashes this call contributed when a scope is active.
+   */
+  private hashVariants = (
+    recipeName: string,
+    computedVariants: Record<string, any>,
+    baseEntry: Partial<Omit<StyleEntry, 'prop' | 'value' | 'cond'>>,
+  ) => {
+    const set = getOrCreateSet(this.recipes, recipeName)
+    const scope = this.activeScope
+
+    if (!scope) {
+      this.hashStyleObject(set, computedVariants, baseEntry)
+      return
+    }
+
+    const local = new Set<string>()
+    this.hashStyleObject(local, computedVariants, baseEntry)
+
+    const scoped = getOrCreateSet(scope.recipes, recipeName)
+    local.forEach((hash) => {
+      set.add(hash)
+      scoped.add(hash)
+    })
+  }
+
   processConfigRecipeBase = (recipeName: string, config: RecipeConfig) => {
-    if (!config.base || this.recipes_base.has(recipeName)) return
+    if (!config.base) return
+
+    // Record before the early return, for the same reason as the slot variant.
+    this.activeScope?.recipes_base.add(recipeName)
+    if (this.recipes_base.has(recipeName)) return
+
     const base_set = getOrCreateSet(this.recipes_base, recipeName)
     this.hashStyleObject(base_set, config.base, { recipe: recipeName })
   }
@@ -232,9 +345,8 @@ export class StyleEncoder {
     this.processConfigRecipeBase(recipeName, config)
 
     // process variants
-    const set = getOrCreateSet(this.recipes, recipeName)
     const computedVariants = Object.assign({}, config.defaultVariants, variants)
-    this.hashStyleObject(set, computedVariants, { recipe: recipeName, variants: true })
+    this.hashVariants(recipeName, computedVariants, { recipe: recipeName, variants: true })
 
     // process compound variants
     if (!config.compoundVariants || this.compound_variants.has(recipeName)) return

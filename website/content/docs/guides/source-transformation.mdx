@@ -1,0 +1,211 @@
+---
+title: Source Transformation
+description: Fold static css() and pattern calls into literal class strings at build time
+---
+
+Bamboo resolves styles at runtime: `css({ color: 'red.300' })` runs on every render and returns a class string. The
+result is cached, but the call still costs something — and for a call whose arguments never change, that cost buys
+nothing.
+
+Source transformation removes it. During a production build, `@bamboocss/vite` rewrites statically-resolvable calls into
+the string they would have returned:
+
+```tsx
+// you write
+export const title = css({ fontSize: 'lg', fontWeight: 'bold' })
+
+// the bundle gets
+export const title = 'fs_lg fw_bold'
+```
+
+The CSS is unchanged. Only the JavaScript changes.
+
+## Setup
+
+Install the plugin and add it to your Vite config. It is **off by default** — you have to ask for it.
+
+```bash
+pnpm add -D @bamboocss/vite
+```
+
+```ts
+// vite.config.ts
+import { defineConfig } from 'vite'
+import bamboocss from '@bamboocss/vite'
+
+export default defineConfig({
+  plugins: [bamboocss({ transform: true })],
+})
+```
+
+<Callout type="info">
+  This plugin does not emit CSS. Keep your existing PostCSS setup — it stays responsible for the stylesheet. The
+  plugin's only job is the fold.
+</Callout>
+
+## What folds
+
+A call folds when every argument can be resolved at build time and the call evaluates to a class string.
+
+```tsx
+// ✅ literal styles
+css({ color: 'red.300', padding: '4' })
+
+// ✅ conditions, responsive values, conditional value maps
+css({ color: 'red.300', _hover: { color: 'blue.500' } })
+css({ fontSize: { base: 'sm', md: 'lg' } })
+
+// ✅ several arguments — merged later-wins first, exactly as the runtime merges them
+css({ color: 'red.300', padding: '2' }, { color: 'blue.500' })
+
+// ✅ pattern calls
+stack({ gap: '4', align: 'center' })
+
+// ✅ inside a JSX expression, which is still a call site
+<div className={css({ px: '4' })} />
+```
+
+## What does not fold
+
+Everything else is left byte-identical. A call Bamboo cannot fully resolve keeps its runtime behaviour.
+
+```tsx
+// ❌ a value only known at runtime
+css({ color: tone })
+
+// ❌ a ternary — two possible results, no single string
+css({ color: on ? 'red.300' : 'blue.500' })
+
+// ❌ a spread of anything but an inline object literal
+css({ color: 'red.300', ...rest })
+
+// ❌ a computed key
+css({ [key]: { color: 'red.300' } })
+
+// ❌ partially static: one dynamic argument disqualifies the call
+css({ display: 'block' }, extra)
+```
+
+### Composed across files
+
+A value imported from another module folds, as long as the extractor can resolve it statically:
+
+```tsx
+// styles.ts
+export const button = css.raw({ display: 'inline-flex', padding: '4' })
+
+// button.tsx
+import { button } from './styles'
+export const cls = css(button, { background: 'blue.500' })
+// → "d_inline-flex p_4 bg_blue.500"
+```
+
+The same holds for plain exported objects, aliased imports, re-exports, and pure local helpers — including IIFEs:
+
+```tsx
+const pad = (n) => ({ padding: n })
+css(pad('4')) // → "p_4"
+```
+
+When a fold reads from another module, the plugin registers that module as a watch dependency, so editing it
+re-transforms the files that folded against it rather than leaving a stale literal behind.
+
+The one cross-file shape that does **not** fold is an imported value spread inside a nested selector
+(`css({ '& svg': { ...icon } })`). Extraction handles it and the CSS is still emitted — only the rewrite is declined,
+for the spread reason below.
+
+### Never folded
+
+Three kinds of call never fold, because they do not evaluate to a class string at all:
+
+- **`css.raw()`**, `recipe.raw()`, and `pattern.raw()` return a _style object_ so callers can compose them. Folding one
+  to a string would break every consumer.
+- **`cva()` and `sva()`** return a function. Their definitions stay as they are.
+- **`token()`** returns a token value, not a class.
+
+### Why spreads are conservative
+
+`{ ...base }` where `base` is a static local object _is_ resolvable, and Bamboo's extractor resolves it. But once the
+extractor flattens a spread into its result, a spread it understood and a spread it silently skipped look identical —
+both simply contribute keys, or fail to. Folding the second case would drop styles without any error.
+
+Rather than guess, the fold declines any spread that is not an inline object literal. Lifting that restriction is what
+partial folding, a later phase, is for.
+
+## Knowing whether a call folded
+
+Turn on `reportSkipped` to have every declined call reported with a reason:
+
+```ts
+bamboocss({ transform: true, reportSkipped: true })
+```
+
+```txt
+src/Button.tsx: dynamic=2 raw-call=1
+```
+
+The reasons are:
+
+| Reason               | Meaning                                                         |
+| -------------------- | --------------------------------------------------------------- |
+| `dynamic`            | Some part of the arguments could not be resolved at build time. |
+| `raw-call`           | A `.raw()` call, which must keep returning a style object.      |
+| `not-foldable`       | `cva`, `sva`, or `token` — cannot evaluate to a class string.   |
+| `unsupported-kind`   | A config recipe call — could fold, but does not yet.            |
+| `not-imported`       | The callee is not a Bamboo import (see below).                  |
+| `empty`              | Resolved, but produced no class names.                          |
+| `overlapping`        | Nested inside another folded call.                              |
+| `no-call-expression` | The call site could not be located in the source.               |
+
+`not-foldable` and `unsupported-kind` are deliberately separate. The first is permanent — `cva` and `sva` return
+functions and `token` returns a value, so there is no class string to fold to. The second is a limitation: a config
+recipe call like `buttonStyle({ size: 'sm' })` does resolve to a class string, and folding it would require reproducing
+`cx` conflict resolution and compound-variant matching. Both currently live in generated artifacts rather than in shared
+code, and a second implementation of either is how a build and its runtime drift apart. Lifting them into
+`@bamboocss/shared` is the prerequisite.
+
+You can also just read the output bundle: a folded call is a string literal, an unfolded one still says `css(`.
+
+### `not-imported`, specifically
+
+Bamboo's extractor matches style calls **by name** and does not require an import — a deliberate choice, since the worst
+case for CSS extraction is a handful of unused rules. A source transform cannot be that relaxed: your own
+`const css = (styles) => JSON.stringify(styles)` would otherwise be rewritten into a class string.
+
+So the fold asks for more than the extractor does. The callee's name must be imported at file level, and no enclosing
+scope may shadow it. A call that merely looks like a Bamboo call is reported as `not-imported` and left alone.
+
+## Build only, and why
+
+The plugin declares `apply: 'build'`. It does not run in `vite dev`.
+
+Folding a module means re-parsing it with `ts-morph`. In a build that cost is paid once per module and amortizes across
+the whole pass. Measured on `sandbox/vite-ts`, it is roughly **0.3 ms for a small component and 3 ms for a 147-line file
+with 24 call sites** — the parse dominates, and the fold itself adds about 10% on top of it. For a 500-module app that
+is somewhere under a second and a half added to a production build.
+
+In dev the trade is bad in both directions: the same parse lands on every hot update, feeding a source file back into
+the project invalidates cross-file resolutions that other modules memoized, and a dev bundle gains nothing from having
+its style calls pre-resolved. So the transform stays where it pays for itself.
+
+## What it does not do
+
+- **It does not remove the runtime from your bundle.** Dropping `createCss` and the utility tables requires _every_ call
+  site in the module graph to fold, which realistically does not happen in an app with dynamic components. You get the
+  per-call CPU saving; the runtime still ships.
+- **It does not remove the now-unused import.** `import { css } from 'styled-system/css'` stays after its last call
+  folds. Bundlers tree-shake it.
+- **It does not fold JSX style props.** `<Box color="red.300" />` is a different surface and keeps its runtime path. A
+  `css()` call _inside_ JSX — including compiled `_jsx(...)` output — is still a call site and does fold.
+- **It does not fold config recipe calls yet.** See `unsupported-kind` above.
+
+## How it stays correct
+
+The folded string is computed through the same runtime `css` your app would have called, rebuilt in-process from your
+resolved config — so the substitution is behaviour-preserving by construction rather than by a reimplementation that
+could drift.
+
+That leaves one thing to verify, and the test suite verifies it: that every class in a folded string is backed by a rule
+in the CSS the build emits. `packages/vite/__tests__` checks this across conditions, responsive values, `!important`,
+multiline values, arbitrary values containing quotes and backslashes, shorthand and longhand conflicts, and
+multi-argument merge order — plus a parity test asserting the emitted CSS is byte-identical whether or not folding ran.

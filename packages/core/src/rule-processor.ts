@@ -55,12 +55,12 @@ export class RuleProcessor {
   css(styles: SystemStyleObject): AtomicRule {
     const { encoder, decoder } = this.getParamsOrThrow()
 
-    encoder.processAtomic(styles)
+    const scope = encoder.withScope(() => encoder.processAtomic(styles))
     decoder.collect(encoder)
 
     return {
       styles,
-      getClassNames: () => Array.from(decoder.classNames.keys()),
+      getClassNames: () => decoder.filterClassNames(scope),
       toCss: this.toCss.bind(this),
     }
   }
@@ -68,14 +68,12 @@ export class RuleProcessor {
   grouped(styles: SystemStyleObject): GroupedRule {
     const { encoder, decoder } = this.getParamsOrThrow()
 
-    encoder.processGrouped(styles)
+    const scope = encoder.withScope(() => encoder.processGrouped(styles))
     decoder.collect(encoder)
-
-    const groupedResults = Array.from(decoder.grouped)
 
     return {
       styles,
-      getClassNames: () => groupedResults.map((r) => r.className),
+      getClassNames: () => decoder.filterClassNames(scope),
       toCss: this.toCss.bind(this),
     }
   }
@@ -83,12 +81,12 @@ export class RuleProcessor {
   cva(recipeConfig: RecipeDefinition<any>): AtomicRecipeRule {
     const { encoder, decoder } = this.getParamsOrThrow()
 
-    encoder.processAtomicRecipe(recipeConfig)
+    const scope = encoder.withScope(() => encoder.processAtomicRecipe(recipeConfig))
     decoder.collect(encoder)
 
     return {
       config: recipeConfig,
-      getClassNames: () => Array.from(decoder.classNames.keys()),
+      getClassNames: () => decoder.filterClassNames(scope),
       toCss: this.toCss.bind(this),
     }
   }
@@ -97,11 +95,12 @@ export class RuleProcessor {
     const { encoder, decoder } = this
     this.getParamsOrThrow()
 
-    encoder.processAtomicSlotRecipe(recipeConfig)
+    const scope = encoder.withScope(() => encoder.processAtomicSlotRecipe(recipeConfig))
     decoder.collect(encoder)
+
     return {
       config: recipeConfig,
-      getClassNames: () => Array.from(decoder.classNames.keys()),
+      getClassNames: () => decoder.filterClassNames(scope),
       toCss: this.toCss.bind(this),
     }
   }
@@ -110,12 +109,47 @@ export class RuleProcessor {
     const { encoder, decoder } = this
     this.getParamsOrThrow()
 
-    encoder.processRecipe(name, variants)
+    const scope = encoder.withScope(() => encoder.processRecipe(name, variants))
     decoder.collect(encoder)
 
     return {
       variants,
-      getClassNames: () => Array.from(decoder.classNames.keys()),
+      getClassNames: () => decoder.filterClassNames(scope),
+      toCss: this.toCss.bind(this),
+    }
+  }
+
+  /**
+   * Class names for a set of style props, as a JSX factory or pattern would resolve
+   * them. Scoped to this call, so it is safe on a processor shared across call sites.
+   */
+  styleProps(props: SystemStyleObject, grouped = false): AtomicRule {
+    const { encoder, decoder } = this.getParamsOrThrow()
+
+    const scope = encoder.withScope(() => encoder.processStyleProps(props, grouped))
+    decoder.collect(encoder)
+
+    return {
+      styles: props,
+      getClassNames: () => decoder.filterClassNames(scope),
+      toCss: this.toCss.bind(this),
+    }
+  }
+
+  /**
+   * Class names for a pattern call (`stack({ gap: '4' })`), scoped to this call.
+   */
+  pattern(name: string, props: SystemStyleObject, jsxName?: string): AtomicRule {
+    const { encoder, decoder } = this.getParamsOrThrow()
+
+    const scope = encoder.withScope(() =>
+      encoder.processPattern(name, props, jsxName ? 'jsx-pattern' : 'pattern', jsxName),
+    )
+    decoder.collect(encoder)
+
+    return {
+      styles: props,
+      getClassNames: () => decoder.filterClassNames(scope),
       toCss: this.toCss.bind(this),
     }
   }

@@ -14,7 +14,8 @@
     "**/coverage/**",
     "**/styled-system/**",
     "**/*-outdir/**",
-    "**/outdir/**"
+    "**/outdir/**",
+    "**/__golden__/**"
   ],
   "env": {
     "node": true,

@@ -222,6 +222,7 @@ export const docsNavigation: NavItem = {
         { title: 'Custom Fonts', url: 'fonts' },
         { title: 'Dynamic Styles', url: 'dynamic-styling' },
         { title: 'Static Generator', url: 'static' },
+        { title: 'Source Transformation', url: 'source-transformation' },
         { title: 'Debugging', url: 'debugging' },
       ],
     },

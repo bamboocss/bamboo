@@ -20,7 +20,7 @@ import type {
 } from '@bamboocss/types'
 import type { Context } from './context'
 import { sortStyleRules } from './sort-style-rules'
-import { StyleEncoder } from './style-encoder'
+import { type EncoderScope, StyleEncoder } from './style-encoder'
 
 import { Recipes } from './recipes'
 
@@ -391,6 +391,82 @@ export class StyleDecoder {
     return this
   }
 
+  /**
+   * Class names produced by one `process*` call.
+   *
+   * The decoder accumulates across calls, so reading `classNames` directly returns
+   * everything encoded so far. Callers that need one call's result — the build-time
+   * fold in particular, which must not attribute a neighbouring call's atoms to this
+   * one — pass the `EncoderScope` recorded for that call.
+   *
+   * Membership and order both come from the scope, never from the decoder's own
+   * accumulated state — otherwise the same call site would resolve differently
+   * depending on what was encoded before it, and a build would stop being
+   * reproducible under a change in module traversal order.
+   *
+   * Within that, ordering matches what a single-call processor produces today:
+   * atomic styles go through the same `sortStyleRules` pass `collectAtomic` applies,
+   * and the remaining categories follow the order `collect` inserts them (grouped,
+   * recipe variants, recipe base). Class order on an element has no cascade meaning
+   * — the stylesheet decides that — so this is about determinism, not correctness.
+   */
+  filterClassNames = (scope: EncoderScope): string[] => {
+    const resultsByHash = new Map<string, AtomicStyleResult[]>()
+    const byGroupId = new Map<string, string>()
+    const byRecipeKey = new Map<string, string>()
+
+    for (const [className, entry] of this.classNames) {
+      if ('hash' in entry) {
+        // Slot recipes record one variant hash but `collectRecipe` expands it per
+        // slot (`<hash>]___[slot:<slot>`), so several results share a base hash.
+        // Insertion order within a hash is slot order.
+        const key = stripSlotSegment(entry.hash)
+        const list = resultsByHash.get(key)
+        if (list) list.push(entry)
+        else resultsByHash.set(key, [entry])
+        continue
+      }
+
+      if ('recipe' in entry) {
+        const key = entry.slot ? this.context.recipes.getSlotKey(entry.recipe, entry.slot) : entry.recipe
+        byRecipeKey.set(key, className)
+        continue
+      }
+
+      byGroupId.set(Array.from(entry.hashSet).sort().join('|'), className)
+    }
+
+    const out: string[] = []
+    const seen = new Set<string>()
+
+    const push = (className: string | undefined) => {
+      if (!className || seen.has(className)) return
+      seen.add(className)
+      out.push(className)
+    }
+
+    const collectResults = (hashes: Iterable<string>) => {
+      const found: AtomicStyleResult[] = []
+      for (const hash of hashes) {
+        const results = resultsByHash.get(hash)
+        if (results) found.push(...results)
+      }
+      return found
+    }
+
+    // Atomic styles are sorted, matching `collectAtomic`.
+    sortStyleRules(collectResults(scope.atomic)).forEach((result) => push(result.className))
+
+    scope.grouped.forEach((groupId) => push(byGroupId.get(groupId)))
+
+    // Recipe variants are not sorted — each is already scoped by its recipe class.
+    scope.recipes.forEach((hashes) => collectResults(hashes).forEach((result) => push(result.className)))
+
+    scope.recipes_base.forEach((key) => push(byRecipeKey.get(key)))
+
+    return out
+  }
+
   getConfigRecipeResult = (recipeName: string) => {
     return {
       atomic: this.atomic,
@@ -427,6 +503,14 @@ export class StyleDecoder {
 
     return this.getConfigRecipeResult(recipeName)
   }
+}
+
+const slotSegment = StyleEncoder.separator + 'slot:'
+
+/** Drop a trailing `]___[slot:<slot>` segment, if present. Always appended last. */
+const stripSlotSegment = (hash: string) => {
+  const at = hash.lastIndexOf(slotSegment)
+  return at === -1 ? hash : hash.slice(0, at)
 }
 
 const entryKeys = ['cond', 'recipe', 'layer', 'slot'] as const
