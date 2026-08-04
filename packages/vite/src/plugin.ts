@@ -18,12 +18,22 @@ export interface BambooVitePluginOptions {
   configPath?: string
   cwd?: string
   /**
-   * Report every call site that did *not* fold, and why. Useful when a call you
-   * expected to collapse still shows up in the bundle.
+   * Report every call site that did *not* fold, and why, per file. Useful when a call
+   * you expected to collapse still shows up in the bundle.
    *
    * @default false
    */
   reportSkipped?: boolean
+  /**
+   * Print a coverage summary when the build finishes: how much folded, and what the
+   * remainder was declined for.
+   *
+   * On by default. Without it there is no signal that the transform did anything, and
+   * no way to tell a project where everything folds from one where nothing does.
+   *
+   * @default true
+   */
+  reportSummary?: boolean
 }
 
 const DEFAULT_EXTENSIONS = /\.(?:[cm]?[jt]sx?)$/
@@ -64,7 +74,10 @@ const formatSkipped = (id: string, skipped: SkippedCall[]) => {
  * with no matching rule.
  */
 export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin => {
-  const { transform = false, configPath, cwd, reportSkipped = false } = options
+  const { transform = false, configPath, cwd, reportSkipped = false, reportSummary = true } = options
+
+  /** Totals across the build, for the summary. */
+  const totals = { folded: 0, files: 0, filesWithFolds: 0, skipped: new Map<string, number>() }
 
   let ctx: Awaited<ReturnType<typeof loadConfigAndCreateContext>> | undefined
   let runtimeCss: RuntimeCss | undefined
@@ -114,6 +127,13 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin => {
         return null
       }
 
+      totals.files++
+      totals.folded += result.folded.length
+      if (result.folded.length) totals.filesWithFolds++
+      for (const entry of result.skipped) {
+        totals.skipped.set(entry.reason, (totals.skipped.get(entry.reason) ?? 0) + 1)
+      }
+
       if (reportSkipped && result.skipped.length) {
         logger.info('vite:transform', formatSkipped(filePath, result.skipped))
       }
@@ -131,6 +151,26 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin => {
       logger.debug('vite:transform', `Folded ${result.folded.length} call(s) in ${filePath}`)
 
       return { code: result.code, map: result.map }
+    },
+
+    buildEnd() {
+      if (!transform || !reportSummary) return
+
+      const declined = Array.from(totals.skipped.values()).reduce((sum, count) => sum + count, 0)
+      const total = totals.folded + declined
+      if (!total) return
+
+      const share = Math.round((totals.folded / total) * 100)
+      const reasons = Array.from(totals.skipped.entries())
+        .sort((a, b) => b[1] - a[1])
+        .map(([reason, count]) => `${reason}=${count}`)
+        .join(' ')
+
+      logger.info(
+        'vite:transform',
+        `Folded ${totals.folded}/${total} (${share}%) across ${totals.filesWithFolds}/${totals.files} files` +
+          (reasons ? ` — declined: ${reasons}` : ''),
+      )
     },
   }
 }

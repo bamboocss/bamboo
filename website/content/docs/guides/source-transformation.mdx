@@ -197,7 +197,17 @@ partial folding, a later phase, is for.
 
 ## Knowing whether a call folded
 
-Turn on `reportSkipped` to have every declined call reported with a reason:
+A build prints a coverage summary when it finishes:
+
+```txt
+Folded 184/213 (86%) across 41/58 files — declined: dynamic=22 raw-call=5 not-imported=2
+```
+
+That is the number to watch. It tells you the transform ran, how much of the project it reached, and what the remainder
+is waiting on — a project sitting at 40% `dynamic` is a different problem from one sitting at 40% `not-imported`. Turn
+it off with `reportSummary: false`.
+
+For per-file detail, turn on `reportSkipped` to have every declined call reported with a reason:
 
 ```ts
 bamboocss({ transform: true, reportSkipped: true })

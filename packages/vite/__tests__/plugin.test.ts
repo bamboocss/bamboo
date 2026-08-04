@@ -72,3 +72,28 @@ describe('file filtering', () => {
     await expect(callTransform(plugin, SOURCE, id)).resolves.toBeNull()
   })
 })
+
+describe('coverage summary', () => {
+  const callBuildEnd = async (plugin: ReturnType<typeof bamboocss>) => {
+    const hook = plugin.buildEnd
+    const handler = typeof hook === 'function' ? hook : hook?.handler
+    return handler?.call({} as never, undefined as never)
+  }
+
+  test('is on by default and off when asked', () => {
+    // The option exists so a build can opt out; the default is on, because without it
+    // there is no signal that the transform did anything at all.
+    expect(() => bamboocss({ transform: true })).not.toThrow()
+    expect(() => bamboocss({ transform: true, reportSummary: false })).not.toThrow()
+  })
+
+  test('says nothing when the transform is off', async () => {
+    await expect(callBuildEnd(bamboocss())).resolves.toBeUndefined()
+  })
+
+  test('says nothing when no module was transformed', async () => {
+    // A build that folded nothing and declined nothing has no coverage to report, and a
+    // "0/0" line would be noise in every project not using the transform.
+    await expect(callBuildEnd(bamboocss({ transform: true }))).resolves.toBeUndefined()
+  })
+})
