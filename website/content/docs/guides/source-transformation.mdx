@@ -310,7 +310,9 @@ its style calls pre-resolved. So the transform stays where it pays for itself.
 
 - **It does not remove the runtime from your bundle.** Dropping `createCss` and the utility tables requires _every_ call
   site in the module graph to fold, which realistically does not happen in an app with dynamic components. You get the
-  per-call CPU saving; the runtime still ships.
+  per-call CPU saving; the runtime still ships. Bundle size barely moves either way, and gzipped it moves slightly
+  against you — on `sandbox/runtime-perf`, -0.8% raw and +1.0% gzipped, because class literals are all distinct where
+  the repeated `css({ … })` calls they replace compressed almost to nothing.
 - **It does not remove the now-unused import.** `import { css } from 'styled-system/css'` stays after its last call
   folds. Bundlers tree-shake it.
 - **It does not fold recipe elements.** A config recipe's `jsx` components — `<Button size="sm" />` — keep their runtime
