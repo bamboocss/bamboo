@@ -99,7 +99,36 @@ const asTag = (attribute: JsxAttribute): string | undefined => {
  */
 const HTML_PROPS = new Set(['htmlSize', 'htmlTranslate', 'htmlWidth', 'htmlHeight'])
 
-export type JsxSkipReason = 'dynamic' | 'unsupported-kind'
+export type JsxSkipReason = 'dynamic' | 'unsupported-kind' | 'not-imported'
+
+/**
+ * Is the name bound by an import from bamboo's generated system?
+ *
+ * The parser matches a pattern element by its tag name, so `<Stack>` is reported
+ * whatever module `Stack` came from. That is harmless for extraction — a few unused
+ * rules — and destructive for a transform: `import { Stack } from '@mui/material'`
+ * would be replaced by a bamboo `<div>`, deleting the third-party component.
+ *
+ * `imports.match` is the same check the parser uses to decide whether a module counts,
+ * so this asks the question the element surface never got around to asking.
+ */
+const isBambooImport = (node: Node, name: string, ctx: Context): boolean => {
+  for (const declaration of node.getSourceFile().getImportDeclarations()) {
+    const mod = declaration.getModuleSpecifierValue()
+
+    for (const named of declaration.getNamedImports()) {
+      const importName = named.getNameNode().getText()
+      const alias = named.getAliasNode()?.getText() ?? importName
+      if (alias !== name) continue
+      return ctx.imports.match({ mod, name: importName, alias })
+    }
+
+    const namespace = declaration.getNamespaceImport()
+    if (namespace?.getText() === name) return ctx.imports.match({ mod, name, alias: name, kind: 'namespace' })
+  }
+
+  return false
+}
 
 /**
  * The intrinsic tag a factory expression names, if it names one statically.
@@ -150,6 +179,8 @@ export const planPatternFold = (
   const jsxName = node.getTagNameNode().getText()
   const detail = ctx.patterns.details.find((entry) => entry.jsxName === jsxName)
   if (!detail) return { reason: 'unsupported-kind' }
+
+  if (!isBambooImport(node, jsxName, ctx)) return { reason: 'not-imported' }
 
   const styles = (item.data?.[0] ?? {}) as Dict
   const passthrough: string[] = []
@@ -211,8 +242,11 @@ export const planJsxFold = (
     return { reason: 'unsupported-kind' }
   }
 
-  const baseTag = intrinsicTag(node.getTagNameNode().getText(), ctx.jsx.factoryName)
+  const tagName = node.getTagNameNode().getText()
+  const baseTag = intrinsicTag(tagName, ctx.jsx.factoryName)
   if (!baseTag) return { reason: 'unsupported-kind' }
+
+  if (!isBambooImport(node, ctx.jsx.factoryName, ctx)) return { reason: 'not-imported' }
 
   let tag = baseTag
 

@@ -432,3 +432,42 @@ describe('pattern elements', () => {
     expect(fold(code).folded).toHaveLength(0)
   })
 })
+
+describe('the component has to come from bamboo', () => {
+  /**
+   * The parser matches an element by its tag name, whatever module it came from. That is
+   * harmless for extraction and destructive here: replacing a third-party component with
+   * a bamboo div deletes it.
+   */
+  test('a pattern-named component from a library is not folded', () => {
+    const { fold } = createFoldFixture()
+    const code = `import { Stack } from '@mui/material'\nexport const A = () => <Stack gap="4">hi</Stack>\n`
+
+    const result = fold(code)
+    expect(result.folded).toHaveLength(0)
+    expect(result.code).toBe(code)
+    expect(result.skipped.map((s) => s.reason)).toContain('not-imported')
+  })
+
+  test('a factory-named import from a library is not folded', () => {
+    const { fold } = createFoldFixture()
+    const code = `import { styled } from '@emotion/styled'\nexport const A = () => <styled.div color="red.300" />\n`
+
+    expect(fold(code).folded).toHaveLength(0)
+    expect(fold(code).code).toBe(code)
+  })
+
+  test('a locally defined pattern-named component is not folded', () => {
+    const { fold } = createFoldFixture()
+    const code = `const Stack = (p) => null\nexport const A = () => <Stack gap="4">hi</Stack>\n`
+
+    expect(fold(code).folded).toHaveLength(0)
+  })
+
+  test('the real import still folds', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(`import { Stack } from 'styled-system/jsx'\nexport const A = () => <Stack gap="4">hi</Stack>\n`)
+
+    expect(result.folded).toHaveLength(1)
+  })
+})
