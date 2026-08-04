@@ -75,8 +75,20 @@ pnpm build-fast               # Fast build without type definitions
 
 ### Benchmarks
 
-Perf-sensitive code has Vitest benchmarks in `packages/*/__tests__/*.bench.ts` (core `static-css`, extractor, parser
-`ts-eval`, generator runtime `css()`).
+Perf-sensitive code has Vitest benchmarks in `{packages,sandbox}/*/__tests__/*.bench.ts` (core `static-css`, extractor,
+parser `ts-eval`, generator runtime `css()`, the vite fold's per-module cost, and a React render of a folded tree).
+
+🚨 **Nothing in CI catches a performance regression.** The Quality workflow runs format, tests, lint, knip and typecheck
+— benchmarks are excluded on purpose, for the reason below. That makes measuring a _manual obligation before
+committing_, not an optional follow-up:
+
+- Touching a path with a benchmark, or any hot path — extraction, the generated runtime, the fold, css emission — means
+  taking a before and after reading and reporting the diff in the commit.
+- If the change is meant to be perf-neutral, say so and show the numbers. "Should be fine" is how regressions land.
+- If a benchmark does not cover the path you changed, that is a reason to add one, not a reason to skip measuring.
+
+This is not hypothetical. A per-call-site import scan added to the vite fold cost **+74%** on the largest sandbox file
+and was caught only because the change happened to be re-measured. Nothing else would have found it.
 
 ```bash
 pnpm bench                    # Run all benchmarks
@@ -87,8 +99,9 @@ pnpm bench:compare            # Re-run and diff against that baseline
 
 **Benchmarks are reported, not asserted.** Wall-clock numbers depend on the machine and its load, so they are
 deliberately excluded from `pnpm check` and CI — a threshold would fail on a busy runner rather than on a real
-regression. Behaviour that must not regress is locked down deterministically instead (e.g.
-`packages/shared/__tests__/memo.test.ts` counts serialization work rather than timing it).
+regression. Where behaviour must not regress, lock it down by counting the work instead of timing it — e.g.
+`packages/shared/__tests__/memo.test.ts` counts serialization calls rather than measuring them, and that _does_ run in
+CI. If a change you cannot benchmark deterministically still matters, that is the shape to reach for.
 
 To measure a change, take both readings on the same idle machine:
 
