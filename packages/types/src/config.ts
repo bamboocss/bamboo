@@ -357,9 +357,18 @@ interface CssgenOptions {
    *
    * It is opt-in because reachability cannot be proven for every reference. `token()` and
    * `token.var()` calls are read out of the source, as is any literal `var(--x)` written
-   * by hand, but a token referenced only from a stylesheet outside `include`, or by a
-   * separate package consuming the output as design tokens, is invisible here. Use
-   * `staticCss` to keep those.
+   * by hand. Three things stay invisible: a token named by a path the source does not
+   * spell out as a string literal — `token.var(key)` — one referenced only from a
+   * stylesheet outside `include`, and one used by a separate package consuming the output
+   * as design tokens. Use `staticCss` to keep those.
+   *
+   * Tokens that javascript receives as a `var()` rather than a literal are always kept, so
+   * that `token()` answers correctly for any path at runtime. That covers virtual tokens
+   * and any token carrying a condition, and it has one cost worth knowing about: a
+   * negative token resolves to `calc(var(--spacing-4) * -1)`, so every token with a
+   * negative counterpart pins its own declaration. Spacing scales generate one per entry,
+   * which keeps the whole scale whether or not the app uses it — on the default preset
+   * that is roughly a third of what survives pruning. There is no opt-out.
    *
    * @default false
    */

@@ -31,6 +31,9 @@ export interface SplitCssArtifact {
   dir?: string
 }
 
+/** A `var()` reference, including the whitespace a formatter may leave behind. */
+const VAR_REF = /var\(\s*(--[^\s,)]+)/g
+
 export interface SplitCssResult {
   /** Layer CSS files (reset, global, tokens, utilities) */
   layers: SplitCssArtifact[]
@@ -145,7 +148,7 @@ export class Generator extends Context {
     if (!themes) return names
 
     for (const themeName of Object.keys(themes)) {
-      for (const match of getThemeCss(this, themeName).matchAll(/var\(\s*(--[^\s,)]+)/g)) {
+      for (const match of getThemeCss(this, themeName).matchAll(VAR_REF)) {
         names.add(match[1])
       }
     }
@@ -154,19 +157,35 @@ export class Generator extends Context {
   }
 
   /**
-   * Tokens whose javascript value is a `var()` reference rather than a literal: virtual
-   * tokens, and any token carrying a condition. `token('colors.text')` hands those to the
-   * caller as a reference, so the declaration has to survive whether or not the generated
-   * css mentions it. Ordinary tokens resolve to a literal in javascript and need no such
-   * exemption.
+   * Tokens whose javascript value is a `var()` reference rather than a literal.
+   * `token('colors.text')` hands those to the caller as a reference, so the declaration
+   * has to survive whether or not the generated css mentions it. Ordinary tokens resolve
+   * to a literal in javascript and need no such exemption.
+   *
+   * The two cases mirror `generateTokenJs`, which is what decides the value javascript
+   * actually receives:
+   *
+   * - A virtual token, or one carrying a condition, is handed its own `varRef`.
+   * - A negative token is handed `calc(var(--x) * -1)`, so it is a reference too — but to
+   *   the *positive* token's declaration. Its own var is never declared, so the name has
+   *   to come out of the value.
    */
   private getAlwaysKeptTokenVars = () => {
     const names = new Set<string>()
 
     this.tokens.allTokens.forEach((token) => {
-      const { isVirtual, condition, var: varName } = token.extensions
-      if (!isVirtual && (!condition || condition === 'base')) return
-      if (varName) names.add(varName.startsWith('--') ? varName : `--${varName}`)
+      const { isVirtual, isNegative, condition, var: varName } = token.extensions
+
+      if (isVirtual || condition !== 'base') {
+        if (varName) names.add(varName.startsWith('--') ? varName : `--${varName}`)
+        return
+      }
+
+      if (!isNegative) return
+
+      for (const match of String(token.value).matchAll(VAR_REF)) {
+        names.add(match[1])
+      }
     })
 
     return names

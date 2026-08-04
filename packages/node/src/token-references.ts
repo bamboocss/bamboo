@@ -19,6 +19,16 @@ const RAW_VAR = /var\(\s*(--[^\s,)]+)/g
  * This is deliberately textual and therefore over-inclusive: a match inside a comment or
  * a string that is never evaluated keeps a token alive. Keeping a token that is not used
  * costs bytes; dropping one that is breaks the page, so the bias belongs on this side.
+ *
+ * `results` is a second, redundant source for the same paths: the extractor resolves one
+ * built from a constant, which the text scan reads literally and fails to look up. Callers
+ * that cannot supply it — the watch rebuild and the PostCSS plugin, where re-parsing would
+ * encode every style a second time — pass none, and stay correct only because a path the
+ * scan misses can lose nothing: `token()` hands javascript a literal for exactly the
+ * tokens this cannot see, and hands it a `var()` only for virtual, conditional and
+ * negative tokens, which `getAlwaysKeptTokenVars` keeps whatever the source says. Narrow
+ * those blanket keeps and this argument stops being redundant, so those two callers would
+ * have to find another way to supply it.
  */
 export function collectTokenReferences(ctx: BambooContext, results: ParserResult[]) {
   const paths = new Set<string>()
@@ -48,13 +58,13 @@ export function collectTokenReferences(ctx: BambooContext, results: ParserResult
   }
 
   // Token paths resolve to a css variable name through the dictionary; a path that names
-  // no token simply resolves to nothing.
+  // no token simply resolves to nothing. A negative token resolves to `calc(var(--x) *
+  // -1)`, so read every reference out rather than only the first.
   for (const path of paths) {
     const ref = ctx.tokens.view.getVar(path)
     if (!ref) continue
 
-    const name = String(ref).match(/var\(\s*(--[^\s,)]+)/)
-    if (name) vars.add(name[1])
+    for (const match of String(ref).matchAll(RAW_VAR)) vars.add(match[1])
   }
 
   return vars

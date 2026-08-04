@@ -2,8 +2,13 @@ import { createGeneratorContext } from '@bamboocss/fixture'
 import type { Config } from '@bamboocss/types'
 import { describe, expect, test } from 'vitest'
 
-const declarations = (css: string) => new Set([...css.matchAll(/(--[a-z0-9-]+)\s*:/gi)].map((m) => m[1]))
-const references = (css: string) => new Set([...css.matchAll(/var\(\s*(--[a-z0-9-]+)/gi)].map((m) => m[1]))
+/**
+ * Both stop where the product's own regex stops, rather than at `[a-z0-9-]`. A token name
+ * can carry an escape — `spacing.0.5` is declared as `--spacing-0\.5` — and truncating it
+ * to `--spacing-0` invents a name that collides with a real, unrelated token.
+ */
+const declarations = (css: string) => new Set([...css.matchAll(/(--[^\s:;{}]+)\s*:/g)].map((m) => m[1]))
+const references = (css: string) => new Set([...css.matchAll(/var\(\s*(--[^\s,)]+)/g)].map((m) => m[1]))
 
 /**
  * A `var()` with nothing declaring it. Some are there before pruning and are meant to be —
@@ -15,7 +20,7 @@ const dangling = (css: string) => {
   return [...references(css)].filter((name) => !declared.has(name))
 }
 
-const build = (config: Config) => {
+const buildWithContext = (config: Config) => {
   const ctx = createGeneratorContext({
     staticCss: { css: [{ properties: { color: ['red.300'] } }] },
     ...config,
@@ -26,7 +31,28 @@ const build = (config: Config) => {
   ctx.appendBaselineCss(sheet)
   ctx.pruneTokens(sheet)
 
-  return ctx.getCss(sheet)
+  return { ctx, css: ctx.getCss(sheet) }
+}
+
+const build = (config: Config) => buildWithContext(config).css
+
+/**
+ * The custom properties `token()` hands javascript as a `var()` reference rather than a
+ * literal, mirroring `generateTokenJs` — it is what decides the value a caller receives.
+ *
+ * Not the same set as "tokens with their own var": a negative token's value is
+ * `calc(var(--spacing-4) * -1)`, so the name it depends on is the *positive* token's.
+ */
+const referencedByJs = (ctx: ReturnType<typeof buildWithContext>['ctx']) => {
+  const names = new Set<string>()
+
+  ctx.tokens.allTokens.forEach((token) => {
+    const { isVirtual, condition, varRef } = token.extensions
+    const value = isVirtual || condition !== 'base' ? varRef : token.value
+    references(String(value)).forEach((name) => names.add(name))
+  })
+
+  return names
 }
 
 /** Every configuration whose token output differs in shape. */
@@ -83,6 +109,28 @@ describe('themes injected at runtime', () => {
 
     expect(referenced.length).toBeGreaterThan(0)
     expect(referenced.filter((name) => !declared.has(name))).toEqual([])
+  })
+})
+
+/**
+ * `token('spacing.-4')` returns `calc(var(--spacing-4) * -1)`, and `token('colors.text')`
+ * a `var()` at whatever the condition resolves to. Prune the declaration behind either and
+ * javascript is left holding a reference to nothing — a silent one, since the css itself
+ * stays consistent.
+ */
+describe.each(Object.entries(CASES))('references javascript is handed: %s', (_name, config) => {
+  const before = buildWithContext({ ...config, pruneUnusedTokens: false })
+  const after = buildWithContext({ ...config, pruneUnusedTokens: true })
+
+  test('keeps every declaration token() resolves to', () => {
+    const declaredBefore = declarations(before.css)
+    const declaredAfter = declarations(after.css)
+
+    // Some are undeclared before pruning too — a virtual token has no declaration of its
+    // own until a utility emits one — so the test is what pruning takes away.
+    const lost = [...referencedByJs(after.ctx)].filter((name) => declaredBefore.has(name) && !declaredAfter.has(name))
+
+    expect(lost).toEqual([])
   })
 })
 

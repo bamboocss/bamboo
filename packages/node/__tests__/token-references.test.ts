@@ -5,6 +5,7 @@ const tokenVars: Record<string, string> = {
   'colors.pink.400': 'var(--colors-pink-400)',
   'colors.purple.600': 'var(--colors-purple-600)',
   'spacing.4': 'var(--spacing-4)',
+  'spacing.-4': 'calc(var(--spacing-4) * -1)',
 }
 
 const createContext = (files: Record<string, string>) =>
@@ -65,5 +66,14 @@ describe('collectTokenReferences', () => {
     ctx.getFiles = () => ['a.tsx', 'gone.tsx']
 
     expect(collectTokenReferences(ctx, [])).toEqual(new Set(['--spacing-4']))
+  })
+
+  /**
+   * A negative token's value is `calc(var(--spacing-4) * -1)`, so the reference to keep is
+   * the positive token's declaration — and reading only the first match would still find
+   * it. Guard the general shape instead: every reference in the value, not just one.
+   */
+  test('keeps every reference in a resolved value, not only the first', () => {
+    expect(collect({ 'a.tsx': `token('spacing.-4')` })).toEqual(new Set(['--spacing-4']))
   })
 })

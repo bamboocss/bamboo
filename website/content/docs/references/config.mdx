@@ -660,6 +660,13 @@ It is opt-in because reachability cannot be proven for every reference. Three th
 
 Use [`staticCss`](#staticcss) to keep those.
 
+One cost is worth knowing about. Tokens that javascript receives as a `var()` rather than a literal are always kept, so
+that `token()` answers correctly for any path at runtime — that covers virtual tokens, any token carrying a condition,
+and negative tokens. A negative token resolves to `calc(var(--spacing-4) * -1)`, so every token with a negative
+counterpart pins its own declaration. Spacing scales generate one negative per entry, which keeps the whole scale
+whether or not your app uses it. On the default preset that is roughly a third of what survives pruning, and there is no
+opt-out.
+
 ### cssVarRoot
 
 **Type**: `string`
