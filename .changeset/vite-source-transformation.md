@@ -41,6 +41,11 @@ Props follow the factory's own rule: with no recipe attached, css properties are
 the DOM unchanged. Elements carrying `as`, `unstyled`, `css`, `ref`, a spread, a dynamic prop or an `html*` prop are
 left alone. Pass `jsx: false` for call-site folding only.
 
+A `styled.*` element with a static `as` folds to that tag, pattern elements (`<Stack>`) collapse the pattern and the
+factory together, and a call or element that is only _partly_ static splits — the resolvable half becomes a literal and
+the rest keeps its runtime call, joined with `cx`. Splitting is refused wherever the two halves could produce a class
+for the same property. Pass `partial: false` to disable it.
+
 Values composed across files fold too, since the extractor already resolves them — an imported `css.raw()` value, a
 plain exported object, an aliased import, or a pure local helper including an IIFE. When a fold reads from another
 module the plugin registers it as a watch dependency, so editing that module re-transforms its consumers instead of

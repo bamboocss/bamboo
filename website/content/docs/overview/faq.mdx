@@ -386,6 +386,22 @@ Yes, you can use dynamic styles with Bamboo. More on that [here](/docs/guides/dy
 
 ---
 
+## Can Bamboo resolve styles at build time instead of at runtime?
+
+Yes, for the parts it can see. `@bamboocss/vite` rewrites statically-resolvable style calls into the class string they
+would have returned, so those calls cost nothing on render:
+
+```tsx
+export const title = css({ fontSize: 'lg' })
+export const title = 'fs_lg'
+```
+
+It covers `css()`, pattern and recipe calls, `styled.*` and pattern elements, and the static half of anything only
+partly static. The CSS is unchanged; only the JavaScript is. Off by default and build-only — see
+[Source Transformation](/docs/guides/source-transformation).
+
+---
+
 ## Should I use atomic or config recipes ?
 
 [Config recipes](/docs/concepts/recipes#config-recipe) are generated just in time, meaning that only the recipes and

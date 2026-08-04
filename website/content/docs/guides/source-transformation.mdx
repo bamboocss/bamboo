@@ -145,7 +145,8 @@ css({ color: 'red.300', ...rest })
 // ❌ a computed key
 css({ [key]: { color: 'red.300' } })
 
-// ❌ partially static: one dynamic argument disqualifies the call
+// ❌ several arguments where one is dynamic — later-wins across the whole object, so the
+//    static half cannot be hoisted out without reproducing the merge
 css({ display: 'block' }, extra)
 ```
 
@@ -192,8 +193,30 @@ Three kinds of call never fold, because they do not evaluate to a class string a
 extractor flattens a spread into its result, a spread it understood and a spread it silently skipped look identical —
 both simply contribute keys, or fail to. Folding the second case would drop styles without any error.
 
-Rather than guess, the fold declines any spread that is not an inline object literal. Lifting that restriction is what
-partial folding, a later phase, is for.
+Rather than guess, the fold declines any spread that is not an inline object literal.
+
+## Partly static calls and elements
+
+A single-argument `css()` call, or a `styled.*` element, does not have to be entirely static. The part that resolves
+becomes a literal and the rest keeps its runtime call:
+
+```tsx
+css({ color: 'red.300', padding: p })
+cx('c_red.300', css({ padding: p }))
+
+<styled.div color="red.300" backgroundColor={tone} />
+<div className={cx('c_red.300', css({ backgroundColor: tone }))} />
+```
+
+The element still collapses to its intrinsic tag, so the factory goes with it.
+
+Splitting is refused when the two halves could produce a class for the same property, since `cx` concatenates without
+resolving conflicts: a shorthand facing its longhand, a top-level `base` block, and multi-argument `css()`. A property
+counts as static only if the extractor resolved every leaf _and_ accounted for everything the source declared, so a
+ternary, a dynamic array element, a nested dynamic value and a spread all keep their whole property at runtime.
+
+Element splitting needs both `css` and `cx`, so a file that does not already import `css` is left alone. Turn splitting
+off with `partial: false`.
 
 ## Knowing whether a call folded
 
