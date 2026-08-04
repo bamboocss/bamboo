@@ -217,4 +217,49 @@ describe('CLI', () => {
     // Clean up
     await fs.unlink(paths.pkgJson)
   })
+
+  /**
+   * Codegen leaves a nameless `package.json` in the outdir to carry the `sideEffects`
+   * hint, so pointing `emit-pkg` at that directory finds a file already there. It still
+   * has to produce a package that can be resolved and published: an entrypoint map alone,
+   * on top of a nameless `private` file, is not one.
+   */
+  test('emit-pkg over the codegen output', async () => {
+    const outdirPkg = path.resolve(paths.styledSystem, 'package.json')
+
+    expect(JSON.parse(await fs.readFile(outdirPkg, 'utf8'))).toMatchObject({
+      private: true,
+      sideEffects: ['*.css', '**/*.css'],
+    })
+
+    runCommand(`node ${binPath} emit-pkg --outdir styled-system --cwd="${testsCwd}"`, { cwd: testsCwd })
+
+    const pkg = JSON.parse(await fs.readFile(outdirPkg, 'utf8'))
+
+    expect(pkg).toMatchObject({
+      name: 'styled-system',
+      version: '0.1.0',
+      license: 'ISC',
+      type: 'module',
+      sideEffects: ['*.css', '**/*.css'],
+      scripts: { prepare: 'bamboo codegen --clean' },
+    })
+    expect(pkg.exports['./css']).toBeDefined()
+    expect('private' in pkg).toBe(false)
+  })
+
+  /** A file the consumer named is theirs; only the entrypoints are ours to write. */
+  test('emit-pkg leaves a package the consumer named alone', async () => {
+    const outdirPkg = path.resolve(paths.styledSystem, 'package.json')
+    const owned = { name: '@acme/styled-system', version: '2.4.0', private: true, type: 'module' }
+    await fs.writeFile(outdirPkg, JSON.stringify(owned, null, 2))
+
+    runCommand(`node ${binPath} emit-pkg --outdir styled-system --cwd="${testsCwd}"`, { cwd: testsCwd })
+
+    const pkg = JSON.parse(await fs.readFile(outdirPkg, 'utf8'))
+
+    expect(pkg).toMatchObject(owned)
+    expect(pkg.exports['./css']).toBeDefined()
+    expect(pkg.license).toBeUndefined()
+  })
 })

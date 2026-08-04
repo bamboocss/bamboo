@@ -10,6 +10,7 @@ import { generateCx } from './js/cx'
 import { generateHelpers } from './js/helpers'
 import { generateIsValidProp } from './js/is-valid-prop'
 import { generatedJsxHelpers } from './js/jsx-helper'
+import { generatePackageJson } from './js/package-json'
 import { generatePattern } from './js/pattern'
 import { generateCreateRecipe, generateRecipes } from './js/recipe'
 import { generateSvaFn } from './js/sva'
@@ -27,6 +28,14 @@ function setupHelpers(ctx: Context): Artifact {
   return {
     id: 'helpers',
     files: [{ file: ctx.file.ext('helpers'), code: code.js }],
+  }
+}
+
+function setupPackageJson(): Artifact {
+  const code = generatePackageJson()
+  return {
+    id: 'package.json',
+    files: [{ file: 'package.json', code: code.json }],
   }
 }
 
@@ -470,6 +479,7 @@ const filterArtifactsFiles = (artifacts: Artifact[], filters?: ArtifactFilters):
 
 type ArtifactEntry = [ArtifactId, (ctx: Context, filters?: ArtifactFilters) => Artifact | undefined]
 const entries: ArtifactEntry[] = [
+  ['package.json', setupPackageJson],
   ['helpers', setupHelpers],
   ['design-tokens', setupDesignTokens],
   ['types-jsx', setupJsxTypes],

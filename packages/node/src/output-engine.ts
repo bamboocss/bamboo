@@ -45,8 +45,40 @@ export class OutputEngine {
         const absPath = this.path.join(...dir, file)
 
         logger.debug('write:file', dir.slice(-1).concat(file).join('/'))
+
+        if (file === 'package.json') {
+          return this.writePackageJson(absPath, code)
+        }
+
         return this.fs.writeFile(absPath, code)
       }),
     )
+  }
+
+  /**
+   * Unlike the rest of the output, `package.json` is not exclusively ours: `emit-pkg`
+   * writes entrypoints to the same path, and consumers hand-edit it. Overwriting would
+   * drop that, so only keys that are absent get filled in — anything already declared,
+   * including a deliberate `sideEffects`, is left as it stands.
+   */
+  private writePackageJson = (absPath: string, code: string) => {
+    if (!this.fs.existsSync(absPath)) {
+      return this.fs.writeFile(absPath, code)
+    }
+
+    let existing: Record<string, unknown>
+
+    try {
+      existing = JSON.parse(this.fs.readFileSync(absPath))
+    } catch {
+      // Replacing it would discard whatever the consumer still has in there.
+      logger.warn('write:file', `Skipped ${absPath}: could not be parsed as JSON`)
+      return
+    }
+
+    const missing = Object.entries(JSON.parse(code)).filter(([key]) => existing[key] === undefined)
+    if (!missing.length) return
+
+    return this.fs.writeFile(absPath, JSON.stringify({ ...existing, ...Object.fromEntries(missing) }, null, 2) + '\n')
   }
 }

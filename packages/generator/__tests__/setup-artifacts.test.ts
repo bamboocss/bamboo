@@ -131,6 +131,9 @@ describe('setup-artifacts', () => {
     expect(generator.getArtifacts().map(formatArtifact)).toMatchInlineSnapshot(`
       [
         [
+          "/package.json",
+        ],
+        [
           "/helpers.mjs",
         ],
         [
