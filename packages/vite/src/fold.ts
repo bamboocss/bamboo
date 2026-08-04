@@ -310,6 +310,22 @@ const calleeRootName = (call: Node): string | undefined => {
 }
 
 /**
+ * The identifier a JSX tag is rooted at: `styled` for `<styled.div>`, `bamboo` for
+ * `<bamboo.styled.div>`. The same question `calleeRootName` answers for a call, and it
+ * feeds the same import and shadowing checks.
+ */
+const tagRootName = (element: Node): string | undefined => {
+  if (!Node.isJsxOpeningElement(element) && !Node.isJsxSelfClosingElement(element)) return undefined
+
+  let current: Node = element.getTagNameNode()
+  while (Node.isPropertyAccessExpression(current)) {
+    current = current.getExpression()
+  }
+
+  return Node.isIdentifier(current) ? current.getText() : undefined
+}
+
+/**
  * Names a module imports, computed once per file.
  *
  * The parser matches style calls by name and does not require an import — a
@@ -482,17 +498,38 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     const call = findCallExpression(item.box)
 
     if (jsx && JSX_TYPES.has(type)) {
+      const element = item.box.getNode?.()
+      if (!element) continue
+
+      const elementStart = element.getStart()
+      const elementEnd = element.getEnd()
+
+      // Same two guards the call path applies, for the same reasons: offsets only mean
+      // something against the module being rewritten, and the parser matches a factory
+      // by name without requiring the import to be the one in scope. Collapsing a
+      // `styled.div` that is really the user's own binding does not just change a
+      // string — it deletes their component from the markup.
+      if (code.slice(elementStart, elementEnd) !== element.getText()) {
+        skipped.push({ name, reason: 'no-call-expression', start: 0, end: 0 })
+        continue
+      }
+
+      const rootName = tagRootName(element)
+      if (!rootName || !importsFor(element.getSourceFile()).has(rootName) || isShadowed(element, rootName)) {
+        skipped.push({ name, reason: 'not-imported', start: elementStart, end: elementEnd })
+        continue
+      }
+
       const plan = planJsxFold(item, ctx, runtimeCss)
 
       if ('reason' in plan) {
-        const node = item.box?.getNode?.()
-        if (node) skipped.push({ name, reason: plan.reason, start: node.getStart(), end: node.getEnd() })
+        skipped.push({ name, reason: plan.reason, start: elementStart, end: elementEnd })
         continue
       }
 
       candidates.push({
         item,
-        node: item.box!.getNode!(),
+        node: element,
         edits: plan.edits,
         className: plan.className,
         start: plan.start,

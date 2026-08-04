@@ -177,6 +177,50 @@ describe('the factory has to be bamboo', () => {
     expect(fold(code).folded).toHaveLength(0)
     expect(fold(code).code).toBe(code)
   })
+
+  /**
+   * The import being present is what makes these different from the case above, and it
+   * is the realistic arrangement: a module that uses the factory throughout and takes a
+   * `styled` prop, or names a local, in one component. The parser matches a factory by
+   * name and does not ask which binding is in scope, so the fold has to.
+   *
+   * Getting this wrong is worse here than at a call site. There the damage is a wrong
+   * string; here the user's own component is deleted from the markup and replaced by a
+   * bare intrinsic tag.
+   */
+  const shadowed: Array<{ name: string; body: string }> = [
+    { name: 'a destructured parameter', body: `export const A = ({ styled }) => <styled.div color="red.300" />` },
+    { name: 'a plain parameter', body: `export function A(styled) { return <styled.div color="red.300" /> }` },
+    {
+      name: 'a block-scoped const',
+      body: `export function A() {\n  const styled = { div: (p) => null }\n  return <styled.div color="red.300" />\n}`,
+    },
+    {
+      name: 'a destructured local',
+      body: `export function A(p) {\n  const { styled } = p\n  return <styled.div color="red.300" />\n}`,
+    },
+  ]
+
+  test.each(shadowed)('$name shadowing the factory is not folded', ({ body }) => {
+    const result = expectUnchanged(body)
+
+    expect(result.skipped.map((s) => s.reason)).toContain('not-imported')
+  })
+
+  test('an unshadowed element in the same module still folds', () => {
+    const { fold } = createFoldFixture()
+
+    // The guard must reject the shadowed element without disabling the surface.
+    const result = fold(
+      jsx(
+        `export const A = ({ styled }) => <styled.div color="red.300" />\nexport const B = () => <styled.div p="4" />`,
+      ),
+    )
+
+    expect(result.folded).toHaveLength(1)
+    expect(result.code).toContain(`export const A = ({ styled }) => <styled.div color="red.300" />`)
+    expect(result.code).toContain(`export const B = () => <div className={"p_4"} />`)
+  })
 })
 
 describe('prop value shapes', () => {
