@@ -20,9 +20,12 @@ async function build(ctx: BambooContext, artifactIds?: ArtifactId[]) {
   const parsed = ctx.parseFiles()
   ctx.appendParserCss(sheet)
 
-  // Gathering the references reads every source file, so it stays behind the flag.
+  // Gathering the references reads every source file, so each stays behind its own flag.
   if (ctx.config.pruneUnusedTokens) {
     ctx.pruneTokens(sheet, collectTokenReferences(ctx, parsed.results))
+  }
+
+  if (ctx.config.pruneUnusedKeyframes) {
     ctx.pruneKeyframes(sheet, collectKeyframeReferences(ctx, keyframeNames(ctx)))
   }
 
@@ -80,6 +83,9 @@ export async function generate(config: Config, configPath?: string) {
       // time on each change.
       if (ctx.config.pruneUnusedTokens) {
         ctx.pruneTokens(sheet, collectTokenReferences(ctx, []))
+      }
+
+      if (ctx.config.pruneUnusedKeyframes) {
         ctx.pruneKeyframes(sheet, collectKeyframeReferences(ctx, keyframeNames(ctx)))
       }
 

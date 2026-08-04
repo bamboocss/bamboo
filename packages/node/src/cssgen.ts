@@ -43,9 +43,12 @@ export const cssgen = async (ctx: BambooContext, options: CssGenOptions) => {
 
     // Only now does the sheet hold everything that could reference a token. `minimal`
     // omits the token layer altogether, so there is nothing to prune. Gathering the
-    // references reads every source file, so it stays behind the flag.
+    // references reads every source file, so each stays behind its own flag.
     if (!minimal && ctx.config.pruneUnusedTokens) {
       ctx.pruneTokens(sheet, collectTokenReferences(ctx, results))
+    }
+
+    if (!minimal && ctx.config.pruneUnusedKeyframes) {
       ctx.pruneKeyframes(sheet, collectKeyframeReferences(ctx, keyframeNames(ctx)))
     }
 

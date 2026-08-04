@@ -201,6 +201,9 @@ export class Builder {
     // the source scan alone; re-parsing here would encode every style a second time.
     if (ctx.config.pruneUnusedTokens) {
       ctx.pruneTokens(sheet, collectTokenReferences(ctx, []))
+    }
+
+    if (ctx.config.pruneUnusedKeyframes) {
       ctx.pruneKeyframes(sheet, collectKeyframeReferences(ctx, keyframeNames(ctx)))
     }
 

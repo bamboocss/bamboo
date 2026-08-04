@@ -667,6 +667,37 @@ counterpart pins its own declaration. Spacing scales generate one negative per e
 whether or not your app uses it. On the default preset that is roughly a third of what survives pruning, and there is no
 opt-out.
 
+### pruneUnusedKeyframes
+
+**Type**: `boolean`
+
+**Default**: `false`
+
+Whether to drop `@keyframes` rules nothing in the generated css can reach.
+
+A preset declares every animation it offers and an app uses a handful; the rest sit in the same render-blocking
+stylesheet. Like [`pruneUnusedTokens`](#pruneunusedtokens), the saving scales with the size of your design system rather
+than the size of your app. The two are independent — either can be switched on without the other.
+
+```json
+{
+  "pruneUnusedKeyframes": true
+}
+```
+
+Only keyframes your theme declares are ever removed, so one emitted by [`globalCss`](#globalcss) is left alone. A name
+is kept when an animation property in the generated css names it, when a theme names it, when it is named by a custom
+property that is itself reachable, or when it appears anywhere under [`include`](#include).
+
+That last clause is a textual scan, and it is deliberately over-inclusive: it covers an animation name assembled at
+runtime or handed to an inline `style` rather than to Bamboo, neither of which the css can show. A name matching a word
+in unrelated prose keeps its keyframe alive, which is the cheap failure.
+
+Names are recovered by testing each token in a value against the set your theme declares, rather than by parsing the
+`animation` shorthand — whose parts come in any order. A keyframe named after a keyword such as `none` or `ease`
+therefore always looks referenced. The bias is intentional throughout: keeping an unused keyframe costs bytes, dropping
+a used one silently stops an animation.
+
 ### cssVarRoot
 
 **Type**: `string`
