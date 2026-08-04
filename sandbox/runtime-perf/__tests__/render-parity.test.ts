@@ -53,6 +53,35 @@ const props = { tone: 'red600', rest: { title: 'spread title' } }
 const sortClasses = (html: string) =>
   html.replaceAll(/class="([^"]*)"/g, (_, value: string) => `class="${value.split(' ').sort().join(' ')}"`)
 
+const classAttributes = (html: string) => Array.from(html.matchAll(/class="([^"]*)"/g), (match) => match[1]!)
+
+/**
+ * Class attributes holding the same tokens in a different order.
+ *
+ * Only a *partially* folded element may legitimately reorder, because the static half is
+ * emitted before the runtime half. A whole fold computes its class through `runtimeCss` —
+ * the runtime function itself — so its order matches by construction, and a reorder there
+ * would be a real divergence. Counting them keeps the tolerance scoped to the elements
+ * that need it instead of granting it to the whole document.
+ */
+const orderOnlyDifferences = (before: string, after: string) => {
+  const a = classAttributes(before)
+  const b = classAttributes(after)
+
+  return a.reduce((count, value, index) => {
+    const other = b[index]
+    if (other === undefined || value === other) return count
+    return value.split(' ').sort().join(' ') === other.split(' ').sort().join(' ') ? count + 1 : count
+  }, 0)
+}
+
+/**
+ * How many elements in the fixture fold partially. Pinned rather than derived, so adding
+ * a partial element is a deliberate edit here and an unexpected reorder anywhere else
+ * fails instead of being absorbed.
+ */
+const EXPECTED_REORDERS = 1
+
 describe('render parity', () => {
   test('the fixture actually exercises the fold', () => {
     // Guards against this passing because nothing was rewritten.
@@ -96,6 +125,10 @@ describe('render parity', () => {
     // feature has belonged to: removing one changes the sorted string too. What it
     // tolerates is only a permutation.
     expect(sortClasses(after)).toBe(sortClasses(before))
+
+    // And only as many permutations as there are partially folded elements, so the
+    // tolerance does not silently extend to the rest of the document.
+    expect(orderOnlyDifferences(before, after)).toBe(EXPECTED_REORDERS)
   })
 
   test('a deliberately broken fold would be caught', async () => {
