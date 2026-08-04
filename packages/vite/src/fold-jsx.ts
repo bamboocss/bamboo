@@ -72,6 +72,11 @@ const RESERVED_PROPS = new Set(['unstyled', 'css', 'ref', 'key', 'children'])
  * `<thing>`, a DOM element named `thing` rather than the component; `as="Section"` would
  * fold to `<Section>`, a variable reference rather than the intrinsic the factory would
  * have created. Both bail.
+ *
+ * A dot is the same hazard spelled differently, and it survives lowercasing. `<foo.bar>`
+ * is a JSX member expression — `createElement(foo.bar)`, a property read off a variable
+ * in scope — where the factory would have created an intrinsic element named literally
+ * `foo.bar`. So a dotted value bails even though its casing agrees.
  */
 const asTag = (attribute: JsxAttribute): string | undefined => {
   const initializer = attribute.getInitializer()
@@ -79,8 +84,9 @@ const asTag = (attribute: JsxAttribute): string | undefined => {
 
   if (Node.isStringLiteral(initializer)) {
     const value = initializer.getLiteralValue()
-    // Lowercase-initial only, so JSX reads it as the intrinsic the factory would create.
-    return /^[a-z][\w.-]*$/.test(value) ? value : undefined
+    // Lowercase-initial and dot-free, so JSX reads it as the intrinsic element the
+    // factory would have created rather than as a reference to something in scope.
+    return /^[a-z][\w-]*$/.test(value) ? value : undefined
   }
 
   if (!Node.isJsxExpression(initializer)) return undefined

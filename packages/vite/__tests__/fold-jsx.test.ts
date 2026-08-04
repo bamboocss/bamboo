@@ -354,6 +354,24 @@ describe('the as prop', () => {
 
     expect(result.code).toContain('<my-widget className={"c_red.300"} />')
   })
+
+  /**
+   * A dot is the casing hazard spelled differently, and lowercasing does not save it:
+   * `<foo.bar>` is a JSX member expression, so it compiles to a property read off a
+   * variable in scope, where the factory would have created an intrinsic element named
+   * literally `foo.bar`. Nothing about the value looks wrong, which is why it needs a
+   * test rather than a glance.
+   */
+  test('a dotted string bails, since JSX would read it as a member expression', () => {
+    expectUnchanged(`export const A = () => <styled.div as="foo.bar" color="red.300" />`)
+  })
+
+  test('an underscored name still folds, since it is an ordinary identifier', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(jsx(`export const A = () => <styled.div as="my_widget" color="red.300" />`))
+
+    expect(result.code).toContain('<my_widget className={"c_red.300"} />')
+  })
 })
 
 const pat = (body: string) => `import { Box, Stack, HStack, Circle } from 'styled-system/jsx'\n${body}\n`
