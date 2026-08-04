@@ -167,3 +167,86 @@ export const A = ({ rest }) => <styled.div color="red.300" {...rest} />
     expect(result.code).toContain('{...rest}')
   })
 })
+
+describe('the factory has to be bamboo', () => {
+  test('a local object named styled is not folded', () => {
+    const { fold } = createFoldFixture()
+    const code = `const styled = { div: (p) => null }\nexport const A = () => <styled.div color="red.300" />\n`
+
+    // Same hazard as a local function named `css`: the element only looks like bamboo's.
+    expect(fold(code).folded).toHaveLength(0)
+    expect(fold(code).code).toBe(code)
+  })
+})
+
+describe('prop value shapes', () => {
+  test('a boolean shorthand prop folds to its true value', () => {
+    const { fold, runtimeCss } = createFoldFixture()
+    const result = fold(jsx(`export const A = () => <styled.div truncate />`))
+
+    expect(result.folded[0]!.className).toBe(runtimeCss({ truncate: true }))
+  })
+
+  test('a numeric prop folds', () => {
+    const { fold, runtimeCss } = createFoldFixture()
+    const result = fold(jsx(`export const A = () => <styled.div zIndex={10} />`))
+
+    expect(result.folded[0]!.className).toBe(runtimeCss({ zIndex: 10 }))
+  })
+})
+
+/**
+ * Corruption risks drawn from upstream's jsx suite. Resolving the closing tag through
+ * the AST rather than by matching text makes most of these safe by construction — but
+ * "safe by construction" is worth an assertion, since the construction can change.
+ */
+describe('does not corrupt output', () => {
+  test('nested elements of the same name pair their own closing tags', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(
+      jsx(`export const A = () => <styled.div color="red.300"><styled.div padding="4">hi</styled.div></styled.div>`),
+    )
+
+    expect(result.folded).toHaveLength(2)
+    expect(result.code).toContain('<div className={"c_red.300"}><div className={"p_4"}>hi</div></div>')
+  })
+
+  test('a closing tag written inside a string child is not treated as markup', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(jsx(`export const A = () => <styled.div color="red.300">{"</styled.div>"}</styled.div>`))
+
+    expect(result.code).toContain('{"</styled.div>"}')
+    expect(result.code).toContain('<div className={"c_red.300"}>')
+  })
+
+  test('a css() call among the children still folds', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(
+      `import { css } from 'styled-system/css'
+import { styled } from 'styled-system/jsx'
+export const A = () => <styled.div color="red.300"><span className={css({ padding: '4' })} /></styled.div>
+`,
+    )
+
+    expect(result.folded).toHaveLength(2)
+    expect(result.code).toContain('<div className={"c_red.300"}>')
+    expect(result.code).toContain('className={"p_4"}')
+  })
+
+  test('a brace inside an attribute string value survives', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(jsx(`export const A = () => <styled.div color="red.300" data-x="{a}" />`))
+
+    expect(result.code).toContain('data-x="{a}"')
+  })
+
+  test('a class name containing a quote is emitted as a valid expression', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(jsx(`export const A = () => <styled.div color='[var(--x, "red")]' />`))
+
+    // The attribute form cannot carry an unescaped quote, so the class goes in an
+    // expression container with the quote escaped.
+    expect(result.folded).toHaveLength(1)
+    expect(result.code).toContain('className={"c_[var(--x,_\\"red\\")]"}')
+  })
+})
