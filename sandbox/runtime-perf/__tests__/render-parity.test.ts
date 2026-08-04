@@ -58,9 +58,11 @@ describe('render parity', () => {
 
   test('the folded module no longer goes through the factory for folded elements', () => {
     expect(foldedCode).toContain('className={"')
+    // A static `as` names the folded tag rather than blocking the fold.
+    expect(foldedCode).toContain('<section className={')
     // The declining shapes must still be there.
     expect(foldedCode).toContain('{...rest}')
-    expect(foldedCode).toContain('as="section"')
+    expect(foldedCode).toContain('css={{')
   })
 
   test('renders byte-identical markup with and without the transform', async () => {

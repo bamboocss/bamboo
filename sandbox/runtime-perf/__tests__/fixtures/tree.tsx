@@ -47,7 +47,7 @@ export const Tree = ({ tone, rest }: { tone: string; rest: Record<string, unknow
       spread
     </styled.div>
 
-    {/* declines: as prop */}
+    {/* folds: a static as prop names the tag */}
     <styled.div as="section" color="yellow600">
       as
     </styled.div>

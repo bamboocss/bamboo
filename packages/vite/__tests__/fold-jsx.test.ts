@@ -90,7 +90,6 @@ describe('declines', () => {
   const cases: Array<{ name: string; body: string }> = [
     { name: 'a spread', body: `export const A = ({ rest }) => <styled.div color="red.300" {...rest} />` },
     { name: 'a dynamic style prop', body: `export const A = ({ t }) => <styled.div color={t} />` },
-    { name: 'an as prop', body: `export const A = () => <styled.div as="section" color="red.300" />` },
     { name: 'an unstyled prop', body: `export const A = () => <styled.div unstyled color="red.300" />` },
     { name: 'a css prop', body: `export const A = () => <styled.div css={{ color: 'red.300' }} />` },
     { name: 'a ref', body: `export const A = ({ r }) => <styled.div ref={r} color="red.300" />` },
@@ -292,5 +291,50 @@ export const A = () => <styled.div color="red.300"><span className={css({ paddin
     // expression container with the quote escaped.
     expect(result.folded).toHaveLength(1)
     expect(result.code).toContain('className={"c_[var(--x,_\\"red\\")]"}')
+  })
+})
+
+describe('the as prop', () => {
+  test('a string literal names the folded tag', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(jsx(`export const A = () => <styled.div as="section" color="red.300" />`))
+
+    expect(result.folded).toHaveLength(1)
+    expect(result.code).toContain('<section className={"c_red.300"} />')
+  })
+
+  test('the closing tag follows the as prop, not the factory tag', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(jsx(`export const A = () => <styled.div as="section" color="red.300">hi</styled.div>`))
+
+    expect(result.code).toContain('<section className={"c_red.300"}>hi</section>')
+    expect(result.code).not.toContain('</div>')
+  })
+
+  test('an identifier names a component tag', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(
+      `import { styled } from 'styled-system/jsx'\nimport { Link } from './link'\nexport const A = () => <styled.div as={Link} color="red.300">hi</styled.div>\n`,
+    )
+
+    // `splitProps` keys off the factory's config rather than off what `as` points at,
+    // so the class and the forwarded props are the same whatever the tag becomes.
+    expect(result.code).toContain('<Link className={"c_red.300"}>hi</Link>')
+  })
+
+  test('a dynamic as expression bails', () => {
+    expectUnchanged(`export const A = ({ El }) => <styled.div as={El.thing} color="red.300" />`)
+  })
+
+  test('a computed as expression bails', () => {
+    expectUnchanged(`export const A = ({ on }) => <styled.div as={on ? "a" : "b"} color="red.300" />`)
+  })
+
+  test('an as prop with no value bails', () => {
+    expectUnchanged(`export const A = () => <styled.div as color="red.300" />`)
+  })
+
+  test('a non-identifier string is rejected', () => {
+    expectUnchanged(`export const A = () => <styled.div as="not a tag" color="red.300" />`)
   })
 })

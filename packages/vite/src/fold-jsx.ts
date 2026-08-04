@@ -1,7 +1,7 @@
 import type { Context } from '@bamboocss/core'
 import { type BoxNode } from '@bamboocss/extractor'
 import type { Dict, ResultItem } from '@bamboocss/types'
-import { Node } from 'ts-morph'
+import { type JsxAttribute, Node } from 'ts-morph'
 import type { RuntimeCss } from './runtime-css'
 
 /**
@@ -41,14 +41,42 @@ export interface JsxFoldPlan {
  * in a way a literal class cannot express, so an element carrying any of them is left
  * alone.
  *
- * - `as` swaps the element type at runtime.
+ * `as` is handled separately rather than listed here: a statically known one just names
+ * the tag to fold to.
+ *
  * - `unstyled` takes a different branch through the factory.
  * - `css` is a style object, but merging it here would have to reproduce the argument
  *   order `cvaClass` uses; left for when partial folding lands.
  * - `ref` and `key` are React's, not props, and `children` competes with the element's
  *   own children (`children ?? combinedProps.children`).
  */
-const RESERVED_PROPS = new Set(['as', 'unstyled', 'css', 'ref', 'key', 'children'])
+const RESERVED_PROPS = new Set(['unstyled', 'css', 'ref', 'key', 'children'])
+
+/**
+ * The tag an `as` prop names, when it names one statically.
+ *
+ * The factory destructures `{ as: Element = __base__ }` and hands `Element` to
+ * `createElement`, so a static `as` is simply a different tag with the same class and
+ * the same forwarded props — `splitProps` keys off the factory's own config, not off
+ * what `as` points at, so the split is unchanged.
+ *
+ * A string literal names an intrinsic element; an identifier names a component in
+ * scope, which is emitted as-is. Anything else is only known at runtime.
+ */
+const asTag = (attribute: JsxAttribute): string | undefined => {
+  const initializer = attribute.getInitializer()
+  if (!initializer) return undefined
+
+  if (Node.isStringLiteral(initializer)) {
+    const value = initializer.getLiteralValue()
+    return /^[A-Za-z][\w.-]*$/.test(value) ? value : undefined
+  }
+
+  if (!Node.isJsxExpression(initializer)) return undefined
+
+  const expression = initializer.getExpression()
+  return expression && Node.isIdentifier(expression) ? expression.getText() : undefined
+}
 
 /**
  * `normalizeHTMLProps` renames these on the way to the DOM (`htmlSize` -> `size`).
@@ -86,8 +114,10 @@ export const planJsxFold = (
     return { reason: 'unsupported-kind' }
   }
 
-  const tag = intrinsicTag(node.getTagNameNode().getText(), ctx.jsx.factoryName)
-  if (!tag) return { reason: 'unsupported-kind' }
+  const baseTag = intrinsicTag(node.getTagNameNode().getText(), ctx.jsx.factoryName)
+  if (!baseTag) return { reason: 'unsupported-kind' }
+
+  let tag = baseTag
 
   const styles = (item.data?.[0] ?? {}) as Dict
   const passthrough: string[] = []
@@ -104,6 +134,13 @@ export const planJsxFold = (
       const initializer = attribute.getInitializer()
       if (!initializer || !Node.isStringLiteral(initializer)) return { reason: 'dynamic' }
       staticClassName = initializer.getLiteralValue()
+      continue
+    }
+
+    if (name === 'as') {
+      const resolved = asTag(attribute)
+      if (!resolved) return { reason: 'dynamic' }
+      tag = resolved
       continue
     }
 

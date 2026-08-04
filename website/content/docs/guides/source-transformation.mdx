@@ -90,7 +90,18 @@ reduces to "css properties are consumed, everything else reaches the DOM unchang
 verbatim while `color` becomes part of the class. A static `className` is appended, in the position `cx` would have put
 it.
 
-An element bails if it carries anything the factory gives extra meaning to: a spread, a dynamic style prop, `as`,
+A static `as` names the tag to fold to, rather than blocking the fold:
+
+```tsx
+<styled.div as="section" color="red.300">hi</styled.div>
+<section className={"c_red.300"}>hi</section>
+```
+
+It works for a component too — `as={Link}` folds to `<Link className={…}>`. `splitProps` keys off the factory's own
+config rather than off what `as` points at, so the class and the forwarded props are the same whatever the tag becomes.
+An `as` only known at runtime still bails.
+
+An element bails if it carries anything else the factory gives extra meaning to: a spread, a dynamic style prop,
 `unstyled`, `css`, `ref`, `key`, an explicit `children`, a dynamic `className`, or one of the `html*` props that
 `normalizeHTMLProps` renames. Pattern components like `<Stack>` are not folded yet.
 
