@@ -42,6 +42,18 @@ export const Tree = ({ tone, rest }: { tone: string; rest: Record<string, unknow
     {/* declines: dynamic style prop */}
     <styled.div color={tone}>dynamic</styled.div>
 
+    {/* partially folds: static props become a literal, the dynamic one goes to css() */}
+    <styled.div padding="xs" fontWeight="bold" backgroundColor={tone}>
+      partial element
+    </styled.div>
+
+    {/* the shape a scalar-only fixture cannot reach: the dynamic leaf is *inside* the
+        nested values, not beside them. Folding used to resolve the static leaves and drop
+        the rest, which renders as a styled element missing half its rules. */}
+    <styled.div color="blue600" _hover={{ color: tone }} fontSize={{ base: 'body', md: tone }} padding="xs">
+      partial with a dynamic leaf
+    </styled.div>
+
     {/* declines: spread */}
     <styled.div color="green600" {...rest}>
       spread

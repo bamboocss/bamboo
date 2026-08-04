@@ -1,7 +1,8 @@
 import type { Context } from '@bamboocss/core'
-import { type BoxNode } from '@bamboocss/extractor'
+import { type BoxNode, box } from '@bamboocss/extractor'
 import type { Dict, ResultItem } from '@bamboocss/types'
 import { type JsxAttribute, Node } from 'ts-morph'
+import { accountsForSource, collides, isStaticBox, resolveCssHelpers } from './fold-partial'
 import type { RuntimeCss } from './runtime-css'
 
 /**
@@ -34,6 +35,15 @@ export interface JsxFoldPlan {
   /** Range of the whole element, for overlap detection against other folds. */
   start: number
   end: number
+  /** Import edit for a split that needed a `cx` binding added. */
+  insert?: { pos: number; text: string }
+}
+
+/** Callbacks a split needs, threaded in so this file stays free of context plumbing. */
+export interface JsxFoldDeps {
+  isBambooCssModule: (mod: string) => boolean
+  isGeneratedCssModule: (mod: string) => boolean
+  isShadowed: (node: Node, name: string) => boolean
 }
 
 /**
@@ -215,6 +225,7 @@ export const planJsxFold = (
   item: ResultItem,
   ctx: Context,
   runtimeCss: RuntimeCss,
+  deps?: JsxFoldDeps,
 ): JsxFoldPlan | { reason: JsxSkipReason } => {
   const node = (item.box as BoxNode | undefined)?.getNode?.()
 
@@ -229,7 +240,12 @@ export const planJsxFold = (
   let tag = baseTag
 
   const styles = (item.data?.[0] ?? {}) as Dict
+  const propBoxes = box.isMap(item.box as BoxNode | undefined)
+    ? (item.box as never as { value: Map<string, BoxNode> }).value
+    : undefined
   const passthrough: string[] = []
+  const staticProps: string[] = []
+  const dynamicProps: Array<{ name: string; text: string }> = []
   let staticClassName = ''
 
   for (const attribute of node.getAttributes()) {
@@ -257,14 +273,72 @@ export const planJsxFold = (
 
     if (ctx.isValidProperty(name)) {
       // A style prop the extractor could not resolve is absent from `data`, exactly as a
-      // dropped object property is. Folding without it would lose the style.
-      if (!(name in styles)) return { reason: 'dynamic' }
+      // dropped object property is. Folding it away would lose the style, so it is either
+      // kept for the runtime half or, with no split available, declines the element.
+      // `name in styles` is not enough, and this is the same defect the call-site split
+      // was fixed for. The extractor keeps an `unresolvable` leaf inside the box while
+      // `unbox` drops it from the data, so `_hover={{ color: t }}` leaves `_hover` present
+      // as an empty object — static by that test, and folding it discards the whole
+      // condition block. Only the box knows.
+      const attributeValue = attribute.getInitializer()
+      const valueExpression =
+        attributeValue && Node.isJsxExpression(attributeValue) ? attributeValue.getExpression() : undefined
+      const propBox = propBoxes?.get(name)
+
+      // Two questions, and both have to be asked. `isStaticBox` answers "is every leaf
+      // that is here resolvable" — it cannot see a spread, which contributes no box entry
+      // at all, so `_hover={{ ...rest }}` walks an empty map and reports static.
+      // `accountsForSource` is the one that compares against what the source declared.
+      // The call-site split has always run both; this surface had only the first.
+      if (name in styles && isStaticBox(propBox) && accountsForSource(valueExpression, propBox)) {
+        staticProps.push(name)
+        continue
+      }
+
+      if (!valueExpression) return { reason: 'dynamic' }
+      const expression = valueExpression
+
+      dynamicProps.push({ name, text: expression.getText() })
       continue
     }
 
     // Not a css property, so `defaultShouldForwardProp` sends it to the DOM untouched.
     passthrough.push(attribute.getText())
   }
+
+  if (dynamicProps.length) {
+    if (!deps || item.data.length !== 1) return { reason: 'dynamic' }
+
+    // Same rule as the call-site split: two halves must never produce a class for the
+    // same property, and shorthand resolution is where distinct names converge.
+    if (
+      collides(
+        staticProps,
+        dynamicProps.map((prop) => prop.name),
+        ctx,
+      )
+    )
+      return { reason: 'dynamic' }
+
+    const helpers = resolveCssHelpers(node, deps.isBambooCssModule, deps.isGeneratedCssModule, deps.isShadowed)
+    if (!helpers) return { reason: 'dynamic' }
+
+    const staticStyles: Dict = {}
+    for (const name of staticProps) staticStyles[name] = styles[name]
+
+    const resolved = [runtimeCss(staticStyles), staticClassName].filter(Boolean).join(' ')
+    if (!resolved) return { reason: 'dynamic' }
+
+    const runtime = `${helpers.css}({ ${dynamicProps.map((prop) => `${prop.name}: ${prop.text}`).join(', ')} })`
+    const plan = buildEdits(node, tag, passthrough, resolved, `${helpers.cx}(${JSON.stringify(resolved)}, ${runtime})`)
+
+    return 'reason' in plan ? plan : { ...plan, insert: helpers.insert }
+  }
+
+  // `item.data` is `[...conditions, raw, ...spreadConditions]`, so more than one entry
+  // means a ternary is present and `data[0]` is a branch projection rather than the props
+  // as written. Folding the whole element from that collapses it to one branch.
+  if (item.data.length !== 1) return { reason: 'dynamic' }
 
   const className = [runtimeCss(styles), staticClassName].filter(Boolean).join(' ')
   if (!className) return { reason: 'dynamic' }
@@ -278,8 +352,10 @@ const buildEdits = (
   tag: string,
   passthrough: string[],
   className: string,
+  /** Expression for the `className` attribute, when it is not a plain literal. */
+  classExpression?: string,
 ): JsxFoldPlan | { reason: JsxSkipReason } => {
-  const attributes = [...passthrough, `className={${JSON.stringify(className)}}`].join(' ')
+  const attributes = [...passthrough, `className={${classExpression ?? JSON.stringify(className)}}`].join(' ')
   const selfClosing = Node.isJsxSelfClosingElement(node)
 
   const edits: JsxEdit[] = [

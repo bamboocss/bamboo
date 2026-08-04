@@ -489,3 +489,220 @@ describe('the component has to come from bamboo', () => {
     expect(result.folded).toHaveLength(1)
   })
 })
+
+const both = (body: string) =>
+  `import { css } from 'styled-system/css'\nimport { styled } from 'styled-system/jsx'\n${body}\n`
+
+describe('partially folding an element', () => {
+  test('static style props become a literal, dynamic ones move to css()', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(both(`export const A = ({ tone }) => <styled.div color="red.300" backgroundColor={tone} />`))
+
+    expect(result.folded).toHaveLength(1)
+    expect(result.code).toContain('<div className={cx("c_red.300", css({ backgroundColor: tone }))} />')
+    expect(result.code).not.toContain('styled.div')
+  })
+
+  test('cx is added to the existing css import', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(both(`export const A = ({ tone }) => <styled.div color="red.300" backgroundColor={tone} />`))
+
+    expect(result.code).toContain(`import { css, cx } from 'styled-system/css'`)
+  })
+
+  test('non-style props still pass through', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(
+      both(
+        `export const A = ({ tone, fn }) => <styled.div color="red.300" backgroundColor={tone} id="x" onClick={fn} />`,
+      ),
+    )
+
+    expect(result.code).toContain('id="x"')
+    expect(result.code).toContain('onClick={fn}')
+  })
+
+  test('a static className is folded into the literal half', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(
+      both(`export const A = ({ tone }) => <styled.div color="red.300" className="mine" backgroundColor={tone} />`),
+    )
+
+    expect(result.code).toContain('cx("c_red.300 mine", css({ backgroundColor: tone }))')
+  })
+
+  test('children and the closing tag survive', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(both(`export const A = ({ tone }) => <styled.span color="red.300" bg={tone}>hi</styled.span>`))
+
+    expect(result.code).toContain('>hi</span>')
+  })
+
+  test('a static as prop still names the tag', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(
+      both(`export const A = ({ tone }) => <styled.div as="section" color="red.300" backgroundColor={tone} />`),
+    )
+
+    expect(result.code).toContain('<section className={cx(')
+  })
+
+  test('the split half is backed by emitted css', () => {
+    const { fold, getCss } = createFoldFixture()
+    const result = fold(both(`export const A = ({ tone }) => <styled.div color="red.300" padding="4" bg={tone} />`))
+
+    const css = getCss()
+    for (const selector of selectorsFor(result.folded[0]!.className)) expect(css).toContain(selector)
+  })
+})
+
+describe('elements that must not split', () => {
+  test('a shorthand colliding with a dynamic longhand', () => {
+    const { fold } = createFoldFixture()
+    const code = both(`export const A = ({ m }) => <styled.div mx="4" marginInline={m} />`)
+
+    // Both resolve to one property; the factory keeps the last, a split emits both.
+    expect(fold(code).folded).toHaveLength(0)
+    expect(fold(code).code).toBe(code)
+  })
+
+  test('a file with no css import', () => {
+    const { fold } = createFoldFixture()
+    const code = `import { styled } from 'styled-system/jsx'\nexport const A = ({ tone }) => <styled.div color="red.300" backgroundColor={tone} />\n`
+
+    // The dynamic half needs a `css()` call, and writing a new import would mean guessing
+    // a module specifier.
+    expect(fold(code).folded).toHaveLength(0)
+    expect(fold(code).code).toBe(code)
+  })
+
+  test('a spread', () => {
+    const { fold } = createFoldFixture()
+    const code = both(`export const A = ({ tone, rest }) => <styled.div color="red.300" bg={tone} {...rest} />`)
+
+    expect(fold(code).folded).toHaveLength(0)
+  })
+
+  test('a style prop with an empty expression container', () => {
+    const { fold } = createFoldFixture()
+    const code = both(`export const A = () => <styled.div color="red.300" truncate={} />`)
+
+    // `not.toThrow()` was true of every input in this file and asserted nothing.
+    expect(fold(code).folded).toHaveLength(0)
+  })
+
+  test('a css prop alongside a dynamic style prop', () => {
+    const { fold } = createFoldFixture()
+    const code = both(`export const A = ({ tone }) => <styled.div css={{ margin: '2' }} bg={tone} />`)
+
+    expect(fold(code).folded).toHaveLength(0)
+  })
+
+  test('a shadowed css binding', () => {
+    const { fold } = createFoldFixture()
+    const code = both(`export const A = ({ tone, css }) => <styled.div color="red.300" bg={tone} />`)
+
+    expect(fold(code).folded).toHaveLength(0)
+  })
+
+  test('an element whose static half resolves to no class', () => {
+    const { fold } = createFoldFixture()
+    const code = both(`export const A = ({ tone }) => <styled.div backgroundColor={tone} />`)
+
+    // Declined because the static half is empty, not because of a rule about having no
+    // static props — `<styled.div className="mine" bg={o} />` has none either and does
+    // split, on the strength of the className alone.
+    expect(fold(code).folded).toHaveLength(0)
+  })
+})
+
+/**
+ * Every shape here was reported by an independent review. Each folded away a style the
+ * factory would have applied, and each was invisible to the class-name assertions above:
+ * the element still carried *a* class, just not all of them.
+ *
+ * The common cause: the extractor keeps an `unresolvable` leaf inside the box while
+ * `unbox` drops it from the data, so the parent key survives as an empty object and reads
+ * as static unless the box itself is consulted.
+ */
+describe('regressions the first jsx split had', () => {
+  const cases: Array<{ name: string; props: string; runtime: string }> = [
+    {
+      name: 'a dynamic value in a condition block',
+      props: `_hover={{ color: t }}`,
+      runtime: 'css({ _hover: { color: t }',
+    },
+    {
+      name: 'a dynamic value in a responsive object',
+      props: `fontSize={{ base: 'sm', md: t }}`,
+      runtime: "css({ fontSize: { base: 'sm', md: t }",
+    },
+    {
+      name: 'a dynamic element in a responsive array',
+      props: `padding={['1', t]}`,
+      runtime: "css({ padding: ['1', t]",
+    },
+    {
+      name: 'a partly dynamic condition block',
+      props: `_hover={{ margin: '2', color: t }}`,
+      runtime: "css({ _hover: { margin: '2', color: t }",
+    },
+    { name: 'a dynamic value under a breakpoint key', props: `md={{ color: t }}`, runtime: 'css({ md: { color: t }' },
+    {
+      name: 'a dynamic value two conditions deep',
+      props: `_hover={{ _dark: { color: t } }}`,
+      runtime: 'css({ _hover: { _dark: { color: t } }',
+    },
+    {
+      name: 'a spread inside a prop value',
+      props: `_hover={{ ...rest }}`,
+      runtime: 'css({ _hover: { ...rest }',
+    },
+    {
+      name: 'a spread beside a static value inside a prop',
+      props: `_hover={{ margin: '2', ...rest }}`,
+      runtime: "css({ _hover: { margin: '2', ...rest }",
+    },
+  ]
+
+  test.each(cases)('$name moves to the runtime half rather than being folded away', ({ props, runtime }) => {
+    const { fold } = createFoldFixture()
+    const code = both(`export const A = ({ t, o, rest }) => <styled.div color="red.300" ${props} bg={o} />`)
+
+    const result = fold(code)
+
+    // Naming the expected runtime half, because a looser assertion cannot fail: an
+    // earlier version checked the output contained `t`, which matches the `t` in
+    // `styled-system/jsx` and so passed against output with the whole block dropped.
+    expect(result.folded).toHaveLength(1)
+    expect(result.code).toContain(runtime)
+    expect(result.folded[0]!.className).toBe('c_red.300')
+  })
+
+  test.each(cases)('$name is not absorbed into the static half', ({ props }) => {
+    const { fold } = createFoldFixture()
+    const result = fold(both(`export const A = ({ t, o, rest }) => <styled.div color="red.300" ${props} bg={o} />`))
+
+    // The static class must be exactly the one static prop. Anything more means part of
+    // the dynamic value was resolved and baked in.
+    expect(result.folded[0]!.className.split(' ')).toEqual(['c_red.300'])
+  })
+
+  test('the whole-element path does not collapse a ternary to one branch', () => {
+    const { fold } = createFoldFixture()
+    const code = both(`export const A = ({ f }) => <styled.div color={f ? 'red.300' : 'blue.500'} />`)
+
+    // Pre-existing: with no `data.length` guard the element folded to `"c_red.300"`.
+    expect(fold(code).folded).toHaveLength(0)
+    expect(fold(code).code).toBe(code)
+  })
+
+  test('the whole-element path keeps a dynamic condition block', () => {
+    const { fold } = createFoldFixture()
+    const code = `import { styled } from 'styled-system/jsx'\nexport const A = ({ t }) => <styled.div color="red.300" _hover={{ color: t }} />\n`
+
+    // Pre-existing, and with no css import there is no split to fall back on.
+    expect(fold(code).folded).toHaveLength(0)
+    expect(fold(code).code).toBe(code)
+  })
+})

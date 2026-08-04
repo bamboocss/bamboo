@@ -49,6 +49,10 @@ afterAll(() => {
 
 const props = { tone: 'red600', rest: { title: 'spread title' } }
 
+/** Markup with the tokens inside every `class` attribute sorted. */
+const sortClasses = (html: string) =>
+  html.replaceAll(/class="([^"]*)"/g, (_, value: string) => `class="${value.split(' ').sort().join(' ')}"`)
+
 describe('render parity', () => {
   test('the fixture actually exercises the fold', () => {
     // Guards against this passing because nothing was rewritten.
@@ -82,7 +86,16 @@ describe('render parity', () => {
     expect(before).toContain('spread title')
     expect(before).toContain('<section')
 
-    expect(after).toBe(before)
+    // Class *order* is allowed to differ, and only class order. A partial fold emits the
+    // static half before the runtime half, so a prop written last can surface second.
+    // Attribute order carries no cascade meaning for atomic classes, and `collides()`
+    // guarantees the two halves never produce a class for the same property — the browser
+    // check computing identical styles is what actually confirms that. Everything else
+    // here, tags, attributes and text, still has to match byte for byte.
+    // Sorting cannot hide a dropped class, which is the bug class every defect in this
+    // feature has belonged to: removing one changes the sorted string too. What it
+    // tolerates is only a permutation.
+    expect(sortClasses(after)).toBe(sortClasses(before))
   })
 
   test('a deliberately broken fold would be caught', async () => {
@@ -95,7 +108,11 @@ describe('render parity', () => {
 
     try {
       const broken = await import(/* @vite-ignore */ brokenPath)
-      expect(renderToStaticMarkup(createElement(broken.Tree, props))).not.toBe(before)
+
+      // Compared the same way the assertion above compares, so this demonstrates that
+      // *that* comparison can fail — a raw `toBe` would pass here while telling you
+      // nothing about the relaxed one, and would keep passing if it were relaxed further.
+      expect(sortClasses(renderToStaticMarkup(createElement(broken.Tree, props)))).not.toBe(sortClasses(before))
     } finally {
       rmSync(brokenPath, { force: true })
     }
