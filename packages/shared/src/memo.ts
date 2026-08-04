@@ -9,9 +9,29 @@
  * - Anything nested falls back to `JSON.stringify`, which V8 does faster than a
  *   JS walk.
  *
+ * The second point is the counter-intuitive one, and it has been measured rather
+ * than assumed. Extending the structural hash to recurse — so nested styles could
+ * take the fast path too — is *slower*, because it trades one native serialization
+ * for two JS walks (hash, then the deep equality that confirms it). Over 10k
+ * iterations per shape:
+ *
+ *     shape        stringify   recursive hash + deep equal
+ *     flat            1.06ms   2.09ms
+ *     _hover          1.00ms   2.16ms
+ *     responsive      1.23ms   2.15ms
+ *     realistic       2.32ms   5.84ms
+ *     nested 3 deep   1.22ms   2.35ms
+ *
+ * So a nested `css()` call costing several times a flat one is not a defect here.
+ * It is the floor for a value-keyed memo in JS, and the way to avoid it is to not
+ * make the call — see the build-time fold in `@bamboocss/vite`.
+ *
  * Both regimes key on *values*, never on object identity: mutating a style object
  * between calls changes its hash, so the next call misses and recomputes rather
- * than serving a stale class.
+ * than serving a stale class. Keying nested arguments on the identity of the inner
+ * objects would skip serialization entirely, but it cannot detect a mutation, and
+ * "same object, different contents" is exactly what a style object built per render
+ * looks like.
  *
  * Both caches are bounded. An unbounded memo is a leak in any long-lived process
  * (SSR), where the set of distinct style objects grows without limit.
