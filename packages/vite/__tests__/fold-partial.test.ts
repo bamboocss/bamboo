@@ -229,6 +229,101 @@ export const b = (q) => css({ display: 'flex', margin: q })`),
     expect(fold(code).code).toBe(code)
   })
 
+  // The module-scope collision check is syntactic — it walks the top-level statements
+  // rather than asking the compiler's symbol table, which binds the whole program and cost
+  // more than the fold itself. Each declaration form it has to recognise is pinned here,
+  // because one it misses emits a duplicate binding and the module stops parsing.
+  test.each([
+    ['const', `const cx = (...a) => a.join('!')`],
+    ['let', `let cx`],
+    ['var', `var cx = 1`],
+    ['function', `function cx() {}`],
+    ['class', `class cx {}`],
+    ['destructured object', `const { cx } = globalThis`],
+    ['renamed destructure', `const { join: cx } = globalThis`],
+    ['destructured array', `const [cx] = []`],
+    ['nested destructure', `const { a: { cx } } = globalThis`],
+    ['default import', `import cx from 'other-lib'`],
+    ['namespace import', `import * as cx from 'other-lib'`],
+    ['aliased named import', `import { join as cx } from 'other-lib'`],
+    ['enum', `enum cx {}`],
+    ['type alias', `type cx = string`],
+  ])('a module-scope %s named cx blocks the split', (_label, declaration) => {
+    const { fold } = createFoldFixture()
+    const code = src(`${declaration}\nexport const f = (p) => css({ color: 'red.300', padding: p })`)
+
+    expect(fold(code).folded).toHaveLength(0)
+    expect(fold(code).code).toBe(code)
+  })
+
+  // `var` is function-scoped, so one written inside any *statement* at the top level still
+  // binds at module scope. Walking only the top-level statements missed every shape below,
+  // and each emitted a second `cx` into a module that then would not parse.
+  test.each([
+    ['block', `if (globalThis.DEV) { var cx = 1 }`],
+    ['bare if', `if (globalThis.DEV) var cx = 1`],
+    ['else', `if (globalThis.DEV) {} else { var cx = 1 }`],
+    ['for initializer', `for (var cx = 0; ; ) {}`],
+    ['for-of', `for (var cx of []) {}`],
+    ['for-in', `for (var cx in {}) {}`],
+    ['while', `while (globalThis.DEV) { var cx = 1 }`],
+    ['do-while', `do { var cx = 1 } while (false)`],
+    ['try', `try { var cx = 1 } catch {}`],
+    ['catch', `try {} catch { var cx = 1 }`],
+    ['finally', `try {} finally { var cx = 1 }`],
+    ['switch case', `switch (1) { case 1: var cx = 1 }`],
+    ['label', `outer: { var cx = 1 }`],
+    ['destructured', `{ var { cx } = globalThis }`],
+    ['two levels deep', `if (1) { while (1) { var cx = 1 } }`],
+    ['after the call site', `export const g = 1\nif (1) { var cx = 1 }`],
+  ])('a hoisted var named cx in a %s blocks the split', (_label, declaration) => {
+    const { fold } = createFoldFixture()
+    const code = src(`${declaration}\nexport const f = (p) => css({ color: 'red.300', padding: p })`)
+
+    expect(fold(code).folded).toHaveLength(0)
+    expect(fold(code).code).toBe(code)
+  })
+
+  // The other side of the same rule: a function body is a new variable scope, so a `var`
+  // in one cannot collide with a module-level import. Over-correcting here would decline
+  // most real modules.
+  test.each([
+    ['function declaration', `function g() { var cx = 1 }`],
+    ['arrow body', `const g = () => { var cx = 1 }`],
+    ['method body', `class G { m() { var cx = 1 } }`],
+    ['function nested in a block', `if (1) { function g() { var cx = 1 } }`],
+  ])('a var named cx inside a %s does not block the split', (_label, declaration) => {
+    const { fold } = createFoldFixture()
+    const result = fold(src(`${declaration}\nexport const f = (p) => css({ color: 'red.300', padding: p })`))
+
+    expect(result.folded).toHaveLength(1)
+  })
+
+  test('an import-equals declaration named cx blocks the split', () => {
+    const { fold } = createFoldFixture()
+    // Its own statement kind rather than an import declaration, so the named-import scan
+    // never sees it.
+    const code = src(`import cx = require('other-lib')\nexport const f = (p) => css({ color: 'red.300', padding: p })`)
+
+    expect(fold(code).folded).toHaveLength(0)
+    expect(fold(code).code).toBe(code)
+  })
+
+  test('re-folding the same path sees the new text, not the previous revision', () => {
+    const { fold } = createFoldFixture()
+    const path = 'app/src/watch.tsx'
+    const call = `export const f = (p) => css({ color: 'red.300', padding: p })`
+
+    expect(fold(src(call), path).folded).toHaveLength(1)
+
+    // ts-morph reuses the `SourceFile` wrapper when a path is re-added with new text —
+    // exactly what a watch rebuild does — so anything memoized against that object serves
+    // the previous revision. Here that would re-add `cx` alongside the one now declared.
+    const second = fold(src(`const cx = 1\n${call}`), path)
+    expect(second.folded).toHaveLength(0)
+    expect(second.code).not.toContain('css, cx')
+  })
+
   test('a cx parameter in scope blocks the split', () => {
     const { fold } = createFoldFixture()
     const code = src(`export const f = (p, cx) => css({ color: 'red.300', padding: p })`)

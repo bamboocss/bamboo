@@ -1,6 +1,7 @@
 import type { Context } from '@bamboocss/core'
 import { type BoxContext, type BoxNode, box, maybeBoxNode, unbox } from '@bamboocss/extractor'
 import type { Dict } from '@bamboocss/types'
+import { type SourceFile, VariableDeclarationKind } from 'ts-morph'
 import {
   type BinaryExpression,
   type ConditionalExpression,
@@ -661,6 +662,148 @@ export const collides = (staticKeys: string[], dynamicKeys: string[], ctx: Conte
 }
 
 /**
+ * Every name declared at module scope, which is what an added import could collide with.
+ *
+ * This replaced `sourceFile.getLocals()`. That was precise, but it goes through the
+ * compiler's symbol table, and reaching for it binds the program — including every
+ * `.d.ts` the module's imports pull in. It cost ~8ms on a ten-line file and grew with the
+ * project, which was invisible while only a partial split reached it and became the
+ * dominant cost once open-ended values started lowering too.
+ *
+ * A syntactic walk answers the same question: a binding in a nested *function* cannot
+ * collide with a module-scope import, and one that shadows it *at the call site* is what
+ * `isShadowed` is for. Deliberately uncached — ts-morph reuses the `SourceFile` wrapper
+ * when a path is re-added with new text, so a cache keyed on it serves the previous
+ * revision's names on every watch rebuild. The walk measures as noise against the fold.
+ */
+const declaredAtModuleScope = (sourceFile: SourceFile): Set<string> => {
+  const names = new Set<string>()
+
+  const addBinding = (node: Node | undefined) => {
+    if (!node) return
+
+    // `const { a, b: c } = …` and `const [a, b] = …` bind their elements, not themselves.
+    if (Node.isObjectBindingPattern(node) || Node.isArrayBindingPattern(node)) {
+      for (const element of node.getElements()) {
+        if (Node.isBindingElement(element)) addBinding(element.getNameNode())
+      }
+      return
+    }
+
+    if (Node.isIdentifier(node)) names.add(node.getText())
+  }
+
+  const addDeclarations = (list: Node) => {
+    if (Node.isVariableStatement(list)) {
+      for (const declaration of list.getDeclarations()) addBinding(declaration.getNameNode())
+      return
+    }
+    if (Node.isVariableDeclarationList(list)) {
+      for (const declaration of list.getDeclarations()) addBinding(declaration.getNameNode())
+    }
+  }
+
+  const isVar = (node: Node): boolean =>
+    (Node.isVariableStatement(node) || Node.isVariableDeclarationList(node)) &&
+    node.getDeclarationKind() === VariableDeclarationKind.Var
+
+  /**
+   * `var` is scoped to the enclosing *function*, not the enclosing block, so one written
+   * inside any statement at the top level still binds at module scope. Walking only the
+   * top-level statements missed every one of them, and each emitted a duplicate binding.
+   *
+   * Only statement containers are followed. A function or class body opens a new variable
+   * scope, so a `var` inside one cannot collide with a module-level import.
+   */
+  const addHoistedVars = (node: Node) => {
+    if (isVar(node)) {
+      addDeclarations(node)
+      return
+    }
+
+    if (Node.isBlock(node)) {
+      for (const statement of node.getStatements()) addHoistedVars(statement)
+      return
+    }
+    if (Node.isIfStatement(node)) {
+      addHoistedVars(node.getThenStatement())
+      const otherwise = node.getElseStatement()
+      if (otherwise) addHoistedVars(otherwise)
+      return
+    }
+    if (Node.isForStatement(node)) {
+      const initializer = node.getInitializer()
+      if (initializer) addHoistedVars(initializer)
+      addHoistedVars(node.getStatement())
+      return
+    }
+    if (Node.isForInStatement(node) || Node.isForOfStatement(node)) {
+      addHoistedVars(node.getInitializer())
+      addHoistedVars(node.getStatement())
+      return
+    }
+    if (Node.isWhileStatement(node) || Node.isDoStatement(node) || Node.isWithStatement(node)) {
+      addHoistedVars(node.getStatement())
+      return
+    }
+    if (Node.isLabeledStatement(node)) {
+      addHoistedVars(node.getStatement())
+      return
+    }
+    if (Node.isTryStatement(node)) {
+      addHoistedVars(node.getTryBlock())
+      const caught = node.getCatchClause()
+      if (caught) addHoistedVars(caught.getBlock())
+      const finally_ = node.getFinallyBlock()
+      if (finally_) addHoistedVars(finally_)
+      return
+    }
+    if (Node.isSwitchStatement(node)) {
+      for (const clause of node.getCaseBlock().getClauses()) {
+        for (const statement of clause.getStatements()) addHoistedVars(statement)
+      }
+    }
+  }
+
+  for (const statement of sourceFile.getStatements()) {
+    if (Node.isVariableStatement(statement)) {
+      addDeclarations(statement)
+      continue
+    }
+
+    if (Node.isImportDeclaration(statement)) {
+      addBinding(statement.getDefaultImport())
+      addBinding(statement.getNamespaceImport())
+      for (const named of statement.getNamedImports()) addBinding(named.getAliasNode() ?? named.getNameNode())
+      continue
+    }
+
+    // `import x = require('…')`, which is its own statement kind rather than an import
+    // declaration, so the branch above never sees it.
+    if (Node.isImportEqualsDeclaration(statement)) {
+      addBinding(statement.getNameNode())
+      continue
+    }
+
+    if (
+      Node.isFunctionDeclaration(statement) ||
+      Node.isClassDeclaration(statement) ||
+      Node.isEnumDeclaration(statement) ||
+      Node.isModuleDeclaration(statement) ||
+      Node.isTypeAliasDeclaration(statement) ||
+      Node.isInterfaceDeclaration(statement)
+    ) {
+      addBinding(statement.getNameNode())
+      continue
+    }
+
+    addHoistedVars(statement)
+  }
+
+  return names
+}
+
+/**
  * The `cx` binding to call, adding it to the import that already brings in the style
  * helper when it is not there yet.
  *
@@ -705,13 +848,9 @@ export const ensureCxImport = (
   // wrapper re-exporting `css` need not re-export `cx`.
   if (!isGeneratedCssModule(host.getModuleSpecifierValue())) return undefined
 
-  // A local `cx` anywhere in scope would collide with the binding being added, or be
-  // reached instead of it. `getLocals` is compiler internals that ts-morph documents as
-  // unstable, so its absence declines the insert rather than waving it through — the
-  // alternative is a silent duplicate declaration if it ever goes away.
-  if (isShadowed(call, 'cx')) return undefined
-  const locals = sourceFile.getLocals?.()
-  if (!locals || locals.some((local) => local.getName() === 'cx')) return undefined
+  // A module-scope `cx` would collide with the binding being added, and one in scope at
+  // the call site would be reached instead of it.
+  if (isShadowed(call, 'cx') || declaredAtModuleScope(sourceFile).has('cx')) return undefined
 
   const last = host.getNamedImports().at(-1)
   if (!last) return undefined
@@ -760,8 +899,7 @@ export const resolveCssHelpers = (
     if (!isGeneratedCssModule(mod)) return undefined
     if (isShadowed(node, 'cx')) return undefined
 
-    const locals = sourceFile.getLocals?.()
-    if (!locals || locals.some((local) => local.getName() === 'cx')) return undefined
+    if (declaredAtModuleScope(sourceFile).has('cx')) return undefined
 
     const last = named.at(-1)
     if (!last) return undefined
