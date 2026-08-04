@@ -283,6 +283,10 @@ Together a JSX barrel import goes from 41.2 KB to 30.1 KB minified, and 12.6 KB 
 - That cache is bounded. It previously grew for the lifetime of the process, which leaked in long-lived SSR.
 - Copying styles now happens at the `raw()` boundary rather than on every merge, so the two places that need an
   independent object pay for it instead of every caller.
+- The JSX factory no longer memoizes its props. Both `useMemo` calls keyed off a rest-destructured object, so neither
+  could ever hit. About 3% on an unfolded tree.
+- `splitProps` reads each key's descriptor on demand rather than building one for the whole object: 2.4-2.9x on plain
+  and frozen props. Accessor props, which is what Solid compiles to, keep the descriptor path.
 
 ### Optional zero-runtime output
 
