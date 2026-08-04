@@ -68,10 +68,14 @@ const FOLDABLE_TYPES = new Set(['css', 'pattern'])
 
 /**
  * Kinds that can never collapse to a class string, as opposed to config recipes,
- * which could but are left to a later phase — folding one means reproducing `cx`
- * conflict resolution and compound-variant matching, both of which live in generated
- * artifacts rather than in shared code. A second implementation of either is how the
- * runtime and the build drift apart.
+ * which could but are not folded yet.
+ *
+ * A recipe call resolves to `cx(recipeCss(variants), css(compoundVariantStyles))`.
+ * Both halves are reachable: `cx` is a plain string concatenation here, and
+ * `getCompoundVariantCss` is a short pure function whose only dependency, `mergeCss`,
+ * already lives in `@bamboocss/shared`. What is missing is the recipe-specific
+ * `createCss` transform (`name--prop_value`), which the generated artifact builds
+ * inline. Lifting that alongside the compound-variant matcher is the prerequisite.
  */
 const UNFOLDABLE_TYPES = new Set(['cva', 'sva', 'token'])
 
