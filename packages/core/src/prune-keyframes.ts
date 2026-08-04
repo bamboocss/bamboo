@@ -35,6 +35,21 @@ const isAnimationProperty = (prop: string) => prop.startsWith('--') || prop.toLo
 const NAME_SEPARATOR = /[\s,()]+/
 
 /**
+ * `animation-name` accepts `<custom-ident> | <string>`, so `animation-name: "fade-in"`
+ * names the same keyframe as the bare form and has to match it.
+ */
+const unquote = (token: string) => token.replace(/^['"]|['"]$/g, '')
+
+const namesIn = (value: string, keyframeNames: Set<string>) => {
+  const found: string[] = []
+  for (const token of value.split(NAME_SEPARATOR)) {
+    const name = unquote(token)
+    if (keyframeNames.has(name)) found.push(name)
+  }
+  return found
+}
+
+/**
  * Remove `@keyframes` rules nothing can reach.
  *
  * Names are recovered by tokenizing the value and testing each token against the set of
@@ -80,17 +95,14 @@ export function pruneKeyframes(options: PruneKeyframesOptions) {
         for (const name of cssVarRefs(decl.value)) visitVar(name)
         if (!isAnimationProperty(decl.prop)) return
 
-        for (const token of decl.value.split(NAME_SEPARATOR)) {
-          if (keyframeNames.has(token)) referenced.add(token)
-        }
+        for (const name of namesIn(decl.value, keyframeNames)) referenced.add(name)
         return
       }
 
-      for (const token of decl.value.split(NAME_SEPARATOR)) {
-        if (!keyframeNames.has(token)) continue
+      for (const name of namesIn(decl.value, keyframeNames)) {
         let names = byCustomProperty.get(decl.prop)
         if (!names) byCustomProperty.set(decl.prop, (names = new Set()))
-        names.add(token)
+        names.add(name)
       }
 
       for (const name of cssVarRefs(decl.value)) {

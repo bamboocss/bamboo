@@ -166,3 +166,28 @@ describe('reporting', () => {
     expect(result).toMatchObject({ removed: 2, kept: 1 })
   })
 })
+
+describe('quoted names', () => {
+  // `animation-name` accepts `<custom-ident> | <string>`, so the name may be quoted.
+  test.each([
+    ['double quotes', '.a { animation-name: "fade-in" }'],
+    ['single quotes', ".a { animation-name: 'fade-in' }"],
+    ['quoted inside a list', '.a { animation-name: other, "fade-in" }'],
+  ])('%s keeps the keyframe', (_name, decl) => {
+    const { css } = prune(KEYFRAMES, [decl])
+
+    expect(css).toContain('@keyframes fade-in')
+  })
+})
+
+describe('keyframe steps', () => {
+  test('a step naming another keyframe keeps it', () => {
+    const target = `
+      @keyframes fade-in { from { animation: spin 1s } }
+      @keyframes spin { to { transform: rotate(360deg) } }
+    `
+    const { css } = prune(target, ['.a { animation: fade-in 1s }'], ['fade-in', 'spin'])
+
+    expect(css).toContain('@keyframes spin')
+  })
+})
