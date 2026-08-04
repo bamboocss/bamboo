@@ -50,10 +50,24 @@ describe('vite plugin, real build', () => {
     expect(code).not.toContain('c_blue600')
   }, 60_000)
 
+  /**
+   * Each declining shape is named individually, because a fold that corrupts one of them
+   * corrupts it in a way only that shape shows. Matching loosely — any `rest` anywhere in
+   * the bundle — passes just as well when the element it was meant to describe has been
+   * rewritten into a div.
+   */
   test('declining shapes survive a real build', async () => {
     const code = await bundle({ transform: true })
 
-    // The spread and css-prop elements must reach the bundle intact.
-    expect(code).toMatch(/\.\.\.rest|rest\)/)
+    // Still routed through the factory, with the prop that made each one decline.
+    expect(code).toContain('styled.div, { color: tone')
+    expect(code).toContain('...rest')
+    expect(code).toContain('css: { color: "gray600" }')
+
+    // And the dynamic pattern element is still the pattern component.
+    expect(code).toContain('Stack, { gap: tone')
+
+    // The dynamic call site keeps its runtime call while the static one beside it folded.
+    expect(code).toContain('css({ color: tone })')
   }, 60_000)
 })

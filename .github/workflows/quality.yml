@@ -59,10 +59,17 @@ jobs:
       # Those artifacts and `packages/studio/styled-system` are generated *and* tracked,
       # so a build that regenerates them differently means the committed copies are
       # stale. Left unchecked they flip back and forth on every build.
+      #
+      # `git status --porcelain` rather than `git diff`: a build that starts emitting a
+      # *new* generated file leaves it untracked, which `git diff` does not see. Build
+      # output that is meant to stay out of the tree is gitignored, so it does not show
+      # up here either way.
       - name: Check generated output is committed
         run: |
-          if ! git diff --exit-code; then
+          if [ -n "$(git status --porcelain)" ]; then
             echo "::error::Generated output differs after a build. Run 'pnpm build' and commit the result."
+            git status --porcelain
+            git diff
             exit 1
           fi
 
