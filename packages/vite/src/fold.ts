@@ -406,10 +406,13 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     // left for the runtime. Each part is omitted when it has nothing to contribute, so a
     // call that is entirely static plus finite emits no `css()` at all.
     const runtimePart = plan.dynamicText ? `${callee}(${plan.dynamicText})` : undefined
+    const runtimeParts = runtimePart ? [runtimePart] : []
     const parts = [
+      // The literal first: it holds no expressions, so it cannot be observed out of order.
       ...(plan.className ? [JSON.stringify(plan.className)] : []),
-      ...plan.finite,
-      ...(runtimePart ? [runtimePart] : []),
+      // The rest keeps the order the properties were written in, since a condition and a
+      // dynamic value are both arbitrary expressions.
+      ...(plan.finiteFirst ? [...plan.finite, ...runtimeParts] : [...runtimeParts, ...plan.finite]),
     ]
 
     // Nothing gained if the only thing produced is the call that was already there. A

@@ -46,6 +46,23 @@ export const isStaticBox = (node: BoxNode | undefined, seen = new Set<BoxNode>()
 }
 
 /**
+ * Strip the wrappers the extractor strips before it builds a box, so the source node
+ * compared against a box is the same node the box was built from.
+ *
+ * A local copy of the extractor's `unwrapExpression`, which is not part of its public
+ * surface. Recognising fewer wrappers than it does is not a cosmetic difference: an
+ * unrecognised one leaves an object literal wrapped, and the object checks below skip it.
+ */
+const unwrapExpression = (node: Node): Node =>
+  Node.isAsExpression(node) ||
+  Node.isParenthesizedExpression(node) ||
+  Node.isNonNullExpression(node) ||
+  Node.isTypeAssertion(node) ||
+  Node.isSatisfiesExpression(node)
+    ? unwrapExpression(node.getExpression())
+    : node
+
+/**
  * Does the extracted box account for every property the source declares?
  *
  * `isStaticBox` is not sufficient on its own. The extractor *omits* what it cannot
@@ -69,7 +86,7 @@ export const isStaticBox = (node: BoxNode | undefined, seen = new Set<BoxNode>()
 export const accountsForSource = (node: Node | undefined, boxNode: BoxNode | undefined): boolean => {
   if (!node) return true
 
-  const unwrapped = Node.isAsExpression(node) || Node.isParenthesizedExpression(node) ? node.getExpression() : node
+  const unwrapped = unwrapExpression(node)
 
   if (Node.isArrayLiteralExpression(unwrapped)) {
     if (!box.isArray(boxNode)) return false
@@ -164,6 +181,11 @@ export interface PartialFold {
    * branches — `isError ? "c_red.500" : "c_green.500"`.
    */
   finite: string[]
+  /**
+   * Whether the ternaries come before the runtime call. Both a ternary's condition and a
+   * dynamic value are arbitrary expressions, so which is written first is observable.
+   */
+  finiteFirst: boolean
 }
 
 /**
@@ -178,24 +200,40 @@ export interface PartialFold {
  */
 const finiteBranches = (
   key: string,
+  value: Node | undefined,
   boxNode: BoxNode | undefined,
-  runtimeCss: (...styles: Dict[]) => string,
+  deps: PartialFoldContext,
 ): string | undefined => {
   if (!box.isConditional(boxNode)) return undefined
 
   const node = boxNode.getNode()
   if (!Node.isConditionalExpression(node)) return undefined
 
-  const branches = [boxNode.whenTrue, boxNode.whenFalse].map((branch) => {
-    if (!isStaticBox(branch)) return undefined
+  // The box's node is wherever the extractor *found* a conditional, which need not be
+  // here: identifiers are resolved through their declarations, across modules. Copying
+  // that condition's text would emit a reference to a binding that does not exist at this
+  // call site, and would re-evaluate it on every render rather than once at its
+  // declaration. Requiring it to be this initializer also keeps the branch nodes aligned
+  // with the box's, which `palette[e ? 'a' : 'b']` breaks — there the conditional is the
+  // key, and the box's branches are the values it looked up.
+  if (!value || unwrapExpression(value) !== node) return undefined
+
+  const branches = [
+    [node.getWhenTrue(), boxNode.whenTrue] as const,
+    [node.getWhenFalse(), boxNode.whenFalse] as const,
+  ].map(([source, branch]) => {
+    // Both questions, for the reason the sibling static path asks both: the extractor
+    // omits what it cannot evaluate, so a branch holding a spread or a computed key
+    // produces a map that looks complete and is missing a value.
+    if (!deps.isStatic(branch)) return undefined
+    if (!deps.isAccounted(source, branch)) return undefined
 
     const value = (unbox(branch) as { raw?: unknown }).raw
-    // An `undefined` branch contributes no declaration, which is a legitimate class of
-    // its own rather than a failure to resolve.
-    if (value === undefined) return ''
 
     try {
-      return runtimeCss({ [key]: value } as Dict)
+      // A branch resolving to no declaration at all — `null`, an empty object — is a
+      // legitimate outcome, and `cx` drops the empty string.
+      return deps.runtimeCss({ [key]: value } as Dict)
     } catch {
       return undefined
     }
@@ -203,9 +241,9 @@ const finiteBranches = (
 
   const [whenTrue, whenFalse] = branches
   if (whenTrue === undefined || whenFalse === undefined) return undefined
-  // Both branches empty means the property contributes nothing either way, which the
-  // runtime would also drop — but emitting `cond ? "" : ""` keeps the condition's side
-  // effects, and dropping it would not.
+  // Neither branch produces a declaration, so there is no class to choose between.
+  // Declining leaves the property in the runtime call, which keeps the condition where
+  // it was written rather than emitting `cond ? "" : ""` to preserve its side effects.
   if (!whenTrue && !whenFalse) return undefined
 
   return `${node.getCondition().getText()} ? ${JSON.stringify(whenTrue)} : ${JSON.stringify(whenFalse)}`
@@ -244,6 +282,7 @@ export const planPartialFold = (
     className,
     dynamicText: partition.dynamicText.length ? `{ ${partition.dynamicText.join(', ')} }` : undefined,
     finite: partition.finite,
+    finiteFirst: partition.finiteFirst,
   }
 }
 
@@ -254,6 +293,8 @@ interface Partition {
   dynamicText: string[]
   /** Ternary expressions for properties with resolvable branches. */
   finite: string[]
+  /** Whether every ternary is written before every dynamic property. */
+  finiteFirst: boolean
 }
 
 /**
@@ -292,6 +333,8 @@ const partitionObject = (
   const seenKeys = new Set<string>()
   const finiteKeys: string[] = []
   const finite: string[] = []
+  /** `f` or `d` per property, in source order, to check the two never interleave. */
+  const order: string[] = []
 
   for (const property of node.getProperties()) {
     // A spread contributes keys that cannot be attributed to either half.
@@ -329,10 +372,11 @@ const partitionObject = (
     // be a ternary between two literals instead of a runtime call. Only at this level —
     // a nested one would need its condition path carried into the class.
     if (topLevel) {
-      const branches = finiteBranches(key, valueBox, deps.runtimeCss)
+      const branches = finiteBranches(key, value, valueBox, deps)
       if (branches) {
         finiteKeys.push(key)
         finite.push(branches)
+        order.push('f')
         continue
       }
     }
@@ -351,11 +395,13 @@ const partitionObject = (
       dynamicKeys.push(key)
       splitKeys.add(key)
       dynamicText.push(`${property.getNameNode().getText()}: { ${nested.dynamicText.join(', ')} }`)
+      order.push('d')
       continue
     }
 
     dynamicKeys.push(key)
     dynamicText.push(property.getText())
+    order.push('d')
   }
 
   // Nothing to gain unless something resolves and something is left over. A finite
@@ -375,7 +421,18 @@ const partitionObject = (
   // other halves exactly as a static or dynamic key would.
   if (collides(finiteKeys, [...staticKeys, ...contested], ctx)) return undefined
 
-  return { staticStyles, dynamicText, finite }
+  // And with each other: two ternaries on `mx` and `marginInline` would each emit a class
+  // for margin-inline, where the object keeps only the last. The pairwise walk is what
+  // `collides` cannot do in one call, since every key trivially matches itself.
+  if (finiteKeys.some((key, index) => collides([key], finiteKeys.slice(0, index), ctx))) return undefined
+
+  // A ternary's condition leaves the object, so it is evaluated relative to the dynamic
+  // values rather than among them. That is expressible while the two do not interleave —
+  // ternaries before the call, or after it — and not otherwise.
+  const written = order.join('')
+  if (!/^f*d*$/.test(written) && !/^d*f*$/.test(written)) return undefined
+
+  return { staticStyles, dynamicText, finite, finiteFirst: !written.startsWith('d') }
 }
 
 /**

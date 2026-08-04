@@ -137,9 +137,6 @@ Everything else is left byte-identical. A call Bamboo cannot fully resolve keeps
 // ❌ a value only known at runtime
 css({ color: tone })
 
-// ❌ a ternary — two possible results, no single string
-css({ color: on ? 'red.300' : 'blue.500' })
-
 // ❌ a spread of anything but an inline object literal
 css({ color: 'red.300', ...rest })
 
@@ -211,10 +208,24 @@ cx('c_red.300', css({ padding: p }))
 
 The element still collapses to its intrinsic tag, so the factory goes with it.
 
-Splitting is refused when the two halves could produce a class for the same property, since `cx` concatenates without
+A top-level ternary is neither half. Both its branches are known, so each resolves now and the choice becomes a ternary
+between two literals:
+
+```tsx
+css({ margin: '2', color: isError ? 'red.500' : 'green.500' })
+cx('m_2', isError ? 'c_red.500' : 'c_green.500')
+```
+
+Independent conditionals stay linear — two of them give two ternaries, not four combinations. One branch that does not
+resolve makes the choice open-ended again, and the property goes back to the runtime. The ternary has to be written at
+the call site: one reached through a variable stays where it was declared, so its condition is neither copied into a
+scope that cannot see it nor re-evaluated on every call.
+
+Splitting is refused when two halves could produce a class for the same property, since `cx` concatenates without
 resolving conflicts: a shorthand facing its longhand, a top-level `base` block, and multi-argument `css()`. A property
 counts as static only if the extractor resolved every leaf _and_ accounted for everything the source declared, so a
-ternary, a dynamic array element, a nested dynamic value and a spread all keep their whole property at runtime.
+dynamic array element, a nested dynamic value and a spread all keep their whole property at runtime. A ternary nested
+inside a condition block stays there too — lowering it would mean carrying the condition's path into each branch.
 
 Element splitting needs both `css` and `cx`, so a file that does not already import `css` is left alone. Turn splitting
 off with `partial: false`.

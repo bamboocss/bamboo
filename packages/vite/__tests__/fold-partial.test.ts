@@ -466,26 +466,37 @@ describe('splitting inside a block', () => {
  * `collides()` rules out two properties resolving to the same class.
  */
 describe('finite branches', () => {
+  /**
+   * Execute a folded module and return the class string it produces, so equivalence is
+   * checked against what actually runs rather than against a re-derivation of it. `cx` is
+   * the generated one: concatenate the string arguments, skip everything else.
+   */
+  const run = (code: string, ...args: unknown[]) => {
+    const body = code.replace(/^\s*import .*$/gm, '').replace('export const', 'const')
+    const cx = (...parts: unknown[]) => parts.filter((part) => part && typeof part === 'string').join(' ')
+
+    return new Function('cx', `${body}; return f`)(cx)(...args) as string
+  }
+
   test('a lone ternary lowers to a ternary of literals', () => {
-    const { fold, runtimeCss } = createFoldFixture()
+    const { fold } = createFoldFixture()
     const result = fold(src(`export const f = (e) => css({ margin: '2', color: e ? 'red.300' : 'blue.500' })`))
 
     expect(result.code).toContain(`cx("m_2", e ? "c_red.300" : "c_blue.500")`)
-    // Each branch has to equal what the runtime produces for that branch's value.
-    expect(runtimeCss({ color: 'red.300' })).toBe('c_red.300')
-    expect(runtimeCss({ color: 'blue.500' })).toBe('c_blue.500')
   })
 
   test('either branch recombines to the whole', () => {
     const { fold, runtimeCss } = createFoldFixture()
     const result = fold(src(`export const f = (e) => css({ margin: '2', color: e ? 'red.300' : 'blue.500' })`))
 
-    for (const value of ['red.300', 'blue.500']) {
-      const whole = runtimeCss({ margin: '2', color: value })
-      const split = ['m_2', runtimeCss({ color: value })].join(' ')
-      expect(split.split(' ').sort()).toEqual(whole.split(' ').sort())
+    for (const [e, value] of [
+      [true, 'red.300'],
+      [false, 'blue.500'],
+    ] as const) {
+      // The folded expression is *run*, rather than reconstructed with the same
+      // `runtimeCss` the fold used — which would only assert that function against itself.
+      expect(run(result.code, e).split(' ').sort()).toEqual(runtimeCss({ margin: '2', color: value }).split(' ').sort())
     }
-    expect(result.folded).toHaveLength(1)
   })
 
   test('two independent conditionals stay linear', () => {
@@ -540,5 +551,107 @@ describe('finite branches', () => {
     // apply two classes where the runtime applies one.
     expect(fold(code).folded).toHaveLength(0)
     expect(fold(code).code).toBe(code)
+  })
+
+  test('two ternaries colliding with each other decline', () => {
+    const { fold } = createFoldFixture()
+    const code = src(`export const f = (a, b) => css({ mx: a ? '1' : '2', marginInline: b ? '3' : '4' })`)
+
+    // No static half to collide against, so the guard has to compare the ternaries to
+    // one another. All four combinations would otherwise emit two margin-inline classes.
+    expect(fold(code).folded).toHaveLength(0)
+    expect(fold(code).code).toBe(code)
+  })
+
+  test('a branch the box does not fully account for declines', () => {
+    const { fold } = createFoldFixture()
+
+    // The extractor omits `base` rather than marking it unresolvable, so the branch map
+    // looks static while missing a value. Lowering it would drop the base colour.
+    const dropped = src(
+      `export const f = (e) => css({ margin: '2', color: e ? { base: g(), md: 'blue.500' } : 'red.300' })`,
+    )
+    expect(fold(dropped).code).toContain('base: g()')
+
+    // A spread inside a branch is the same hole, and there it produces a *wrong* class
+    // rather than a missing one, since the spread may override the key beside it.
+    const overridden = src(
+      `export const f = (e, o) => css({ margin: '2', _hover: e ? { color: 'red.300', ...o } : { color: 'blue.500' } })`,
+    )
+    expect(fold(overridden).code).toContain('...o')
+  })
+
+  test('a condition is not hoisted past a dynamic value', () => {
+    const { fold } = createFoldFixture()
+
+    // Both are arbitrary expressions, so which runs first is observable. Written after
+    // the dynamic value, the ternary has to stay after the call.
+    const after = fold(
+      src(`export const f = (p, e) => css({ padding: log(p), color: log(e) ? 'red.300' : 'blue.500' })`),
+    )
+    expect(after.code).toContain(`cx(css({ padding: log(p) }), log(e) ? "c_red.300" : "c_blue.500")`)
+
+    // Written before it, before.
+    const before = fold(
+      src(`export const f = (p, e) => css({ color: log(e) ? 'red.300' : 'blue.500', padding: log(p) })`),
+    )
+    expect(before.code).toContain(`cx(log(e) ? "c_red.300" : "c_blue.500", css({ padding: log(p) }))`)
+
+    // Interleaved, neither order holds, so the lowering is declined outright.
+    const between = src(
+      `export const f = (p, q, e) => css({ padding: log(p), color: log(e) ? 'red.300' : 'blue.500', margin: log(q) })`,
+    )
+    expect(fold(between).code).toContain(`color: log(e) ? 'red.300' : 'blue.500'`)
+  })
+  test('a wrapped branch is still checked', () => {
+    const { fold } = createFoldFixture()
+
+    // The extractor unwraps `as`, `satisfies`, `!` and parentheses before boxing, so a
+    // check that unwraps fewer of them looks at the wrapper and waves the object through.
+    for (const branch of [`({ color: 'red.300', ...o } as any)`, `(({ color: 'red.300', ...o }))`]) {
+      const code = src(`export const f = (e, o) => css({ margin: '2', _hover: e ? ${branch} : { color: 'blue.500' } })`)
+
+      expect(fold(code).code).toContain('...o')
+      expect(fold(code).code).not.toContain('hover:c_red.300')
+    }
+  })
+
+  test('a condition found outside this call is not copied into it', () => {
+    const { fold } = createFoldFixture()
+
+    // The extractor resolves identifiers through their declarations, across modules, so
+    // the conditional it found is often not written here. Copying its condition would
+    // emit a reference to a binding this scope does not have, and would re-evaluate it on
+    // every call rather than once where it was declared.
+    const local = src(`const v = flag ? 'red.300' : 'blue.500'\nexport const f = () => css({ margin: '2', color: v })`)
+
+    // `flag ?` still appears in the declaration, which is untouched; what must not appear
+    // is the lowered form, where the condition has been moved into `f`.
+    expect(fold(local).code).not.toContain('flag ? "c_red.300"')
+    expect(fold(local).code).toContain('css({ color: v })')
+  })
+
+  test('a conditional in a key position is not read as the value', () => {
+    const { fold } = createFoldFixture()
+
+    // Here the box's conditional is the lookup key, and its branches are the values it
+    // found — so the source's when-true is `'a'`, not the object the box holds.
+    const code = src(
+      `const palette = { a: 'red.300', b: 'blue.500' }\nexport const f = (e) => css({ margin: '2', color: palette[e ? 'a' : 'b'] })`,
+    )
+
+    expect(fold(code).code).toContain(`css({ color: palette[e ? 'a' : 'b'] })`)
+    expect(fold(code).code).not.toContain('c_red.300')
+  })
+
+  test('a ternary written after a nested split stays after it', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(
+      src(`export const f = (p, e) => css({ _hover: { color: 'red.300', padding: p }, margin: e ? '1' : '2' })`),
+    )
+
+    // The runtime half of a split block counts as a dynamic property for ordering, the
+    // same as a whole one does.
+    expect(result.code).toContain(`cx("hover:c_red.300", css({ _hover: { padding: p } }), e ? "m_1" : "m_2")`)
   })
 })
