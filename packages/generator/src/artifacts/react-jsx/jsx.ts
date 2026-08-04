@@ -6,7 +6,7 @@ export function generateReactJsxFactory(ctx: Context) {
 
   return {
     js: outdent`
-    import { createElement, forwardRef, useMemo } from 'react'
+    import { createElement, forwardRef } from 'react'
     ${ctx.file.import('css, cx, cva', '../css/index')}
     ${ctx.file.import(
       'defaultShouldForwardProp, composeShouldForwardProps, composeCvaFn, getDisplayName',
@@ -36,11 +36,13 @@ export function generateReactJsxFactory(ctx: Context) {
       const ${componentName} = /* @__PURE__ */ forwardRef(function ${componentName}(props, ref) {
         const { as: Element = __base__, unstyled, children, ...restProps } = props
 
-        const combinedProps = useMemo(() => Object.assign({}, defaultProps, restProps), [restProps])
+        // Not memoized, deliberately. \`restProps\` is rest destructuring, so it is a fresh
+        // object on every render and a dependency on it can never match — a memo here is a
+        // guaranteed miss that still costs a hook slot, a deps array and a retained cell.
+        const combinedProps = Object.assign({}, defaultProps, restProps)
 
-        const [htmlProps, forwardedProps, variantProps, styleProps, elementProps] = useMemo(() => {
-          return splitProps(combinedProps, normalizeHTMLProps.keys, __shouldForwardProps__, __cvaFn__.variantKeys, isCssProperty)
-        }, [combinedProps])
+        const [htmlProps, forwardedProps, variantProps, styleProps, elementProps] =
+          splitProps(combinedProps, normalizeHTMLProps.keys, __shouldForwardProps__, __cvaFn__.variantKeys, isCssProperty)
 
         function recipeClass() {
           const { css: cssStyles, ...propStyles } = styleProps

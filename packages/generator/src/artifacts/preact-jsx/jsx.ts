@@ -8,7 +8,6 @@ export function generatePreactJsxFactory(ctx: Context) {
     js: outdent`
     import { h } from 'preact'
     import { forwardRef } from 'preact/compat'
-    import { useMemo } from 'preact/hooks'
     ${ctx.file.import(
       'defaultShouldForwardProp, composeShouldForwardProps, composeCvaFn, getDisplayName',
       './factory-helper',
@@ -39,11 +38,13 @@ export function generatePreactJsxFactory(ctx: Context) {
         const { as: Element = __base__, unstyled, children, ...restProps } = props
 
 
-        const combinedProps = useMemo(() => Object.assign({}, defaultProps, restProps), [restProps])
+        // Not memoized, deliberately. \`restProps\` is rest destructuring, so it is a fresh
+        // object on every render and a dependency on it can never match — a memo here is a
+        // guaranteed miss that still costs a hook slot, a deps array and a retained cell.
+        const combinedProps = Object.assign({}, defaultProps, restProps)
 
-        const [htmlProps, forwardedProps, variantProps, styleProps, elementProps] = useMemo(() => {
-          return splitProps(combinedProps, normalizeHTMLProps.keys, __shouldForwardProps__, __cvaFn__.variantKeys, isCssProperty)
-        }, [combinedProps])
+        const [htmlProps, forwardedProps, variantProps, styleProps, elementProps] =
+          splitProps(combinedProps, normalizeHTMLProps.keys, __shouldForwardProps__, __cvaFn__.variantKeys, isCssProperty)
 
         function recipeClass() {
           const { css: cssStyles, ...propStyles } = styleProps
