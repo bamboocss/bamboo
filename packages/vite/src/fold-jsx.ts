@@ -60,8 +60,18 @@ const RESERVED_PROPS = new Set(['unstyled', 'css', 'ref', 'key', 'children'])
  * the same forwarded props — `splitProps` keys off the factory's own config, not off
  * what `as` points at, so the split is unchanged.
  *
- * A string literal names an intrinsic element; an identifier names a component in
- * scope, which is emitted as-is. Anything else is only known at runtime.
+ * Casing is load-bearing, because JSX and `createElement` disagree about it. JSX reads a
+ * lowercase tag as an intrinsic element and a capitalised one as a variable, while
+ * `createElement` takes a string as intrinsic and anything else as a component. So the
+ * two forms only survive the rewrite when their casing already agrees:
+ *
+ * - `as="section"` -> `<section>`, intrinsic both ways.
+ * - `as={Link}` -> `<Link>`, a component reference both ways.
+ *
+ * The mismatched pair render something else entirely. `as={thing}` would fold to
+ * `<thing>`, a DOM element named `thing` rather than the component; `as="Section"` would
+ * fold to `<Section>`, a variable reference rather than the intrinsic the factory would
+ * have created. Both bail.
  */
 const asTag = (attribute: JsxAttribute): string | undefined => {
   const initializer = attribute.getInitializer()
@@ -69,13 +79,18 @@ const asTag = (attribute: JsxAttribute): string | undefined => {
 
   if (Node.isStringLiteral(initializer)) {
     const value = initializer.getLiteralValue()
-    return /^[A-Za-z][\w.-]*$/.test(value) ? value : undefined
+    // Lowercase-initial only, so JSX reads it as the intrinsic the factory would create.
+    return /^[a-z][\w.-]*$/.test(value) ? value : undefined
   }
 
   if (!Node.isJsxExpression(initializer)) return undefined
 
   const expression = initializer.getExpression()
-  return expression && Node.isIdentifier(expression) ? expression.getText() : undefined
+  if (!expression || !Node.isIdentifier(expression)) return undefined
+
+  // Capitalised only, so JSX reads it as the reference the factory would call.
+  const name = expression.getText()
+  return /^[A-Z]/.test(name) ? name : undefined
 }
 
 /**

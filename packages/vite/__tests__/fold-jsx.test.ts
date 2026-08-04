@@ -337,4 +337,29 @@ describe('the as prop', () => {
   test('a non-identifier string is rejected', () => {
     expectUnchanged(`export const A = () => <styled.div as="not a tag" color="red.300" />`)
   })
+
+  /**
+   * JSX and `createElement` disagree about casing, so the two forms only fold when their
+   * casing already agrees. The mismatched pair render something else entirely.
+   */
+  test('a lowercase identifier bails, since JSX would read it as an intrinsic', () => {
+    const { fold } = createFoldFixture()
+    const code = `import { styled } from 'styled-system/jsx'\nconst thing = () => null\nexport const A = () => <styled.div as={thing} color="red.300" />\n`
+
+    // Folding to `<thing>` would render a DOM element named `thing`, not the component.
+    expect(fold(code).folded).toHaveLength(0)
+    expect(fold(code).code).toBe(code)
+  })
+
+  test('a capitalised string bails, since JSX would read it as a variable', () => {
+    // `createElement("Section")` is an intrinsic; `<Section>` is a reference.
+    expectUnchanged(`export const A = () => <styled.div as="Section" color="red.300" />`)
+  })
+
+  test('a custom element name still folds', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(jsx(`export const A = () => <styled.div as="my-widget" color="red.300" />`))
+
+    expect(result.code).toContain('<my-widget className={"c_red.300"} />')
+  })
 })
