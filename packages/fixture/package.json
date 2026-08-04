@@ -4,7 +4,7 @@
   "private": true,
   "description": "Test fixtures for Bamboo CSS",
   "license": "MIT",
-  "author": "Segun Adebayo <joseshegs@gmail.com>",
+  "author": "Gajus Kuizinas <gajus@gajus.com>",
   "main": "src/index.ts",
   "types": "src/index.ts",
   "devDependencies": {

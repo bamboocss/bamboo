@@ -4,7 +4,7 @@
   "description": "Bamboo CSS plugin for Vue single file component support",
   "homepage": "https://bamboocss.com",
   "license": "MIT",
-  "author": "Segun Adebayo <joseshegs@gmail.com>",
+  "author": "Gajus Kuizinas <gajus@gajus.com>",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bamboocss/bamboo.git",

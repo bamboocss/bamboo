@@ -5,7 +5,7 @@
   "description": "The repository of css bamboo",
   "keywords": [],
   "license": "MIT",
-  "author": "Segun Adebayo <joseshegs@gmail.com>",
+  "author": "Gajus Kuizinas <gajus@gajus.com>",
   "type": "module",
   "scripts": {
     "playground": "pnpm --filter=./playground",

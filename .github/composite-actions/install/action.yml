@@ -16,8 +16,8 @@ runs:
     - name: Setup Git User
       shell: bash
       run: |
-        git config --global user.email "joseshegs@gmail.com"
-        git config --global user.name "Segun Adebayo"
+        git config --global user.email "gajus@gajus.com"
+        git config --global user.name "Gajus Kuizinas"
 
     - name: Install dependencies
       shell: bash
