@@ -103,6 +103,15 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin => {
 
     async buildStart() {
       if (!transform) return
+
+      // `vite build --watch` runs this hook once per rebuild against the same plugin
+      // instance, so without a reset the summary reports every build since the first
+      // and the percentage stops describing the bundle that was just written.
+      totals.folded = 0
+      totals.files = 0
+      totals.filesWithFolds = 0
+      totals.skipped.clear()
+
       await ensureContext()
     },
 

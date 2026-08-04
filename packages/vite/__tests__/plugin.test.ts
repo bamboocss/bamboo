@@ -1,3 +1,6 @@
+import { logger } from '@bamboocss/logger'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
 import { bamboocss } from '../src/plugin'
 
@@ -95,5 +98,46 @@ describe('coverage summary', () => {
     // A build that folded nothing and declined nothing has no coverage to report, and a
     // "0/0" line would be noise in every project not using the transform.
     await expect(callBuildEnd(bamboocss({ transform: true }))).resolves.toBeUndefined()
+  })
+
+  /**
+   * `vite build --watch` reuses one plugin instance across rebuilds, so totals that are
+   * never cleared describe every build since the first rather than the bundle just
+   * written.
+   *
+   * Needs a real config, since the counters are only touched once a module actually
+   * folds — `sandbox/codegen` has one. Without it this would pass whether or not the
+   * reset exists, because a failed context leaves every total at zero.
+   */
+  test('counts are reset per build, so a watch rebuild reports only itself', async () => {
+    const cwd = join(dirname(fileURLToPath(import.meta.url)), '../../../sandbox/codegen')
+    const plugin = bamboocss({ transform: true, cwd })
+
+    const logged: string[] = []
+    const info = logger.info
+    ;(logger as { info: typeof logger.info }).info = (_type: string, message: string) => {
+      logged.push(message)
+    }
+
+    const buildStart = typeof plugin.buildStart === 'function' ? plugin.buildStart : plugin.buildStart?.handler
+
+    try {
+      await buildStart?.call({} as never, {} as never)
+      const folded = await callTransform(plugin, SOURCE, join(cwd, 'src/watch-a.tsx'))
+      await callBuildEnd(plugin)
+
+      // The summary only reports when something was counted, so this is what makes the
+      // second half meaningful.
+      expect(folded).not.toBeNull()
+      expect(logged).toHaveLength(1)
+
+      // A second build that transformed nothing must have nothing to report.
+      await buildStart?.call({} as never, {} as never)
+      await callBuildEnd(plugin)
+
+      expect(logged).toHaveLength(1)
+    } finally {
+      ;(logger as { info: typeof logger.info }).info = info
+    }
   })
 })
