@@ -1,4 +1,3 @@
-import Script from 'next/script'
 import { Providers } from '@/components/providers'
 import { css, cx } from '@/styled-system/css'
 import { fontClassName } from 'styles/fonts'
@@ -24,9 +23,6 @@ export default function RootLayout(props: Props) {
       className={cx(fontClassName, css({ fontFamily: 'body', fontSize: '0.9em' }))}
       suppressHydrationWarning
     >
-      <head>
-        <Script data-domain="bamboo-css.com" src="https://plausible.io/js/script.js" />
-      </head>
       <body suppressHydrationWarning>
         <Providers>{children}</Providers>
       </body>
