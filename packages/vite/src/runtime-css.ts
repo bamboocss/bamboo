@@ -23,23 +23,26 @@ export interface RuntimeCss {
   (...styles: Dict[]): string
 }
 
+/** The shape `createCss` and `createMergeCss` both take, derived from a resolved context. */
+export const createCssContext = (ctx: Context) => ({
+  grouped: ctx.config.cssMode === 'grouped',
+  hash: Boolean(ctx.hash.className),
+  conditions: {
+    shift: ctx.conditions.shift,
+    finalize: ctx.conditions.finalize,
+    breakpoints: { keys: ctx.conditions.breakpoints.keys },
+  },
+  utility: {
+    prefix: ctx.utility.prefix,
+    hasShorthand: ctx.utility.hasShorthand,
+    resolveShorthand: ctx.utility.resolveShorthand.bind(ctx.utility),
+    transform: ctx.utility.transform.bind(ctx.utility),
+    toHash: ctx.utility.toHash.bind(ctx.utility),
+  },
+})
+
 export const createRuntimeCss = (ctx: Context): RuntimeCss => {
-  const cssContext = {
-    grouped: ctx.config.cssMode === 'grouped',
-    hash: Boolean(ctx.hash.className),
-    conditions: {
-      shift: ctx.conditions.shift,
-      finalize: ctx.conditions.finalize,
-      breakpoints: { keys: ctx.conditions.breakpoints.keys },
-    },
-    utility: {
-      prefix: ctx.utility.prefix,
-      hasShorthand: ctx.utility.hasShorthand,
-      resolveShorthand: ctx.utility.resolveShorthand.bind(ctx.utility),
-      transform: ctx.utility.transform.bind(ctx.utility),
-      toHash: ctx.utility.toHash.bind(ctx.utility),
-    },
-  }
+  const cssContext = createCssContext(ctx)
 
   const cssFn = createCss(cssContext)
   const { mergeCss } = createMergeCss(cssContext)
@@ -68,6 +71,7 @@ export interface RuntimeRecipe {
 
 export const createRuntimeRecipe = (ctx: Context, runtimeCss: RuntimeCss): RuntimeRecipe => {
   const separator = ctx.utility.separator
+  const { mergeCss } = createMergeCss(createCssContext(ctx))
 
   return (name, variants) => {
     const config = ctx.recipes.getConfig(name)
@@ -100,14 +104,41 @@ export const createRuntimeRecipe = (ctx: Context, runtimeCss: RuntimeCss): Runti
     })
 
     const recipeStyles = { [className]: '__ignore__', ...defaultVariants, ...compact(variants) }
-    const compoundStyles = getCompoundVariantCss(compoundVariants as Dict[], recipeStyles)
+
+    // The generated `transform` calls `assertCompoundVariant` on every prop, which throws
+    // for a conditional variant value on a recipe that has compound variants. So the
+    // runtime does not return a class here at all — it crashes. Declining leaves the call
+    // on its runtime path and the crash where the user put it; folding would quietly
+    // repair a bug rather than preserve behaviour. Spelled the way the assert spells it,
+    // `typeof` against the variants as passed, so the two agree on the edge cases.
+    if (compoundVariants.length > 0 && Object.keys(recipeStyles).some((prop) => typeof variants[prop] === 'object')) {
+      return undefined
+    }
+
+    const compoundStyles = getCompoundVariantCss(compoundVariants as Dict[], recipeStyles, mergeCss)
 
     return [recipeCss(recipeStyles), runtimeCss(compoundStyles)].filter(Boolean).join(' ')
   }
 }
 
-/** Mirrors the function of the same name in the generated `cva` artifact. */
-const getCompoundVariantCss = (compoundVariants: Dict[], variantMap: Dict): Dict => {
+/**
+ * Mirrors the function of the same name in the generated `cva` artifact, down to the
+ * `mergeCss` it accumulates with.
+ *
+ * That merge has to be the deep one. More than one compound variant can match a single
+ * selection, and their `css` objects then combine rather than replace: `_hover` set by
+ * one and `_hover` set by another have to end up as a single condition holding both
+ * declarations. `Object.assign` drops everything the earlier match contributed under a
+ * shared key, which produces a shorter class list and no error at all.
+ *
+ * Taking `mergeCss` as an argument rather than importing one keeps it the same instance
+ * the rest of the fold resolves through, built from the same context.
+ */
+export const getCompoundVariantCss = (
+  compoundVariants: Dict[],
+  variantMap: Dict,
+  mergeCss: (...styles: Dict[]) => Dict,
+): Dict => {
   let result: Dict = {}
 
   for (const compoundVariant of compoundVariants) {
@@ -119,7 +150,7 @@ const getCompoundVariantCss = (compoundVariants: Dict[], variantMap: Dict): Dict
       return values.some((entry) => variantMap[key] === entry)
     })
 
-    if (isMatching) result = Object.assign({}, result, compoundVariant.css)
+    if (isMatching) result = mergeCss(result, compoundVariant.css)
   }
 
   return result
