@@ -169,3 +169,30 @@ describe('callee spellings that should still fold', () => {
     expect(result.code).toContain('"some-unknown-prop_value"')
   })
 })
+
+describe('values the extractor resolves to nothing', () => {
+  /**
+   * A dynamic template literal is boxed as a *literal* whose value is `undefined`, not as
+   * `unresolvable`. Both staticness checks accepted that — `isStaticBox` only rejects
+   * `unresolvable` and `conditional`, and the key genuinely is present in the map — so the
+   * call folded and the property vanished from the output.
+   */
+  test('a dynamic template literal beside a static value is not dropped', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(withImport('export const f = (x) => css({ color: `red.300`, width: `${x}px` })'))
+
+    // The whole-call path used to fold this to `"c_red.300"` and lose `width` entirely.
+    // It now declines, and partial folding routes `width` to the runtime half instead —
+    // which is the outcome that keeps the property rather than merely refusing to act.
+    expect(result.code).toContain('cx("c_red.300", css({ width: `${x}px` }))')
+  })
+
+  test('the single-property spelling bails for the accounting reason, not by luck', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(withImport('export const f = (x) => css({ width: `${x}px` })'))
+
+    // Previously this bailed only because the resulting class string was empty, which is
+    // why it never caught the case above.
+    expect(result.skipped.map((s) => s.reason)).toContain('dynamic')
+  })
+})

@@ -112,6 +112,12 @@ const isStaticBox = (node: BoxNode | undefined, seen = new Set<BoxNode>()): bool
   // `box.fallback` fabricates a shape with no discriminant.
   if (!('type' in node) || node.type == null) return false
 
+  // A value the extractor could not evaluate is not always boxed as `unresolvable`: a
+  // template literal with an interpolation comes back as a *literal* carrying
+  // `undefined`. The key is present in the map, so the accounting check is satisfied
+  // too, and the property would be dropped from a fold that looked static by both tests.
+  if (box.isLiteral(node) && node.value === undefined) return false
+
   if (box.isMap(node)) {
     for (const child of node.value.values()) {
       if (!isStaticBox(child, seen)) return false
