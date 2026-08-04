@@ -1,7 +1,7 @@
 import { logger } from '@bamboocss/logger'
 import type { CssArtifactType } from '@bamboocss/types'
 import type { BambooContext } from './create-context'
-import { collectTokenReferences } from './token-references'
+import { collectKeyframeReferences, collectTokenReferences, keyframeNames } from './token-references'
 
 export interface CssGenOptions {
   cwd: string
@@ -46,6 +46,7 @@ export const cssgen = async (ctx: BambooContext, options: CssGenOptions) => {
     // references reads every source file, so it stays behind the flag.
     if (!minimal && ctx.config.pruneUnusedTokens) {
       ctx.pruneTokens(sheet, collectTokenReferences(ctx, results))
+      ctx.pruneKeyframes(sheet, collectKeyframeReferences(ctx, keyframeNames(ctx)))
     }
 
     if (splitting) {

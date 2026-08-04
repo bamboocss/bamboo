@@ -1,4 +1,4 @@
-import { Context, pruneTokenVars, type StyleDecoder, type Stylesheet } from '@bamboocss/core'
+import { Context, pruneKeyframes, pruneTokenVars, type StyleDecoder, type Stylesheet } from '@bamboocss/core'
 import { logger } from '@bamboocss/logger'
 import { cssVarRefs, dashCase, BambooError } from '@bamboocss/shared'
 import type { ArtifactId, CssArtifactType, LoadConfigResult, SpecFile, SpecType, SpecTypeMap } from '@bamboocss/types'
@@ -115,6 +115,41 @@ export class Generator extends Context {
     })
 
     logger.debug('prune:tokens', `Removed ${result.removed} unused token css variable(s)`)
+
+    return result
+  }
+
+  /**
+   * Drop `@keyframes` nothing can reach. Same completeness requirement as
+   * `pruneTokens`: the sheet has to hold the whole stylesheet, or every keyframe looks
+   * unused for want of a utility to reference it.
+   *
+   * `keep` carries names this cannot see for itself; see `collectKeyframeReferences`.
+   */
+  pruneKeyframes = (sheet: Stylesheet, keep?: Set<string>) => {
+    if (!this.config.pruneUnusedKeyframes) return
+
+    const layers = sheet.layers
+
+    const result = pruneKeyframes({
+      scan: [
+        layers.reset,
+        layers.base,
+        layers.tokens,
+        layers.recipes,
+        layers.recipes_base,
+        layers.recipes_slots,
+        layers.recipes_slots_base,
+        layers.utilities,
+        layers.compositions,
+      ],
+      // `generateKeyframeCss` appends into the token layer.
+      target: layers.tokens,
+      keyframeNames: new Set(Object.keys(this.config.theme?.keyframes ?? {})),
+      keep,
+    })
+
+    logger.debug('prune:keyframes', `Removed ${result.removed} unused keyframe(s)`)
 
     return result
   }

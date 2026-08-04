@@ -9,7 +9,7 @@ import { codegen } from './codegen'
 import { loadConfigAndCreateContext } from './config'
 import { BambooContext } from './create-context'
 import { parseDependency } from './parse-dependency'
-import { collectTokenReferences } from './token-references'
+import { collectKeyframeReferences, collectTokenReferences, keyframeNames } from './token-references'
 
 const fileModifiedMap = new Map<string, number>()
 
@@ -201,6 +201,7 @@ export class Builder {
     // the source scan alone; re-parsing here would encode every style a second time.
     if (ctx.config.pruneUnusedTokens) {
       ctx.pruneTokens(sheet, collectTokenReferences(ctx, []))
+      ctx.pruneKeyframes(sheet, collectKeyframeReferences(ctx, keyframeNames(ctx)))
     }
 
     const css = ctx.getCss(sheet)

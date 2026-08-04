@@ -3,7 +3,7 @@ import type { ArtifactId, Config } from '@bamboocss/types'
 import { codegen } from './codegen'
 import { loadConfigAndCreateContext } from './config'
 import { BambooContext } from './create-context'
-import { collectTokenReferences } from './token-references'
+import { collectKeyframeReferences, collectTokenReferences, keyframeNames } from './token-references'
 
 async function build(ctx: BambooContext, artifactIds?: ArtifactId[]) {
   await codegen(ctx, artifactIds)
@@ -23,6 +23,7 @@ async function build(ctx: BambooContext, artifactIds?: ArtifactId[]) {
   // Gathering the references reads every source file, so it stays behind the flag.
   if (ctx.config.pruneUnusedTokens) {
     ctx.pruneTokens(sheet, collectTokenReferences(ctx, parsed.results))
+    ctx.pruneKeyframes(sheet, collectKeyframeReferences(ctx, keyframeNames(ctx)))
   }
 
   await ctx.writeCss(sheet)
@@ -79,6 +80,7 @@ export async function generate(config: Config, configPath?: string) {
       // time on each change.
       if (ctx.config.pruneUnusedTokens) {
         ctx.pruneTokens(sheet, collectTokenReferences(ctx, []))
+        ctx.pruneKeyframes(sheet, collectKeyframeReferences(ctx, keyframeNames(ctx)))
       }
 
       const css = ctx.getCss(sheet)

@@ -75,3 +75,56 @@ export function collectTokenReferences(ctx: BambooContext, results: ParserResult
 
   return vars
 }
+
+/**
+ * Collect keyframe names that reading the generated css cannot reveal.
+ *
+ * A keyframe reached through `css({ animation: 'fade-in 1s' })` lands in the stylesheet
+ * and `pruneKeyframes` sees it there. What it cannot see is a name assembled at runtime,
+ * or one handed to an inline `style` rather than to bamboo — in both cases the animation
+ * plays against a `@keyframes` that no bamboo declaration references.
+ *
+ * So each declared name is looked for in the source text. Like the token scan this is
+ * deliberately over-inclusive: a name that happens to appear in a comment, or as a word
+ * in unrelated prose, keeps its keyframe alive. Keeping an unused keyframe costs bytes;
+ * dropping a used one silently stops an animation, which is the worse failure and the
+ * harder one to trace.
+ */
+export function collectKeyframeReferences(ctx: BambooContext, names: Iterable<string>) {
+  const declared = Array.from(names)
+  const found = new Set<string>()
+  if (!declared.length) return found
+
+  // Word-boundary match per name, built once. A keyframe called `spin` must not be kept
+  // alive by the word `spinner`.
+  const patterns = declared.map((name) => [name, new RegExp(`\\b${escapeRegExp(name)}\\b`)] as const)
+
+  for (const file of ctx.getFiles()) {
+    if (found.size === declared.length) break
+
+    const filePath = ctx.runtime.path.abs(ctx.config.cwd, file)
+
+    // Same reasoning as `collectTokenReferences`: the project already holds the text of
+    // everything it parsed, so re-reading from disk would repeat the io per rebuild.
+    let content = ctx.project.getSourceFile(filePath)?.getFullText()
+
+    if (content == null) {
+      try {
+        content = ctx.runtime.fs.readFileSync(filePath)
+      } catch {
+        continue
+      }
+    }
+
+    for (const [name, pattern] of patterns) {
+      if (!found.has(name) && pattern.test(content)) found.add(name)
+    }
+  }
+
+  return found
+}
+
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+/** The keyframes the theme declares — the allow-list `pruneKeyframes` works against. */
+export const keyframeNames = (ctx: BambooContext) => Object.keys(ctx.config.theme?.keyframes ?? {})

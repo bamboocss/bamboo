@@ -374,6 +374,22 @@ interface CssgenOptions {
    */
   pruneUnusedTokens?: boolean
   /**
+   * Drop `@keyframes` rules nothing can reach.
+   *
+   * A preset declares every animation it offers and an app uses a handful, so the rest
+   * are dead weight in the stylesheet that blocks first paint. Only keyframes the theme
+   * declares are ever removed — one emitted by `globalCss` is left alone.
+   *
+   * A name is kept when any declaration in the generated css names it, and when it
+   * appears anywhere under `include`, which covers an animation assembled at runtime or
+   * applied through an inline `style` rather than through bamboo. That textual fallback
+   * is deliberately over-inclusive: keeping an unused keyframe costs bytes, dropping a
+   * used one breaks the animation.
+   *
+   * @default false
+   */
+  pruneUnusedKeyframes?: boolean
+  /**
    * The root selector for the css variables.
    * @default ':where(:host, :root)'
    */
