@@ -84,7 +84,10 @@ describe('sandbox/vite-ts parity', () => {
       for (const call of result.folded) {
         const where = `${file} @ ${call.start}`
 
-        expect(call.className, `${where} produced an empty class`).not.toBe('')
+        // A call whose every property lowered to a ternary resolves no class outright,
+        // and its branches are in `classNames` instead. Emitting nothing at all is still
+        // a defect.
+        expect(call.classNames, `${where} produced no class`).not.toHaveLength(0)
 
         // The decoder escapes class names for CSS selectors (`.c_red\.300`); a class
         // attribute must carry the unescaped form. A stray backslash here is the
@@ -97,6 +100,11 @@ describe('sandbox/vite-ts parity', () => {
           call.className.split(' ').filter((part) => part === ''),
           where,
         ).toHaveLength(0)
+
+        for (const name of call.classNames) {
+          expect(name, `${where} produced an empty class`).not.toBe('')
+          expect(name, `${where} leaked a selector escape`).not.toContain('\\')
+        }
       }
     }
   })
@@ -106,7 +114,11 @@ describe('sandbox/vite-ts parity', () => {
 
     for (const { file, result } of results) {
       for (const call of result.folded) {
-        expect(result.code, `${file}: ${call.className} missing from output`).toContain(JSON.stringify(call.className))
+        // Each literal separately: a lowered ternary writes its arms as two strings, so
+        // there is no single literal holding them both.
+        for (const name of call.classNames) {
+          expect(result.code, `${file}: ${name} missing from output`).toContain(name)
+        }
       }
     }
   })
@@ -150,7 +162,7 @@ describe('sandbox/vite-ts parity', () => {
 
     for (const { file, result } of results) {
       for (const call of result.folded) {
-        for (const selector of selectorsFor(call.className)) {
+        for (const selector of selectorsFor(call.classNames.join(' '))) {
           expect(css, `${file}: ${selector} has no rule`).toContain(selector)
         }
       }

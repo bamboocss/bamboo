@@ -1,3 +1,4 @@
+import type { Dict } from '@bamboocss/types'
 import { describe, expect, test } from 'vitest'
 import { foldSource } from '../src/fold'
 import { createFoldFixture } from './fixture'
@@ -553,6 +554,49 @@ describe('finite branches', () => {
     expect(fold(code).code).toBe(code)
   })
 
+  test('a lowering that cannot be kept goes back to the runtime, and the split survives', () => {
+    const { fold } = createFoldFixture()
+
+    // Interleaved with dynamic values, so the condition cannot be hoisted without
+    // reordering it. The property returns to the call; `bg` is still worth hoisting.
+    const interleaved = fold(
+      src(
+        `export const f = (p, e, m) => css({ bg: 'red.300', padding: p, color: e ? 'red.300' : 'blue.500', margin: m })`,
+      ),
+    )
+    expect(interleaved.code).toContain(
+      `cx("bg_red.300", css({ padding: p, color: e ? 'red.300' : 'blue.500', margin: m }))`,
+    )
+
+    // Same for a nested split, which must not be lost either.
+    const nested = fold(
+      src(
+        `export const f = (p, e) => css({ _hover: { bg: 'red.300', padding: p }, color: e ? 'red.300' : 'blue.500', margin: p })`,
+      ),
+    )
+    expect(nested.code).toContain('cx("hover:bg_red.300", css({ _hover: { padding: p },')
+
+    // And for a colliding pair, where both ternaries demote and the static half stays.
+    const colliding = fold(
+      src(`export const f = (a, b) => css({ padding: '2', mx: a ? '1' : '2', marginInline: b ? '3' : '4' })`),
+    )
+    expect(colliding.code).toContain(`cx("p_2", css({ mx: a ? '1' : '2', marginInline: b ? '3' : '4' }))`)
+  })
+
+  test('a branch reached as an identifier is checked against its own box', () => {
+    const { fold } = createFoldFixture()
+
+    // `warm` accounts for its box trivially, being an identifier rather than a literal.
+    // The other branch does not account for its own — `g()` did not evaluate — so pairing
+    // each source with the wrong box would let this through against the wrong one.
+    const code = src(
+      `const warm = { color: 'red.300', margin: '4' }\nexport const f = (e) => css({ padding: '2', _hover: e ? warm : { color: 'blue.500', margin: g() } })`,
+    )
+
+    expect(fold(code).code).toContain('margin: g()')
+    expect(fold(code).code).not.toContain('hover:c_red.300')
+  })
+
   test('two ternaries colliding with each other decline', () => {
     const { fold } = createFoldFixture()
     const code = src(`export const f = (a, b) => css({ mx: a ? '1' : '2', marginInline: b ? '3' : '4' })`)
@@ -642,6 +686,64 @@ describe('finite branches', () => {
 
     expect(fold(code).code).toContain(`css({ color: palette[e ? 'a' : 'b'] })`)
     expect(fold(code).code).not.toContain('c_red.300')
+  })
+
+  test('every folded shape produces the classes the runtime would', () => {
+    const { fold, runtimeCss } = createFoldFixture()
+
+    /** Run a folded module with the real `css` behind it, not just `cx`. */
+    const execute = (code: string, e: unknown) => {
+      const body = code.replace(/^\s*import .*$/gm, '').replace('export const', 'const')
+      const cx = (...parts: unknown[]) => parts.filter((part) => part && typeof part === 'string').join(' ')
+      const classes = new Function('cx', 'css', `${body}; return f`)(cx, runtimeCss)(e) as string
+
+      return classes.split(' ').filter(Boolean).sort()
+    }
+
+    // Each shape paired with the object it is equivalent to, per branch. Declining shapes
+    // are included deliberately: they execute through the stub unchanged, so the
+    // comparison proves the decline was right rather than merely counting it.
+    const shapes: Array<[string, (e: boolean) => Dict]> = [
+      [
+        `css({ margin: '2', color: e ? 'red.300' : 'blue.500' })`,
+        (e) => ({ margin: '2', color: e ? 'red.300' : 'blue.500' }),
+      ],
+      [`css({ color: e ? 'red.300' : 'blue.500' })`, (e) => ({ color: e ? 'red.300' : 'blue.500' })],
+      [
+        `css({ mx: e ? '1' : '2', marginInline: e ? '3' : '4' })`,
+        (e) => ({ mx: e ? '1' : '2', marginInline: e ? '3' : '4' }),
+      ],
+      [
+        `css({ padding: '2', mx: e ? '1' : '2', marginInline: e ? '3' : '4' })`,
+        (e) => ({ padding: '2', mx: e ? '1' : '2', marginInline: e ? '3' : '4' }),
+      ],
+      [
+        `css({ margin: '2', _hover: e ? { color: 'red.300' } : { color: 'blue.500' } })`,
+        (e) => ({ margin: '2', _hover: { color: e ? 'red.300' : 'blue.500' } }),
+      ],
+      [
+        `css({ margin: '2', color: e ? ['red.300', 'blue.500'] : 'green.400' })`,
+        (e) => ({ margin: '2', color: e ? ['red.300', 'blue.500'] : 'green.400' }),
+      ],
+      [
+        `css({ bg: 'red.300', color: e ? 'red.300' : 'blue.500', margin: e ? '1' : '2' })`,
+        (e) => ({ bg: 'red.300', color: e ? 'red.300' : 'blue.500', margin: e ? '1' : '2' }),
+      ],
+      [
+        `css({ _hover: { color: 'red.300', padding: e ? '1' : '2' } })`,
+        (e) => ({ _hover: { color: 'red.300', padding: e ? '1' : '2' } }),
+      ],
+    ]
+
+    for (const [call, whole] of shapes) {
+      const result = fold(src(`export const f = (e) => ${call}`))
+
+      for (const e of [true, false]) {
+        expect(execute(result.code, e), `${call} with e=${e}`).toEqual(
+          runtimeCss(whole(e)).split(' ').filter(Boolean).sort(),
+        )
+      }
+    }
   })
 
   test('a ternary written after a nested split stays after it', () => {

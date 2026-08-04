@@ -7,7 +7,7 @@ import { Box, HStack, Stack, styled } from '../../styled-system/jsx'
  * transform is what proves the rewrite is behaviour-preserving at the markup level,
  * which the class-string assertions elsewhere cannot show.
  */
-export const Tree = ({ tone, rest }: { tone: string; rest: Record<string, unknown> }) => (
+export const Tree = ({ tone, rest, flag }: { tone: string; rest: Record<string, unknown>; flag: boolean }) => (
   <styled.div padding="md" backgroundColor="gray100">
     {/* folds: style props only */}
     <styled.span color="blue600" fontWeight="bold">
@@ -92,5 +92,16 @@ export const Tree = ({ tone, rest }: { tone: string; rest: Record<string, unknow
     <div className={css({ color: 'blue600', padding: 'xs', backgroundColor: tone })}>partial</div>
 
     <div className={css({ color: tone })}>dynamic call site</div>
+
+    {/* lowers: both branches resolve, so the choice is between two class literals */}
+    <div className={css({ padding: 'xs', color: flag ? 'red600' : 'green600' })}>finite branch</div>
+
+    {/* lowers to a ternary alone, leaving no call behind */}
+    <div className={css({ color: flag ? 'blue800' : 'gray700' })}>lone branch</div>
+
+    {/* declines the lowering: two ternaries would emit a class for one property */}
+    <div className={css({ padding: 'xs', mx: flag ? 'xs' : 'sm', marginInline: flag ? 'md' : 'xxs' })}>
+      colliding branches
+    </div>
   </styled.div>
 )

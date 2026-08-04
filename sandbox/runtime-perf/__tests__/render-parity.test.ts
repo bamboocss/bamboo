@@ -47,7 +47,7 @@ afterAll(() => {
   rmSync(foldedPath, { force: true })
 })
 
-const props = { tone: 'red600', rest: { title: 'spread title' } }
+const props = { tone: 'red600', rest: { title: 'spread title' }, flag: true }
 
 /** Markup with the tokens inside every `class` attribute sorted. */
 const sortClasses = (html: string) =>
@@ -104,6 +104,14 @@ describe('render parity', () => {
 
     const before = renderToStaticMarkup(createElement(original.Tree, props))
     const after = renderToStaticMarkup(createElement(folded.Tree, props))
+
+    // Both arms of every lowered ternary, since a fold that picked one branch renders
+    // identically to the source for the value that branch was taken from.
+    const offBefore = renderToStaticMarkup(createElement(original.Tree, { ...props, flag: false }))
+    const offAfter = renderToStaticMarkup(createElement(folded.Tree, { ...props, flag: false }))
+
+    expect(sortClasses(offAfter)).toBe(sortClasses(offBefore))
+    expect(offBefore).not.toBe(before)
 
     // The two modules have to be genuinely different, or this compares a thing to
     // itself and proves nothing.

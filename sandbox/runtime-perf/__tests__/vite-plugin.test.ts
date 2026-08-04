@@ -69,5 +69,11 @@ describe('vite plugin, real build', () => {
 
     // The dynamic call site keeps its runtime call while the static one beside it folded.
     expect(code).toContain('css({ color: tone })')
+
+    // A lowered ternary, both arms resolved, through a real build.
+    expect(code).toContain('flag ? "c_red600" : "c_green600"')
+
+    // And one whose arms would collide on a single property, left whole.
+    expect(code).toContain(`mx: flag ? "xs" : "sm"`)
   }, 60_000)
 })

@@ -24,7 +24,14 @@ export type SkipReason =
 
 export interface FoldedCall {
   name: string
+  /** The class string resolved outright, empty when the whole call lowered to ternaries. */
   className: string
+  /**
+   * Every class literal the replacement emits, including both arms of each ternary — so a
+   * consumer checking that folded classes have CSS behind them sees the branches too,
+   * which `className` alone does not carry.
+   */
+  classNames: string[]
   start: number
   end: number
 }
@@ -78,6 +85,16 @@ export interface FoldOptions {
  * sites the parser does not record as such.
  */
 const FOLDABLE_TYPES = new Set(['css', 'pattern', 'recipe'])
+
+/**
+ * The class strings inside a lowered ternary — `e ? "c_red" : "c_blue"` gives both arms.
+ *
+ * They are read back out of the emitted text rather than threaded through the planner,
+ * because the planner's product *is* that text: anything it did not write cannot appear
+ * here, and anything it did cannot be missed.
+ */
+const literalsIn = (expression: string): string[] =>
+  [...expression.matchAll(/"((?:[^"\\]|\\.)*)"/g)].flatMap((match) => JSON.parse(match[0]).split(' ')).filter(Boolean)
 
 /**
  * The kinds reported as `not-foldable`, which is permanent rather than a limit of this
@@ -424,6 +441,8 @@ export const foldSource = (options: FoldOptions): FoldResult => {
 
     return {
       className: plan.className,
+      // Both arms of every ternary, so nothing the fold wrote is invisible downstream.
+      classNames: [plan.className, ...plan.finite.flatMap(literalsIn)].filter(Boolean),
       replacement: `${cx.name}(${parts.join(', ')})`,
       insert: cx.insert,
     }
@@ -495,6 +514,8 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     /** Pre-planned edits and class, for a JSX element. */
     edits?: JsxEdit[]
     className?: string
+    /** Every class literal emitted, when that is more than `className` — see FoldedCall. */
+    classNames?: string[]
     /** Replacement text for a partially folded call, in place of a bare class string. */
     replacement?: string
     insert?: { pos: number; text: string }
@@ -672,7 +693,13 @@ export const foldSource = (options: FoldOptions): FoldResult => {
         insertedCx = true
       }
       applied.push(...ranges)
-      folded.push({ name, className: candidate.className!, start, end })
+      folded.push({
+        name,
+        className: candidate.className!,
+        classNames: candidate.classNames ?? [candidate.className!],
+        start,
+        end,
+      })
       collectSourceFiles(item.box, dependencyScan)
       continue
     }
@@ -684,7 +711,13 @@ export const foldSource = (options: FoldOptions): FoldResult => {
         insertedCx = true
       }
       applied.push(...ranges)
-      folded.push({ name, className: candidate.className!, start, end })
+      folded.push({
+        name,
+        className: candidate.className!,
+        classNames: candidate.classNames ?? [candidate.className!],
+        start,
+        end,
+      })
       collectSourceFiles(item.box, dependencyScan)
       continue
     }
@@ -719,7 +752,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     // characters, and any quote an arbitrary value introduced.
     magic.overwrite(start, end, JSON.stringify(className))
     applied.push(...ranges)
-    folded.push({ name, className, start, end })
+    folded.push({ name, className, classNames: [className], start, end })
     collectSourceFiles(item.box, dependencyScan)
   }
 

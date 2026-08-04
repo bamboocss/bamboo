@@ -32,7 +32,7 @@ const original = await import(/* @vite-ignore */ source)
 const folded = await import(/* @vite-ignore */ foldedPath)
 rmSync(foldedPath, { force: true })
 
-const props = { tone: 'red600', rest: { title: 'spread title' } }
+const props = { tone: 'red600', rest: { title: 'spread title' }, flag: true }
 
 /** Enough elements that per-render setup does not dominate the measurement. */
 const TREES = 50

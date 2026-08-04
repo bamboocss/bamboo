@@ -223,8 +223,10 @@ const finiteBranches = (
     [node.getWhenFalse(), boxNode.whenFalse] as const,
   ].map(([source, branch]) => {
     // Both questions, for the reason the sibling static path asks both: the extractor
-    // omits what it cannot evaluate, so a branch holding a spread or a computed key
-    // produces a map that looks complete and is missing a value.
+    // omits what it cannot evaluate, so a branch literal holding a spread or a computed
+    // key produces a map that looks complete and is missing a value. A branch that is an
+    // identifier is only as trustworthy as the static path's handling of one, which does
+    // not look through it either.
     if (!deps.isStatic(branch)) return undefined
     if (!deps.isAccounted(source, branch)) return undefined
 
@@ -286,6 +288,18 @@ export const planPartialFold = (
   }
 }
 
+/** One property that did not resolve outright, before it is assigned to a half. */
+interface Slot {
+  key: string
+  kind: 'dynamic' | 'finite'
+  /** Source text of the property, used when it goes to the runtime call. */
+  text: string
+  /** The ternary to emit, while this stays finite. */
+  lowered?: string
+  /** A block the recursion split, which therefore appears on both sides legitimately. */
+  split?: boolean
+}
+
 interface Partition {
   /** Style object for the half that resolves now. */
   staticStyles: Dict
@@ -325,16 +339,14 @@ const partitionObject = (
 
   const { ctx, isAccounted, isStatic } = deps
   const staticKeys: string[] = []
-  const dynamicKeys: string[] = []
   const staticStyles: Dict = {}
-  const dynamicText: string[] = []
-  /** Keys the recursion split, as opposed to keys that merely appear on both sides. */
-  const splitKeys = new Set<string>()
   const seenKeys = new Set<string>()
-  const finiteKeys: string[] = []
-  const finite: string[] = []
-  /** `f` or `d` per property, in source order, to check the two never interleave. */
-  const order: string[] = []
+  /**
+   * Everything not resolved outright, in source order. Kept as one list because a ternary
+   * that cannot be lowered has to become a runtime property *in its original position*,
+   * and because whether the two kinds interleave is a property of that order.
+   */
+  const slots: Slot[] = []
 
   for (const property of node.getProperties()) {
     // A spread contributes keys that cannot be attributed to either half.
@@ -374,9 +386,7 @@ const partitionObject = (
     if (topLevel) {
       const branches = finiteBranches(key, value, valueBox, deps)
       if (branches) {
-        finiteKeys.push(key)
-        finite.push(branches)
-        order.push('f')
+        slots.push({ key, kind: 'finite', lowered: branches, text: property.getText() })
         continue
       }
     }
@@ -392,47 +402,71 @@ const partitionObject = (
     if (nested && Object.keys(nested.staticStyles).length && nested.dynamicText.length) {
       staticKeys.push(key)
       staticStyles[key] = nested.staticStyles
-      dynamicKeys.push(key)
-      splitKeys.add(key)
-      dynamicText.push(`${property.getNameNode().getText()}: { ${nested.dynamicText.join(', ')} }`)
-      order.push('d')
+      slots.push({
+        key,
+        kind: 'dynamic',
+        split: true,
+        text: `${property.getNameNode().getText()}: { ${nested.dynamicText.join(', ')} }`,
+      })
       continue
     }
 
-    dynamicKeys.push(key)
-    dynamicText.push(property.getText())
-    order.push('d')
+    slots.push({ key, kind: 'dynamic', text: property.getText() })
   }
 
-  // Nothing to gain unless something resolves and something is left over. A finite
-  // branch counts as both: it resolves, and it replaces what would have been a call.
-  if (!staticKeys.length && !finite.length) return undefined
-  if (!dynamicText.length && !finite.length) return undefined
+  // A lowering that cannot be kept sends its property back to the runtime call, rather
+  // than abandoning the split: the static half is still worth hoisting, and every other
+  // declined lowering already falls through to exactly that.
+  const demote = (slot: Slot) => {
+    slot.kind = 'dynamic'
+    slot.lowered = undefined
+  }
 
-  // Only the keys the recursion actually split are exempt. Inferring that from "appears
-  // on both sides" was wrong: a duplicated key lands on both sides too, and exempting it
-  // let a discarded property emit classes. Duplicates now decline above, so this set is
-  // the only way a key is on both sides — which is the point of tracking it directly
-  // rather than deducing it.
-  const contested = dynamicKeys.filter((key) => !splitKeys.has(key))
-  if (collides(staticKeys, contested, ctx)) return undefined
+  // Only the keys the recursion actually split are exempt from the collision check.
+  // Inferring that from "appears on both sides" was wrong: a duplicated key lands on both
+  // sides too, and exempting it let a discarded property emit classes.
+  const contested = () => slots.filter((slot) => slot.kind === 'dynamic' && !slot.split).map((slot) => slot.key)
 
   // A finite branch emits a class for its property in both arms, so it collides with the
-  // other halves exactly as a static or dynamic key would.
-  if (collides(finiteKeys, [...staticKeys, ...contested], ctx)) return undefined
+  // other halves exactly as a static or dynamic key would — and with the ternaries kept
+  // before it, since two on `mx` and `marginInline` would each emit a class for
+  // margin-inline where the object keeps only the last.
+  // To a fixed point, because demoting one makes it a dynamic key the ones already kept
+  // have not been checked against: `{ mx: a ? … , marginInline: b ? … }` demotes the
+  // second and then the first, ending with neither lowered rather than with a pair that
+  // still emits two classes for margin-inline.
+  for (;;) {
+    const lowered = slots.filter((slot) => slot.kind === 'finite')
+    const dynamic = contested()
+    const offender = lowered.find((slot, index) =>
+      collides([slot.key], [...staticKeys, ...dynamic, ...lowered.slice(0, index).map((kept) => kept.key)], ctx),
+    )
 
-  // And with each other: two ternaries on `mx` and `marginInline` would each emit a class
-  // for margin-inline, where the object keeps only the last. The pairwise walk is what
-  // `collides` cannot do in one call, since every key trivially matches itself.
-  if (finiteKeys.some((key, index) => collides([key], finiteKeys.slice(0, index), ctx))) return undefined
+    if (!offender) break
+    demote(offender)
+  }
 
   // A ternary's condition leaves the object, so it is evaluated relative to the dynamic
   // values rather than among them. That is expressible while the two do not interleave —
-  // ternaries before the call, or after it — and not otherwise.
-  const written = order.join('')
-  if (!/^f*d*$/.test(written) && !/^d*f*$/.test(written)) return undefined
+  // ternaries before the call, or after it. Demoting from the end is what restores it,
+  // and keeps the ternaries that were already on one side.
+  const written = () => slots.map((slot) => (slot.kind === 'finite' ? 'f' : 'd')).join('')
+  while (!/^f*d*$/.test(written()) && !/^d*f*$/.test(written())) {
+    demote(slots.findLast((slot) => slot.kind === 'finite')!)
+  }
 
-  return { staticStyles, dynamicText, finite, finiteFirst: !written.startsWith('d') }
+  const dynamicText = slots.filter((slot) => slot.kind === 'dynamic').map((slot) => slot.text)
+  const finite = slots.filter((slot) => slot.kind === 'finite').map((slot) => slot.lowered!)
+
+  // Nothing to gain unless something resolves and something is left over. A finite branch
+  // counts as both: it resolves, and it replaces what would have been a call.
+  if (!staticKeys.length && !finite.length) return undefined
+  if (!dynamicText.length && !finite.length) return undefined
+
+  // Last, because a demoted ternary is a dynamic key it did not used to be.
+  if (collides(staticKeys, contested(), ctx)) return undefined
+
+  return { staticStyles, dynamicText, finite, finiteFirst: !written().startsWith('d') }
 }
 
 /**
