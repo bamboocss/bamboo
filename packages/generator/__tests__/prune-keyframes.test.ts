@@ -93,3 +93,42 @@ describe('pruneKeyframes', () => {
     expect(() => ctx.pruneKeyframes(sheet)).not.toThrow()
   })
 })
+
+describe('themes', () => {
+  /**
+   * A theme is emitted separately and injected at runtime, so nothing in the pruned
+   * sheet names what it needs. Pointing an animation token at a different keyframe than
+   * the base does is the case that breaks.
+   */
+  const themed = (prune: boolean) => {
+    const ctx = createGeneratorContext({
+      pruneUnusedKeyframes: prune,
+      theme: {
+        extend: {
+          keyframes: KEYFRAMES,
+          tokens: { animations: { enter: { value: 'fade-in 1s ease-out' } } },
+        },
+      },
+      themes: {
+        dark: { tokens: { animations: { enter: { value: 'spin 1s linear' } } } },
+      },
+      staticCss: { css: [{ properties: { animation: ['enter'] } }] },
+    } as never)
+
+    const sheet = ctx.createSheet()
+    ctx.appendLayerParams(sheet)
+    ctx.appendBaselineCss(sheet)
+    ctx.pruneKeyframes(sheet)
+
+    return ctx.getCss(sheet)
+  }
+
+  test('a keyframe only the theme names is kept', () => {
+    const css = themed(true)
+
+    // `fade-in` is what the base token resolves to and the sheet shows it.
+    expect(declares(css, 'fade-in')).toBe(true)
+    // `spin` appears only in the dark theme's override of the same token.
+    expect(declares(css, 'spin')).toBe(true)
+  })
+})

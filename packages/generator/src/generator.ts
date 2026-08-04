@@ -130,6 +130,7 @@ export class Generator extends Context {
     if (!this.config.pruneUnusedKeyframes) return
 
     const layers = sheet.layers
+    const keyframeNames = new Set(Object.keys(this.config.theme?.keyframes ?? {}))
 
     const result = pruneKeyframes({
       scan: [
@@ -145,13 +146,38 @@ export class Generator extends Context {
       ],
       // `generateKeyframeCss` appends into the token layer.
       target: layers.tokens,
-      keyframeNames: new Set(Object.keys(this.config.theme?.keyframes ?? {})),
-      keep,
+      keyframeNames,
+      keep: new Set([...this.getThemeKeyframeNames(keyframeNames), ...(keep ?? [])]),
     })
 
     logger.debug('prune:keyframes', `Removed ${result.removed} unused keyframe(s)`)
 
     return result
+  }
+
+  /**
+   * Keyframes the themes name.
+   *
+   * A theme is emitted as its own artifact and injected at runtime, so its css is not in
+   * the sheet being pruned. A theme that points an animation token at a different
+   * keyframe than the base does — `--animations-enter: fade-in` in the base and
+   * `slide-up` under `dark` — would otherwise have that keyframe removed, because
+   * nothing in the pruned sheet ever names it.
+   */
+  private getThemeKeyframeNames = (keyframeNames: Set<string>) => {
+    const names = new Set<string>()
+    const themes = this.config.themes
+    if (!themes || !keyframeNames.size) return names
+
+    for (const themeName of Object.keys(themes)) {
+      // Raw css text rather than declaration values, so the separator has to be
+      // everything a name cannot contain.
+      for (const token of getThemeCss(this, themeName).split(/[^\w-]+/)) {
+        if (keyframeNames.has(token)) names.add(token)
+      }
+    }
+
+    return names
   }
 
   /**
