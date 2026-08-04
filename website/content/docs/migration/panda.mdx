@@ -1,0 +1,162 @@
+---
+title: Migrating from Panda CSS
+description: Migrate your project from Panda CSS to Bamboo.
+---
+
+Bamboo started as a fork of [Panda CSS](https://panda-css.com/), so unlike the other guides in this section this one is
+not a rewrite. The styling API is the same: your style objects, recipes, patterns, conditions and tokens carry over
+unchanged. What changes is the name of the package they come from.
+
+For most projects this is a find-and-replace of `panda` with `bamboo`, plus a re-run of codegen.
+
+## What stays the same
+
+- `css`, `cva`, `sva`, `cx`, the pattern functions and the JSX factory — same names, same signatures.
+- Recipes, slot recipes, variants, compound variants and default variants.
+- Tokens, semantic tokens, conditions, breakpoints, themes, `staticCss`, cascade layers.
+- The config shape. Every key you have in `panda.config.ts` is valid in `bamboo.config.ts`.
+- The output directory. It still defaults to `styled-system`, so imports like `styled-system/css` do not move.
+- `jsxFactory`, which still defaults to `styled`.
+
+Because the generated output directory keeps its name and shape, the only imports you have to touch are the ones that
+name the tool itself — the config file, the PostCSS plugin, and any direct `@pandacss/*` imports.
+
+## Rename the packages
+
+Every package moves from the `@pandacss` scope to `@bamboocss`. The ones a project normally depends on:
+
+| Panda CSS                       | Bamboo                           |
+| ------------------------------- | -------------------------------- |
+| `@pandacss/dev`                 | `@bamboocss/dev`                 |
+| `@pandacss/types`               | `@bamboocss/types`               |
+| `@pandacss/preset-base`         | `@bamboocss/preset-base`         |
+| `@pandacss/preset-panda`        | `@bamboocss/preset-bamboo`       |
+| `@pandacss/studio`              | `@bamboocss/studio`              |
+| `@pandacss/postcss`             | `@bamboocss/postcss`             |
+| `@pandacss/astro-plugin-studio` | `@bamboocss/astro-plugin-studio` |
+
+The internal packages (`@pandacss/core`, `/node`, `/parser`, `/generator`, `/token-dictionary` and the rest) follow the
+same rule if you import them directly.
+
+<Callout type="info">
+  The default preset is the one rename that is not a straight scope swap: `@pandacss/preset-panda` becomes
+  `@bamboocss/preset-bamboo`. If you never listed presets explicitly, the defaults are applied for you and there is
+  nothing to change.
+</Callout>
+
+## Step by step
+
+<Steps>
+
+### Swap the dependencies
+
+<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
+  {/* <!-- prettier-ignore-start --> */}
+  <Tab>
+    ```bash
+    pnpm remove @pandacss/dev
+    pnpm add -D @bamboocss/dev
+    ```
+  </Tab>
+  <Tab>
+    ```bash
+    npm uninstall @pandacss/dev
+    npm install -D @bamboocss/dev
+    ```
+  </Tab>
+  <Tab>
+    ```bash
+    yarn remove @pandacss/dev
+    yarn add -D @bamboocss/dev
+    ```
+  </Tab>
+  <Tab>
+    ```bash
+    bun remove @pandacss/dev
+    bun add -D @bamboocss/dev
+    ```
+  </Tab>
+  {/* <!-- prettier-ignore-end --> */}
+</Tabs>
+
+### Rename the config file
+
+`panda.config.ts` becomes `bamboo.config.ts`. Bamboo looks for `bamboo.config.{ts,js,mts,mjs}` and will not pick up a
+file under the old name.
+
+Update the import inside it, and the preset names if you listed them:
+
+```ts
+// bamboo.config.ts
+import { defineConfig } from '@bamboocss/dev'
+
+export default defineConfig({
+  presets: ['@bamboocss/preset-base', '@bamboocss/preset-bamboo'],
+  include: ['./src/**/*.{js,jsx,ts,tsx}'],
+  outdir: 'styled-system',
+})
+```
+
+### Update the PostCSS config
+
+```js
+// postcss.config.cjs
+module.exports = {
+  plugins: {
+    '@bamboocss/dev/postcss': {},
+  },
+}
+```
+
+### Update your scripts
+
+The CLI is `bamboo` (`bamboocss` also works). Every command keeps its name, so `panda codegen` becomes `bamboo codegen`,
+`panda cssgen` becomes `bamboo cssgen`, and so on.
+
+```json
+{
+  "scripts": {
+    "prepare": "bamboo codegen"
+  }
+}
+```
+
+### Regenerate the output directory
+
+Delete the existing `styled-system` directory and generate it again, so nothing from the previous install is left
+behind:
+
+```bash
+rm -rf styled-system
+pnpm bamboo codegen
+```
+
+</Steps>
+
+## Things that are easy to miss
+
+- **`PANDA_DEBUG`** is now `BAMBOO_DEBUG`. See [Debugging](/docs/guides/debugging).
+- **`jsxFactory: 'panda'`.** If you set this, the factory is imported under whatever name you choose, so `panda.div`
+  keeps working. Rename it only if you want to.
+- **The ESLint plugin** is `@bamboocss/eslint-plugin`.
+- **Editor and CI caches.** The TypeScript server holds on to the old `styled-system` types; restart it after
+  regenerating.
+- **`.gitignore`.** If you generate `styled-system` in CI rather than committing it, the entry does not change, since
+  the directory name is the same.
+
+## Worth a look once you have migrated
+
+These are documented in full elsewhere, and none of them are required to get a migrated project building:
+
+- [Source transformation](/docs/guides/source-transformation) — `@bamboocss/vite` folds statically-resolvable `css()`
+  and pattern calls into plain class strings at build time, so they cost nothing at runtime.
+- [`pruneUnusedTokens`](/docs/references/config#pruneunusedtokens) — drops token CSS variables nothing can reach, which
+  is usually the largest single saving in render-blocking CSS.
+- [Spec files](/docs/theming/spec) — generate a machine-readable description of your design system.
+- [MCP server](/docs/ai/mcp-server) and [llms.txt](/docs/ai/llms-txt) — expose your design system to AI tooling.
+
+## Getting help
+
+If something does not carry over, check the [open issues](https://github.com/bamboocss/bamboo/issues) first. If you
+cannot find it, please open [a new issue](https://github.com/bamboocss/bamboo/issues/new/choose) with a minimal
+reproduction.

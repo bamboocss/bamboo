@@ -158,8 +158,8 @@ and that the `bamboo` command has been run (or is running with `--watch`).
 
 You can use the `bamboo debug` to debug design token extraction & css generated from files.
 
-If the issue persists, you can try looking for it in the [issues](https://github.com/bamboocss/bamboo/issues) or in the
-[discord](https://discord.gg/VQrkpsgSx7). If you can't find it, please create a minimal reproduction and submit
+If the issue persists, you can try looking for it in the [issues](https://github.com/bamboocss/bamboo/issues). If you
+can't find it, please create a minimal reproduction and submit
 [a new github issue](https://github.com/bamboocss/bamboo/issues/new/choose) so we can help you.
 
 ---
@@ -243,6 +243,71 @@ function App() {
 
 Just like the `node_modules` folder, you most likely don't want to commit the `styled-system` folder. It contains code
 that is auto-generated and can be re-generated at any time.
+
+---
+
+## How is Bamboo different from Panda CSS?
+
+Bamboo is a fork of Panda CSS v1, so the styling API is the same and [migrating](/docs/migration/panda) is mostly a
+rename. What has changed since the fork is everything below: what gets shipped to the browser, what it costs at runtime,
+and how quickly the build turns around.
+
+Every number here was measured against this repository's own sandboxes and fixtures. Your project will differ — the
+output-size wins in particular scale with the size of your design system rather than the size of your app.
+
+### Less CSS
+
+- [`pruneUnusedTokens`](/docs/references/config#pruneunusedtokens) drops token CSS variables nothing can reach. The
+  token layer declares every token in your theme while an app uses a fraction of them. On the `vite-ts` sandbox this
+  takes `styles.css` from 24,433 to 12,293 bytes — 6,398 to 3,504 gzipped.
+- [`pruneUnusedKeyframes`](/docs/references/config#pruneunusedkeyframes) does the same for `@keyframes` rules a preset
+  declares and your app never animates.
+
+Both are opt-in and change nothing until switched on.
+
+### Less JavaScript
+
+- The generated output now declares `sideEffects`, so a bundler can tree-shake the barrels. Previously
+  `import { Box } from 'styled-system/jsx'` retained every pattern module.
+- The JSX property list is emitted once rather than twice. It carried the browser CSS properties and your project's
+  properties as two constants that the runtime immediately concatenated, with 285 entries appearing in both; the module
+  drops from 15,684 to 11,468 bytes.
+
+Together a JSX barrel import goes from 41.2 KB to 30.1 KB minified, and 12.6 KB to 10.2 KB gzipped.
+
+### A faster runtime
+
+- `css()` and the pattern helpers memoize their class names on a structural hash confirmed by an exact comparison.
+  Repeated `css()` calls get roughly 4-5x faster, multi-argument calls about 4x, and the pattern helpers — which were
+  not memoized at all — about 1.3x. Class name output is unchanged.
+- That cache is bounded. It previously grew for the lifetime of the process, which leaked in long-lived SSR.
+- Copying styles now happens at the `raw()` boundary rather than on every merge, so the two places that need an
+  independent object pay for it instead of every caller.
+
+### Optional zero-runtime output
+
+[`@bamboocss/vite`](/docs/guides/source-transformation) rewrites statically-resolvable calls into the class string they
+would have returned, so they cost nothing at runtime:
+
+```tsx
+// you write
+export const title = css({ fontSize: 'lg', fontWeight: 'bold' })
+
+// the bundle gets
+export const title = 'fs_lg fw_bold'
+```
+
+It also collapses `styled.*` elements to the intrinsic tag they render, folds config recipes, pattern elements and a
+static `as` prop, and follows named imports across files. CSS output is unchanged — only the JavaScript changes. It is
+off by default, build-only, and reports how much of your source it managed to fold.
+
+### Faster builds
+
+- The dependency graph resolves imports without initializing the TypeScript type checker, which was costing hundreds of
+  milliseconds on a cold build for what is only a filesystem question.
+- Watch mode builds the stylesheet once per edit rather than once per affected file. Editing a shared style file with 60
+  importers previously ran the full optimize pipeline and wrote to disk 61 times.
+- Editing a shared style file now re-parses the files importing it, so consumers stop emitting stale styles.
 
 ---
 
@@ -356,7 +421,7 @@ yet", update your tsconfig to use es6 or higher:
 ## How can I generate all possible CSS variants at build time?
 
 While it's possible to generate all variants, even unused ones, by using
-[`config.staticCss`](https://bamboo-css.com/docs/guides/dynamic-styling#using-static-css), it's generally **not
+[`config.staticCss`](https://bamboocss.com/docs/guides/dynamic-styling#using-static-css), it's generally **not
 recommended** to use it for more than a few values. However, keep in mind this approach compromises one of Bamboo's
 strengths: lean, usage-based CSS generation.
 

@@ -114,13 +114,3 @@ mutation {
   }
 }'
 ```
-
-### 11. Post to Discord
-
-Paste this into the Discord `#announcements` channel:
-
-```
-@here 🐼
-Bamboo v<version>
-<discussion url>
-```

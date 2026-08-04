@@ -38,8 +38,8 @@ export const Footer = () => {
           })}
         >
           <span>Copyright © {new Date().getFullYear()}</span>
-          <a className={css({ color: 'current', textDecoration: 'none' })} href="https://www.adebayosegun.com/">
-            Proudly made by the Chakra team
+          <a className={css({ color: 'current', textDecoration: 'none' })} href="https://github.com/gajus">
+            Made by Gajus
           </a>
         </div>
       </div>

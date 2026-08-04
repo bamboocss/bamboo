@@ -100,7 +100,7 @@ export function Colors({ theme }: ColorsProps) {
             </ColorGroup>
           )}
 
-          {!hasResults && <div>No result found! 🐼</div>}
+          {!hasResults && <div>No result found! 🎋</div>}
         </Stack>
       </TokenContent>
     </TokenGroup>

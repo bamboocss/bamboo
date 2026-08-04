@@ -85,7 +85,7 @@ export const interactive = async () => {
     },
   )
 
-  p.outro("Let's get started! 🐼")
+  p.outro("Let's get started! 🎋")
 
   return {
     postcss: initFlags.usePostcss === 'yes',

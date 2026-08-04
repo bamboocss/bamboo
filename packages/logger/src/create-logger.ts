@@ -106,7 +106,7 @@ const formatEntry = (entry: LogEntry): FormatedEntry => {
     const { msg: message, level } = entry
     const color = logLevels[level!].color
     const levelLabel = colors.bold(color(`${level}`))
-    label = [`🐼`, levelLabel, uword].filter(Boolean).join(' ')
+    label = [`🎋`, levelLabel, uword].filter(Boolean).join(' ')
     msg = message
   } else {
     label = uword ?? ''

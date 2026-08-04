@@ -1,16 +1,3 @@
-export interface TeamMember {
-  login: string
-  role: string
-}
-
-export const teamMembers: TeamMember[] = [
-  { login: 'segunadebayo', role: 'Creator & Maintainer' },
-  { login: 'astahmer', role: 'Creator' },
-  { login: 'cschroeter', role: 'Creator @ Park UI' },
-  { login: 'anubra266', role: 'Creator @ Tark UI' },
-  { login: 'estheragbaje', role: 'Developer Marketing' },
-]
-
 export interface NavItem {
   title: string
   url?: string
@@ -31,42 +18,20 @@ export interface DocsConfig {
   gitTimestamp: string
   logoUrl?: string
   navigation: NavItem[]
-
-  twitterUrl: string
-  discordUrl: string
 }
 
 export const docsConfig: DocsConfig = {
   title: 'Bamboo CSS',
   description: 'Build modern websites using build-time and type-safe CSS-in-JS',
-  url: 'https://bamboo-css.com',
+  url: 'https://bamboocss.com',
   logoUrl: '/',
   docsRepositoryBase: 'https://github.com/bamboocss/bamboo',
   gitTimestamp: 'Last updated on',
-  twitterUrl: 'https://twitter.com/bamboo__css',
-  discordUrl: 'https://discord.gg/VQrkpsgSx7',
   navigation: [
     {
       title: 'Docs',
       type: 'page',
       href: '/docs',
-    },
-    {
-      title: 'Team',
-      type: 'page',
-      href: '/team',
-    },
-    {
-      title: 'Showcase',
-      type: 'page',
-      href: '/showcase',
-    },
-    {
-      title: 'Playground',
-      type: 'page',
-      href: 'https://play.bamboo-css.com/',
-      external: true,
-      newWindow: true,
     },
   ],
 }
@@ -83,11 +48,6 @@ export const docsNavigation: NavItem = {
         { title: 'Why Bamboo?', url: 'why-bamboo' },
         { title: 'FAQs', url: 'faq' },
         { title: 'Browser Support', url: 'browser-support' },
-        {
-          title: 'Roadmap',
-          href: 'https://bamboo-css.canny.io/',
-          external: true,
-        },
         {
           title: 'Changelog',
           href: 'https://github.com/bamboocss/bamboo/blob/main/CHANGELOG.md',
@@ -156,6 +116,7 @@ export const docsNavigation: NavItem = {
       title: 'Migration',
       url: 'migration',
       items: [
+        { title: 'Panda CSS', url: 'panda' },
         { title: 'Stitches', url: 'stitches' },
         { title: 'Styled Components', url: 'styled-components' },
         { title: 'Theme UI', url: 'theme-ui' },

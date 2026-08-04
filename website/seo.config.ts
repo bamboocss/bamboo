@@ -24,10 +24,6 @@ const seoConfig = defineMetadata({
     { rel: 'mask-icon', url: '/favicon.ico' },
     { rel: 'image/x-icon', url: '/favicon.ico' },
   ],
-  twitter: {
-    site: '@bamboo__css',
-    creator: '@thesegunadebayo',
-  },
 })
 
 export default seoConfig

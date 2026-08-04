@@ -1,6 +1,5 @@
 'use client'
 
-import { CourseBanner } from '@/components/course-banner'
 import { CommandMenu } from '@/components/docs/command-menu'
 import { SearchButton } from '@/components/docs/search'
 import { Sidebar } from '@/components/docs/sidebar'
@@ -36,8 +35,6 @@ export const Navbar = () => {
   return (
     <div data-scope="navbar" data-part="root" className={navbar()}>
       <div data-scope="navbar" data-part="blur" />
-
-      <CourseBanner />
 
       <nav data-scope="navbar" data-part="nav">
         {docsConfig.logoUrl ? (

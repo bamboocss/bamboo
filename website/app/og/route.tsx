@@ -1,6 +1,5 @@
 import { ImageResponse } from 'next/og'
 import { Logo } from './logo'
-import { Yums } from './mascot'
 
 const monaSans = fetch(new URL('../../styles/Onest-Bold.ttf', import.meta.url)).then((res) => res.arrayBuffer())
 
@@ -101,12 +100,6 @@ export async function GET(request: Request) {
               </div>
             )}
           </div>
-          <Yums
-            style={{
-              width: '275px',
-              height: '355px',
-            }}
-          />
         </div>
       </div>,
       {

@@ -11,23 +11,13 @@ const config = {
   async redirects() {
     return [
       {
+        source: '/',
+        destination: '/docs/overview/getting-started',
+        permanent: false,
+      },
+      {
         source: '/(docs|docs/getting-started)',
         destination: '/docs/overview/getting-started',
-        permanent: true,
-      },
-      {
-        source: '/discord',
-        destination: 'https://discord.gg/VQrkpsgSx7',
-        permanent: true,
-      },
-      {
-        source: '/play',
-        destination: 'https://play.bamboo-css.com',
-        permanent: true,
-      },
-      {
-        source: '/learn',
-        destination: 'https://bamboomastery.com',
         permanent: true,
       },
       {
@@ -38,16 +28,6 @@ const config = {
     ]
   },
   reactStrictMode: true,
-  images: {
-    remotePatterns: [
-      { hostname: 'images.unsplash.com' },
-      { hostname: 'avatars.githubusercontent.com' },
-      { hostname: 'coolcontrast.vercel.app' },
-      { hostname: 's2.coinmarketcap.com' },
-      { hostname: 'magic.link' },
-      { hostname: 'ark-ui.com' },
-    ],
-  },
 }
 
 export default config

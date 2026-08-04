@@ -27,7 +27,7 @@ export const EXAMPLES = [
               textStyle: '4xl',
             })}
           >
-            <span>🐼</span>
+            <span>🎋</span>
             <span>Hello from Bamboo</span>
           </div>
         </div>

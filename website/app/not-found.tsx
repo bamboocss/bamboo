@@ -1,11 +1,12 @@
 import { css } from '@/styled-system/css'
-import { Box, Container, VStack, bamboo } from '@/styled-system/jsx'
-import Image from 'next/image'
+import { Container, VStack, bamboo } from '@/styled-system/jsx'
 import Link from 'next/link'
 
 export default function Page() {
+  // The background is yellow in both themes, so the text colour has to be pinned to match
+  // rather than following the theme's foreground.
   return (
-    <bamboo.div bg="yellow.300" height="dvh">
+    <bamboo.div bg="yellow.300" color="black" height="dvh">
       <Container py="20" textAlign="center">
         <VStack>
           <bamboo.h1 textStyle="bamboo.h1" fontWeight="bold">
@@ -26,9 +27,6 @@ export default function Page() {
               Back to docs
             </Link>
           </bamboo.p>
-          <Box mt="16">
-            <Image src="/bamboo-yoga.svg" alt="" width="300" height="500" />
-          </Box>
         </VStack>
       </Container>
     </bamboo.div>
