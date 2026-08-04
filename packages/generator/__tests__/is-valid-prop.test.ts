@@ -8,17 +8,29 @@ import { generateIsValidProp } from '../src/artifacts/js/is-valid-prop'
  * silently once the bundler changed — the output still parsed, it just behaved
  * wrongly at render time — so assert each one landed.
  */
+const propertiesOf = (js: string) => {
+  const match = js.match(/const allCssProperties = "(.*?)"\.split/)
+  expect(match).not.toBeNull()
+  return match![1].split(',')
+}
+
 describe('generateIsValidProp', () => {
   test('injects the project properties rather than leaving the list empty', () => {
-    const js = generateIsValidProp(createContext())!.js
+    const properties = propertiesOf(generateIsValidProp(createContext())!.js)
 
-    const match = js.match(/const userGenerated = "(.*?)"\.split/)
-    expect(match).not.toBeNull()
-
-    const properties = match![1].split(',')
     expect(properties.length).toBeGreaterThan(1)
     // a shorthand: unrecognised properties render as raw HTML attributes
     expect(properties).toContain('mx')
+    // a browser property, which the project list does not supply
+    expect(properties).toContain('WebkitMaskClip')
+  })
+
+  test('emits the project and browser lists as one deduplicated list', () => {
+    const properties = propertiesOf(generateIsValidProp(createContext())!.js)
+
+    expect(properties).toEqual([...new Set(properties)])
+    // the two lists are no longer concatenated at runtime
+    expect(generateIsValidProp(createContext())!.js).not.toMatch(/concat\(userGenerated\)/)
   })
 
   test('strips the module own memo when importing the shared one', () => {
@@ -34,6 +46,6 @@ describe('generateIsValidProp', () => {
   test('drops the browser property list when style props are not used', () => {
     const js = generateIsValidProp(createContext({ jsxStyleProps: 'minimal' }))!.js
 
-    expect(js).toContain('const allCssProperties = "".split(",")')
+    expect(js).toContain('const allCssProperties = "css".split(",")')
   })
 })

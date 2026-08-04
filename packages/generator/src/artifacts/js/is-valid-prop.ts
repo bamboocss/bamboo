@@ -1,15 +1,15 @@
 import type { Context } from '@bamboocss/core'
+import { BambooError, uniq } from '@bamboocss/shared'
 import { outdent } from 'outdent'
 import { match } from 'ts-pattern'
 import isValidPropJson from '../generated/is-valid-prop.mjs.json' assert { type: 'json' }
 
-// These target the bundler's output, not the source: it inlines the string
-// constants, so `const userGeneratedStr = ''` arrives as `"".split(",")` and there
-// is no named variable left to match. A miss is silent — the generated file still
-// parses, it just carries an empty property list — so both are asserted in
-// `is-valid-prop.test.ts`.
-const userGeneratedRegex = /const userGenerated = "(.*?)"\.split\(","\);/
-const cssPropRegex = /const allCssProperties = "(.*?)"\.split\(","\)/
+// This targets the bundler's output, not the source: it inlines the string constants,
+// so `const userGeneratedStr = ''` arrives as `"".split(",")` and there is no named
+// variable left to match. Both declarations are matched together because they are
+// rewritten into a single deduplicated list.
+const cssPropListRegex =
+  /const userGenerated = ".*?"\.split\(","\);\s*const allCssProperties = "(.*?)"\.split\(","\)\.concat\(userGenerated\);/
 // Matches whichever binding keyword the bundler emits: it produced `var` before
 // the tsdown migration and `const` after, and a miss here leaves the local `memo`
 // in place alongside the imported one, which is a duplicate declaration.
@@ -19,23 +19,42 @@ export function generateIsValidProp(ctx: Context) {
   if (ctx.isTemplateLiteralSyntax) return
   let content = isValidPropJson.content
 
-  // replace user generated props by those from ctx, `css` or nothing
+  const propertyList = content.match(cssPropListRegex)
+
+  // Silently emitting an empty list would ship a system where every style prop leaks
+  // to the DOM as an HTML attribute, so refuse rather than degrade.
+  if (!propertyList) {
+    throw new BambooError(
+      'NOT_FOUND',
+      'Could not find the property list in the prebuilt is-valid-prop module. Its bundled shape has changed.',
+    )
+  }
+
+  const userProperties = match(ctx.jsx.styleProps)
+    .with('all', () => Array.from(ctx.properties))
+    .with('minimal', () => ['css'])
+    .with('none', () => ['css'])
+    .exhaustive()
+
+  // The two lists overlap heavily — around 285 of the browser properties are also
+  // project properties — and the runtime only ever reads their union, so emit it once.
+  // `minimal` and `none` do not accept arbitrary CSS properties on JSX, which makes the
+  // browser list dead weight there.
+  const browserProperties = ctx.jsx.styleProps === 'all' ? propertyList[1].split(',') : []
+
+  // Replacing via a function so that a `$` in a project property is not read as a
+  // replacement pattern.
   content = content.replace(
-    userGeneratedRegex,
-    `const userGenerated = "${match(ctx.jsx.styleProps)
-      .with('all', () => Array.from(ctx.properties).join(','))
-      .with('minimal', () => 'css')
-      .with('none', () => 'css')
-      .exhaustive()}".split(",");`,
+    cssPropListRegex,
+    () => `const allCssProperties = "${uniq(browserProperties, userProperties).join(',')}".split(",");`,
   )
 
   // replace memo function declaration with an import from helpers
   content = content.replace(memoFnDeclarationRegex, '$1')
 
-  // remove browser CSS props / memo function call when not needed
+  // remove the memo function call when not needed
   if (ctx.jsx.styleProps === 'minimal' || ctx.jsx.styleProps === 'none') {
     content = content.replace('/* @__PURE__ */ memo(', '/* @__PURE__ */ (')
-    content = content.replace(cssPropRegex, 'const allCssProperties = "".split(",")')
   } else {
     // we want memo if we're using style props
     content = ctx.file.import('memo', '../helpers') + '\n' + content
