@@ -59,7 +59,11 @@ function extractSectionContent(fullContent: string, toc: Doc['toc'], currentInde
   const content = fullContent
     .slice(startIndex, endIndex)
     .replace(/```[\s\S]*?```/g, '') // Remove code blocks
-    .replace(/`[^`]*`/g, '') // Remove inline code
+    // Unwrap inline code rather than deleting it. Every api name in these docs is written
+    // as code -- `cx`, `splitProps`, `css.raw` -- and those are the words people type into
+    // search. Deleting them left `cx` in 8 of 829 records, all of them whole-page ones, so
+    // no heading could ever match it and the query returned nothing.
+    .replace(/`([^`]*)`/g, '$1')
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Convert links to text
     .replace(/#+\s*/g, '') // Remove heading markers
     .replace(/\n{3,}/g, '\n\n') // Normalize line breaks
@@ -176,13 +180,20 @@ export function filterSearchItems(
       { name: 'content', weight: 0.2 }, // Content matching
       { name: 'category', weight: 0.1 }, // Category/breadcrumb
     ],
-    threshold: 0.2, // More strict matching
-    distance: 100, // Maximum allowed distance
-    location: 0, // Prefer matches at beginning
+    // Fuzziness is a share of the query, so a fixed threshold buys a two-letter query far
+    // more slack than a ten-letter one: at 0.2, `sva` matched "cssVarRoot" ahead of "Atomic
+    // Slot Recipe (or sva)". Short queries in these docs are api names, where an exact
+    // substring is what the reader means and a near-miss is noise, so they get no slack.
+    threshold: query.length <= 3 ? 0 : 0.2,
     minMatchCharLength: 2, // Minimum character match length
     includeScore: true, // Include relevance score
     includeMatches: true, // Include match details
-    ignoreLocation: false, // Consider match position
+    // Score on whether the term appears, not where. With location scoring on (the default,
+    // `distance: 100`) a match had to fall within about 100 characters of the start of the
+    // field to clear the threshold at all -- and `content` holds a whole page or section, so
+    // anything documented below the fold was unreachable. `token` found 59 records this way
+    // and 285 without it; `cx` and `splitProps` found none.
+    ignoreLocation: true,
     findAllMatches: true, // Find all matching patterns
     useExtendedSearch: true, // Enable advanced search patterns
   }
@@ -190,15 +201,20 @@ export function filterSearchItems(
   const fuse = new Fuse(items, fuseOptions)
   const results = fuse.search(query)
 
-  // Sort results: pages before headings, then by score
+  // Sort by relevance, and let type break ties only.
+  //
+  // This used to put every page above every heading before comparing scores at all, which
+  // was survivable while content matching was broken and almost nothing matched. Once it
+  // worked, any page mentioning the term in passing outranked the section actually about it:
+  // searching `cx` led with "Get started with Bamboo" and never surfaced "cx resolves
+  // conflicts". A heading is the more useful result anyway -- it links to the anchor.
   const sortedResults = results
     .sort((a, b) => {
-      // First sort by type preference (pages before headings)
-      if (a.item.type === 'page' && b.item.type === 'heading') return -1
-      if (a.item.type === 'heading' && b.item.type === 'page') return 1
+      const byScore = (a.score || 1) - (b.score || 1)
+      if (Math.abs(byScore) > 1e-6) return byScore
 
-      // Then sort by Fuse score (lower score = better match)
-      return (a.score || 1) - (b.score || 1)
+      if (a.item.type === b.item.type) return 0
+      return a.item.type === 'heading' ? -1 : 1
     })
     .map((result) => result.item)
     .slice(0, 15)
