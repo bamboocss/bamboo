@@ -7,9 +7,23 @@ const hasAtRule = (conditions: ConditionDetails[]) =>
   conditions.some((details) => details.type === 'at-rule' || details.type === 'mixed' || details.type === 'multi-block')
 const styleOrder = [':link', ':visited', ':focus-within', ':focus', ':focus-visible', ':hover', ':active']
 
+/**
+ * Rank of the first pseudo-class the selector mentions, or 0 for none.
+ *
+ * Scanning `styleOrder` with a substring test per entry is cheap once, but this sits inside a
+ * comparator, so it ran on the order of N log N times over a set of selectors that is tiny and
+ * repeats. Pure in its argument, so caching it leaves every comparison's result unchanged.
+ */
+const pseudoScoreCache = new Map<string, number>()
+
 const pseudoSelectorScore = (selector: string) => {
-  const index = styleOrder.findIndex((pseudoClass) => selector.includes(pseudoClass))
-  return index + 1
+  let score = pseudoScoreCache.get(selector)
+  if (score === undefined) {
+    score = styleOrder.findIndex((pseudoClass) => selector.includes(pseudoClass)) + 1
+    if (pseudoScoreCache.size > 4096) pseudoScoreCache.clear()
+    pseudoScoreCache.set(selector, score)
+  }
+  return score
 }
 const compareSelectors = (a: WithConditions, b: WithConditions) => {
   const aConds = a.conditions! as SelectorCondition[]
@@ -46,10 +60,7 @@ const flatten = (conds: ConditionDetails[]) =>
  * -> exit early if not equal
  * -> if all comparisons result in a score of 0, return 0
  */
-export const compareAtRuleOrMixed = (a: WithConditions, b: WithConditions) => {
-  const aConds = flatten(a.conditions!) as Array<ConditionDetails>
-  const bConds = flatten(b.conditions!) as Array<ConditionDetails>
-
+const compareFlattened = (aConds: Array<ConditionDetails>, bConds: Array<ConditionDetails>) => {
   let aCond, bCond
   const max = Math.max(aConds.length, bConds.length)
 
@@ -119,6 +130,17 @@ export const compareAtRuleOrMixed = (a: WithConditions, b: WithConditions) => {
   return 0 // Return 0 if all comparisons resulted in a score of 0
 }
 
+/**
+ * Flattens both operands, then compares.
+ *
+ * `sortStyleRules` does not go through here — it flattens each rule once up front and compares
+ * the results directly, because a comparator runs on the order of N log N times and flattening
+ * inside it allocated two arrays per comparison. This spelling stays for callers that hold one
+ * pair and have nothing to hoist the work out of.
+ */
+export const compareAtRuleOrMixed = (a: WithConditions, b: WithConditions) =>
+  compareFlattened(flatten(a.conditions!) as Array<ConditionDetails>, flatten(b.conditions!) as Array<ConditionDetails>)
+
 export interface WithConditions extends Pick<AtomicStyleResult, 'conditions' | 'entry'> {}
 
 const sortByPropertyPriority = (a: WithConditions, b: WithConditions) => {
@@ -160,12 +182,23 @@ export const sortStyleRules = <T extends WithConditions>(styleRules: Array<T>): 
 
     return sortByPropertyPriority(a, b)
   })
-  withAtRules.sort((a, b) => {
-    const conditionDiff = compareAtRuleOrMixed(a, b)
+  // Flattened once per rule instead of twice per comparison. `flatten` allocates, and a
+  // comparison sort asks for it on the order of N log N times — around thirteen flattens per
+  // rule at the sizes a staticCss build reaches, against one here. The comparator sees the same
+  // arrays it built for itself before, so the order is unchanged.
+  const decorated = withAtRules.map((rule) => ({
+    rule,
+    conds: flatten(rule.conditions!) as Array<ConditionDetails>,
+  }))
+
+  decorated.sort((a, b) => {
+    const conditionDiff = compareFlattened(a.conds, b.conds)
     if (conditionDiff !== 0) return conditionDiff
 
-    return sortByPropertyPriority(a, b)
+    return sortByPropertyPriority(a.rule, b.rule)
   })
+
+  for (let i = 0; i < decorated.length; i++) withAtRules[i] = decorated[i].rule
 
   const sorted = declarations.sort(sortByPropertyPriority)
 

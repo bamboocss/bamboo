@@ -91,18 +91,61 @@ function _testQuery(doubleTestTrue: RegExp, doubleTestFalse: RegExp, singleTest:
   }
 }
 
+interface QueryFacts {
+  isPrint: boolean
+  isPrintOnly: boolean
+  min: boolean
+  max: boolean
+  length: number
+}
+
+/**
+ * Everything the comparator needs to know about one query, derived once per distinct string.
+ *
+ * `sortCSSmq` is a comparator, so a sort of N rules calls it on the order of N log N times —
+ * and each call ran six regexes and a length parse over each of its two operands. The strings
+ * come from the config's conditions, so a build sorting thousands of rules asks the same
+ * handful of questions about the same handful of queries tens of thousands of times.
+ *
+ * These are pure functions of the string, so caching them cannot change a comparison's result
+ * and the sorted order is identical. The cache is keyed on the query text rather than on the
+ * rule, because two rules carrying the same breakpoint should share the entry.
+ *
+ * Bounded because the PostCSS `sort-mq` plugin feeds it `params` from whatever stylesheet it
+ * is given, rather than only the conditions this config declared. The ceiling is far above any
+ * real project's distinct at-rule count, so it exists to stop a pathological input growing the
+ * map without limit in a watch process, not as an eviction policy anything should reach.
+ */
+const factsCache = new Map<string, QueryFacts>()
+
+const factsOf = (query: string): QueryFacts => {
+  let facts = factsCache.get(query)
+  if (facts === undefined) {
+    facts = {
+      isPrint: isPrint.test(query),
+      isPrintOnly: isPrintOnly.test(query),
+      min: isMinWidth(query) || isMinHeight(query),
+      max: isMaxWidth(query) || isMaxHeight(query),
+      length: getQueryLength(query),
+    }
+    if (factsCache.size > 4096) factsCache.clear()
+    factsCache.set(query, facts)
+  }
+  return facts
+}
+
 /**
  * @private
  * @param {string} a
  * @param {string} b
  * @return {number|null}
  */
-function _testIsPrint(a: string, b: string) {
-  const isPrintA = isPrint.test(a)
-  const isPrintOnlyA = isPrintOnly.test(a)
+function _testIsPrint(a: string, b: string, aFacts: QueryFacts, bFacts: QueryFacts) {
+  const isPrintA = aFacts.isPrint
+  const isPrintOnlyA = aFacts.isPrintOnly
 
-  const isPrintB = isPrint.test(b)
-  const isPrintOnlyB = isPrintOnly.test(b)
+  const isPrintB = bFacts.isPrint
+  const isPrintOnlyB = bFacts.isPrintOnly
 
   if (isPrintA && isPrintB) {
     if (!isPrintOnlyA && isPrintOnlyB) {
@@ -131,16 +174,19 @@ function createSort(config: { unitlessMqAlwaysFirst?: boolean } = {}) {
   const { unitlessMqAlwaysFirst } = config
 
   return function sortCSSmq(a: string, b: string) {
-    const testIsPrint = _testIsPrint(a, b)
+    const aFacts = factsOf(a)
+    const bFacts = factsOf(b)
+
+    const testIsPrint = _testIsPrint(a, b, aFacts, bFacts)
     if (testIsPrint !== null) {
       return testIsPrint
     }
 
-    const minA = isMinWidth(a) || isMinHeight(a)
-    const maxA = isMaxWidth(a) || isMaxHeight(a)
+    const minA = aFacts.min
+    const maxA = aFacts.max
 
-    const minB = isMinWidth(b) || isMinHeight(b)
-    const maxB = isMaxWidth(b) || isMaxHeight(b)
+    const minB = bFacts.min
+    const maxB = bFacts.max
 
     if (unitlessMqAlwaysFirst && ((!minA && !maxA) || (!minB && !maxB))) {
       if (!minA && !maxA && !minB && !maxB) {
@@ -155,8 +201,8 @@ function createSort(config: { unitlessMqAlwaysFirst?: boolean } = {}) {
         return 1
       }
 
-      const lengthA = getQueryLength(a)
-      const lengthB = getQueryLength(b)
+      const lengthA = aFacts.length
+      const lengthB = bFacts.length
 
       if (lengthA === maxValue && lengthB === maxValue) {
         return a.localeCompare(b)
