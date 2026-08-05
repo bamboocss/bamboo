@@ -1,5 +1,117 @@
 # @bamboocss/generator
 
+## 1.13.2
+
+### Patch Changes
+
+- 79c9872: Assemble class names without the throwaway arrays.
+
+  Every style leaf of every `css()` cache miss built an array for the prefix, filtered it and joined it — and most
+  configs set no prefix, so that array only ever held the class it started with. Conditions were spread into a second
+  array and joined even when there were none.
+  - A flat `css()` cache miss end to end: **1710 → 1443 ns** (-15.6%)
+  - One with conditions and a responsive value: **2675 → 2589 ns** (-3.2%)
+  - Measured on the assembly alone, with the memo forced to miss: **+25%** flat, **+10%** with a condition, **+14%**
+    with a condition and a prefix
+  - Class names are unchanged across a 27,000-object corpus, and across 43,008 combinations of prefix, class, condition
+    and hashing
+
+  The prefix is now read once when the `css` function is built rather than per leaf. It is set in the `Utility`
+  constructor and the `utility:created` hook can only replace `toHash`, so there is nothing to re-read.
+
+- 61fe88c: Answer "is this style object empty" without building the compacted object.
+
+  `mergeCss` discards style objects that hold nothing once undefined values are dropped, and it decided that by
+  compacting the object, taking a key array for the result, and throwing both away. It only ever needed to know whether
+  one defined value existed.
+  - The predicate itself: **19x** on a three-key style object, **43x** on a twenty-key one
+  - A flat `css()` cache miss end to end: **2030 → 1857 ns** (-8.5%); the nested case moves within noise
+  - Class names are unchanged across a 27,000-object corpus
+
+  The predicate is the same one: `Object.keys` enumerates exactly what `compact`'s `Object.entries` did, so own,
+  enumerable and string-keyed still decide it, and `null` still counts as present where `undefined` does not.
+
+- ba60cf5: Memoize the variant resolution behind `cva.raw()`.
+
+  Every JSX factory calls `cva.raw()` once per element per render to build the styles it merges with style props, and
+  resolving them is not cheap: a `mergeCss` per active variant plus a scan of every compound variant. That ran again for
+  every element, even when a hundred of them shared the same variant props.
+  - `raw()` on repeated variant props: **7.0x** faster
+  - A React SSR render of elements with a `cva` config: **2.19 → 1.28 µs** per element (1.7x)
+  - Markup and class names are unchanged
+
+  `raw()` still returns an independent copy — more importantly than before, since the object it copies from is now
+  cached twice over, by `mergeCss` and by the resolution itself.
+
+  The cost is on the other side: when every call carries a distinct variant combination nothing is reusable, and that
+  path measures ~8% slower. Variant props come from a fixed set, so the reusable case is the normal one — but
+  `cva.bench.ts` now tracks both, where nothing covered `cva` at all before.
+
+  One behavioural note: mutating a `cva` config object after creating the recipe no longer changes what `raw()` returns.
+  Calling the recipe itself was already memoized, so the two now agree rather than disagreeing.
+
+- be3764d: Skip the per-leaf string rewrites that have nothing to rewrite.
+
+  `sanitize`, `isImportant`, `withoutImportant` and `withoutSpace` run on every style leaf of every `css()` cache miss,
+  and each one starts with a regex rewrite. For the values that dominate real style objects — `red`, `4px`, `lg` — all
+  four are no-ops. Each now begins with the cheapest search that can prove there is nothing to do.
+  - A flat `css()` cache miss: **2474 → 2027 ns** (-18%)
+  - One with conditions and a responsive value: **3040 → 2808 ns** (-7.6%)
+  - Class names are unchanged across a 27,000-object corpus covering conditions, responsive arrays, `!important`, and
+    values carrying whitespace
+
+  The guards are exact rather than approximate, which is the only thing making them safe: `/\s/` is precisely the class
+  the collapse matched, `trim()` strips precisely that set again, and `/\s*!(important)?/` cannot match a string with no
+  `!`.
+
+  `withoutImportant` and `withoutSpace` now declare `string | T` instead of inferring it. They return a rewritten
+  string, so inferring `T` would have promised callers back the literal they passed in.
+
+- 7a63215: Stop rebuilding style objects that are already normal.
+
+  Normalizing renames a shorthand to its longhand, expands a responsive array into a breakpoint object, and drops
+  nullish leaves. A flat object of plain values written in longhand needs none of the three — which is most of what
+  `css()` is handed — but it was still walked and rebuilt, with a path array allocated per key.
+  - Normalizing a flat object, measured through `mergeCss`: **-22% to -26%**, and **-28%** for one carrying twenty
+    properties
+  - A flat `css()` cache miss end to end: **1825 → 1685 ns** (-7.7%)
+  - Class names are unchanged across a 27,000-object corpus
+
+  An object that does need normalizing pays for the check that found out, which measures between +2% and +7% depending
+  on how late the first dirty key appears. The nested case is around -4% overall, since the same objects tend to have
+  flat blocks inside them.
+
+  The result may now be the argument itself rather than a fresh object, so callers have to treat it as read-only. Every
+  one already does: merging accumulates into its own object, and `css.raw()` and `cva.raw()` clone at the boundary.
+
+- 2130606: Call `splitProps` predicates with the key alone.
+
+  The predicate was handed straight to `Array.prototype.filter`, which calls it with `(key, index, allKeys)`. A
+  one-parameter predicate cannot see the extra arguments, but a memoized one reads its whole argument list — and the
+  predicate the JSX factory passes is `isCssProperty`, which is memoized. So the memo hashed the entire key array once
+  per prop, and keyed its cache on it: two elements with different prop sets shared no entry even for the same prop
+  name.
+
+  Every styled element pays this, once per prop, on every render.
+  - `splitProps` with a memoized predicate: **6.0x** faster
+  - A React SSR render of styled elements: **4.18 → 1.15 µs** per element (3.6x)
+  - The same for elements with a `cva` config: **11.2 → 2.17 µs** per element (5.2x)
+  - Markup and `splitProps` output are unchanged
+
+  Predicates have always been typed `(key: string) => boolean`, so no typed caller could have read the extra arguments.
+
+- Updated dependencies [79c9872]
+- Updated dependencies [61fe88c]
+- Updated dependencies [be3764d]
+- Updated dependencies [7a63215]
+- Updated dependencies [2130606]
+  - @bamboocss/shared@1.13.2
+  - @bamboocss/core@1.13.2
+  - @bamboocss/token-dictionary@1.13.2
+  - @bamboocss/types@1.13.2
+  - @bamboocss/is-valid-prop@1.13.2
+  - @bamboocss/logger@1.13.2
+
 ## 1.13.1
 
 ### Patch Changes
