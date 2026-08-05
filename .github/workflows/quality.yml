@@ -32,10 +32,24 @@ jobs:
       - name: Run oxfmt
         run: pnpm fmt
 
+  # Split three ways because this job was the critical path: ~47s of install
+  # followed by ~295s of tests, while no other job in the workflow ran past 2
+  # minutes. vitest divides by file, and the split is even -- 70/69/69 of 208.
+  #
+  # `fail-fast: false` so one failing shard does not cancel the others; knowing
+  # only that "a shard failed" means re-running to find out what else broke.
+  #
+  # This trades runner minutes for wall clock: three shards pay the install cost
+  # three times. The jobs run in parallel, so that buys back nothing on a busy
+  # runner pool -- revisit if queueing becomes the bottleneck rather than the tests.
   tests:
-    name: Unit Tests
+    name: Unit Tests ${{ matrix.shard }}/3
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -44,7 +58,24 @@ jobs:
         uses: ./.github/composite-actions/install
 
       - name: Run tests
-        run: pnpm test run && pnpm test:codegen
+        run: pnpm test run --shard=${{ matrix.shard }}/3
+
+  # Separate job, not a fourth shard. The root vitest config excludes
+  # sandbox/codegen/__tests__/frameworks, so the Solid, Vue, Preact and Qwik
+  # suites only ever run here -- sharding `pnpm test` would never reach them.
+  codegen:
+    name: Codegen Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install
+        uses: ./.github/composite-actions/install
+
+      - name: Run codegen tests
+        run: pnpm test:codegen
 
   build:
     name: Build
