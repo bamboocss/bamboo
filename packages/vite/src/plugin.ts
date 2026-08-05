@@ -162,6 +162,44 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin => {
       await ensureContext()
     },
 
+    /**
+     * Take a changed module out of the parser's hands before the rebuild reads it.
+     *
+     * `addWatchFile` below registers the modules a fold read, so editing one re-transforms
+     * its consumers. That is only half of it. The consumer is transformed *before* the
+     * module it imports — that is how a bundler discovers imports at all — so by the time
+     * the changed module's own `transform` refreshes it in the ts-morph project, the fold
+     * that reads it has already run against the previous contents and baked a stale class
+     * into the bundle. Rollup calls this hook before any of that, which is the only point
+     * where refreshing is early enough.
+     *
+     * Both entry points clear the box-node cache, which is the part that matters: a
+     * resolution memoized against the old contents outlives the file itself.
+     *
+     * A created file is handled as an edit. `reloadSourceFile` cannot re-read one the
+     * parser has never held, and does not need to — it clears the cache, and the extractor
+     * adds a newly-reachable module from disk on next use. What the shared path *is* needed
+     * for is an editor's atomic save, which arrives as a delete followed by a create while
+     * the parser still holds the file.
+     */
+    watchChange(id, change) {
+      if (!transform || !ctx) return
+      if (!shouldTransform(id)) return
+
+      // Split the same way `transform` does. Nothing observed puts a query on a watch id,
+      // but handing ts-morph a path the rest of the plugin spells differently is the kind
+      // of asymmetry that only shows up as a fold that quietly stopped refreshing.
+      const [filePath] = id.split('?')
+      if (!filePath) return
+
+      if (change.event === 'delete') {
+        ctx.project.removeSourceFile(filePath)
+        return
+      }
+
+      ctx.project.reloadSourceFile(filePath)
+    },
+
     async transform(code, id) {
       if (!transform) return null
       if (!shouldTransform(id)) return null

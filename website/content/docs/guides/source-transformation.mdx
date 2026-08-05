@@ -223,6 +223,11 @@ css(pad('4')) // → "p_4"
 When a fold reads from another module, the plugin registers that module as a watch dependency, so editing it
 re-transforms the files that folded against it rather than leaving a stale literal behind.
 
+Under `vite build --watch` that takes a second step. A consumer is transformed _before_ the module it imports – that is
+how a bundler discovers imports at all – so re-transforming it is not enough on its own: the parser would still be
+holding the previous contents and would fold the same stale class again. The plugin re-reads a changed module as the
+rebuild starts, before anything folds against it.
+
 The one cross-file shape that does **not** fold is an imported value spread inside a nested selector
 (`css({ '& svg': { ...icon } })`). Extraction handles it and the CSS is still emitted – only the rewrite is declined,
 for the spread reason below.
