@@ -55,20 +55,6 @@ export interface JsxFoldDeps {
 }
 
 /**
- * Props the factory gives meaning to beyond styling. Each one changes what is rendered
- * in a way a literal class cannot express, so an element carrying any of them is left
- * alone.
- *
- * `as` is handled separately rather than listed here: a statically known one just names
- * the tag to fold to.
- *
- * - `unstyled` takes a different branch through the factory.
- * - `css` is a style object, but merging it here would have to reproduce the argument
- *   order `cvaClass` uses; left for when partial folding lands.
- * - `ref` and `key` are React's, not props, and `children` competes with the element's
- *   own children (`children ?? combinedProps.children`).
- */
-/**
  * How much of the program an expression can touch.
  *
  * `constant` neither reads nor writes, so it commutes with anything. `reads` runs no code
@@ -134,7 +120,53 @@ const attributePurity = (attribute: JsxAttribute): Purity => {
   return expression ? purityOf(expression) : 'constant'
 }
 
-const RESERVED_PROPS = new Set(['unstyled', 'css', 'ref', 'key', 'children'])
+/**
+ * Props the factory gives extra *styling* meaning to, which is why they block a fold.
+ *
+ * `unstyled` skips the recipe and `css` merges at a higher precedence than the style
+ * props, so neither is expressible as a class the fold can compute alongside the rest.
+ *
+ * `ref`, `key` and `children` used to be here too, and do not belong: none of them
+ * changes what the element is styled with. The factory takes `ref` through `forwardRef`
+ * and hands it straight to `createElement`, so an intrinsic tag — or whatever `as` names
+ * — receives the identical prop. `key` never reaches the component at all; React consumes
+ * it. And `children ?? combinedProps.children` mirrors `createElement`'s own rule that
+ * the third argument beats `props.children`. Each is a passthrough, and travels as one.
+ */
+const RESERVED_PROPS = new Set(['unstyled', 'css'])
+
+/**
+ * Props that carry no styling, and so block a fold only where the framework gives them a
+ * meaning the rewrite would change.
+ */
+const MECHANICAL_PROPS = new Set(['ref', 'key', 'children'])
+
+/**
+ * Where a mechanical prop may travel as an ordinary passthrough.
+ *
+ * React only, and measured rather than reasoned about. Its factory forwards the ref to
+ * the element it renders, so moving the ref onto that element changes nothing.
+ *
+ * Preact was in this list on the strength of `forwardRef` appearing in its factory too,
+ * and that inference was wrong: under this repo's compat setup an unfolded
+ * `<styled.div ref={r}>` binds the *component instance* and the folded `<div ref={r}>`
+ * binds the DOM node. A hand-written `forwardRef` behaves the same way, so it is Preact's
+ * own handling rather than anything the factory does. Vue diverges for the plain reason —
+ * a ref on a component is the instance, on an element it is the node.
+ *
+ * An allowlist rather than a denylist, because the failure is silent and the list of
+ * runtimes is open. Every other framework keeps the behaviour it had before.
+ */
+const MECHANICAL_FRAMEWORKS = new Set(['react'])
+
+/**
+ * Is this a tag JSX reads as an intrinsic element?
+ *
+ * Anchored and dot-free, because both halves matter. `Section` is a variable reference,
+ * and `foo.bar` is a member expression — a property read off something in scope — where
+ * the runtime would have created an element named literally that.
+ */
+const isIntrinsicTag = (tag: string): boolean => /^[a-z][\w-]*$/.test(tag)
 
 /**
  * The tag an `as` prop names, when it names one statically.
@@ -249,7 +281,9 @@ export const planPatternFold = (
   const styles = (item.data?.[0] ?? {}) as Dict
   const passthrough: string[] = []
   let staticClassName = ''
+  let sawChildrenProp = false
   let tag = detail.config.jsxElement ?? 'div'
+  let tagFromAs = false
 
   for (const attribute of node.getAttributes()) {
     if (!Node.isJsxAttribute(attribute)) return { reason: 'dynamic' }
@@ -267,10 +301,16 @@ export const planPatternFold = (
       const resolved = asTag(attribute)
       if (!resolved) return { reason: 'dynamic' }
       tag = resolved
+      tagFromAs = true
       continue
     }
 
     if (RESERVED_PROPS.has(name) || HTML_PROPS.has(name)) return { reason: 'dynamic' }
+    if (MECHANICAL_PROPS.has(name) && !MECHANICAL_FRAMEWORKS.has(ctx.jsx.framework ?? '')) {
+      return { reason: 'dynamic' }
+    }
+
+    if (name === 'children') sawChildrenProp = true
 
     // A pattern prop and a style prop are both consumed; what matters is only that the
     // extractor resolved it, since anything it dropped would be silently lost.
@@ -281,6 +321,20 @@ export const planPatternFold = (
 
     passthrough.push(attribute.getText())
   }
+
+  // `children ?? combinedProps.children` collapses `null` to `undefined` before the
+  // factory renders, and a destructuring default fires on `undefined` but not on `null` —
+  // so `children={null}` reaches a component's default and the folded `children={null}`
+  // does not. Unobservable on an intrinsic tag, which has no defaults to trigger, and
+  // only `as` can make the target anything else.
+  // A pattern's own tag is whatever `jsxElement` says, handed to the runtime as a *string*
+  // — so it always names an intrinsic element there, however it is spelled. Written back
+  // as JSX, `Section` becomes a variable reference and `foo.bar` a member expression, and
+  // both render something the runtime never would. `as` is exempt because `asTag` has
+  // already checked the casing agrees.
+  if (!tagFromAs && !isIntrinsicTag(tag)) return { reason: 'unsupported-kind' }
+
+  if (sawChildrenProp && !isIntrinsicTag(tag)) return { reason: 'dynamic' }
 
   let resolved: string
   try {
@@ -323,6 +377,7 @@ export const planJsxFold = (
   let staticClassName = ''
   let dynamicClassName = ''
   let sawClassName = false
+  let sawChildrenProp = false
   /**
    * Where a dynamic `className` was written, and where the attributes that outlive the
    * fold were.
@@ -383,6 +438,11 @@ export const planJsxFold = (
     }
 
     if (RESERVED_PROPS.has(name) || HTML_PROPS.has(name)) return { reason: 'dynamic' }
+    if (MECHANICAL_PROPS.has(name) && !MECHANICAL_FRAMEWORKS.has(ctx.jsx.framework ?? '')) {
+      return { reason: 'dynamic' }
+    }
+
+    if (name === 'children') sawChildrenProp = true
 
     if (ctx.isValidProperty(name)) {
       // A style prop the extractor could not resolve is absent from `data`, exactly as a
@@ -421,6 +481,13 @@ export const planJsxFold = (
     survivors.push({ index, purity: attributePurity(attribute) })
     passthrough.push(attribute.getText())
   }
+
+  // `children ?? combinedProps.children` collapses `null` to `undefined` before the
+  // factory renders, and a destructuring default fires on `undefined` but not on `null` —
+  // so `children={null}` reaches a component's default and the folded `children={null}`
+  // does not. Unobservable on an intrinsic tag, which has no defaults to trigger, and
+  // only `as` can make the target anything else.
+  if (sawChildrenProp && !isIntrinsicTag(tag)) return { reason: 'dynamic' }
 
   /**
    * Would emitting the className last move it past something that can observe it?

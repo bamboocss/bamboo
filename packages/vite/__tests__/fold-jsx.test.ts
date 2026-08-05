@@ -89,12 +89,20 @@ describe('folds', () => {
 describe('declines', () => {
   const cases: Array<{ name: string; body: string }> = [
     { name: 'a spread', body: `export const A = ({ rest }) => <styled.div color="red.300" {...rest} />` },
-    { name: 'a dynamic style prop', body: `export const A = ({ t }) => <styled.div color={t} />` },
+    // A responsive array, since a scalar lowers to the leaf helper. Both of the shapes
+    // here decline for their own reason rather than for want of a `cx` binding, which the
+    // `styled`-only prelude would otherwise supply for free — an assertion that passes
+    // because the helper is missing proves nothing about the rule it is named for.
+    {
+      name: 'a dynamic style prop with nothing to hoist',
+      body: `export const A = ({ t }) => <styled.div color={[t, t]} />`,
+    },
     { name: 'an unstyled prop', body: `export const A = () => <styled.div unstyled color="red.300" />` },
     { name: 'a css prop', body: `export const A = () => <styled.div css={{ color: 'red.300' }} />` },
-    { name: 'a ref', body: `export const A = ({ r }) => <styled.div ref={r} color="red.300" />` },
-    { name: 'a children prop', body: `export const A = () => <styled.div color="red.300" children="hi" />` },
-    { name: 'a dynamic className', body: `export const A = ({ c }) => <styled.div color="red.300" className={c} />` },
+    {
+      name: 'a dynamic className written before a call',
+      body: `export const A = ({ c, f }) => <styled.div color="red.300" className={c} id={f()} />`,
+    },
     { name: 'an htmlSize prop', body: `export const A = () => <styled.input color="red.300" htmlSize={4} />` },
     { name: 'an htmlWidth prop', body: `export const A = () => <styled.img color="red.300" htmlWidth={4} />` },
     { name: 'a capitalised component', body: `export const A = () => <styled.Thing color="red.300" />` },
@@ -103,6 +111,112 @@ describe('declines', () => {
 
   test.each(cases)('$name', ({ body }) => {
     expectUnchanged(body)
+  })
+
+  // `ref`, `key` and `children` were declined alongside `unstyled` and `css`, but unlike
+  // those two they change nothing about styling. The factory takes `ref` through
+  // `forwardRef` and passes it to `createElement`, so an intrinsic tag receives the same
+  // prop; `key` never reaches the component; and `children ?? combinedProps.children`
+  // matches `createElement`'s own rule that the third argument beats `props.children`.
+  test.each([
+    [
+      'a ref',
+      `export const A = ({ r }) => <styled.div ref={r} color="red.300" />`,
+      '<div ref={r} className={"c_red.300"} />',
+    ],
+    [
+      'a key',
+      `export const A = ({ k }) => <styled.div key={k} color="red.300" />`,
+      '<div key={k} className={"c_red.300"} />',
+    ],
+    [
+      'a children prop',
+      `export const A = () => <styled.div color="red.300" children="hi" />`,
+      '<div children="hi" className={"c_red.300"} />',
+    ],
+  ])('%s no longer blocks the fold', (_name, body, expected) => {
+    const { fold } = createFoldFixture()
+    const result = fold(jsx(body))
+
+    expect(result.folded).toHaveLength(1)
+    expect(result.code).toContain(expected)
+  })
+
+  test('a children prop declines when the target is a component', () => {
+    const { fold } = createFoldFixture()
+    // `children ?? combinedProps.children` collapses `null` to `undefined`, so a
+    // component's destructuring default fires where the folded `children={null}` would
+    // not. An intrinsic tag has no defaults, so only an `as` can expose it.
+    for (const body of [
+      `export const A = ({ c, Comp }) => <styled.div as={Comp} color="red.300" children={c} />`,
+      `export const A = ({ c, Comp }) => <styled.div color="red.300" children={c} as={Comp} />`,
+    ]) {
+      const code = jsx(body)
+      expect(fold(code).folded, body).toHaveLength(0)
+      expect(fold(code).code, body).toBe(code)
+    }
+  })
+
+  test.each([
+    ['vue', 0],
+    ['solid', 0],
+    ['qwik', 0],
+    ['preact', 0],
+    ['react', 1],
+  ])('a ref folds under %s: %i', (framework, folded) => {
+    // React only, and measured rather than inferred: Preact was allowed here on the
+    // strength of `forwardRef` appearing in its factory, and under this repo's compat
+    // setup an unfolded ref binds the component instance while a folded one binds the
+    // node. In Vue the same divergence holds for the plain reason.
+    const { fold } = createFoldFixture({ jsxFramework: framework } as never)
+    const result = fold(jsx(`export const A = ({ r }) => <styled.div color="red.300" ref={r} />`))
+
+    expect(result.folded).toHaveLength(folded)
+  })
+
+  test.each([['vue'], ['solid'], ['qwik'], ['preact'], ['react']])(
+    'an element with no ref folds under %s, so the gate is what the zeros measure',
+    (framework) => {
+      const { fold } = createFoldFixture({ jsxFramework: framework } as never)
+      const result = fold(jsx(`export const A = () => <styled.div color="red.300" />`))
+
+      expect(result.folded).toHaveLength(1)
+    },
+  )
+
+  // The runtime hands `jsxElement` to `createElement` as a string, so it always names an
+  // intrinsic element there. Written back as JSX, `Section` is a variable reference and
+  // `foo.bar` a member expression — `<Section />` folds to `createElement(undefined)` and
+  // throws. The `div` row is the control: without it, an `extend` that clobbered the
+  // pattern would make the zeros pass for the wrong reason.
+  test.each([
+    ['div', 1],
+    ['linearGradient', 1],
+    ['my-element', 1],
+    ['Section', 0],
+    ['foo.bar', 0],
+  ])('a pattern whose jsxElement is %s folds: %i', (jsxElement, folded) => {
+    const { fold } = createFoldFixture({ patterns: { extend: { stack: { jsxElement } } } } as never)
+    const code = pat(`export const A = () => <Stack gap="4" />`)
+
+    expect(fold(code).folded).toHaveLength(folded)
+    if (!folded) expect(fold(code).code).toBe(code)
+  })
+
+  test('a ref survives an as that names a component', () => {
+    const { fold } = createFoldFixture()
+    // `createElement(Element, { …, ref })` is what the factory already does, so handing
+    // the same prop to whatever `as` names is the identical call.
+    const result = fold(jsx(`export const A = ({ r, Link }) => <styled.div as={Link} ref={r} color="red.300" />`))
+
+    expect(result.code).toContain('<Link ref={r} className={"c_red.300"} />')
+  })
+
+  test('unstyled and a css prop still block it', () => {
+    // These two do change the styling: `unstyled` skips the recipe, `css` merges above
+    // the style props.
+    expectUnchanged(`export const A = () => <styled.div color="red.300" unstyled />`)
+    expectUnchanged(`export const A = () => <styled.div color="red.300" css={{ margin: '2' }} />`)
   })
 
   test('a factory call rather than a member access', () => {
@@ -427,12 +541,19 @@ describe('pattern elements', () => {
     expect(result.folded[0]!.className.endsWith(' mine')).toBe(true)
   })
 
+  test('a pattern element keeps a ref too', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(pat(`export const A = ({ r }) => <Stack gap="4" ref={r} />`))
+
+    expect(result.folded).toHaveLength(1)
+    expect(result.code).toContain('<div ref={r} className={"d_flex flex-d_column gap_4"} />')
+  })
+
   test.each([
     ['a spread', `export const A = ({ rest }) => <Stack gap="4" {...rest} />`],
     ['a dynamic pattern prop', `export const A = ({ g }) => <Stack gap={g} />`],
     ['a dynamic style prop', `export const A = ({ t }) => <Stack gap="4" color={t} />`],
     ['a css prop', `export const A = () => <Stack gap="4" css={{ color: 'red.300' }} />`],
-    ['a ref', `export const A = ({ r }) => <Stack gap="4" ref={r} />`],
   ])('declines %s', (_name, body) => {
     const { fold } = createFoldFixture()
     const code = pat(body)
