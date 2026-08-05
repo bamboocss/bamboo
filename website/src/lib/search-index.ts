@@ -87,7 +87,13 @@ export function getSearchIndex(docs: Doc[]): SearchIndex {
 
   // Process each document
   for (const doc of docs) {
-    const baseUrl = `/docs/${doc.slug}`
+    // Velite's slug already leads with `docs/` -- the route strips it back off with
+    // `.split('/').slice(1)` in app/docs/[...slug]/page.tsx. Prefixing it again here
+    // is what sent every search result to /docs/docs/<path>.
+    //
+    // The sidebar and pagination do prefix, correctly: their items come from
+    // docs.config, which stores urls without it.
+    const baseUrl = `/${doc.slug}`
 
     // Add main page record
     const pageRecord: SearchRecord = {
