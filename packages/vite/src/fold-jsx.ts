@@ -1,7 +1,7 @@
 import type { Context } from '@bamboocss/core'
 import { type BoxNode, box } from '@bamboocss/extractor'
 import type { Dict, ResultItem } from '@bamboocss/types'
-import { type JsxAttribute, Node } from 'ts-morph'
+import { type JsxAttribute, Node, SyntaxKind } from 'ts-morph'
 import {
   accountsForSource,
   collides,
@@ -68,6 +68,72 @@ export interface JsxFoldDeps {
  * - `ref` and `key` are React's, not props, and `children` competes with the element's
  *   own children (`children ?? combinedProps.children`).
  */
+/**
+ * How much of the program an expression can touch.
+ *
+ * `constant` neither reads nor writes, so it commutes with anything. `reads` runs no code
+ * but observes bindings, so it commutes only with something that also cannot write.
+ * `unknown` may do either.
+ *
+ * The distinction matters because the question is not "can this run code" but "is
+ * swapping these two observable" — and `A;B` becoming `B;A` is observable as soon as `A`
+ * writes something `B` reads. An identifier read is code-free and still not safe to move
+ * behind a call that assigns to it.
+ */
+type Purity = 'constant' | 'reads' | 'unknown'
+
+const RANK: Record<Purity, number> = { constant: 0, reads: 1, unknown: 2 }
+const worst = (a: Purity, b: Purity): Purity => (RANK[a] >= RANK[b] ? a : b)
+
+const purityOf = (node: Node): Purity => {
+  if (Node.isIdentifier(node)) return 'reads'
+
+  if (
+    Node.isStringLiteral(node) ||
+    Node.isNumericLiteral(node) ||
+    Node.isNoSubstitutionTemplateLiteral(node) ||
+    Node.isTrueLiteral(node) ||
+    Node.isFalseLiteral(node) ||
+    node.getKind() === SyntaxKind.NullKeyword
+  ) {
+    return 'constant'
+  }
+
+  if (Node.isPrefixUnaryExpression(node) && Node.isNumericLiteral(node.getOperand())) return 'constant'
+
+  if (Node.isObjectLiteralExpression(node)) {
+    return node.getProperties().reduce<Purity>((acc, property) => {
+      if (!Node.isPropertyAssignment(property)) return 'unknown'
+      if (Node.isComputedPropertyName(property.getNameNode())) return 'unknown'
+      const value = property.getInitializer()
+      return worst(acc, value ? purityOf(value) : 'unknown')
+    }, 'constant')
+  }
+
+  if (Node.isArrayLiteralExpression(node)) {
+    return node.getElements().reduce<Purity>((acc, element) => worst(acc, purityOf(element)), 'constant')
+  }
+
+  return 'unknown'
+}
+
+/**
+ * The same question for a whole attribute.
+ *
+ * A `JsxElement` or `JsxFragment` initializer — `title=<Tag x={f()} />` — is legal, holds
+ * arbitrary expressions, and is not a `JsxExpression`, so this asks what an initializer
+ * *is* rather than listing the kinds that carry code.
+ */
+const attributePurity = (attribute: JsxAttribute): Purity => {
+  const initializer = attribute.getInitializer()
+  if (!initializer) return 'constant'
+  if (Node.isStringLiteral(initializer)) return 'constant'
+  if (!Node.isJsxExpression(initializer)) return 'unknown'
+
+  const expression = initializer.getExpression()
+  return expression ? purityOf(expression) : 'constant'
+}
+
 const RESERVED_PROPS = new Set(['unstyled', 'css', 'ref', 'key', 'children'])
 
 /**
@@ -255,24 +321,63 @@ export const planJsxFold = (
   const staticProps: string[] = []
   const dynamicProps: Array<{ name: string; text: string; expression: Node }> = []
   let staticClassName = ''
+  let dynamicClassName = ''
+  let sawClassName = false
+  /**
+   * Where a dynamic `className` was written, and where the attributes that outlive the
+   * fold were.
+   *
+   * The factory appends `className` after the styles, so a folded one is emitted last and
+   * anything written after it runs before it instead. That covers more than the style
+   * props — a passthrough keeps its own place among the attributes — but only where the
+   * expression survives at all. A static style prop is not among them: it is *deleted*,
+   * its value having been resolved at build time. That is a larger change than reordering
+   * and a separate pre-existing gap — `<styled.div color={counted()} />` folds and never
+   * calls it, with or without this — rather than a reason the reordering is moot.
+   */
+  let classNameIndex = -1
+  let classNamePurity: Purity = 'constant'
+  const survivors: Array<{ index: number; purity: Purity }> = []
+  let index = -1
 
   for (const attribute of node.getAttributes()) {
     if (!Node.isJsxAttribute(attribute)) return { reason: 'dynamic' }
 
+    index += 1
     const name = attribute.getNameNode().getText()
 
     if (name === 'className') {
       // `cx(css(...), combinedProps.className)` appends it last, so a static one can be
-      // concatenated. A dynamic one would need `cx` at runtime.
+      // concatenated into the literal and a dynamic one becomes a final `cx` argument —
+      // in that position, so a class it carries still wins the way it did before.
       const initializer = attribute.getInitializer()
-      if (!initializer || !Node.isStringLiteral(initializer)) return { reason: 'dynamic' }
-      staticClassName = initializer.getLiteralValue()
+      if (!initializer) return { reason: 'dynamic' }
+
+      // Written twice, JSX keeps the last and evaluates both. Two static ones simply
+      // overwrite, which is what the runtime does too; any other pairing would either
+      // apply a class the runtime dropped or lose one of their side effects.
+      if (sawClassName && (dynamicClassName || !Node.isStringLiteral(initializer))) return { reason: 'dynamic' }
+      sawClassName = true
+
+      if (Node.isStringLiteral(initializer)) {
+        staticClassName = initializer.getLiteralValue()
+        continue
+      }
+
+      const expression = Node.isJsxExpression(initializer) ? initializer.getExpression() : undefined
+      if (!expression) return { reason: 'dynamic' }
+      dynamicClassName = expression.getText()
+      classNameIndex = index
+      classNamePurity = purityOf(expression)
       continue
     }
 
     if (name === 'as') {
       const resolved = asTag(attribute)
       if (!resolved) return { reason: 'dynamic' }
+      // The tag becomes the first argument to `jsx()`, so it moves ahead of everything —
+      // further than a passthrough does, and by the same rule.
+      survivors.push({ index, purity: attributePurity(attribute) })
       tag = resolved
       continue
     }
@@ -306,13 +411,41 @@ export const planJsxFold = (
       if (!valueExpression) return { reason: 'dynamic' }
       const expression = valueExpression
 
+      survivors.push({ index, purity: attributePurity(attribute) })
       dynamicProps.push({ name, text: expression.getText(), expression })
       continue
     }
 
-    // Not a css property, so `defaultShouldForwardProp` sends it to the DOM untouched.
+    // Not a css property, so `defaultShouldForwardProp` sends it to the DOM untouched —
+    // in its original position, which is what makes it able to cross the className.
+    survivors.push({ index, purity: attributePurity(attribute) })
     passthrough.push(attribute.getText())
   }
+
+  /**
+   * Would emitting the className last move it past something that can observe it?
+   *
+   * A constant survivor commutes with anything. One that only reads commutes only while
+   * the className expression cannot write — `className={cn} onClick={h}` is safe, and
+   * `className={assigns()} bg={tone}` is not, because moving the read after the write
+   * hands it the other value.
+   *
+   * This answers for the className and nothing else. `buildEdits` emits
+   * `[...passthrough, className={cx(…)}]`, so a passthrough is also hoisted ahead of every
+   * dynamic style prop's expression — `<styled.div bg={writes()} data-x={reads} />`
+   * reorders those two with no className present at all. That is pre-existing and
+   * reproduces on an unchanged tree; folding a dynamic className only makes it reachable
+   * for more elements. Closing it means comparing every survivor against everything it
+   * crosses rather than against one attribute, which is a different change.
+   */
+  const reordered = () =>
+    classNameIndex >= 0 &&
+    survivors.some(
+      (entry) =>
+        entry.index > classNameIndex &&
+        entry.purity !== 'constant' &&
+        !(entry.purity === 'reads' && classNamePurity !== 'unknown'),
+    )
 
   if (dynamicProps.length) {
     if (!deps || item.data.length !== 1) return { reason: 'dynamic' }
@@ -353,6 +486,8 @@ export const planJsxFold = (
     const kinds = dynamicProps.map((prop) => (prefixes.has(prop.name) ? 'l' : 'r')).join('')
     if (!/^l*r*$/.test(kinds) && !/^r*l*$/.test(kinds)) prefixes.clear()
 
+    if (reordered()) return { reason: 'dynamic' }
+
     const helpers = resolveCssHelpers(
       node,
       deps.isBambooCssModule,
@@ -381,7 +516,8 @@ export const planJsxFold = (
     // to be worth it even with no static half: the factory layer goes with it.
     if (!resolved && !lowered.length) return { reason: 'dynamic' }
 
-    const parts = kinds.startsWith('r') ? [...runtime, ...lowered] : [...lowered, ...runtime]
+    const ordered = kinds.startsWith('r') ? [...runtime, ...lowered] : [...lowered, ...runtime]
+    const parts = dynamicClassName ? [...ordered, dynamicClassName] : ordered
     const plan = buildEdits(
       node,
       tag,
@@ -399,6 +535,21 @@ export const planJsxFold = (
   if (item.data.length !== 1) return { reason: 'dynamic' }
 
   const className = [runtimeCss(styles), staticClassName].filter(Boolean).join(' ')
+
+  if (dynamicClassName) {
+    // Same rule as the split path: it is emitted last, so nothing written after it may
+    // still be an expression — including a passthrough prop, which keeps its own place
+    // among the attributes and would then run first.
+    if (reordered()) return { reason: 'dynamic' }
+
+    const helpers = deps && resolveCssHelpers(node, deps.isBambooCssModule, deps.isGeneratedCssModule, deps.isShadowed)
+    if (!helpers) return { reason: 'dynamic' }
+
+    const args = [...(className ? [JSON.stringify(className)] : []), dynamicClassName]
+    const plan = buildEdits(node, tag, passthrough, className, `${helpers.cx}(${args.join(', ')})`)
+    return 'reason' in plan ? plan : { ...plan, insert: helpers.insert }
+  }
+
   if (!className) return { reason: 'dynamic' }
 
   return buildEdits(node, tag, passthrough, className)

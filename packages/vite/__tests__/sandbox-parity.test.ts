@@ -95,12 +95,16 @@ describe('sandbox/vite-ts parity', () => {
         // signature of folding the selector form by mistake.
         expect(call.className, `${where} leaked a selector escape`).not.toContain('\\')
 
-        // No empty segments, no leading or trailing space in the joined string.
+        // No empty segments, no leading or trailing space in the joined string. An empty
+        // `className` is its own case rather than a malformed one: a fold whose classes
+        // are all built at runtime resolves no literal at all.
         expect(call.className, where).toBe(call.className.trim())
-        expect(
-          call.className.split(' ').filter((part) => part === ''),
-          where,
-        ).toHaveLength(0)
+        if (call.className) {
+          expect(
+            call.className.split(' ').filter((part) => part === ''),
+            where,
+          ).toHaveLength(0)
+        }
 
         for (const name of call.classNames) {
           expect(name, `${where} produced an empty class`).not.toBe('')

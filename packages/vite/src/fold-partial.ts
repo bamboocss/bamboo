@@ -438,6 +438,46 @@ const finiteBranches = (
 export const LEAF_HELPER = 'cssLeaf'
 
 /**
+ * Memo keyed on a file, thrown away when its text is replaced.
+ *
+ * A plain `WeakMap<SourceFile, …>` is wrong here: ts-morph reuses the wrapper when a path
+ * is re-added with new text — which is what a watch rebuild does — so it would answer for
+ * the previous revision. Comparing against the text it was computed from costs a
+ * reference check while the file is unchanged, since `getFullText()` hands back the same
+ * string instance.
+ */
+const byText = <T>(
+  cache: WeakMap<SourceFile, { text: string; value: T }>,
+  sourceFile: SourceFile,
+  compute: () => T,
+): T => {
+  const text = sourceFile.getFullText()
+  const hit = cache.get(sourceFile)
+  if (hit && hit.text === text) return hit.value
+
+  const value = compute()
+  cache.set(sourceFile, { text, value })
+  return value
+}
+
+/**
+ * The modules this file imports from, as specifiers.
+ *
+ * Only strings are cached. A ts-morph *node* cannot be: re-adding a path forgets the old
+ * nodes even when the text is identical, so the memo would hand back wrappers that throw
+ * on access. Strings outlive that, and answer the one question worth asking before the
+ * helper resolution walks the declarations — whether this file imports from bamboo at
+ * all. On a module of many elements that never fold, that walk was the entire cost of
+ * trying.
+ */
+const specifierCache = new WeakMap<SourceFile, { text: string; value: string[] }>()
+
+const importsAnything = (sourceFile: SourceFile, matches: (mod: string) => boolean): boolean =>
+  byText(specifierCache, sourceFile, () =>
+    sourceFile.getImportDeclarations().map((declaration) => declaration.getModuleSpecifierValue()),
+  ).some(matches)
+
+/**
  * Every name declared at module scope, which is what an added import could collide with.
  *
  * This replaced `sourceFile.getLocals()`. That was precise, but it goes through the
@@ -448,11 +488,17 @@ export const LEAF_HELPER = 'cssLeaf'
  *
  * A syntactic walk answers the same question: a binding in a nested *function* cannot
  * collide with a module-scope import, and one that shadows it *at the call site* is what
- * `isShadowed` is for. Deliberately uncached — ts-morph reuses the `SourceFile` wrapper
- * when a path is re-added with new text, so a cache keyed on it serves the previous
- * revision's names on every watch rebuild. The walk measures as noise against the fold.
+ * `isShadowed` is for. Memoized against the file's text rather than the file, since
+ * ts-morph reuses the wrapper across a re-add and a plain `WeakMap` would answer for the
+ * previous revision. Uncached it is re-walked per candidate, which is quadratic in a
+ * module of many elements.
  */
-const declaredAtModuleScope = (sourceFile: SourceFile): Set<string> => {
+const moduleScopeCache = new WeakMap<SourceFile, { text: string; value: Set<string> }>()
+
+const declaredAtModuleScope = (sourceFile: SourceFile): Set<string> =>
+  byText(moduleScopeCache, sourceFile, () => collectModuleScopeNames(sourceFile))
+
+const collectModuleScopeNames = (sourceFile: SourceFile): Set<string> => {
   const names = new Set<string>()
 
   const addBinding = (node: Node | undefined) => {
@@ -593,6 +639,8 @@ export const findBambooBinding = (
   isBambooCssModule: (mod: string) => boolean,
   isShadowed: (call: Node, name: string) => boolean,
 ): string | undefined => {
+  if (!importsAnything(call.getSourceFile(), isBambooCssModule)) return undefined
+
   for (const declaration of call.getSourceFile().getImportDeclarations()) {
     if (declaration.isTypeOnly() || !isBambooCssModule(declaration.getModuleSpecifierValue())) continue
 
@@ -1043,6 +1091,7 @@ export const resolveCssHelpers = (
   wantLeaf = false,
 ): { css: string; cx: string; leaf?: string; insert?: { pos: number; names: string[] } } | undefined => {
   const sourceFile = node.getSourceFile()
+  if (!importsAnything(sourceFile, isBambooCssModule)) return undefined
 
   for (const declaration of sourceFile.getImportDeclarations()) {
     const mod = declaration.getModuleSpecifierValue()

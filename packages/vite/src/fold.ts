@@ -755,7 +755,10 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       folded.push({
         name,
         className: candidate.className!,
-        classNames: candidate.classNames ?? [candidate.className!],
+        // Filtered, because an element or call whose classes are all built at runtime
+        // resolves no literal — `classNames` is what a consumer checks for CSS behind it,
+        // and an empty string is not a class to check.
+        classNames: (candidate.classNames ?? [candidate.className!]).filter(Boolean),
         start,
         end,
       })
@@ -770,7 +773,10 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       folded.push({
         name,
         className: candidate.className!,
-        classNames: candidate.classNames ?? [candidate.className!],
+        // Filtered, because an element or call whose classes are all built at runtime
+        // resolves no literal — `classNames` is what a consumer checks for CSS behind it,
+        // and an empty string is not a class to check.
+        classNames: (candidate.classNames ?? [candidate.className!]).filter(Boolean),
         start,
         end,
       })

@@ -566,6 +566,134 @@ describe('partially folding an element', () => {
     expect(result.code).toContain('onClick={fn}')
   })
 
+  // A dynamic className used to bail. It folds now, because the split already emits a
+  // `cx` and the factory's own `cx(styles, props.className)` puts it in the same place.
+  test('a dynamic className becomes the last cx argument', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(both(`export const A = ({ cn }) => <styled.div color="red.300" className={cn} />`))
+
+    expect(result.folded).toHaveLength(1)
+    expect(result.code).toContain('<div className={cx("c_red.300", cn)} />')
+  })
+
+  test('a dynamic className goes after the lowered props, not where it was written', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(both(`export const A = ({ cn, t }) => <styled.div color="red.300" bg={t} className={cn} />`))
+
+    // The factory appends it after the styles, so a class it carries wins over them.
+    expect(result.code).toContain('cx("c_red.300", cssLeaf("bg_", "bg", t), cn)')
+  })
+
+  // It has to be emitted last for the cascade and first for evaluation order, and both
+  // are arbitrary expressions — so the two cannot be satisfied at once. Anything written
+  // after it counts, whichever half of the element it belongs to: a style prop that stays
+  // an expression, and a passthrough prop, which keeps its own place among the attributes.
+  test.each([
+    ['before a dynamic prop', `<styled.div className={cn} color="red.300" bg={t()} />`],
+    ['between two dynamic props', `<styled.div bg={t()} className={cn} color={t()} />`],
+    ['before a residual css() call', `<styled.div bg={t()} className={cn} padding={['1', t()]} />`],
+    ['before a passthrough call', `<styled.div color="red.300" className={cn} id={t()} />`],
+    // Legal, holds arbitrary expressions, and is not a `JsxExpression` — so a rule that
+    // listed the kinds carrying code rather than asking what an initializer *is* let it
+    // through.
+    ['before a jsx-element initializer', `<styled.div color="red.300" className={cn} title=<Tag x={t()} /> />`],
+    ['before a jsx fragment initializer', `<styled.div color="red.300" className={cn} title=<>{t()}</> />`],
+    ['before a template with a call', `<styled.div color="red.300" className={cn} id={\`a\${t()}\`} />`],
+    ['before a property access, which may be a getter', `<styled.div color="red.300" className={cn} id={t.x} />`],
+  ])('a dynamic className written %s declines', (_label, element) => {
+    const { fold } = createFoldFixture()
+    const code = both(`export const A = ({ cn, t }) => ${element}`)
+
+    expect(fold(code).folded).toHaveLength(0)
+    expect(fold(code).code).toBe(code)
+  })
+
+  // Reordering only matters when something can observe it. Reading a literal or a binding
+  // runs nothing, and a static style prop is resolved away rather than emitted at all — so
+  // these fold despite sitting after the className.
+  test.each([
+    ['an identifier passthrough', `<styled.div color="red.300" className={cn} onClick={h} />`],
+    ['a numeric style prop', `<styled.div color="red.300" className={cn} zIndex={10} />`],
+    ['an object of literals', `<styled.div color="red.300" className={cn} _hover={{ color: 'blue.500' }} />`],
+    ['a boolean shorthand', `<styled.div color="red.300" className={cn} hidden />`],
+    ['a literal passthrough', `<styled.div color="red.300" className={cn} id="x" />`],
+  ])('a dynamic className written before %s still folds', (_label, element) => {
+    const { fold } = createFoldFixture()
+    const result = fold(both(`export const A = ({ cn, h }) => ${element}`))
+
+    expect(result.folded).toHaveLength(1)
+    expect(result.code).toContain('cn)')
+  })
+
+  // The question is not whether an expression runs code but whether swapping two of them
+  // is observable, and `A;B` becoming `B;A` shows as soon as `A` writes what `B` reads. So
+  // a survivor that only reads is safe only while the className cannot write.
+  test.each([
+    ['a read style prop', `<styled.span className={bump()} bg={tone} />`],
+    ['a read passthrough', `<styled.div color="red.300" className={bump()} data-mark={tone} />`],
+    ['a read as', `<styled.div color="red.300" className={bump()} as={Tone} />`],
+  ])('a className that may write declines before %s', (_label, element) => {
+    const { fold } = createFoldFixture()
+    const code = both(`export const A = ({ bump, tone, Tone }) => ${element}`)
+
+    expect(fold(code).folded).toHaveLength(0)
+    expect(fold(code).code).toBe(code)
+  })
+
+  test.each([
+    ['a literal passthrough', `<styled.div color="red.300" className={bump()} id="x" />`],
+    ['a numeric style prop', `<styled.div color="red.300" className={bump()} zIndex={10} />`],
+  ])('a className that may write still folds before %s', (_label, element) => {
+    const { fold } = createFoldFixture()
+    // A constant neither reads nor writes, so it commutes with anything.
+    const result = fold(both(`export const A = ({ bump }) => ${element}`))
+
+    expect(result.folded).toHaveLength(1)
+  })
+
+  test('two static classNames still fold, last winning', () => {
+    const { fold } = createFoldFixture()
+    // Both slots are the same kind, so the later simply overwrites — which is what the
+    // runtime does with a duplicate attribute too.
+    const result = fold(both(`export const A = () => <styled.div color="red.300" className="a" className="b" />`))
+
+    expect(result.code).toContain('<div className={"c_red.300 b"} />')
+  })
+
+  test('a className written twice declines', () => {
+    const { fold } = createFoldFixture()
+    // JSX keeps the last and evaluates both. Emitting one of each slot applies a class the
+    // runtime dropped; picking one loses the other's side effect.
+    const code = both(`export const A = ({ cn }) => <styled.div color="red.300" className="x" className={cn} />`)
+
+    expect(fold(code).folded).toHaveLength(0)
+    expect(fold(code).code).toBe(code)
+  })
+
+  test('a static passthrough after the className is fine', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(both(`export const A = ({ cn }) => <styled.div color="red.300" className={cn} id="x" />`))
+
+    // A literal attribute is not an expression, so nothing can be observed running early.
+    expect(result.code).toContain('<div id="x" className={cx("c_red.300", cn)} />')
+  })
+
+  test('written first is fine when nothing else is an expression', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(both(`export const A = ({ cn }) => <styled.div className={cn} color="red.300" />`))
+
+    // Only `cn` is evaluated, so where it sat cannot be observed.
+    expect(result.code).toContain('<div className={cx("c_red.300", cn)} />')
+  })
+
+  test("an element whose only class is the caller's still sheds its factory", () => {
+    const { fold } = createFoldFixture()
+    const result = fold(both(`export const A = ({ cn }) => <styled.div className={cn} />`))
+
+    expect(result.code).toContain('<div className={cx(cn)} />')
+    expect(result.code).not.toContain('styled.div')
+  })
+
   test('a static className is folded into the literal half', () => {
     const { fold } = createFoldFixture()
     const result = fold(

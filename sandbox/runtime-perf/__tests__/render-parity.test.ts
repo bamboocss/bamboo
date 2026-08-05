@@ -82,6 +82,13 @@ const orderOnlyDifferences = (before: string, after: string) => {
  */
 const EXPECTED_REORDERS = 1
 
+/**
+ * A folded element always emits `className` last, while the factory re-assigns the key it
+ * was given and so keeps it in its source position. The class *tokens* match either way —
+ * that is what this compares — but the serialized attribute order does not, so an element
+ * written with `className` before another forwarded prop will fail the byte comparison
+ * below. Put `className` last in this fixture, or compare tokens rather than markup.
+ */
 describe('render parity', () => {
   test('the fixture actually exercises the fold', () => {
     // Guards against this passing because nothing was rewritten.
