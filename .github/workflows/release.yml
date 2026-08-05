@@ -7,6 +7,10 @@ on:
       - 'packages/**'
     branches:
       - main
+  # The push filter above means a commit touching only .github or the website never
+  # runs this, so there is otherwise no way to re-open the Version Packages PR --
+  # or to retry a publish -- without manufacturing a commit under packages/.
+  workflow_dispatch:
 
 # Publishing is not safe to run twice at once: two jobs can race to version, tag and
 # push the same packages. Unlike the other workflows this must never cancel a run in
