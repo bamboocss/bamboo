@@ -43,10 +43,24 @@ export class StaticCss {
     this.conditionKeys = new Set(Object.keys(context.config.conditions ?? {}))
   }
 
+  /**
+   * An independent instance, so one caller's `process()` cannot be seen by another's.
+   *
+   * This used to reassign its own encoder and decoder and hand back `this`, which left every
+   * caller sharing one object — and, more quietly, one `wildcardCache`. Callers reach for it to
+   * get isolation (`ctx.staticCss.clone().process(…)` is the idiom in every test and bench), so
+   * a "cold" instance that inherited a warm cache measured and asserted the wrong thing: the
+   * cold and warm process benches sat within 2% of each other because they were the same cache.
+   *
+   * The cloned encoder and decoder are also what `process` reads to tell a clone from the
+   * context's own instance, so they have to differ from `context.encoder`/`context.decoder`
+   * rather than being rebuilt from them.
+   */
   clone() {
-    this.encoder = this.encoder.clone()
-    this.decoder = this.decoder.clone()
-    return this
+    const cloned = new StaticCss(this.context)
+    cloned.encoder = this.encoder.clone()
+    cloned.decoder = this.decoder.clone()
+    return cloned
   }
 
   /**
