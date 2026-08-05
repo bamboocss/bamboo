@@ -1,6 +1,5 @@
 import type { RecipeNode, Stylesheet } from '@bamboocss/core'
 import { logger } from '@bamboocss/logger'
-import { esc } from '@bamboocss/shared'
 import type { CssRule, Dict, PatternRule, RecipeRule, StaticCssOptions } from '@bamboocss/types'
 import type { Context } from './context'
 import { StyleDecoder } from './style-decoder'
@@ -94,20 +93,6 @@ export class StaticCss {
     }
 
     return result
-  }
-
-  private createRegex = () => {
-    const classNames = Array.from(this.decoder.classNames.keys())
-    const escapedClassNames = classNames.map((name) => esc(name))
-    const pattern = `(${escapedClassNames.join('|')})`
-    return new RegExp(`\\b${pattern}\\b`, 'g')
-  }
-
-  parse = (text: string) => {
-    const regex = this.createRegex()
-    const matches = text.match(regex)
-    if (!matches) return []
-    return matches.map((match) => match.replace('.', ''))
   }
 
   /**
