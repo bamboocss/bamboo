@@ -50,7 +50,7 @@ export const docsNavigation: NavItem = {
         { title: 'Browser Support', url: 'browser-support' },
         {
           title: 'Changelog',
-          href: 'https://github.com/bamboocss/bamboo/blob/main/CHANGELOG.md',
+          href: 'https://github.com/bamboocss/bamboo/releases',
           external: true,
         },
       ],

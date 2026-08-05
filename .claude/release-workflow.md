@@ -41,7 +41,7 @@ Wait for one of these signals before proceeding:
 **Option A — GitHub Actions:** The publish workflow on `main` completes successfully.
 
 ```bash
-gh run list --branch main --workflow=release.yml --limit 1
+gh run list --branch main --workflow=release.yaml --limit 1
 ```
 
 **Option B — Git tags:** A tag for a key package at the new version exists.
@@ -53,41 +53,13 @@ git tag | grep '@bamboocss/types@<version>'
 
 Poll every ~30 seconds. If not confirmed after 10 minutes, stop and investigate.
 
-### 7. Draft the CHANGELOG.md entry
-
-Using the changeset content captured in step 4, add a new entry at the top of `CHANGELOG.md` following the existing
-format:
-
-```markdown
-## [<version>](#<version>) - <date>
-
-### Added
-
-...
-
-### Fixed
-
-...
-```
-
-### 8. Create and merge the changelog PR
-
-```bash
-git checkout -b changelog/v<version>
-git add CHANGELOG.md
-git commit -m "chore: add changelog for v<version>"
-git push -u origin changelog/v<version>
-gh pr create --title "chore: add changelog for v<version>"
-gh pr merge --squash --delete-branch
-```
-
-### 9. Pull main again
+### 7. Pull main again
 
 ```bash
 git pull origin main
 ```
 
-### 10. Create the GitHub Announcements discussion
+### 8. Create the GitHub Announcements discussion
 
 Open a new discussion in the **Announcements** category with the release notes. Close it immediately after using the
 `closeDiscussion` GraphQL mutation (closed announcements still appear pinned in the Discussions tab).
