@@ -40,7 +40,6 @@ describe('CLI', () => {
     postcssConfig: path.resolve(testsCwd, 'postcss.config.cjs'),
     styledSystem: path.resolve(testsCwd, 'styled-system'),
     logFile: path.resolve(testsCwd, 'bamboo.log'),
-    studio: path.resolve(testsCwd, 'styled-system-studio'),
     pkgJson: path.resolve(testsCwd, 'package.json'),
   }
 
@@ -56,7 +55,6 @@ describe('CLI', () => {
         fs.unlink(paths.postcssConfig),
         fs.unlink(paths.logFile),
         fs.rm(paths.styledSystem, { recursive: true }),
-        fs.rm(paths.studio, { recursive: true }),
       ])
     } catch {
       //
@@ -161,18 +159,6 @@ describe('CLI', () => {
     // Check that the `styled-system/styles.css` was created
     const stylesCssExists = await fs.access(path.resolve(paths.styledSystem, 'styles.css'))
     expect(stylesCssExists).toBeUndefined()
-  })
-
-  test.skip('studio', async () => {
-    const cmd = `node ${binPath} studio --cwd="${testsCwd}"`
-
-    // studio
-    const output = runCommand(cmd + ' --build', { cwd: testsCwd })
-    expect(output.includes('Complete!')).toBe(true)
-
-    //   Check that the `styled-system-studio` folder was created
-    const studioExists = await fs.access(paths.studio)
-    expect(studioExists).toBeUndefined()
   })
 
   test('debug', async () => {

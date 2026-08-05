@@ -1,18 +1,11 @@
 import { defineConfig } from 'vitest/config'
 import tsconfigPaths from 'vite-tsconfig-paths'
-import virtual from 'vite-plugin-virtual'
 
 const resolve = (val: string) => new URL(val, import.meta.url).pathname
 
-function virtualBamboo() {
-  return virtual({
-    'virtual:bamboo': 'export const config = {}',
-  })
-}
-
 export default defineConfig({
   root: process.cwd(),
-  plugins: [tsconfigPaths(), virtualBamboo()],
+  plugins: [tsconfigPaths()],
   test: {
     globals: true,
     testTimeout: 15_000,

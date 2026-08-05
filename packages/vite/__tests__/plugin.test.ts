@@ -108,8 +108,8 @@ describe('generated output', () => {
   })
 
   test('a sibling whose name merely starts with the outdir is user source', () => {
-    // `styled-system-studio` sits next to `styled-system` and is not it.
-    expect(isGeneratedOutput('/app/styled-system-studio/app.tsx', ctx('/app', 'styled-system'))).toBe(false)
+    // `styled-system-static` sits next to `styled-system` and is not it.
+    expect(isGeneratedOutput('/app/styled-system-static/app.tsx', ctx('/app', 'styled-system'))).toBe(false)
   })
 
   test('an absolute outdir is honoured rather than appended to the cwd', () => {

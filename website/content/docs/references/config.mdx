@@ -365,12 +365,11 @@ Whether to update the .gitignore file.
 }
 ```
 
-Will add the following to your `.gitignore` file:
+Will add your [`outdir`](#outdir) to your `.gitignore` file:
 
 ```txt
-# Bamboo
+## Bamboo
 styled-system
-styled-system-static
 ```
 
 ### cwd
@@ -1069,24 +1068,7 @@ Ex with 'none':
 <button className={css({ marginTop: '40px' })}>Click me</button>
 ```
 
-## Documentation options
-
-### studio
-
-**Type**: `Partial<Studio>`
-
-**Default**: `{ title: 'Bamboo', logo: '🎋' }`
-
-Used to customize the design system studio
-
-```json
-{
-  "studio": {
-    "logo": "🎋",
-    "title": "Bamboo"
-  }
-}
-```
+## Diagnostics options
 
 ### log level
 

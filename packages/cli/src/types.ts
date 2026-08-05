@@ -30,16 +30,6 @@ export interface CssGenCommandFlags {
   splitting?: boolean
 }
 
-export interface StudioCommandFlags extends Pick<Config, 'cwd'> {
-  build?: boolean
-  preview?: boolean
-  config?: string
-  outdir?: string
-  port?: string
-  host?: boolean
-  base?: string
-}
-
 export interface AnalyzeCommandFlags {
   silent?: boolean
   outfile?: string

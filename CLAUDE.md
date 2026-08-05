@@ -66,9 +66,10 @@ whose flag is malformed — `--keep-index=false` is not a valid form, and the st
 a "before" measurement that is really the "after" tree. Commit or copy to a scratch directory first, then confirm the
 state actually changed (`grep` for something the change added) before trusting anything measured against it.
 
-**The pre-commit hook regenerates from `dist`, not from the working tree** — `.husky/pre-commit` runs `prepare-studio`,
-`fmt:fix`, then `git add -A`. Committing source that has not been rebuilt sweeps in artifacts generated from a different
-revision. Run `pnpm build` before committing anything that changes what the generator emits.
+**Generated artifacts under `packages/generator/src/artifacts/generated` are built from `dist`, not from the working
+tree.** Committing source that has not been rebuilt leaves those artifacts generated from a different revision, and CI
+fails on the "Check generated output is committed" step. Run `pnpm build` before committing anything that changes what
+the generator emits.
 
 ### Testing Workflow
 

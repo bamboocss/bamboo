@@ -10,8 +10,6 @@ import type {
   BambooHooks,
   PrefixOptions,
   PropertyConfig,
-  RequiredBy,
-  StudioOptions,
   Theme,
   ThemeVariantsMap,
   UserConfig,
@@ -56,8 +54,6 @@ const defaults = (config: UserConfig): UserConfig => ({
 })
 
 export class Context {
-  studio: RequiredBy<NonNullable<StudioOptions['studio']>, 'outdir'>
-
   // Engines
   tokens: TokenDictionary
   utility: Utility
@@ -120,7 +116,6 @@ export class Context {
       helpers: patternFns,
     })
 
-    this.studio = { outdir: `${config.outdir}-studio`, ...conf.config.studio }
     this.setupProperties()
 
     // Relies on this.conditions, this.utility, this.layers

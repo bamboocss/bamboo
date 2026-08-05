@@ -3,7 +3,6 @@ export type BambooErrorCode =
   | 'CONFIG_ERROR'
   | 'NOT_FOUND'
   | 'CONDITION'
-  | 'MISSING_STUDIO'
   | 'INVALID_LAYER'
   | 'UNKNOWN_RECIPE'
   | 'INVALID_RECIPE'

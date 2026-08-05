@@ -200,34 +200,6 @@ You can then choose how to import these files:
 | `--cpu-prof`           | Generate a `bamboo-{command}-{timestamp}.cpuprofile` file for profiling                | [Debugging](/docs/guides/debugging)                           |
 | `--logfile <file>`     | Outputs logs to a file                                                                 | [Debugging](/docs/guides/debugging)                           |
 
-## studio
-
-Realtime documentation for your design tokens.
-
-```bash
-pnpm bamboo studio
-
-# Build static studio site
-pnpm bamboo studio --build
-
-# Preview built studio
-pnpm bamboo studio --preview
-
-# Use custom port
-pnpm bamboo studio --port 3000
-```
-
-| Flag                  | Description                       | Related                                     |
-| --------------------- | --------------------------------- | ------------------------------------------- |
-| `--build`             | Build                             | -                                           |
-| `--preview`           | Preview                           | -                                           |
-| `--port <port>`       | Use custom port                   | -                                           |
-| `--host`              | Expose to custom host             | -                                           |
-| `--config, -c <path>` | Path to Bamboo config file        | [`config`](/docs/references/config.md)      |
-| `--cwd <path>`        | Current working directory         | [`config.cwd`](/docs/references/config#cwd) |
-| `--outdir <dir>`      | Output directory for static files | -                                           |
-| `--base <path>`       | Base path of project              | -                                           |
-
 ## spec
 
 Generate spec files for your theme (useful for documentation).

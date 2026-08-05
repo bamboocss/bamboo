@@ -12,7 +12,6 @@ export function setupGitIgnore(ctx: BambooContext) {
   
   ## Bamboo
   ${outdir}
-  ${ctx.studio.outdir}
   `
 
   const file = lookItUpSync('.gitignore')

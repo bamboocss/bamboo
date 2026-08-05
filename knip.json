@@ -2,8 +2,7 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "workspaces": {
     ".": {
-      "ignoreDependencies": ["@changesets/changelog-github", "@projectwallace/format-css"],
-      "ignoreBinaries": ["serve"]
+      "ignoreDependencies": ["@changesets/changelog-github", "@projectwallace/format-css"]
     },
     "packages/cli": {
       "entry": ["src/cli-default.ts!"],
@@ -84,9 +83,6 @@
       "project": ["src/**/*.ts"],
       "ignoreDependencies": ["csstype", "ts-morph"]
     },
-    "packages/astro-plugin-studio": {
-      "project": ["src/**/*.ts"]
-    },
     "packages/plugin-lightningcss": {
       "project": ["src/**/*.ts"]
     },
@@ -95,14 +91,9 @@
     },
     "packages/plugin-vue": {
       "project": ["src/**/*.ts"]
-    },
-    "packages/studio": {
-      "entry": ["src/**/*.astro", "src/**/*.tsx", "src/**/*.ts", "bamboo.config.ts"],
-      "ignore": ["styled-system/**"],
-      "ignoreDependencies": ["@bamboocss/config", "vite"]
     }
   },
   "ignoreWorkspaces": ["sandbox/*", "sandbox/component-lib/**", "playground", "website"],
-  "ignore": ["**/__tests__/**", "**/styled-system/**"],
+  "ignore": ["**/__tests__/**"],
   "exclude": ["duplicates"]
 }

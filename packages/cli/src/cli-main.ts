@@ -1,5 +1,4 @@
-import { findConfig } from '@bamboocss/config'
-import { colors, logger } from '@bamboocss/logger'
+import { logger } from '@bamboocss/logger'
 import {
   BambooContext,
   analyze,
@@ -17,7 +16,7 @@ import {
   startProfiling,
   type CssGenOptions,
 } from '@bamboocss/node'
-import { BambooError, compact } from '@bamboocss/shared'
+import { compact } from '@bamboocss/shared'
 import type { CssArtifactType } from '@bamboocss/types'
 import { cac } from 'cac'
 import { join, resolve } from 'path'
@@ -34,7 +33,6 @@ import type {
   McpInitCommandFlags,
   ShipCommandFlags,
   SpecCommandFlags,
-  StudioCommandFlags,
 } from './types'
 
 export async function main() {
@@ -330,59 +328,6 @@ export async function main() {
       })
 
       await spec(ctx, { outdir })
-    })
-
-  cli
-    .command('studio', 'Realtime documentation for your design tokens')
-    .option('--build', 'Build')
-    .option('--preview', 'Preview')
-    .option('--port <port>', 'Port')
-    .option('--host', 'Host')
-    .option('-c, --config <path>', 'Path to bamboo config file')
-    .option('--cwd <cwd>', 'Current working directory', { default: cwd })
-    .option('--outdir <dir>', 'Output directory for static files')
-    .option('--base <path>', 'Base path of project')
-    .action(async (flags: StudioCommandFlags) => {
-      const { build, preview, port, host, outdir, config, base } = flags
-
-      const cwd = resolve(flags.cwd ?? '')
-
-      const ctx = await loadConfigAndCreateContext({
-        cwd,
-        configPath: config,
-      })
-
-      const buildOpts = {
-        configPath: findConfig({ cwd, file: config })!,
-        outDir: resolve(outdir || ctx.studio.outdir),
-        port,
-        host,
-        base,
-      }
-
-      let studio: any
-
-      try {
-        const studioPath = require.resolve('@bamboocss/studio', { paths: [cwd] })
-        studio = require(studioPath)
-      } catch (error) {
-        throw new BambooError('MISSING_STUDIO', "You need to install '@bamboocss/studio' to use this command", {
-          cause: error,
-        })
-      }
-
-      if (preview) {
-        await studio.previewStudio(buildOpts)
-      } else if (build) {
-        await studio.buildStudio(buildOpts)
-      } else {
-        await studio.serveStudio(buildOpts)
-
-        const note = `use ${colors.reset(colors.bold('--build'))} to build`
-        const port = `use ${colors.reset(colors.bold('--port'))} for a different port`
-        logger.log(colors.dim(`  ${colors.green('➜')}  ${colors.bold('Build')}: ${note}`))
-        logger.log(colors.dim(`  ${colors.green('➜')}  ${colors.bold('Port')}: ${port}`))
-      }
     })
 
   cli

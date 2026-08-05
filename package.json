@@ -33,10 +33,6 @@
     "typecheck": "tsc --noEmit",
     "release": "changeset publish",
     "release-dev": "changeset version --snapshot dev && changeset publish --tag dev",
-    "prepare-studio": "pnpm --filter=./packages/studio codegen",
-    "build-studio": "pnpm --filter=./sandbox/vite-ts exec pnpm bamboo studio --build",
-    "deploy-studio": "pnpm prepare-studio && pnpm build-studio",
-    "serve-studio": "npx serve ./sandbox/vite-ts/styled-system-studio",
     "website": "pnpm --filter=./website",
     "mdx-check": "mdx-local-link-checker docs && mdx-local-link-checker website/pages/docs"
   },
@@ -45,7 +41,6 @@
     "@changesets/cli": "2.29.8",
     "@projectwallace/format-css": "^2.0.0",
     "chokidar": "4.0.3",
-    "concurrently": "9.2.1",
     "cross-env": "10.1.0",
     "happy-dom": "20.0.11",
     "husky": "9.1.7",
@@ -62,8 +57,7 @@
     "@types/node": "24.10.1",
     "knip": "6.14.1",
     "oxfmt": "0.51.0",
-    "oxlint": "1.66.0",
-    "vite-plugin-virtual": "^0.4.0"
+    "oxlint": "1.66.0"
   },
   "packageManager": "pnpm@11.0.8",
   "pnpm": {

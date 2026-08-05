@@ -13748,29 +13748,6 @@ export type ExtendableUtilityConfig = UtilityConfigWithExtend & {
 }
 export type CascadeLayer = 'reset' | 'base' | 'tokens' | 'recipes' | 'utilities'
 export type CascadeLayers = Record<CascadeLayer, string>
-export interface StudioOptions {
-  /**
-   * Used to customize the design system studio
-   * @default { title: 'Bamboo', logo: '🎋' }
-   */
-  studio?: {
-    /**
-     * The output directory for the design system studio when the build command is run.
-     */
-    outdir?: string
-    /**
-     * The logo url for the design system studio.
-     */
-    logo?: string
-    /**
-     * Used to inject custom html into the head or body of the studio
-     */
-    inject?: {
-      head?: string
-      body?: string
-    }
-  }
-}
 export interface Patterns {
   [pattern: string]: PatternConfig
 }
@@ -14162,7 +14139,6 @@ export interface PluginsOptions {
 }
 export interface Config
   extends
-    StudioOptions,
     ExtendableOptions,
     CssgenOptions,
     CodegenOptions,

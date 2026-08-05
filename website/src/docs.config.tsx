@@ -133,7 +133,6 @@ export const docsNavigation: NavItem = {
         { title: 'Layer Styles', url: 'layer-styles' },
         { title: 'Animation Styles', url: 'animation-styles' },
         { title: 'Spec', url: 'spec', tag: 'new' },
-        { title: 'Bamboo Studio', url: 'studio' },
       ],
     },
     {

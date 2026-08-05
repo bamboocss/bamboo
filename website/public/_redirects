@@ -12,6 +12,7 @@
 /docs                      /docs/overview/getting-started  301
 /docs/getting-started      /docs/overview/getting-started  301
 /docs/overview/llms-txt    /docs/ai/llms-txt               301
+/docs/theming/studio       /docs/theming/spec              301
 
 # Raw-markdown alias for agents: /docs/<path>.mdx -> /llms/<path>.mdx. The
 # target is emitted as a real asset by generateStaticParams in

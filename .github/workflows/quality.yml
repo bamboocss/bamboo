@@ -95,9 +95,9 @@ jobs:
       - name: Run build
         run: pnpm build
 
-      # Those artifacts and `packages/studio/styled-system` are generated *and* tracked,
-      # so a build that regenerates them differently means the committed copies are
-      # stale. Left unchecked they flip back and forth on every build.
+      # Those artifacts are generated *and* tracked, so a build that regenerates them
+      # differently means the committed copies are stale. Left unchecked they flip back
+      # and forth on every build.
       #
       # `git status --porcelain` rather than `git diff`: a build that starts emitting a
       # *new* generated file leaves it untracked, which `git diff` does not see. Build

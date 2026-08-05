@@ -2,9 +2,6 @@ import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   outExtension: 'js',
-  studio: {
-    logo: 'https://place-hold.it/36x24',
-  },
   preflight: true,
   include: ['./app/routes/**/*.{tsx,jsx}', './app/components/**/*.{tsx,jsx}'],
   exclude: [],

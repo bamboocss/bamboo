@@ -1,9 +1,6 @@
 import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
-  studio: {
-    logo: 'https://place-hold.it/36x24',
-  },
   preflight: true,
   include: ['./src/**/*.{js,svelte,ts}'],
   outdir: 'styled-system',

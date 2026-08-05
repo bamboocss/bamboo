@@ -34,7 +34,7 @@ bamboo/
 - **Purpose**: Main entry point for end users
 - **Exports**: CLI binary (`bamboo` command), PostCSS plugin, presets
 - **Key responsibilities**:
-  - Command-line interface (init, codegen, build, analyze, debug, studio)
+  - Command-line interface (init, codegen, build, analyze, debug)
   - Interactive setup wizard
   - Update notifications
 - **Dependencies**: Orchestrates all other packages
@@ -195,23 +195,6 @@ bamboo/
 #### `@bamboocss/reporter` (packages/reporter)
 
 - **Purpose**: User-friendly error and warning messages
-
-### 6. Developer Experience
-
-#### `@bamboocss/studio` (packages/studio)
-
-- **Purpose**: Visual documentation of design tokens
-- **Technology**: Astro-based static site
-- **Features**:
-  - Token visualization
-  - Color palette preview
-  - Typography scale
-  - Spacing scale
-  - Interactive token explorer
-
-#### `@bamboocss/astro-plugin-studio` (packages/astro-plugin-studio)
-
-- **Purpose**: Astro integration for Bamboo Studio
 
 ## System Flow
 

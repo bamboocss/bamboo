@@ -25,15 +25,13 @@ name the tool itself — the config file, the PostCSS plugin, and any direct `@p
 
 Every package moves from the `@pandacss` scope to `@bamboocss`. The ones a project normally depends on:
 
-| Panda CSS                       | Bamboo CSS                       |
-| ------------------------------- | -------------------------------- |
-| `@pandacss/dev`                 | `@bamboocss/dev`                 |
-| `@pandacss/types`               | `@bamboocss/types`               |
-| `@pandacss/preset-base`         | `@bamboocss/preset-base`         |
-| `@pandacss/preset-panda`        | `@bamboocss/preset-bamboo`       |
-| `@pandacss/studio`              | `@bamboocss/studio`              |
-| `@pandacss/postcss`             | `@bamboocss/postcss`             |
-| `@pandacss/astro-plugin-studio` | `@bamboocss/astro-plugin-studio` |
+| Panda CSS                | Bamboo CSS                 |
+| ------------------------ | -------------------------- |
+| `@pandacss/dev`          | `@bamboocss/dev`           |
+| `@pandacss/types`        | `@bamboocss/types`         |
+| `@pandacss/preset-base`  | `@bamboocss/preset-base`   |
+| `@pandacss/preset-panda` | `@bamboocss/preset-bamboo` |
+| `@pandacss/postcss`      | `@bamboocss/postcss`       |
 
 The internal packages (`@pandacss/core`, `/node`, `/parser`, `/generator`, `/token-dictionary` and the rest) follow the
 same rule if you import them directly.

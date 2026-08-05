@@ -5,18 +5,6 @@ staged=$(git diff --cached --name-only --diff-filter=ACMR)
 # Nothing to do for an empty commit, or `git commit --amend --no-edit`.
 [ -n "$staged" ] || exit 0
 
-# Studio ships a generated styled-system that is committed -- 122 files -- and no CI job
-# checks it is current, so this hook is the only thing keeping it in sync. It is a full
-# codegen run, so only pay for it when a staged path could change what it emits.
-#
-# Note it regenerates from packages/*/dist, not from the working tree: committing a
-# change to what the generator emits without running `pnpm build` first writes artifacts
-# from a different revision.
-if printf '%s\n' "$staged" | grep '^packages/' | grep -qv '^packages/studio/styled-system/'; then
-  pnpm prepare-studio
-  git add packages/studio/styled-system
-fi
-
 # Format the tree, then stage back only the paths this commit already touched.
 #
 # oxfmt walks the tree itself rather than taking a file list, and it exits non-zero on
