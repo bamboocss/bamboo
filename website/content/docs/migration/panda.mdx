@@ -1,10 +1,10 @@
 ---
 title: Migrating from Panda CSS
-description: Migrate your project from Panda CSS to Bamboo.
+description: Migrate your project from Panda CSS to Bamboo CSS.
 ---
 
-Bamboo started as a fork of [Panda CSS](https://panda-css.com/), so unlike the other guides in this section this one is
-not a rewrite. The styling API is the same: your style objects, recipes, patterns, conditions and tokens carry over
+Bamboo CSS started as a fork of [Panda CSS](https://panda-css.com/), so unlike the other guides in this section this one
+is not a rewrite. The styling API is the same: your style objects, recipes, patterns, conditions and tokens carry over
 unchanged. What changes is the name of the package they come from.
 
 For most projects this is a find-and-replace of `panda` with `bamboo`, plus a re-run of codegen.
@@ -25,7 +25,7 @@ name the tool itself — the config file, the PostCSS plugin, and any direct `@p
 
 Every package moves from the `@pandacss` scope to `@bamboocss`. The ones a project normally depends on:
 
-| Panda CSS                       | Bamboo                           |
+| Panda CSS                       | Bamboo CSS                       |
 | ------------------------------- | -------------------------------- |
 | `@pandacss/dev`                 | `@bamboocss/dev`                 |
 | `@pandacss/types`               | `@bamboocss/types`               |

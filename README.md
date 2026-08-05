@@ -86,11 +86,11 @@ Feel like contributing? That's awesome! We have a
 
 ### Want to help improve the docs?
 
-Our docsite lives in the [monorepo](./website/pages/docs/).
+Our docsite lives in the [monorepo](./website/content/docs/).
 
 If you're interested in contributing to the documentation, check out the
 [contributing guide](https://github.com/bamboocss/bamboo/blob/main/CONTRIBUTING.md).
 
 ## Acknowledgement
 
-The development of Bamboo started as a fork of [Panda CSS](https://panda-css.com/).
+Bamboo CSS started as a fork of [Panda CSS](https://panda-css.com/).
