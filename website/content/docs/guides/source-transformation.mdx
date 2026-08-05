@@ -235,11 +235,12 @@ a value the extractor never saw already produced a class with no rule. A respons
 non-scalar fall back to `css()` at runtime, and `null` produces no class. It applies to a top-level property; `hash` and
 `cssMode: 'grouped'` decline it, since neither appends the value to a prefix.
 
-Splitting is refused when two halves could produce a class for the same property, since `cx` concatenates without
-resolving conflicts: a shorthand facing its longhand, a top-level `base` block, and multi-argument `css()`. A property
-counts as static only if the extractor resolved every leaf _and_ accounted for everything the source declared, so a
-dynamic array element, a nested dynamic value and a spread all keep their whole property at runtime. A ternary nested
-inside a condition block stays there too – lowering it would mean carrying the condition's path into each branch.
+Splitting is refused when two halves could produce a class for the same property: a shorthand facing its longhand, a
+top-level `base` block, and multi-argument `css()`. `cx` does resolve conflicts, but by argument order, and splitting
+moves the static half to the front — so the winner could differ from the one `css()` would have kept. A property counts
+as static only if the extractor resolved every leaf _and_ accounted for everything the source declared, so a dynamic
+array element, a nested dynamic value and a spread all keep their whole property at runtime. A ternary nested inside a
+condition block stays there too – lowering it would mean carrying the condition's path into each branch.
 
 Element splitting needs both `css` and `cx`, so a file that does not already import `css` is left alone. Turn splitting
 off with `partial: false`.

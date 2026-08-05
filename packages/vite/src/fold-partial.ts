@@ -334,8 +334,11 @@ export const accountsForSource = (node: Node | undefined, boxNode: BoxNode | und
  * would emit both.
  *
  * So the halves are compared after shorthand resolution and the call is left alone if they
- * overlap. `cx` here is a plain concatenation with no conflict resolution of its own, so
- * this check is the only thing standing between a split and a wrong class.
+ * overlap. `cx` does resolve conflicts, but by argument order, and the split hoists the
+ * static half to the front regardless of where its key sat in the source — so for
+ * `{ marginInline: dynamic, mx: '2' }` the merge keeps `mx` and the split would keep
+ * `marginInline`. This check is still the only thing standing between a split and a wrong
+ * class.
  *
  * Multi-argument calls are excluded for the same reason at a larger scale: `css(a, b)` is
  * later-wins across the whole object, so a static `a` cannot be hoisted out of a dynamic

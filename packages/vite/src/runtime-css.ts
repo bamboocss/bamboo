@@ -54,9 +54,11 @@ export const createRuntimeCss = (ctx: Context): RuntimeCss => {
  * The generated `createRecipe`, rebuilt in-process.
  *
  * A config recipe call resolves to `cx(recipeCss(variants), css(compoundVariantStyles))`.
- * Both halves are reachable from shared primitives: `cx` is a plain concatenation here,
- * and the recipe's own `createCss` differs from the ordinary one only in its `transform`,
- * which names classes `recipe--prop_value` instead of going through the utility table.
+ * Both halves are reachable from shared primitives. The generated `cx` resolves conflicts,
+ * but it never merges a recipe class and the first half is nothing else — so joining the
+ * two here agrees with it. The recipe's own `createCss` differs from the ordinary one only
+ * in its `transform`, which names classes `recipe--prop_value` instead of going through the
+ * utility table.
  *
  * `getCompoundVariantCss` is the one piece the generated artifact builds inline rather
  * than importing, so it is mirrored below. That is a second implementation and therefore
