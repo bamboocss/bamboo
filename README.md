@@ -16,7 +16,14 @@ what it costs.
 ## Features
 
 - ⚡️ Write style objects or style props, extract them at build time
+- 🪶 [Optional zero runtime](https://bamboocss.com/docs/guides/source-transformation) — fold statically-resolvable
+  `css()` calls and JSX into literal class strings at build time
 - ✨ Modern CSS output — cascade layers `@layer`, css variables and more
+- ✂️ Prune [unused tokens](https://bamboocss.com/docs/references/config#pruneunusedtokens) and
+  [keyframes](https://bamboocss.com/docs/references/config#pruneunusedkeyframes) — drop what nothing can reach from the
+  stylesheet that blocks first paint
+- 📦 [Grouped class output](https://bamboocss.com/docs/references/config#cssmode) — one class per `css()` call instead
+  of one per property
 - 🦄 Works with most JavaScript frameworks
 - 🚀 Recipes and Variants - Just like Stitches™️ ✨
 - 🎨 High-level design tokens support for simultaneous themes
