@@ -9,8 +9,10 @@
     "dev:next": "next dev",
     "dev": "run-p dev:*",
     "build:content": "velite --clean",
+    "build:og": "tsx --tsconfig scripts/tsconfig.json scripts/generate-og-images.tsx",
     "build:next": "next build",
-    "build": "run-s build:*",
+    "//build": "Steps are named rather than globbed: og reads the velite collection and writes into public/, so it has to sit between the two.",
+    "build": "run-s build:content build:og build:next",
     "prebuild": "pnpm --filter=../packages/** build",
     "lint": "oxlint .",
     "start": "next start"
@@ -47,6 +49,7 @@
     "rehype-autolink-headings": "^7.1.0",
     "rehype-slug": "^6.0.0",
     "shiki": "^3.19.0",
+    "tsx": "4.20.6",
     "unist-util-visit": "^5.0.0",
     "velite": "0.3.0"
   }

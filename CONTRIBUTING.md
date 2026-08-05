@@ -67,8 +67,6 @@ all components.
 Please conform to the issue template and provide a clear path to reproduction with a code example. The best way to show
 a bug is by sending a minimal reproduction as a GitHub repo, CodeSandbox, or StackBlitz.
 
-You may wish to use this starter template to help you get going: https://github.com/astahmer/bamboo-vite-template
-
 ## Proposing new or changed API?
 
 Please provide thoughtful comments and some sample API code. Proposals that don't line up with our roadmap or don't have

@@ -1,0 +1,10 @@
+{
+  // The app's tsconfig sets `jsx: preserve`, which is right for Next -- it compiles the
+  // JSX itself. This script is run directly by tsx, so esbuild has to emit something
+  // runnable, and under `preserve` it falls back to classic `React.createElement` with
+  // no React in scope. The automatic runtime imports what it needs.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx"
+  }
+}

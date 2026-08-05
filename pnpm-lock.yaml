@@ -1690,6 +1690,9 @@ importers:
       shiki:
         specifier: ^3.19.0
         version: 3.19.0
+      tsx:
+        specifier: 4.20.6
+        version: 4.20.6
       unist-util-visit:
         specifier: ^5.0.0
         version: 5.0.0
