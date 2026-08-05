@@ -38,7 +38,7 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     # npm binds a trusted publisher to repository + workflow filename + environment.
-    # All three are load-bearing: this is `.github/workflows/release.yml` and the
+    # All three are load-bearing: this is `.github/workflows/release.yaml` and the
     # environment is `release`. Renaming either breaks publishing with the same
     # unhelpful E404 that an unauthenticated publish gives.
     environment: release
