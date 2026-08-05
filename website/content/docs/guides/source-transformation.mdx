@@ -109,6 +109,56 @@ An element bails if it carries anything else the factory gives extra meaning to:
 `unstyled`, `css`, `ref`, `key`, an explicit `children`, a dynamic `className`, or one of the `html*` props that
 `normalizeHTMLProps` renames.
 
+### `token()` calls
+
+`token()` is the one fold that produces a value rather than a class. It is what you reach for when a design token is
+needed somewhere Bamboo emits no CSS – an inline style, a canvas, a chart config:
+
+```tsx
+// you write
+const chart = { grid: token('colors.red.300') }
+
+// the bundle gets
+const chart = { grid: '#fca5a5' }
+```
+
+What it folds to is exactly what the runtime would have returned, which for a conditional or semantic token is the
+variable reference rather than either branch:
+
+```tsx
+token('colors.primary') // → 'var(--colors-primary)', still themeable
+```
+
+Getting that split backwards is the one mistake here that no class-name check would catch, so it is worth stating
+plainly: a base token inlines its literal value, and anything with conditions inlines its `var()`.
+
+When every `token()` call in a module folds, its import of the generated token map – every token in your project – is
+left unused, and your bundler drops it. The fold does not remove the import statement itself; the generated
+`styled-system/package.json` declares `sideEffects` narrowly enough that Rollup and Vite can.
+
+Aliased and namespaced imports fold. The path has to be **one resolved string literal** – a conditional is not one, even
+when every branch of it is a real token:
+
+```tsx
+token('colors.red.300') // ✅
+token(dark ? 'colors.a' : 'colors.b') // ❌ declines – folding a branch would delete the condition
+token(chosen || 'colors.red.300') // ❌ declines – for the same reason
+```
+
+A second argument that could _run_ something also declines, because both arguments evaluate before the call:
+
+```tsx
+token('colors.red.300', 'rebeccapurple') // ✅ folds – the fallback is inert and dead
+token('colors.red.300', computeFallback()) // ❌ declines – folding would delete the call
+```
+
+A path the fold cannot resolve to a usable string is reported as `unresolved-token`: the path names no token, or the
+token's value is empty, or it is not a string at all – a numeric `fontWeights` token stays a number, and no string
+literal stands in for that. In the first two cases the runtime's `tokens[path]?.value || fallback` hands the result to
+the fallback, which is exactly what declining preserves.
+
+`token.var()` is left alone.
+
 ### Pattern elements
 
 `<Stack>`, `<Box>`, `<HStack>` and the rest fold too, and they save more than a `styled.*` element does. A pattern
@@ -179,12 +229,11 @@ for the spread reason below.
 
 ### Never folded
 
-Three kinds of call never fold, because they do not evaluate to a class string at all:
+Two kinds of call never fold, because they do not evaluate to anything a literal can stand in for:
 
 - **`css.raw()`**, `recipe.raw()`, and `pattern.raw()` return a _style object_ so callers can compose them. Folding one
   to a string would break every consumer.
 - **`cva()` and `sva()`** return a function. Their definitions stay as they are.
-- **`token()`** returns a token value, not a class.
 
 ### Why spreads are conservative
 
@@ -273,16 +322,17 @@ The reasons are:
 | -------------------- | --------------------------------------------------------------- |
 | `dynamic`            | Some part of the arguments could not be resolved at build time. |
 | `raw-call`           | A `.raw()` call, which must keep returning a style object.      |
-| `not-foldable`       | `cva`, `sva`, or `token` – cannot evaluate to a class string.   |
+| `not-foldable`       | `cva` or `sva` – returns a function, not a class string.        |
 | `unsupported-kind`   | A slot recipe call, or a shape this phase does not handle.      |
 | `not-imported`       | The callee is not a Bamboo import (see below).                  |
 | `empty`              | Resolved, but produced no class names.                          |
 | `overlapping`        | Nested inside another folded call.                              |
+| `unresolved-token`   | A `token()` path resolving to no usable string (see above).     |
 | `no-call-expression` | The call site could not be located in the source.               |
 
 `not-foldable` and `unsupported-kind` are deliberately separate. The first is permanent – `cva` and `sva` return
-functions and `token` returns a value, so there is no class string to fold to. The second is a limitation of this phase,
-such as a slot recipe, which resolves to one class per slot rather than to a single string.
+functions, so there is no class string to fold to. The second is a limitation of this phase, such as a slot recipe,
+which resolves to one class per slot rather than to a single string.
 
 You can also just read the output bundle: a folded call is a string literal, an unfolded one still says `css(`.
 

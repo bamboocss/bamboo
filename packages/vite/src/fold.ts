@@ -3,7 +3,7 @@ import type { Context } from '@bamboocss/core'
 import { type BoxNode, box, unbox } from '@bamboocss/extractor'
 import type { Dict, ParserResultInterface, ResultItem } from '@bamboocss/types'
 import MagicString from 'magic-string'
-import { Node, type SourceFile } from 'ts-morph'
+import { Node, type SourceFile, SyntaxKind } from 'ts-morph'
 import { type JsxEdit, planJsxFold, planPatternFold } from './fold-jsx'
 import {
   accountsForSource,
@@ -13,7 +13,7 @@ import {
   LEAF_HELPER,
   planPartialFold,
 } from './fold-partial'
-import { createRuntimeCss, createRuntimeRecipe, type RuntimeCss } from './runtime-css'
+import { createRuntimeCss, createRuntimeRecipe, createRuntimeToken, type RuntimeCss } from './runtime-css'
 
 /**
  * Why a call site was left alone. Surfaced through `panda`-style diagnostics so a
@@ -22,15 +22,25 @@ import { createRuntimeCss, createRuntimeRecipe, type RuntimeCss } from './runtim
 export type SkipReason =
   | 'dynamic' // some part of the arguments could not be resolved at build time
   | 'raw-call' // `css.raw(...)` returns a style object, not a class string
-  | 'not-foldable' // the call cannot evaluate to a class string at all (cva/sva/token)
+  | 'not-foldable' // the call cannot evaluate to a class string at all (cva/sva)
   | 'unsupported-kind' // could fold in principle, but this phase does not (config recipes)
   | 'not-imported' // the callee is not a Bamboo import — a local function of the same name
   | 'no-call-expression' // could not locate the enclosing call to replace
   | 'overlapping' // nested inside another fold
   | 'empty' // resolved to no class names at all
+  | 'unresolved-token' // `token(...)` resolves to no usable string, so its fallback decides
 
 export interface FoldedCall {
   name: string
+  /**
+   * What the call collapsed to.
+   *
+   * `class` is every style surface: a class string bound for a `class` attribute. `value`
+   * is `token()`, which resolves to a CSS *value* (`var(--colors-red-300)`). The two are
+   * not interchangeable, and a consumer that checks folded classes against the emitted
+   * stylesheet has to skip the latter — there is no rule named after a variable reference.
+   */
+  kind: 'class' | 'value'
   /** The class string resolved outright, empty when the whole call lowered to ternaries. */
   className: string
   /**
@@ -39,6 +49,8 @@ export interface FoldedCall {
    * which `className` alone does not carry.
    */
   classNames: string[]
+  /** The literal written in place of the call, for a `value` fold. */
+  value?: string
   start: number
   end: number
 }
@@ -87,9 +99,10 @@ export interface FoldOptions {
 }
 
 /**
- * `cva`/`sva` return a function and `token` returns a value, so none of them can
- * collapse to a class string. Their *invocations* could, but those are separate call
- * sites the parser does not record as such.
+ * `cva`/`sva` return a function, so neither can collapse to a class string. Their
+ * *invocations* could, but those are separate call sites the parser does not record as
+ * such. `token` also resolves to no class, but it does resolve to a literal, so it folds
+ * through its own path rather than being declined outright.
  */
 const FOLDABLE_TYPES = new Set(['css', 'pattern', 'recipe'])
 
@@ -108,7 +121,24 @@ const literalsIn = (expression: string): string[] =>
  * phase — hence separate from `unsupported-kind`, where a slot recipe lands because it
  * resolves to one class per slot rather than to a single string.
  */
-const UNFOLDABLE_TYPES = new Set(['cva', 'sva', 'token'])
+const UNFOLDABLE_TYPES = new Set(['cva', 'sva'])
+
+/**
+ * An argument that cannot run anything when it is evaluated.
+ *
+ * `token(path, fallback)` evaluates both arguments before the call, so a fold that drops
+ * the fallback also drops whatever evaluating it would have done. `token('x', compute())`
+ * is pathological, but the fold's contract is behaviour preservation and a literal is the
+ * cheap way to prove it: no call, no property read, no getter.
+ */
+const isInertArgument = (node: Node): boolean =>
+  Node.isStringLiteral(node) ||
+  Node.isNumericLiteral(node) ||
+  Node.isNoSubstitutionTemplateLiteral(node) ||
+  node.getKind() === SyntaxKind.TrueKeyword ||
+  node.getKind() === SyntaxKind.FalseKeyword ||
+  node.getKind() === SyntaxKind.NullKeyword ||
+  (Node.isIdentifier(node) && node.getText() === 'undefined')
 
 /** Element surfaces `foldJsx` handles, as opposed to call sites. */
 const JSX_TYPES = new Set(['jsx-factory', 'jsx-pattern'])
@@ -493,6 +523,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     }
   }
   const runtimeRecipe = createRuntimeRecipe(ctx, runtimeCss)
+  const runtimeToken = createRuntimeToken(ctx)
 
   /**
    * Does this specifier name a module that exports the css API, exactly?
@@ -563,6 +594,8 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     classNames?: string[]
     /** Replacement text for a partially folded call, in place of a bare class string. */
     replacement?: string
+    /** The resolved value, for a `token()` call. Its presence is what marks one. */
+    value?: string
     /** Bindings to add to an existing import, by name so duplicates can be dropped. */
     insert?: { pos: number; names: string[] }
     node: Node
@@ -634,6 +667,97 @@ export const foldSource = (options: FoldOptions): FoldResult => {
         start: plan.start,
         end: plan.end,
       })
+      continue
+    }
+
+    // `token()` resolves to a CSS value rather than a class, so it takes its own path:
+    // none of the class-producing machinery below has anything to say about it. Folding it
+    // is worth the separate path because the alternative is shipping the whole token map —
+    // every token in the project — to resolve a handful of string lookups at runtime.
+    if (type === 'token') {
+      if (!call) {
+        skipped.push({ name, reason: 'no-call-expression', start: 0, end: 0 })
+        continue
+      }
+
+      const start = call.getStart()
+      const end = call.getEnd()
+
+      // The same foreign-module guard the call path applies, for the same reason: a box
+      // can carry nodes from any module the extractor resolved through, and offsets only
+      // mean something against the module being rewritten.
+      if (code.slice(start, end) !== call.getText()) {
+        skipped.push({ name, reason: 'no-call-expression', start: 0, end: 0 })
+        continue
+      }
+
+      const rangeKey = `${start}:${end}`
+      if (seenRanges.has(rangeKey)) continue
+      seenRanges.add(rangeKey)
+
+      const rootName = calleeRootName(call)
+      if (!rootName || !importsFor(call.getSourceFile()).has(rootName) || isShadowed(call, rootName)) {
+        skipped.push({ name, reason: 'not-imported', start, end })
+        continue
+      }
+
+      // `token.var(path)` returns the variable reference where `token(path)` returns the
+      // resolved value, and both are recorded under the name `token`. The parser does not
+      // currently record `.var` at all, so this guards a case that cannot arise today —
+      // and would silently inline the wrong half of the entry the day it does.
+      //
+      // Only a property access can name the wrong half, so only one is asked. A bare
+      // callee is whatever the file bound the import to, which `token as t` makes some
+      // name the matcher has never heard of.
+      const callee = Node.isCallExpression(call) ? call.getExpression() : undefined
+      if (
+        Node.isPropertyAccessExpression(callee) &&
+        !ctx.imports.matchers.tokens.match(callee.getNameNode().getText())
+      ) {
+        skipped.push({ name, reason: 'unsupported-kind', start, end })
+        continue
+      }
+
+      // The path has to be one resolved literal, not merely a string somewhere in `data`.
+      //
+      // A conditional argument boxes *every* branch: `token(dark ? 'colors.a' : 'colors.b')`
+      // arrives as `['colors.a', 'colors.b', {}]`, and reading `data[0]` off it picks one
+      // branch and deletes the condition that chose between them. Same for `a || 'colors.b'`.
+      // This is the guard the class path applies below, and for the same reason — the
+      // fallback argument gets a whole inertness check for a value that is *discarded*,
+      // so the argument that decides the result cannot have less.
+      if (!isStaticBox(item.box) || item.data.length !== 1) {
+        skipped.push({ name, reason: 'dynamic', start, end })
+        continue
+      }
+
+      const path = item.data[0]
+      if (typeof path !== 'string') {
+        skipped.push({ name, reason: 'dynamic', start, end })
+        continue
+      }
+
+      // Everything after the path is dead once the token resolves, but only inert
+      // arguments are provably free to delete — see `isInertArgument`.
+      const extraArguments = Node.isCallExpression(call) ? call.getArguments().slice(1) : []
+      if (!extraArguments.every(isInertArgument)) {
+        skipped.push({ name, reason: 'dynamic', start, end })
+        continue
+      }
+
+      const value = runtimeToken(path)
+      // Three ways to land here, all of them the same decision: the path names no token,
+      // the token's value is not a string (a numeric `fontWeights` token stays a number
+      // through the dictionary, and the runtime returns that number), or the value is
+      // empty. The runtime is `tokens[path]?.value || fallback`, so in the first and last
+      // cases the fallback decides; in the middle one no string literal can stand in for
+      // what it returns. Declining leaves all three where the user wrote them.
+      if (!value) {
+        skipped.push({ name, reason: 'unresolved-token', start, end })
+        continue
+      }
+
+      candidates.push({ item, call, node: call, start, end, value })
       continue
     }
 
@@ -748,12 +872,24 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       continue
     }
 
+    // A `token()` call, which becomes the value itself. No class is involved, so the
+    // class fields stay empty rather than carrying a `var(…)` reference that a consumer
+    // would go looking for a rule behind.
+    if (candidate.value !== undefined) {
+      magic.overwrite(start, end, JSON.stringify(candidate.value))
+      applied.push(...ranges)
+      folded.push({ name, kind: 'value', className: '', classNames: [], value: candidate.value, start, end })
+      collectSourceFiles(item.box, dependencyScan)
+      continue
+    }
+
     if (candidate.replacement) {
       magic.overwrite(start, end, candidate.replacement)
       applyInsert(candidate.insert)
       applied.push(...ranges)
       folded.push({
         name,
+        kind: 'class',
         className: candidate.className!,
         // Filtered, because an element or call whose classes are all built at runtime
         // resolves no literal — `classNames` is what a consumer checks for CSS behind it,
@@ -772,6 +908,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       applied.push(...ranges)
       folded.push({
         name,
+        kind: 'class',
         className: candidate.className!,
         // Filtered, because an element or call whose classes are all built at runtime
         // resolves no literal — `classNames` is what a consumer checks for CSS behind it,
@@ -814,7 +951,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     // characters, and any quote an arbitrary value introduced.
     magic.overwrite(start, end, JSON.stringify(className))
     applied.push(...ranges)
-    folded.push({ name, className, classNames: [className], start, end })
+    folded.push({ name, kind: 'class', className, classNames: [className], start, end })
     collectSourceFiles(item.box, dependencyScan)
   }
 
