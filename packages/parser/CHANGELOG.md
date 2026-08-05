@@ -2465,7 +2465,7 @@
   ```
 
 - 3a04a927: Fix static extraction of the
-  [Array Syntax](https://bamboo-css.com/docs/concepts/responsive-design#the-array-syntax) when used with runtime
+  [Array Syntax](https://bamboocss.com/docs/concepts/responsive-design#the-array-syntax) when used with runtime
   conditions
 
   Given a component like this:

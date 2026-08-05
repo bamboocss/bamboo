@@ -1170,7 +1170,7 @@
     https://nodejs.org/api/packages.html#subpath-imports
   - for a component library, use a dedicated workspace package (e.g. `@acme/styled-system`) and use
     `importMap: "@acme/styled-system"` so that Bamboo knows which entrypoint to extract, e.g.
-    `import { css } from '@acme/styled-system/css'` https://bamboo-css.com/docs/guides/component-library
+    `import { css } from '@acme/styled-system/css'` https://bamboocss.com/docs/guides/component-library
 
 ### Patch Changes
 

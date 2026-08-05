@@ -72,8 +72,7 @@ You may wish to use this starter template to help you get going: https://github.
 ## Proposing new or changed API?
 
 Please provide thoughtful comments and some sample API code. Proposals that don't line up with our roadmap or don't have
-a thoughtful explanation will be closed. You can check the existing proposals and our official roadmap here:
-https://bamboo-css.canny.io/
+a thoughtful explanation will be closed.
 
 ## Making a Pull Request?
 

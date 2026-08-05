@@ -789,7 +789,7 @@
 ### Patch Changes
 
 - 3a04a927: Fix static extraction of the
-  [Array Syntax](https://bamboo-css.com/docs/concepts/responsive-design#the-array-syntax) when used with runtime
+  [Array Syntax](https://bamboocss.com/docs/concepts/responsive-design#the-array-syntax) when used with runtime
   conditions
 
   Given a component like this:
@@ -934,7 +934,7 @@
 ### Patch Changes
 
 - be24d1a0: Fix issue (https://github.com/bamboocss/bamboo/issues/1365) with the `unbox` fn that removed nullish values,
-  which could be useful for the [Array Syntax](https://bamboo-css.com/docs/concepts/responsive-design#the-array-syntax)
+  which could be useful for the [Array Syntax](https://bamboocss.com/docs/concepts/responsive-design#the-array-syntax)
 
   ```ts
   const className = css({

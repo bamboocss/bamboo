@@ -1620,7 +1620,7 @@ export default defineConfig({
     https://nodejs.org/api/packages.html#subpath-imports
   - for a component library, use a dedicated workspace package (e.g. `@acme/styled-system`) and use
     `importMap: "@acme/styled-system"` so that Bamboo knows which entrypoint to extract, e.g.
-    `import { css } from '@acme/styled-system/css'` https://bamboo-css.com/docs/guides/component-library
+    `import { css } from '@acme/styled-system/css'` https://bamboocss.com/docs/guides/component-library
 
 ## [0.41.0](#0.41.0) - 2024-06-16
 
@@ -3114,7 +3114,7 @@ It's known for causing several issues:
 - use [package.json #imports](https://nodejs.org/api/packages.html#subpath-imports) and/or tsconfig path aliases (prefer
   package.json#imports when possible, TS 5.4 supports them by default) like `#styled-system/css` instead of
   `styled-system/css`
-- for a [component library](https://bamboo-css.com/docs/guides/component-library), use a dedicated workspace package
+- for a [component library](https://bamboocss.com/docs/guides/component-library), use a dedicated workspace package
   (e.g. `@acme/styled-system`) and use `importMap: "@acme/styled-system"` so that Bamboo knows which entrypoint to
   extract, e.g. `import { css } from '@acme/styled-system/css'`
 
@@ -5283,7 +5283,7 @@ bamboo cssgen "static" --outfile dist/static.css
 
 - Fix preset merging, config wins over presets.
 - Fix issues with class merging in the `styled` factory fn for Qwik, Solid and Vue.
-- Fix static extraction of the [Array Syntax](https://bamboo-css.com/docs/concepts/responsive-design#the-array-syntax)
+- Fix static extraction of the [Array Syntax](https://bamboocss.com/docs/concepts/responsive-design#the-array-syntax)
   when used with runtime conditions
 
 Given a component like this:
@@ -5725,7 +5725,7 @@ const baseStyle = cva({
 ### Fixed
 
 - Fix issue (https://github.com/bamboocss/bamboo/issues/1365) with the `unbox` fn that removed nullish values, which
-  could be useful for the [Array Syntax](https://bamboo-css.com/docs/concepts/responsive-design#the-array-syntax)
+  could be useful for the [Array Syntax](https://bamboocss.com/docs/concepts/responsive-design#the-array-syntax)
 
 ```ts
 const className = css({
