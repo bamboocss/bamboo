@@ -36,22 +36,28 @@ function toHash(value) {
 //#endregion
 //#region src/important.ts
 const importantRegex = /\s*!(important)?/i;
+const whitespaceRegex = /\s/;
 /**
 * Collapse every run of whitespace to a single space, which is what the class name is
 * built from. Exported because `leafClass` has to reproduce this exact pipeline, and a
 * second copy of it would be free to drift from the one `createCss` runs.
 */
 function sanitize(value) {
-	return typeof value === "string" ? value.replaceAll(/[\n\s]+/g, " ") : value;
+	if (typeof value !== "string") return value;
+	return whitespaceRegex.test(value) ? value.replaceAll(/[\n\s]+/g, " ") : value;
 }
 function isImportant(value) {
-	return typeof value === "string" ? importantRegex.test(value) : false;
+	if (typeof value !== "string") return false;
+	return value.includes("!") && importantRegex.test(value);
 }
 function withoutImportant(value) {
-	return typeof value === "string" ? value.replace(importantRegex, "").trim() : value;
+	if (typeof value !== "string") return value;
+	if (!value.includes("!")) return value.trim();
+	return value.replace(importantRegex, "").trim();
 }
 function withoutSpace(str) {
-	return typeof str === "string" ? str.replaceAll(" ", "_") : str;
+	if (typeof str !== "string") return str;
+	return str.includes(" ") ? str.replaceAll(" ", "_") : str;
 }
 //#endregion
 //#region src/memo.ts
