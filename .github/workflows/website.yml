@@ -45,11 +45,19 @@ jobs:
 
       # Assets-only deploy -- wrangler.jsonc declares no `main`, so this uploads
       # `out/` to Cloudflare's asset store and runs no Worker code.
+      #
+      # Invoked through `pnpm dlx` rather than cloudflare/wrangler-action. The action
+      # shells out to `npm i wrangler` inside `workingDirectory`, and website/package.json
+      # declares `workspace:*` dependencies that npm cannot parse -- it fails with
+      # EUNSUPPORTEDPROTOCOL before it ever reaches Cloudflare. `pnpm dlx` resolves
+      # wrangler into a temp prefix instead, so the workspace manifest is never touched.
+      #
+      # The version is pinned. Left to itself the action installs its own default, which
+      # on the v3 tag is wrangler 3.90.0 -- old enough to predate assets-only Workers.
       - name: Deploy
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: website
-          command: deploy
+        run: pnpm dlx wrangler@4.118.0 deploy
+        working-directory: website
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
