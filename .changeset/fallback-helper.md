@@ -16,8 +16,11 @@ css({ height: fallback('100dvh', '100vh') })
 css({ height: 'fallback(100dvh, 100vh)' }) // identical
 ```
 
-The extractor evaluates the call, including under an alias (`import { fallback as fb }`), so the value reaching `css()`
-is the same literal either way. A project's own local `fallback` function is left alone — only an identifier that
-resolves to the `styled-system/css` import is treated as this helper.
+The extractor evaluates the call, including under an alias (`import { fallback as fb }`). A project's own local
+`fallback` function is left alone — only an identifier that resolves to a bamboo import is treated as this helper.
+
+One case where the forms differ: a candidate built by another call, such as `token()`, cannot be resolved from inside
+the helper. Use the string form there — `` `fallback(${token('sizes.4')}, 100vh)` `` — which interpolates before the
+extractor sees it. The helper is not emitted for `syntax: 'template-literal'`.
 
 The candidates are still not individually type-checked, the same trade the `[...]` escape hatch makes.

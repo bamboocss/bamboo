@@ -612,13 +612,21 @@ Some CSS values have no single spelling every browser understands. CSS handles t
 property more than once – a browser keeps the last declaration it can parse and discards the rest. A style object can't
 express that, since it can't hold the same key twice, so Bamboo gives you `fallback(...)`.
 
-Write the candidates **most-preferred first**, either as a string or through the `fallback` helper — they compile to the
-same thing, so pick whichever reads better:
+Write the candidates **most-preferred first**, either as a string or through the `fallback` helper:
 
 ```js
 import { css, fallback } from '../styled-system/css'
 
 css({ height: fallback('calc(100dvh - 100px)', 'calc(100vh - 100px)') })
+```
+
+Both compile to the same value. The helper exists so the feature has an import to find and a signature to hover; the
+string form is the one to reach for when a candidate is itself built by a call, since `token()` and friends cannot be
+resolved from inside another function call:
+
+```js
+css({ height: `fallback(${token('sizes.4')}, 100vh)` }) // ✅
+css({ height: fallback(token('sizes.4'), '100vh') }) // ❌ not extractable
 ```
 
 ```js

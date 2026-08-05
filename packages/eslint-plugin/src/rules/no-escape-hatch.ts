@@ -43,9 +43,9 @@ const rule = createRule({
         return
       }
 
-      // Stripping the outer brackets is only a fix when the whole value is the escape hatch.
-      // Inside a fallback the brackets are on the candidates, and removing the first and last
-      // character of the node would leave `allback(...` behind.
+      // The suggestion rewrites the value to its unwrapped form, which only means anything
+      // when the whole value is the escape hatch. Inside a fallback the brackets are on the
+      // candidates, so `getArbitraryValue` returns the value unchanged and the fix is a no-op.
       if (parseFallbackValue(value)) {
         context.report({ messageId: 'escapeHatch', node })
         return

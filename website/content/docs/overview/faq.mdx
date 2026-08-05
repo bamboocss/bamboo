@@ -51,8 +51,9 @@ is highest under [`separator: '-'`](/docs/references/config#separator), where or
 `top-nav` collide. Prefixes that no utility uses — `js-`, `e2e-`, `test-` — are always safe, and so is anything without
 the separator in it.
 
-Recipe classes are never merged, and neither is a class whose property is not a utility bamboo registered. Enabling
-[`hash`](/docs/references/config#hash) turns merging off entirely, since a hashed class carries no property to compare.
+Recipe classes are never merged, and neither is a class whose property is not a utility bamboo registered. Hashing class
+names — [`hash: true`](/docs/references/config#hash) or `hash: { className: true }` — turns merging off entirely, since
+a hashed class carries no property to compare.
 
 See [Classname concatenation](/docs/concepts/writing-styles#classname-concatenation) for the full rules.
 

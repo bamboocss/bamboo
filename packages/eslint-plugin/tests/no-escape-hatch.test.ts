@@ -6,7 +6,7 @@ eslintTester.run(RULE_NAME, rule, {
   invalid: [
     {
       // The value as a whole is not an escape hatch, but a candidate inside it is. No
-      // suggestion: stripping the outer characters would leave `allback(...` behind.
+      // suggestion, because unwrapping the whole value would be a no-op here.
       code: multiline`
   import { css } from './bamboo/css';
   

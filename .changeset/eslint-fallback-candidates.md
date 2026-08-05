@@ -8,5 +8,5 @@ The rule tests whether the value as a whole is an escape hatch, and a fallback w
 `fallback([stretch], 100%)` slipped past it even though `[stretch]` is exactly what the rule exists to catch. Each
 candidate is now checked on its own.
 
-No autofix is offered in that case: the existing suggestion strips the first and last character of the value, which
-would leave `allback(...` behind. The report still points at the value.
+No autofix is offered in that case: the existing suggestion rewrites the whole value to its unwrapped form, which for a
+fallback would be a no-op. The report still points at the value.
