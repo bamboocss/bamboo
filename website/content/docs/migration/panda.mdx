@@ -11,10 +11,12 @@ For most projects this is a find-and-replace of `panda` with `bamboo`, plus a re
 
 ## What stays the same
 
-- `css`, `cva`, `sva`, `cx`, the pattern functions and the JSX factory – same names, same signatures.
+- `css`, `cva`, `sva`, `cx`, the pattern functions and the JSX factory – same names, same signatures. `cx` resolves
+  conflicts rather than concatenating, which is a behaviour change; see [below](#cx-resolves-conflicts).
 - Recipes, slot recipes, variants, compound variants and default variants.
 - Tokens, semantic tokens, conditions, breakpoints, themes, `staticCss`, cascade layers.
-- The config shape. Every key you have in `panda.config.ts` is valid in `bamboo.config.ts`.
+- The config shape, with one exception. Every key you have in `panda.config.ts` is valid in `bamboo.config.ts` except
+  `studio`, which has no equivalent – delete it.
 - The output directory. It still defaults to `styled-system`, so imports like `styled-system/css` do not move.
 - `jsxFactory`, which still defaults to `styled`.
 
@@ -130,6 +132,32 @@ pnpm bamboo codegen
 ```
 
 </Steps>
+
+## `cx` resolves conflicts
+
+This is the one place where identical code produces different output, so it is worth reading before you migrate a large
+app.
+
+Panda's `cx` joins classnames. Two atomic classes for the same property both end up on the element, and which one the
+browser applies depends on their order in the stylesheet rather than the order you passed them. Bamboo's `cx` resolves
+that — the last one passed wins:
+
+```js
+cx(css({ paddingX: '4' }), css({ paddingX: '2' }))
+// panda:  'px_4 px_2'
+// bamboo: 'px_2'
+```
+
+In practice this is the fix you wanted: `cx(recipeClasses, props.className)` is what every JSX factory emits, so a
+caller's `className` now reliably overrides the component's own styles. Two consequences to plan for:
+
+- **DOM snapshots will change.** Elements carry one class where they carried two, and the winner keeps the position of
+  the class it replaced.
+- **A hand-written class shaped exactly like a utility class can be dropped.** `top_bar` is what bamboo emits for
+  `css({ top: 'bar' })`, so it merges with `top_0`. If you pass your own classes through a styled component, avoid names
+  of the form `<utility><separator><value>`.
+
+See [Classname concatenation](/docs/concepts/writing-styles#classname-concatenation) for the full rules.
 
 ## Things that are easy to miss
 
