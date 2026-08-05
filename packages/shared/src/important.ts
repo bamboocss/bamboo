@@ -1,3 +1,5 @@
+import { FALLBACK_SEPARATOR } from './fallback-value'
+
 const importantRegex = /\s*!(important)?/i
 const whitespaceRegex = /\s/
 
@@ -23,7 +25,13 @@ const whitespaceRegex = /\s/
  */
 export function sanitize<T>(value: T): T {
   if (typeof value !== 'string') return value
-  return (whitespaceRegex.test(value) ? value.replaceAll(/[\n\s]+/g, ' ') : value) as T
+  const collapsed = whitespaceRegex.test(value) ? value.replaceAll(/[\n\s]+/g, ' ') : value
+  // NUL is what a `fallback(...)` joins its candidates with on the way to `stringify`. It
+  // cannot appear in CSS, but it can appear in a JS string, and one arriving from pasted or
+  // generated content would be split into declarations nobody wrote — and would put a raw
+  // NUL in the class name, which the CSS parser rewrites to U+FFFD so the rule stops
+  // matching the element. Author values never carry it past here.
+  return (collapsed.includes(FALLBACK_SEPARATOR) ? collapsed.replaceAll(FALLBACK_SEPARATOR, '') : collapsed) as T
 }
 
 export function isImportant<T extends string | number | boolean>(value: T) {
@@ -58,7 +66,15 @@ export function markImportant(obj: Dict) {
   while (stack.length > 0) {
     const { obj, result } = stack.pop()!
     for (const [key, value] of Object.entries(obj)) {
-      if (typeof value === 'string' || typeof value === 'number') {
+      if (typeof value === 'string' && value.includes(FALLBACK_SEPARATOR)) {
+        // Every candidate of a fallback carries the mark, not just the last one. Marking
+        // only the winning declaration would leave the others losing an important-priority
+        // fight in exactly the browsers that have to fall back to them.
+        result[key] = value
+          .split(FALLBACK_SEPARATOR)
+          .map((candidate) => `${candidate} !important`)
+          .join(FALLBACK_SEPARATOR)
+      } else if (typeof value === 'string' || typeof value === 'number') {
         result[key] = `${value} !important`
       } else if (typeof value === 'object' && value !== null) {
         const next = Array.isArray(value) ? [] : {}

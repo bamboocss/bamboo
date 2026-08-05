@@ -1,4 +1,4 @@
-import { hypenateProperty } from '@bamboocss/shared'
+import { FALLBACK_SEPARATOR, hypenateProperty } from '@bamboocss/shared'
 import type { Dict } from '@bamboocss/types'
 import { unitlessProperties } from './unitless'
 
@@ -13,6 +13,20 @@ interface StringifyContext {
 
 /* Grab object prototype to compare in the loop */
 const toString = Object.prototype.toString
+
+/**
+ * Give a numeric value its unit, the way a declaration written on its own would get one.
+ *
+ * Exported because a `fallback(...)` has to apply this before its candidates are joined:
+ * joining makes them strings, and a string never reaches the numeric branch in `write`.
+ * Without it `marginTop: fallback(4, 8)` emits `margin-top: 8`, which is not CSS, and the
+ * browser drops both declarations.
+ */
+export function withCssUnit(property: string, value: string | number, isVariableLike?: boolean) {
+  if (typeof value !== 'number') return value
+  const bare = value === 0 || unitlessProperties.has(property) || (isVariableLike ?? property.startsWith('--'))
+  return bare ? String(value) : `${value}px`
+}
 
 /** Returns a string of CSS from an object of CSS. */
 export function stringify(
@@ -50,10 +64,7 @@ export function stringify(
     let value = data
 
     if (typeof value === 'number') {
-      const shouldAddPx = !(value === 0 || unitlessProperties.has(name) || isVariableLike)
-      if (shouldAddPx) {
-        value = `${value}px`
-      }
+      value = withCssUnit(name, value, isVariableLike)
     }
 
     // Format property
@@ -84,6 +95,17 @@ export function stringify(
 
         // Declaration rule (no nested rules), just property and value
         if (!isObjectLike) {
+          // The candidates of a `fallback(...)` value arrive joined, because a style object
+          // cannot hold one property twice and both other carriers already mean something
+          // else here. Repeating the declaration is what CSS does with a fallback: the
+          // browser keeps the last one it can parse.
+          if (typeof data === 'string' && data.includes(FALLBACK_SEPARATOR)) {
+            for (const candidate of data.split(FALLBACK_SEPARATOR)) {
+              cssText = write(cssText, selectors, conditions, name, candidate, isAtRuleLike, isVariableLike)
+            }
+            continue
+          }
+
           cssText = write(cssText, selectors, conditions, name, data as string | number, isAtRuleLike, isVariableLike)
           continue
         }

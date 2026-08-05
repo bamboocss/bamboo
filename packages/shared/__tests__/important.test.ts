@@ -1,5 +1,6 @@
+import { FALLBACK_SEPARATOR } from '../src/fallback-value'
 import { describe, expect, test } from 'vitest'
-import { isImportant, sanitize, withoutImportant, withoutSpace } from '../src/important'
+import { isImportant, markImportant, sanitize, withoutImportant, withoutSpace } from '../src/important'
 
 /**
  * These four run per style leaf on every `css()` cache miss and each carries a fast path for
@@ -96,6 +97,25 @@ describe('important and space handling', () => {
       expect(withoutSpace('a\tb')).toBe('a\tb')
       expect(withoutSpace('red')).toBe('red')
       expect(withoutSpace(4)).toBe(4)
+    })
+  })
+  describe('fallback candidates', () => {
+    const SEP = FALLBACK_SEPARATOR
+
+    test('markImportant marks every candidate, not just the winning one', () => {
+      // Marking only the last would leave the fallbacks losing an important-priority fight
+      // in exactly the browsers that have to use them.
+      expect(markImportant({ height: `100vh${SEP}100dvh` })).toEqual({
+        height: `100vh !important${SEP}100dvh !important`,
+      })
+    })
+
+    test('markImportant leaves an ordinary value alone', () => {
+      expect(markImportant({ height: '100vh' })).toEqual({ height: '100vh !important' })
+    })
+
+    test('sanitize strips a separator arriving from author input', () => {
+      expect(sanitize(`100px${SEP}200px`)).toBe('100px200px')
     })
   })
 })

@@ -1,11 +1,15 @@
+import { logger } from '@bamboocss/logger'
 import {
   compact,
+  FALLBACK_SEPARATOR,
   getArbitraryValue,
   hypenateProperty,
+  isFallbackCall,
   isFunction,
   isString,
   mapToJson,
   memo,
+  parseFallbackValue,
   toHash,
   withoutSpace,
 } from '@bamboocss/shared'
@@ -22,6 +26,7 @@ import type {
 } from '@bamboocss/types'
 import type { TransformResult } from './types'
 import { colorMix } from './color-mix'
+import { withCssUnit } from './stringify'
 
 export interface UtilityOptions {
   config?: UtilityConfig
@@ -499,22 +504,128 @@ export class Utility {
   /**
    * Returns the resolved className and styles for a given property and value
    */
+  private resolveStyleValue = (value: string) => {
+    const styleValue = getArbitraryValue(value)
+    return isString(styleValue) ? this.tokens.expandReferenceInValue(styleValue) : styleValue
+  }
+
+  /**
+   * Resolve each candidate of a `fallback(...)` value on its own, then stack the results into
+   * one declaration list per property.
+   *
+   * Candidates are authored most-preferred first and emitted in reverse, because the CSS
+   * mechanism this compiles to is the cascade: a browser keeps the last declaration it can
+   * parse and discards the ones it cannot, so the preferred value has to come last.
+   *
+   * Each candidate goes through the ordinary single-value path, so tokens and arbitrary
+   * values resolve inside a fallback exactly as they do outside one.
+   *
+   * ## Why every candidate has to resolve to exactly one declaration
+   *
+   * The cascade only arbitrates between declarations of the *same property*: the browser
+   * keeps the last `height` it can parse. The moment a candidate resolves to more than one
+   * declaration, the extras are not part of that contest and apply unconditionally —
+   * whichever candidate won.
+   *
+   * That is not hypothetical. `transitionProperty` emits `--transition-prop` alongside
+   * `transition-property`, and a custom property accepts any token sequence, so the
+   * preferred `--transition-prop` always wins even in the browser that fell back. Anything
+   * reading that variable then disagrees with the property beside it. `lineClamp` emits four
+   * declarations for a number and one for `none`, leaving `display: -webkit-box` applying
+   * when the author asked for no clamping at all. `divideX` emits a nested rule, where there
+   * is no cascade between candidates whatsoever.
+   *
+   * A count of matching keys does not separate these from the honest cases — `transitionProperty`
+   * has two keys in every candidate. Requiring a single declaration does, and it is a rule
+   * that can be explained. Anything else is reported and resolved to the preferred candidate
+   * alone: wrong-looking CSS nobody asked for is worse than a fallback quietly not applying.
+   */
+  private getFallbackStyles = (key: string, values: string[]) => {
+    const decline = (reason: string) => {
+      logger.warn('utility', `\`${key}: fallback(${values.join(', ')})\` ${reason} Only \`${values[0]}\` was applied.`)
+    }
+
+    // Checked before resolving, because a nested call resolves to itself and would be
+    // emitted verbatim as a value that is not CSS.
+    const nested = values.find(isFallbackCall)
+    if (nested) {
+      // Nothing to fall back to: the preferred candidate *is* the nested call, so resolving
+      // it would emit `fallback(...)` as a value. Drop the declaration, as a malformed call
+      // at the top level does.
+      logger.warn(
+        'utility',
+        `\`${key}: fallback(${values.join(', ')})\` nests another \`fallback(...)\` in \`${nested}\`, which has no meaning as a candidate. The declaration was dropped.`,
+      )
+      return {}
+    }
+
+    const resolved = values.map((value) => this.getOrCreateStyle(key, this.resolveStyleValue(value)))
+    const preferred = resolved[0]
+    const prop = Object.keys(preferred)[0]
+
+    const isStackable = resolved.every((styles) => {
+      const props = Object.keys(styles)
+      if (props.length !== 1 || props[0] !== prop) return false
+      const value = styles[prop]
+      // An array is a comma-separated list — a font stack, say — which stacks fine once
+      // joined. An object is a nested rule, which does not stack at all.
+      return isString(value) || typeof value === 'number' || Array.isArray(value)
+    })
+
+    if (!isStackable) {
+      decline('does not resolve to a single declaration per candidate, so no fallback was emitted.')
+      return preferred
+    }
+
+    const seen: string[] = []
+
+    // Reverse order: least-preferred declaration first, so the preferred one wins.
+    for (let i = resolved.length - 1; i >= 0; i--) {
+      const value = resolved[i][prop]
+      // The unit has to land before the join, which turns the number into a string that
+      // `stringify` will no longer recognise as one.
+      const declaration = Array.isArray(value) ? value.join(',') : String(withCssUnit(prop, value as string | number))
+      // A candidate that resolves to the declaration already emitted adds nothing, and
+      // repeating it would only make the rule bigger.
+      if (seen[seen.length - 1] !== declaration) seen.push(declaration)
+    }
+
+    return { [prop]: seen.length > 1 ? seen.join(FALLBACK_SEPARATOR) : seen[0] }
+  }
+
   transform = (prop: string, value: string | undefined): TransformResult => {
     if (value == null) {
       return { className: '', styles: {} }
     }
 
-    const key = this.resolveShorthand(prop)
+    // NUL is what this method joins fallback candidates with on the way out. It cannot
+    // appear in CSS, but it can appear in a JS string, and one arriving from pasted or
+    // generated content would be split into declarations nobody wrote — and would put a raw
+    // NUL in the class name, which the CSS parser rewrites to U+FFFD so the rule stops
+    // matching the element it is on.
+    // Numbers reach here too, despite the signature.
+    if (isString(value) && value.includes(FALLBACK_SEPARATOR)) {
+      value = value.replaceAll(FALLBACK_SEPARATOR, '')
+    }
 
-    let styleValue = getArbitraryValue(value)
-    if (isString(styleValue)) {
-      styleValue = this.tokens.expandReferenceInValue(styleValue)
+    const key = this.resolveShorthand(prop)
+    const fallbackValues = parseFallbackValue(value)
+
+    // A value that opens with `fallback(` and does not parse is a typo, not a plain value.
+    // Emitted verbatim it is not CSS, and PostCSS rejects the declaration — which in a
+    // grouped rule takes its neighbours down with it, reported only as a syntax error that
+    // never names the property. Drop the declaration and say what happened instead.
+    if (!fallbackValues && isFallbackCall(value)) {
+      logger.warn('utility', `Malformed \`fallback(...)\` in \`${key}: ${value}\`. Check for an unbalanced ( or [.`)
+      return { className: this.getOrCreateClassName(key, withoutSpace(value)), styles: {} }
     }
 
     return compact({
       layer: this.configs.get(key)?.layer,
       className: this.getOrCreateClassName(key, withoutSpace(value)),
-      styles: this.getOrCreateStyle(key, styleValue),
+      styles: fallbackValues
+        ? this.getFallbackStyles(key, fallbackValues)
+        : this.getOrCreateStyle(key, this.resolveStyleValue(value)),
     })
   }
 
