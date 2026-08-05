@@ -45,7 +45,6 @@
 
 - 6fccbd9: Lower a ternary style value to a ternary between two class literals, instead of leaving the property to the
   runtime.
-
   - `css({ margin: '2', color: isError ? 'red.500' : 'green.500' })` now folds to
     `cx('m_2', isError ? 'c_red.500' : 'c_green.500')`, removing the `css()` call entirely when nothing else is dynamic.
   - Independent conditionals stay linear: two of them emit two ternaries, not four combinations.
@@ -138,21 +137,21 @@
 
   ```tsx
   // you write
-  export const title = css({ fontSize: "lg", fontWeight: "bold" });
+  export const title = css({ fontSize: 'lg', fontWeight: 'bold' })
 
   // the bundle gets
-  export const title = "fs_lg fw_bold";
+  export const title = 'fs_lg fw_bold'
   ```
 
   CSS output is unchanged — only the JavaScript changes. It is **off by default** and build-only:
 
   ```ts
   // vite.config.ts
-  import bamboocss from "@bamboocss/vite";
+  import bamboocss from '@bamboocss/vite'
 
   export default defineConfig({
     plugins: [bamboocss({ transform: true })],
-  });
+  })
   ```
 
   The plugin does not emit CSS. Keep your existing PostCSS setup for that.
@@ -226,7 +225,6 @@
   The extractor answers "what styles could this produce", so when one arm of `a ? b : c`, `a || b` or `a && b` does not
   evaluate it returns the other rather than refusing. That is right for generating CSS and wrong for rewriting source,
   where the arm it kept becomes the only one that runs.
-
   - `css({ color: e ? 'red.300' : fn() })` folded to `c_red.300`, silently choosing a branch. Same for
     `fn() || 'blue.500'`, `fn() && 'blue.500'`, `on && fn()` with a truthy `on`, and `empty || 'blue.500'` with a falsy
     `empty`.

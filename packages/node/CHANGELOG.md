@@ -74,7 +74,6 @@
   virtual, so stopping at them would leave the rule pointing at colours that had been removed.
 
   Two limits are deliberate:
-
   - Only custom properties the token system declares are eligible. `globalCss` output is never touched. `preset-base`
     declares the filter and gradient composition properties on the universal selector precisely so a parent's value
     cannot inherit into a descendant; they look unreferenced, and removing them would change rendering. The `styles.css`
@@ -102,7 +101,6 @@
   several patterns, so it sees less than the ceiling — JS goes from 242.22 KB to 236.95 KB with the CSS byte-identical.
 
   Two details in the emitted file are load-bearing:
-
   - `sideEffects` lists CSS globs rather than being a bare `false`. A bare `false` permits a bundler to drop
     `import 'styled-system/styles.css'`, which is how the stylesheet reaches CLI-flow apps. Vite happens to retain CSS
     imports regardless, but webpack historically does not. Both `*.css` and `**/*.css` are listed because the stylesheet
@@ -404,7 +402,6 @@
 - 22b444d: Replace discontinued `tsconfck` with [`get-tsconfig`](https://github.com/privatenumber/get-tsconfig) for
   resolving and parsing `tsconfig.json` (including `extends`).
 - bc2b8d7: Dependency updates for reported security advisories.
-
   - **@bamboocss/node** / **@bamboocss/token-dictionary**: bump `picomatch` to 4.0.4
     ([GHSA-3v7f-55p6-f55p](https://github.com/advisories/GHSA-3v7f-55p6-f55p),
     [GHSA-c2c7-rcm5-vvqj](https://github.com/advisories/GHSA-c2c7-rcm5-vvqj)).
@@ -594,8 +591,8 @@
   **Spec Usage:**
 
   ```javascript
-  import tokens from "styled-system/specs/tokens";
-  import recipes from "styled-system/specs/recipes";
+  import tokens from 'styled-system/specs/tokens'
+  import recipes from 'styled-system/specs/recipes'
   ```
 
 ### Patch Changes
@@ -706,7 +703,6 @@
 ### Patch Changes
 
 - bb32028: Fix "Browserslist: caniuse-lite is outdated" warning by updating `browserslist` and PostCSS-related packages:
-
   - Update `browserslist` from 4.23.3 to 4.24.4
   - Update `postcss` from 8.4.49 to 8.5.6
   - Update `postcss-nested` from 6.0.1 to 7.0.2
@@ -870,43 +866,43 @@
   Add `createStyleContext` function to framework artifacts for React, Preact, Solid, and Vue frameworks
 
   ```tsx
-  import { sva } from "styled-system/css";
-  import { createStyleContext } from "styled-system/jsx";
+  import { sva } from 'styled-system/css'
+  import { createStyleContext } from 'styled-system/jsx'
 
   const card = sva({
-    slots: ["root", "label"],
+    slots: ['root', 'label'],
     base: {
       root: {
-        color: "red",
-        bg: "red.300",
+        color: 'red',
+        bg: 'red.300',
       },
       label: {
-        fontWeight: "medium",
+        fontWeight: 'medium',
       },
     },
     variants: {
       size: {
         sm: {
           root: {
-            padding: "10px",
+            padding: '10px',
           },
         },
         md: {
           root: {
-            padding: "20px",
+            padding: '20px',
           },
         },
       },
     },
     defaultVariants: {
-      size: "sm",
+      size: 'sm',
     },
-  });
+  })
 
-  const { withProvider, withContext } = createStyleContext(card);
+  const { withProvider, withContext } = createStyleContext(card)
 
-  const CardRoot = withProvider("div", "root");
-  const CardLabel = withContext("label", "label");
+  const CardRoot = withProvider('div', 'root')
+  const CardLabel = withContext('label', 'label')
   ```
 
   Then, use like this:
@@ -1131,7 +1127,6 @@
 
 - fea78c7: Adds support for static analysis of used tokens and recipe variants. It helps to get a birds-eye view of how
   your design system is used and answers the following questions:
-
   - What tokens are most used?
   - What recipe variants are most used?
   - How many hardcoded values vs tokens do we have?
@@ -1355,21 +1350,21 @@
 - ec64819: Change recipes `className` to be optional, both for `recipes` and `slotRecipes`, with a fallback to its name.
 
   ```ts
-  import { defineConfig } from "@bamboocss/core";
+  import { defineConfig } from '@bamboocss/core'
 
   export default defineConfig({
     recipes: {
       button: {
-        className: "button", // 👈 was mandatory, is now optional
+        className: 'button', // 👈 was mandatory, is now optional
         variants: {
           size: {
-            sm: { padding: "2", borderRadius: "sm" },
-            md: { padding: "4", borderRadius: "md" },
+            sm: { padding: '2', borderRadius: 'sm' },
+            md: { padding: '4', borderRadius: 'md' },
           },
         },
       },
     },
-  });
+  })
   ```
 
 - 17a1932: [BREAKING] Removed the legacy `config.optimize` option because it was redundant. Now, we always optimize the
@@ -1428,12 +1423,10 @@
 - 5dcdae4: Improve monorepo setup DX by exposing some cli flags
 
   ### `bamboo init`
-
   - Added new flag `--no-codegen` to skip codegen during initialization
   - Added new flag `--outdir` to specify the output directory for generated files
 
   ### `bamboo emit-pkg`
-
   - Added new `--base` flag to specify the base directory for the entrypoints in the generated `package.json#exports`
     field
 
@@ -1785,7 +1778,6 @@
 ### Minor Changes
 
 - f0296249: - Sort the longhand/shorthand atomic rules in a deterministic order to prevent property conflicts
-
   - Automatically merge the `base` object in the `css` root styles in the runtime
   - This may be a breaking change depending on how your styles are created
 
@@ -1793,10 +1785,10 @@
 
   ```ts
   css({
-    padding: "1px",
-    paddingTop: "3px",
-    paddingBottom: "4px",
-  });
+    padding: '1px',
+    paddingTop: '3px',
+    paddingBottom: '4px',
+  })
   ```
 
   Will now always generate the following css:
@@ -1924,8 +1916,8 @@
   ```ts
   export default defineConfig({
     // ...
-    dependencies: ["path/to/files/**.ts"],
-  });
+    dependencies: ['path/to/files/**.ts'],
+  })
   ```
 
   - Invoke `config:change` hook in more situations (when the `--watch` flag is passed to `bamboo codegen`,
@@ -1958,7 +1950,6 @@
 ### Minor Changes
 
 - f58f6df2: Refactor `config.hooks` to be much more powerful, you can now:
-
   - Tweak the config after it has been resolved (after presets are loaded and merged), this could be used to dynamically
     load all `recipes` from a folder
   - Transform a source file's content before parsing it, this could be used to transform the file content to a
@@ -1977,54 +1968,39 @@
      * Called when the config is resolved, after all the presets are loaded and merged.
      * This is the first hook called, you can use it to tweak the config before the context is created.
      */
-    "config:resolved": (args: { conf: LoadConfigResult }) => MaybeAsyncReturn;
+    'config:resolved': (args: { conf: LoadConfigResult }) => MaybeAsyncReturn
     /**
      * Called when the Bamboo context has been created and the API is ready to be used.
      */
-    "context:created": (args: {
-      ctx: ApiInterface;
-      logger: LoggerInterface;
-    }) => void;
+    'context:created': (args: { ctx: ApiInterface; logger: LoggerInterface }) => void
     /**
      * Called when the config file or one of its dependencies (imports) has changed.
      */
-    "config:change": (args: { config: UserConfig }) => MaybeAsyncReturn;
+    'config:change': (args: { config: UserConfig }) => MaybeAsyncReturn
     /**
      * Called after reading the file content but before parsing it.
      * You can use this hook to transform the file content to a tsx-friendly syntax so that Bamboo's parser can parse it.
      * You can also use this hook to parse the file's content on your side using a custom parser, in this case you don't have to return anything.
      */
-    "parser:before": (args: {
-      filePath: string;
-      content: string;
-    }) => string | void;
+    'parser:before': (args: { filePath: string; content: string }) => string | void
     /**
      * Called after the file styles are extracted and processed into the resulting ParserResult object.
      * You can also use this hook to add your own extraction results from your custom parser to the ParserResult object.
      */
-    "parser:after": (args: {
-      filePath: string;
-      result: ParserResultInterface | undefined;
-    }) => void;
+    'parser:after': (args: { filePath: string; result: ParserResultInterface | undefined }) => void
     /**
      * Called after the codegen is completed
      */
-    "codegen:done": () => MaybeAsyncReturn;
+    'codegen:done': () => MaybeAsyncReturn
     /**
      * Called right before adding the design-system CSS (global, static, preflight, tokens, keyframes) to the final CSS
      * Called right before writing/injecting the final CSS (styles.css) that contains the design-system CSS and the parser CSS
      * You can use it to tweak the CSS content before it's written to disk or injected through the postcss plugin.
      */
-    "cssgen:done": (args: {
-      artifact:
-        | "global"
-        | "static"
-        | "reset"
-        | "tokens"
-        | "keyframes"
-        | "styles.css";
-      content: string;
-    }) => string | void;
+    'cssgen:done': (args: {
+      artifact: 'global' | 'static' | 'reset' | 'tokens' | 'keyframes' | 'styles.css'
+      content: string
+    }) => string | void
   }
   ```
 
@@ -2114,7 +2090,6 @@
 - 84304901: Improve performance, mostly for the CSS generation by removing a lot of `postcss` usage (and plugins).
 
   ## Public changes:
-
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
@@ -2122,7 +2097,6 @@
     for this run.
 
   ## Internal changes:
-
   - `markImportant` fn from JS instead of walking through postcss AST nodes
   - use a fork of `stitches` `stringify` function instead of `postcss-css-in-js` to write the CSS string from a JS
     object
@@ -2348,7 +2322,6 @@
   Initial extraction time can get slow when using static CSS with lots of recipes or parsing a lot of files.
 
   **Scenarios**
-
   - Park UI went from 3500ms to 580ms (6x faster)
   - Bamboo Website went from 2900ms to 208ms (14x faster)
 
@@ -2643,36 +2616,35 @@
   together and the styles will be merged correctly.
 
   ```jsx
-  const Box = styled("div", {
+  const Box = styled('div', {
     base: {
-      background: "red.light",
-      color: "white",
+      background: 'red.light',
+      color: 'white',
     },
-  });
+  })
 
   const ExtendedBox = styled(Box, {
-    base: { background: "red.dark" },
-  });
+    base: { background: 'red.dark' },
+  })
 
   // <ExtendedBox> will have a background of `red.dark` and a color of `white`
   ```
 
   **Limitation:** This feature does not allow compose mixed styled composition. A mixed styled composition happens when
   an element is created from a cva/inline cva, and another created from a config recipe.
-
   - CVA or Inline CVA + CVA or Inline CVA = ✅
   - Config Recipe + Config Recipe = ✅
   - CVA or Inline CVA + Config Recipe = ❌
 
   ```jsx
-  import { button } from "../styled-system/recipes";
+  import { button } from '../styled-system/recipes'
 
-  const Button = styled("div", button);
+  const Button = styled('div', button)
 
   // ❌ This will throw an error
   const ExtendedButton = styled(Button, {
-    base: { background: "red.dark" },
-  });
+    base: { background: 'red.dark' },
+  })
   ```
 
 ### Patch Changes
@@ -2726,7 +2698,6 @@
 
   In addition to the optional `glob` that you can already pass to override the config.include option, the
   `bamboo cssgen` command now accepts a new `{type}` argument to generate only a specific type of CSS:
-
   - preflight
   - tokens
   - static
@@ -3193,7 +3164,6 @@
   path `src/styled-system`
 - e48b130a: - Remove `stack` from `box.toJSON()` so that generated JSON files have less noise, mostly useful to get make
   the `bamboo debug` command easier to read
-
   - Also use the `ParserResult.toJSON()` method on `bamboo debug` command for the same reason
 
   instead of:
@@ -3420,7 +3390,6 @@
 ### Patch Changes
 
 - fb40fff2: Initial release of all packages
-
   - Internal AST parser for TS and TSX
   - Support for defining presets in config
   - Support for design tokens (core and semantic)
@@ -3476,15 +3445,14 @@ This hook is called right before writing the codegen files to disk. You can use 
 export default defineConfig({
   // ...
   hooks: {
-    "codegen:prepare": ({ artifacts, changed }) => {
+    'codegen:prepare': ({ artifacts, changed }) => {
       // do something with the emitted js/d.ts files
     },
   },
-});
+})
 ```
 
 - d5977c24: - Add a `--logfile` flag to the `bamboo`, `bamboo codegen`, `bamboo cssgen` and `bamboo debug` commands.
-
   - Add a `logfile` option to the postcss plugin
 
   Logs will be streamed to the file specified by the `--logfile` flag or the `logfile` option. This is useful for
@@ -3497,11 +3465,11 @@ export default defineConfig({
   ```js
   module.exports = {
     plugins: {
-      "@bamboocss/dev/postcss": {
-        logfile: "./logs/bamboo.log",
+      '@bamboocss/dev/postcss': {
+        logfile: './logs/bamboo.log',
       },
     },
-  };
+  }
   ```
 
 - Updated dependencies [0dd45b6a]
@@ -3551,8 +3519,8 @@ export default defineConfig({
   ```ts
   export default defineConfig({
     // ...
-    dependencies: ["path/to/files/**.ts"],
-  });
+    dependencies: ['path/to/files/**.ts'],
+  })
   ```
 
   - Invoke `config:change` hook in more situations (when the `--watch` flag is passed to `bamboo codegen`,
@@ -3585,7 +3553,6 @@ export default defineConfig({
 ### Minor Changes
 
 - f58f6df2: Refactor `config.hooks` to be much more powerful, you can now:
-
   - Tweak the config after it has been resolved (after presets are loaded and merged), this could be used to dynamically
     load all `recipes` from a folder
   - Transform a source file's content before parsing it, this could be used to transform the file content to a
@@ -3604,54 +3571,39 @@ export default defineConfig({
      * Called when the config is resolved, after all the presets are loaded and merged.
      * This is the first hook called, you can use it to tweak the config before the context is created.
      */
-    "config:resolved": (args: { conf: LoadConfigResult }) => MaybeAsyncReturn;
+    'config:resolved': (args: { conf: LoadConfigResult }) => MaybeAsyncReturn
     /**
      * Called when the Bamboo context has been created and the API is ready to be used.
      */
-    "context:created": (args: {
-      ctx: ApiInterface;
-      logger: LoggerInterface;
-    }) => void;
+    'context:created': (args: { ctx: ApiInterface; logger: LoggerInterface }) => void
     /**
      * Called when the config file or one of its dependencies (imports) has changed.
      */
-    "config:change": (args: { config: UserConfig }) => MaybeAsyncReturn;
+    'config:change': (args: { config: UserConfig }) => MaybeAsyncReturn
     /**
      * Called after reading the file content but before parsing it.
      * You can use this hook to transform the file content to a tsx-friendly syntax so that Bamboo's parser can parse it.
      * You can also use this hook to parse the file's content on your side using a custom parser, in this case you don't have to return anything.
      */
-    "parser:before": (args: {
-      filePath: string;
-      content: string;
-    }) => string | void;
+    'parser:before': (args: { filePath: string; content: string }) => string | void
     /**
      * Called after the file styles are extracted and processed into the resulting ParserResult object.
      * You can also use this hook to add your own extraction results from your custom parser to the ParserResult object.
      */
-    "parser:after": (args: {
-      filePath: string;
-      result: ParserResultInterface | undefined;
-    }) => void;
+    'parser:after': (args: { filePath: string; result: ParserResultInterface | undefined }) => void
     /**
      * Called after the codegen is completed
      */
-    "codegen:done": () => MaybeAsyncReturn;
+    'codegen:done': () => MaybeAsyncReturn
     /**
      * Called right before adding the design-system CSS (global, static, preflight, tokens, keyframes) to the final CSS
      * Called right before writing/injecting the final CSS (styles.css) that contains the design-system CSS and the parser CSS
      * You can use it to tweak the CSS content before it's written to disk or injected through the postcss plugin.
      */
-    "cssgen:done": (args: {
-      artifact:
-        | "global"
-        | "static"
-        | "reset"
-        | "tokens"
-        | "keyframes"
-        | "styles.css";
-      content: string;
-    }) => string | void;
+    'cssgen:done': (args: {
+      artifact: 'global' | 'static' | 'reset' | 'tokens' | 'keyframes' | 'styles.css'
+      content: string
+    }) => string | void
   }
   ```
 
@@ -3741,7 +3693,6 @@ export default defineConfig({
 - 84304901: Improve performance, mostly for the CSS generation by removing a lot of `postcss` usage (and plugins).
 
   ## Public changes:
-
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
@@ -3749,7 +3700,6 @@ export default defineConfig({
     for this run.
 
   ## Internal changes:
-
   - `markImportant` fn from JS instead of walking through postcss AST nodes
   - use a fork of `stitches` `stringify` function instead of `postcss-css-in-js` to write the CSS string from a JS
     object
@@ -3975,7 +3925,6 @@ export default defineConfig({
   Initial extraction time can get slow when using static CSS with lots of recipes or parsing a lot of files.
 
   **Scenarios**
-
   - Park UI went from 3500ms to 580ms (6x faster)
   - Bamboo Website went from 2900ms to 208ms (14x faster)
 
@@ -4270,36 +4219,35 @@ export default defineConfig({
   together and the styles will be merged correctly.
 
   ```jsx
-  const Box = styled("div", {
+  const Box = styled('div', {
     base: {
-      background: "red.light",
-      color: "white",
+      background: 'red.light',
+      color: 'white',
     },
-  });
+  })
 
   const ExtendedBox = styled(Box, {
-    base: { background: "red.dark" },
-  });
+    base: { background: 'red.dark' },
+  })
 
   // <ExtendedBox> will have a background of `red.dark` and a color of `white`
   ```
 
   **Limitation:** This feature does not allow compose mixed styled composition. A mixed styled composition happens when
   an element is created from a cva/inline cva, and another created from a config recipe.
-
   - CVA or Inline CVA + CVA or Inline CVA = ✅
   - Config Recipe + Config Recipe = ✅
   - CVA or Inline CVA + Config Recipe = ❌
 
   ```jsx
-  import { button } from "../styled-system/recipes";
+  import { button } from '../styled-system/recipes'
 
-  const Button = styled("div", button);
+  const Button = styled('div', button)
 
   // ❌ This will throw an error
   const ExtendedButton = styled(Button, {
-    base: { background: "red.dark" },
-  });
+    base: { background: 'red.dark' },
+  })
   ```
 
 ### Patch Changes
@@ -4353,7 +4301,6 @@ export default defineConfig({
 
   In addition to the optional `glob` that you can already pass to override the config.include option, the
   `bamboo cssgen` command now accepts a new `{type}` argument to generate only a specific type of CSS:
-
   - preflight
   - tokens
   - static
@@ -4820,7 +4767,6 @@ export default defineConfig({
   path `src/styled-system`
 - e48b130a: - Remove `stack` from `box.toJSON()` so that generated JSON files have less noise, mostly useful to get make
   the `bamboo debug` command easier to read
-
   - Also use the `ParserResult.toJSON()` method on `bamboo debug` command for the same reason
 
   instead of:
@@ -5047,7 +4993,6 @@ export default defineConfig({
 ### Patch Changes
 
 - fb40fff2: Initial release of all packages
-
   - Internal AST parser for TS and TSX
   - Support for defining presets in config
   - Support for design tokens (core and semantic)
