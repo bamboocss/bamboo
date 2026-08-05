@@ -1,7 +1,7 @@
 {
   "name": "@bamboocss/dev",
   "version": "1.13.1",
-  "description": "The user facing package for bamboo css",
+  "description": "Build-time, type-safe, zero-runtime CSS-in-JS",
   "homepage": "https://bamboocss.com",
   "license": "MIT",
   "author": "Gajus Kuizinas <gajus@gajus.com>",

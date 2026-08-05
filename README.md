@@ -1,8 +1,8 @@
 <p align="center">
   <br/>
-  Bamboo is a universal styling solution for the modern web &mdash;
+  Bamboo is build-time, type-safe CSS-in-JS &mdash;
   <br/>
-  build time, type-safe, and scalable CSS-in-JS
+  the scaffolding comes down before you ship.
 </p>
 
 ## How is this different from Panda CSS?

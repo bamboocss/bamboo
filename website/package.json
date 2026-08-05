@@ -10,6 +10,7 @@
     "dev": "run-p dev:*",
     "build:content": "velite --clean",
     "build:og": "tsx --tsconfig scripts/tsconfig.json scripts/generate-og-images.tsx",
+    "build:logo": "tsx --tsconfig scripts/tsconfig.json scripts/generate-logo-assets.tsx",
     "build:next": "next build",
     "//build": "Steps are named rather than globbed: og reads the velite collection and writes into public/, so it has to sit between the two.",
     "build": "run-s build:content build:og build:next",
@@ -38,6 +39,7 @@
   "devDependencies": {
     "@bamboocss/dev": "workspace:*",
     "@bamboocss/postcss": "workspace:^",
+    "@resvg/resvg-js": "^2.6.2",
     "@shikijs/rehype": "^3.19.0",
     "@shikijs/transformers": "^3.19.0",
     "@types/react": "19.2.7",
@@ -47,6 +49,7 @@
     "postcss": "8.5.14",
     "rehype-autolink-headings": "^7.1.0",
     "rehype-slug": "^6.0.0",
+    "satori": "^0.29.0",
     "shiki": "^3.19.0",
     "tsx": "4.20.6",
     "unist-util-visit": "^5.0.0",

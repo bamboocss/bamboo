@@ -2,7 +2,7 @@
   "name": "bamboo",
   "version": "0.0.1",
   "private": true,
-  "description": "The repository of css bamboo",
+  "description": "Build-time, type-safe, zero-runtime CSS-in-JS",
   "keywords": [],
   "license": "MIT",
   "author": "Gajus Kuizinas <gajus@gajus.com>",

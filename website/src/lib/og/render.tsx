@@ -6,7 +6,7 @@ import { Logo } from './logo'
 export const OG_SIZE = { width: 1200, height: 630 }
 export const OG_CONTENT_TYPE = 'image/png'
 
-const DEFAULT_TITLE = 'Build time, type safe, CSS-in-JS'
+const DEFAULT_TITLE = 'Build-time, type-safe, zero-runtime CSS-in-JS'
 
 interface OgImageProps {
   title?: string

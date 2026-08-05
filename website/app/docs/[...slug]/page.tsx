@@ -25,7 +25,8 @@ export async function generateMetadata({ params }: DocsPageProps) {
   if (!doc) {
     return {
       title: 'Bamboo CSS',
-      description: 'Build modern websites using build time and type-safe CSS-in-JS',
+      description:
+        'Build-time, type-safe, zero-runtime CSS-in-JS. Prune unused tokens, tree-shake the runtime, and fold static styles into plain class strings.',
     }
   }
 

@@ -9,9 +9,10 @@ const seoConfig = defineMetadata({
   metadataBase: new URL(publicUrl),
   title: {
     template: '%s - Bamboo CSS',
-    default: 'Bamboo CSS - Build modern websites using build time and type-safe CSS-in-JS',
+    default: 'Bamboo CSS - Build-time, type-safe, zero-runtime CSS-in-JS',
   },
-  description: 'Build modern websites using build time and type-safe CSS-in-JS',
+  description:
+    'Build-time, type-safe, zero-runtime CSS-in-JS. Prune unused tokens, tree-shake the runtime, and fold static styles into plain class strings.',
   themeColor: '#F6E458',
   // The default card comes from app/opengraph-image.tsx; per-doc cards come from
   // app/docs/[...slug]/opengraph-image.tsx. Both are rendered at build time.

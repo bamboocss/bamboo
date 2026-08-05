@@ -71,7 +71,7 @@ export const GET = async () => {
 const TEMPLATE = `
 # Bamboo CSS Documentation for LLMs
 
-> Bamboo CSS is a CSS-in-JS framework with build-time optimizations for styling web applications
+> Bamboo CSS is a build-time, type-safe, zero-runtime CSS-in-JS framework. It prunes unused tokens, tree-shakes the runtime, and folds static styles into plain class strings.
 
 ## Documentation Sets
 
