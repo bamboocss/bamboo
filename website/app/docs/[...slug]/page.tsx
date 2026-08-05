@@ -5,7 +5,6 @@ import { MDXContent } from '@/components/docs/mdx-content'
 import { Pagination } from '@/components/docs/pagination'
 import { Sidebar } from '@/components/docs/sidebar'
 import { Toc } from '@/components/ui/toc'
-import { css } from '@/styled-system/css'
 import { Box } from '@/styled-system/jsx'
 import { notFound } from 'next/navigation'
 
@@ -64,58 +63,50 @@ export default async function DocsPage(props: DocsPageProps) {
     notFound()
   }
 
+  // All three columns start at --content-top. The sticky ones set it directly; the
+  // article gets there from the layout's navbar padding plus its own. Nothing here
+  // adds a private offset on top, which is what used to make them drift.
   return (
-    <>
-      <Box maxW="90rem" mx="auto" display="flex" position="relative">
-        {/* Sidebar */}
-        <Box
-          as="aside"
-          display={{ base: 'none', lg: 'block' }}
-          flexShrink="0"
-          w="64"
-          position="sticky"
-          top="calc(var(--navbar-height) + var(--banner-height) + 2.5rem)"
-          height="calc(100vh - var(--navbar-height) - var(--banner-height) - 2.5rem)"
-        >
-          <Box overflowY="auto" height="100%" className="scroll-area" p="4">
-            <Sidebar slug={slug} />
-          </Box>
-        </Box>
-
-        {/* Main Content */}
-        {/* The three columns each set their own top offset, so they have to move
-            together -- the sidebar via its sticky `top`, these two via `pt`. Change one
-            alone and the sidebar's first item stops lining up with the breadcrumb. */}
-        <Box as="article" flex="1" minW="0" px={{ base: '4', lg: '10' }} pt="16">
-          <Breadcrumb slug={slug} />
-          <Header doc={doc} />
-          <div
-            className={css({
-              '& > *:first-child': { mt: 0 },
-              '& > *:last-child': { mb: 0 },
-            })}
-          >
-            <MDXContent code={doc.code} />
-          </div>
-          <Pagination slug={slug} />
-        </Box>
-
-        {/* Table of Contents */}
-        <Box
-          visibility={doc.hideToc ? 'hidden' : 'visible'}
-          display={{ base: 'none', xl: 'block' }}
-          flexShrink="0"
-          w="56"
-          position="sticky"
-          top="calc(var(--navbar-height) + var(--banner-height))"
-          pt="16"
-          maxH="calc(100vh - var(--navbar-height) - var(--banner-height) - 1rem)"
-        >
-          <Box overflowY="auto" height="100%" className="scroll-area">
-            <Toc data={doc.toc} />
-          </Box>
-        </Box>
+    <Box maxW="90rem" mx="auto" display="flex" position="relative">
+      <Box
+        as="aside"
+        display={{ base: 'none', lg: 'block' }}
+        flexShrink="0"
+        w="64"
+        position="sticky"
+        top="var(--content-top)"
+        height="calc(100vh - var(--content-top))"
+        overflowY="auto"
+        // Padding on the sides and bottom only: a top inset here would push the first
+        // link below the breadcrumb it is meant to line up with.
+        px="4"
+        pb="4"
+        // Not decorative -- Toc resolves its scroll container with closest('.scroll-area').
+        className="scroll-area"
+      >
+        <Sidebar slug={slug} />
       </Box>
-    </>
+
+      <Box as="article" flex="1" minW="0" px={{ base: '4', lg: '10' }} pt="16">
+        <Breadcrumb slug={slug} />
+        <Header doc={doc} />
+        <MDXContent code={doc.code} />
+        <Pagination slug={slug} />
+      </Box>
+
+      <Box
+        visibility={doc.hideToc ? 'hidden' : 'visible'}
+        display={{ base: 'none', xl: 'block' }}
+        flexShrink="0"
+        w="56"
+        position="sticky"
+        top="var(--content-top)"
+        maxH="calc(100vh - var(--content-top))"
+        overflowY="auto"
+        className="scroll-area"
+      >
+        <Toc data={doc.toc} />
+      </Box>
+    </Box>
   )
 }
