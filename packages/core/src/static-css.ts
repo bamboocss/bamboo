@@ -172,7 +172,7 @@ export class StaticCss {
   }
 
   private getRecipeNode = (name: string) => {
-    return this.context.recipes.details.find((detail) => detail.baseName === name)
+    return this.context.recipes.getNode(name)
   }
 
   getRecipeRuleObjects = (name: string, recipe: RecipeRule, recipeNode: RecipeNode): Dict[] => {

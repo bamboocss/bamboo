@@ -209,8 +209,23 @@ export class Recipes {
     return Array.from(sharedState.nodes.values())
   }
 
+  /**
+   * The node for a recipe, by name.
+   *
+   * `details` is a getter that materializes the whole node list, so finding one by name that
+   * way allocates an array of every recipe in the theme and then scans it — and `baseName` is
+   * the key the node is already stored under.
+   *
+   * Not memoized, unlike `getRecipe`. The node map is module-level state that `saveOne` and
+   * `remove` write to, so a cached answer can outlive the node it names; reading through gives
+   * the same freshness the scan had.
+   */
+  getNode = (name: string): RecipeNode | undefined => {
+    return sharedState.nodes.get(name)
+  }
+
   splitProps = (recipeName: string, props: Dict) => {
-    const recipe = this.details.find((node) => node.baseName === recipeName)
+    const recipe = this.getNode(recipeName)
     if (!recipe) return [{}, props]
     return recipe.splitProps(props)
   }
