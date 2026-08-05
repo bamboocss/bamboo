@@ -479,7 +479,7 @@ const App = () => {
 
 ### Classname concatenation
 
-Bamboo provides a simple `cx` function to join classnames. It accepts a list of classnames and returns a string.
+Bamboo provides a `cx` function to join classnames. It accepts a list of classnames and returns a string.
 
 ```jsx
 import { css, cx } from '../styled-system/css'
@@ -496,6 +496,48 @@ const Card = ({ className, ...props }) => {
   return <div className={rootClassName} {...props} />
 }
 ```
+
+**The last class that sets a property wins.** Two atomic classes for the same property under the same conditions cannot
+both apply, and leaving both on the element would hand the decision to whichever rule happens to come later in the
+stylesheet — not to the order you passed them. `cx` resolves that, so a caller's `className` reliably overrides the
+component's own styles:
+
+```js
+cx(css({ paddingX: '4' }), css({ paddingX: '2' }))
+// 'px_2' — not 'px_4 px_2'
+```
+
+Conditions are part of the declaration, so they only merge with each other:
+
+```js
+cx('hover:px_4', 'hover:px_2') // 'hover:px_2'
+cx('px_4', 'hover:px_2') // 'px_4 hover:px_2'
+```
+
+A class is only merged when its property is a utility bamboo actually registered, matched at its longest — `bd-w` beats
+`bd`, so `bd-w-4px` and `bd-c-red` stay separate under `separator: '-'`. Recipe classes are excluded outright, and
+anything else is left exactly as written, duplicates included:
+
+```js
+cx('btn px_4', 'btn px_2') // 'btn px_2 btn'
+```
+
+<Callout type="warning">
+  `cx` recognises a bamboo class by its shape, and a hand-written class can share it. `top_bar` is exactly what bamboo
+  emits for `css({ top: 'bar' })`, so `cx('top_bar', 'top_0')` keeps only `top_0`. If you pass your own classes through a
+  bamboo component, avoid names of the form `<utility><separator><value>`. The risk is highest under `separator: '-'`,
+  where ordinary kebab-case names like `p-4` or `top-nav` collide.
+</Callout>
+
+<Callout type="info">
+  This only applies to classes whose property is still visible in the name. With [`hash`](#hashing) enabled every class
+  is an opaque hash, so `cx` can only concatenate — compose with `css(a, b)` instead, which merges the style objects
+  before any class name exists.
+</Callout>
+
+An `!important` class is the same declaration as its plain form, so argument order decides between them —
+`cx(css({ color: 'red!' }), css({ color: 'blue' }))` is `c_blue`. That is the opposite of what the cascade would do with
+both classes on the element, and it is the point: the value you passed last is the one that applies.
 
 ### Hashing
 
