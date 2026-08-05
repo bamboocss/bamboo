@@ -67,7 +67,17 @@ export default async function DocsPage(props: DocsPageProps) {
   // article gets there from the layout's navbar padding plus its own. Nothing here
   // adds a private offset on top, which is what used to make them drift.
   return (
-    <Box maxW="90rem" mx="auto" display="flex" position="relative">
+    // Same width and the same inset as the navbar's inner wrapper (see the `nav` part
+    // in theme/recipes/navbar.recipe.ts), so the sidebar starts on the same vertical
+    // as the logo above it. Matching maxW alone is not enough -- the navbar also pads.
+    <Box
+      maxW="90rem"
+      mx="auto"
+      ps="max(env(safe-area-inset-left), 1.5rem)"
+      pe="max(env(safe-area-inset-right), 1.5rem)"
+      display="flex"
+      position="relative"
+    >
       <Box
         as="aside"
         display={{ base: 'none', lg: 'block' }}
@@ -77,9 +87,10 @@ export default async function DocsPage(props: DocsPageProps) {
         top="var(--content-top)"
         height="calc(100vh - var(--content-top))"
         overflowY="auto"
-        // Padding on the sides and bottom only: a top inset here would push the first
-        // link below the breadcrumb it is meant to line up with.
-        px="4"
+        // No inset on the leading edge: the section labels have to start on the same
+        // vertical as the logo above them, and any padding here shifts them right of it.
+        // Nothing on top either -- that would drop the first link below the breadcrumb.
+        pe="4"
         pb="4"
         // Not decorative -- Toc resolves its scroll container with closest('.scroll-area').
         className="scroll-area"
@@ -87,7 +98,7 @@ export default async function DocsPage(props: DocsPageProps) {
         <Sidebar slug={slug} />
       </Box>
 
-      <Box as="article" flex="1" minW="0" px={{ base: '4', lg: '10' }} pt="16">
+      <Box as="article" flex="1" minW="0" px={{ base: '4', lg: '10' }} pt="8">
         <Breadcrumb slug={slug} />
         <Header doc={doc} />
         <MDXContent code={doc.code} />

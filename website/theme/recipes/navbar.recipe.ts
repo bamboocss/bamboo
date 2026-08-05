@@ -37,7 +37,11 @@ export const navbarRecipe = defineRecipe({
       h: 'full',
       w: 'full',
       bg: 'bg.surface',
-      shadow: '0 2px 4px rgba(0,0,0,.02),0 1px 0 rgba(0,0,0,.06)',
+      // A hairline rather than a drop shadow. The shadow was tuned for a light page
+      // and is invisible on a dark one, so the bar had no edge at all where it met
+      // the content scrolling under it.
+      borderBottomWidth: '1px',
+      borderColor: 'border.muted',
       _supportsBackdrop: {
         backdropFilter: 'blur(8px)',
         backgroundColor: 'rgba(255, 255, 255, 0.85) !important',

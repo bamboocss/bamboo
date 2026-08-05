@@ -188,7 +188,8 @@ export const Toc = (props: TocProps) => {
           <li key={item.id} className={classes.item}>
             <Link
               href={`#${item.id}`}
-              style={{ paddingInlineStart: item.depth * 12 }}
+              // 12px clears the rail; depth indents from there.
+              style={{ paddingInlineStart: 12 + item.depth * 12 }}
               data-current={isCurrent(item.id) || undefined}
               className={classes.link}
               onClick={(e) => onLinkClick(e, item.id)}
@@ -206,32 +207,43 @@ const tocRecipe = sva({
   slots: ['root', 'title', 'link', 'item'],
   base: {
     root: {
-      ps: '4',
+      // The rail each entry hangs off, so the active marker has something to sit on
+      // and the list reads as one column rather than free-floating text.
+      borderInlineStartWidth: '1px',
+      borderColor: 'border.muted',
     },
     title: {
+      // Matches the entries' 12px inset so the heading lines up with them off the rail.
+      ps: '3',
       textStyle: 'sm',
       fontWeight: 'medium',
       letterSpacing: 'tight',
-      mb: '4',
+      mb: '3',
     },
     item: {
-      my: '2',
       scrollMarginY: '6',
       scrollPaddingY: '6',
     },
     link: {
-      display: 'inline-flex',
+      // Block-level and pulled onto the rail: the 2px marker covers the rail's 1px, so
+      // the label does not move when an entry becomes current.
+      display: 'flex',
+      ms: '-1px',
+      borderInlineStartWidth: '2px',
+      borderColor: 'transparent',
       textStyle: 'sm',
       color: 'fg.subtle',
-      py: '0.5',
-      transitionProperty: 'color',
-      transitionDuration: '200ms',
+      py: '1.5',
+      transitionProperty: 'color, border-color',
+      transitionDuration: '150ms',
+      _hover: {
+        color: 'fg',
+        borderColor: 'border',
+      },
       _current: {
         color: 'fg',
         fontWeight: 'medium',
-      },
-      _hover: {
-        color: 'fg',
+        borderColor: 'accent',
       },
     },
   },

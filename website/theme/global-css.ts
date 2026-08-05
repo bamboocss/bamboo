@@ -6,9 +6,21 @@ export const globalCss = defineGlobalStyles({
   },
   html: {
     fontFamily: 'sans',
-    fontSize: '0.9em',
+    // Was 0.9em, which scaled the whole rem system to 14.4px and made body copy,
+    // sidebar and table of contents all read a size small. Everything sized in rem
+    // moves with it, which is why the page felt uniformly cramped rather than
+    // obviously wrong in any one place.
+    fontSize: '1em',
     '--nextra-primary-hue': '212deg',
-    scrollPaddingTop: 'calc(var(--navbar-height, 4rem) + var(--banner-height, 2.5rem) + 1rem)',
+    // Defined here, not on `main`. The navbar sizes itself from this and is
+    // `position: fixed`, so `main` has to reserve exactly as much -- and the two are
+    // siblings, so a value set on `main` is invisible to the navbar. It silently fell
+    // back to 4rem while `main` reserved less, leaving anything directly in `main`
+    // tucked under the bar.
+    '--navbar-height': '4.5rem',
+    // Where the three columns start. One value so they cannot drift apart.
+    '--content-top': 'calc(var(--navbar-height) + 2rem)',
+    scrollPaddingTop: 'calc(var(--navbar-height) + 1rem)',
   },
   body: {
     bg: 'bg',

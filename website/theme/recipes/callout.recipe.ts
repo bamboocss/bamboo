@@ -29,6 +29,10 @@ export const calloutRecipe = defineRecipe({
       width: '100%',
       minWidth: 0,
       lineHeight: '1.75rem',
+      // Prose reads at normal contrast. The tint on the root is left to carry the
+      // callout's type through the border and the icon, rather than recolouring a
+      // paragraph the reader still has to read.
+      color: 'fg',
     },
   }),
   variants: {
@@ -40,7 +44,7 @@ export const calloutRecipe = defineRecipe({
           color: 'orange.800',
           _dark: {
             borderColor: 'rgb(251 146 60 / 0.3)', // opacity modifier
-            bg: 'rgb(251 146 60 / 0.2)',
+            bg: 'rgb(251 146 60 / 0.08)',
             color: 'orange.300',
           },
         },
@@ -52,7 +56,7 @@ export const calloutRecipe = defineRecipe({
           color: 'red.800',
           _dark: {
             borderColor: 'rgb(248 113 113 / 0.3)',
-            bg: 'rgb(127 29 29 / 0.3)',
+            bg: 'rgb(248 113 113 / 0.08)',
             color: 'red.200',
           },
         },
@@ -64,7 +68,7 @@ export const calloutRecipe = defineRecipe({
           color: 'blue.800',
           _dark: {
             borderColor: 'rgb(191 219 254 / 0.3)',
-            bg: 'rgb(30 58 138 / 0.3)',
+            bg: 'rgb(96 165 250 / 0.08)',
             color: 'blue.200',
           },
         },
@@ -76,7 +80,7 @@ export const calloutRecipe = defineRecipe({
           color: 'yellow.800',
           _dark: {
             borderColor: 'rgb(254 240 138 / 0.3)',
-            bg: 'rgb(113 63 18 / 0.3)',
+            bg: 'rgb(250 204 21 / 0.08)',
             color: 'yellow.200',
           },
         },

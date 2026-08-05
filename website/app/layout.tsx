@@ -1,4 +1,3 @@
-import { Providers } from '@/components/providers'
 import { css, cx } from '@/styled-system/css'
 import { fontClassName } from 'styles/fonts'
 import seoConfig from '../seo.config'
@@ -18,14 +17,11 @@ export const viewport = {
 export default function RootLayout(props: Props) {
   const { children } = props
   return (
-    <html
-      lang="en"
-      className={cx(fontClassName, css({ fontFamily: 'body', fontSize: '0.9em' }))}
-      suppressHydrationWarning
-    >
-      <body suppressHydrationWarning>
-        <Providers>{children}</Providers>
-      </body>
+    // Font size is set once, on `html` in theme/global-css.ts. It was also set here as
+    // an atomic class, which won on specificity -- so changing the global rule alone
+    // had no effect at all.
+    <html lang="en" className={cx('dark', fontClassName, css({ fontFamily: 'body' }))}>
+      <body>{children}</body>
     </html>
   )
 }

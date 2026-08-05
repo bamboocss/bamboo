@@ -8,12 +8,8 @@ export default function DocsLayout(props: React.PropsWithChildren) {
       <Navbar />
       <main
         className={css({
-          '--navbar-height': '4rem',
-          // Where the three columns begin. The sidebar and table of contents are
-          // sticky and position against the viewport, while the article sits in
-          // normal flow under this padding -- so without a shared value they drift
-          // apart whenever one of them is adjusted.
-          '--content-top': 'calc(var(--navbar-height) + 4rem)',
+          // --navbar-height and --content-top live on `html` in theme/global-css.ts,
+          // so the fixed navbar and this element read the same numbers.
           pt: 'var(--navbar-height)',
           pb: '32',
         })}

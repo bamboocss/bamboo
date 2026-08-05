@@ -26,6 +26,8 @@ export const Header = ({ doc }: Props) => {
             fontSize: { base: '3xl', md: '4xl' },
             fontWeight: 'bold',
             lineHeight: 'tight',
+            // Display sizes need negative tracking; at 4xl the default spacing reads loose.
+            letterSpacing: 'tight',
             mb: 2,
           })}
         >

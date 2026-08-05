@@ -17,10 +17,9 @@ const styles = cva({
     fontWeight: 'semibold',
     fontFamily: 'heading',
     letterSpacing: 'tight',
-    color: {
-      base: 'gray.900',
-      _dark: 'gray.100',
-    },
+    // `fg`, not the gray ramp. gray.100 is #f3f4f6 against neutral.50's #fafafa --
+    // cool enough that headings read faintly blue over neutral body copy.
+    color: 'fg',
   },
   variants: {
     tag: {

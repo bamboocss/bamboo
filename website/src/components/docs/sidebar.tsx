@@ -76,7 +76,9 @@ export function Sidebar({ slug: currentSlug }: Props) {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 w: 'full',
-                px: 3,
+                // Leading edge flush with the column so the label lines up with the
+                // logo; the hover fill runs the full width rather than sitting inset.
+                px: 0,
                 py: 2,
                 rounded: 'md',
                 fontWeight: 'semibold',
@@ -100,25 +102,43 @@ export function Sidebar({ slug: currentSlug }: Props) {
             </button>
 
             {isExpanded && section.children && (
-              <Stack gap="0.5" mt="1">
+              <Stack
+                gap="0"
+                mt="1"
+                // Hairline the children hang off, so a section reads as one group and
+                // the active marker has something to sit on.
+                ms="3"
+                borderInlineStartWidth="1px"
+                borderColor="border.muted"
+              >
                 {section.children.map((item) => {
                   const linkStyles = css({
                     display: 'flex',
                     alignItems: 'center',
                     gap: '2',
-                    px: '4',
+                    // Sits on the rail: the 2px marker replaces the rail's own 1px, so
+                    // the negative margin keeps the text from shifting when it appears.
+                    ms: '-1px',
+                    ps: '4',
+                    pe: '3',
                     py: '1.5',
-                    rounded: 'md',
+                    borderInlineStartWidth: '2px',
+                    borderColor: 'transparent',
                     textStyle: 'sm',
                     color: 'fg.muted',
-                    bg: 'transparent',
                     fontWeight: 'normal',
-                    transitionProperty: 'background, color',
-                    transitionDuration: '200ms',
+                    transitionProperty: 'color, border-color',
+                    transitionDuration: '150ms',
+                    _hover: {
+                      color: 'fg',
+                      borderColor: 'border',
+                    },
+                    // A filled block here made navigation the loudest thing on the page.
+                    // The marker and a weight change carry it instead.
                     _current: {
                       color: 'fg',
-                      bg: 'accent.subtle',
-                      fontWeight: 'semibold',
+                      fontWeight: 'medium',
+                      borderColor: 'accent',
                     },
                   })
 

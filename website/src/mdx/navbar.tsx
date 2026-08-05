@@ -15,7 +15,6 @@ import { Icon } from '@/theme/icons'
 import { Dialog, useDialog } from '@ark-ui/react/dialog'
 import { usePathname } from 'next/navigation'
 import { useEffect } from 'react'
-import { ThemeSwitch } from './theme-switch'
 
 const classes = {
   link: css({ textStyle: 'sm' }),
@@ -91,8 +90,6 @@ export const Navbar = () => {
             <GithubIcon />
           </Anchor>
         ) : null}
-
-        <ThemeSwitch />
 
         <MobileNavDrawer
           trigger={
