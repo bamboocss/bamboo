@@ -409,8 +409,8 @@ function App() {
 }
 ```
 
-The generated css is registered under the `recipe` [cascade layer](/docs/concepts/cascade-layers.mdx) with the class
-name that matches the recipe-variant name pattern `<recipe-className>--<variant-name>`.
+The generated css is registered under the `recipe` [cascade layer](/docs/concepts/cascade-layers) with the class name
+that matches the recipe-variant name pattern `<recipe-className>--<variant-name>`.
 
 > **Technical Notes 📝:** Only the recipe and variants used in your application are generated. Not more!
 
@@ -573,7 +573,7 @@ export default defineConfig({
 })
 ```
 
-Learn more about the [extend](/docs/concepts/extend.md) keyword.
+Learn more about the [extend](/docs/concepts/extend) keyword.
 
 ## Methods and Properties
 
@@ -726,7 +726,7 @@ const button = defineRecipe({
 Bamboo provides a way to generate `static CSS` for your recipes. This is useful when you want to generate CSS for a
 recipe without using the recipe in your code or if you use dynamic styling that Bamboo can't keep track of.
 
-More information about static CSS can be found [here](/docs/guides/static.md#generating-recipes).
+More information about static CSS can be found [here](/docs/guides/static#generating-recipes).
 
 ## Should I use atomic or config recipes ?
 

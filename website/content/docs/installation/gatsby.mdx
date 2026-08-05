@@ -84,7 +84,7 @@ Open your `package.json` file and update the `scripts` section as follows:
 ```
 
 - `"prepare"` - script that will run Bamboo CSS CLI codegen before each build. Read more about
-  [codegen](/docs/references/cli#bamboo-codegen) in the CLI section.
+  [codegen](/docs/references/cli#codegen) in the CLI section.
 
 > This step ensures that the bamboo output directory is regenerated after each dependency installation. So you can add
 > the output directory to your `.gitignore` file and not worry about it.
@@ -94,8 +94,8 @@ Open your `package.json` file and update the `scripts` section as follows:
 Make sure that all of the paths of your React components are included in the `include` section of the `bamboo.config.ts`
 file.
 
-> If you use [GraphQL Typegen](/docs/how-to/local-development/graphql-typegen/), you'll need to update the `include` to
-> avoid infinite loop due to generated `src/gatsby-types.d.ts`.
+> If you use [GraphQL Typegen](https://www.gatsbyjs.com/docs/how-to/local-development/graphql-typegen/), you'll need to
+> update the `include` to avoid infinite loop due to generated `src/gatsby-types.d.ts`.
 
 ```js {6} filename="bamboo.config.ts"
 import { defineConfig } from '@bamboocss/dev'
