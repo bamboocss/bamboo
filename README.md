@@ -4,36 +4,14 @@
   the scaffolding comes down before you ship.
 </p>
 
-## Why we forked Panda CSS
+## Why Bamboo?
 
-Bamboo is the styling engine behind [Contra](https://contra.com), whose UI has more than 20,000 `css()` call sites. At
-that scale everything a styling library spends per call site — bytes emitted, work at runtime, time in the build — is
-multiplied by five figures, so optimizations too small to notice elsewhere are plainly measurable.
+Bamboo CSS is a fork of [Panda CSS](https://panda-css.com/) v1. The styling API is identical and
+[migrating](https://bamboocss.com/docs/migration/panda) is mostly a rename; what changed is what reaches the browser and
+what it costs.
 
-The fork exists to chase them further than a general-purpose library reasonably would. That is the priority for every
-release.
-
-## How is this different from Panda CSS?
-
-Bamboo CSS is a fork of [Panda CSS](https://panda-css.com/) v1, so the styling API is identical and
-[migrating](https://bamboocss.com/docs/migration/panda) is mostly a rename. What has changed since the fork is what
-reaches the browser and what it costs:
-
-- **Less CSS** — `pruneUnusedTokens` drops token variables nothing can reach, taking `styles.css` from 24.4 KB to 12.3
-  KB on our own sandbox.
-- **Less JavaScript** — the generated output declares `sideEffects` and stops emitting the JSX property list twice, so a
-  barrel import falls from 41.2 KB to 30.1 KB minified.
-- **A faster runtime** — repeated `css()` calls are roughly 4-5x faster, and the class-name cache is bounded rather than
-  growing for the life of the process, which used to leak under long-lived SSR.
-- **Optional zero runtime** — [`@bamboocss/vite`](https://bamboocss.com/docs/guides/source-transformation) folds
-  statically-resolvable `css()` calls into plain class strings at build time.
-- **Less HTML** — [`cssMode: 'grouped'`](https://bamboocss.com/docs/references/config#cssmode) emits one class per
-  `css()` call instead of one per property, trading CSS duplication for shorter class attributes and faster style
-  recalculation.
-
-Every figure is measured against this repository's own sandboxes; the output-size wins scale with the size of your
-design system rather than your app. The
-[full comparison](https://bamboocss.com/docs/overview/faq#how-is-bamboo-css-different-from-panda-css) has the rest.
+- [Why we forked Panda CSS](https://bamboocss.com/docs/overview/why-bamboo#why-we-forked-panda-css)
+- [How is Bamboo different from Panda CSS?](https://bamboocss.com/docs/overview/faq#how-is-bamboo-css-different-from-panda-css)
 
 ## Features
 
