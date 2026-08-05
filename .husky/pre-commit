@@ -1,3 +1,32 @@
-pnpm prepare-studio
+# Husky runs this with `sh -e` (see .husky/_/h), so any failure below aborts the commit.
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+
+# Nothing to do for an empty commit, or `git commit --amend --no-edit`.
+[ -n "$staged" ] || exit 0
+
+# Studio ships a generated styled-system that is committed -- 122 files -- and no CI job
+# checks it is current, so this hook is the only thing keeping it in sync. It is a full
+# codegen run, so only pay for it when a staged path could change what it emits.
+#
+# Note it regenerates from packages/*/dist, not from the working tree: committing a
+# change to what the generator emits without running `pnpm build` first writes artifacts
+# from a different revision.
+if printf '%s\n' "$staged" | grep '^packages/' | grep -qv '^packages/studio/styled-system/'; then
+  pnpm prepare-studio
+  git add packages/studio/styled-system
+fi
+
+# Format the tree, then stage back only the paths this commit already touched.
+#
+# oxfmt walks the tree itself rather than taking a file list, and it exits non-zero on
+# .astro, .svelte and .svg -- all of which this repo has -- so passing it the staged
+# paths would need an allowlist that rots the first time it learns a new extension.
+# Letting it choose, then re-staging selectively, keeps that knowledge in the formatter.
+#
+# Caveat: a partially staged file (git add -p) has its unstaged remainder swept in by
+# the re-add. That is the same trade lint-staged makes, and far narrower than the
+# `git add -A` this replaces, which committed the whole working tree every time.
 pnpm fmt:fix
-git add -A
+
+git diff --cached --name-only --diff-filter=ACMR -z | xargs -0 git add --
