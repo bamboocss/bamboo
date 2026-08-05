@@ -1,5 +1,80 @@
 # @bamboocss/extractor
 
+## 1.13.0
+
+### Minor Changes
+
+- 5b881ee: Extract styles composed across files. A named import whose value is static now folds at the call site:
+
+  ```ts
+  // styles.ts
+  export const button = css.raw({ display: 'inline-flex', paddingInline: '4' })
+
+  // button.tsx
+  import { button } from './styles'
+  css(button, { background: 'blue.500' }) // now emits the button styles too
+  ```
+
+  Previously the imported half resolved to nothing and was silently dropped, so only the inline object produced CSS.
+
+  Supported: named imports, aliased named imports, re-exports, file-local alias chains, plain exported objects,
+  `css.raw()` values, and imported values spread into objects or nested selectors. Not supported, and skipped without
+  error: default imports, namespace imports, and values that are only known at runtime.
+
+  Aliased named imports (`import { button as btn }`) were additionally never resolved even when file traversal was
+  enabled — the lookup used the local binding name rather than the exported one.
+
+### Patch Changes
+
+- 328a926: Stop re-export cycles crashing the build.
+
+  Importing a name that does not resolve inside a cycle of re-exporting files — a typo, a stale import, a type-only
+  export, or a name that lives outside the cycle — made export lookup walk the cycle until the stack overflowed, failing
+  the whole build with `RangeError: Maximum call stack size exceeded`.
+
+  `export * from './other'` is the worst case, since a star re-export matches every name and so every unresolved lookup
+  traverses the entire graph. A barrel that re-exports itself hit it with a single file.
+
+  Lookup now tracks the files it has already searched and stops on revisit, so such an import degrades to unresolvable
+  like any other rather than throwing. Names that do resolve through a cycle are still found.
+
+- d7825f6: Resolve values through renaming re-exports.
+
+  Export lookup compared a requested name against the name in the _source_ module rather than the one the module
+  actually exposes, so `export { btn as button } from './styles'` failed in both directions:
+  - Importing `button` — the name the barrel really exports — resolved to nothing, and the style silently vanished from
+    the CSS. Renaming re-exports are ordinary barrel hygiene, so this is the one that bites.
+  - Importing `btn` — a name the barrel does **not** export — resolved anyway. TypeScript already rejects that import,
+    so it only affected code that does not typecheck. **If you were relying on it, those styles will now disappear**;
+    import the name the barrel exposes.
+
+  A value declared locally and renamed on the way out (`const btn = …; export { btn as button }`) now resolves too, and
+  a star re-export sitting over a renaming barrel forwards correctly.
+
+  Lookup carries the source name across each hop, so the cycle guard added alongside it now tracks file-and-name pairs.
+  Keyed on the file alone, a file searched unsuccessfully for one name would have blocked a later search of that same
+  file for a different one — a value that is genuinely reachable.
+
+- 5b881ee: Serve fresh values to importers after a shared style file is edited or deleted.
+
+  Resolved values are memoized against the AST node that produced them, but a node's value can come from another file —
+  `css(button)` folds whatever `./styles` exports. Editing that file replaces only its own nodes, so an importer's nodes
+  stayed identical and kept serving the value read before the edit. Re-parsing the importer was not enough to clear it.
+
+  The memo is now dropped whenever a file's contents are replaced or reloaded, which is the point at which another
+  file's resolutions can have gone out of date. Deleting a shared file also rebuilds its importers, resolving them
+  before the file leaves the project rather than after, when its path can no longer be matched.
+
+- Updated dependencies [9ffb84f]
+- Updated dependencies [e482ab3]
+- Updated dependencies [7bf6798]
+- Updated dependencies [11c9409]
+- Updated dependencies [9ffb84f]
+- Updated dependencies [a5cb5a8]
+- Updated dependencies [9ffb84f]
+- Updated dependencies [a966bae]
+  - @bamboocss/shared@1.13.0
+
 ## 1.12.3
 
 ### Patch Changes

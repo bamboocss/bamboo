@@ -1,5 +1,20 @@
 # @bamboocss/astro-plugin-studio
 
+## 1.13.0
+
+### Patch Changes
+
+- Updated dependencies [a07286f]
+- Updated dependencies [a5cb5a8]
+- Updated dependencies [5b16a67]
+- Updated dependencies [a24d37a]
+- Updated dependencies [5b881ee]
+- Updated dependencies [5b881ee]
+- Updated dependencies [5b881ee]
+- Updated dependencies [5b881ee]
+  - @bamboocss/core@1.13.0
+  - @bamboocss/node@1.13.0
+
 ## 1.12.3
 
 ### Patch Changes

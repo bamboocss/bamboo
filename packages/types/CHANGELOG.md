@@ -1,5 +1,74 @@
 # @bamboocss/types
 
+## 1.13.0
+
+### Minor Changes
+
+- a07286f: Add `pruneUnusedKeyframes`, dropping `@keyframes` rules nothing can reach.
+
+  A preset declares every animation it offers and an app uses a handful. The rest sit in the one stylesheet that blocks
+  first paint. On the fixture preset this drops all four unused keyframes and 436 bytes; it scales with the size of the
+  design system rather than the app, the same way `pruneUnusedTokens` does.
+
+  It is **off by default** and changes nothing until switched on.
+
+  Only keyframes the theme declares are ever removed, so one emitted by `globalCss` is left alone. A name is kept when
+  an animation property in the generated css names it, when it appears anywhere under `include`, or when it is named in
+  a custom property that is itself reachable.
+
+  That last clause is what makes the pass worth having. `preset-bamboo` declares
+  `--animations-spin: spin 1s linear infinite` whether or not anything uses that token, so counting every custom
+  property as a reference would keep every keyframe the preset ships. References from a custom property are held back
+  and only credited once the property is reached through `var()`, following the chain — the same reachability model
+  `pruneTokenVars` uses.
+
+  Names are recovered by tokenizing values and testing each token against the declared set, rather than by parsing the
+  `animation` shorthand, which interleaves durations, easings and directions in any order. A keyframe named after a
+  keyword therefore always looks referenced. That is the intended bias: keeping an unused keyframe costs bytes, dropping
+  a used one silently stops an animation.
+
+  The textual scan over `include` covers what the css cannot show — an animation name assembled at runtime, or applied
+  through an inline `style` rather than through bamboo.
+
+- a5cb5a8: Add `pruneUnusedTokens`, dropping token css variables nothing can reach.
+
+  The token layer declares every token in the theme. An app uses a fraction of them, so most of what it declares is dead
+  weight in the one stylesheet that blocks first paint. On the `vite-ts` sandbox, with the default preset, this takes
+  `styles.css` from 24,433 to 12,293 bytes — 6,398 to 3,504 gzipped. It scales with the size of the design system rather
+  than the app: `preset-bamboo` declares 432 variables, `preset-atlaskit` 837, `preset-open-props` 898.
+
+  It is **off by default** and changes nothing until switched on.
+
+  A variable is kept when the generated css references it, when a kept variable's own value references it, or when it is
+  named by `token()` or `token.var()` or a literal `var(--x)` anywhere under `include`. Tokens that javascript receives
+  as a reference rather than a literal are always kept, because `token('colors.text')` hands the caller a `var()`
+  whether or not the css mentions it. That covers virtual tokens, any token carrying a condition, and negative tokens —
+  `spacing.-4` resolves to `calc(var(--spacing-4) * -1)`, so what has to survive is the _positive_ token's declaration,
+  not its own. So is anything a theme refers to: a theme is a separate artifact injected at runtime, so nothing in the
+  sheet points at what it needs.
+
+  The negative-token rule is the one with a visible price, and there is no opt-out. A spacing scale generates one
+  negative per entry, so the whole scale is pinned whether or not the app uses it: on the default preset an app
+  referencing a single colour keeps 37 spacing variables, about a third of everything that survives. Presets with large
+  spacing scales therefore see less than the numbers above.
+
+  The walk follows any custom property, not only the removable ones. A colour palette is what forces that:
+  `colorPalette: 'red'` emits `--colors-color-palette-300: var(--colors-red-300)`, and those palette properties are
+  virtual, so stopping at them would leave the rule pointing at colours that had been removed.
+
+  Two limits are deliberate:
+  - Only custom properties the token system declares are eligible. `globalCss` output is never touched. `preset-base`
+    declares the filter and gradient composition properties on the universal selector precisely so a parent's value
+    cannot inherit into a descendant; they look unreferenced, and removing them would change rendering. The `styles.css`
+    post-processing this option replaces does remove them.
+  - Reachability cannot be proven for every reference. A token named by a path the source does not spell out as a string
+    literal — `token.var(key)` — one used only from a stylesheet outside `include`, or one consumed by a separate
+    package treating the output as design tokens, is invisible. Keep those with `staticCss`.
+
+  Pruning runs wherever a complete stylesheet is assembled — `bamboo`, `bamboo cssgen`, watch mode and the PostCSS
+  plugin — and never on a partial one such as `cssgen tokens`, where nothing would be left to reference the tokens.
+  Collecting the references reads every source file, so that work stays behind the flag.
+
 ## 1.12.3
 
 ## 1.12.2

@@ -1,5 +1,24 @@
 # @bamboocss/config
 
+## 1.13.0
+
+### Patch Changes
+
+- Updated dependencies [9ffb84f]
+- Updated dependencies [e482ab3]
+- Updated dependencies [7bf6798]
+- Updated dependencies [11c9409]
+- Updated dependencies [9ffb84f]
+- Updated dependencies [a07286f]
+- Updated dependencies [a5cb5a8]
+- Updated dependencies [9ffb84f]
+- Updated dependencies [a966bae]
+  - @bamboocss/shared@1.13.0
+  - @bamboocss/types@1.13.0
+  - @bamboocss/logger@1.13.0
+  - @bamboocss/preset-bamboo@1.13.0
+  - @bamboocss/preset-base@1.13.0
+
 ## 1.12.3
 
 ### Patch Changes

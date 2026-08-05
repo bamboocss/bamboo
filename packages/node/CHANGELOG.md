@@ -1,5 +1,188 @@
 # @bamboocss/node
 
+## 1.13.0
+
+### Minor Changes
+
+- a07286f: Add `pruneUnusedKeyframes`, dropping `@keyframes` rules nothing can reach.
+
+  A preset declares every animation it offers and an app uses a handful. The rest sit in the one stylesheet that blocks
+  first paint. On the fixture preset this drops all four unused keyframes and 436 bytes; it scales with the size of the
+  design system rather than the app, the same way `pruneUnusedTokens` does.
+
+  It is **off by default** and changes nothing until switched on.
+
+  Only keyframes the theme declares are ever removed, so one emitted by `globalCss` is left alone. A name is kept when
+  an animation property in the generated css names it, when it appears anywhere under `include`, or when it is named in
+  a custom property that is itself reachable.
+
+  That last clause is what makes the pass worth having. `preset-bamboo` declares
+  `--animations-spin: spin 1s linear infinite` whether or not anything uses that token, so counting every custom
+  property as a reference would keep every keyframe the preset ships. References from a custom property are held back
+  and only credited once the property is reached through `var()`, following the chain — the same reachability model
+  `pruneTokenVars` uses.
+
+  Names are recovered by tokenizing values and testing each token against the declared set, rather than by parsing the
+  `animation` shorthand, which interleaves durations, easings and directions in any order. A keyframe named after a
+  keyword therefore always looks referenced. That is the intended bias: keeping an unused keyframe costs bytes, dropping
+  a used one silently stops an animation.
+
+  The textual scan over `include` covers what the css cannot show — an animation name assembled at runtime, or applied
+  through an inline `style` rather than through bamboo.
+
+- a5cb5a8: Add `pruneUnusedTokens`, dropping token css variables nothing can reach.
+
+  The token layer declares every token in the theme. An app uses a fraction of them, so most of what it declares is dead
+  weight in the one stylesheet that blocks first paint. On the `vite-ts` sandbox, with the default preset, this takes
+  `styles.css` from 24,433 to 12,293 bytes — 6,398 to 3,504 gzipped. It scales with the size of the design system rather
+  than the app: `preset-bamboo` declares 432 variables, `preset-atlaskit` 837, `preset-open-props` 898.
+
+  It is **off by default** and changes nothing until switched on.
+
+  A variable is kept when the generated css references it, when a kept variable's own value references it, or when it is
+  named by `token()` or `token.var()` or a literal `var(--x)` anywhere under `include`. Tokens that javascript receives
+  as a reference rather than a literal are always kept, because `token('colors.text')` hands the caller a `var()`
+  whether or not the css mentions it. That covers virtual tokens, any token carrying a condition, and negative tokens —
+  `spacing.-4` resolves to `calc(var(--spacing-4) * -1)`, so what has to survive is the _positive_ token's declaration,
+  not its own. So is anything a theme refers to: a theme is a separate artifact injected at runtime, so nothing in the
+  sheet points at what it needs.
+
+  The negative-token rule is the one with a visible price, and there is no opt-out. A spacing scale generates one
+  negative per entry, so the whole scale is pinned whether or not the app uses it: on the default preset an app
+  referencing a single colour keeps 37 spacing variables, about a third of everything that survives. Presets with large
+  spacing scales therefore see less than the numbers above.
+
+  The walk follows any custom property, not only the removable ones. A colour palette is what forces that:
+  `colorPalette: 'red'` emits `--colors-color-palette-300: var(--colors-red-300)`, and those palette properties are
+  virtual, so stopping at them would leave the rule pointing at colours that had been removed.
+
+  Two limits are deliberate:
+  - Only custom properties the token system declares are eligible. `globalCss` output is never touched. `preset-base`
+    declares the filter and gradient composition properties on the universal selector precisely so a parent's value
+    cannot inherit into a descendant; they look unreferenced, and removing them would change rendering. The `styles.css`
+    post-processing this option replaces does remove them.
+  - Reachability cannot be proven for every reference. A token named by a path the source does not spell out as a string
+    literal — `token.var(key)` — one used only from a stylesheet outside `include`, or one consumed by a separate
+    package treating the output as design tokens, is invisible. Keep those with `staticCss`.
+
+  Pruning runs wherever a complete stylesheet is assembled — `bamboo`, `bamboo cssgen`, watch mode and the PostCSS
+  plugin — and never on a partial one such as `cssgen tokens`, where nothing would be left to reference the tokens.
+  Collecting the references reads every source file, so that work stays behind the flag.
+
+### Patch Changes
+
+- 5b16a67: Emit a `package.json` into the generated output so bundlers can tree-shake the barrels.
+
+  The output is a plain directory rather than an installed package, so it carried no `sideEffects` hint and bundlers had
+  to assume every module mutates something. Nothing a barrel reached could be dropped:
+  `import { Box } from 'styled-system/jsx'` retained all twenty pattern modules, and a deep import at
+  `styled-system/jsx/box.mjs` — which nobody writes — produced a materially smaller bundle than the documented one.
+
+  Declaring `sideEffects` closes that gap. A barrel import now costs what the deep import costs: 41.2 KB to 34.1 KB
+  minified, 12.6 KB to 10.7 KB gzipped, with nineteen unused pattern modules dropped. The patterns barrel improves by
+  about 26%; recipes scale with how many are defined. In a real Vite build of `sandbox/vite-ts` — an app that does use
+  several patterns, so it sees less than the ceiling — JS goes from 242.22 KB to 236.95 KB with the CSS byte-identical.
+
+  Two details in the emitted file are load-bearing:
+  - `sideEffects` lists CSS globs rather than being a bare `false`. A bare `false` permits a bundler to drop
+    `import 'styled-system/styles.css'`, which is how the stylesheet reaches CLI-flow apps. Vite happens to retain CSS
+    imports regardless, but webpack historically does not. Both `*.css` and `**/*.css` are listed because the stylesheet
+    is emitted at the root and, under `splitting`, in `styles/`.
+  - `type` is set to `module`. Adding a `package.json` makes the output its own package boundary, so `.js` output would
+    stop inheriting the consumer's `type` and be re-read as CommonJS. The emitted code is always ESM. This is a no-op
+    under the default `mjs` extension and only matters for `outExtension: 'js'`.
+  - `private` is set, and the file stays nameless. That same package boundary lets a workspace glob match the output
+    directory — this repo's own `packages/**` now does — so it is marked unpublishable, and left unnamed so that several
+    outputs in one workspace cannot collide.
+
+  Unlike the rest of the output, `package.json` is not exclusively ours — `emit-pkg` writes entrypoints to the same path
+  and consumers hand-edit it — so it is merged rather than overwritten. Only absent keys are filled in: an existing
+  `exports` map survives, and a deliberate `sideEffects` or `type` is left as it stands. A file that cannot be parsed as
+  JSON is reported and skipped rather than replaced. The merged file keeps its trailing newline, so a consumer who
+  tracks it in source control does not see a diff on every codegen.
+
+  `emit-pkg` had to learn the other half of that arrangement. It used to write a whole package only when the directory
+  had none, and codegen now always leaves one there, so it would have contributed an entrypoint map to a nameless
+  `private` file and stopped — no `name`, no `version`, no `license`, nothing publishable or resolvable. It now reads a
+  file without a `name` as ours: it supplies the identity that file lacks and lifts the `private` flag that kept a
+  nameless directory unpublishable, which is the whole point of running it. A file that already carries a `name` belongs
+  to the consumer and is still left alone but for `exports`.
+
+  This only affects what bundlers may discard, so no CSS output or class name changes.
+
+- 5b881ee: Re-parse importers when a shared style file changes in watch mode.
+
+  Cross-file extraction folds an imported value into the importing file's output, so editing `styles.ts` had to re-parse
+  everyone importing it — watch only re-parsed and rebundled the changed file, leaving consumers emitting the previous
+  styles until the process restarted.
+
+  The parser now records a reverse dependency graph while parsing, covering both imports and re-exports, and exposes
+  `project.getDependents(filePath)` for the transitive set. Watch rebundles those alongside the changed file. Edges are
+  rebuilt on each parse, so removing an import stops forcing a rebuild of the file it no longer depends on.
+
+- 5b881ee: Use absolute paths consistently in the file watchers.
+
+  The watch handlers removed files by absolute path but reloaded and created them by the path the watcher reported,
+  which is relative to the working directory. A reload that fails to match the file the project holds does nothing and
+  returns quietly, leaving the edit unread — and with cross-file extraction, an unread edit also leaves every importer
+  emitting the previous styles.
+
+  A newly added file now also rebuilds the files importing it, since it can satisfy an import that previously resolved
+  to nothing.
+
+- 5b881ee: Build the stylesheet once per edit, not once per affected file.
+
+  The stylesheet is built from the whole parser result, so rebuilding it per file meant one edit to a shared style file
+  ran the full optimize pipeline and wrote to disk once for every file importing it — 61 builds and 61 writes for a file
+  with 60 importers. Affected files are now re-parsed first and the sheet is built and written a single time.
+
+  A file appearing also reaches the files that were importing it before it existed. Those importers have no dependency
+  edge to follow, since the specifier resolved to nothing when they were parsed, so they are tracked separately and
+  rebuilt when a new file arrives.
+
+- 5b881ee: Serve fresh values to importers after a shared style file is edited or deleted.
+
+  Resolved values are memoized against the AST node that produced them, but a node's value can come from another file —
+  `css(button)` folds whatever `./styles` exports. Editing that file replaces only its own nodes, so an importer's nodes
+  stayed identical and kept serving the value read before the edit. Re-parsing the importer was not enough to clear it.
+
+  The memo is now dropped whenever a file's contents are replaced or reloaded, which is the point at which another
+  file's resolutions can have gone out of date. Deleting a shared file also rebuilds its importers, resolving them
+  before the file leaves the project rather than after, when its path can no longer be matched.
+
+- Updated dependencies [9ffb84f]
+- Updated dependencies [e482ab3]
+- Updated dependencies [5b881ee]
+- Updated dependencies [7bf6798]
+- Updated dependencies [8a6c23e]
+- Updated dependencies [17de3d0]
+- Updated dependencies [cd76ba7]
+- Updated dependencies [11c9409]
+- Updated dependencies [9ffb84f]
+- Updated dependencies [fd03a10]
+- Updated dependencies [a07286f]
+- Updated dependencies [a5cb5a8]
+- Updated dependencies [9ffb84f]
+- Updated dependencies [172fec0]
+- Updated dependencies [a966bae]
+- Updated dependencies [5b16a67]
+- Updated dependencies [a24d37a]
+- Updated dependencies [5b881ee]
+- Updated dependencies [5b881ee]
+- Updated dependencies [5b881ee]
+  - @bamboocss/generator@1.13.0
+  - @bamboocss/shared@1.13.0
+  - @bamboocss/parser@1.13.0
+  - @bamboocss/types@1.13.0
+  - @bamboocss/core@1.13.0
+  - @bamboocss/reporter@1.13.0
+  - @bamboocss/config@1.13.0
+  - @bamboocss/token-dictionary@1.13.0
+  - @bamboocss/logger@1.13.0
+  - @bamboocss/plugin-lightningcss@1.13.0
+  - @bamboocss/plugin-svelte@1.13.0
+  - @bamboocss/plugin-vue@1.13.0
+
 ## 1.12.3
 
 ### Patch Changes

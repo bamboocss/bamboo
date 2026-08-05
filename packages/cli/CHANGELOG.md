@@ -1,5 +1,101 @@
 # @bamboocss/dev
 
+## 1.13.0
+
+### Patch Changes
+
+- fd03a10: Give the generated `styled-system/package.json` a name.
+
+  That file was emitted without one, deliberately, so that two outputs in a single workspace could not collide on the
+  same name. But a nameless `package.json` is not one a workspace scanner skips — it is one it refuses. pnpm, npm and
+  changesets all abort with `missing the "name" field`, and none of them say which directory produced it. Any project
+  whose workspace globs reach an output directory hit this, and a recursive glob such as `packages/**` reaches every one
+  of them.
+
+  The name is derived from `outdir`, the only input that is both deterministic and portable (`cwd` is absolute, so
+  putting it in generated output would make that output differ per machine). Two projects in one workspace that both
+  keep the default `outdir` therefore still collide — but on a duplicate-name error that names both paths, rather than
+  on a missing field that points nowhere.
+
+  `bamboo emit-pkg` used to treat a missing name as its signal that the file was generated rather than hand-authored. It
+  now keys on the file being `private` with no `version`, which is what actually distinguishes generated output from a
+  package the consumer owns — a private _named_ package in the output directory is the `@acme/styled-system` workspace
+  layout the component-library guide recommends, and that is still left alone.
+
+- 5b16a67: Emit a `package.json` into the generated output so bundlers can tree-shake the barrels.
+
+  The output is a plain directory rather than an installed package, so it carried no `sideEffects` hint and bundlers had
+  to assume every module mutates something. Nothing a barrel reached could be dropped:
+  `import { Box } from 'styled-system/jsx'` retained all twenty pattern modules, and a deep import at
+  `styled-system/jsx/box.mjs` — which nobody writes — produced a materially smaller bundle than the documented one.
+
+  Declaring `sideEffects` closes that gap. A barrel import now costs what the deep import costs: 41.2 KB to 34.1 KB
+  minified, 12.6 KB to 10.7 KB gzipped, with nineteen unused pattern modules dropped. The patterns barrel improves by
+  about 26%; recipes scale with how many are defined. In a real Vite build of `sandbox/vite-ts` — an app that does use
+  several patterns, so it sees less than the ceiling — JS goes from 242.22 KB to 236.95 KB with the CSS byte-identical.
+
+  Two details in the emitted file are load-bearing:
+  - `sideEffects` lists CSS globs rather than being a bare `false`. A bare `false` permits a bundler to drop
+    `import 'styled-system/styles.css'`, which is how the stylesheet reaches CLI-flow apps. Vite happens to retain CSS
+    imports regardless, but webpack historically does not. Both `*.css` and `**/*.css` are listed because the stylesheet
+    is emitted at the root and, under `splitting`, in `styles/`.
+  - `type` is set to `module`. Adding a `package.json` makes the output its own package boundary, so `.js` output would
+    stop inheriting the consumer's `type` and be re-read as CommonJS. The emitted code is always ESM. This is a no-op
+    under the default `mjs` extension and only matters for `outExtension: 'js'`.
+  - `private` is set, and the file stays nameless. That same package boundary lets a workspace glob match the output
+    directory — this repo's own `packages/**` now does — so it is marked unpublishable, and left unnamed so that several
+    outputs in one workspace cannot collide.
+
+  Unlike the rest of the output, `package.json` is not exclusively ours — `emit-pkg` writes entrypoints to the same path
+  and consumers hand-edit it — so it is merged rather than overwritten. Only absent keys are filled in: an existing
+  `exports` map survives, and a deliberate `sideEffects` or `type` is left as it stands. A file that cannot be parsed as
+  JSON is reported and skipped rather than replaced. The merged file keeps its trailing newline, so a consumer who
+  tracks it in source control does not see a diff on every codegen.
+
+  `emit-pkg` had to learn the other half of that arrangement. It used to write a whole package only when the directory
+  had none, and codegen now always leaves one there, so it would have contributed an entrypoint map to a nameless
+  `private` file and stopped — no `name`, no `version`, no `license`, nothing publishable or resolvable. It now reads a
+  file without a `name` as ours: it supplies the identity that file lacks and lifts the `private` flag that kept a
+  nameless directory unpublishable, which is the whole point of running it. A file that already carries a `name` belongs
+  to the consumer and is still left alone but for `exports`.
+
+  This only affects what bundlers may discard, so no CSS output or class name changes.
+
+- 5b881ee: Use absolute paths consistently in the file watchers.
+
+  The watch handlers removed files by absolute path but reloaded and created them by the path the watcher reported,
+  which is relative to the working directory. A reload that fails to match the file the project holds does nothing and
+  returns quietly, leaving the edit unread — and with cross-file extraction, an unread edit also leaves every importer
+  emitting the previous styles.
+
+  A newly added file now also rebuilds the files importing it, since it can satisfy an import that previously resolved
+  to nothing.
+
+- Updated dependencies [9ffb84f]
+- Updated dependencies [e482ab3]
+- Updated dependencies [7bf6798]
+- Updated dependencies [11c9409]
+- Updated dependencies [9ffb84f]
+- Updated dependencies [a07286f]
+- Updated dependencies [a5cb5a8]
+- Updated dependencies [9ffb84f]
+- Updated dependencies [a966bae]
+- Updated dependencies [5b16a67]
+- Updated dependencies [5b881ee]
+- Updated dependencies [5b881ee]
+- Updated dependencies [5b881ee]
+- Updated dependencies [5b881ee]
+  - @bamboocss/shared@1.13.0
+  - @bamboocss/types@1.13.0
+  - @bamboocss/node@1.13.0
+  - @bamboocss/config@1.13.0
+  - @bamboocss/token-dictionary@1.13.0
+  - @bamboocss/logger@1.13.0
+  - @bamboocss/mcp@1.13.0
+  - @bamboocss/preset-bamboo@1.13.0
+  - @bamboocss/preset-base@1.13.0
+  - @bamboocss/postcss@1.13.0
+
 ## 1.12.3
 
 ### Patch Changes
