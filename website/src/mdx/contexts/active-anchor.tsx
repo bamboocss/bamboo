@@ -1,6 +1,5 @@
 'use client'
 
-import 'intersection-observer'
 import { createContext, useContext, useEffect, useState } from 'react'
 
 type ActiveAnchor = Record<
