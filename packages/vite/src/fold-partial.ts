@@ -629,29 +629,29 @@ const LEAF_SENTINEL = 'bamboo0leaf0sentinel0'
  * in one step. It also self-gates — a hashed or grouped class does not contain the
  * sentinel, so both modes decline here without this having to read the config.
  *
+ * Shared with the element surface, which asks the same question about a JSX style prop.
+ *
  * Top level only, like the finite lowering beside it. A nested leaf's class carries its
  * condition path, which the prefix would describe correctly — but the helper's fallback
  * rebuilds `{ [prop]: value }` to hand back to `css()`, and that reconstruction has to
  * carry the same path or the declined shape resolves without its condition.
  */
-const dynamicLeaf = (key: string, value: Node | undefined, deps: PartialFoldContext): string | undefined => {
-  if (!deps.allowLeaf || !value || deps.ctx.isTemplateLiteralSyntax) return undefined
+export const leafPrefix = (
+  key: string,
+  ctx: Context,
+  runtimeCss: (...styles: Dict[]) => string,
+): string | undefined => {
+  if (ctx.isTemplateLiteralSyntax) return undefined
 
   // A condition key names a block, not a declaration. Its value is an object in every
   // real use, which `leafClass` declines at runtime — so lowering one only buys a wasted
   // call before the fallback, and gives it a prefix (`_hover_`) that describes a shape
   // nobody writes.
-  if (deps.ctx.conditions.isCondition(key)) return undefined
-
-  // Written as an object or an array, this is a condition block or a responsive list:
-  // one class per entry rather than one class. The runtime shapes that do the same are
-  // caught by `leafClass`, which declines them back to `css()`.
-  const inner = unwrapExpression(value)
-  if (Node.isObjectLiteralExpression(inner) || Node.isArrayLiteralExpression(inner)) return undefined
+  if (ctx.conditions.isCondition(key)) return undefined
 
   let resolved: string
   try {
-    resolved = deps.runtimeCss({ [key]: LEAF_SENTINEL })
+    resolved = runtimeCss({ [key]: LEAF_SENTINEL })
   } catch {
     return undefined
   }
@@ -661,9 +661,31 @@ const dynamicLeaf = (key: string, value: Node | undefined, deps: PartialFoldCont
   const prefix = resolved.slice(0, -LEAF_SENTINEL.length)
   // A space means the property resolved to more than one class, so no single prefix
   // describes it. An empty prefix means it resolved to nothing recognisable.
-  if (!prefix || prefix.includes(' ')) return undefined
+  return !prefix || prefix.includes(' ') ? undefined : prefix
+}
 
-  return `${deps.leafName ?? LEAF_HELPER}(${JSON.stringify(prefix)}, ${JSON.stringify(key)}, ${value.getText()})`
+/**
+ * Written as an object or an array, this is a condition block or a responsive list: one
+ * class per entry rather than one class. `leafClass` declines both at runtime and falls
+ * back, so lowering one is not wrong — it is a guaranteed round trip through the fallback,
+ * which is the same reason a condition key is declined.
+ */
+export const isWrittenAsCollection = (value: Node): boolean => {
+  const inner = unwrapExpression(value)
+  return Node.isObjectLiteralExpression(inner) || Node.isArrayLiteralExpression(inner)
+}
+
+/** The call this surface emits in place of the property. */
+export const leafCall = (prefix: string, key: string, valueText: string, name = LEAF_HELPER): string =>
+  `${name}(${JSON.stringify(prefix)}, ${JSON.stringify(key)}, ${valueText})`
+
+const dynamicLeaf = (key: string, value: Node | undefined, deps: PartialFoldContext): string | undefined => {
+  if (!deps.allowLeaf || !value) return undefined
+
+  if (isWrittenAsCollection(value)) return undefined
+
+  const prefix = leafPrefix(key, deps.ctx, deps.runtimeCss)
+  return prefix === undefined ? undefined : leafCall(prefix, key, value.getText(), deps.leafName ?? LEAF_HELPER)
 }
 
 export interface PartialFoldContext {
@@ -1018,7 +1040,8 @@ export const resolveCssHelpers = (
   isBambooCssModule: (mod: string) => boolean,
   isGeneratedCssModule: (mod: string) => boolean,
   isShadowed: (node: Node, name: string) => boolean,
-): { css: string; cx: string; insert?: { pos: number; names: string[] } } | undefined => {
+  wantLeaf = false,
+): { css: string; cx: string; leaf?: string; insert?: { pos: number; names: string[] } } | undefined => {
   const sourceFile = node.getSourceFile()
 
   for (const declaration of sourceFile.getImportDeclarations()) {
@@ -1032,24 +1055,44 @@ export const resolveCssHelpers = (
     const cssName = (cssImport.getAliasNode() ?? cssImport.getNameNode()).getText()
     if (isShadowed(node, cssName)) return undefined
 
-    const existingCx = named.find((entry) => entry.getNameNode().getText() === 'cx' && !entry.isTypeOnly())
+    const wanted = wantLeaf ? ['cx', LEAF_HELPER] : ['cx']
+    const resolved: Record<string, string> = {}
+    const missing: string[] = []
 
-    if (existingCx) {
-      const cxName = (existingCx.getAliasNode() ?? existingCx.getNameNode()).getText()
-      return isShadowed(node, cxName) ? undefined : { css: cssName, cx: cxName }
+    for (const want of wanted) {
+      const existing = named.find((entry) => entry.getNameNode().getText() === want && !entry.isTypeOnly())
+
+      if (existing) {
+        const local = (existing.getAliasNode() ?? existing.getNameNode()).getText()
+        if (isShadowed(node, local)) return undefined
+        resolved[want] = local
+        continue
+      }
+
+      missing.push(want)
     }
+
+    if (!missing.length) return { css: cssName, cx: resolved.cx!, leaf: resolved[LEAF_HELPER] }
 
     // Same restriction as the call-site split: only the generated module's exports are
     // known, so only it may have a binding added.
     if (!isGeneratedCssModule(mod)) return undefined
-    if (isShadowed(node, 'cx')) return undefined
 
-    if (declaredAtModuleScope(sourceFile).has('cx')) return undefined
+    const declared = declaredAtModuleScope(sourceFile)
+    for (const name of missing) {
+      if (isShadowed(node, name) || declared.has(name)) return undefined
+      resolved[name] = name
+    }
 
     const last = named.at(-1)
     if (!last) return undefined
 
-    return { css: cssName, cx: 'cx', insert: { pos: last.getEnd(), names: ['cx'] } }
+    return {
+      css: cssName,
+      cx: resolved.cx!,
+      leaf: resolved[LEAF_HELPER],
+      insert: { pos: last.getEnd(), names: missing },
+    }
   }
 
   return undefined

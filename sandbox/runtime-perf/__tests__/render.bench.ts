@@ -32,6 +32,31 @@ const original = await import(/* @vite-ignore */ source)
 const folded = await import(/* @vite-ignore */ foldedPath)
 rmSync(foldedPath, { force: true })
 
+/**
+ * The same treatment for a module of nothing but runtime-valued style props.
+ *
+ * `tree.tsx` folds most of its elements away, so it measures the factory disappearing.
+ * This one keeps a runtime path either way — the fold can only change what that path
+ * costs, by lowering each prop to a class prefix plus its value instead of a `css()`
+ * call. Without it, the surface that change touches is one prop out of a whole tree.
+ */
+const dynamicSource = join(here, '../src/parity/dynamic.tsx')
+const dynamicFoldedPath = join(here, '../src/parity/dynamic.bench.folded.tsx')
+
+const dynamicCode = readFileSync(dynamicSource, 'utf8')
+ctx.project.addSourceFile(dynamicSource, dynamicCode)
+const dynamicResult = foldSource({
+  ctx,
+  code: dynamicCode,
+  parserResult: ctx.project.parseSourceFile(dynamicSource)!,
+  filePath: dynamicSource,
+})
+writeFileSync(dynamicFoldedPath, dynamicResult.code, 'utf8')
+
+const dynamicOriginal = await import(/* @vite-ignore */ dynamicSource)
+const dynamicFolded = await import(/* @vite-ignore */ dynamicFoldedPath)
+rmSync(dynamicFoldedPath, { force: true })
+
 const props = { tone: 'red600', rest: { title: 'spread title' }, flag: true }
 
 /** Enough elements that per-render setup does not dominate the measurement. */
@@ -70,4 +95,20 @@ describe(`react render, ${TREES} trees`, () => {
     },
     OPTIONS,
   )
+})
+
+const dynamicProps = { tone: 'red600', size: 'body', gap: 'md' }
+
+const renderDynamic = (Component: (p: typeof dynamicProps) => unknown) =>
+  renderToStaticMarkup(
+    createElement(
+      'div',
+      null,
+      Array.from({ length: TREES }, (_, key) => createElement(Component as never, { ...dynamicProps, key })),
+    ),
+  )
+
+describe(`react render, ${TREES} trees of runtime-valued props`, () => {
+  bench('source (css() per prop)', () => void renderDynamic(dynamicOriginal.Dynamic), OPTIONS)
+  bench('folded (prefix plus value)', () => void renderDynamic(dynamicFolded.Dynamic), OPTIONS)
 })

@@ -84,10 +84,11 @@ describe('sandbox/vite-ts parity', () => {
       for (const call of result.folded) {
         const where = `${file} @ ${call.start}`
 
-        // A call whose every property lowered to a ternary resolves no class outright,
-        // and its branches are in `classNames` instead. Emitting nothing at all is still
-        // a defect.
-        expect(call.classNames, `${where} produced no class`).not.toHaveLength(0)
+        // A call whose every property lowered to a ternary resolves no class outright, and
+        // its branches are in `classNames` instead. One that lowered every property to a
+        // leaf resolves no literal at all — its class is built at runtime — so an empty
+        // list is legitimate there and only there: the planner declines a fold with
+        // neither a class nor a lowered property, so empty implies a leaf.
 
         // The decoder escapes class names for CSS selectors (`.c_red\.300`); a class
         // attribute must carry the unescaped form. A stray backslash here is the

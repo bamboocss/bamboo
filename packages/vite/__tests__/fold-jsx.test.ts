@@ -494,20 +494,64 @@ const both = (body: string) =>
   `import { css } from 'styled-system/css'\nimport { styled } from 'styled-system/jsx'\n${body}\n`
 
 describe('partially folding an element', () => {
-  test('static style props become a literal, dynamic ones move to css()', () => {
+  test('static style props become a literal, dynamic ones are lowered', () => {
     const { fold } = createFoldFixture()
     const result = fold(both(`export const A = ({ tone }) => <styled.div color="red.300" backgroundColor={tone} />`))
 
     expect(result.folded).toHaveLength(1)
-    expect(result.code).toContain('<div className={cx("c_red.300", css({ backgroundColor: tone }))} />')
+    expect(result.code).toContain('<div className={cx("c_red.300", cssLeaf("bg-c_", "backgroundColor", tone))} />')
     expect(result.code).not.toContain('styled.div')
   })
 
-  test('cx is added to the existing css import', () => {
+  test('a dynamic prop that cannot be lowered keeps its css() call', () => {
+    const { fold } = createFoldFixture()
+    // A responsive array is one class per breakpoint, which no single prefix describes.
+    const result = fold(both(`export const A = ({ p }) => <styled.div color="red.300" padding={['1', p]} />`))
+
+    expect(result.code).toContain(`<div className={cx("c_red.300", css({ padding: ['1', p] }))} />`)
+  })
+
+  test('the helpers are added to the existing css import', () => {
     const { fold } = createFoldFixture()
     const result = fold(both(`export const A = ({ tone }) => <styled.div color="red.300" backgroundColor={tone} />`))
 
-    expect(result.code).toContain(`import { css, cx } from 'styled-system/css'`)
+    expect(result.code).toContain(`import { css, cx, cssLeaf } from 'styled-system/css'`)
+  })
+
+  test('a lowered prop and a residual one keep the order they were written in', () => {
+    const { fold } = createFoldFixture()
+
+    const leafFirst = fold(
+      both(`export const A = ({ a, p }) => <styled.div color="red.300" bg={a} padding={['1', p]} />`),
+    )
+    expect(leafFirst.code).toContain(`cx("c_red.300", cssLeaf("bg_", "bg", a), css({ padding: ['1', p] }))`)
+
+    const residueFirst = fold(
+      both(`export const B = ({ a, p }) => <styled.div color="red.300" padding={['1', p]} bg={a} />`),
+      'app/src/b.tsx',
+    )
+    expect(residueFirst.code).toContain(`cx("c_red.300", css({ padding: ['1', p] }), cssLeaf("bg_", "bg", a))`)
+  })
+
+  test('interleaving sends every lowered prop back to the call', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(
+      both(`export const A = ({ a, p, m }) => <styled.div color="red.300" bg={a} padding={['1', p]} margin={m} />`),
+    )
+
+    // Splitting the residue around the lowered props would turn one last-wins merge into
+    // two independent ones, so the lowering is declined rather than reordered.
+    expect(result.code).toContain(`cx("c_red.300", css({ bg: a, padding: ['1', p], margin: m }))`)
+    expect(result.code).not.toContain('cssLeaf')
+  })
+
+  test('two props claiming one property are not lowered apart', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(both(`export const A = ({ a, b }) => <styled.div color="red.300" mx={a} marginInline={b} />`))
+
+    // Last-wins inside one `css()` object; lowering either would emit both classes.
+    expect(result.code).toContain('css({ mx: a, marginInline: b })')
+    expect(result.code).not.toContain('cssLeaf')
   })
 
   test('non-style props still pass through', () => {
@@ -528,7 +572,7 @@ describe('partially folding an element', () => {
       both(`export const A = ({ tone }) => <styled.div color="red.300" className="mine" backgroundColor={tone} />`),
     )
 
-    expect(result.code).toContain('cx("c_red.300 mine", css({ backgroundColor: tone }))')
+    expect(result.code).toContain('cx("c_red.300 mine", cssLeaf("bg-c_", "backgroundColor", tone))')
   })
 
   test('children and the closing tag survive', () => {
@@ -605,14 +649,25 @@ describe('elements that must not split', () => {
     expect(fold(code).folded).toHaveLength(0)
   })
 
-  test('an element whose static half resolves to no class', () => {
+  test('an element whose static half resolves to no class, and nothing lowers', () => {
     const { fold } = createFoldFixture()
-    const code = both(`export const A = ({ tone }) => <styled.div backgroundColor={tone} />`)
+    // A responsive array cannot lower, so there is neither a class to hoist nor a prop to
+    // lower — the split would emit the same `css()` call wrapped in a `cx()`.
+    const code = both(`export const A = ({ p }) => <styled.div padding={['1', p]} />`)
 
-    // Declined because the static half is empty, not because of a rule about having no
-    // static props — `<styled.div className="mine" bg={o} />` has none either and does
-    // split, on the strength of the className alone.
     expect(fold(code).folded).toHaveLength(0)
+    expect(fold(code).code).toBe(code)
+  })
+
+  test('an element with no static half still folds when a prop lowers', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(both(`export const A = ({ tone }) => <styled.div backgroundColor={tone} />`))
+
+    // Nothing to hoist, but the factory layer goes with the lowered prop — which is the
+    // case where the factory was pure overhead, since no static class amortised it.
+    expect(result.folded).toHaveLength(1)
+    expect(result.code).toContain('<div className={cx(cssLeaf("bg-c_", "backgroundColor", tone))} />')
+    expect(result.code).not.toContain('styled.div')
   })
 })
 

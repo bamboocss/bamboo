@@ -2,7 +2,15 @@ import type { Context } from '@bamboocss/core'
 import { type BoxNode, box } from '@bamboocss/extractor'
 import type { Dict, ResultItem } from '@bamboocss/types'
 import { type JsxAttribute, Node } from 'ts-morph'
-import { accountsForSource, collides, isStaticBox, resolveCssHelpers } from './fold-partial'
+import {
+  accountsForSource,
+  collides,
+  isStaticBox,
+  isWrittenAsCollection,
+  leafCall,
+  leafPrefix,
+  resolveCssHelpers,
+} from './fold-partial'
 import type { RuntimeCss } from './runtime-css'
 
 /**
@@ -245,7 +253,7 @@ export const planJsxFold = (
     : undefined
   const passthrough: string[] = []
   const staticProps: string[] = []
-  const dynamicProps: Array<{ name: string; text: string }> = []
+  const dynamicProps: Array<{ name: string; text: string; expression: Node }> = []
   let staticClassName = ''
 
   for (const attribute of node.getAttributes()) {
@@ -298,7 +306,7 @@ export const planJsxFold = (
       if (!valueExpression) return { reason: 'dynamic' }
       const expression = valueExpression
 
-      dynamicProps.push({ name, text: expression.getText() })
+      dynamicProps.push({ name, text: expression.getText(), expression })
       continue
     }
 
@@ -320,17 +328,67 @@ export const planJsxFold = (
     )
       return { reason: 'dynamic' }
 
-    const helpers = resolveCssHelpers(node, deps.isBambooCssModule, deps.isGeneratedCssModule, deps.isShadowed)
+    // A prop whose class is a prefix plus its value can be lowered the way a call-site
+    // property is, rather than travelling in the `css()` call. Two rules narrow it:
+    //
+    // A property has to be claimed by exactly one prop. Two that resolve to the same one
+    // — `mx` and `marginInline` — are last-wins inside a single `css()` object, and
+    // lowering either would emit both classes instead.
+    const resolveProp = (name: string) => (ctx.utility.hasShorthand ? ctx.utility.resolveShorthand(name) : name)
+    const claimed = new Map<string, number>()
+    for (const prop of dynamicProps) claimed.set(resolveProp(prop.name), (claimed.get(resolveProp(prop.name)) ?? 0) + 1)
+
+    const prefixes = new Map<string, string>()
+    for (const prop of dynamicProps) {
+      if (claimed.get(resolveProp(prop.name)) !== 1) continue
+      if (isWrittenAsCollection(prop.expression)) continue
+      const prefix = leafPrefix(prop.name, ctx, runtimeCss)
+      if (prefix !== undefined) prefixes.set(prop.name, prefix)
+    }
+
+    // And they must not interleave with what stays behind. Each prop's expression runs
+    // where it is written, so the lowered ones can sit before the call or after it, but
+    // splitting the residue into two `css()` calls around them would turn one last-wins
+    // merge into two independent ones.
+    const kinds = dynamicProps.map((prop) => (prefixes.has(prop.name) ? 'l' : 'r')).join('')
+    if (!/^l*r*$/.test(kinds) && !/^r*l*$/.test(kinds)) prefixes.clear()
+
+    const helpers = resolveCssHelpers(
+      node,
+      deps.isBambooCssModule,
+      deps.isGeneratedCssModule,
+      deps.isShadowed,
+      prefixes.size > 0,
+    )
     if (!helpers) return { reason: 'dynamic' }
+    if (!helpers.leaf) prefixes.clear()
 
     const staticStyles: Dict = {}
     for (const name of staticProps) staticStyles[name] = styles[name]
 
     const resolved = [runtimeCss(staticStyles), staticClassName].filter(Boolean).join(' ')
-    if (!resolved) return { reason: 'dynamic' }
 
-    const runtime = `${helpers.css}({ ${dynamicProps.map((prop) => `${prop.name}: ${prop.text}`).join(', ')} })`
-    const plan = buildEdits(node, tag, passthrough, resolved, `${helpers.cx}(${JSON.stringify(resolved)}, ${runtime})`)
+    const lowered = dynamicProps
+      .filter((prop) => prefixes.has(prop.name))
+      .map((prop) => leafCall(prefixes.get(prop.name)!, prop.name, prop.text, helpers.leaf))
+    const residue = dynamicProps.filter((prop) => !prefixes.has(prop.name))
+    const runtime = residue.length
+      ? [`${helpers.css}({ ${residue.map((prop) => `${prop.name}: ${prop.text}`).join(', ')} })`]
+      : []
+
+    // Nothing to hoist and nothing lowered means the split would emit the same `css()`
+    // call inside a `cx()`, so the element keeps its factory. One lowered prop is enough
+    // to be worth it even with no static half: the factory layer goes with it.
+    if (!resolved && !lowered.length) return { reason: 'dynamic' }
+
+    const parts = kinds.startsWith('r') ? [...runtime, ...lowered] : [...lowered, ...runtime]
+    const plan = buildEdits(
+      node,
+      tag,
+      passthrough,
+      resolved,
+      `${helpers.cx}(${[...(resolved ? [JSON.stringify(resolved)] : []), ...parts].join(', ')})`,
+    )
 
     return 'reason' in plan ? plan : { ...plan, insert: helpers.insert }
   }

@@ -39,8 +39,8 @@ export const Tree = ({ tone, rest, flag }: { tone: string; rest: Record<string, 
       <styled.span color="red600">nested</styled.span>
     </styled.div>
 
-    {/* declines: dynamic style prop */}
-    <styled.div color={tone}>dynamic</styled.div>
+    {/* declines: a responsive array is one class per breakpoint, which no prefix describes */}
+    <styled.div padding={['sm', tone]}>dynamic</styled.div>
 
     {/* partially folds: static props become a literal, the dynamic one goes to css() */}
     <styled.div padding="xs" fontWeight="bold" backgroundColor={tone}>

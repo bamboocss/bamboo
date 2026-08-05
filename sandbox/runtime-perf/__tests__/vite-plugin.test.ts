@@ -60,7 +60,7 @@ describe('vite plugin, real build', () => {
     const code = await bundle({ transform: true })
 
     // Still routed through the factory, with the prop that made each one decline.
-    expect(code).toContain('styled.div, { color: tone')
+    expect(code).toContain('styled.div, { padding:')
     expect(code).toContain('...rest')
     expect(code).toContain('css: { color: "gray600" }')
 
