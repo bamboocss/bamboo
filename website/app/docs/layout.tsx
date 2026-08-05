@@ -1,4 +1,3 @@
-import { Footer } from '@/mdx/footer'
 import { Navbar } from '@/mdx/navbar'
 import { css } from '@/styled-system/css'
 
@@ -21,7 +20,6 @@ export default function DocsLayout(props: React.PropsWithChildren) {
       >
         {children}
       </main>
-      <Footer />
     </>
   )
 }
