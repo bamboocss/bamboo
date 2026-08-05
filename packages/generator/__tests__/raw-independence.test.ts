@@ -18,7 +18,16 @@ describe('raw() helpers return independent objects', () => {
 
   test('cva.raw copies the resolved result', () => {
     const js = generateCvaFn(createContext()).js
-    expect(js).toContain('raw: (...args) => cloneStyles(resolve(...args))')
+    expect(js).toContain('raw: (...args) => cloneStyles(resolveVariants(...args))')
+  })
+
+  test('the resolve cva.raw copies from is the memoized one', () => {
+    const js = generateCvaFn(createContext()).js
+
+    // Two separate reasons the copy has to be there, and this is the second: `resolve` ends
+    // in `mergeCss`, which was already cached, and now `resolve` itself is cached too. So the
+    // object `raw` starts from is shared twice over.
+    expect(js).toContain('const resolveVariants = memo(resolve)')
   })
 
   test('mergeProps does not copy, so the hot merge path stays cheap', () => {

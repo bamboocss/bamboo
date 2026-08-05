@@ -38,6 +38,15 @@ export function cva(config) {
     })
   }
 
+  // `raw` runs per element per render — the JSX factory calls it to build the styles it
+  // merges with style props — and `resolve` is not cheap: a `mergeCss` per active variant
+  // plus a scan of every compound variant. Memoizing it keys that work on the variant
+  // props rather than repeating it for every element that shares them.
+  //
+  // `raw` still clones what it returns. The memoized object is shared, so handing it to a
+  // caller that mutated it would poison every later call.
+  const resolveVariants = memo(resolve)
+
   function cvaFn(props) {
     return css(resolve(props))
   }
@@ -54,7 +63,7 @@ export function cva(config) {
     __cva__: true,
     variantMap,
     variantKeys,
-    raw: (...args) => cloneStyles(resolve(...args)),
+    raw: (...args) => cloneStyles(resolveVariants(...args)),
     config,
     merge,
     splitVariantProps,

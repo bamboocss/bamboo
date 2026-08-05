@@ -74,4 +74,36 @@ describe('cva', () => {
       }
     `)
   })
+
+  test('raw returns an object the caller owns', () => {
+    const first = button.raw({ visual: 'solid' })
+    const second = button.raw({ visual: 'solid' })
+
+    // `resolve` is memoized, so the two calls share one computation. They must not share the
+    // object: mutating what `raw` handed back would otherwise poison every later call.
+    expect(first).not.toBe(second)
+
+    // Snapshotted before the mutation. Comparing against `second` directly would be vacuous
+    // under a shallow copy, since `second.color` would be the very object being poisoned.
+    const expected = structuredClone(second)
+
+    first.fontWeight = 'poisoned'
+    ;(first.color as Record<string, string>)._dark = 'poisoned'
+
+    expect(button.raw({ visual: 'solid' })).toEqual(expected)
+  })
+
+  test('the copy reaches nested condition blocks', () => {
+    // `resolve` ends in `mergeCss`, and `mergeProps` builds a fresh top level while assigning
+    // nested objects by reference — so a condition block aliases straight into the `cva`
+    // config. A shallow copy at the `raw` boundary would let this escape into every later
+    // call, and into the class names built from it.
+    const outline = button.raw({ visual: 'outline' })
+    delete (outline.color as Record<string, unknown>)._dark
+
+    expect(button.raw({ visual: 'outline' }).color).toEqual({
+      base: 'colorPalette.600',
+      _dark: 'colorPalette.200',
+    })
+  })
 })
