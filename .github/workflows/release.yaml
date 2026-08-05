@@ -56,7 +56,6 @@ jobs:
         run: pnpm build
 
       - name: Publish packages
-        id: changesets
         uses: changesets/action@v1
         with:
           publish: pnpm release
@@ -67,16 +66,3 @@ jobs:
           # token path and fail unauthenticated.
           # https://github.com/changesets/changesets/issues/1152#issuecomment-3190884868
           NPM_TOKEN: ''
-
-      - name: Slack Notification
-        if: steps.changesets.outputs.published == 'true'
-        uses: slackapi/slack-github-action@v4
-        with:
-          webhook-type: webhook-trigger
-          payload: |
-            {
-              "package_name": "@bamboocss/dev",
-              "changelog_url": "https://github.com/bamboocss/bamboo/blob/main/CHANGELOG.md"
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
