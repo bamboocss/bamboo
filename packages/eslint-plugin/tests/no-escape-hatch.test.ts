@@ -5,6 +5,16 @@ import multiline from 'multiline-ts'
 eslintTester.run(RULE_NAME, rule, {
   invalid: [
     {
+      // The value as a whole is not an escape hatch, but a candidate inside it is. No
+      // suggestion: stripping the outer characters would leave `allback(...` behind.
+      code: multiline`
+  import { css } from './bamboo/css';
+  
+  const styles = css({ width: 'fallback([stretch], 100%)' })`,
+      errors: [{ messageId: 'escapeHatch' }],
+    },
+
+    {
       code: multiline`
   import { css } from './bamboo/css';
   
@@ -76,6 +86,14 @@ eslintTester.run(RULE_NAME, rule, {
     },
   ],
   valid: [
+    {
+      // A fallback whose candidates are all plain values is fine.
+      code: multiline`
+  import { css } from './bamboo/css';
+  
+  const styles = css({ height: 'fallback(100dvh, 100vh)' })`,
+    },
+
     {
       code: multiline`
   import { css } from './bamboo/css';

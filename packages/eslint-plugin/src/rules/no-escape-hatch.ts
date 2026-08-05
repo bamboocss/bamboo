@@ -1,7 +1,7 @@
 import { createRule } from '../utils'
 import { isBambooAttribute, isBambooProp as isBambooProperty, isRecipeVariant } from '../utils/helpers'
 import { isIdentifier, isJSXExpressionContainer, isLiteral, isTemplateLiteral } from '../utils/nodes'
-import { getArbitraryValue } from '@bamboocss/shared'
+import { getArbitraryValue, parseFallbackValue } from '@bamboocss/shared'
 import { type TSESTree } from '@typescript-eslint/utils'
 
 export const RULE_NAME = 'no-escape-hatch'
@@ -14,6 +14,8 @@ const rule = createRule({
       return [start + 1, end - 1] as const
     }
 
+    const isEscapeHatch = (value: string) => getArbitraryValue(value) !== value.trim()
+
     // Function to check if a value contains escape hatch syntax
     const hasEscapeHatch = (value: string | undefined): boolean => {
       if (!value) {
@@ -25,12 +27,27 @@ const rule = createRule({
         return false
       }
 
-      return getArbitraryValue(value) !== value.trim()
+      // A `fallback(...)` wraps its candidates, so the value as a whole never looks like an
+      // escape hatch even when every candidate is one. Check them individually.
+      const candidates = parseFallbackValue(value)
+      if (candidates) {
+        return candidates.some(isEscapeHatch)
+      }
+
+      return isEscapeHatch(value)
     }
 
     // Unified function to handle reporting
     const handleNodeValue = (node: TSESTree.Node, value: string) => {
       if (!hasEscapeHatch(value)) {
+        return
+      }
+
+      // Stripping the outer brackets is only a fix when the whole value is the escape hatch.
+      // Inside a fallback the brackets are on the candidates, and removing the first and last
+      // character of the node would leave `allback(...` behind.
+      if (parseFallbackValue(value)) {
+        context.report({ messageId: 'escapeHatch', node })
         return
       }
 
