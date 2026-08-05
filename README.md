@@ -19,6 +19,9 @@ reaches the browser and what it costs:
   growing for the life of the process, which used to leak under long-lived SSR.
 - **Optional zero runtime** — [`@bamboocss/vite`](https://bamboocss.com/docs/guides/source-transformation) folds
   statically-resolvable `css()` calls into plain class strings at build time.
+- **Less HTML** — [`cssMode: 'grouped'`](https://bamboocss.com/docs/references/config#cssmode) emits one class per
+  `css()` call instead of one per property, trading CSS duplication for shorter class attributes and faster style
+  recalculation.
 
 Every figure is measured against this repository's own sandboxes; the output-size wins scale with the size of your
 design system rather than your app. The

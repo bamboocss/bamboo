@@ -305,6 +305,19 @@ It also collapses `styled.*` elements to the intrinsic tag they render, folds co
 static `as` prop, and follows named imports across files. CSS output is unchanged — only the JavaScript changes. It is
 off by default, build-only, and reports how much of your source it managed to fold.
 
+### Less HTML
+
+[`cssMode: 'grouped'`](/docs/references/config#cssmode) emits one class per `css()` call rather than one per property,
+so an element carrying a dozen atomic classes carries one instead.
+
+Atomic CSS is a good default, but at scale it puts long class sequences into the markup and multiplies the declarations
+the browser walks during style recalculation — a cost `hash` does not address, since it shortens class names rather than
+reducing their count. Grouped trades some CSS duplication for the other side of that: a shared declaration is repeated
+in every group instead of deduping into one class. Which way that goes depends on whether your bottleneck is the CSS
+bundle or the HTML payload, so it is opt-in and atomic stays the default. It matters most under SSR and SSG, where the
+HTML is rarely cached and lands on every initial render. The
+[upstream proposal](https://github.com/chakra-ui/panda/pull/3531) has the benchmarks behind that.
+
 ### Faster builds
 
 - The dependency graph resolves imports without initializing the TypeScript type checker, which was costing hundreds of

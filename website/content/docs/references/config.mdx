@@ -308,6 +308,47 @@ Then the result looks like this:
 }
 ```
 
+### cssMode
+
+**Type**: `'atomic' | 'grouped'`
+
+**Default**: `'atomic'`
+
+How utility classes are generated. `atomic` emits one class per property; `grouped` emits one class per `css()` call
+with every property inside it.
+
+```json
+{
+  "cssMode": "grouped"
+}
+```
+
+This
+
+```tsx
+css({ color: 'red', fontSize: '14px', padding: '8px' })
+```
+
+produces three classes under `atomic` and one under `grouped`:
+
+```css
+.cmmQjj {
+  padding: 8px;
+  color: red;
+  font-size: 14px;
+}
+```
+
+The trade is CSS size for HTML size. Atomic dedupes a shared declaration into one class no matter how many call sites
+use it; grouped repeats it in every group, but the markup carries one class per element instead of a dozen and the
+browser has fewer declarations to walk during style recalculation. That favours SSR and SSG, where the HTML is rarely
+cached and arrives on every initial render. `hash` shortens class names rather than reducing their count, so the two
+address different costs.
+
+Cascade layers, `cva`, recipes and patterns are unaffected. Note that
+[`@bamboocss/vite`](/docs/guides/source-transformation) declines element splitting under `grouped`, since that
+optimization builds a class from a prefix and a value.
+
 ## File system options
 
 ### gitignore
