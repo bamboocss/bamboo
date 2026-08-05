@@ -360,7 +360,7 @@ export interface PartialFold {
 }
 
 /** One property lowered to an expression rather than left in the runtime call. */
-export interface Lowered {
+interface Lowered {
   expression: string
   /**
    * Whether the expression's string literals are class names. A ternary's two arms are;

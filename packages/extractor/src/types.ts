@@ -20,15 +20,13 @@ export interface LiteralObject {
   [key: string]: any
 }
 
-export type SingleLiteralValue = PrimitiveType | LiteralObject
+type SingleLiteralValue = PrimitiveType | LiteralObject
 
 export type LiteralValue = SingleLiteralValue | SingleLiteralValue[]
 
 export interface EvaluatedObjectResult {
   [key: string]: LiteralValue
 }
-
-export type ExtractResultKind = 'component' | 'function'
 
 export interface ExtractedFunctionInstance {
   name: string
@@ -64,9 +62,7 @@ export interface ExtractedComponentResult {
 export type ExtractResultItem = ExtractedComponentResult | ExtractedFunctionResult
 export type ExtractResultByName = Map<string, ExtractResultItem>
 
-export type ListOrAll = 'all' | string[]
-
-export interface MatchTagArgs {
+interface MatchTagArgs {
   tagName: string
   tagNode: JsxOpeningElement | JsxSelfClosingElement | CallExpression
   isFactory: boolean
@@ -87,8 +83,7 @@ export interface MatchFnPropArgs {
   propName: string
   propNode: PropertyAssignment | ShorthandPropertyAssignment | GetAccessorDeclaration
 }
-export type MatchPropFn = (prop: MatchPropArgs) => boolean
-export interface FunctionMatchers {
+interface FunctionMatchers {
   matchFn: (element: MatchFnArgs) => boolean
   matchArg: (arg: Pick<MatchFnArgs, 'fnName' | 'fnNode'> & MatchFnArguments) => boolean
   matchProp: (prop: Pick<MatchFnArgs, 'fnName' | 'fnNode'> & MatchFnPropArgs) => boolean
@@ -99,11 +94,11 @@ export interface ComponentMatchers {
   matchProp: (prop: Pick<MatchTagArgs, 'tagName' | 'tagNode'> & MatchPropArgs) => boolean
 }
 
-export interface MatchTaggedTemplateArgs {
+interface MatchTaggedTemplateArgs {
   fnName: string
   taggedTemplateNode: TaggedTemplateExpression
 }
-export type MatchTaggedTemplate = (tag: MatchTaggedTemplateArgs) => boolean
+type MatchTaggedTemplate = (tag: MatchTaggedTemplateArgs) => boolean
 
 export interface BoxContext {
   getEvaluateOptions?: (node: Expression, stack: Node[]) => Omit<EvaluateOptions, 'node' | 'policy'> | void

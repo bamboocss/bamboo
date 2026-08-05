@@ -46,7 +46,7 @@ export const addNegativeTokens: TokenMiddleware = {
 
 const units = new Set(['spacing', 'sizes', 'borderWidths', 'fontSizes', 'radii'])
 
-export const addPixelUnit: TokenMiddleware = {
+const addPixelUnit: TokenMiddleware = {
   enforce: 'post',
   transform(dictionary: TokenDictionary) {
     const tokens = dictionary.filter((token) => {
@@ -148,7 +148,7 @@ export const addVirtualPalette: TokenMiddleware = {
   },
 }
 
-export const removeEmptyTokens: TokenMiddleware = {
+const removeEmptyTokens: TokenMiddleware = {
   enforce: 'post',
   transform(dictionary: TokenDictionary) {
     dictionary.allTokens = dictionary.allTokens.filter((token) => token.value !== '')

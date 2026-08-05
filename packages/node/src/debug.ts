@@ -2,7 +2,7 @@ import { colors, logger } from '@bamboocss/logger'
 import { parse } from 'path'
 import type { BambooContext } from './create-context'
 
-export interface DebugOptions {
+interface DebugOptions {
   outdir: string
   dry: boolean
   onlyConfig?: boolean

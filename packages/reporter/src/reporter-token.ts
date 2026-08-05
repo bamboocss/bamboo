@@ -115,7 +115,7 @@ export function analyzeTokens(ctx: ParserOptions, result: AnalysisReport): Token
   }
 }
 
-export interface TokenUsageItem {
+interface TokenUsageItem {
   category: string
   value: string
   filePath: string

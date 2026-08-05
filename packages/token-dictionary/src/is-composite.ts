@@ -27,7 +27,7 @@ export const isCompositeBorder = isMatching({
   style: P.string,
 })
 
-export const isCompositeAsset = isMatching({
+const isCompositeAsset = isMatching({
   type: P.union('url', 'svg'),
   value: P.string,
 })

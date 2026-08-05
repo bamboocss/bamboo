@@ -24,7 +24,7 @@ const CATEGORY_PROPERTY_MAP: Record<string, string> = {
   blurs: 'filter',
 }
 
-export const getCategoryProperty = (category?: string): string => {
+const getCategoryProperty = (category?: string): string => {
   return category ? (CATEGORY_PROPERTY_MAP[category] ?? 'color') : 'color'
 }
 

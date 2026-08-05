@@ -24,14 +24,12 @@ export const formatProps = (props: Record<string, string | null | undefined>, op
     .join(propSeparator)
 }
 
-export const formatJsxComponent = (component: string, props: Record<string, string | null | undefined>) => {
+const formatJsxComponent = (component: string, props: Record<string, string | null | undefined>) => {
   const formattedProps = formatProps(props, { keyValueSeparator: '=', propSeparator: ' ', quoteStyle: 'double' })
   return `<${component}${formattedProps ? ' ' + formattedProps : ''} />`
 }
 
-export const collectCompositionStyles = (
-  values: Record<string, any>,
-): Array<{ name: string; description?: string }> => {
+const collectCompositionStyles = (values: Record<string, any>): Array<{ name: string; description?: string }> => {
   const result: Array<{ name: string; description?: string }> = []
 
   walkObject(
@@ -75,7 +73,7 @@ export const generateJsxExample = (
 /**
  * Generates function and JSX examples for a style property
  */
-export const generateJsxExamples = (
+const generateJsxExamples = (
   props: Record<string, string | null | undefined>,
   jsxStyleProps: JsxStyleProps = 'all',
   component = 'Box',

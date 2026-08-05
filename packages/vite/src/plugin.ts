@@ -235,5 +235,3 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin => {
     },
   }
 }
-
-export default bamboocss

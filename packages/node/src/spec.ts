@@ -2,7 +2,7 @@ import { logger } from '@bamboocss/logger'
 import type { ArtifactId, SpecFile } from '@bamboocss/types'
 import type { BambooContext } from './create-context'
 
-export interface SpecOptions {
+interface SpecOptions {
   outdir?: string
 }
 

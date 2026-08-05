@@ -10,7 +10,7 @@ import {
 import { getExportedVarDeclarationWithName, getModuleSpecifierSourceFile } from './maybe-box-node'
 import type { BoxContext } from './types'
 
-export function isScope(node: Node): boolean {
+function isScope(node: Node): boolean {
   return (
     Node.isFunctionDeclaration(node) ||
     Node.isFunctionExpression(node) ||

@@ -695,7 +695,7 @@ const getTypeLiteralNodePropValue = (
   typeLiteralCache.set(type, null)
 }
 
-export function getNameLiteral(wrapper: Node) {
+function getNameLiteral(wrapper: Node) {
   if (Node.isStringLiteral(wrapper)) return wrapper.getLiteralText()
   return wrapper.getText()
 }

@@ -104,5 +104,5 @@
   },
   "ignoreWorkspaces": ["sandbox/*", "sandbox/component-lib/**", "playground", "website"],
   "ignore": ["**/__tests__/**", "**/styled-system/**"],
-  "exclude": ["duplicates", "exports", "nsExports", "types", "nsTypes", "enumMembers"]
+  "exclude": ["duplicates"]
 }

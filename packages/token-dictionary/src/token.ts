@@ -2,19 +2,6 @@ import { isBaseCondition, toHash, walkObject } from '@bamboocss/shared'
 import { isCompositeTokenValue } from './is-composite'
 import { getReferences, hasReference } from './utils'
 
-/**
- * The token data provided by the user
- */
-export type TokenEntry<T = any> = {
-  value: T
-  description?: string
-  deprecated?: boolean
-  type?: string
-  extensions?: {
-    [key: string]: any
-  }
-}
-
 interface ExtensionData {
   category?: string
   references?: TokenReferences

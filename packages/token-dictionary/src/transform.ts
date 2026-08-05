@@ -71,7 +71,7 @@ export const transformGradient: TokenTransformer = {
  * Fonts token transform
  * -----------------------------------------------------------------------------*/
 
-export const transformFonts: TokenTransformer = {
+const transformFonts: TokenTransformer = {
   name: 'tokens/fonts',
   match: (token) => token.extensions.category === 'fonts',
   transform(token) {
@@ -87,7 +87,7 @@ export const transformFonts: TokenTransformer = {
  * Easing token transform
  * -----------------------------------------------------------------------------*/
 
-export const transformEasings: TokenTransformer = {
+const transformEasings: TokenTransformer = {
   name: 'tokens/easings',
   match: (token) => token.extensions.category === 'easings',
   transform(token) {
@@ -141,7 +141,7 @@ export const transformAssets: TokenTransformer = {
  * Color mix token transform
  * -----------------------------------------------------------------------------*/
 
-export const transformColorMix: TokenTransformer = {
+const transformColorMix: TokenTransformer = {
   name: 'tokens/color-mix',
   match: (token) => {
     return token.extensions.category === 'colors' && token.value.includes('/')
@@ -223,7 +223,7 @@ export const addConditionalCssVariables: TokenTransformer = {
   },
 }
 
-export const addColorPalette: TokenTransformer = {
+const addColorPalette: TokenTransformer = {
   type: 'extensions',
   name: 'tokens/colors/colorPalette',
   match(token) {

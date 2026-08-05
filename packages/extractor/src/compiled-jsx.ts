@@ -15,7 +15,7 @@ interface CompiledJsxImportMap {
   bundledNamespace: Map<string, string>
 }
 
-export interface CompiledJsxCallInfo {
+interface CompiledJsxCallInfo {
   framework: 'react' | 'preact' | 'solid' | 'vue' | 'qwik'
   tagName: string
   isFactory: boolean

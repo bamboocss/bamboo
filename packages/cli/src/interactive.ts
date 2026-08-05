@@ -97,7 +97,7 @@ export const interactive = async () => {
   } as InitFlags
 }
 
-export interface InitFlags {
+interface InitFlags {
   postcss: boolean
   outExtension: string
   jsxFramework: string

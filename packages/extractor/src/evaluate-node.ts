@@ -11,7 +11,7 @@ const cacheMap = new WeakMap<Expression, unknown>()
  * Evaluates a node with strict policies restrictions
  * @see https://github.com/wessberg/ts-evaluator#setting-up-policies
  */
-export const evaluateNode = (node: Expression, stack: Node[], ctx: BoxContext) => {
+const evaluateNode = (node: Expression, stack: Node[], ctx: BoxContext) => {
   if (ctx.flags?.skipEvaluate) return
   if (ctx.canEval && !ctx.canEval?.(node, stack)) return
 
@@ -45,5 +45,3 @@ export const safeEvaluateNode = <T>(node: Expression, stack: Node[], ctx: BoxCon
   if (result === TsEvalError) return
   return result as T
 }
-
-export const isEvalError = (value: unknown): value is typeof TsEvalError => value === TsEvalError

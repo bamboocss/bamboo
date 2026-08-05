@@ -121,7 +121,7 @@ export interface Unboxed {
   spreadConditions: LiteralObject[]
 }
 
-export const cacheMap: CacheMap = new WeakMap()
+const cacheMap: CacheMap = new WeakMap()
 
 const createCache = (map: CacheMap) => ({
   value: map,
