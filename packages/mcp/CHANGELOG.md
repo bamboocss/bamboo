@@ -1,5 +1,14 @@
 # @bamboocss/mcp
 
+## 1.13.1
+
+### Patch Changes
+
+- @bamboocss/logger@1.13.1
+- @bamboocss/node@1.13.1
+- @bamboocss/token-dictionary@1.13.1
+- @bamboocss/types@1.13.1
+
 ## 1.13.0
 
 ### Patch Changes
@@ -123,6 +132,7 @@
 ### Patch Changes
 
 - bc2b8d7: Dependency updates for reported security advisories.
+
   - **@bamboocss/node** / **@bamboocss/token-dictionary**: bump `picomatch` to 4.0.4
     ([GHSA-3v7f-55p6-f55p](https://github.com/advisories/GHSA-3v7f-55p6-f55p),
     [GHSA-c2c7-rcm5-vvqj](https://github.com/advisories/GHSA-c2c7-rcm5-vvqj)).

@@ -1,5 +1,16 @@
 # @bamboocss/studio
 
+## 1.13.1
+
+### Patch Changes
+
+- @bamboocss/astro-plugin-studio@1.13.1
+- @bamboocss/config@1.13.1
+- @bamboocss/logger@1.13.1
+- @bamboocss/shared@1.13.1
+- @bamboocss/token-dictionary@1.13.1
+- @bamboocss/types@1.13.1
+
 ## 1.13.0
 
 ### Patch Changes
@@ -69,6 +80,7 @@
 ### Patch Changes
 
 - f3591d8: Fix chunk splitting in build output that produced unstable hashed filenames in published packages.
+
   - Build each entry point independently to prevent shared-code extraction into chunk files
   - Fix build ordering race condition where studio postbuild could run before CLI was ready
 
@@ -438,43 +450,43 @@
   Add `createStyleContext` function to framework artifacts for React, Preact, Solid, and Vue frameworks
 
   ```tsx
-  import { sva } from 'styled-system/css'
-  import { createStyleContext } from 'styled-system/jsx'
+  import { sva } from "styled-system/css";
+  import { createStyleContext } from "styled-system/jsx";
 
   const card = sva({
-    slots: ['root', 'label'],
+    slots: ["root", "label"],
     base: {
       root: {
-        color: 'red',
-        bg: 'red.300',
+        color: "red",
+        bg: "red.300",
       },
       label: {
-        fontWeight: 'medium',
+        fontWeight: "medium",
       },
     },
     variants: {
       size: {
         sm: {
           root: {
-            padding: '10px',
+            padding: "10px",
           },
         },
         md: {
           root: {
-            padding: '20px',
+            padding: "20px",
           },
         },
       },
     },
     defaultVariants: {
-      size: 'sm',
+      size: "sm",
     },
-  })
+  });
 
-  const { withProvider, withContext } = createStyleContext(card)
+  const { withProvider, withContext } = createStyleContext(card);
 
-  const CardRoot = withProvider('div', 'root')
-  const CardLabel = withContext('label', 'label')
+  const CardRoot = withProvider("div", "root");
+  const CardLabel = withContext("label", "label");
   ```
 
   Then, use like this:
@@ -743,6 +755,7 @@
   `WithImportant<T>` and `WithColorOpacityModifier<T>` to use _branded type_ and _non-distributive conditional types_,
   while keeping such tokens valid and also not appearing in autocompletions to prevent them from polluting
   autocompletion result (which is the current behavior).
+
   - @bamboocss/astro-plugin-studio@0.45.2
   - @bamboocss/config@0.45.2
   - @bamboocss/logger@0.45.2
@@ -928,12 +941,14 @@
 ### Patch Changes
 
 - 93dc9f5: Public changes: Some quality of life fixes for the Studio:
+
   - Handle displaying values using the `[xxx]` escape-hatch syntax for `textStyles` in the studio
   - Display an empty state when there's no token in a specific token page in the studio
 
   ***
 
   (mostly) Internal changes:
+
   - Add `deepResolveReference` in TokenDictionary, helpful to get the raw value from a semantic token by recursively
     traversing the token references.
   - Added some exports in the `@bamboocss/token-dictionary` package, mostly useful when building tooling around Bamboo
@@ -1080,12 +1095,12 @@
     theme: {
       extend: {
         colors: {
-          primary: { value: 'blue' },
+          primary: { value: "blue" },
         },
         // borderWidths: {}, // ⚠️ nothing defined here
       },
     },
-  })
+  });
   ```
 
   ```ts
@@ -1096,11 +1111,12 @@
 
     // ✅ after this PR, TS will not throw an error anymore as you don't have any `borderWidths` tokens
     // if you add one, this will error again (as it's supposed to)
-    borderWidths: '123px',
-  })
+    borderWidths: "123px",
+  });
   ```
 
   ## Description
+
   - Simplify typings for the style properties.
   - Add the `csstype` comments for each property.
 
@@ -1151,11 +1167,11 @@
 - 4576a60: Fix nested `styled` factory composition
 
   ```tsx
-  import { styled } from '../styled-system/jsx'
+  import { styled } from "../styled-system/jsx";
 
-  const BasicBox = styled('div', { base: { fontSize: '10px' } })
-  const ExtendedBox1 = styled(BasicBox, { base: { fontSize: '20px' } })
-  const ExtendedBox2 = styled(ExtendedBox1, { base: { fontSize: '30px' } })
+  const BasicBox = styled("div", { base: { fontSize: "10px" } });
+  const ExtendedBox1 = styled(BasicBox, { base: { fontSize: "20px" } });
+  const ExtendedBox2 = styled(ExtendedBox1, { base: { fontSize: "30px" } });
 
   export const App = () => {
     return (
@@ -1168,8 +1184,8 @@
         {/* NOW: ✅ fs_30px */}
         <ExtendedBox2>text3</ExtendedBox2>
       </>
-    )
-  }
+    );
+  };
   ```
 
   - @bamboocss/astro-plugin-studio@0.34.3
@@ -1413,6 +1429,7 @@
 - 84304901: Improve performance, mostly for the CSS generation by removing a lot of `postcss` usage (and plugins).
 
   ## Public changes:
+
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
@@ -1420,6 +1437,7 @@
     for this run.
 
   ## Internal changes:
+
   - `markImportant` fn from JS instead of walking through postcss AST nodes
   - use a fork of `stitches` `stringify` function instead of `postcss-css-in-js` to write the CSS string from a JS
     object
@@ -1546,9 +1564,9 @@
 
   ```ts
   css({
-    borderWidth: '[2px!]',
-    width: '[2px !important]',
-  })
+    borderWidth: "[2px!]",
+    width: "[2px !important]",
+  });
   ```
 
 - Updated dependencies [8f4ce97c]
@@ -1826,9 +1844,9 @@
 
   ```ts
   interface FactoryOptions<TProps extends Dict> {
-    dataAttr?: boolean
-    defaultProps?: TProps
-    shouldForwardProp?(prop: string, variantKeys: string[]): boolean
+    dataAttr?: boolean;
+    defaultProps?: TProps;
+    shouldForwardProp?(prop: string, variantKeys: string[]): boolean;
   }
   ```
 
@@ -1836,16 +1854,16 @@
     This is useful for testing and debugging.
 
   ```jsx
-  import { styled } from '../styled-system/jsx'
-  import { button } from '../styled-system/recipes'
+  import { styled } from "../styled-system/jsx";
+  import { button } from "../styled-system/recipes";
 
-  const Button = styled('button', button, { dataAttr: true })
+  const Button = styled("button", button, { dataAttr: true });
 
   const App = () => (
     <Button variant="secondary" mt="10px">
       Button
     </Button>
-  )
+  );
   // Will render something like <button data-recipe="button" class="btn btn--variant_purple mt_10px">Button</button>
   ```
 
@@ -1853,17 +1871,17 @@
     override the default variants or base styles of a recipe.
 
   ```jsx
-  import { styled } from '../styled-system/jsx'
-  import { button } from '../styled-system/recipes'
+  import { styled } from "../styled-system/jsx";
+  import { button } from "../styled-system/recipes";
 
-  const Button = styled('button', button, {
+  const Button = styled("button", button, {
     defaultProps: {
-      variant: 'secondary',
-      px: '10px',
+      variant: "secondary",
+      px: "10px",
     },
-  })
+  });
 
-  const App = () => <Button>Button</Button>
+  const App = () => <Button>Button</Button>;
   // Will render something like <button class="btn btn--variant_secondary px_10px">Button</button>
   ```
 
@@ -1871,19 +1889,20 @@
     props except recipe variants and style props are forwarded.
 
   ```jsx
-  import { styled } from '../styled-system/jsx'
-  import { button } from '../styled-system/recipes'
-  import { isCssProperty } from '../styled-system/jsx'
-  import { motion, isValidMotionProp } from 'framer-motion'
+  import { styled } from "../styled-system/jsx";
+  import { button } from "../styled-system/recipes";
+  import { isCssProperty } from "../styled-system/jsx";
+  import { motion, isValidMotionProp } from "framer-motion";
 
   const StyledMotion = styled(
     motion.div,
     {},
     {
       shouldForwardProp: (prop, variantKeys) =>
-        isValidMotionProp(prop) || (!variantKeys.includes(prop) && !isCssProperty(prop)),
-    },
-  )
+        isValidMotionProp(prop) ||
+        (!variantKeys.includes(prop) && !isCssProperty(prop)),
+    }
+  );
   ```
 
 - Updated dependencies [abd7c47a]
@@ -1905,22 +1924,22 @@
 
   ```ts file="bamboo.config.ts"
   const button = defineRecipe({
-    className: 'btn',
-    base: { color: 'green', fontSize: '16px' },
+    className: "btn",
+    base: { color: "green", fontSize: "16px" },
     variants: {
-      size: { small: { fontSize: '14px' } },
+      size: { small: { fontSize: "14px" } },
     },
-    compoundVariants: [{ size: 'small', css: { color: 'blue' } }],
-  })
+    compoundVariants: [{ size: "small", css: { color: "blue" } }],
+  });
   ```
 
   This would previously not merge the `color` property overrides, but now it does:
 
   ```tsx file="example.tsx"
-  import { styled } from '../styled-system/jsx'
-  import { button } from '../styled-system/recipes'
+  import { styled } from "../styled-system/jsx";
+  import { button } from "../styled-system/recipes";
 
-  const Button = styled('button', button)
+  const Button = styled("button", button);
 
   function App() {
     return (
@@ -1929,7 +1948,7 @@
           Click me
         </Button>
       </>
-    )
+    );
   }
   ```
 
@@ -2112,14 +2131,15 @@ This hook is called right before writing the codegen files to disk. You can use 
 export default defineConfig({
   // ...
   hooks: {
-    'codegen:prepare': ({ artifacts, changed }) => {
+    "codegen:prepare": ({ artifacts, changed }) => {
       // do something with the emitted js/d.ts files
     },
   },
-})
+});
 ```
 
 - d5977c24: - Add a `--logfile` flag to the `bamboo`, `bamboo codegen`, `bamboo cssgen` and `bamboo debug` commands.
+
   - Add a `logfile` option to the postcss plugin
 
   Logs will be streamed to the file specified by the `--logfile` flag or the `logfile` option. This is useful for
@@ -2132,11 +2152,11 @@ export default defineConfig({
   ```js
   module.exports = {
     plugins: {
-      '@bamboocss/dev/postcss': {
-        logfile: './logs/bamboo.log',
+      "@bamboocss/dev/postcss": {
+        logfile: "./logs/bamboo.log",
       },
     },
-  }
+  };
   ```
 
 - Updated dependencies [0dd45b6a]
@@ -2237,6 +2257,7 @@ export default defineConfig({
 - 84304901: Improve performance, mostly for the CSS generation by removing a lot of `postcss` usage (and plugins).
 
   ## Public changes:
+
   - Introduce a new `config.lightningcss` option to use `lightningcss` (currently disabled by default) instead of
     `postcss`.
   - Add a new `config.browserslist` option to configure the browserslist used by `lightningcss`.
@@ -2244,6 +2265,7 @@ export default defineConfig({
     for this run.
 
   ## Internal changes:
+
   - `markImportant` fn from JS instead of walking through postcss AST nodes
   - use a fork of `stitches` `stringify` function instead of `postcss-css-in-js` to write the CSS string from a JS
     object
@@ -2370,9 +2392,9 @@ export default defineConfig({
 
   ```ts
   css({
-    borderWidth: '[2px!]',
-    width: '[2px !important]',
-  })
+    borderWidth: "[2px!]",
+    width: "[2px !important]",
+  });
   ```
 
 - Updated dependencies [8f4ce97c]
@@ -2650,9 +2672,9 @@ export default defineConfig({
 
   ```ts
   interface FactoryOptions<TProps extends Dict> {
-    dataAttr?: boolean
-    defaultProps?: TProps
-    shouldForwardProp?(prop: string, variantKeys: string[]): boolean
+    dataAttr?: boolean;
+    defaultProps?: TProps;
+    shouldForwardProp?(prop: string, variantKeys: string[]): boolean;
   }
   ```
 
@@ -2660,16 +2682,16 @@ export default defineConfig({
     This is useful for testing and debugging.
 
   ```jsx
-  import { styled } from '../styled-system/jsx'
-  import { button } from '../styled-system/recipes'
+  import { styled } from "../styled-system/jsx";
+  import { button } from "../styled-system/recipes";
 
-  const Button = styled('button', button, { dataAttr: true })
+  const Button = styled("button", button, { dataAttr: true });
 
   const App = () => (
     <Button variant="secondary" mt="10px">
       Button
     </Button>
-  )
+  );
   // Will render something like <button data-recipe="button" class="btn btn--variant_purple mt_10px">Button</button>
   ```
 
@@ -2677,17 +2699,17 @@ export default defineConfig({
     override the default variants or base styles of a recipe.
 
   ```jsx
-  import { styled } from '../styled-system/jsx'
-  import { button } from '../styled-system/recipes'
+  import { styled } from "../styled-system/jsx";
+  import { button } from "../styled-system/recipes";
 
-  const Button = styled('button', button, {
+  const Button = styled("button", button, {
     defaultProps: {
-      variant: 'secondary',
-      px: '10px',
+      variant: "secondary",
+      px: "10px",
     },
-  })
+  });
 
-  const App = () => <Button>Button</Button>
+  const App = () => <Button>Button</Button>;
   // Will render something like <button class="btn btn--variant_secondary px_10px">Button</button>
   ```
 
@@ -2695,19 +2717,20 @@ export default defineConfig({
     props except recipe variants and style props are forwarded.
 
   ```jsx
-  import { styled } from '../styled-system/jsx'
-  import { button } from '../styled-system/recipes'
-  import { isCssProperty } from '../styled-system/jsx'
-  import { motion, isValidMotionProp } from 'framer-motion'
+  import { styled } from "../styled-system/jsx";
+  import { button } from "../styled-system/recipes";
+  import { isCssProperty } from "../styled-system/jsx";
+  import { motion, isValidMotionProp } from "framer-motion";
 
   const StyledMotion = styled(
     motion.div,
     {},
     {
       shouldForwardProp: (prop, variantKeys) =>
-        isValidMotionProp(prop) || (!variantKeys.includes(prop) && !isCssProperty(prop)),
-    },
-  )
+        isValidMotionProp(prop) ||
+        (!variantKeys.includes(prop) && !isCssProperty(prop)),
+    }
+  );
   ```
 
 - Updated dependencies [abd7c47a]
@@ -2729,22 +2752,22 @@ export default defineConfig({
 
   ```ts file="bamboo.config.ts"
   const button = defineRecipe({
-    className: 'btn',
-    base: { color: 'green', fontSize: '16px' },
+    className: "btn",
+    base: { color: "green", fontSize: "16px" },
     variants: {
-      size: { small: { fontSize: '14px' } },
+      size: { small: { fontSize: "14px" } },
     },
-    compoundVariants: [{ size: 'small', css: { color: 'blue' } }],
-  })
+    compoundVariants: [{ size: "small", css: { color: "blue" } }],
+  });
   ```
 
   This would previously not merge the `color` property overrides, but now it does:
 
   ```tsx file="example.tsx"
-  import { styled } from '../styled-system/jsx'
-  import { button } from '../styled-system/recipes'
+  import { styled } from "../styled-system/jsx";
+  import { button } from "../styled-system/recipes";
 
-  const Button = styled('button', button)
+  const Button = styled("button", button);
 
   function App() {
     return (
@@ -2753,7 +2776,7 @@ export default defineConfig({
           Click me
         </Button>
       </>
-    )
+    );
   }
   ```
 
