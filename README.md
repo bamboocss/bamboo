@@ -7,6 +7,25 @@
   build time, type-safe, and scalable CSS-in-JS
 </p>
 
+## How is this different from Panda CSS?
+
+Bamboo CSS is a fork of [Panda CSS](https://panda-css.com/) v1, so the styling API is identical and
+[migrating](https://bamboocss.com/docs/migration/panda) is mostly a rename. What has changed since the fork is what
+reaches the browser and what it costs:
+
+- **Less CSS** — `pruneUnusedTokens` drops token variables nothing can reach, taking `styles.css` from 24.4 KB to 12.3
+  KB on our own sandbox.
+- **Less JavaScript** — the generated output declares `sideEffects` and stops emitting the JSX property list twice, so a
+  barrel import falls from 41.2 KB to 30.1 KB minified.
+- **A faster runtime** — repeated `css()` calls are roughly 4-5x faster, and the class-name cache is bounded rather than
+  growing for the life of the process, which used to leak under long-lived SSR.
+- **Optional zero runtime** — [`@bamboocss/vite`](https://bamboocss.com/docs/guides/source-transformation) folds
+  statically-resolvable `css()` calls into plain class strings at build time.
+
+Every figure is measured against this repository's own sandboxes; the output-size wins scale with the size of your
+design system rather than your app. The
+[full comparison](https://bamboocss.com/docs/overview/faq#how-is-bamboo-css-different-from-panda-css) has the rest.
+
 ## Features
 
 - ⚡️ Write style objects or style props, extract them at build time
