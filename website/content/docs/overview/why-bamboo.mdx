@@ -48,7 +48,7 @@ styling primitives to create, organize, and manage CSS styles in a type-safe and
 ## Why we forked Panda CSS
 
 Bamboo is the styling engine behind [Contra](https://contra.com), whose UI has more than 20,000 `css()` call sites. At
-that scale everything a styling library spends per call site — bytes emitted, work at runtime, time in the build — is
+that scale everything a styling library spends per call site – bytes emitted, work at runtime, time in the build – is
 multiplied by five figures, so optimizations too small to notice elsewhere are plainly measurable.
 
 The fork exists to chase them further than a general-purpose library reasonably would. The authoring API is unchanged

@@ -186,7 +186,7 @@ export default App
 
 ## Optional: fold static styles at build time
 
-The setup above resolves styles at runtime — `css({ color: 'red.300' })` runs on every render and returns a class
+The setup above resolves styles at runtime – `css({ color: 'red.300' })` runs on every render and returns a class
 string. The result is cached, but for a call whose arguments never change that work buys nothing.
 
 `@bamboocss/vite` removes it. During a production build it rewrites statically-resolvable calls into the string they
@@ -214,7 +214,7 @@ export default defineConfig({
 ```
 
 <Callout type="info">
-  This does not replace the PostCSS setup above. The plugin emits no CSS — PostCSS stays responsible for the stylesheet,
+  This does not replace the PostCSS setup above. The plugin emits no CSS – PostCSS stays responsible for the stylesheet,
   and the CSS output is identical either way. Only the JavaScript changes. The fold is also **off by default**; you have
   to pass `transform: true`.
 </Callout>

@@ -252,14 +252,14 @@ Bamboo CSS is a fork of Panda CSS v1, so the styling API is the same and [migrat
 rename. What has changed since the fork is everything below: what gets shipped to the browser, what it costs at runtime,
 and how quickly the build turns around.
 
-Every number here was measured against this repository's own sandboxes and fixtures. Your project will differ — the
+Every number here was measured against this repository's own sandboxes and fixtures. Your project will differ – the
 output-size wins in particular scale with the size of your design system rather than the size of your app.
 
 ### Less CSS
 
 - [`pruneUnusedTokens`](/docs/references/config#pruneunusedtokens) drops token CSS variables nothing can reach. The
   token layer declares every token in your theme while an app uses a fraction of them. On the `vite-ts` sandbox this
-  takes `styles.css` from 24,433 to 12,293 bytes — 6,398 to 3,504 gzipped.
+  takes `styles.css` from 24,433 to 12,293 bytes – 6,398 to 3,504 gzipped.
 - [`pruneUnusedKeyframes`](/docs/references/config#pruneunusedkeyframes) does the same for `@keyframes` rules a preset
   declares and your app never animates.
 
@@ -278,8 +278,8 @@ Together a JSX barrel import goes from 41.2 KB to 30.1 KB minified, and 12.6 KB 
 ### A faster runtime
 
 - `css()` and the pattern helpers memoize their class names on a structural hash confirmed by an exact comparison.
-  Repeated `css()` calls get roughly 4-5x faster, multi-argument calls about 4x, and the pattern helpers — which were
-  not memoized at all — about 1.3x. Class name output is unchanged.
+  Repeated `css()` calls get roughly 4-5x faster, multi-argument calls about 4x, and the pattern helpers – which were
+  not memoized at all – about 1.3x. Class name output is unchanged.
 - That cache is bounded. It previously grew for the lifetime of the process, which leaked in long-lived SSR.
 - Copying styles now happens at the `raw()` boundary rather than on every merge, so the two places that need an
   independent object pay for it instead of every caller.
@@ -302,7 +302,7 @@ export const title = 'fs_lg fw_bold'
 ```
 
 It also collapses `styled.*` elements to the intrinsic tag they render, folds config recipes, pattern elements and a
-static `as` prop, and follows named imports across files. CSS output is unchanged — only the JavaScript changes. It is
+static `as` prop, and follows named imports across files. CSS output is unchanged – only the JavaScript changes. It is
 off by default, build-only, and reports how much of your source it managed to fold.
 
 ### Less HTML
@@ -311,7 +311,7 @@ off by default, build-only, and reports how much of your source it managed to fo
 so an element carrying a dozen atomic classes carries one instead.
 
 Atomic CSS is a good default, but at scale it puts long class sequences into the markup and multiplies the declarations
-the browser walks during style recalculation — a cost `hash` does not address, since it shortens class names rather than
+the browser walks during style recalculation – a cost `hash` does not address, since it shortens class names rather than
 reducing their count. Grouped trades some CSS duplication for the other side of that: a shared declaration is repeated
 in every group instead of deduping into one class. Which way that goes depends on whether your bottleneck is the CSS
 bundle or the HTML payload, so it is opt-in and atomic stays the default. It matters most under SSR and SSG, where the
@@ -414,7 +414,7 @@ export const title = 'fs_lg'
 ```
 
 It covers `css()`, pattern and recipe calls, `styled.*` and pattern elements, and the static half of anything only
-partly static. The CSS is unchanged; only the JavaScript is. Off by default and build-only — see
+partly static. The CSS is unchanged; only the JavaScript is. Off by default and build-only – see
 [Source Transformation](/docs/guides/source-transformation).
 
 ---

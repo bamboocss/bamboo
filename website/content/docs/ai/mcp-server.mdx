@@ -92,7 +92,7 @@ npx -y @bamboocss/mcp --cwd ./my-project
 | `--cwd <path>`        | Current working directory  |
 
 It is packaged separately because the Model Context Protocol SDK brings an HTTP server and a JOSE implementation with it
-— around 18 MB, several times the weight of Bamboo's own CSS toolchain. Keeping it out of `@bamboocss/dev` means a
+– around 18 MB, several times the weight of Bamboo's own CSS toolchain. Keeping it out of `@bamboocss/dev` means a
 project only downloads it if an AI client actually starts the server.
 
 `bamboo mcp` no longer exists. If you configured a client before this change, re-run `bamboo init-mcp` to rewrite the
@@ -148,7 +148,7 @@ When you run `bamboo init-mcp`, the following configuration is generated for eac
 ```
 
 The version is pinned to the Bamboo you generated it with, so the server reads your design system through the same
-release that defines it — re-run `bamboo init-mcp` after upgrading. The server loads your `bamboo.config.ts` from the
+release that defines it – re-run `bamboo init-mcp` after upgrading. The server loads your `bamboo.config.ts` from the
 current working directory when started.
 
 ## Manual Configuration

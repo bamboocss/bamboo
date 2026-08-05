@@ -4,7 +4,7 @@ description: Fold static css() and pattern calls into literal class strings at b
 ---
 
 Bamboo resolves styles at runtime: `css({ color: 'red.300' })` runs on every render and returns a class string. The
-result is cached, but the call still costs something — and for a call whose arguments never change, that cost buys
+result is cached, but the call still costs something – and for a call whose arguments never change, that cost buys
 nothing.
 
 Source transformation removes it. During a production build, `@bamboocss/vite` rewrites statically-resolvable calls into
@@ -22,7 +22,7 @@ The CSS is unchanged. Only the JavaScript changes.
 
 ## Setup
 
-Install the plugin and add it to your Vite config. It is **off by default** — you have to ask for it.
+Install the plugin and add it to your Vite config. It is **off by default** – you have to ask for it.
 
 ```bash
 pnpm add -D @bamboocss/vite
@@ -39,7 +39,7 @@ export default defineConfig({
 ```
 
 <Callout type="info">
-  This plugin does not emit CSS. Keep your existing PostCSS setup — it stays responsible for the stylesheet. The
+  This plugin does not emit CSS. Keep your existing PostCSS setup – it stays responsible for the stylesheet. The
   plugin's only job is the fold.
 </Callout>
 
@@ -55,7 +55,7 @@ css({ color: 'red.300', padding: '4' })
 css({ color: 'red.300', _hover: { color: 'blue.500' } })
 css({ fontSize: { base: 'sm', md: 'lg' } })
 
-// ✅ several arguments — merged later-wins first, exactly as the runtime merges them
+// ✅ several arguments – merged later-wins first, exactly as the runtime merges them
 css({ color: 'red.300', padding: '2' }, { color: 'blue.500' })
 
 // ✅ pattern calls
@@ -81,10 +81,10 @@ A `styled.*` element collapses to the intrinsic tag it renders:
 ```
 
 This is the one that matters most at runtime. The factory runs `splitProps`, `css()` and `cx` for every element on every
-render, inside a `forwardRef` component — folding removes all of it, including the component layer.
+render, inside a `forwardRef` component – folding removes all of it, including the component layer.
 
 Measured on `sandbox/runtime-perf`, rendering fifty trees, warm: **3.2× faster** on a mixed tree, and **2.9×** on one
-whose style props are all runtime-valued. The second is the weaker case and still the more interesting one — nothing
+whose style props are all runtime-valued. The second is the weaker case and still the more interesting one – nothing
 about those elements resolves at build time, so what folding removes there is the factory itself rather than the styles.
 Both sides are warmed first, which is the conservative reading: the runtime's style memo is full, so this is the
 steady-state win rather than the cold-start one, and cold start is where the gap is widest.
@@ -101,7 +101,7 @@ A static `as` names the tag to fold to, rather than blocking the fold:
 <section className={"c_red.300"}>hi</section>
 ```
 
-It works for a component too — `as={Link}` folds to `<Link className={…}>`. `splitProps` keys off the factory's own
+It works for a component too – `as={Link}` folds to `<Link className={…}>`. `splitProps` keys off the factory's own
 config rather than off what `as` points at, so the class and the forwarded props are the same whatever the tag becomes.
 An `as` only known at runtime still bails.
 
@@ -127,7 +127,7 @@ Pattern elements only fold under the default `jsxStyleProps: 'all'`. Under `mini
 reach the factory through the `css` prop rather than being spread, which reverses which side wins when a prop is set in
 both places.
 
-`jsx: false` turns element folding off altogether — both `styled.*` and pattern elements — leaving call sites folding on
+`jsx: false` turns element folding off altogether – both `styled.*` and pattern elements – leaving call sites folding on
 their own.
 
 ## What does not fold
@@ -144,7 +144,7 @@ css({ color: 'red.300', ...rest })
 // ❌ a computed key
 css({ [key]: { color: 'red.300' } })
 
-// ❌ several arguments where one is dynamic — later-wins across the whole object, so the
+// ❌ several arguments where one is dynamic – later-wins across the whole object, so the
 //    static half cannot be hoisted out without reproducing the merge
 css({ display: 'block' }, extra)
 ```
@@ -163,7 +163,7 @@ export const cls = css(button, { background: 'blue.500' })
 // → "d_inline-flex p_4 bg_blue.500"
 ```
 
-The same holds for plain exported objects, aliased imports, re-exports, and pure local helpers — including IIFEs:
+The same holds for plain exported objects, aliased imports, re-exports, and pure local helpers – including IIFEs:
 
 ```tsx
 const pad = (n) => ({ padding: n })
@@ -174,7 +174,7 @@ When a fold reads from another module, the plugin registers that module as a wat
 re-transforms the files that folded against it rather than leaving a stale literal behind.
 
 The one cross-file shape that does **not** fold is an imported value spread inside a nested selector
-(`css({ '& svg': { ...icon } })`). Extraction handles it and the CSS is still emitted — only the rewrite is declined,
+(`css({ '& svg': { ...icon } })`). Extraction handles it and the CSS is still emitted – only the rewrite is declined,
 for the spread reason below.
 
 ### Never folded
@@ -189,7 +189,7 @@ Three kinds of call never fold, because they do not evaluate to a class string a
 ### Why spreads are conservative
 
 `{ ...base }` where `base` is a static local object _is_ resolvable, and Bamboo's extractor resolves it. But once the
-extractor flattens a spread into its result, a spread it understood and a spread it silently skipped look identical —
+extractor flattens a spread into its result, a spread it understood and a spread it silently skipped look identical –
 both simply contribute keys, or fail to. Folding the second case would drop styles without any error.
 
 Rather than guess, the fold declines any spread that is not an inline object literal.
@@ -217,13 +217,13 @@ css({ margin: '2', color: isError ? 'red.500' : 'green.500' })
 cx('m_2', isError ? 'c_red.500' : 'c_green.500')
 ```
 
-Independent conditionals stay linear — two of them give two ternaries, not four combinations. One branch that does not
+Independent conditionals stay linear – two of them give two ternaries, not four combinations. One branch that does not
 resolve makes the choice open-ended again, and the property goes back to the runtime. The ternary has to be written at
 the call site: one reached through a variable stays where it was declared, so its condition is neither copied into a
 scope that cannot see it nor re-evaluated on every call.
 
 A value that resolves to nothing at all still lowers, because the class is the property's prefix plus whatever the value
-holds — and the prefix is known now:
+holds – and the prefix is known now:
 
 ```tsx
 css({ margin: '2', color: tone })
@@ -239,7 +239,7 @@ Splitting is refused when two halves could produce a class for the same property
 resolving conflicts: a shorthand facing its longhand, a top-level `base` block, and multi-argument `css()`. A property
 counts as static only if the extractor resolved every leaf _and_ accounted for everything the source declared, so a
 dynamic array element, a nested dynamic value and a spread all keep their whole property at runtime. A ternary nested
-inside a condition block stays there too — lowering it would mean carrying the condition's path into each branch.
+inside a condition block stays there too – lowering it would mean carrying the condition's path into each branch.
 
 Element splitting needs both `css` and `cx`, so a file that does not already import `css` is left alone. Turn splitting
 off with `partial: false`.
@@ -253,7 +253,7 @@ Folded 184/213 (86%) across 41/58 files — declined: dynamic=22 raw-call=5 not-
 ```
 
 That is the number to watch. It tells you the transform ran, how much of the project it reached, and what the remainder
-is waiting on — a project sitting at 40% `dynamic` is a different problem from one sitting at 40% `not-imported`. Turn
+is waiting on – a project sitting at 40% `dynamic` is a different problem from one sitting at 40% `not-imported`. Turn
 it off with `reportSummary: false`.
 
 For per-file detail, turn on `reportSkipped` to have every declined call reported with a reason:
@@ -272,14 +272,14 @@ The reasons are:
 | -------------------- | --------------------------------------------------------------- |
 | `dynamic`            | Some part of the arguments could not be resolved at build time. |
 | `raw-call`           | A `.raw()` call, which must keep returning a style object.      |
-| `not-foldable`       | `cva`, `sva`, or `token` — cannot evaluate to a class string.   |
+| `not-foldable`       | `cva`, `sva`, or `token` – cannot evaluate to a class string.   |
 | `unsupported-kind`   | A slot recipe call, or a shape this phase does not handle.      |
 | `not-imported`       | The callee is not a Bamboo import (see below).                  |
 | `empty`              | Resolved, but produced no class names.                          |
 | `overlapping`        | Nested inside another folded call.                              |
 | `no-call-expression` | The call site could not be located in the source.               |
 
-`not-foldable` and `unsupported-kind` are deliberately separate. The first is permanent — `cva` and `sva` return
+`not-foldable` and `unsupported-kind` are deliberately separate. The first is permanent – `cva` and `sva` return
 functions and `token` returns a value, so there is no class string to fold to. The second is a limitation of this phase,
 such as a slot recipe, which resolves to one class per slot rather than to a single string.
 
@@ -287,7 +287,7 @@ You can also just read the output bundle: a folded call is a string literal, an 
 
 ### `not-imported`, specifically
 
-Bamboo's extractor matches style calls **by name** and does not require an import — a deliberate choice, since the worst
+Bamboo's extractor matches style calls **by name** and does not require an import – a deliberate choice, since the worst
 case for CSS extraction is a handful of unused rules. A source transform cannot be that relaxed: your own
 `const css = (styles) => JSON.stringify(styles)` would otherwise be rewritten into a class string.
 
@@ -300,7 +300,7 @@ The plugin declares `apply: 'build'`. It does not run in `vite dev`.
 
 Folding a module means re-parsing it with `ts-morph`. In a build that cost is paid once per module and amortizes across
 the whole pass. Measured on `sandbox/vite-ts`, it is roughly **0.3 ms for a small component and 3 ms for a 147-line file
-with 24 call sites** — the parse dominates, and the fold itself adds about 10% on top of it. For a 500-module app that
+with 24 call sites** – the parse dominates, and the fold itself adds about 10% on top of it. For a 500-module app that
 is somewhere under a second and a half added to a production build.
 
 In dev the trade is bad in both directions: the same parse lands on every hot update, feeding a source file back into
@@ -312,11 +312,11 @@ its style calls pre-resolved. So the transform stays where it pays for itself.
 - **It does not remove the runtime from your bundle.** Dropping `createCss` and the utility tables requires _every_ call
   site in the module graph to fold, which realistically does not happen in an app with dynamic components. You get the
   per-call CPU saving; the runtime still ships. Bundle size barely moves either way, and gzipped it moves slightly
-  against you — on `sandbox/runtime-perf`, -0.8% raw and +1.0% gzipped, because class literals are all distinct where
+  against you – on `sandbox/runtime-perf`, -0.8% raw and +1.0% gzipped, because class literals are all distinct where
   the repeated `css({ … })` calls they replace compressed almost to nothing.
 - **It does not remove the now-unused import.** `import { css } from 'styled-system/css'` stays after its last call
   folds. Bundlers tree-shake it.
-- **It does not fold recipe elements.** A config recipe's `jsx` components — `<Button size="sm" />` — keep their runtime
+- **It does not fold recipe elements.** A config recipe's `jsx` components – `<Button size="sm" />` – keep their runtime
   path, even though the equivalent `buttonStyle({ size: 'sm' })` call folds. `styled.*` and pattern elements are the two
   element surfaces that fold. A recipe element is not counted in the coverage summary either, so a project using them
   reads as having fewer sites than it has.
@@ -328,10 +328,10 @@ its style calls pre-resolved. So the transform stays where it pays for itself.
 ## How it stays correct
 
 The folded string is computed through the same runtime `css` your app would have called, rebuilt in-process from your
-resolved config — so the substitution is behaviour-preserving by construction rather than by a reimplementation that
+resolved config – so the substitution is behaviour-preserving by construction rather than by a reimplementation that
 could drift.
 
 That leaves one thing to verify, and the test suite verifies it: that every class in a folded string is backed by a rule
 in the CSS the build emits. `packages/vite/__tests__` checks this across conditions, responsive values, `!important`,
 multiline values, arbitrary values containing quotes and backslashes, shorthand and longhand conflicts, and
-multi-argument merge order — plus a parity test asserting the emitted CSS is byte-identical whether or not folding ran.
+multi-argument merge order – plus a parity test asserting the emitted CSS is byte-identical whether or not folding ran.

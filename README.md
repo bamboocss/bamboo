@@ -16,19 +16,18 @@ what it costs.
 ## Features
 
 - ⚡️ Write style objects or style props, extract them at build time
-- 🪶 [Optional zero runtime](https://bamboocss.com/docs/guides/source-transformation) — fold statically-resolvable
-  `css()` calls and JSX into literal class strings at build time
-- ✨ Modern CSS output — cascade layers `@layer`, css variables and more
+- 🪶 [Optional zero runtime](https://bamboocss.com/docs/guides/source-transformation) – fold static `css()` calls and
+  JSX into plain class strings at build time
+- ✨ Modern CSS output – cascade layers `@layer`, css variables and more
 - ✂️ Prune [unused tokens](https://bamboocss.com/docs/references/config#pruneunusedtokens) and
-  [keyframes](https://bamboocss.com/docs/references/config#pruneunusedkeyframes) — drop what nothing can reach from the
-  stylesheet that blocks first paint
-- 📦 [Grouped class output](https://bamboocss.com/docs/references/config#cssmode) — one class per `css()` call instead
+  [keyframes](https://bamboocss.com/docs/references/config#pruneunusedkeyframes) – ship only what your app uses
+- 📦 [Grouped class output](https://bamboocss.com/docs/references/config#cssmode) – one class per `css()` call instead
   of one per property
 - 🦄 Works with most JavaScript frameworks
 - 🚀 Recipes and Variants - Just like Stitches™️ ✨
 - 🎨 High-level design tokens support for simultaneous themes
 - 💪 Type-safe styles and autocomplete (via codegen)
-- 🤖 [MCP server](https://bamboocss.com/docs/ai/mcp-server) — let AI assistants read your tokens, recipes and usage
+- 🤖 [MCP server](https://bamboocss.com/docs/ai/mcp-server) – let AI assistants read your tokens, recipes and usage
 
 ---
 

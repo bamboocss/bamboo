@@ -499,12 +499,12 @@ const Card = ({ className, ...props }) => {
 
 **The last class that sets a property wins.** Two atomic classes for the same property under the same conditions cannot
 both apply, and leaving both on the element would hand the decision to whichever rule happens to come later in the
-stylesheet — not to the order you passed them. `cx` resolves that, so a caller's `className` reliably overrides the
+stylesheet – not to the order you passed them. `cx` resolves that, so a caller's `className` reliably overrides the
 component's own styles:
 
 ```js
 cx(css({ paddingX: '4' }), css({ paddingX: '2' }))
-// 'px_2' — not 'px_4 px_2'
+// 'px_2' – not 'px_4 px_2'
 ```
 
 Conditions are part of the declaration, so they only merge with each other:
@@ -514,7 +514,7 @@ cx('hover:px_4', 'hover:px_2') // 'hover:px_2'
 cx('px_4', 'hover:px_2') // 'px_4 hover:px_2'
 ```
 
-A class is only merged when its property is a utility bamboo actually registered, matched at its longest — `bd-w` beats
+A class is only merged when its property is a utility bamboo actually registered, matched at its longest – `bd-w` beats
 `bd`, so `bd-w-4px` and `bd-c-red` stay separate under `separator: '-'`. Recipe classes are excluded outright, and
 anything else is left exactly as written, duplicates included:
 
@@ -531,11 +531,11 @@ cx('btn px_4', 'btn px_2') // 'btn px_2 btn'
 
 <Callout type="info">
   This only applies to classes whose property is still visible in the name. With [`hash`](#hashing) enabled every class
-  is an opaque hash, so `cx` can only concatenate — compose with `css(a, b)` instead, which merges the style objects
+  is an opaque hash, so `cx` can only concatenate – compose with `css(a, b)` instead, which merges the style objects
   before any class name exists.
 </Callout>
 
-An `!important` class is the same declaration as its plain form, so argument order decides between them —
+An `!important` class is the same declaration as its plain form, so argument order decides between them –
 `cx(css({ color: 'red!' }), css({ color: 'blue' }))` is `c_blue`. That is the opposite of what the cascade would do with
 both classes on the element, and it is the point: the value you passed last is the one that applies.
 
@@ -609,7 +609,7 @@ css({
 ## Fallback values
 
 Some CSS values have no single spelling every browser understands. CSS handles this by letting you declare the same
-property more than once — a browser keeps the last declaration it can parse and discards the rest. A style object can't
+property more than once – a browser keeps the last declaration it can parse and discards the rest. A style object can't
 express that, since it can't hold the same key twice, so Bamboo gives you `fallback(...)`.
 
 Write the candidates **most-preferred first**:
@@ -634,7 +634,7 @@ css({
 The declarations come out in reverse, so a browser that doesn't understand `dvh` stops at the `vh` line and every other
 browser reaches the one you actually wanted.
 
-You can list as many candidates as you like, and each one resolves the same way a normal value would — tokens, the
+You can list as many candidates as you like, and each one resolves the same way a normal value would – tokens, the
 `[...]` escape hatch and shorthand properties all work inside a fallback:
 
 ```js
@@ -645,7 +645,7 @@ css({
 })
 ```
 
-`fallback(...)` works anywhere a value does — conditions, breakpoints, `globalCss`, recipes, patterns and JSX style
+`fallback(...)` works anywhere a value does – conditions, breakpoints, `globalCss`, recipes, patterns and JSX style
 props. Adding `!important` marks every candidate, not just the winning one.
 
 ### What it can't do
@@ -655,7 +655,7 @@ parse. So every candidate has to resolve to exactly one declaration. Most utilit
 
 Some don't. `transitionProperty` emits a `--transition-prop` variable beside the property, `lineClamp` emits four
 declarations for a number and one for `none`, and `divideX` emits a nested rule. The extra declarations aren't part of
-the contest — they'd apply unconditionally, whichever candidate the browser actually took, so the variable and the
+the contest – they'd apply unconditionally, whichever candidate the browser actually took, so the variable and the
 property could end up disagreeing. Bamboo will not guess: it warns and applies your preferred candidate on its own.
 
 ```
@@ -690,7 +690,7 @@ css({ width: 'stretch', color: 'oklch(70% 0.1 200)' })
 }
 ```
 
-Reach for `fallback(...)` when the fallback is **a different design decision, not a polyfill** — something no optimizer
+Reach for `fallback(...)` when the fallback is **a different design decision, not a polyfill** – something no optimizer
 can infer for you:
 
 | Case                                 | Why a tool can't do it                                            |
@@ -699,7 +699,7 @@ can infer for you:
 | `fallback(-webkit-grab, grab, move)` | `move` is a different cursor, not a prefixed spelling of `grab`   |
 | `fallback(stretch, 100%)`            | `100%` behaves differently; it's your call that it's close enough |
 
-LightningCSS also **prunes** candidates it can prove are unreachable for your targets — a `100vh` fallback disappears
+LightningCSS also **prunes** candidates it can prove are unreachable for your targets – a `100vh` fallback disappears
 from a build that only targets browsers with `dvh`. It prunes on its own understanding of the values, so it can drop a
 candidate at every target level when it considers it redundant. The default PostCSS pipeline keeps every candidate
 exactly as written.
@@ -714,14 +714,14 @@ exactly as written.
 Anything Bamboo can recognise as a broken `fallback(...)` is reported at build time and the declaration is dropped,
 rather than written out as text that isn't CSS:
 
-- **`fallback(100dvh, 100vh`** — an unbalanced `(` or `[` can't be parsed as a candidate list.
-- **`fallback(fallback(a, b), c)`** — nesting has no meaning; group the candidates in one call instead.
-- **Candidates that don't resolve to a single declaration** — as above.
+- **`fallback(100dvh, 100vh`** – an unbalanced `(` or `[` can't be parsed as a candidate list.
+- **`fallback(fallback(a, b), c)`** – nesting has no meaning; group the candidates in one call instead.
+- **Candidates that don't resolve to a single declaration** – as above.
 
 Two mistakes it **cannot** catch, because the value is an ordinary string as far as Bamboo and TypeScript are concerned.
 Both reach the stylesheet verbatim and are ignored by the browser:
 
-- **A misspelled name** — `fallbacks(...)`, or `fallback(...)` used as part of a larger value like
+- **A misspelled name** – `fallbacks(...)`, or `fallback(...)` used as part of a larger value like
   `calc(fallback(a, b))` or `1px solid fallback(red, blue)`. Under [`strictTokens`](#stricttokens) a misspelling is a
   type error; the embedded forms are not.
 - **The candidates themselves aren't type-checked.** `fallback(red.300, rd)` typechecks even under `strictTokens`,

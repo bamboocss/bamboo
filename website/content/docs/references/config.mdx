@@ -701,7 +701,7 @@ It is opt-in because reachability cannot be proven for every reference. Three th
 Use [`staticCss`](#staticcss) to keep those.
 
 One cost is worth knowing about. Tokens that javascript receives as a `var()` rather than a literal are always kept, so
-that `token()` answers correctly for any path at runtime — that covers virtual tokens, any token carrying a condition,
+that `token()` answers correctly for any path at runtime – that covers virtual tokens, any token carrying a condition,
 and negative tokens. A negative token resolves to `calc(var(--spacing-4) * -1)`, so every token with a negative
 counterpart pins its own declaration. Spacing scales generate one negative per entry, which keeps the whole scale
 whether or not your app uses it. On the default preset that is roughly a third of what survives pruning, and there is no
@@ -717,7 +717,7 @@ Whether to drop `@keyframes` rules nothing in the generated css can reach.
 
 A preset declares every animation it offers and an app uses a handful; the rest sit in the same render-blocking
 stylesheet. Like [`pruneUnusedTokens`](#pruneunusedtokens), the saving scales with the size of your design system rather
-than the size of your app. The two are independent — either can be switched on without the other.
+than the size of your app. The two are independent – either can be switched on without the other.
 
 ```json
 {
@@ -734,7 +734,7 @@ runtime or handed to an inline `style` rather than to Bamboo, neither of which t
 in unrelated prose keeps its keyframe alive, which is the cheap failure.
 
 Names are recovered by testing each token in a value against the set your theme declares, rather than by parsing the
-`animation` shorthand — whose parts come in any order. A keyframe named after a keyword such as `none` or `ease`
+`animation` shorthand – whose parts come in any order. A keyframe named after a keyword such as `none` or `ease`
 therefore always looks referenced. The bias is intentional throughout: keeping an unused keyframe costs bytes, dropping
 a used one silently stops an animation.
 

@@ -11,7 +11,7 @@ For most projects this is a find-and-replace of `panda` with `bamboo`, plus a re
 
 ## What stays the same
 
-- `css`, `cva`, `sva`, `cx`, the pattern functions and the JSX factory — same names, same signatures.
+- `css`, `cva`, `sva`, `cx`, the pattern functions and the JSX factory – same names, same signatures.
 - Recipes, slot recipes, variants, compound variants and default variants.
 - Tokens, semantic tokens, conditions, breakpoints, themes, `staticCss`, cascade layers.
 - The config shape. Every key you have in `panda.config.ts` is valid in `bamboo.config.ts`.
@@ -19,7 +19,7 @@ For most projects this is a find-and-replace of `panda` with `bamboo`, plus a re
 - `jsxFactory`, which still defaults to `styled`.
 
 Because the generated output directory keeps its name and shape, the only imports you have to touch are the ones that
-name the tool itself — the config file, the PostCSS plugin, and any direct `@pandacss/*` imports.
+name the tool itself – the config file, the PostCSS plugin, and any direct `@pandacss/*` imports.
 
 ## Rename the packages
 
@@ -146,12 +146,12 @@ pnpm bamboo codegen
 
 These are documented in full elsewhere, and none of them are required to get a migrated project building:
 
-- [Source transformation](/docs/guides/source-transformation) — `@bamboocss/vite` folds statically-resolvable `css()`
+- [Source transformation](/docs/guides/source-transformation) – `@bamboocss/vite` folds statically-resolvable `css()`
   and pattern calls into plain class strings at build time, so they cost nothing at runtime.
-- [`pruneUnusedTokens`](/docs/references/config#pruneunusedtokens) — drops token CSS variables nothing can reach, which
+- [`pruneUnusedTokens`](/docs/references/config#pruneunusedtokens) – drops token CSS variables nothing can reach, which
   is usually the largest single saving in render-blocking CSS.
-- [Spec files](/docs/theming/spec) — generate a machine-readable description of your design system.
-- [MCP server](/docs/ai/mcp-server) and [llms.txt](/docs/ai/llms-txt) — expose your design system to AI tooling.
+- [Spec files](/docs/theming/spec) – generate a machine-readable description of your design system.
+- [MCP server](/docs/ai/mcp-server) and [llms.txt](/docs/ai/llms-txt) – expose your design system to AI tooling.
 
 ## Getting help
 
