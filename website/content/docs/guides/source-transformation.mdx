@@ -213,12 +213,28 @@ export const cls = css(button, { background: 'blue.500' })
 // → "d_inline-flex p_4 bg_blue.500"
 ```
 
-The same holds for plain exported objects, aliased imports, re-exports, and pure local helpers – including IIFEs:
+The same holds for plain exported objects, aliased imports, re-exports, and pure local helpers – including function
+declarations, default parameters, helpers composed from other helpers, and IIFEs:
 
 ```tsx
 const pad = (n) => ({ padding: n })
 css(pad('4')) // → "p_4"
 ```
+
+"Pure" is a description of how style helpers are written, not something the fold verifies. A helper is inlined for the
+value it returns, so a side effect in its body goes with the call:
+
+```tsx
+let count = 0
+const pad = (n) => {
+  count++
+  return { padding: n }
+}
+css(pad('4')) // → "p_4", and `count` is never incremented
+```
+
+Telling that apart needs analysis of the body rather than of the value, and a style helper that mutates is rare enough
+that the fold does not pay for it. Keep effects out of the helpers you style with.
 
 When a fold reads from another module, the plugin registers that module as a watch dependency, so editing it
 re-transforms the files that folded against it rather than leaving a stale literal behind.

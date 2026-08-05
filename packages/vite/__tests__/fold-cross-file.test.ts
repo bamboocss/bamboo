@@ -126,6 +126,85 @@ describe('pure local helpers', () => {
     expect(result.folded).toHaveLength(0)
     expect(result.code).toBe(code)
   })
+
+  test.each([
+    ['a function declaration', `function pad(n) { return { padding: n } }`, `css(pad('4'))`, 'p_4'],
+    ['a default parameter', `const pad = (n = '4') => ({ padding: n })`, `css(pad())`, 'p_4'],
+    [
+      'a helper composed from another',
+      `const pad = (n) => ({ padding: n })\nconst both = (n) => ({ ...pad(n), margin: n })`,
+      `css(both('4'))`,
+      'p_4 m_4',
+    ],
+  ])('%s folds', (_name, helper, call, expected) => {
+    const { fold } = createFoldFixture()
+
+    const result = fold(`
+      import { css } from 'styled-system/css'
+      ${helper}
+      export const cls = ${call}
+    `)
+
+    expect(result.folded).toHaveLength(1)
+    expect(result.folded[0]!.className).toBe(expected)
+  })
+
+  test('a helper returning conditions folds them too', () => {
+    const { fold } = createFoldFixture()
+
+    const result = fold(`
+      import { css } from 'styled-system/css'
+      const hover = (c) => ({ _hover: { color: c } })
+      export const cls = css(hover('red.300'))
+    `)
+
+    expect(result.folded[0]!.className).toBe('hover:c_red.300')
+  })
+})
+
+/**
+ * Two shapes where inlining a helper is not equivalent to calling it. Both are pinned
+ * because they are the edges of what "pure" is taken to mean here, and neither is
+ * currently detected — a reader deciding whether to trust a helper needs to know which.
+ */
+describe('local helpers, where inlining is not calling', () => {
+  test('a side effect in the helper body is dropped', () => {
+    const { fold } = createFoldFixture()
+
+    const result = fold(`
+      import { css } from 'styled-system/css'
+      let count = 0
+      const pad = (n) => { count++; return { padding: n } }
+      export const cls = css(pad('4'))
+    `)
+
+    // The class is right and the increment is gone: the call the fold removed was the
+    // only thing performing it. A style helper that mutates is pathological, and telling
+    // one apart needs real analysis of the body rather than of the value it returns — so
+    // this is a known limitation rather than a case that declines.
+    expect(result.folded[0]!.className).toBe('p_4')
+    expect(result.code).not.toContain('pad(')
+  })
+
+  test('a reassigned binding resolves to its initializer, and the CSS agrees', () => {
+    const { fold, getCss } = createFoldFixture()
+
+    const result = fold(`
+      import { css } from 'styled-system/css'
+      let base = '4'
+      const pad = () => ({ padding: base })
+      base = '8'
+      export const cls = css(pad())
+    `)
+
+    // At runtime this call returns `p_8`; the extractor reads the initializer and says
+    // `p_4`. That is extraction's answer, not the fold's — and it is the answer the
+    // stylesheet is written against, so folding to it is what makes the rendered element
+    // match the CSS that exists. Left unfolded, the element asks for a rule nobody emitted.
+    expect(result.folded[0]!.className).toBe('p_4')
+    expect(getCss()).toContain('p_4')
+    expect(getCss()).not.toContain('p_8')
+  })
 })
 
 describe('compiled JSX output', () => {
