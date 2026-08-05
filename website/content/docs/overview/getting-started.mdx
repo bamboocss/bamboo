@@ -4,11 +4,11 @@ description:
   Build-time, type-safe, zero-runtime CSS-in-JS. Author styles as typed objects; ship atomic CSS and plain class names.
 ---
 
-Bamboo uses static analysis to scan your JavaScript and TypeScript files for style props and function calls, generating
-atomic CSS on demand for the call sites you actually wrote. It runs as a CLI or as a PostCSS plugin.
+Bamboo scans your JavaScript and TypeScript for style props and function calls, and generates atomic CSS for the call
+sites it finds. It runs as a CLI or a PostCSS plugin.
 
-You author styles as plain objects; the tokens, recipes and variants you reach for come from your own config as
-generated types, so the editor autocompletes them and the compiler checks them.
+You author styles as plain objects. Tokens, recipes and variants are generated from your config as types, so the editor
+autocompletes them and the compiler checks them.
 
 ## How is this different from Panda CSS?
 
@@ -35,15 +35,13 @@ has the rest.
 
 ### General Guides
 
-- [Bamboo CLI](/docs/installation/cli): The simplest way to use Bamboo is with the Bamboo CLI tool.
+- [Bamboo CLI](/docs/installation/cli): the simplest way to get started.
 
-- [Using PostCSS](/docs/installation/postcss): (**Recommended**) Installing Bamboo as a PostCSS plugin is the
-  recommended way to integrate it with your project.
+- [Using PostCSS](/docs/installation/postcss): (**Recommended**) integrate Bamboo into your existing PostCSS pipeline.
 
 ### Framework Guides
 
-Start using Bamboo CSS in your JavaScript framework using our framework-specific guides that cover our recommended
-approach.
+The recommended setup for each JavaScript framework.
 
 <FrameworkCards />
 

@@ -6,13 +6,12 @@
 
 ## Why we forked Panda CSS
 
-Bamboo is the styling engine behind [Contra](https://contra.com), an interface large and dense enough to hold more than
-20,000 `css()` call sites. At that scale, anything a styling library spends per call site — bytes emitted, work done at
-runtime, time spent in the build — is multiplied by five figures. Optimizations that would be invisible in a smaller
-application are plainly measurable there.
+Bamboo is the styling engine behind [Contra](https://contra.com), whose UI has more than 20,000 `css()` call sites. At
+that scale everything a styling library spends per call site — bytes emitted, work at runtime, time in the build — is
+multiplied by five figures, so optimizations too small to notice elsewhere are plainly measurable.
 
-The fork exists to pursue those optimizations further than a general-purpose library reasonably would, and that is the
-standing priority for every release — extracting the maximum performance a styling library can give.
+The fork exists to chase them further than a general-purpose library reasonably would. That is the priority for every
+release.
 
 ## How is this different from Panda CSS?
 
@@ -49,7 +48,7 @@ design system rather than your app. The
 
 ## Install
 
-The **recommended** way to install the latest version of Bamboo is by running the command below:
+Install the CLI:
 
 ```bash
 npm i -D @bamboocss/dev
@@ -110,15 +109,8 @@ function Example() {
 
 ## Contributing
 
-Feel like contributing? That's awesome! We have a
-[contributing guide](https://github.com/bamboocss/bamboo/blob/main/CONTRIBUTING.md) to help guide you.
-
-### Want to help improve the docs?
-
-Our docsite lives in the [monorepo](./website/content/docs/).
-
-If you're interested in contributing to the documentation, check out the
-[contributing guide](https://github.com/bamboocss/bamboo/blob/main/CONTRIBUTING.md).
+See the [contributing guide](https://github.com/bamboocss/bamboo/blob/main/CONTRIBUTING.md). The docs site lives in
+[`website/content/docs`](./website/content/docs/).
 
 ## Acknowledgement
 
