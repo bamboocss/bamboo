@@ -31,7 +31,6 @@ import type {
   EmitPackageCommandFlags,
   InitCommandFlags,
   MainCommandFlags,
-  McpCommandFlags,
   McpInitCommandFlags,
   ShipCommandFlags,
   SpecCommandFlags,
@@ -648,12 +647,28 @@ export async function main() {
     })
 
   cli
-    .command('mcp', 'Start MCP server for AI assistants')
+    .command('mcp', 'Moved to the standalone @bamboocss/mcp package')
     .option('-c, --config <path>', 'Path to bamboo config file')
     .option('--cwd <cwd>', 'Current working directory', { default: cwd })
-    .action(async (mcpFlags: McpCommandFlags) => {
-      const { startMcpServer } = await import('@bamboocss/mcp')
-      await startMcpServer(mcpFlags)
+    .action(() => {
+      // Kept as a command rather than deleted so the configs written before the move fail with
+      // this instead of cac's "unknown command".
+      //
+      // Written to stderr directly rather than through the logger, which prints to stdout. A
+      // stale config invokes this *as the server*, where stdout is the protocol channel the
+      // client parses and discards, and stderr is what it surfaces in its logs.
+      process.stderr.write(
+        [
+          'The MCP server now ships as its own package, so installing Bamboo no longer pulls in',
+          'the Model Context Protocol SDK and its HTTP server dependencies.',
+          '',
+          'Run `bamboo init-mcp` to rewrite your client config, or start it directly with:',
+          '',
+          `  npx -y @bamboocss/mcp@${version}`,
+          '',
+        ].join('\n'),
+      )
+      process.exitCode = 1
     })
 
   cli
@@ -661,7 +676,7 @@ export async function main() {
     .option('--cwd <cwd>', 'Current working directory', { default: cwd })
     .option('--client <clients>', 'AI clients to configure (claude, cursor, vscode, windsurf, codex)')
     .action(async (mcpInitFlags: McpInitCommandFlags) => {
-      const { initMcpConfig } = await import('@bamboocss/mcp')
+      const { initMcpConfig } = await import('./mcp-init')
       const resolvedCwd = resolve(mcpInitFlags.cwd ?? cwd)
 
       // Parse comma-separated clients if provided

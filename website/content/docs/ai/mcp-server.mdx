@@ -71,24 +71,32 @@ pnpm bamboo init-mcp --cwd ./my-project
 | `--client <names>` | AI clients to configure (comma-separated) |
 | `--cwd <path>`     | Current working directory                 |
 
-### mcp
+### The server itself
 
-Start the MCP server manually (usually not needed - clients start it automatically).
+The server ships as its own package, `@bamboocss/mcp`, and is started through `npx` rather than through the Bamboo CLI.
+That is what the generated config does, so you rarely run it by hand:
 
 ```bash
-pnpm bamboo mcp
+npx -y @bamboocss/mcp
 
 # With custom config path
-pnpm bamboo mcp --config ./bamboo.config.ts
+npx -y @bamboocss/mcp --config ./bamboo.config.ts
 
 # Specify working directory
-pnpm bamboo mcp --cwd ./my-project
+npx -y @bamboocss/mcp --cwd ./my-project
 ```
 
 | Flag                  | Description                |
 | --------------------- | -------------------------- |
 | `--config, -c <path>` | Path to Bamboo config file |
 | `--cwd <path>`        | Current working directory  |
+
+It is packaged separately because the Model Context Protocol SDK brings an HTTP server and a JOSE implementation with it
+— around 18 MB, several times the weight of Bamboo's own CSS toolchain. Keeping it out of `@bamboocss/dev` means a
+project only downloads it if an AI client actually starts the server.
+
+`bamboo mcp` no longer exists. If you configured a client before this change, re-run `bamboo init-mcp` to rewrite the
+config.
 
 ## Supported AI Clients
 
@@ -133,17 +141,20 @@ When you run `bamboo init-mcp`, the following configuration is generated for eac
   "mcpServers": {
     "bamboo": {
       "command": "npx",
-      "args": ["bamboo", "mcp"]
+      "args": ["-y", "@bamboocss/mcp@<version>"]
     }
   }
 }
 ```
 
-The server automatically loads your `bamboo.config.ts` from the current working directory when started.
+The version is pinned to the Bamboo you generated it with, so the server reads your design system through the same
+release that defines it — re-run `bamboo init-mcp` after upgrading. The server loads your `bamboo.config.ts` from the
+current working directory when started.
 
 ## Manual Configuration
 
-If you prefer to configure MCP manually, create the appropriate config file for your AI client:
+If you prefer to configure MCP manually, create the appropriate config file for your AI client. Replace `<version>` with
+your installed Bamboo version:
 
 ### Claude
 
@@ -154,7 +165,7 @@ Create `.mcp.json` in your project root:
   "mcpServers": {
     "bamboo": {
       "command": "npx",
-      "args": ["bamboo", "mcp"]
+      "args": ["-y", "@bamboocss/mcp@<version>"]
     }
   }
 }
@@ -169,7 +180,7 @@ Create `.cursor/mcp.json`:
   "mcpServers": {
     "bamboo": {
       "command": "npx",
-      "args": ["bamboo", "mcp"]
+      "args": ["-y", "@bamboocss/mcp@<version>"]
     }
   }
 }
@@ -184,7 +195,7 @@ Create `.vscode/mcp.json`:
   "servers": {
     "bamboo": {
       "command": "npx",
-      "args": ["bamboo", "mcp"]
+      "args": ["-y", "@bamboocss/mcp@<version>"]
     }
   }
 }
@@ -199,7 +210,7 @@ If your Bamboo config is not in the default location, specify it explicitly:
   "mcpServers": {
     "bamboo": {
       "command": "npx",
-      "args": ["bamboo", "mcp", "--config", "./path/to/bamboo.config.ts"]
+      "args": ["-y", "@bamboocss/mcp@<version>", "--config", "./path/to/bamboo.config.ts"]
     }
   }
 }
@@ -241,7 +252,7 @@ If the MCP server fails to start:
 
 1. Ensure Bamboo CSS is installed: `pnpm add -D @bamboocss/dev`
 2. Verify you have a valid `bamboo.config.ts` in your project
-3. Check that `npx bamboo mcp` runs without errors
+3. Check that `npx -y @bamboocss/mcp` runs without errors
 
 ### Tools Not Available
 

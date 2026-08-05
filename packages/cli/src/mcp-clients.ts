@@ -50,10 +50,25 @@ export function getClientConfig(client: McpClient): McpClientConfig {
   return MCP_CLIENTS[client]
 }
 
-export function generateMcpConfig(clientConfig: McpClientConfig) {
+/**
+ * The server is started through `npx` rather than through this CLI.
+ *
+ * `@bamboocss/mcp` carries the Model Context Protocol SDK, which brings an HTTP server and a
+ * JOSE implementation with it — around 18 MB, several times the weight of the CSS toolchain,
+ * for a feature most projects never start. Keeping it out of `@bamboocss/dev` means an install
+ * only pays for it when a client actually launches the server.
+ *
+ * `-y` so npx fetches it without prompting the first time.
+ *
+ * Pinned to this CLI's version rather than left to float. The server loads the project's config
+ * with its own copy of `@bamboocss/node`, and every `@bamboocss/*` package releases in lockstep,
+ * so an unpinned `latest` would read a pinned project's design system through a different
+ * release of the thing that defines it. Re-run `bamboo init-mcp` after upgrading.
+ */
+export function generateMcpConfig(clientConfig: McpClientConfig, version: string) {
   const serverConfig = {
     command: 'npx',
-    args: ['bamboo', 'mcp'],
+    args: ['-y', `@bamboocss/mcp@${version}`],
   }
 
   return {

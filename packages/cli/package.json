@@ -59,7 +59,6 @@
   "dependencies": {
     "@bamboocss/config": "workspace:*",
     "@bamboocss/logger": "workspace:*",
-    "@bamboocss/mcp": "workspace:*",
     "@bamboocss/node": "workspace:*",
     "@bamboocss/postcss": "workspace:*",
     "@bamboocss/preset-bamboo": "workspace:*",

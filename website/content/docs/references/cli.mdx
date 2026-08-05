@@ -356,26 +356,15 @@ pnpm bamboo emit-pkg --outdir styled-system
 
 ## mcp
 
-Start the MCP (Model Context Protocol) server for AI assistants. This exposes your design system to AI tools like
-Claude, Cursor, VS Code Copilot, and more.
+Removed. The MCP (Model Context Protocol) server ships as its own package so that installing Bamboo does not pull in the
+protocol SDK, which brings an HTTP server and a JOSE implementation with it.
 
 ```bash
-pnpm bamboo mcp
-
-# With custom config path
-pnpm bamboo mcp --config ./bamboo.config.ts
-
-# Specify working directory
-pnpm bamboo mcp --cwd ./my-project
+npx -y @bamboocss/mcp
 ```
 
-| Flag                  | Description                | Related                                     |
-| --------------------- | -------------------------- | ------------------------------------------- |
-| `--config, -c <path>` | Path to Bamboo config file | [`config`](/docs/references/config.md)      |
-| `--cwd <path>`        | Current working directory  | [`config.cwd`](/docs/references/config#cwd) |
-
-> Note: This command is typically started automatically by AI clients. See the [MCP Server guide](/docs/ai/mcp-server)
-> for setup instructions.
+Run [`init-mcp`](#init-mcp) to write a client config pointing at it. See the [MCP Server guide](/docs/ai/mcp-server) for
+the flags it accepts.
 
 ## init-mcp
 

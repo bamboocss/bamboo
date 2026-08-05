@@ -2,7 +2,15 @@ import * as p from '@clack/prompts'
 import { logger } from '@bamboocss/logger'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { dirname, resolve } from 'path'
-import { CLIENT_NAMES, generateMcpConfig, getClientConfig, isValidClient, MCP_CLIENTS, type McpClient } from './clients'
+import { version } from '../package.json'
+import {
+  CLIENT_NAMES,
+  generateMcpConfig,
+  getClientConfig,
+  isValidClient,
+  MCP_CLIENTS,
+  type McpClient,
+} from './mcp-clients'
 
 export interface InitMcpConfigOptions {
   cwd?: string
@@ -61,7 +69,7 @@ export async function initMcpConfig(options: InitMcpConfigOptions = {}) {
     }
 
     // Generate new config
-    const newConfig = generateMcpConfig(clientConfig)
+    const newConfig = generateMcpConfig(clientConfig, version)
 
     // Check if config file already exists
     let finalConfig = newConfig
