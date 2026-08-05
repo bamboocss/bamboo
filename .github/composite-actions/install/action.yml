@@ -4,10 +4,10 @@ description: 'Sets up Node.js and runs install'
 runs:
   using: composite
   steps:
-    - uses: pnpm/action-setup@v4
+    - uses: pnpm/action-setup@v6
 
     - name: Setup Node.js
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@v7
       with:
         node-version: 22
         registry-url: 'https://registry.npmjs.org'
