@@ -1,5 +1,269 @@
 # @bamboocss/core
 
+## 1.14.0
+
+### Minor Changes
+
+- b567114: Drop `@bamboocss/studio` and `@bamboocss/astro-plugin-studio`.
+
+  Studio was the visual token browser inherited from Panda — an Astro site that read your config and rendered your
+  colors, typography and spacing. It is no longer maintained, and both packages are removed from the repository. The
+  versions already on npm stay there and keep working; they will not receive further releases.
+
+  **`bamboo studio` is gone.** Its own flags — `--build`, `--preview`, `--port`, `--host`, `--outdir` and `--base` —
+  have no replacement. If you have it in a `package.json` script, remove the script.
+
+  **`config.studio` is gone**, along with the `StudioOptions` type. Leaving `studio: { logo, outdir, inject }` in a
+  config is now a TypeScript error rather than a silent no-op, so delete it — a plain-JS config will keep ignoring it.
+  `Context.studio` is removed from `@bamboocss/core`, and the `MISSING_STUDIO` error code from `@bamboocss/shared`'s
+  `BambooErrorCode` union.
+
+  The studio output directory is no longer written to `.gitignore` by `bamboo init`. Existing `.gitignore` files keep
+  their `styled-system-studio` line until you remove it, which is harmless — nothing writes there anymore.
+
+  For documenting a design system, [spec files](/docs/theming/spec) generate a machine-readable description of your
+  tokens, recipes and patterns that you can render however you like, and the [MCP server](/docs/ai/mcp-server) exposes
+  the same information to AI tooling.
+
+- 3264da1: Export a `fallback()` helper from `styled-system/css`.
+
+  `fallback(...)` previously existed only as a string, which meant no import to discover, no autocomplete and no hover.
+  The helper builds the same string, so the two forms are interchangeable:
+
+  ```js
+  import { css, fallback } from '../styled-system/css'
+
+  css({ height: fallback('100dvh', '100vh') })
+  css({ height: 'fallback(100dvh, 100vh)' }) // identical
+  ```
+
+  The extractor evaluates the call, including under an alias (`import { fallback as fb }`). A project's own local
+  `fallback` function is left alone — only an identifier that resolves to a bamboo import is treated as this helper.
+
+  One case where the forms differ: a candidate built by another call, such as `token()`, cannot be resolved from inside
+  the helper. Use the string form there — `` `fallback(${token('sizes.4')}, 100vh)` `` — which interpolates before the
+  extractor sees it. The helper is not emitted for `syntax: 'template-literal'`.
+
+  The candidates are still not individually type-checked, the same trade the `[...]` escape hatch makes.
+
+- d1d05fc: Add `fallback(...)` for progressive-enhancement values.
+
+  CSS expresses a value fallback by declaring the same property more than once — the browser keeps the last declaration
+  it can parse. A style object cannot hold the same key twice, so there was no way to write one. `fallback(...)` closes
+  that gap:
+
+  ```js
+  css({ height: 'fallback(calc(100dvh - 100px), calc(100vh - 100px))' })
+  ```
+
+  ```css
+  .h_fallback\(calc\(100dvh_-_100px\)\,_calc\(100vh_-_100px\)\) {
+    height: calc(100vh - 100px);
+    height: calc(100dvh - 100px);
+  }
+  ```
+
+  Candidates are written most-preferred first and emitted in reverse. Each one resolves like an ordinary value, so
+  tokens, the `[...]` escape hatch and shorthand properties all work inside a fallback, as do conditions, breakpoints,
+  `globalCss`, recipes, patterns and JSX style props. `!important` marks every candidate. Under `strictTokens`,
+  `fallback(...)` is accepted alongside the other escape hatches, though the candidates inside it are not individually
+  checked — the same trade-off the `[...]` escape hatch already makes.
+
+  Only a value that is _entirely_ one `fallback(...)` call is treated as a candidate list —
+  `1px solid fallback(red, blue)` is left alone.
+
+  Every candidate has to resolve to exactly one declaration, because that is all the cascade arbitrates between. A
+  candidate that expands further — `transitionProperty` emits a `--transition-prop` variable beside the property,
+  `lineClamp` emits four declarations for a number and one for `none`, `divideX` emits a nested rule — would leave those
+  extras applying unconditionally whichever candidate the browser took. Those warn and apply the preferred candidate
+  alone.
+
+  Malformed calls warn and drop the declaration rather than emitting text that is not CSS: an unbalanced `(` or `[`, and
+  a `fallback(...)` nested inside another. A misspelled name or one embedded in a larger value (`calc(fallback(a, b))`)
+  is an ordinary string that Bamboo cannot recognise, and reaches the stylesheet verbatim.
+
+  Reach for it when the fallback is a different design decision rather than a polyfill. If you use LightningCSS, it
+  already generates vendor-prefix and color-space fallbacks from your browser targets, and it prunes the ones your
+  targets don't need — including candidates you write yourself.
+
+### Patch Changes
+
+- 42fab68: Look up a recipe node by name instead of scanning every recipe.
+
+  `recipes.details` is a getter that materializes the whole node list, so finding one by name built an array of every
+  recipe in the theme and then linear-scanned it. `baseName` is the key the node is already stored under, so `getNode`
+  reads it straight from the map.
+
+  Two callers did this: the parser, once per recipe-component usage in the source (via `Recipes.splitProps`), and
+  `staticCss`, once per recipe in the static config.
+
+  The lookup itself, against recipe count:
+
+  | recipes | scan   | map    |
+  | ------- | ------ | ------ |
+  | 2       | 16 ns  | 6.0 ns |
+  | 30      | 95 ns  | 6.0 ns |
+  | 120     | 288 ns | 6.3 ns |
+
+  It is flat where the scan is linear, so the saving grows with the size of the design system. The repo's `static-css`
+  benchmarks are unmoved by it, and should be: their config names one recipe, so a `process()` run does a single lookup
+  — tens of nanoseconds against a 52 µs operation.
+
+  `getNode` is deliberately not memoized, unlike the neighbouring `getRecipe`: the node map is module-level state that
+  `saveOne` and `remove` write to, so reading through keeps the freshness the scan had.
+
+- 7f87699: Remove `StaticCss.parse`.
+
+  It had no callers anywhere — not in this repo, its sandboxes, the playground or the docs — and was never documented.
+  The private `createRegex` behind it existed only to serve it. It was stranded by the 2024 static-css engine refactor,
+  which stopped returning either from `process()`, and has been unreachable in practice ever since: hooks receive a
+  curated interface that `staticCss` is not on.
+
+  That it was broken is the clearest evidence nothing called it. `matches.map((m) => m.replace('.', ''))` strips the
+  first dot anywhere in the string, and generated class names contain dots — so it would have handed back `c_red300` for
+  `c_red.300`.
+
+  Worth removing rather than leaving: it built a regex alternation over every class name the decoder knows and
+  recompiled it on every call, so the first thing to reach for it would have paid for the whole stylesheet per
+  invocation. Deleting an uncalled method is perf-neutral by construction, so there is no measurement to report.
+
+  The method was declared in the published types, so this is a removal from `@bamboocss/core`'s surface rather than from
+  its internals. Filed as a patch, matching how this repo has treated removing an undocumented binding before — the
+  package has no README, and the docs never reference it.
+
+  `decoder.classNames`, the state it read, stays reachable through the hooks API.
+
+- 1f5d4fb: Hoist the work `sortStyleRules` was repeating inside its comparator.
+
+  This runs on every build, for every project. The CSS emitted from extracted app source goes through
+  `Stylesheet.processDecoder`, and `StyleDecoder.collectAtomic` sorts before that — so every atomic style the extractor
+  finds is sorted twice, whether or not `staticCss` is configured. It is also on the fold's path, through
+  `filterClassNames`.
+
+  A comparison sort of N rules calls its comparator on the order of N log N times, so anything derived inside one is
+  recomputed roughly thirteen times per rule at the sizes a real project reaches. Three things were being derived per
+  comparison rather than per rule:
+  - `flatten` allocated a fresh array for **both** operands on every call. It now runs once per rule, ahead of the sort,
+    and the comparator receives them already flattened.
+  - `sortCSSmq` ran six regexes and a length parse over each of its two query strings. Those facts are now derived once
+    per distinct query and cached on the text, so two rules carrying the same breakpoint share the entry.
+  - `pseudoSelectorScore` scanned its seven-entry table per comparison, over a set of selectors that is small and
+    repeats.
+
+  All three are pure functions of their input, so no comparison can return a different answer and the sorted order is
+  identical — the full suite passes unchanged, CSS output snapshots included.
+
+  Measured on 10,000 rules, against a control of the same sort with no conditions that held at 1.00x across the pair:
+
+  | sort                | before   | after   |         |
+  | ------------------- | -------- | ------- | ------- |
+  | at-rule conditions  | 26.854ms | 3.967ms | 6.77x   |
+  | selector conditions | 8.298ms  | 4.064ms | 2.04x   |
+  | no conditions       | 2.672ms  | 2.661ms | control |
+
+  What this is worth end to end is not certified. The workload that made the cost visible was a `staticCss` config large
+  enough to produce 13,350 atoms in a single rule set, and at the whole build level the effect read directionally
+  positive but the machine would not hold still long enough to put a number on it. Worth re-taking on an idle machine.
+
+  Adds `sort-style-rules.bench.ts`, which sorts a shuffled input rather than the decoder's already-ordered output. That
+  distinction is what hid the cost: a nearly-sorted array costs TimSort far fewer comparisons, and measuring it
+  flattered the comparator by about 4x.
+
+- 4a7d40c: Make `StaticCss.clone()` return an independent instance.
+
+  It reassigned its own encoder and decoder and handed back `this`, so every caller shared one object — and, less
+  visibly, one `wildcardCache`. Callers reach for it to get isolation: `ctx.staticCss.clone().process(…)` is the idiom
+  throughout the tests and benchmarks.
+
+  The cache is what made this worth fixing. A "cold" instance inherited whatever the last caller had warmed, so the cold
+  and warm `process()` benchmarks measured the same populated cache and sat within 2% of each other — a pair whose whole
+  purpose was to show the difference between them. With the clone actually isolated they read 203ms against 135ms, so
+  the wildcard cache is worth about a third of `process()`; it was always doing that work, and nothing could show it.
+
+  The cloned encoder and decoder stay cloned rather than rebuilt from the context: `process()` reads whether they differ
+  from `context.encoder`/`context.decoder` to tell a clone from the context's own instance, and uses fresh ones per call
+  when they do.
+
+  No production code calls `clone()` — it is a test and benchmark affordance — so this changes no CSS output.
+
+- f2d7565: Expand `staticCss` conditions without rescanning the condition list.
+
+  Two things in the same inner loop, which runs once per condition per computed value:
+  - `formatCondition` asked whether a name is a known condition with `Array.prototype.includes` over
+    `Object.keys(config.conditions)`. The base preset alone declares 107 of them, and a container query — never in that
+    list — scanned all 107 before missing. It reads a `Set` now.
+  - `getConditionalValues` spread its accumulator per condition, building a fresh object of growing size for each. It
+    assigns into one object now.
+
+  Rule expansion, measured on its own rather than through `process()`, which is dominated by encoding and css
+  generation:
+
+  | rule (40 values)        | before     | after      |        |
+  | ----------------------- | ---------- | ---------- | ------ |
+  | five interactive states | 32,620 hz  | 300,303 hz | 9.2x   |
+  | four container queries  | 43,625 hz  | 325,252 hz | 7.5x   |
+  | no conditions (control) | 725,933 hz | 737,085 hz | 1.015x |
+
+  `static-css-real-world.bench.ts` now carries those three cases, the last as the control — they are the only benchmarks
+  that isolate this from the rest of a `process()` run.
+
+  Output is unchanged, key order included. A condition named `__proto__` is still defined rather than assigned, so it
+  stays an own key instead of reparenting the object it lands on.
+
+- faffa8e: Append rule results without spreading them into `push`.
+
+  `sorted.push(...withSelectorsOnly, ...withAtRules)` and the four `results.*.push(...)` calls in `staticCss` pass every
+  element as a separate argument. That is the quicker way to append while the array is small, and it stops being so
+  abruptly — measured here, per element:
+
+  | elements | ns/element |
+  | -------- | ---------- |
+  | 10,750   | 0.88       |
+  | 11,000   | 4.37       |
+
+  Past that it eventually throws rather than slowing down, because the arguments stop fitting on the stack. There is no
+  single size where that happens: ~124,000 from an empty stack, ~16,000 from nine thousand frames down.
+
+  Both sites are reachable on inputs that are large rather than absurd. A `staticCss` rule naming every utility with a
+  wildcard expands to ~15,000 objects against this repo's own fixture, and `sortStyleRules` — which runs on every build,
+  over every rule in the stylesheet — gets several times more from the same input.
+
+  Both now append with a loop, and the cost of that is real but small. Rules shaped like the ones in the real-world
+  benchmark append 87, 562 and 147 objects, and doing so with a loop takes `getStyleObjects` from 0.116 ms to 0.122 ms —
+  5% of a step that is a fraction of a millisecond inside a build measured in hundreds. In exchange the cost stays
+  linear at every size instead of inverting and then failing.
+
+  A threshold that kept the spread below a few thousand elements was the first attempt, and was dropped: it cannot make
+  the ceiling safe, only less likely to be met, and it left two branches where one is enough — including one where
+  appending an array to itself would not terminate.
+
+- 745727b: Stop `staticCss` rules with `responsive: true` mutating the config they came from.
+
+  Appending the breakpoints to a rule's `conditions` pushed into the array in place. The `|| []` default only stands in
+  when the field is absent, so a rule setting both `conditions` and `responsive` had the user's own array grown — and
+  both callers of `process` pass `ctx.config.staticCss` itself, so it grew again on every run:
+
+  ```
+  before:  ["light"]
+  after 1: ["light","sm","md","lg","xl","2xl"]
+  after 2: ["light","sm","md","lg","xl","2xl","sm","md","lg","xl","2xl"]
+  ```
+
+  Under `recipes: '*'` the rule being destructured is the recipe's own `variantKeyMap`, so a recipe with a variant named
+  `conditions` had that variant's list of values appended to instead — and `variantKeyMap` is module-level state that is
+  stringified into the generated recipe artifact, so the damage reached emitted code.
+
+  Affected the `css`, `patterns` and `recipes` forms alike. Nothing covered `responsive` before this; every example in
+  the docs sets it on a rule with no `conditions`, where the default hid the aliasing.
+
+- Updated dependencies [b567114]
+- Updated dependencies [d1d05fc]
+  - @bamboocss/types@1.14.0
+  - @bamboocss/shared@1.14.0
+  - @bamboocss/logger@1.14.0
+  - @bamboocss/token-dictionary@1.14.0
+  - @bamboocss/is-valid-prop@1.14.0
+
 ## 1.13.2
 
 ### Patch Changes

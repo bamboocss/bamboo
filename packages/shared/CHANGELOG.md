@@ -1,5 +1,70 @@
 # @bamboocss/shared
 
+## 1.14.0
+
+### Minor Changes
+
+- b567114: Drop `@bamboocss/studio` and `@bamboocss/astro-plugin-studio`.
+
+  Studio was the visual token browser inherited from Panda — an Astro site that read your config and rendered your
+  colors, typography and spacing. It is no longer maintained, and both packages are removed from the repository. The
+  versions already on npm stay there and keep working; they will not receive further releases.
+
+  **`bamboo studio` is gone.** Its own flags — `--build`, `--preview`, `--port`, `--host`, `--outdir` and `--base` —
+  have no replacement. If you have it in a `package.json` script, remove the script.
+
+  **`config.studio` is gone**, along with the `StudioOptions` type. Leaving `studio: { logo, outdir, inject }` in a
+  config is now a TypeScript error rather than a silent no-op, so delete it — a plain-JS config will keep ignoring it.
+  `Context.studio` is removed from `@bamboocss/core`, and the `MISSING_STUDIO` error code from `@bamboocss/shared`'s
+  `BambooErrorCode` union.
+
+  The studio output directory is no longer written to `.gitignore` by `bamboo init`. Existing `.gitignore` files keep
+  their `styled-system-studio` line until you remove it, which is harmless — nothing writes there anymore.
+
+  For documenting a design system, [spec files](/docs/theming/spec) generate a machine-readable description of your
+  tokens, recipes and patterns that you can render however you like, and the [MCP server](/docs/ai/mcp-server) exposes
+  the same information to AI tooling.
+
+- d1d05fc: Add `fallback(...)` for progressive-enhancement values.
+
+  CSS expresses a value fallback by declaring the same property more than once — the browser keeps the last declaration
+  it can parse. A style object cannot hold the same key twice, so there was no way to write one. `fallback(...)` closes
+  that gap:
+
+  ```js
+  css({ height: 'fallback(calc(100dvh - 100px), calc(100vh - 100px))' })
+  ```
+
+  ```css
+  .h_fallback\(calc\(100dvh_-_100px\)\,_calc\(100vh_-_100px\)\) {
+    height: calc(100vh - 100px);
+    height: calc(100dvh - 100px);
+  }
+  ```
+
+  Candidates are written most-preferred first and emitted in reverse. Each one resolves like an ordinary value, so
+  tokens, the `[...]` escape hatch and shorthand properties all work inside a fallback, as do conditions, breakpoints,
+  `globalCss`, recipes, patterns and JSX style props. `!important` marks every candidate. Under `strictTokens`,
+  `fallback(...)` is accepted alongside the other escape hatches, though the candidates inside it are not individually
+  checked — the same trade-off the `[...]` escape hatch already makes.
+
+  Only a value that is _entirely_ one `fallback(...)` call is treated as a candidate list —
+  `1px solid fallback(red, blue)` is left alone.
+
+  Every candidate has to resolve to exactly one declaration, because that is all the cascade arbitrates between. A
+  candidate that expands further — `transitionProperty` emits a `--transition-prop` variable beside the property,
+  `lineClamp` emits four declarations for a number and one for `none`, `divideX` emits a nested rule — would leave those
+  extras applying unconditionally whichever candidate the browser took. Those warn and apply the preferred candidate
+  alone.
+
+  Malformed calls warn and drop the declaration rather than emitting text that is not CSS: an unbalanced `(` or `[`, and
+  a `fallback(...)` nested inside another. A misspelled name or one embedded in a larger value (`calc(fallback(a, b))`)
+  is an ordinary string that Bamboo cannot recognise, and reaches the stylesheet verbatim.
+
+  Reach for it when the fallback is a different design decision rather than a polyfill. If you use LightningCSS, it
+  already generates vendor-prefix and color-space fallbacks from your browser targets, and it prunes the ones your
+  targets don't need — including candidates you write yourself.
+
 ## 1.13.2
 
 ### Patch Changes
