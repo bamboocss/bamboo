@@ -11,47 +11,47 @@ export const GET = async () => {
     },
     {
       title: 'Overview',
-      href: `${getPublicUrl('/llms.txt/overview')}`,
+      href: `${getPublicUrl('/llms/overview.txt')}`,
       description: 'Getting started, browser support, FAQ, and why Bamboo CSS',
     },
     {
       title: 'Installation',
-      href: `${getPublicUrl('/llms.txt/installation')}`,
+      href: `${getPublicUrl('/llms/installation.txt')}`,
       description: 'Framework-specific installation guides for all supported frameworks',
     },
     {
       title: 'Concepts',
-      href: `${getPublicUrl('/llms.txt/concepts')}`,
+      href: `${getPublicUrl('/llms/concepts.txt')}`,
       description: 'Core concepts including patterns, recipes, conditional styles, and responsive design',
     },
     {
       title: 'Theming',
-      href: `${getPublicUrl('/llms.txt/theming')}`,
+      href: `${getPublicUrl('/llms/theming.txt')}`,
       description: 'Design tokens, text styles, layer styles, and animation styles',
     },
     {
       title: 'Utilities',
-      href: `${getPublicUrl('/llms.txt/utilities')}`,
+      href: `${getPublicUrl('/llms/utilities.txt')}`,
       description: 'All CSS utilities organized by category',
     },
     {
       title: 'Customization',
-      href: `${getPublicUrl('/llms.txt/customization')}`,
+      href: `${getPublicUrl('/llms/customization.txt')}`,
       description: 'Customizing theme, utilities, patterns, and presets',
     },
     {
       title: 'Guides',
-      href: `${getPublicUrl('/llms.txt/guides')}`,
+      href: `${getPublicUrl('/llms/guides.txt')}`,
       description: 'Practical guides for specific use cases',
     },
     {
       title: 'Migration',
-      href: `${getPublicUrl('/llms.txt/migration')}`,
+      href: `${getPublicUrl('/llms/migration.txt')}`,
       description: 'Guides for migrating from other CSS-in-JS libraries',
     },
     {
       title: 'References',
-      href: `${getPublicUrl('/llms.txt/references')}`,
+      href: `${getPublicUrl('/llms/references.txt')}`,
       description: 'CLI commands and configuration reference',
     },
   ]

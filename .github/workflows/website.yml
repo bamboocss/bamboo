@@ -1,0 +1,55 @@
+name: Website
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'website/**'
+      - 'packages/**'
+      - '.github/workflows/website.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'website/**'
+      - 'packages/**'
+      - '.github/workflows/website.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install
+        uses: ./.github/composite-actions/install
+
+      # `website` builds the workspace packages first (its own `prebuild`), then
+      # velite, then `next build`. With `output: 'export'` that writes `out/`.
+      #
+      # NEXT_PUBLIC_URL has to be set *here*, not at deploy time: the pages are
+      # prerendered during this step, so the value is baked into metadataBase,
+      # the og:image URLs and every link inside llms.txt. Without it they are all
+      # emitted as http://localhost:3000 and nothing fails loudly.
+      - name: Build
+        run: pnpm --filter=website build
+        env:
+          NEXT_PUBLIC_URL: https://bamboocss.com
+
+      # Assets-only deploy -- wrangler.jsonc declares no `main`, so this uploads
+      # `out/` to Cloudflare's asset store and runs no Worker code.
+      - name: Deploy
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: website
+          command: deploy

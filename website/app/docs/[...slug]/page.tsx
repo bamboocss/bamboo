@@ -5,7 +5,6 @@ import { MDXContent } from '@/components/docs/mdx-content'
 import { Pagination } from '@/components/docs/pagination'
 import { Sidebar } from '@/components/docs/sidebar'
 import { Toc } from '@/components/ui/toc'
-import { generateOgImageUrl } from '@/lib/og-image'
 import { css } from '@/styled-system/css'
 import { Box } from '@/styled-system/jsx'
 import { notFound } from 'next/navigation'
@@ -31,12 +30,8 @@ export async function generateMetadata({ params }: DocsPageProps) {
     }
   }
 
-  const ogImage = generateOgImageUrl({
-    title: doc.title,
-    description: doc.description,
-    category: 'Docs',
-  })
-
+  // The image tags come from opengraph-image.tsx in this segment -- Next merges
+  // the metadata file convention in, so listing `images` here would duplicate it.
   return {
     title: `${doc.title} | Bamboo CSS`,
     description: doc.description,
@@ -44,13 +39,11 @@ export async function generateMetadata({ params }: DocsPageProps) {
       title: doc.title,
       description: doc.description,
       type: 'article',
-      images: [ogImage],
     },
     twitter: {
       card: 'summary_large_image',
       title: doc.title,
       description: doc.description,
-      images: [ogImage],
     },
   }
 }

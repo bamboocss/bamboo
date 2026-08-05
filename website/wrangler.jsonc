@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "bamboocss",
+  "compatibility_date": "2026-08-04",
+
+  // Assets-only: there is no `main`, so no Worker script runs and nothing can
+  // exceed a bundle limit. Cloudflare serves `out/` straight from its asset store.
+  "assets": {
+    "directory": "./out",
+
+    // `next build` writes 404.html from app/not-found.tsx; serve it for unknown
+    // paths instead of Cloudflare's default bare 404.
+    "not_found_handling": "404-page",
+  },
+}

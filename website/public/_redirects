@@ -1,0 +1,29 @@
+# Cloudflare static-asset redirects. Replaces the `redirects()` and `rewrites()`
+# blocks in next.config.mjs, which `output: 'export'` does not apply.
+#
+# Syntax: [source] [destination] [code]. Codes 301/302/303/307/308 are supported;
+# these are real redirects, not meta-refresh stubs.
+
+# There is no `/` page -- the site opens on the docs. Kept at 302, matching the
+# `permanent: false` this replaced, so the landing page can claim `/` later.
+/                          /docs/overview/getting-started  302
+
+# Legacy entry points.
+/docs                      /docs/overview/getting-started  301
+/docs/getting-started      /docs/overview/getting-started  301
+/docs/overview/llms-txt    /docs/ai/llms-txt               301
+
+# Raw-markdown alias for agents: /docs/<path>.mdx -> /llms/<path>.mdx. The
+# target is emitted as a real asset by generateStaticParams in
+# app/llms/[...slug]/route.ts, so this resolves to a file rather than a 404.
+#
+# The agent-facing docs live under /llms/ rather than /llms.txt/ because the
+# llms.txt convention puts the index at /llms.txt -- a *file*, which cannot also
+# be the directory holding its children.
+/docs/*.mdx                /llms/:splat.mdx                301
+
+# Category summaries are files named <category>.txt so they can coexist with the
+# <category>/ directory alongside them. This keeps the extensionless URL working.
+# A placeholder matches neither `/` nor `.`, so this catches `/llms/concepts`
+# without catching `/llms/concepts.txt` (no loop) or `/llms/concepts/patterns`.
+/llms/:category            /llms/:category.txt             301

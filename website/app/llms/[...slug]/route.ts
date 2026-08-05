@@ -20,17 +20,25 @@ export async function generateStaticParams() {
     'references',
   ]
 
-  // Generate params for category pages
+  // Category summaries carry a .txt suffix so the file can sit beside the
+  // directory of the same name that holds that category's docs --
+  // `out/llms.txt/concepts.txt` next to `out/llms.txt/concepts/`. A bare
+  // `concepts` file cannot, and static export fails on the collision rather
+  // than skipping it. `_redirects` keeps the extensionless URL working.
   const categoryParams = categories.map((category) => ({
-    slug: [category],
+    slug: [`${category}.txt`],
   }))
 
-  // Generate params for individual doc pages
-  const docParams = docs.map((doc) => {
+  // Generate params for individual doc pages. Each doc is emitted twice: once
+  // bare, and once with the .mdx suffix the GET handler already strips. Under
+  // `output: 'export'` a path only exists if it is listed here, and the .mdx
+  // form is what `/docs/<path>.mdx` redirects to for agents fetching raw
+  // markdown -- a redirect to an unlisted path would 404.
+  const docParams = docs.flatMap((doc) => {
     const slugParts = doc.slug.replace('docs/', '').split('/')
-    return {
-      slug: slugParts,
-    }
+    const lastPart = slugParts[slugParts.length - 1]
+
+    return [{ slug: slugParts }, { slug: [...slugParts.slice(0, -1), `${lastPart}.mdx`] }]
   })
 
   return [...categoryParams, ...docParams]
@@ -40,13 +48,12 @@ export async function GET(request: Request, context: RouteContext) {
   const params = await context.params
   let slugParts = params.slug
 
-  // Remove .mdx extension from the last part if present
+  // Strip the extension the URL carries: .mdx for the /docs raw-markdown alias,
+  // .txt for category summaries.
   const lastPart = slugParts[slugParts.length - 1]
-  if (lastPart.endsWith('.mdx')) {
-    slugParts = [
-      ...slugParts.slice(0, -1),
-      lastPart.slice(0, -4), // Remove .mdx
-    ]
+  const extension = ['.mdx', '.txt'].find((ext) => lastPart.endsWith(ext))
+  if (extension) {
+    slugParts = [...slugParts.slice(0, -1), lastPart.slice(0, -extension.length)]
   }
 
   // Check if this is a specific doc request (e.g., /installation/redwood)

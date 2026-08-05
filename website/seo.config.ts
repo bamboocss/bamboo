@@ -13,8 +13,9 @@ const seoConfig = defineMetadata({
   },
   description: 'Build modern websites using build time and type-safe CSS-in-JS',
   themeColor: '#F6E458',
+  // The default card comes from app/opengraph-image.tsx; per-doc cards come from
+  // app/docs/[...slug]/opengraph-image.tsx. Both are rendered at build time.
   openGraph: {
-    images: `${publicUrl}/og`,
     url: publicUrl,
   },
   manifest: '/site.webmanifest',

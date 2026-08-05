@@ -1,0 +1,7 @@
+# Cloudflare static-asset response headers.
+
+# Everything under /_next/static is content-hashed by the build, so it can be
+# cached permanently. Without this the asset store falls back to a short TTL and
+# repeat visitors re-download the JS and CSS chunks on every deploy.
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
