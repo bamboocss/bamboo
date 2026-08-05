@@ -89,11 +89,23 @@
     "packages/plugin-svelte": {
       "project": ["src/**/*.ts"]
     },
+    "website": {
+      "entry": [
+        "app/**/{page,layout,not-found,opengraph-image}.tsx",
+        "velite.config.ts",
+        "bamboo.config.ts",
+        "seo.config.ts",
+        "scripts/*.tsx"
+      ],
+      "project": ["{app,src,theme,scripts}/**/*.{ts,tsx,cjs,mjs}"],
+      "ignore": ["src/icons/**", "src/mdx/contexts/**"]
+    },
     "packages/plugin-vue": {
       "project": ["src/**/*.ts"]
     }
   },
-  "ignoreWorkspaces": ["sandbox/*", "sandbox/component-lib/**", "playground", "website"],
+  "ignoreWorkspaces": ["sandbox/*", "sandbox/component-lib/**", "playground"],
+  "ignoreExportsUsedInFile": true,
   "ignore": ["**/__tests__/**"],
   "exclude": ["duplicates"]
 }

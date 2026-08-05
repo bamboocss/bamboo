@@ -341,14 +341,3 @@ export const Icon = ({ icon, ...props }: ComponentPropsWithoutRef<'svg'> & { ico
   const Icon = icons[icon]
   return <Icon data-scope="icon" {...props} />
 }
-
-export const ButtonIcon = ({
-  icon,
-  side = 'right',
-  ...props
-}: ComponentPropsWithoutRef<'svg'> & {
-  icon: IconType
-  side?: 'left' | 'right'
-}) => {
-  return <Icon icon={icon} data-scope="button" data-part={side + '-icon'} {...props} />
-}

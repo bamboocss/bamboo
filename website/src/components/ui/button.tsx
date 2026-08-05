@@ -1,6 +1,5 @@
 import { cva } from '@/styled-system/css'
 import { bamboo } from '@/styled-system/jsx'
-import Link from 'next/link'
 
 const buttonRecipe = cva({
   base: {
@@ -134,7 +133,5 @@ const buttonRecipe = cva({
     variant: 'outline',
   },
 })
-
-export const ButtonLink = bamboo(Link, buttonRecipe)
 
 export const Button = bamboo('button', buttonRecipe)

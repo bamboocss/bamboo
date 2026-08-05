@@ -37,6 +37,12 @@ jobs:
       - name: Install
         uses: ./.github/composite-actions/install
 
+      # A dead internal link does not fail `next build` -- the page renders and the
+      # href simply 404s for the reader -- so it is checked separately, before the
+      # slow step rather than after it.
+      - name: Check internal links
+        run: pnpm --filter=website check-links
+
       # `website` builds the workspace packages first (its own `prebuild`), then
       # velite, then `next build`. With `output: 'export'` that writes `out/`.
       #

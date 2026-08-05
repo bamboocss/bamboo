@@ -34,7 +34,7 @@
     "release": "changeset publish",
     "release-dev": "changeset version --snapshot dev && changeset publish --tag dev",
     "website": "pnpm --filter=./website",
-    "mdx-check": "mdx-local-link-checker docs && mdx-local-link-checker website/pages/docs"
+    "mdx-check": "pnpm --filter=website check-links"
   },
   "dependencies": {
     "@changesets/changelog-github": "0.5.2",
@@ -44,7 +44,6 @@
     "cross-env": "10.1.0",
     "happy-dom": "20.0.11",
     "husky": "9.1.7",
-    "mdx-local-link-checker": "2.1.1",
     "rimraf": "5.0.10",
     "ts-morph": "28.0.0",
     "tsdown": "0.22.0",
