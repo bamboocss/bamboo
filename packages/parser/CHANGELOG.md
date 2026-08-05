@@ -1,5 +1,91 @@
 # @bamboocss/parser
 
+## 1.13.0
+
+### Minor Changes
+
+- 5b881ee: Extract styles composed across files. A named import whose value is static now folds at the call site:
+
+  ```ts
+  // styles.ts
+  export const button = css.raw({ display: 'inline-flex', paddingInline: '4' })
+
+  // button.tsx
+  import { button } from './styles'
+  css(button, { background: 'blue.500' }) // now emits the button styles too
+  ```
+
+  Previously the imported half resolved to nothing and was silently dropped, so only the inline object produced CSS.
+
+  Supported: named imports, aliased named imports, re-exports, file-local alias chains, plain exported objects,
+  `css.raw()` values, and imported values spread into objects or nested selectors. Not supported, and skipped without
+  error: default imports, namespace imports, and values that are only known at runtime.
+
+  Aliased named imports (`import { button as btn }`) were additionally never resolved even when file traversal was
+  enabled — the lookup used the local binding name rather than the exported one.
+
+- 5b881ee: Re-parse importers when a shared style file changes in watch mode.
+
+  Cross-file extraction folds an imported value into the importing file's output, so editing `styles.ts` had to re-parse
+  everyone importing it — watch only re-parsed and rebundled the changed file, leaving consumers emitting the previous
+  styles until the process restarted.
+
+  The parser now records a reverse dependency graph while parsing, covering both imports and re-exports, and exposes
+  `project.getDependents(filePath)` for the transitive set. Watch rebundles those alongside the changed file. Edges are
+  rebuilt on each parse, so removing an import stops forcing a rebuild of the file it no longer depends on.
+
+### Patch Changes
+
+- 172fec0: Resolve imports without initializing the type checker when building the dependency graph.
+
+  Tracking which files import which ran through the symbol table, which forces the TypeScript type checker to initialize
+  on first use — hundreds of milliseconds on a cold build, for what is only a filesystem question. Resolution now goes
+  straight to the module resolver, with a shared cache so a repeated specifier does not hit the disk again.
+
+  Resolved files are looked up in the project rather than added to it, so resolving a package import cannot pull its
+  type declarations in. The graph continues to track only the files being scanned.
+
+- 5b881ee: Build the stylesheet once per edit, not once per affected file.
+
+  The stylesheet is built from the whole parser result, so rebuilding it per file meant one edit to a shared style file
+  ran the full optimize pipeline and wrote to disk once for every file importing it — 61 builds and 61 writes for a file
+  with 60 importers. Affected files are now re-parsed first and the sheet is built and written a single time.
+
+  A file appearing also reaches the files that were importing it before it existed. Those importers have no dependency
+  edge to follow, since the specifier resolved to nothing when they were parsed, so they are tracked separately and
+  rebuilt when a new file arrives.
+
+- 5b881ee: Serve fresh values to importers after a shared style file is edited or deleted.
+
+  Resolved values are memoized against the AST node that produced them, but a node's value can come from another file —
+  `css(button)` folds whatever `./styles` exports. Editing that file replaces only its own nodes, so an importer's nodes
+  stayed identical and kept serving the value read before the edit. Re-parsing the importer was not enough to clear it.
+
+  The memo is now dropped whenever a file's contents are replaced or reloaded, which is the point at which another
+  file's resolutions can have gone out of date. Deleting a shared file also rebuilds its importers, resolving them
+  before the file leaves the project rather than after, when its path can no longer be matched.
+
+- Updated dependencies [9ffb84f]
+- Updated dependencies [e482ab3]
+- Updated dependencies [5b881ee]
+- Updated dependencies [7bf6798]
+- Updated dependencies [328a926]
+- Updated dependencies [11c9409]
+- Updated dependencies [9ffb84f]
+- Updated dependencies [a07286f]
+- Updated dependencies [a5cb5a8]
+- Updated dependencies [9ffb84f]
+- Updated dependencies [d7825f6]
+- Updated dependencies [a966bae]
+- Updated dependencies [a24d37a]
+- Updated dependencies [5b881ee]
+  - @bamboocss/shared@1.13.0
+  - @bamboocss/extractor@1.13.0
+  - @bamboocss/types@1.13.0
+  - @bamboocss/core@1.13.0
+  - @bamboocss/config@1.13.0
+  - @bamboocss/logger@1.13.0
+
 ## 1.12.3
 
 ### Patch Changes

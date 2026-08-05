@@ -1,5 +1,13 @@
 # @bamboocss/plugin-svelte
 
+## 1.13.0
+
+### Patch Changes
+
+- Updated dependencies [a07286f]
+- Updated dependencies [a5cb5a8]
+  - @bamboocss/types@1.13.0
+
 ## 1.12.3
 
 ### Patch Changes

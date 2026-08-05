@@ -1,5 +1,294 @@
 # @bamboocss/generator
 
+## 1.13.0
+
+### Minor Changes
+
+- 7bf6798: Lower a single dynamic style value to a class the runtime builds by concatenation, instead of leaving a
+  `css()` call behind.
+
+  `css({ margin: '2', color: tone })` folded to `cx("m_2", css({ color: tone }))`. It now folds to
+  `cx("m_2", cssLeaf("c_", "color", tone))`, where `c_` is resolved at build time and the runtime only appends the
+  value. Measured against the `css()` call it replaces: 2.2x when the memo would have hit, 43x when it would have missed
+  — which is every SSR render, and any value that cycles past the memo's 1000-entry ceiling.
+
+  This is sound because `css()` already builds the class from the value alone. `utility.transform` is string
+  construction over a table fixed at build time and nothing consults which rules were emitted, so `css({ color: tone })`
+  already returns `c_<tone>` for a value the extractor never saw, with no CSS behind it. The lowered form produces the
+  same string in the same cases.
+
+  Three shapes do not reduce to one class and fall back to `css()` at runtime, so nothing is lost: a responsive array, a
+  condition object, and any non-scalar. `null` and `undefined` produce no class, as before. A value carrying whitespace
+  or `!important` still resolves correctly but takes a regex path that is slower than a memo hit, so a call whose value
+  always has one is better left alone.
+
+  It applies to a top-level property of a single-argument `css()` call, with `hash` and `cssMode: 'grouped'` declining
+  automatically — neither produces a class the value is merely appended to. Condition keys are declined too, since their
+  value is an object in every real use. Turn it off with `partial: false`, alongside the rest of the splitting.
+
+  Two notes for upgrades. `cssLeaf` is emitted by the generator, so a project whose `styled-system/` was generated
+  before this release must be regenerated — the transform emits an import of it, and a stale runtime has no such export.
+  And `sanitize` is now exported from `@bamboocss/shared`, so the class-name pipeline has one implementation rather than
+  a copy in `leafClass`.
+
+- a07286f: Add `pruneUnusedKeyframes`, dropping `@keyframes` rules nothing can reach.
+
+  A preset declares every animation it offers and an app uses a handful. The rest sit in the one stylesheet that blocks
+  first paint. On the fixture preset this drops all four unused keyframes and 436 bytes; it scales with the size of the
+  design system rather than the app, the same way `pruneUnusedTokens` does.
+
+  It is **off by default** and changes nothing until switched on.
+
+  Only keyframes the theme declares are ever removed, so one emitted by `globalCss` is left alone. A name is kept when
+  an animation property in the generated css names it, when it appears anywhere under `include`, or when it is named in
+  a custom property that is itself reachable.
+
+  That last clause is what makes the pass worth having. `preset-bamboo` declares
+  `--animations-spin: spin 1s linear infinite` whether or not anything uses that token, so counting every custom
+  property as a reference would keep every keyframe the preset ships. References from a custom property are held back
+  and only credited once the property is reached through `var()`, following the chain — the same reachability model
+  `pruneTokenVars` uses.
+
+  Names are recovered by tokenizing values and testing each token against the declared set, rather than by parsing the
+  `animation` shorthand, which interleaves durations, easings and directions in any order. A keyframe named after a
+  keyword therefore always looks referenced. That is the intended bias: keeping an unused keyframe costs bytes, dropping
+  a used one silently stops an animation.
+
+  The textual scan over `include` covers what the css cannot show — an animation name assembled at runtime, or applied
+  through an inline `style` rather than through bamboo.
+
+- a5cb5a8: Add `pruneUnusedTokens`, dropping token css variables nothing can reach.
+
+  The token layer declares every token in the theme. An app uses a fraction of them, so most of what it declares is dead
+  weight in the one stylesheet that blocks first paint. On the `vite-ts` sandbox, with the default preset, this takes
+  `styles.css` from 24,433 to 12,293 bytes — 6,398 to 3,504 gzipped. It scales with the size of the design system rather
+  than the app: `preset-bamboo` declares 432 variables, `preset-atlaskit` 837, `preset-open-props` 898.
+
+  It is **off by default** and changes nothing until switched on.
+
+  A variable is kept when the generated css references it, when a kept variable's own value references it, or when it is
+  named by `token()` or `token.var()` or a literal `var(--x)` anywhere under `include`. Tokens that javascript receives
+  as a reference rather than a literal are always kept, because `token('colors.text')` hands the caller a `var()`
+  whether or not the css mentions it. That covers virtual tokens, any token carrying a condition, and negative tokens —
+  `spacing.-4` resolves to `calc(var(--spacing-4) * -1)`, so what has to survive is the _positive_ token's declaration,
+  not its own. So is anything a theme refers to: a theme is a separate artifact injected at runtime, so nothing in the
+  sheet points at what it needs.
+
+  The negative-token rule is the one with a visible price, and there is no opt-out. A spacing scale generates one
+  negative per entry, so the whole scale is pinned whether or not the app uses it: on the default preset an app
+  referencing a single colour keeps 37 spacing variables, about a third of everything that survives. Presets with large
+  spacing scales therefore see less than the numbers above.
+
+  The walk follows any custom property, not only the removable ones. A colour palette is what forces that:
+  `colorPalette: 'red'` emits `--colors-color-palette-300: var(--colors-red-300)`, and those palette properties are
+  virtual, so stopping at them would leave the rule pointing at colours that had been removed.
+
+  Two limits are deliberate:
+  - Only custom properties the token system declares are eligible. `globalCss` output is never touched. `preset-base`
+    declares the filter and gradient composition properties on the universal selector precisely so a parent's value
+    cannot inherit into a descendant; they look unreferenced, and removing them would change rendering. The `styles.css`
+    post-processing this option replaces does remove them.
+  - Reachability cannot be proven for every reference. A token named by a path the source does not spell out as a string
+    literal — `token.var(key)` — one used only from a stylesheet outside `include`, or one consumed by a separate
+    package treating the output as design tokens, is invisible. Keep those with `staticCss`.
+
+  Pruning runs wherever a complete stylesheet is assembled — `bamboo`, `bamboo cssgen`, watch mode and the PostCSS
+  plugin — and never on a partial one such as `cssgen tokens`, where nothing would be left to reference the tokens.
+  Collecting the references reads every source file, so that work stays behind the flag.
+
+### Patch Changes
+
+- 9ffb84f: Cache `css()` and pattern class names in the generated runtime, and stop `css.raw()` sharing a mutable
+  object.
+
+  `memo` now keys flat arguments on a structural hash confirmed by an exact comparison, falling back to `JSON.stringify`
+  only for nested styles. Repeated `css()` calls get roughly 4-5x faster, multi-argument calls about 4x, and pattern
+  helpers — which were not memoized at all — about 1.3x. Class name output is unchanged.
+
+  Two behaviour changes worth knowing about:
+  - The cache is now **bounded**. It previously grew for the lifetime of the process, which leaked in long-lived SSR
+    workers (~16MB retained after 50k distinct styles, versus ~3MB now). The trade is that a workload whose set of
+    distinct styles exceeds the bound no longer benefits from caching, and is slower than it was; a workload that reuses
+    styles — the reason the cache exists — is substantially faster.
+  - `css.raw()` returns a fresh object. It previously handed every caller the same cached instance, so a caller mutating
+    what it received corrupted the cache and the class names produced afterwards. The copy is shallow, so mutating a
+    nested condition object inside a `raw()` result still reaches shared state.
+
+- e482ab3: Stop charging every merge for a copy only `raw()` needs.
+
+  Merged style objects are cached, so `css.raw()` and `cva.raw()` have to hand out something independent — a caller
+  mutating what it received would otherwise change what every later caller reads. That guarantee was previously supplied
+  by making `mergeProps` copy nested objects, which put the cost on every merge instead of the two places that need it.
+
+  Merging runs on every `css()` cache miss, and on every render of a pattern component under `jsxStyleProps: 'minimal'`.
+  Copying there cost roughly twice as much as merging alone for a realistic style object — five base properties and four
+  condition blocks — and the overhead scales with nesting, so it fell on exactly the styles people write.
+
+  `mergeProps` is a merge again, and a new `cloneStyles` helper supplies the copy at the two boundaries where the value
+  reaches user code. The independence guarantee is unchanged; the call site now says what it is doing.
+
+  The template-literal `css.raw()` also routes through `cloneStyles`, so both syntaxes offer the same guarantee. It
+  previously relied on the merge copying for it.
+
+- 8a6c23e: Drop two `useMemo` calls from the React and Preact factories that could never hit.
+
+  `restProps` comes from rest destructuring, so it is a fresh object on every render and the dependency on it never
+  matches — even when React hands back the identical props object. The second memo depends on the first's output and
+  misses for the same reason. Every element that is not folded away paid for two hook slots, two dependency arrays and
+  two retained memo cells to recompute both values anyway.
+
+  Measured at ~3% faster on an unfolded tree of factory elements, and ~7% on the hooks in isolation.
+
+  Solid and Vue are untouched: their `createMemo`/`computed` track reactive sources rather than a dependency array, and
+  do cache.
+
+- 17de3d0: Stop shipping the JSX property list twice.
+
+  `jsx/is-valid-prop` carried two string constants that the runtime immediately concatenated into one lookup: the
+  browser CSS properties, and the project's own properties and shorthands. They overlap heavily — 285 of the 1,134
+  entries appeared in both — and every consumer of the JSX factory downloaded and parsed the overlap twice. At 15,684
+  bytes it was the largest single module in the generated runtime, and roughly a third of what
+  `import { Box } from 'styled-system/jsx'` pulled in.
+
+  The two lists are now merged into one deduplicated list at generation time. The module drops to 11,468 bytes. Combined
+  with the `sideEffects` declaration, a JSX barrel import goes from 41.2 KB to 30.1 KB minified and 12.6 KB to 10.2 KB
+  gzipped.
+
+  The set of recognised properties is unchanged — 849 before and after, verified by diffing the two — so `isCssProperty`
+  answers identically and no prop that used to be treated as a style prop now leaks to the DOM. The exported
+  `allCssProperties` holds the same members, without the duplicates; anything reading its `length` rather than its
+  contents will see 849 instead of 1,134.
+
+  Two related fixes fall out of the rewrite:
+  - A failure to match the prebuilt module is now an error rather than an empty list. These rewrites match bundler
+    output and have silently missed before; an empty list is not a degraded system but a broken one, since every style
+    prop would render as a raw HTML attribute.
+  - The substitution runs through a replacer function, so a `$` in a project property is no longer interpreted as a
+    replacement pattern.
+
+  Under `jsxStyleProps: 'minimal'` or `'none'` the browser list was already dropped, and still is; that path now emits
+  `"css"` instead of an empty string alongside it.
+
+- cd76ba7: Stop style props leaking into the DOM as raw HTML attributes.
+
+  `isCssProperty` is generated by rewriting a prebuilt module, and all three of those rewrites matched shapes the
+  bundler stopped emitting after the tsdown migration. The rewrites failed silently — the file still parsed — so the
+  effects were only visible in rendered output:
+  - The list of the project's own properties came out empty, so shorthands and custom utilities were not recognised.
+    `<styled.button mx="2">` rendered `mx="2"` as a literal attribute instead of applying the class, and a `css` prop
+    rendered as `css="[object Object]"`.
+  - Under `jsxStyleProps: 'minimal'` or `'none'`, the full browser CSS property list was still shipped rather than
+    stripped.
+  - The module's own `memo` was left in place next to the imported one, which is a duplicate declaration — a syntax
+    error in any generated `styled-system` using style props.
+
+  All three now match what the bundler emits, and are asserted so a future change to the build output fails loudly
+  instead of silently producing a styled-system that renders the wrong markup.
+
+- 9ffb84f: Key scalar arguments by value in the generated runtime's memo.
+
+  Every non-object argument hashed to the same constant, so distinct strings shared one bucket and competed for its
+  fixed number of slots. Past that count the hit rate fell to zero and each call also paid a scan of the bucket and a
+  fresh snapshot of its arguments.
+
+  This hit `isCssProperty`, which is called for every prop on every render when `jsx.styleProps` is `'all'` (the
+  default) and sees hundreds of distinct property names — so the hottest path in the runtime was missing its cache
+  entirely.
+
+  Scalars now hash by value, and a call with a single scalar argument is keyed directly, which is the shape of the
+  callers that run most often.
+
+- fd03a10: Give the generated `styled-system/package.json` a name.
+
+  That file was emitted without one, deliberately, so that two outputs in a single workspace could not collide on the
+  same name. But a nameless `package.json` is not one a workspace scanner skips — it is one it refuses. pnpm, npm and
+  changesets all abort with `missing the "name" field`, and none of them say which directory produced it. Any project
+  whose workspace globs reach an output directory hit this, and a recursive glob such as `packages/**` reaches every one
+  of them.
+
+  The name is derived from `outdir`, the only input that is both deterministic and portable (`cwd` is absolute, so
+  putting it in generated output would make that output differ per machine). Two projects in one workspace that both
+  keep the default `outdir` therefore still collide — but on a duplicate-name error that names both paths, rather than
+  on a missing field that points nowhere.
+
+  `bamboo emit-pkg` used to treat a missing name as its signal that the file was generated rather than hand-authored. It
+  now keys on the file being `private` with no `version`, which is what actually distinguishes generated output from a
+  package the consumer owns — a private _named_ package in the output directory is the `@acme/styled-system` workspace
+  layout the component-library guide recommends, and that is still left alone.
+
+- 9ffb84f: Stop `cva.raw()`, `sva.raw()` and `css.raw()` handing out shared, mutable style objects.
+
+  Merged results are cached, so returning one directly means a caller that mutates what it received changes what every
+  later caller reads:
+
+  ```js
+  const styles = button.raw({ size: 'sm' })
+  styles.color = 'red' // used to poison the cached entry
+  button.raw({ size: 'sm' }) // every later caller saw color: 'red'
+  ```
+
+  `css.raw()` already copied, but only at the top level, and the merge underneath kept references to the caller's nested
+  objects — so a condition object such as `_hover` was shared even through that copy. Merging now copies nested objects
+  and arrays instead of pointing at the source, and all three `raw()` helpers return a fully independent object.
+
+  Class name output is unchanged.
+
+- 5b16a67: Emit a `package.json` into the generated output so bundlers can tree-shake the barrels.
+
+  The output is a plain directory rather than an installed package, so it carried no `sideEffects` hint and bundlers had
+  to assume every module mutates something. Nothing a barrel reached could be dropped:
+  `import { Box } from 'styled-system/jsx'` retained all twenty pattern modules, and a deep import at
+  `styled-system/jsx/box.mjs` — which nobody writes — produced a materially smaller bundle than the documented one.
+
+  Declaring `sideEffects` closes that gap. A barrel import now costs what the deep import costs: 41.2 KB to 34.1 KB
+  minified, 12.6 KB to 10.7 KB gzipped, with nineteen unused pattern modules dropped. The patterns barrel improves by
+  about 26%; recipes scale with how many are defined. In a real Vite build of `sandbox/vite-ts` — an app that does use
+  several patterns, so it sees less than the ceiling — JS goes from 242.22 KB to 236.95 KB with the CSS byte-identical.
+
+  Two details in the emitted file are load-bearing:
+  - `sideEffects` lists CSS globs rather than being a bare `false`. A bare `false` permits a bundler to drop
+    `import 'styled-system/styles.css'`, which is how the stylesheet reaches CLI-flow apps. Vite happens to retain CSS
+    imports regardless, but webpack historically does not. Both `*.css` and `**/*.css` are listed because the stylesheet
+    is emitted at the root and, under `splitting`, in `styles/`.
+  - `type` is set to `module`. Adding a `package.json` makes the output its own package boundary, so `.js` output would
+    stop inheriting the consumer's `type` and be re-read as CommonJS. The emitted code is always ESM. This is a no-op
+    under the default `mjs` extension and only matters for `outExtension: 'js'`.
+  - `private` is set, and the file stays nameless. That same package boundary lets a workspace glob match the output
+    directory — this repo's own `packages/**` now does — so it is marked unpublishable, and left unnamed so that several
+    outputs in one workspace cannot collide.
+
+  Unlike the rest of the output, `package.json` is not exclusively ours — `emit-pkg` writes entrypoints to the same path
+  and consumers hand-edit it — so it is merged rather than overwritten. Only absent keys are filled in: an existing
+  `exports` map survives, and a deliberate `sideEffects` or `type` is left as it stands. A file that cannot be parsed as
+  JSON is reported and skipped rather than replaced. The merged file keeps its trailing newline, so a consumer who
+  tracks it in source control does not see a diff on every codegen.
+
+  `emit-pkg` had to learn the other half of that arrangement. It used to write a whole package only when the directory
+  had none, and codegen now always leaves one there, so it would have contributed an entrypoint map to a nameless
+  `private` file and stopped — no `name`, no `version`, no `license`, nothing publishable or resolvable. It now reads a
+  file without a `name` as ours: it supplies the identity that file lacks and lifts the `private` flag that kept a
+  nameless directory unpublishable, which is the whole point of running it. A file that already carries a `name` belongs
+  to the consumer and is still left alone but for `exports`.
+
+  This only affects what bundlers may discard, so no CSS output or class name changes.
+
+- Updated dependencies [9ffb84f]
+- Updated dependencies [e482ab3]
+- Updated dependencies [7bf6798]
+- Updated dependencies [11c9409]
+- Updated dependencies [9ffb84f]
+- Updated dependencies [a07286f]
+- Updated dependencies [a5cb5a8]
+- Updated dependencies [9ffb84f]
+- Updated dependencies [a966bae]
+- Updated dependencies [a24d37a]
+  - @bamboocss/shared@1.13.0
+  - @bamboocss/types@1.13.0
+  - @bamboocss/core@1.13.0
+  - @bamboocss/token-dictionary@1.13.0
+  - @bamboocss/logger@1.13.0
+  - @bamboocss/is-valid-prop@1.13.0
+
 ## 1.12.3
 
 ### Patch Changes
