@@ -9,7 +9,9 @@ runs:
     - name: Setup Node.js
       uses: actions/setup-node@v7
       with:
-        node-version: 22
+        # Node 24 is the active LTS ("Krypton"). Matches @types/node, which is already
+        # on 24.x -- CI was type-checking against a newer runtime than it ran on.
+        node-version: 24
         registry-url: 'https://registry.npmjs.org'
         cache: 'pnpm'
 
