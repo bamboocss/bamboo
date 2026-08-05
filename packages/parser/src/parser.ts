@@ -24,7 +24,12 @@ const defaultEnv: EvaluateOptions['environment'] = {
  * repeated here — without it the call is unresolvable and the whole declaration is dropped
  * with no diagnostic, which is worse than not shipping the helper at all.
  */
-const fallbackImpl = (...values: unknown[]) => `fallback(${values.join(', ')})`
+const fallbackImpl = (...values: unknown[]) =>
+  // A candidate the evaluator could not resolve arrives as `undefined`, and joining it in
+  // would build a class name the runtime helper never produces — a rule that matches
+  // nothing. Returning `undefined` drops the declaration instead, which is what every other
+  // unresolvable value does.
+  values.some((value) => value === undefined) ? undefined : `fallback(${values.join(', ')})`
 
 const evaluateOptions: EvaluateOptions = {
   environment: defaultEnv,
@@ -151,11 +156,6 @@ export function createParser(context: ParserOptions) {
     extractResultByName.forEach((result, alias) => {
       //
       const name = file.getName(file.normalizeFnName(alias))
-
-      // `fallback()` is only ever a value inside a style object, which the evaluator has
-      // already resolved by now. A bare call carries nothing to collect, and the `css`
-      // matcher would otherwise read its arguments as a style object.
-      if (name === 'fallback') return
 
       logger.debug(`ast:${name}`, name !== alias ? { kind: result.kind, alias } : { kind: result.kind })
 

@@ -11,7 +11,7 @@ interface ImportMatcher {
 
 export class ImportMap {
   value: ImportMapOutput<string>
-  matchers = {} as Record<keyof ImportMapOutput, ImportMatcher>
+  matchers = {} as Record<keyof ImportMapOutput | 'fallback', ImportMatcher>
   outdir: string
 
   constructor(private context: Pick<Context, 'jsx' | 'config' | 'conf' | 'isValidProperty' | 'recipes' | 'patterns'>) {
@@ -21,7 +21,11 @@ export class ImportMap {
 
     const importMap = this.buildImportMap(context.config.importMap)
 
-    this.matchers.css = this.createMatcher(importMap.css, ['css', 'cva', 'sva', 'fallback'])
+    this.matchers.css = this.createMatcher(importMap.css, ['css', 'cva', 'sva'])
+    // Its own matcher rather than a fourth name on `css`: that one also drives parser
+    // dispatch, and a recipe or pattern named `fallback` — an ordinary word, unlike `cva` —
+    // would be read as a `css()` call and silently emit nothing.
+    this.matchers.fallback = this.createMatcher(importMap.css, ['fallback'])
     this.matchers.tokens = this.createMatcher(importMap.tokens, ['token'])
     this.matchers.recipe = this.createMatcher(importMap.recipe)
     this.matchers.pattern = this.createMatcher(importMap.pattern)

@@ -1,3 +1,4 @@
+import type { Config } from '@bamboocss/types'
 import { describe, expect, test } from 'vitest'
 import { parseAndExtract } from './fixture'
 
@@ -42,6 +43,29 @@ describe('fallback values', () => {
     css({ height: fallback('50vh') })
     `)
     expect(result.css).toContain('height: 50vh')
+    expect(result.css).not.toContain('fallback(')
+  })
+
+  test('does not shadow a recipe or pattern named fallback', () => {
+    // `fallback` is an ordinary word, unlike `cva`. Registering it on the css matcher put it
+    // ahead of recipes in parser dispatch, and the recipe emitted nothing at all.
+    const config = {
+      theme: { extend: { recipes: { fallback: { className: 'fb', base: { color: 'red' }, variants: {} } } } },
+    } as unknown as Config
+
+    const result = parseAndExtract(`import { fallback } from "styled-system/recipes"\nfallback()`, config)
+    expect(result.css).toContain('color: red')
+  })
+
+  test('drops a declaration whose candidate could not be resolved', () => {
+    // Joining an unresolved candidate in would build a class the runtime helper never
+    // produces — a rule matching nothing at all.
+    const result = parseAndExtract(`
+    import { css, fallback } from "styled-system/css"
+    declare const runtime: string
+    css({ color: 'red', height: fallback(runtime, '100vh') })
+    `)
+    expect(result.css).toContain('color: red')
     expect(result.css).not.toContain('fallback(')
   })
 
