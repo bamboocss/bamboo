@@ -615,15 +615,26 @@ export async function main() {
 
       /**
        * Codegen writes a package.json of its own into the outdir so that bundlers get a
-       * `sideEffects` hint, and deliberately leaves it nameless so several outputs in one
-       * workspace cannot collide. A file without a `name` is therefore ours, and this
-       * command is what turns the directory into a real package: it supplies the identity
-       * the file lacks and lifts the `private` flag that kept a nameless directory
-       * unpublishable. A file that already carries a `name` belongs to the consumer, so
-       * nothing but `exports` is touched.
+       * `sideEffects` hint, and marks it `private` because a generated directory is not
+       * something to publish. This command is what turns it into a real package: it
+       * supplies the identity the file lacks and lifts that flag.
+       *
+       * This used to key on a missing `name`. Codegen now emits one — a nameless
+       * package.json is what pnpm, npm and changesets refuse to scan rather than skip —
+       * so its absence no longer distinguishes anything.
+       *
+       * `private` alone will not do either: a consumer can own a private *named* package
+       * here, which is the `@acme/styled-system` workspace layout the component-library
+       * guide recommends. What separates the two is `version`. Ours never carries one, and
+       * a file that is private with no version is by definition not publishable and holds
+       * no identity worth preserving, so supplying one is the whole point of the command.
+       *
+       * `existing` is spread last, so anything already declared wins and a second run
+       * only refreshes `exports`.
        */
-      const content = existing.name ? existing : { ...identity, ...existing }
-      if (!existing.name) delete content.private
+      const isGenerated = existing.private === true && existing.version === undefined
+      const content = isGenerated ? { ...identity, ...existing } : existing
+      if (isGenerated) delete content.private
 
       content.exports = {
         ...content.exports,

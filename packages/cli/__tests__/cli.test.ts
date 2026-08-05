@@ -219,15 +219,19 @@ describe('CLI', () => {
   })
 
   /**
-   * Codegen leaves a nameless `package.json` in the outdir to carry the `sideEffects`
+   * Codegen leaves a `private` `package.json` in the outdir to carry the `sideEffects`
    * hint, so pointing `emit-pkg` at that directory finds a file already there. It still
    * has to produce a package that can be resolved and published: an entrypoint map alone,
-   * on top of a nameless `private` file, is not one.
+   * on top of a `private` file with no version or license, is not one.
    */
   test('emit-pkg over the codegen output', async () => {
     const outdirPkg = path.resolve(paths.styledSystem, 'package.json')
 
+    // The name is not decoration. Without one, a workspace glob that reaches this
+    // directory takes down `pnpm install` and `changeset publish` with
+    // `missing the "name" field` -- naming no directory in particular.
     expect(JSON.parse(await fs.readFile(outdirPkg, 'utf8'))).toMatchObject({
+      name: 'styled-system',
       private: true,
       sideEffects: ['*.css', '**/*.css'],
     })

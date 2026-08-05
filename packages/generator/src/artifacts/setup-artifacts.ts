@@ -31,8 +31,8 @@ function setupHelpers(ctx: Context): Artifact {
   }
 }
 
-function setupPackageJson(): Artifact {
-  const code = generatePackageJson()
+function setupPackageJson(ctx: Context): Artifact {
+  const code = generatePackageJson(ctx)
   return {
     id: 'package.json',
     files: [{ file: 'package.json', code: code.json }],

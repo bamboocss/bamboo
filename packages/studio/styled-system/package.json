@@ -1,6 +1,7 @@
 {
-  "private": true,
+  "name": "styled-system",
   "type": "module",
+  "private": true,
   "sideEffects": [
     "*.css",
     "**/*.css"

@@ -1,5 +1,9 @@
 packages:
   - 'packages/**'
+  # Generated output, not a workspace package. It carries a package.json so bundlers
+  # get a `sideEffects` hint, which is enough for the recursive glob above to claim
+  # it -- and `packages/studio/styled-system` is committed, so it reaches CI.
+  - '!packages/*/styled-system/**'
   - 'sandbox/*'
   - 'sandbox/component-lib/**'
   - 'playground'

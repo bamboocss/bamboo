@@ -7,5 +7,5 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["sandbox-*", "playground", "website", "@bamboocss/fixture"]
+  "ignore": ["sandbox-*", "playground", "website"]
 }
