@@ -1,5 +1,4 @@
 import { isObject } from './assert'
-import { compact } from './compact'
 import { filterBaseConditions } from './condition'
 import { toHash } from './hash'
 import { isImportant, sanitize, withoutImportant } from './important'
@@ -114,8 +113,25 @@ interface StyleObject {
   [key: string]: any
 }
 
+/**
+ * Whether a style object carries anything `compact` would have kept.
+ *
+ * The question `compactStyles` asks is only ever "is this empty once undefined values are
+ * dropped", but it used to answer it by building the compacted object and then a key array
+ * for it, then throwing both away. `Object.keys` enumerates exactly what `compact`'s
+ * `Object.entries` did — own, enumerable, string-keyed — so this is the same predicate
+ * without the two allocations, and it stops at the first value that settles it.
+ */
+function hasDefinedValue(style: StyleObject) {
+  const keys = Object.keys(style)
+  for (let i = 0; i < keys.length; i++) {
+    if (style[keys[i] as string] !== undefined) return true
+  }
+  return false
+}
+
 function compactStyles(...styles: StyleObject[]) {
-  return styles.flat().filter((style) => isObject(style) && Object.keys(compact(style)).length > 0)
+  return styles.flat().filter((style) => isObject(style) && hasDefinedValue(style))
 }
 
 export function createMergeCss(context: CreateCssContext) {

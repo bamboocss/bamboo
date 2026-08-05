@@ -4,11 +4,6 @@ function isObject(value) {
 }
 const isObjectOrArray = (obj) => typeof obj === "object" && obj !== null;
 //#endregion
-//#region src/compact.ts
-function compact(value) {
-	return Object.fromEntries(Object.entries(value ?? {}).filter(([_, value]) => value !== void 0));
-}
-//#endregion
 //#region src/condition.ts
 const isBaseCondition = (v) => v === "base";
 function filterBaseConditions(c) {
@@ -417,8 +412,22 @@ function createCss(context) {
 		return Array.from(classNames).join(" ");
 	});
 }
+/**
+* Whether a style object carries anything `compact` would have kept.
+*
+* The question `compactStyles` asks is only ever "is this empty once undefined values are
+* dropped", but it used to answer it by building the compacted object and then a key array
+* for it, then throwing both away. `Object.keys` enumerates exactly what `compact`'s
+* `Object.entries` did — own, enumerable, string-keyed — so this is the same predicate
+* without the two allocations, and it stops at the first value that settles it.
+*/
+function hasDefinedValue(style) {
+	const keys = Object.keys(style);
+	for (let i = 0; i < keys.length; i++) if (style[keys[i]] !== void 0) return true;
+	return false;
+}
 function compactStyles(...styles) {
-	return styles.flat().filter((style) => isObject(style) && Object.keys(compact(style)).length > 0);
+	return styles.flat().filter((style) => isObject(style) && hasDefinedValue(style));
 }
 function createMergeCss(context) {
 	function resolve(styles) {
@@ -467,6 +476,11 @@ function cloneStyles(styles) {
 		out[key] = cloneStyles(styles[key]);
 	}
 	return out;
+}
+//#endregion
+//#region src/compact.ts
+function compact(value) {
+	return Object.fromEntries(Object.entries(value ?? {}).filter(([_, value]) => value !== void 0));
 }
 //#endregion
 //#region src/leaf-class.ts
