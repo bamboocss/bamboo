@@ -1,6 +1,6 @@
 {
   "name": "@bamboocss/astro-plugin-studio",
-  "version": "1.12.3",
+  "version": "1.13.0",
   "description": "Vite plugin for Bamboocss Studio",
   "homepage": "https://bamboocss.com",
   "license": "MIT",

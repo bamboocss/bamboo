@@ -1,5 +1,176 @@
 # @bamboocss/shared
 
+## 1.13.0
+
+### Minor Changes
+
+- 7bf6798: Lower a single dynamic style value to a class the runtime builds by concatenation, instead of leaving a
+  `css()` call behind.
+
+  `css({ margin: '2', color: tone })` folded to `cx("m_2", css({ color: tone }))`. It now folds to
+  `cx("m_2", cssLeaf("c_", "color", tone))`, where `c_` is resolved at build time and the runtime only appends the
+  value. Measured against the `css()` call it replaces: 2.2x when the memo would have hit, 43x when it would have missed
+  — which is every SSR render, and any value that cycles past the memo's 1000-entry ceiling.
+
+  This is sound because `css()` already builds the class from the value alone. `utility.transform` is string
+  construction over a table fixed at build time and nothing consults which rules were emitted, so `css({ color: tone })`
+  already returns `c_<tone>` for a value the extractor never saw, with no CSS behind it. The lowered form produces the
+  same string in the same cases.
+
+  Three shapes do not reduce to one class and fall back to `css()` at runtime, so nothing is lost: a responsive array, a
+  condition object, and any non-scalar. `null` and `undefined` produce no class, as before. A value carrying whitespace
+  or `!important` still resolves correctly but takes a regex path that is slower than a memo hit, so a call whose value
+  always has one is better left alone.
+
+  It applies to a top-level property of a single-argument `css()` call, with `hash` and `cssMode: 'grouped'` declining
+  automatically — neither produces a class the value is merely appended to. Condition keys are declined too, since their
+  value is an object in every real use. Turn it off with `partial: false`, alongside the rest of the splitting.
+
+  Two notes for upgrades. `cssLeaf` is emitted by the generator, so a project whose `styled-system/` was generated
+  before this release must be regenerated — the transform emits an import of it, and a stale runtime has no such export.
+  And `sanitize` is now exported from `@bamboocss/shared`, so the class-name pipeline has one implementation rather than
+  a copy in `leafClass`.
+
+- a5cb5a8: Add `pruneUnusedTokens`, dropping token css variables nothing can reach.
+
+  The token layer declares every token in the theme. An app uses a fraction of them, so most of what it declares is dead
+  weight in the one stylesheet that blocks first paint. On the `vite-ts` sandbox, with the default preset, this takes
+  `styles.css` from 24,433 to 12,293 bytes — 6,398 to 3,504 gzipped. It scales with the size of the design system rather
+  than the app: `preset-bamboo` declares 432 variables, `preset-atlaskit` 837, `preset-open-props` 898.
+
+  It is **off by default** and changes nothing until switched on.
+
+  A variable is kept when the generated css references it, when a kept variable's own value references it, or when it is
+  named by `token()` or `token.var()` or a literal `var(--x)` anywhere under `include`. Tokens that javascript receives
+  as a reference rather than a literal are always kept, because `token('colors.text')` hands the caller a `var()`
+  whether or not the css mentions it. That covers virtual tokens, any token carrying a condition, and negative tokens —
+  `spacing.-4` resolves to `calc(var(--spacing-4) * -1)`, so what has to survive is the _positive_ token's declaration,
+  not its own. So is anything a theme refers to: a theme is a separate artifact injected at runtime, so nothing in the
+  sheet points at what it needs.
+
+  The negative-token rule is the one with a visible price, and there is no opt-out. A spacing scale generates one
+  negative per entry, so the whole scale is pinned whether or not the app uses it: on the default preset an app
+  referencing a single colour keeps 37 spacing variables, about a third of everything that survives. Presets with large
+  spacing scales therefore see less than the numbers above.
+
+  The walk follows any custom property, not only the removable ones. A colour palette is what forces that:
+  `colorPalette: 'red'` emits `--colors-color-palette-300: var(--colors-red-300)`, and those palette properties are
+  virtual, so stopping at them would leave the rule pointing at colours that had been removed.
+
+  Two limits are deliberate:
+  - Only custom properties the token system declares are eligible. `globalCss` output is never touched. `preset-base`
+    declares the filter and gradient composition properties on the universal selector precisely so a parent's value
+    cannot inherit into a descendant; they look unreferenced, and removing them would change rendering. The `styles.css`
+    post-processing this option replaces does remove them.
+  - Reachability cannot be proven for every reference. A token named by a path the source does not spell out as a string
+    literal — `token.var(key)` — one used only from a stylesheet outside `include`, or one consumed by a separate
+    package treating the output as design tokens, is invisible. Keep those with `staticCss`.
+
+  Pruning runs wherever a complete stylesheet is assembled — `bamboo`, `bamboo cssgen`, watch mode and the PostCSS
+  plugin — and never on a partial one such as `cssgen tokens`, where nothing would be left to reference the tokens.
+  Collecting the references reads every source file, so that work stays behind the flag.
+
+### Patch Changes
+
+- 9ffb84f: Cache `css()` and pattern class names in the generated runtime, and stop `css.raw()` sharing a mutable
+  object.
+
+  `memo` now keys flat arguments on a structural hash confirmed by an exact comparison, falling back to `JSON.stringify`
+  only for nested styles. Repeated `css()` calls get roughly 4-5x faster, multi-argument calls about 4x, and pattern
+  helpers — which were not memoized at all — about 1.3x. Class name output is unchanged.
+
+  Two behaviour changes worth knowing about:
+  - The cache is now **bounded**. It previously grew for the lifetime of the process, which leaked in long-lived SSR
+    workers (~16MB retained after 50k distinct styles, versus ~3MB now). The trade is that a workload whose set of
+    distinct styles exceeds the bound no longer benefits from caching, and is slower than it was; a workload that reuses
+    styles — the reason the cache exists — is substantially faster.
+  - `css.raw()` returns a fresh object. It previously handed every caller the same cached instance, so a caller mutating
+    what it received corrupted the cache and the class names produced afterwards. The copy is shallow, so mutating a
+    nested condition object inside a `raw()` result still reaches shared state.
+
+- e482ab3: Stop charging every merge for a copy only `raw()` needs.
+
+  Merged style objects are cached, so `css.raw()` and `cva.raw()` have to hand out something independent — a caller
+  mutating what it received would otherwise change what every later caller reads. That guarantee was previously supplied
+  by making `mergeProps` copy nested objects, which put the cost on every merge instead of the two places that need it.
+
+  Merging runs on every `css()` cache miss, and on every render of a pattern component under `jsxStyleProps: 'minimal'`.
+  Copying there cost roughly twice as much as merging alone for a realistic style object — five base properties and four
+  condition blocks — and the overhead scales with nesting, so it fell on exactly the styles people write.
+
+  `mergeProps` is a merge again, and a new `cloneStyles` helper supplies the copy at the two boundaries where the value
+  reaches user code. The independence guarantee is unchanged; the call site now says what it is doing.
+
+  The template-literal `css.raw()` also routes through `cloneStyles`, so both syntaxes offer the same guarantee. It
+  previously relied on the merge copying for it.
+
+- 11c9409: Stop the generated runtime's memo treating differently-shaped arguments as equal.
+
+  Cached arguments were compared as a flat bag of key/value pairs enumerated with `for...in`, which diverges from what
+  the memoized functions actually read in two ways:
+  - An array and an object with the same numeric keys enumerate identically, so `['x']` and `{ 0: 'x' }` shared a cache
+    entry.
+  - `for...in` walks the prototype chain, so an object with inherited enumerable properties was compared as though it
+    owned them, while `Object.keys` and `JSON.stringify` see nothing.
+
+  In both cases the second caller received a result computed from the first caller's arguments. No user-reachable
+  miscompilation was found — style objects reaching that path are plain, and arrays of styles or responsive values are
+  nested and take a different route — but the guarantee the memo documents was not one it kept, and the failure would
+  surface as an inexplicable class name.
+
+  Arrays are now distinguished from objects, and any value carrying a custom prototype is keyed by serialization
+  instead, which sees exactly what the wrapped function does.
+
+- 9ffb84f: Key scalar arguments by value in the generated runtime's memo.
+
+  Every non-object argument hashed to the same constant, so distinct strings shared one bucket and competed for its
+  fixed number of slots. Past that count the hit rate fell to zero and each call also paid a scan of the bucket and a
+  fresh snapshot of its arguments.
+
+  This hit `isCssProperty`, which is called for every prop on every render when `jsx.styleProps` is `'all'` (the
+  default) and sees hundreds of distinct property names — so the hottest path in the runtime was missing its cache
+  entirely.
+
+  Scalars now hash by value, and a call with a single scalar argument is keyed directly, which is the shape of the
+  callers that run most often.
+
+- 9ffb84f: Stop `cva.raw()`, `sva.raw()` and `css.raw()` handing out shared, mutable style objects.
+
+  Merged results are cached, so returning one directly means a caller that mutates what it received changes what every
+  later caller reads:
+
+  ```js
+  const styles = button.raw({ size: 'sm' })
+  styles.color = 'red' // used to poison the cached entry
+  button.raw({ size: 'sm' }) // every later caller saw color: 'red'
+  ```
+
+  `css.raw()` already copied, but only at the top level, and the merge underneath kept references to the caller's nested
+  objects — so a condition object such as `_hover` was shared even through that copy. Merging now copies nested objects
+  and arrays instead of pointing at the source, and all three `raw()` helpers return a fully independent object.
+
+  Class name output is unchanged.
+
+- a966bae: Make `splitProps` faster by reading each key's descriptor instead of building one for the whole object, and
+  by answering key membership from the own-keys list rather than by asking the object per key.
+
+  Roughly 2.4–2.9x on plain and frozen props, 1.2x on accessor props, and about even on the proxy Solid's `mergeProps`
+  hands over — the shapes that carry something to preserve keep the descriptor path and most of its cost.
+
+  It called `Object.getOwnPropertyDescriptors` up front and `Object.defineProperty` for every key it moved. That is paid
+  once per element per render, and the descriptor path is only needed for keys that have something to preserve.
+
+  An accessor still stays an accessor — Solid compiles props to accessors, and reading one during a split would build a
+  component's children before their provider exists — a non-enumerable key stays non-enumerable, and `__proto__` is
+  defined rather than assigned so it stays an own property.
+
+  One thing does change: a key taken from frozen props — React freezes them in development — arrives writable, because
+  `writable`/`configurable` are carried over only on the descriptor path. Assigning to a split bucket used to throw in
+  strict mode and now succeeds. Nothing in the framework mutates one.
+
+  Two long-standing bugs go with it: a group naming `toString`, `constructor` or another `Object.prototype` member used
+  to be handed one and put `undefined` in its bucket, and that spurious key also reached the rest bucket.
+
 ## 1.12.3
 
 ## 1.12.2
