@@ -2,6 +2,7 @@ import type { RecipeNode, Stylesheet } from '@bamboocss/core'
 import { logger } from '@bamboocss/logger'
 import type { CssRule, Dict, PatternRule, RecipeRule, StaticCssOptions } from '@bamboocss/types'
 import type { Context } from './context'
+import { pushAll } from './push-all'
 import { StyleDecoder } from './style-decoder'
 import { StyleEncoder } from './style-encoder'
 
@@ -244,7 +245,7 @@ export class StaticCss {
 
     css.forEach((rule) => {
       const cssObjects = this.getCssRuleObjects(rule)
-      results.css.push(...cssObjects)
+      pushAll(results.css, cssObjects)
     })
 
     const recipes = (options.recipes ?? {}) as Record<string, RecipeRule[]>
@@ -257,17 +258,17 @@ export class StaticCss {
       results.recipes.push({ [recipe]: {} })
 
       if (recipeNode.config.compoundVariants) {
-        results.css.push(...this.getRecipeCompoundVariantCssObjects(recipeNode))
+        pushAll(results.css, this.getRecipeCompoundVariantCssObjects(recipeNode))
       }
 
       rules.forEach((rule) => {
-        results.recipes.push(...this.getRecipeRuleObjects(recipe, rule, recipeNode))
+        pushAll(results.recipes, this.getRecipeRuleObjects(recipe, rule, recipeNode))
       })
     })
 
     Object.entries(patterns).forEach(([pattern, rules]) => {
       rules.forEach((rule) => {
-        results.patterns.push(...this.getPatternRuleObjects(pattern, rule))
+        pushAll(results.patterns, this.getPatternRuleObjects(pattern, rule))
       })
     })
 

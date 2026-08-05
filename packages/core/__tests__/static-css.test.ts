@@ -2351,14 +2351,6 @@ describe('static-css', () => {
     `)
   })
 
-  /**
-   * `responsive` appends the breakpoints to the rule's conditions, and the rule handed in is
-   * the one in the user's config — both callers of `process` pass `ctx.config.staticCss`
-   * itself. Appending in place therefore grew the config's own array every run.
-   *
-   * Nothing covered `responsive` at all before this, and every example in the docs sets it on
-   * a rule with no `conditions`, where the `|| []` default hides the aliasing.
-   */
   describe('conditional values', () => {
     test('base comes first, then the conditions in the order the rule named them', () => {
       const { results } = getStaticCss({
@@ -2384,6 +2376,14 @@ describe('static-css', () => {
     })
   })
 
+  /**
+   * `responsive` appends the breakpoints to the rule's conditions, and the rule handed in is
+   * the one in the user's config — both callers of `process` pass `ctx.config.staticCss`
+   * itself. Appending in place therefore grew the config's own array every run.
+   *
+   * Nothing covered `responsive` at all before this, and every example in the docs sets it on
+   * a rule with no `conditions`, where the `|| []` default hides the aliasing.
+   */
   describe('responsive leaves the rule it was given alone', () => {
     // The rule travels alongside the options so each case can assert on the object it put in,
     // rather than digging it back out by a hardcoded name.

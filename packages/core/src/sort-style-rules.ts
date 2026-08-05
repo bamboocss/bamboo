@@ -1,5 +1,6 @@
 import type { AtomicStyleResult, ConditionDetails, SelectorCondition } from '@bamboocss/types'
 import { sortAtRules } from './sort-at-rules'
+import { pushAll } from './push-all'
 import { getPropertyPriority } from '@bamboocss/shared'
 
 const hasAtRule = (conditions: ConditionDetails[]) =>
@@ -168,7 +169,10 @@ export const sortStyleRules = <T extends WithConditions>(styleRules: Array<T>): 
 
   const sorted = declarations.sort(sortByPropertyPriority)
 
-  sorted.push(...withSelectorsOnly, ...withAtRules)
+  // Appended rather than spread: this runs on every build, over every rule in the stylesheet,
+  // and gets several times more elements than any other site that does this.
+  pushAll(sorted, withSelectorsOnly)
+  pushAll(sorted, withAtRules)
 
   return sorted
 }
