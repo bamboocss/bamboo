@@ -4,6 +4,16 @@
   the scaffolding comes down before you ship.
 </p>
 
+## Why we forked Panda CSS
+
+Bamboo is the styling engine behind [Contra](https://contra.com), an interface large and dense enough to hold more than
+20,000 `css()` call sites. At that scale, anything a styling library spends per call site — bytes emitted, work done at
+runtime, time spent in the build — is multiplied by five figures. Optimizations that would be invisible in a smaller
+application are plainly measurable there.
+
+The fork exists to pursue those optimizations further than a general-purpose library reasonably would, and that is the
+standing priority for every release — extracting the maximum performance a styling library can give.
+
 ## How is this different from Panda CSS?
 
 Bamboo CSS is a fork of [Panda CSS](https://panda-css.com/) v1, so the styling API is identical and
