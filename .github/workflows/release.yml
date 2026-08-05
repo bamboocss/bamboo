@@ -21,8 +21,16 @@ concurrency:
 
 # changesets writes: it commits version bumps, pushes tags and cuts GitHub releases,
 # and opens the "Version Packages" pull request.
+#
+# `id-token` is not for that -- it is what npm Trusted Publishing needs to mint an
+# OIDC token instead of a long-lived NPM_TOKEN. It always defaults to `none`, even
+# under a permissive repository default, so it has to be asked for explicitly. On its
+# own it publishes nothing: each package also has to name this repo and workflow as a
+# trusted publisher on npmjs.com.
 permissions:
   contents: write
+  id-token: write
+  issues: write
   pull-requests: write
 
 jobs:
