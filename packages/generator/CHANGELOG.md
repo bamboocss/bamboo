@@ -1,5 +1,149 @@
 # @bamboocss/generator
 
+## 1.14.0
+
+### Minor Changes
+
+- 7cc6235: `cx` now resolves conflicting utility classes instead of concatenating them.
+
+  Two atomic classes that set the same property under the same conditions cannot both apply. Concatenating them handed
+  the decision to whichever rule came later in the stylesheet rather than to the order they were passed, so the common
+  composition pattern did not reliably work:
+
+  ```js
+  cx(css({ paddingX: '4' }), css({ paddingX: '2' }))
+  // before: 'px_4 px_2' — whichever rule the stylesheet ordered last applied
+  // now:    'px_2'
+  ```
+
+  That is the pattern every generated JSX factory uses (`cx(recipeClasses, props.className)`), so a caller's `className`
+  now overrides the component's own styles as expected.
+
+  Conditions are part of the declaration, so they only merge with each other — `hover:px_4` and `px_4` are unrelated. An
+  `!important` class is the same declaration as its plain form, so argument order decides between them rather than the
+  cascade.
+
+  ## What this changes in your output
+
+  **The class strings your components render are different.** Elements carry only the winning class where they
+  previously carried both, and the winner keeps the position of the class it replaced — so
+  `cx('px_4 c_red', 'c_blue px_2')` is now `'px_2 c_blue'`. Expect DOM snapshots in consuming test suites to need
+  updating. If you relied on stylesheet order to pick between two classes on one element, that no longer happens.
+
+  ## What is and isn't protected
+
+  A class is only merged when the property segment matches a utility bamboo actually registered, matched at its longest
+  — `bd-w` beats `bd`, so `bd-w-4px` and `bd-c-red` stay separate under `separator: '-'`. Recipe class names are
+  excluded outright, bare and with a `--variant` suffix, so a recipe called `my_btn` is not mistaken for the `my`
+  utility. When a `prefix` is configured a class must carry it to be eligible at all.
+
+  **A hand-written class that is shaped exactly like a utility class is indistinguishable from one and will be merged.**
+  `top_bar` is what bamboo emits for `css({ top: 'bar' })`, so `cx('top_bar', 'top_0')` keeps only `top_0`. Provenance
+  cannot be recovered from a class string at runtime, and `tailwind-merge` has the same limitation. If you pass
+  hand-written classes through a bamboo component, avoid names of the form `<utility><separator><value>` — the risk is
+  highest under `separator: '-'`, where ordinary kebab-case names like `p-4` or `top-nav` collide.
+
+  With `hash.className` enabled a class name carries no property, so `cx` cannot merge and keeps concatenating — compose
+  with `css(a, b)` instead. The smaller function is emitted in that case.
+
+  ## Cost
+
+  Measured against the previous implementation, both compiled in the same process, on the call shapes generated code
+  actually emits (every site passes at least two arguments):
+
+  |                                | merging             | concatenating         |
+  | ------------------------------ | ------------------- | --------------------- |
+  | no `className` passed          | 41.3M ops/s         | 47.4M ops/s           |
+  | 12 tokens + a 2-token override | 707K ops/s (~1.4µs) | 42.7M ops/s (~0.02µs) |
+
+  So a component that renders without a `className` pays ~13%, and one that merges pays about a microsecond. The React
+  render benchmark cannot resolve that either way — it is dominated by React — so it is not evidence the cost is free,
+  only that it is small next to a render.
+
+  The emitted `cx` grows from ~290 bytes to ~7.5KB raw (~1.5KB min+gzip), most of it the list of utility class names the
+  matcher checks against. It is imported by the JSX factory, `sva` and `create-style-context`, so it is not
+  tree-shakeable in a real app.
+
+- 3264da1: Export a `fallback()` helper from `styled-system/css`.
+
+  `fallback(...)` previously existed only as a string, which meant no import to discover, no autocomplete and no hover.
+  The helper builds the same string, so the two forms are interchangeable:
+
+  ```js
+  import { css, fallback } from '../styled-system/css'
+
+  css({ height: fallback('100dvh', '100vh') })
+  css({ height: 'fallback(100dvh, 100vh)' }) // identical
+  ```
+
+  The extractor evaluates the call, including under an alias (`import { fallback as fb }`). A project's own local
+  `fallback` function is left alone — only an identifier that resolves to a bamboo import is treated as this helper.
+
+  One case where the forms differ: a candidate built by another call, such as `token()`, cannot be resolved from inside
+  the helper. Use the string form there — `` `fallback(${token('sizes.4')}, 100vh)` `` — which interpolates before the
+  extractor sees it. The helper is not emitted for `syntax: 'template-literal'`.
+
+  The candidates are still not individually type-checked, the same trade the `[...]` escape hatch makes.
+
+- d1d05fc: Add `fallback(...)` for progressive-enhancement values.
+
+  CSS expresses a value fallback by declaring the same property more than once — the browser keeps the last declaration
+  it can parse. A style object cannot hold the same key twice, so there was no way to write one. `fallback(...)` closes
+  that gap:
+
+  ```js
+  css({ height: 'fallback(calc(100dvh - 100px), calc(100vh - 100px))' })
+  ```
+
+  ```css
+  .h_fallback\(calc\(100dvh_-_100px\)\,_calc\(100vh_-_100px\)\) {
+    height: calc(100vh - 100px);
+    height: calc(100dvh - 100px);
+  }
+  ```
+
+  Candidates are written most-preferred first and emitted in reverse. Each one resolves like an ordinary value, so
+  tokens, the `[...]` escape hatch and shorthand properties all work inside a fallback, as do conditions, breakpoints,
+  `globalCss`, recipes, patterns and JSX style props. `!important` marks every candidate. Under `strictTokens`,
+  `fallback(...)` is accepted alongside the other escape hatches, though the candidates inside it are not individually
+  checked — the same trade-off the `[...]` escape hatch already makes.
+
+  Only a value that is _entirely_ one `fallback(...)` call is treated as a candidate list —
+  `1px solid fallback(red, blue)` is left alone.
+
+  Every candidate has to resolve to exactly one declaration, because that is all the cascade arbitrates between. A
+  candidate that expands further — `transitionProperty` emits a `--transition-prop` variable beside the property,
+  `lineClamp` emits four declarations for a number and one for `none`, `divideX` emits a nested rule — would leave those
+  extras applying unconditionally whichever candidate the browser took. Those warn and apply the preferred candidate
+  alone.
+
+  Malformed calls warn and drop the declaration rather than emitting text that is not CSS: an unbalanced `(` or `[`, and
+  a `fallback(...)` nested inside another. A misspelled name or one embedded in a larger value (`calc(fallback(a, b))`)
+  is an ordinary string that Bamboo cannot recognise, and reaches the stylesheet verbatim.
+
+  Reach for it when the fallback is a different design decision rather than a polyfill. If you use LightningCSS, it
+  already generates vendor-prefix and color-space fallbacks from your browser targets, and it prunes the ones your
+  targets don't need — including candidates you write yourself.
+
+### Patch Changes
+
+- Updated dependencies [b567114]
+- Updated dependencies [3264da1]
+- Updated dependencies [d1d05fc]
+- Updated dependencies [42fab68]
+- Updated dependencies [7f87699]
+- Updated dependencies [1f5d4fb]
+- Updated dependencies [4a7d40c]
+- Updated dependencies [f2d7565]
+- Updated dependencies [faffa8e]
+- Updated dependencies [745727b]
+  - @bamboocss/types@1.14.0
+  - @bamboocss/core@1.14.0
+  - @bamboocss/shared@1.14.0
+  - @bamboocss/logger@1.14.0
+  - @bamboocss/token-dictionary@1.14.0
+  - @bamboocss/is-valid-prop@1.14.0
+
 ## 1.13.2
 
 ### Patch Changes
