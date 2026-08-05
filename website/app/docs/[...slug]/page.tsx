@@ -68,8 +68,8 @@ export default async function DocsPage(props: DocsPageProps) {
           flexShrink="0"
           w="64"
           position="sticky"
-          top="calc(var(--navbar-height) + var(--banner-height) + 1rem)"
-          height="calc(100vh - var(--navbar-height) - var(--banner-height) - 1rem)"
+          top="calc(var(--navbar-height) + var(--banner-height) + 2.5rem)"
+          height="calc(100vh - var(--navbar-height) - var(--banner-height) - 2.5rem)"
         >
           <Box overflowY="auto" height="100%" className="scroll-area" p="4">
             <Sidebar slug={slug} />
@@ -77,7 +77,10 @@ export default async function DocsPage(props: DocsPageProps) {
         </Box>
 
         {/* Main Content */}
-        <Box as="article" flex="1" minW="0" px={{ base: '4', lg: '10' }} pt="10">
+        {/* The three columns each set their own top offset, so they have to move
+            together -- the sidebar via its sticky `top`, these two via `pt`. Change one
+            alone and the sidebar's first item stops lining up with the breadcrumb. */}
+        <Box as="article" flex="1" minW="0" px={{ base: '4', lg: '10' }} pt="16">
           <Breadcrumb slug={slug} />
           <Header doc={doc} />
           <div
@@ -99,7 +102,7 @@ export default async function DocsPage(props: DocsPageProps) {
           w="56"
           position="sticky"
           top="calc(var(--navbar-height) + var(--banner-height))"
-          pt="10"
+          pt="16"
           maxH="calc(100vh - var(--navbar-height) - var(--banner-height) - 1rem)"
         >
           <Box overflowY="auto" height="100%" className="scroll-area">
