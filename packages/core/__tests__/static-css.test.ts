@@ -2350,6 +2350,101 @@ describe('static-css', () => {
       }"
     `)
   })
+
+  /**
+   * `responsive` appends the breakpoints to the rule's conditions, and the rule handed in is
+   * the one in the user's config — both callers of `process` pass `ctx.config.staticCss`
+   * itself. Appending in place therefore grew the config's own array every run.
+   *
+   * Nothing covered `responsive` at all before this, and every example in the docs sets it on
+   * a rule with no `conditions`, where the `|| []` default hides the aliasing.
+   */
+  describe('responsive leaves the rule it was given alone', () => {
+    // The rule travels alongside the options so each case can assert on the object it put in,
+    // rather than digging it back out by a hardcoded name.
+    const cases: [string, StaticCssOptions, { conditions: string[] }][] = [
+      (() => {
+        const rule = { properties: { color: ['red.200'] }, conditions: ['light'], responsive: true }
+        return ['css', { css: [rule] }, rule]
+      })(),
+      (() => {
+        const rule = { size: ['sm'], conditions: ['light'], responsive: true }
+        return ['recipe', { recipes: { buttonStyle: [rule] } }, rule]
+      })(),
+      (() => {
+        const rule = { properties: { ratio: ['4/3'] }, conditions: ['light'], responsive: true }
+        return ['pattern', { patterns: { aspectRatio: [rule] } }, rule]
+      })(),
+    ]
+
+    test.each(cases)('%s rule', (_kind, options, rule) => {
+      const conditions = [...rule.conditions]
+
+      getStaticCss(options)
+      expect(rule.conditions).toEqual(conditions)
+
+      // Twice, because the damage compounds: a second run appended a second set of
+      // breakpoints on top of the first.
+      getStaticCss(options)
+      expect(rule.conditions).toEqual(conditions)
+    })
+
+    test('a recipe wildcard leaves the shared variant key map alone', () => {
+      // The worst form of it, and the reason `withBreakpoints` copies rather than pushes.
+      //
+      // Under `recipes: '*'` the rule destructured is the recipe's own `variantKeyMap`, so a
+      // variant named `conditions` binds its list of values to the very array the breakpoints
+      // were appended to — and a variant named `responsive` makes that happen, since the flag
+      // is only ever tested for truthiness. `variantKeyMap` lives in module-level state and is
+      // stringified into the generated recipe artifact, so this reached user-facing output.
+      const { hooks: h, ...rest } = fixtureDefaults
+      const local = new Context({
+        hooks: h,
+        ...rest,
+        config: {
+          ...rest.config,
+          theme: {
+            ...JSON.parse(JSON.stringify(rest.config.theme)),
+            recipes: {
+              oddNames: {
+                className: 'oddNames',
+                base: { display: 'flex' },
+                variants: {
+                  conditions: { a: { color: 'red' }, b: { color: 'blue' } },
+                  responsive: { yes: { display: 'block' } },
+                  size: { sm: { fontSize: '12px' } },
+                },
+              },
+            },
+          },
+        },
+      } as typeof fixtureDefaults)
+
+      const node: any = local.recipes.getRecipe('oddNames')
+      const before = JSON.parse(JSON.stringify(node.variantKeyMap))
+
+      local.staticCss.clone().process({ recipes: '*' })
+      local.staticCss.clone().process({ recipes: '*' })
+
+      expect(node.variantKeyMap).toEqual(before)
+    })
+
+    test.each([
+      ['with other conditions', ['light'], ['light\\:c_red', 'md\\:c_red']],
+      // The shape every example in the docs uses, and the one where the old `|| []` default
+      // hid the aliasing — so it is also the one nothing was checking.
+      ['on its own', undefined, ['c_red', 'md\\:c_red']],
+    ] as [string, string[] | undefined, string[]][])(
+      'the breakpoints still reach the css, %s',
+      (_k, conds, expected) => {
+        const { css } = getStaticCss({
+          css: [{ properties: { color: ['red.200'] }, ...(conds && { conditions: conds }), responsive: true }],
+        })
+
+        for (const cls of expected) expect(css).toContain(cls)
+      },
+    )
+  })
 })
 
 describe('static-css caching', () => {

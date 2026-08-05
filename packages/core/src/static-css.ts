@@ -47,6 +47,22 @@ export class StaticCss {
     return this
   }
 
+  /**
+   * The rule's conditions, with the breakpoints appended when it asked to be responsive.
+   *
+   * Returns a new array rather than pushing into the one it was handed. `conditions` there is
+   * the array in the user's config — the `|| []` default only stands in when the field is
+   * absent — and both callers of `process` pass `ctx.config.staticCss` itself, so appending
+   * in place grew the config's own array by a full set of breakpoints on every call.
+   */
+  // `responsive` is `unknown` because the `'*'` form destructures a recipe's variant key map,
+  // where a variant named `responsive` lands here as its array of values. Testing it for
+  // truthiness is what this has always done, so it stays that way.
+  private withBreakpoints = (conditions: string[] | undefined, responsive: unknown) => {
+    if (!responsive) return conditions ?? []
+    return conditions ? [...conditions, ...this.breakpointKeys] : this.breakpointKeys.slice()
+  }
+
   private formatCondition = (condition: string) => {
     return this.conditionKeys.includes(condition) ? `_${condition}` : condition
   }
@@ -119,10 +135,7 @@ export class StaticCss {
   }
 
   getCssRuleObjects = (rule: CssRule) => {
-    const conditions = rule.conditions || []
-    if (rule.responsive) {
-      conditions.push(...this.breakpointKeys)
-    }
+    const conditions = this.withBreakpoints(rule.conditions, rule.responsive)
     const entries = Object.entries(rule.properties)
     return entries.flatMap((entry) => this.getCssObjects(entry, conditions))
   }
@@ -151,12 +164,9 @@ export class StaticCss {
       props = Object.fromEntries((details.props ?? []).map((key) => [key, ['*']]))
     }
 
-    const { conditions = [], responsive = false, properties = props } = useAllKeys ? {} : pattern
+    const { conditions: ruleConditions, responsive = false, properties = props } = useAllKeys ? {} : pattern
 
-    if (responsive) {
-      conditions.push(...this.breakpointKeys)
-    }
-
+    const conditions = this.withBreakpoints(ruleConditions, responsive)
     const entries = Object.entries(properties)
     return entries.flatMap((entry) => this.getPatternObjects(name, entry, conditions))
   }
@@ -170,11 +180,9 @@ export class StaticCss {
     if (!recipeKeys) return []
 
     const useAllKeys = recipe === '*'
-    const { conditions = [], responsive, ...variants } = useAllKeys ? recipeKeys : recipe
+    const { conditions: ruleConditions, responsive, ...variants } = useAllKeys ? recipeKeys : recipe
 
-    if (responsive) {
-      conditions.push(...this.breakpointKeys)
-    }
+    const conditions = this.withBreakpoints(ruleConditions, responsive)
 
     return Object.entries(variants).flatMap(([variant, values]) => {
       if (!Array.isArray(values)) return []
