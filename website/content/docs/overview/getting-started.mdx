@@ -25,6 +25,10 @@ Bamboo CSS is a fork of [Panda CSS](https://panda-css.com/) v1, so the styling A
 - ✂️ Prune [unused tokens](/docs/references/config#pruneunusedtokens) and
   [keyframes](/docs/references/config#pruneunusedkeyframes) – ship only what your app uses
 - 📦 [Grouped class output](/docs/references/config#cssmode) – one class per `css()` call instead of one per property
+- 🎯 [Predictable overrides](/docs/concepts/writing-styles#classname-concatenation) – `cx` resolves conflicting
+  utilities, so the last one passed wins instead of whichever the stylesheet ordered last
+- 🛟 [Fallback values](/docs/concepts/writing-styles#fallback-values) – `fallback(100dvh, 100vh)` for progressive
+  enhancement, in one declaration
 - 🦄 Works with most JavaScript frameworks
 - 🚀 [Recipes and Variants](/docs/concepts/recipes) – composable style variants, an API inspired by Stitches
 - 🎨 High-level design tokens support for simultaneous themes

@@ -23,6 +23,10 @@ what it costs.
   [keyframes](https://bamboocss.com/docs/references/config#pruneunusedkeyframes) – ship only what your app uses
 - 📦 [Grouped class output](https://bamboocss.com/docs/references/config#cssmode) – one class per `css()` call instead
   of one per property
+- 🎯 [Predictable overrides](https://bamboocss.com/docs/concepts/writing-styles#classname-concatenation) – `cx` resolves
+  conflicting utilities, so the last one passed wins instead of whichever the stylesheet ordered last
+- 🛟 [Fallback values](https://bamboocss.com/docs/concepts/writing-styles#fallback-values) – `fallback(100dvh, 100vh)`
+  for progressive enhancement, in one declaration
 - 🦄 Works with most JavaScript frameworks
 - 🚀 Recipes and Variants – composable style variants, an API [inspired by Stitches](https://stitches.dev/)
 - 🎨 High-level design tokens support for simultaneous themes
