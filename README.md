@@ -21,6 +21,7 @@ what it costs.
 - 🚀 Recipes and Variants - Just like Stitches™️ ✨
 - 🎨 High-level design tokens support for simultaneous themes
 - 💪 Type-safe styles and autocomplete (via codegen)
+- 🤖 [MCP server](https://bamboocss.com/docs/ai/mcp-server) — let AI assistants read your tokens, recipes and usage
 
 ---
 
