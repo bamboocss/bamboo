@@ -2359,6 +2359,31 @@ describe('static-css', () => {
    * Nothing covered `responsive` at all before this, and every example in the docs sets it on
    * a rule with no `conditions`, where the `|| []` default hides the aliasing.
    */
+  describe('conditional values', () => {
+    test('base comes first, then the conditions in the order the rule named them', () => {
+      const { results } = getStaticCss({
+        css: [{ properties: { color: ['red.200'] }, conditions: ['dark', 'md', 'light'] }],
+      })
+
+      // Position, not just presence. The conditions are keys on the same object as `base`, and
+      // which one an object-merge sees last is decided by this order.
+      expect(Object.keys(results.css[0]!.color)).toEqual(['base', '_dark', 'md', '_light'])
+    })
+
+    test('a condition named __proto__ becomes an own key, not a prototype', () => {
+      // Building the object by assignment rather than by spread would run the setter on
+      // `Object.prototype` here and reparent the result instead of adding a key —
+      // the same hazard `mergeProps`, `cloneStyles` and `splitProps` each guard against.
+      const { results } = getStaticCss({
+        css: [{ properties: { color: ['red.200'] }, conditions: ['__proto__'] }],
+      })
+
+      const value = results.css[0]!.color
+      expect(Object.getPrototypeOf(value)).toBe(Object.prototype)
+      expect(Object.getOwnPropertyNames(value)).toEqual(['base', '__proto__'])
+    })
+  })
+
   describe('responsive leaves the rule it was given alone', () => {
     // The rule travels alongside the options so each case can assert on the object it put in,
     // rather than digging it back out by a hardcoded name.

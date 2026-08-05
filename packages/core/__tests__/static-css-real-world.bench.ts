@@ -444,4 +444,32 @@ describe('static-css real-world performance', () => {
     // paying for: below that the spread is too wide to read a regression off.
     { warmupIterations: 3, iterations: 10 },
   )
+
+  /**
+   * Rule expansion on its own, without the encode, decode and css generation that dominate
+   * `process()` and hide anything this size.
+   *
+   * Every condition on a rule costs one membership test against the config's condition list
+   * and one key on the object built per computed value, so both scale with conditions x
+   * values — the two multiplied together are what these measure.
+   */
+  describe('rule expansion only', () => {
+    const values = Array.from({ length: 40 }, (_, i) => `${i}px`)
+    const rule = (conditions: string[]) => ({ properties: { padding: values }, conditions })
+
+    // Interactive states: declared conditions, so each is found in the list.
+    const states = rule(['_groupHover', '_hover', '_focus', '_active', '_disabled'])
+    // Container queries: never declared, so a scan runs the whole list before missing.
+    const containers = rule(['@pb/sm', '@pb/md', '@pb/lg', '@pb/xl'])
+    const bare = rule([])
+
+    const opts = { warmupIterations: 5, time: 1000 }
+
+    bench('five interactive states x40 values', () => void ctx.staticCss.getCssRuleObjects(states), opts)
+    bench('four container queries x40 values', () => void ctx.staticCss.getCssRuleObjects(containers), opts)
+
+    // The control: same values, no conditions, so neither path runs. If this moves between
+    // two readings, the machine did.
+    bench('no conditions x40 values', () => void ctx.staticCss.getCssRuleObjects(bare), opts)
+  })
 })

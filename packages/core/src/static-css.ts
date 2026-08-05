@@ -27,7 +27,9 @@ export class StaticCss {
   decoder: StyleDecoder
 
   private breakpointKeys: string[]
-  private conditionKeys: string[]
+  // A set rather than the key array: `formatCondition` asks this once per condition per value,
+  // and the base preset alone declares 107 conditions to scan past.
+  private conditionKeys: Set<string>
 
   // Wildcard expansion cache - this is the main performance optimization
   // Memoizing wildcard expansions avoids redundant token lookups
@@ -38,7 +40,7 @@ export class StaticCss {
     this.decoder = context.decoder
 
     this.breakpointKeys = Object.keys(context.config.theme?.breakpoints ?? {})
-    this.conditionKeys = Object.keys(context.config.conditions ?? {})
+    this.conditionKeys = new Set(Object.keys(context.config.conditions ?? {}))
   }
 
   clone() {
@@ -64,17 +66,34 @@ export class StaticCss {
   }
 
   private formatCondition = (condition: string) => {
-    return this.conditionKeys.includes(condition) ? `_${condition}` : condition
+    return this.conditionKeys.has(condition) ? `_${condition}` : condition
   }
 
+  /**
+   * `{ base: value, ...one key per condition }`.
+   *
+   * Assigns into one object rather than spreading the accumulator per condition, which built a
+   * fresh object of growing size for each. Runs once per computed value, and a rule that is
+   * responsive over five breakpoints carries six conditions.
+   *
+   * `__proto__` is defined rather than assigned. A computed key in an object literal is a
+   * data property, so the spread this replaced created an own key for it; plain assignment
+   * would instead run the setter on `Object.prototype` and reparent the result. The same guard
+   * is why `mergeProps`, `cloneStyles` and `splitProps` all name that key.
+   */
   private getConditionalValues = (conditions: string[], value: any) => {
-    return conditions.reduce(
-      (acc, key) => {
-        const cond = this.formatCondition(key)
-        return { ...acc, [cond]: value }
-      },
-      { base: value },
-    )
+    const result: Record<string, any> = { base: value }
+
+    for (let i = 0; i < conditions.length; i++) {
+      const key = this.formatCondition(conditions[i])
+      if (key === '__proto__') {
+        Object.defineProperty(result, key, { value, writable: true, enumerable: true, configurable: true })
+      } else {
+        result[key] = value
+      }
+    }
+
+    return result
   }
 
   private createRegex = () => {
