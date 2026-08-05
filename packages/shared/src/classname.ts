@@ -42,18 +42,27 @@ const COND_SEP = '<___>'
 export function createCss(context: CreateCssContext) {
   const { utility, hash, grouped, conditions: conds = fallbackCondition } = context
 
-  const formatClassName = (str: string) => [utility.prefix, str].filter(Boolean).join('-')
+  // Both of these run once per style leaf per cache miss, so the prefix is resolved here
+  // rather than rebuilt into an array, filtered and joined on every one of them. Most
+  // configs set no prefix at all, which made that array pure overhead.
+  //
+  // The `|| ''` keeps the unprefixed branch returning a string for a falsy class, which the
+  // array-and-join it replaced did for any class at all. `transform` is declared to return a
+  // string and every implementation builds one, so that is the invariant this now leans on.
+  const { prefix } = utility
+  const formatClassName = prefix ? (str: string) => (str ? `${prefix}-${str}` : prefix) : (str: string) => str || ''
 
   const hashFn = (conditions: string[], className: string) => {
-    let result: string
     if (hash) {
       const baseArray = [...conds.finalize(conditions), className]
-      result = formatClassName(utility.toHash(baseArray, toHash))
-    } else {
-      const baseArray = [...conds.finalize(conditions), formatClassName(className)]
-      result = baseArray.join(':')
+      return formatClassName(utility.toHash(baseArray, toHash))
     }
-    return result
+
+    const finalized = conds.finalize(conditions)
+    // An unconditional style is the common case and needs neither the copy nor the join —
+    // `[x].join(':')` is `x`.
+    if (finalized.length === 0) return formatClassName(className)
+    return [...finalized, formatClassName(className)].join(':')
   }
 
   if (grouped) {

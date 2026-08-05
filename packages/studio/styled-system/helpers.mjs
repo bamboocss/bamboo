@@ -410,14 +410,16 @@ const ENTRY_SEP = "]___[";
 const COND_SEP = "<___>";
 function createCss(context) {
 	const { utility, hash, grouped, conditions: conds = fallbackCondition } = context;
-	const formatClassName = (str) => [utility.prefix, str].filter(Boolean).join("-");
+	const { prefix } = utility;
+	const formatClassName = prefix ? (str) => str ? `${prefix}-${str}` : prefix : (str) => str || "";
 	const hashFn = (conditions, className) => {
-		let result;
 		if (hash) {
 			const baseArray = [...conds.finalize(conditions), className];
-			result = formatClassName(utility.toHash(baseArray, toHash));
-		} else result = [...conds.finalize(conditions), formatClassName(className)].join(":");
-		return result;
+			return formatClassName(utility.toHash(baseArray, toHash));
+		}
+		const finalized = conds.finalize(conditions);
+		if (finalized.length === 0) return formatClassName(className);
+		return [...finalized, formatClassName(className)].join(":");
 	};
 	if (grouped) return memo(({ base, ...styles } = {}) => {
 		const normalizedObject = normalizeStyleObject(Object.assign(styles, base), context);
