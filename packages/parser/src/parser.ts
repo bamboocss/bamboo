@@ -18,6 +18,14 @@ const defaultEnv: EvaluateOptions['environment'] = {
   preset: 'ECMA',
 }
 
+/**
+ * `fallback()` is generated into `styled-system/css`, so evaluating a call to it would mean
+ * resolving and running generated code. It is a pure string builder, so the definition is
+ * repeated here — without it the call is unresolvable and the whole declaration is dropped
+ * with no diagnostic, which is worse than not shipping the helper at all.
+ */
+const fallbackImpl = (...values: unknown[]) => `fallback(${values.join(', ')})`
+
 const evaluateOptions: EvaluateOptions = {
   environment: defaultEnv,
 }
@@ -107,6 +115,19 @@ export function createParser(context: ParserOptions) {
         if (!Node.isCallExpression(node)) return evaluateOptions
         const propAccessExpr = node.getExpression()
 
+        // `fallback(...)`, under whatever name it was imported as.
+        if (Node.isIdentifier(propAccessExpr)) {
+          const local = propAccessExpr.getText()
+          // `getName` echoes the identifier back when it is not an import, so the match has
+          // to be confirmed against the import list — otherwise a project's own local
+          // `fallback` helper would be shadowed by this one.
+          if (!file.match(local) || file.getName(local) !== 'fallback') return evaluateOptions
+
+          return {
+            environment: Object.assign({}, defaultEnv, { extra: { [local]: fallbackImpl } }),
+          }
+        }
+
         if (!Node.isPropertyAccessExpression(propAccessExpr)) return evaluateOptions
         let name = propAccessExpr.getText()
 
@@ -130,6 +151,11 @@ export function createParser(context: ParserOptions) {
     extractResultByName.forEach((result, alias) => {
       //
       const name = file.getName(file.normalizeFnName(alias))
+
+      // `fallback()` is only ever a value inside a style object, which the evaluator has
+      // already resolved by now. A bare call carries nothing to collect, and the `css`
+      // matcher would otherwise read its arguments as a style object.
+      if (name === 'fallback') return
 
       logger.debug(`ast:${name}`, name !== alias ? { kind: result.kind, alias } : { kind: result.kind })
 

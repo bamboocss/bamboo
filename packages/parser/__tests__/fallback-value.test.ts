@@ -17,6 +17,34 @@ describe('fallback values', () => {
     expect(result.css.indexOf('calc(100vh - 100px)')).toBeLessThan(result.css.indexOf('calc(100dvh - 100px)'))
   })
 
+  test('evaluates the fallback() helper, including under an alias', () => {
+    const withHelper = parseAndExtract(`
+    import { css, fallback } from "styled-system/css"
+    css({ height: fallback('100dvh', '100vh') })
+    `)
+    expect(withHelper.css).toContain('height: 100vh')
+    expect(withHelper.css).toContain('height: 100dvh')
+
+    const aliased = parseAndExtract(`
+    import { css, fallback as fb } from "styled-system/css"
+    css({ height: fb('100dvh', '100vh') })
+    `)
+    expect(aliased.css).toContain('height: 100vh')
+    expect(aliased.css).toContain('height: 100dvh')
+  })
+
+  test("leaves a project's own fallback helper alone", () => {
+    // `getName` echoes back an identifier it does not know, so without confirming the
+    // import this would shadow the local function and emit `fallback(50vh)`.
+    const result = parseAndExtract(`
+    import { css } from "styled-system/css"
+    const fallback = (value) => value
+    css({ height: fallback('50vh') })
+    `)
+    expect(result.css).toContain('height: 50vh')
+    expect(result.css).not.toContain('fallback(')
+  })
+
   test('extracts from a jsx style prop', () => {
     const code = `
     import { styled } from "styled-system/jsx"
