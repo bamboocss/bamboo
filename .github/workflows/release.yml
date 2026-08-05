@@ -37,6 +37,11 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
+    # npm binds a trusted publisher to repository + workflow filename + environment.
+    # All three are load-bearing: this is `.github/workflows/release.yml` and the
+    # environment is `release`. Renaming either breaks publishing with the same
+    # unhelpful E404 that an unauthenticated publish gives.
+    environment: release
     timeout-minutes: 20
     steps:
       - name: Checkout
@@ -56,8 +61,12 @@ jobs:
         with:
           publish: pnpm release
         env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          # Deliberately empty, not removed. changesets only falls through to OIDC
+          # when NPM_TOKEN is present and blank; leaving it unset makes it take the
+          # token path and fail unauthenticated.
+          # https://github.com/changesets/changesets/issues/1152#issuecomment-3190884868
+          NPM_TOKEN: ''
 
       - name: Slack Notification
         if: steps.changesets.outputs.published == 'true'
