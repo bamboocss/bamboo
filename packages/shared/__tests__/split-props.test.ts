@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest'
+import { memo } from '../src/memo'
 import { splitProps } from '../src/split-props'
 
 describe('split props', () => {
@@ -210,5 +211,36 @@ describe('split props', () => {
     // rest bucket.
     expect(named).toEqual({ toString: 'x' })
     expect(Object.getOwnPropertyNames(rest)).toEqual(['a'])
+  })
+
+  test('a predicate is called with the key alone', () => {
+    const seen: unknown[][] = []
+    splitProps({ a: 1, b: 2 }, (...args: unknown[]) => {
+      seen.push(args)
+      return args[0] === 'a'
+    })
+
+    // Handing the predicate to `filter` directly passed `(key, index, allKeys)`. The extra
+    // arguments are invisible to a one-parameter predicate but not to a memoized one, which
+    // reads its whole argument list.
+    expect(seen).toEqual([['a'], ['b']])
+  })
+
+  test('a memoized predicate keys its cache on the prop name, not the surrounding props', () => {
+    let calls = 0
+    const predicate = memo((key: string) => {
+      calls++
+      return key === 'color'
+    })
+
+    splitProps({ color: 'red', padding: '4px' }, predicate)
+    const afterFirst = calls
+
+    // Same prop names, different surrounding key set. Under the old arity the memo keyed on
+    // `(key, index, allKeys)`, so nothing here could hit and the cache grew per prop set.
+    splitProps({ color: 'blue', margin: '8px', id: 'x' }, predicate)
+
+    expect(afterFirst).toBe(2)
+    expect(calls).toBe(afterFirst + 2) // only `margin` and `id` are new
   })
 })

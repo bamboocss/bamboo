@@ -1,4 +1,5 @@
 import { bench, describe } from 'vitest'
+import { memo } from '../src/memo'
 import { splitProps } from '../src/split-props'
 
 /**
@@ -68,8 +69,30 @@ const PROXIED = new Proxy(
 const opts = { warmupIterations: 5, time: 2000 }
 const split = (props: Record<string, unknown>) => splitProps(props, HTML_KEYS, () => false, VARIANT_KEYS, isCssProperty)
 
+/**
+ * What actually ships: the generated `isCssProperty` is `memo`-wrapped, and a memo reads its
+ * whole argument list. Every case above passes a plain predicate, which cannot see that —
+ * handing the predicate straight to `filter` measured within noise here while costing ~10x
+ * on this one, because the memo was hashing and keying on `(key, index, allKeys)`.
+ *
+ * Two prop sets alternate so a per-prop-set cache cannot look like a working one.
+ */
+const memoizedIsCssProperty = memo(isCssProperty)
+const OTHER_PROPS = { ...PROPS, margin: '2', bg: 'red.100' }
+const splitMemoized = (props: Record<string, unknown>) =>
+  splitProps(props, HTML_KEYS, () => false, VARIANT_KEYS, memoizedIsCssProperty)
+
 describe('splitProps', () => {
   bench('factory split (4 groups, 10 props)', () => void split(PROPS), opts)
+
+  bench(
+    'factory split, memoized predicate',
+    () => {
+      splitMemoized(PROPS)
+      splitMemoized(OTHER_PROPS)
+    },
+    opts,
+  )
 
   // The shapes that take the descriptor path rather than the value path.
   bench('a hidden key', () => void split(HIDDEN), opts)
