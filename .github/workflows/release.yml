@@ -8,10 +8,24 @@ on:
     branches:
       - main
 
+# Publishing is not safe to run twice at once: two jobs can race to version, tag and
+# push the same packages. Unlike the other workflows this must never cancel a run in
+# flight -- killing it mid-publish is how you get a tag with no npm release behind it.
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+# changesets writes: it commits version bumps, pushes tags and cuts GitHub releases,
+# and opens the "Version Packages" pull request.
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v7

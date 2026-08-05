@@ -20,10 +20,16 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
+# Deployment is authenticated by the Cloudflare token, not the job token, so this
+# needs nothing beyond reading the tree.
+permissions:
+  contents: read
+
 jobs:
   deploy:
     name: Build and Deploy
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v7
