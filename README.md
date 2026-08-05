@@ -1,5 +1,3 @@
-![Write type-safe styles with Bamboo](.github/assets/banner.png 'Write type-safe styles with Bamboo')
-
 <p align="center">
   <br/>
   Bamboo is a universal styling solution for the modern web &mdash;
