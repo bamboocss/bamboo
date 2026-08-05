@@ -1,16 +1,14 @@
 ---
 title: Get started with Bamboo
-description: The universal design system solution for the web
+description:
+  Build-time, type-safe, zero-runtime CSS-in-JS. Author styles as typed objects; ship atomic CSS and plain class names.
 ---
 
-Bamboo is a styling engine that generates styling primitives to author atomic CSS and recipes in a type-safe and
-readable manner.
+Bamboo uses static analysis to scan your JavaScript and TypeScript files for style props and function calls, generating
+atomic CSS on demand for the call sites you actually wrote. It runs as a CLI or as a PostCSS plugin.
 
-Bamboo combines the developer experience of CSS-in-JS and the performance of atomic CSS. It leverages static analysis to
-scan your JavaScript and TypeScript files for JSX style props and function calls, generating styles on-demand (aka
-Just-in-Time)
-
-> TLDR; Bamboo is a CSS-in-JS engine that generates atomic CSS at build time (via CLI or PostCSS)
+You author styles as plain objects; the tokens, recipes and variants you reach for come from your own config as
+generated types, so the editor autocompletes them and the compiler checks them.
 
 ## How is this different from Panda CSS?
 
