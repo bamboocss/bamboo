@@ -1,0 +1,191 @@
+---
+title: View Transitions
+description:
+  Style the View Transitions API with viewTransition(), which returns one class you can share across elements.
+---
+
+The [View Transitions API](https://developer.mozilla.org/en-US/docs/Web/API/View_Transitions_API) animates between two
+states of a page. The animation itself is CSS, written against `::view-transition-*` pseudo-elements — and that is the
+part `viewTransition()` writes for you.
+
+```ts
+import { viewTransition } from '../styled-system/css'
+
+const slide = viewTransition({
+  group: { animationDuration: '0.4s', animationTimingFunction: 'ease-in-out' },
+  old: { animationName: 'slide-out' },
+  new: { animationName: 'slide-in' },
+})
+// → 'vt_tEsgy'
+```
+
+It returns a single class. Put that class on any element that should use the transition:
+
+```tsx
+<img className={slide} src="/hero.png" alt="" />
+```
+
+## What gets emitted
+
+```css
+@layer utilities {
+  .vt_tEsgy {
+    view-transition-class: vt_tEsgy;
+  }
+
+  ::view-transition-group(.vt_tEsgy) {
+    animation-duration: 0.4s;
+    animation-timing-function: ease-in-out;
+  }
+
+  ::view-transition-old(.vt_tEsgy) {
+    animation-name: slide-out;
+  }
+
+  ::view-transition-new(.vt_tEsgy) {
+    animation-name: slide-in;
+  }
+}
+```
+
+The class sets `view-transition-class`, and the pseudo-element rules match on it.
+
+## You still set `view-transition-name`
+
+`view-transition-name` has to be **unique per element** — two elements sharing one breaks the transition. So bamboo
+cannot set it for you, and does not try.
+
+`view-transition-class` is the opposite: it is shared on purpose, exactly like a CSS class. That is what makes a
+transition something bamboo can extract, deduplicate and emit once. You pair the two:
+
+```tsx
+<img className={slide} style={{ viewTransitionName: `photo-${id}` }} src={src} alt="" />
+```
+
+Framework helpers that own the name work the same way — React's `<ViewTransition name>`, Astro's `transition:name`:
+
+```tsx
+<ViewTransition name="hero">
+  <img className={slide} src="/hero.png" alt="" />
+</ViewTransition>
+```
+
+## Slots
+
+Four slots map to the four pseudo-elements:
+
+| Slot        | Pseudo-element                 | What it styles                                    |
+| ----------- | ------------------------------ | ------------------------------------------------- |
+| `group`     | `::view-transition-group`      | The container animating between the two positions |
+| `imagePair` | `::view-transition-image-pair` | The pair of snapshots, old and new together       |
+| `old`       | `::view-transition-old`        | The outgoing snapshot                             |
+| `new`       | `::view-transition-new`        | The incoming snapshot                             |
+
+Every slot is an ordinary style object, so tokens, breakpoints and at-rule conditions work inside one:
+
+```ts
+const fade = viewTransition({
+  group: {
+    animationDuration: '0.3s',
+    md: { animationDuration: '0.5s' },
+    _motionReduce: { animationDuration: '0.01s' },
+  },
+  old: { animationName: 'fade-out' },
+})
+```
+
+Conditions that lower to a **selector** rather than an at-rule — `_hover`, `_dark`, `_before` — do not work here, and
+are not rejected. A `::view-transition-*` pseudo-element lives in its own overlay tree: it is not a descendant of the
+element carrying the class, so `_dark`'s `[data-theme=dark] &` can never reach it, and nothing may follow a
+pseudo-element, so `_hover` cannot attach to it either. Both emit a rule that simply never matches. Stick to `@media`,
+`@supports` and `@container` conditions inside a slot.
+
+## Keyframes
+
+`animationName` takes a keyframe name — one from `theme.keyframes` or one you declared in `globalCss`:
+
+```ts
+export default defineConfig({
+  theme: {
+    extend: {
+      keyframes: {
+        'slide-in': {
+          from: { transform: 'translateX(100%)' },
+          to: { transform: 'translateX(0)' },
+        },
+      },
+    },
+  },
+})
+```
+
+A keyframe reached only from a `viewTransition()` slot is still reachable, so
+[`pruneUnusedKeyframes`](/docs/references/config#pruneunusedkeyframes) will not drop it. The same holds for tokens and
+[`pruneUnusedTokens`](/docs/references/config#pruneunusedtokens).
+
+## The class is stable
+
+The class is a hash of the options, so it does not depend on where or how you wrote them. These produce the same class:
+
+```ts
+viewTransition({ group: { animationDuration: '0.4s' }, old: { animationName: 'x' } })
+viewTransition({ old: { animationName: 'x' }, group: { animationDuration: '0.4s' } })
+```
+
+Two calls with the same options anywhere in your codebase emit one set of rules.
+
+Keys that are not slots are ignored — including by the hash — so a stray property cannot silently fork the class.
+
+## Sharing a transition
+
+Because the class is derived from the options alone, a shared bag is just a shared module:
+
+```ts
+// transitions.ts
+import { viewTransition } from '../styled-system/css'
+
+export const slide = viewTransition({
+  group: { animationDuration: '0.4s' },
+  old: { animationName: 'slide-out' },
+  new: { animationName: 'slide-in' },
+})
+```
+
+Import it anywhere. The CSS is emitted once, from wherever the extractor found the call.
+
+## Limitations
+
+- **Object syntax only.** `viewTransition()` is not generated for
+  [template literal syntax](/docs/concepts/template-literals) configs.
+- **The whole bag has to be static.** This is stricter than `css()`, and the difference matters. Because one class
+  covers all four slots, a single value bamboo cannot resolve at build time changes the hash for the _entire_ bag — so
+  the static slots lose their CSS too, not just the dynamic one:
+
+  ```ts
+  import { duration } from './theme-config'
+
+  // ⚠️ `duration` is not statically known, so nothing here is emitted —
+  // including the `old` slot, which is perfectly static.
+  viewTransition({
+    group: { animationDuration: duration },
+    old: { animationName: 'fade-out' },
+  })
+  ```
+
+  Keep the options a literal. If part of a transition is genuinely dynamic, split it into its own bag so it cannot take
+  the static half down with it.
+
+- **Selector conditions do not apply.** See [Slots](#slots) — use at-rule conditions inside a slot.
+- **Not resolvable inside a style object.** `css({ viewTransitionClass: viewTransition({ … }) })` is a call expression
+  where a static value is expected, so the declaration is dropped. Assign the class to a variable and pass it as a
+  `className`.
+- **Not folded.** [Source transformation](/docs/guides/source-transformation) does not yet rewrite static
+  `viewTransition()` calls to string literals, so a call costs a serialization and a hash at runtime. Hoist shared bags
+  to module scope so that happens once.
+- **No view-transition-type conditions.** Styling by transition type (`:active-view-transition-type()`) is not exposed
+  as a condition yet.
+
+## Browser support
+
+The View Transitions API is [not supported everywhere](https://caniuse.com/view-transitions). Where it is missing, the
+emitted CSS is inert and the page changes state without animating — so this degrades on its own, with nothing to guard.

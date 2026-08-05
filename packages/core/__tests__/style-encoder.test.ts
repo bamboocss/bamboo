@@ -450,6 +450,7 @@ describe('style encoder', () => {
             "zIndex]___[value:1]___[cond:_focus]___[recipe:button",
           },
         },
+        "view_transitions": Map {},
       }
     `)
 
@@ -571,6 +572,7 @@ describe('style encoder', () => {
             "backgroundColor]___[value:hsla(0,0%,7%,.8) !important]___[cond:&[data-part="blur"]<___>_supportsBackdrop<___>_dark]___[recipe:button",
           },
         },
+        "view_transitions": Map {},
       }
     `)
 
@@ -699,6 +701,7 @@ describe('style encoder', () => {
             "marginInlineStart]___[value:2]___[recipe:checkbox]___[slot:label",
           },
         },
+        "view_transitions": Map {},
       }
     `)
   })

@@ -11,7 +11,7 @@ interface ImportMatcher {
 
 export class ImportMap {
   value: ImportMapOutput<string>
-  matchers = {} as Record<keyof ImportMapOutput | 'fallback', ImportMatcher>
+  matchers = {} as Record<keyof ImportMapOutput | 'fallback' | 'viewTransition', ImportMatcher>
   outdir: string
 
   constructor(private context: Pick<Context, 'jsx' | 'config' | 'conf' | 'isValidProperty' | 'recipes' | 'patterns'>) {
@@ -26,6 +26,11 @@ export class ImportMap {
     // dispatch, and a recipe or pattern named `fallback` — an ordinary word, unlike `cva` —
     // would be read as a `css()` call and silently emit nothing.
     this.matchers.fallback = this.createMatcher(importMap.css, ['fallback'])
+    // Same reasoning as `fallback`, and the same entrypoint. This is what makes a file
+    // whose only bamboo import is `viewTransition` register as one worth parsing; the
+    // parser dispatches through `FileMatcher.isViewTransitionFn` instead, which is scoped
+    // to the module rather than matching the name anywhere it appears.
+    this.matchers.viewTransition = this.createMatcher(importMap.css, ['viewTransition'])
     this.matchers.tokens = this.createMatcher(importMap.tokens, ['token'])
     this.matchers.recipe = this.createMatcher(importMap.recipe)
     this.matchers.pattern = this.createMatcher(importMap.pattern)

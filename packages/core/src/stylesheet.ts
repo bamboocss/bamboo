@@ -1,6 +1,6 @@
 import layersPolyfill from '@csstools/postcss-cascade-layers'
 import { logger } from '@bamboocss/logger'
-import type { CascadeLayer, Dict, SystemStyleObject } from '@bamboocss/types'
+import type { CascadeLayer, Dict, SystemStyleObject, ViewTransitionResult } from '@bamboocss/types'
 import postcss, { CssSyntaxError } from 'postcss'
 import { optimizeCss } from './optimize'
 import sortMediaQueries from './plugins/sort-mq'
@@ -98,6 +98,24 @@ export class Stylesheet {
         this.processCss(recipe.result, recipe.slot ? 'recipes_slots_base' : 'recipes_base')
       })
     })
+
+    decoder.view_transitions.forEach((viewTransition) => {
+      this.processViewTransition(viewTransition)
+    })
+  }
+
+  /**
+   * `utilities` for the same reason atomic styles land there — last in the cascade, so a
+   * transition overrides the theme rather than the other way round.
+   *
+   * What matters is that it is one of the *existing* layers: both pruning passes scan a
+   * hardcoded list of them, so a layer of its own would make every keyframe and token a
+   * transition names look unreachable and get pruned away.
+   */
+  processViewTransition = (viewTransition: ViewTransitionResult) => {
+    // Serialized rather than appended raw: the slot bodies are authored style objects, so
+    // tokens, shorthands and conditions inside them resolve the same as anywhere else.
+    this.process({ styles: this.serialize(viewTransition.styles), layer: 'utilities' })
   }
 
   /**

@@ -5,6 +5,8 @@ import {
   getOrCreateSet,
   isImportant,
   markImportant,
+  viewTransitionPseudo,
+  viewTransitionSlots,
   withoutImportant,
 } from '@bamboocss/shared'
 import type {
@@ -17,6 +19,7 @@ import type {
   RecipeBaseResult,
   StyleEntry,
   StyleResultObject,
+  ViewTransitionResult,
 } from '@bamboocss/types'
 import type { Context } from './context'
 import { sortStyleRules } from './sort-style-rules'
@@ -38,13 +41,21 @@ export class StyleDecoder {
   //
   recipes = new Map<string, Set<AtomicStyleResult>>()
   recipes_base = new Map<string, Set<RecipeBaseResult>>()
+  //
+  view_transitions = new Set<ViewTransitionResult>()
 
   clone = () => {
     return new StyleDecoder(this.context)
   }
 
   isEmpty = () => {
-    return !this.atomic.size && !this.grouped.size && !this.recipes.size && !this.recipes_base.size
+    return (
+      !this.atomic.size &&
+      !this.grouped.size &&
+      !this.recipes.size &&
+      !this.recipes_base.size &&
+      !this.view_transitions.size
+    )
   }
 
   get results() {
@@ -53,6 +64,7 @@ export class StyleDecoder {
       grouped: this.grouped,
       recipes: this.recipes,
       recipes_base: this.recipes_base,
+      view_transitions: this.view_transitions,
     }
   }
 
@@ -379,6 +391,28 @@ export class StyleDecoder {
     })
   }
 
+  collectViewTransitions = (encoder: StyleEncoder) => {
+    encoder.view_transitions.forEach((slots, className) => {
+      const styles: StyleResultObject = {
+        // What carries the bag onto an element. `view-transition-class` is shared, unlike
+        // `view-transition-name`, which is why a class can stand for a transition at all.
+        ['.' + esc(className)]: { viewTransitionClass: className },
+      }
+
+      for (const slot of viewTransitionSlots) {
+        const body = slots[slot]
+        if (body == null) continue
+        // `::view-transition-*` are top-level pseudo-elements matched by class, not
+        // descendants of the element carrying it — so no `&` here.
+        styles[`::${viewTransitionPseudo[slot]}(.${esc(className)})`] = body
+      }
+
+      this.view_transitions.add({ className, styles })
+    })
+
+    return this
+  }
+
   /**
    * Collect and re-create all styles and recipes objects from the style encoder
    * So that we can just iterate over them and transform resulting CSS objects into CSS strings
@@ -388,6 +422,7 @@ export class StyleDecoder {
     this.collectGrouped(encoder)
     this.collectRecipe(encoder)
     this.collectRecipeBase(encoder)
+    this.collectViewTransitions(encoder)
     return this
   }
 

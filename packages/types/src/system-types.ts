@@ -89,6 +89,21 @@ export type NestedCssProperties = Nested<CssProperties>
 
 export type SystemStyleObject = Nested<(SystemProperties | GenericProperties) & CssVarProperties>
 
+/**
+ * The four `::view-transition-*` pseudo-elements a `viewTransition()` bag can style.
+ *
+ * `imagePair` is camelCase here and emitted as `::view-transition-image-pair`, matching
+ * how every other property in a style object is authored.
+ */
+export interface ViewTransitionStyleObject {
+  group?: SystemStyleObject
+  imagePair?: SystemStyleObject
+  old?: SystemStyleObject
+  new?: SystemStyleObject
+}
+
+export type ViewTransitionFn = (options: ViewTransitionStyleObject) => string
+
 export interface GlobalStyleObject {
   [selector: string]: SystemStyleObject
 }

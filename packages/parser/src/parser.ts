@@ -231,6 +231,25 @@ export function createParser(context: ParserOptions) {
               }
             })
           })
+          // viewTransition({ group: { ... }, old: { ... } })
+          //
+          // Below the recipe and pattern branches, not above them: a project that has both
+          // this import and a recipe of the same name is ambiguous, and the recipe is the
+          // one whose styles would otherwise be silently dropped.
+          .when(
+            (name: string) => syntax !== 'template-literal' && file.isViewTransitionFn(name),
+            (name: string) => {
+              result.queryList.forEach((query) => {
+                if (query.kind === 'call-expression') {
+                  parserResult.setViewTransition({
+                    name,
+                    box: (query.box.value[0] as BoxNodeMap) ?? box.fallback(query.box),
+                    data: combineResult(unbox(query.box.value[0])),
+                  })
+                }
+              })
+            },
+          )
           // bamboo("span", { ... }) or bamboo("div", badge)
           // or bamboo("span", { color: "red.100", ... })
           // or bamboo('span')` color: red; `

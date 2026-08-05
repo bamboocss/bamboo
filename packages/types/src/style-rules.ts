@@ -39,3 +39,15 @@ export interface RecipeBaseResult extends GroupedResult {
 export interface GroupedStyleResultDetails extends Pick<AtomicStyleResult, 'hash' | 'entry' | 'conditions'> {
   result: StyleResultObject
 }
+
+export interface ViewTransitionResult {
+  className: string
+  /**
+   * Selector -> authored style object, the shape `globalCss` takes.
+   *
+   * Unlike every other result here this is *not* transformed yet: the bodies target
+   * `::view-transition-*` pseudo-elements, so they are serialized whole at emit rather
+   * than atomized into classes.
+   */
+  styles: StyleResultObject
+}

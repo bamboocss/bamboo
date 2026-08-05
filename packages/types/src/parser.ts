@@ -14,6 +14,7 @@ export interface ParserResultInterface {
   cva: Set<ResultItem>
   sva: Set<ResultItem>
   token: Set<ResultItem>
+  viewTransition: Set<ResultItem>
   recipe: Map<string, Set<ResultItem>>
   pattern: Map<string, Set<ResultItem>>
   filePath: string | undefined
@@ -24,6 +25,7 @@ export interface ParserResultInterface {
   setCva: (result: ResultItem) => void
   setSva: (result: ResultItem) => void
   setToken: (result: ResultItem) => void
+  setViewTransition: (result: ResultItem) => void
   setJsx: (result: ResultItem) => void
   setPattern: (name: string, result: ResultItem) => void
   setRecipe: (name: string, result: ResultItem) => void
@@ -38,6 +40,10 @@ export interface EncoderJson {
     }
     grouped?: {
       [groupId: string]: string[]
+    }
+    /** Bag class -> the `::view-transition-*` slot styles behind it. */
+    viewTransitions?: {
+      [className: string]: Record<string, any>
     }
   }
 }

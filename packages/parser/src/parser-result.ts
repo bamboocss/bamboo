@@ -17,6 +17,7 @@ export class ParserResult implements ParserResultInterface {
   cva = new Set<ResultItem>()
   sva = new Set<ResultItem>()
   token = new Set<ResultItem>()
+  viewTransition = new Set<ResultItem>()
 
   recipe = new Map<string, Set<ResultItem>>()
   pattern = new Map<string, Set<ResultItem>>()
@@ -146,6 +147,13 @@ export class ParserResult implements ParserResultInterface {
     // They're runtime functions that reference design tokens
   }
 
+  setViewTransition(result: ResultItem) {
+    this.viewTransition.add(this.append(Object.assign({ type: 'viewTransition' }, result)))
+
+    const encoder = this.encoder
+    result.data.forEach((obj) => encoder.processViewTransition(obj))
+  }
+
   setJsx(result: ResultItem) {
     this.jsx.add(this.append(Object.assign({ type: 'jsx' }, result)))
 
@@ -203,6 +211,7 @@ export class ParserResult implements ParserResultInterface {
     result.cva.forEach((item) => this.cva.add(this.append(item)))
     result.sva.forEach((item) => this.sva.add(this.append(item)))
     result.token.forEach((item) => this.token.add(this.append(item)))
+    result.viewTransition.forEach((item) => this.viewTransition.add(this.append(item)))
     result.jsx.forEach((item) => this.jsx.add(this.append(item)))
 
     result.recipe.forEach((items, name) => {
@@ -227,6 +236,7 @@ export class ParserResult implements ParserResultInterface {
       cva: Array.from(this.cva),
       sva: Array.from(this.sva),
       token: Array.from(this.token),
+      viewTransition: Array.from(this.viewTransition),
       jsx: Array.from(this.jsx),
       recipe: Object.fromEntries(Array.from(this.recipe.entries()).map(([key, value]) => [key, Array.from(value)])),
       pattern: Object.fromEntries(Array.from(this.pattern.entries()).map(([key, value]) => [key, Array.from(value)])),

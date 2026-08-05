@@ -8,7 +8,7 @@ export function generateCssFn(ctx: Context) {
 
   return {
     dts: outdent`
-    ${ctx.file.importType('SystemStyleObject', '../types/index')}
+    ${ctx.file.importType('SystemStyleObject, ViewTransitionFn', '../types/index')}
 
     type Styles = SystemStyleObject | undefined | null | false
 
@@ -46,6 +46,24 @@ export function generateCssFn(ctx: Context) {
     export declare function fallback(preferred: string | number, ...rest: Array<string | number>): \`fallback(\${string})\`;
 
     /**
+     * Style the View Transitions API and get back one stable class for the bag.
+     *
+     * The class is applied through \`view-transition-class\`, so the same transition can be
+     * shared by any number of elements. You still set \`view-transition-name\` yourself —
+     * it has to be unique per element, so bamboo cannot share it for you.
+     *
+     * @example
+     * const slide = viewTransition({
+     *   group: { animationDuration: '0.4s' },
+     *   old: { animationName: 'slide-out' },
+     *   new: { animationName: 'slide-in' },
+     * })
+     *
+     * @see https://bamboocss.com/docs/concepts/view-transitions
+     */
+    export declare const viewTransition: ViewTransitionFn;
+
+    /**
      * Internal. Emitted for the source transform, which rewrites a single dynamic style
      * leaf into a call to this. Not part of the authoring API.
      */
@@ -53,7 +71,7 @@ export function generateCssFn(ctx: Context) {
     `,
     js: outdent`
     ${ctx.file.import(
-      'cloneStyles, createCss, createMergeCss, hypenateProperty, leafClass, memo, withoutSpace',
+      'cloneStyles, createCss, createMergeCss, hypenateProperty, leafClass, memo, viewTransitionClassName, withoutSpace',
       '../helpers',
     )}
     ${ctx.file.import('sortConditions, finalizeConditions', './conditions')}
@@ -163,6 +181,11 @@ export function generateCssFn(ctx: Context) {
     // hover and a name the editor can complete. The extractor evaluates the call, so the
     // value reaching \`css()\` is the same literal either way.
     export const fallback = (...values) => \`fallback($\{values.join(', ')})\`
+
+    // The class is the whole return value — the CSS behind it was emitted at build time
+    // from the same options, hashed by this same function. A call the extractor never saw
+    // still returns a class, exactly as \`css()\` does for a value it never saw.
+    export const viewTransition = (options) => viewTransitionClassName(options, ${JSON.stringify(prefix.className ?? '')})
 
     export const { mergeCss, assignCss } = createMergeCss(context)
     `,

@@ -101,6 +101,7 @@ export const docsNavigation: NavItem = {
         { title: 'Template Literals', url: 'template-literals' },
         { title: 'Conditional Styles', url: 'conditional-styles' },
         { title: 'Responsive Design', url: 'responsive-design' },
+        { title: 'View Transitions', url: 'view-transitions' },
         { title: 'Virtual Color', url: 'virtual-color' },
         { title: 'Patterns', url: 'patterns' },
         { title: 'Recipes', url: 'recipes' },

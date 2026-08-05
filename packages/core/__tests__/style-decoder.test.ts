@@ -2626,6 +2626,7 @@ describe('style decoder', () => {
             },
           },
         },
+        "view_transitions": Set {},
       }
     `)
   })

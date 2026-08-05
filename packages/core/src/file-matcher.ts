@@ -23,6 +23,23 @@ interface FileMatcherOptions {
 
 const cssEntrypointFns = new Set(['css', 'cva', 'sva'])
 
+/**
+ * Exported from the same entrypoint as `css`, but not one of the above: it takes a bag of
+ * `::view-transition-*` slots rather than a style object, so it needs its own alias set
+ * and its own branch in the parser.
+ */
+const viewTransitionFn = 'viewTransition'
+
+/**
+ * Everything the css barrel exports that a call site can name.
+ *
+ * One set rather than two so recognising an import stays a single pass over the file's
+ * imports — `createMatch` filters all of them, and doing that once per entrypoint rather
+ * than once per exported name is the difference between constant and linear added work
+ * per file.
+ */
+const cssBarrelFns = new Set([...cssEntrypointFns, viewTransitionFn])
+
 export class FileMatcher {
   imports: ImportResult[]
   namespaces: Map<string, ImportResult> = new Map()
@@ -32,6 +49,7 @@ export class FileMatcher {
   private cvaAliases = new Set<string>()
   private svaAliases = new Set<string>()
   private tokenAliases = new Set<string>()
+  private viewTransitionAliases = new Set<string>()
   private jsxFactoryAliases = new Set<string>()
 
   private recipeAliases = new Set<string>()
@@ -60,7 +78,7 @@ export class FileMatcher {
   }
 
   private assignAliases() {
-    const isCssEntrypoint = this.createMatch(this.importMap.css, Array.from(cssEntrypointFns))
+    const isCssEntrypoint = this.createMatch(this.importMap.css, Array.from(cssBarrelFns))
     const isTokensEntrypoint = this.createMatch(this.importMap.tokens, ['token'])
 
     this.imports.forEach((result) => {
@@ -83,6 +101,10 @@ export class FileMatcher {
 
         if (result.name === 'sva') {
           this.svaAliases.add(result.alias)
+        }
+
+        if (result.name === viewTransitionFn) {
+          this.viewTransitionAliases.add(result.alias)
         }
       }
 
@@ -185,6 +207,18 @@ export class FileMatcher {
     return this._recipesMatcher(id)
   }
 
+  private _viewTransitionMatcher: ReturnType<typeof this.createMatch> | undefined
+
+  /**
+   * Scoped to the css entrypoint, unlike the name-only `ImportMap` matcher: `viewTransition`
+   * is an ordinary enough name that a project can have a recipe or pattern called that, and
+   * dispatching on the name alone would read theirs as this and emit nothing for it.
+   */
+  isViewTransitionFn = (id: string) => {
+    this._viewTransitionMatcher ||= this.createMatch(this.importMap.css, [viewTransitionFn])
+    return this._viewTransitionMatcher(id)
+  }
+
   isRawFn = (fnName: string) => {
     const name = fnName.split('.raw')[0] ?? ''
 
@@ -217,6 +251,7 @@ export class FileMatcher {
       this.cssAliases.has(fnName) ||
       this.svaAliases.has(fnName) ||
       this.tokenAliases.has(fnName) ||
+      this.viewTransitionAliases.has(fnName) ||
       this.isJsxFactory(fnName)
     )
   })
@@ -233,7 +268,7 @@ export class FileMatcher {
     const [namespace, identifier] = fnName.split('.')
     const ns = this.namespaces.get(namespace)
     if (ns) {
-      if (this.importMap.css.some((m) => ns.mod.includes(m)) && cssEntrypointFns.has(identifier)) return true
+      if (this.importMap.css.some((m) => ns.mod.includes(m)) && cssBarrelFns.has(identifier)) return true
       if (this.importMap.tokens.some((m) => ns.mod.includes(m)) && identifier === 'token') return true
       if (this.importMap.recipe.some((m) => ns.mod.includes(m)) && this.recipeAliases.has(identifier)) return true
       if (this.importMap.pattern.some((m) => ns.mod.includes(m)) && this.patternAliases.has(identifier)) return true

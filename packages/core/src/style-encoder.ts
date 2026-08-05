@@ -7,6 +7,8 @@ import {
   toResponsiveObject,
   traverse,
   uniq,
+  viewTransitionClassName,
+  viewTransitionSlots,
 } from '@bamboocss/shared'
 import type {
   Dict,
@@ -74,6 +76,16 @@ export class StyleEncoder {
   grouped = new Map<string, Set<string>>()
 
   /**
+   * Bag class -> the slot styles behind it.
+   *
+   * Keyed by class rather than hashed per declaration like everything above: a bag emits
+   * whole rules against `::view-transition-*` pseudo-elements, which no atomic class can
+   * carry, so there is nothing to deduplicate at the property level. Keying by the class
+   * is what collapses two calls that wrote the same options.
+   */
+  view_transitions = new Map<string, StyleResultObject>()
+
+  /**
    * Scope being recorded by the innermost `withScope` on the stack, if any.
    * Encoding is synchronous, so a single field is enough to thread this through
    * nested `process*` calls without changing their signatures.
@@ -120,7 +132,8 @@ export class StyleEncoder {
       !this.recipes.size &&
       !this.compound_variants.size &&
       !this.recipes_base.size &&
-      !this.grouped.size
+      !this.grouped.size &&
+      !this.view_transitions.size
     )
   }
 
@@ -130,6 +143,7 @@ export class StyleEncoder {
       recipes: this.recipes,
       recipes_base: this.recipes_base,
       grouped: this.grouped,
+      view_transitions: this.view_transitions,
     }
   }
   /**
@@ -236,6 +250,33 @@ export class StyleEncoder {
     if (existing) return
 
     this.grouped.set(groupId, groupSet)
+  }
+
+  /**
+   * Record a `viewTransition({ ... })` bag.
+   *
+   * The class is derived from the options alone, by the same function the generated
+   * runtime calls, so the class the build emits CSS for is the class the call returns.
+   */
+  processViewTransition = (options: unknown) => {
+    if (!options || typeof options !== 'object') return
+
+    const slots: StyleResultObject = {}
+    for (const slot of viewTransitionSlots) {
+      const value = (options as StyleResultObject)[slot]
+      // Nullish is dropped on the hashing side too, so skipping it here cannot make the
+      // build disagree with the runtime about which class this call returns.
+      if (value == null) continue
+      // The emit path serializes a slot body whole rather than atomizing it, so it never
+      // reaches the normalizing the atomic path does on the way in. Without this a
+      // responsive array stays an array, and `serializeStyles` walks it into `0:`/`1:`
+      // declarations instead of a breakpoint object.
+      slots[slot] = normalizeStyleObject(value as StyleResultObject, this.context)
+    }
+
+    if (!Object.keys(slots).length) return
+
+    this.view_transitions.set(viewTransitionClassName(options, this.context.utility.prefix), slots)
   }
 
   processStyleProps = (styleProps: StyleProps, grouped = false) => {
@@ -465,6 +506,13 @@ export class StyleEncoder {
       styles.grouped = Object.fromEntries(Array.from(this.grouped.entries()).map(([id, set]) => [id, Array.from(set)]))
     }
 
+    // The slot styles, not a hash: the class is already the key, and rebuilding the rule
+    // bodies from hashed declarations is not something the decoder can do for a pseudo
+    // element it never atomized.
+    if (this.view_transitions.size) {
+      styles.viewTransitions = Object.fromEntries(this.view_transitions)
+    }
+
     return {
       schemaVersion: version,
       styles,
@@ -488,6 +536,12 @@ export class StyleEncoder {
     Object.entries(styles.grouped ?? {}).forEach(([groupId, hashes]) => {
       const set = getOrCreateSet(this.grouped, groupId)
       hashes.forEach((hash) => set.add(hash))
+    })
+
+    // Keyed by the finalized class, so this restores the prefix the producing build
+    // applied rather than re-deriving it from the consuming config.
+    Object.entries(styles.viewTransitions ?? {}).forEach(([className, slots]) => {
+      this.view_transitions.set(className, slots)
     })
 
     return this
