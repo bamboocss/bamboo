@@ -3,7 +3,12 @@ import { defineConfig } from '@bamboocss/dev'
 export default defineConfig({
   preflight: false,
   include: ['./src/**/*.{tsx,jsx}'],
-  exclude: [],
+  // `render-parity.test.ts` writes `tree.folded.tsx` beside its source so the relative
+  // imports resolve identically, then deletes it when it finishes. Any context built while
+  // that file exists globs it, and the glob reads each matched path with no guard — so a
+  // context created in one test file and a cleanup running in another race, and the loser
+  // fails with `ENOENT` somewhere unrelated. Nothing should be extracting from it anyway.
+  exclude: ['**/*.folded.tsx'],
   outdir: 'styled-system',
   jsxFramework: 'react',
   theme: {
