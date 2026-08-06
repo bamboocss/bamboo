@@ -179,19 +179,30 @@ const className = cx(
 // => 'button button--size-small bg_red'
 ```
 
-`cx` also resolves conflicts between the classes you give it: two atomic classes for the same property under the same
-conditions cannot both apply, so the last one passed wins rather than whichever the stylesheet ordered last.
+That override works because of the layer, not because of `cx`. `utilities` is declared after `recipes`, so the `css()`
+class wins whatever order the class names are in.
+
+`cx` **joins** class names. It does not resolve conflicts between them:
 
 ```js
-cx(css({ paddingX: '4' }), css({ paddingX: '2' })) // => 'px_2'
+cx(css({ paddingX: '4' }), css({ paddingX: '2' })) // => 'px_4 px_2', not 'px_2'
 ```
 
-Recipe classes are never merged, which is why the example above keeps `button` and `button--size-small` intact. See
-[Classname concatenation](/docs/concepts/writing-styles#classname-concatenation) for the full rules, including the case
-where a hand-written class shaped like a utility class gets merged away and the builds where `cx` cannot merge at all.
+Both land on the element, in the same layer, and the browser picks by their order in the stylesheet rather than by the
+order you passed them.
 
-The config recipe override above does not rely on that merge — `utilities` is declared after `recipes`, so it wins by
-layer order whatever `cx` does with the class names.
+This is deliberate. `cx` cannot resolve conflicts in every build — under [`hash`](/docs/references/config#hash) or
+[`cssMode: 'grouped'`](/docs/references/config#cssmode) a class name carries no property to compare, and a grouped class
+names a whole `css()` call rather than one declaration. A `cx` that merged where it could and joined where it could not
+would behave differently in development and in a minified production build, from the same source, with nothing raised
+either way. It does the same thing everywhere instead.
+
+So when you need one style to beat another, decide it by origin:
+
+- **A component a consumer will override** belongs in the `recipes` layer. Write it with `cva`/`sva`, not bare `css()`,
+  and the consumer's `css()` in `utilities` wins by layer — deterministically, in every build.
+- **Two `css()` calls you own** are in the same layer. Merge the objects rather than the classes: `css(base, override)`
+  resolves per property before any class name exists.
 
 ## Merging within JSX component
 

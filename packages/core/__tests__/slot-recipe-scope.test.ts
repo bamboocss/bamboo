@@ -1,3 +1,4 @@
+import { Recipes } from '../src/recipes'
 import { createContext, createRuleProcessor } from '@bamboocss/fixture'
 import { describe, expect, test } from 'vitest'
 
@@ -66,6 +67,35 @@ describe('slot recipe variants are scoped by the root', () => {
     const rootClass = ctx.recipes.getTransform('checkbox__root')('size', 'md').className
 
     expect(css({ size: 'md' })).toContain(`@scope (.${rootClass}) to (.checkbox__root)`)
+  })
+
+  /**
+   * A component library's enclosing element is not always a slot called `root` — and
+   * sometimes the slot called `root` renders no element at all, which is the case that
+   * makes this necessary rather than convenient.
+   */
+  test('scopeRoot anchors a recipe whose enclosing slot has another name', () => {
+    const ctx = createContext({
+      theme: {
+        extend: {
+          slotRecipes: {
+            menu: {
+              className: 'menu',
+              slots: ['trigger', 'positioner', 'item'],
+              scopeRoot: 'positioner',
+              base: { positioner: { position: 'absolute' } },
+              variants: { size: { sm: { item: { padding: '2' } } } },
+            },
+          },
+        },
+      },
+    } as never)
+
+    expect(Recipes.getRootSlot(ctx.recipes.getConfig('menu') as never)).toBe('positioner')
+  })
+
+  test('a scopeRoot naming no declared slot is not trusted', () => {
+    expect(Recipes.getRootSlot({ slots: ['trigger', 'item'], scopeRoot: 'nope' } as never)).toBeUndefined()
   })
 
   /**

@@ -33,29 +33,17 @@ The styles generated at build time will look like this:
 
 ---
 
-## One of my classNames disappeared. Where did it go?
+## Why didn't my `className` override the component's styles?
 
-`cx` resolves conflicts rather than concatenating: two classes that set the same property under the same conditions
-cannot both apply, so only the last one passed survives. Usually that is the point — it is what makes
-`cx(recipeClasses, props.className)` let a caller override a component.
+`cx` joins class names; it does not resolve conflicts between them. If a component styles itself with `css()` and joins
+your `className`, both classes are in the `utilities` layer and the browser picks by stylesheet order.
 
-It recognises a bamboo class by its shape, though, and a hand-written class can share that shape. `top_bar` is exactly
-what bamboo emits for `css({ top: 'bar' })`, so it is treated as setting `top`:
+The fix is to give the two styles different origins. A component meant to be overridden should use `cva`/`sva`, which
+puts its styles in the `recipes` layer — a consumer's `css()` in `utilities` then wins by
+[cascade layer](/docs/concepts/cascade-layers), in every build.
 
-```js
-cx('top_bar', 'top_0') // 'top_0' — top_bar is gone
-```
-
-If you pass your own classes through a bamboo component, avoid names of the form `<utility><separator><value>`. The risk
-is highest under [`separator: '-'`](/docs/references/config#separator), where ordinary kebab-case names like `p-4` or
-`top-nav` collide. Prefixes that no utility uses — `js-`, `e2e-`, `test-` — are always safe, and so is anything without
-the separator in it.
-
-Recipe classes are never merged, and neither is a class whose property is not a utility bamboo registered. Hashing class
-names — [`hash: true`](/docs/references/config#hash) or `hash: { className: true }` — turns merging off entirely, since
-a hashed class carries no property to compare.
-
-See [Classname concatenation](/docs/concepts/writing-styles#classname-concatenation) for the full rules.
+If you own both call sites, merge the style objects instead: `css(base, override)` resolves per property before any
+class name exists.
 
 ---
 

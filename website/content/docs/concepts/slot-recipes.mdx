@@ -258,8 +258,22 @@ of a checkbox nested inside it.
 Precedence is unaffected. The scoped selector is more specific than the slot's base rule, but specificity never crosses
 a [cascade layer](/docs/concepts/cascade-layers) — a consumer's `css()` output sits in `utilities` and still wins.
 
-A recipe whose slots are siblings, with no slot named `root`, has no ancestor to scope by. Those keep a variant class
-per slot, and every slot stays callable.
+If the enclosing slot is called something else, name it with `scopeRoot`:
+
+```ts
+defineSlotRecipe({
+  className: 'menu',
+  slots: ['trigger', 'positioner', 'item'],
+  scopeRoot: 'positioner',
+  variants: { size: { sm: { item: { padding: '2' } } } },
+})
+```
+
+Only slots rendered _inside_ the named one are reached — `trigger` above is a sibling of `positioner`, so a portal or a
+sibling slot still needs its variant delivered by hand.
+
+A recipe whose slots are all siblings has no ancestor to scope by. Those keep a variant class per slot, and every slot
+stays callable.
 
 ### Styling JSX Compound Components
 

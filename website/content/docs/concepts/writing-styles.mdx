@@ -497,47 +497,33 @@ const Card = ({ className, ...props }) => {
 }
 ```
 
-**The last class that sets a property wins.** Two atomic classes for the same property under the same conditions cannot
-both apply, and leaving both on the element would hand the decision to whichever rule happens to come later in the
-stylesheet – not to the order you passed them. `cx` resolves that, so a caller's `className` reliably overrides the
-component's own styles:
+**`cx` joins, it does not resolve conflicts.** Two atomic classes for the same property both land on the element, and
+the browser picks by their order in the stylesheet rather than the order you passed them:
 
 ```js
 cx(css({ paddingX: '4' }), css({ paddingX: '2' }))
-// 'px_2' – not 'px_4 px_2'
+// 'px_4 px_2' – both survive
 ```
 
-Conditions are part of the declaration, so they only merge with each other:
+This is deliberate, and it is the same in every build. `cx` could only ever compare classes whose property is still
+visible in the name — with [`hash`](#hashing) it is not, and with
+[`cssMode: 'grouped'`](/docs/references/config#cssmode) a single class names a whole `css()` call rather than one
+declaration. Resolving where it could and joining where it could not would mean the same source behaving one way in
+development and another in a minified production build, with no error either way.
 
-```js
-cx('hover:px_4', 'hover:px_2') // 'hover:px_2'
-cx('px_4', 'hover:px_2') // 'px_4 hover:px_2'
-```
+Precedence is decided by origin instead:
 
-A class is only merged when its property is a utility bamboo actually registered, matched at its longest – `bd-w` beats
-`bd`, so `bd-w-4px` and `bd-c-red` stay separate under `separator: '-'`. Recipe classes are excluded outright, and
-anything else is left exactly as written, duplicates included:
-
-```js
-cx('btn px_4', 'btn px_2') // 'btn px_2 btn'
-```
+- **A component a consumer will override** belongs in the `recipes` layer — write it with `cva`/`sva` rather than bare
+  `css()`, and a consumer's `css()` in `utilities` wins by [cascade layer](/docs/concepts/cascade-layers) in every
+  build.
+- **Two `css()` calls you own** are in the same layer, so merge the objects rather than the classes: `css(a, b)`
+  resolves per property before any class name exists.
 
 <Callout type="warning">
-  `cx` recognises a bamboo class by its shape, and a hand-written class can share it. `top_bar` is exactly what bamboo
-  emits for `css({ top: 'bar' })`, so `cx('top_bar', 'top_0')` keeps only `top_0`. If you pass your own classes through a
-  bamboo component, avoid names of the form `<utility><separator><value>`. The risk is highest under `separator: '-'`,
-  where ordinary kebab-case names like `p-4` or `top-nav` collide.
+  A component that styles itself with bare `css()` and accepts a `className` is the case to watch. Both end up in
+  `utilities`, so which one applies is decided by stylesheet order rather than by the caller. Use `cva` for anything
+  meant to be overridden.
 </Callout>
-
-<Callout type="info">
-  This only applies to classes whose property is still visible in the name. With [`hash`](#hashing) or [`cssMode:
-  'grouped'`](/docs/references/config#cssmode) every class is an opaque hash, so `cx` can only concatenate – compose
-  with `css(a, b)` instead, which merges the style objects before any class name exists.
-</Callout>
-
-An `!important` class is the same declaration as its plain form, so argument order decides between them –
-`cx(css({ color: 'red!' }), css({ color: 'blue' }))` is `c_blue`. That is the opposite of what the cascade would do with
-both classes on the element, and it is the point: the value you passed last is the one that applies.
 
 ### Hashing
 

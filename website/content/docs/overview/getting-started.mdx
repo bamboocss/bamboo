@@ -25,8 +25,8 @@ Bamboo CSS is a fork of [Panda CSS](https://panda-css.com/) v1, so the styling A
 - ✂️ Prune [unused tokens](/docs/references/config#pruneunusedtokens) and
   [keyframes](/docs/references/config#pruneunusedkeyframes) – ship only what your app uses
 - 📦 [Grouped class output](/docs/references/config#cssmode) – one class per `css()` call instead of one per property
-- 🎯 [Predictable overrides](/docs/concepts/writing-styles#classname-concatenation) – `cx` resolves conflicting
-  utilities, so the last one passed wins instead of whichever the stylesheet ordered last
+- 🎯 [Predictable overrides](/docs/concepts/cascade-layers) – a recipe's styles sit in a lower cascade layer than
+  `css()`, so a consumer's override wins by origin rather than by source order
 - 🛟 [Fallback values](/docs/concepts/writing-styles#fallback-values) – `fallback(100dvh, 100vh)` for progressive
   enhancement, in one declaration
 - 🎬 [View transitions](/docs/concepts/view-transitions) – `viewTransition()` writes the `::view-transition-*` rules and

@@ -111,13 +111,20 @@ export class Recipes {
   }
 
   /**
-   * The slot every other slot is nested inside, if the recipe declares one.
+   * The slot every other slot is nested inside, if the recipe has one.
    *
-   * By name rather than by position: a recipe whose slots are siblings — `['title',
-   * 'body']` — has no ancestor to scope by, and scoping one to another would emit rules
-   * that match nothing. Those keep a variant class per slot.
+   * `scopeRoot` when it is set, otherwise a slot named `root`. By name rather than by
+   * position: a recipe whose slots are siblings — `['title', 'body']` — has no ancestor to
+   * scope by, and scoping one to another would emit rules that match nothing. Those keep a
+   * variant class per slot.
+   *
+   * A `scopeRoot` naming a slot the recipe does not declare is ignored rather than
+   * trusted; validation reports it.
    */
   static getRootSlot = (recipe: SlotRecipeConfig): string | undefined => {
+    const declared = (recipe as { scopeRoot?: string }).scopeRoot
+    if (declared) return recipe.slots.includes(declared) ? declared : undefined
+
     return recipe.slots.includes(ROOT_SLOT) ? ROOT_SLOT : undefined
   }
 

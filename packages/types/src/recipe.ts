@@ -154,6 +154,25 @@ export interface SlotRecipeDefinition<
    */
   slots: S[] | Readonly<S[]>
   /**
+   * The slot every other slot is rendered inside, used to scope their variant styles.
+   *
+   * A slot recipe's variants are chosen once, at the top, but the slots that react to them
+   * are authored by the consumer somewhere below. Naming the enclosing slot lets the build
+   * emit their variant styles as rules scoped by the class that slot already carries, so
+   * nothing has to be delivered to a slot at runtime and every other slot's class is a
+   * constant.
+   *
+   * Defaults to a slot named `root` when one exists. Set it when the enclosing element is
+   * a slot by another name — a wrapper a component library calls `positioner`, say. A
+   * recipe whose slots are siblings has no enclosing slot at all; leave it unset and each
+   * slot keeps a variant class of its own.
+   *
+   * Only slots rendered *inside* the named one are reached. A slot moved out of the
+   * subtree by a portal is not, and needs its variant delivered by hand — see
+   * `recipe.slotsAffectedBy`.
+   */
+  scopeRoot?: S
+  /**
    * The base styles of the recipe.
    */
   base?: SlotRecord<S, SystemStyleObject>

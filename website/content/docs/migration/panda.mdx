@@ -132,35 +132,15 @@ pnpm bamboo codegen
 
 </Steps>
 
-## `cx` resolves conflicts
+## `cx` joins, in both tools
 
-This is the one place where identical code produces different output, so it is worth reading before you migrate a large
-app.
+Panda's `cx` joins classnames and so does Bamboo's, so this needs no migration. Two atomic classes for the same property
+both end up on the element and the browser picks by stylesheet order.
 
-Panda's `cx` joins classnames. Two atomic classes for the same property both end up on the element, and which one the
-browser applies depends on their order in the stylesheet rather than the order you passed them. Bamboo's `cx` resolves
-that — the last one passed wins:
-
-```js
-cx(css({ paddingX: '4' }), css({ paddingX: '2' }))
-// panda:  'px_4 px_2'
-// bamboo: 'px_2'
-```
-
-In practice this is the fix you wanted: `cx(recipeClasses, props.className)` is what every JSX factory emits, so a
-caller's `className` now reliably overrides the component's own styles. Two consequences to plan for:
-
-- **DOM snapshots will change.** Elements carry one class where they carried two, and the winner keeps the position of
-  the class it replaced.
-- **A hand-written class shaped exactly like a utility class can be dropped.** `top_bar` is what bamboo emits for
-  `css({ top: 'bar' })`, so it merges with `top_0`. If you pass your own classes through a styled component, avoid names
-  of the form `<utility><separator><value>`.
-
-Neither applies if you set [`hash.className`](/docs/references/config#hash) or
-[`cssMode: 'grouped'`](/docs/references/config#cssmode). Both leave a class name with no property in it, so `cx`
-concatenates exactly as Panda's did.
-
-See [Classname concatenation](/docs/concepts/writing-styles#classname-concatenation) for the full rules.
+What differs is the advice about what to do instead. Bamboo puts `cva`/`sva` output in the `recipes` layer and `css()`
+in `utilities`, so a component written with a recipe is overridden by a consumer's `css()` deterministically — see
+[Merging styles](/docs/concepts/merging-styles). A component that styles itself with bare `css()` has no such guarantee
+in either tool.
 
 ## Things that are easy to miss
 
