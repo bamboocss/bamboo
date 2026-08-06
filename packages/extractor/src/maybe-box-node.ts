@@ -272,6 +272,18 @@ export function maybeBoxNode(
       const value =
         tryComputingPlusTokenBinaryExpressionToString(node, stack, ctx) ?? safeEvaluateNode<string>(node, stack, ctx)
       if (!value) return
+
+      // `safeEvaluateNode` will happily concatenate an operand it could not resolve, since
+      // evaluating an unknown identifier yields `undefined` and `+` stringifies it. That
+      // turned `css({ padding: '2' + n })` into the literal `'2undefined'` — not an
+      // unresolvable box and not a dropped key, but a *wrong value*, which then reached the
+      // stylesheet as `.p_2undefined { padding: 2undefined }`.
+      //
+      // No CSS value contains `undefined`, so treating it as unresolved costs nothing real
+      // and stops the junk rule being emitted. `tryComputing…` above already declines this
+      // shape; this only guards the evaluator's fallback.
+      if (typeof value === 'string' && value.includes('undefined')) return
+
       return cache(box.from(value, node, stack))
     }
 

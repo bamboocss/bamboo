@@ -290,8 +290,6 @@ describe('css.raw spreading in variants', () => {
                 "content",
                 "header",
                 "body",
-                "sm",
-                "lg",
               ],
               "variants": {
                 "size": {
@@ -432,8 +430,6 @@ describe('css.raw spreading in variants', () => {
                 "root",
                 "icon",
                 "label",
-                "primary",
-                "secondary",
               ],
               "variants": {
                 "variant": {
@@ -704,11 +700,7 @@ describe('css.raw spreading in variants', () => {
                 },
               },
               "slots": [
-                "trigger",
-                "content",
-                "overlay",
-                "sm",
-                "lg",
+                undefined,
               ],
               "variants": {
                 "size": {
@@ -834,8 +826,6 @@ describe('css.raw spreading in variants', () => {
                 "backdrop",
                 "panel",
                 "header",
-                "open",
-                "closed",
               ],
               "variants": {
                 "state": {

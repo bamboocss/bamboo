@@ -86,45 +86,42 @@ describe('extract namespace', () => {
          `
     const result = parseAndExtract(code)
     expect(result.json).toMatchInlineSnapshot(`
-          [
+      [
+        {
+          "data": [
             {
-              "data": [
-                {
-                  "color": "red",
-                },
-              ],
-              "name": "css",
-              "type": "css",
+              "color": "red",
             },
+          ],
+          "name": "css",
+          "type": "css",
+        },
+        {
+          "data": [
             {
-              "data": [
-                {
-                  "base": {
-                    "color": "blue",
-                  },
-                },
-              ],
-              "name": "cva",
-              "type": "cva",
+              "base": {
+                "color": "blue",
+              },
             },
+          ],
+          "name": "cva",
+          "type": "cva",
+        },
+        {
+          "data": [
             {
-              "data": [
-                {
-                  "base": {
-                    "root": {
-                      "color": "green",
-                    },
-                  },
-                  "slots": [
-                    "root",
-                  ],
+              "base": {
+                "root": {
+                  "color": "green",
                 },
-              ],
-              "name": "sva",
-              "type": "sva",
+              },
             },
-          ]
-        `)
+          ],
+          "name": "sva",
+          "type": "sva",
+        },
+      ]
+    `)
 
     expect(result.css).toMatchInlineSnapshot(`
       "@layer utilities {

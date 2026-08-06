@@ -273,11 +273,9 @@ describe('recipe jsx', () => {
 
     expect(result.css).toMatchInlineSnapshot(`
       "@layer recipes.slots {
-        @layer _base {
-          .tabs__root {
-            display: flex;
+        .tabs__root {
+          display: flex;
       }
-          }
       }"
     `)
   })

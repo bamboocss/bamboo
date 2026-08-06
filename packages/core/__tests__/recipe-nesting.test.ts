@@ -55,13 +55,11 @@ function textRecipe(variants: Record<string, any> = {}) {
 test('[recipe] direct nesting / recipe ruleset', () => {
   expect(textRecipe({ variant: 'sm' })).toMatchInlineSnapshot(`
     "@layer recipes {
-      @layer _base {
-        .text {
-          object-pos: center;
-          margin-top: auto;
-          margin-bottom: var(--spacing-0);
-          padding-top: var(--spacing-0);
-    }
+      .text {
+        object-pos: center;
+        margin-top: auto;
+        margin-bottom: var(--spacing-0);
+        padding-top: var(--spacing-0);
     }
 
       .text--variant_sm:disabled {
@@ -87,13 +85,11 @@ test('[recipe] direct nesting / recipe ruleset', () => {
 
   expect(textRecipe({ variant: 'md' })).toMatchInlineSnapshot(`
     "@layer recipes {
-      @layer _base {
-        .text {
-          object-pos: center;
-          margin-top: auto;
-          margin-bottom: var(--spacing-0);
-          padding-top: var(--spacing-0);
-    }
+      .text {
+        object-pos: center;
+        margin-top: auto;
+        margin-bottom: var(--spacing-0);
+        padding-top: var(--spacing-0);
     }
 
       .text--variant_md:before {

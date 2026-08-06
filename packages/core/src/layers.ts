@@ -50,8 +50,22 @@ export class Layers {
       case 'recipes': {
         const recipeRoot = postcss.root()
 
-        if (recipes_base.nodes?.length) recipes.prepend(recipes_base)
-        if (recipes_slots_base.nodes?.length) recipes_slots.prepend(recipes_slots_base)
+        // Base rules go *into* the recipe layer ahead of the variants, not into a nested
+        // `@layer _base` inside it.
+        //
+        // A layer's own unlayered rules always beat its nested sublayers, whatever their
+        // selectors say — layer order outranks specificity. So a base declaration written
+        // under a condition lost to an unconditional variant declaration *even while the
+        // condition held*: `base: { _hover: { boxShadow: '6px' } }` with
+        // `variants.color.black: { boxShadow: 'none' }` rendered `none` on hover, silently
+        // dropping the hover style. The identical config through `cva` merges in JS and
+        // keeps it, so the two pipelines disagreed on the same input.
+        //
+        // In one layer the ordinary rules apply again: the conditional selector wins on
+        // specificity, and two equal-specificity declarations fall back to order — which is
+        // why base is prepended rather than appended.
+        if (recipes_base.nodes?.length) recipes.prepend(recipes_base.nodes)
+        if (recipes_slots_base.nodes?.length) recipes_slots.prepend(recipes_slots_base.nodes)
 
         if (recipes.nodes?.length) recipeRoot.append(recipes)
         if (recipes_slots.nodes?.length) recipeRoot.append(recipes_slots)

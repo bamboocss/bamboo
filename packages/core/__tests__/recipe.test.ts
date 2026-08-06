@@ -6,15 +6,13 @@ describe('recipe ruleset', () => {
   test('should work with basic', () => {
     expect(processRecipe('textStyle', { size: 'h1' })).toMatchInlineSnapshot(`
       "@layer recipes {
-        @layer _base {
-          .textStyle {
-            font-family: var(--fonts-mono);
+        .textStyle {
+          font-family: var(--fonts-mono);
       }
 
-          .textStyle > :not([hidden]) ~ :not([hidden]) {
-            border-inline-start-width: 20px;
-            border-inline-end-width: 0px;
-      }
+        .textStyle > :not([hidden]) ~ :not([hidden]) {
+          border-inline-start-width: 20px;
+          border-inline-end-width: 0px;
       }
 
         .textStyle--size_h1 {
@@ -27,30 +25,26 @@ describe('recipe ruleset', () => {
 
     expect(processRecipe('textStyle', {})).toMatchInlineSnapshot(`
       "@layer recipes {
-        @layer _base {
-          .textStyle {
-            font-family: var(--fonts-mono);
+        .textStyle {
+          font-family: var(--fonts-mono);
       }
 
-          .textStyle > :not([hidden]) ~ :not([hidden]) {
-            border-inline-start-width: 20px;
-            border-inline-end-width: 0px;
+        .textStyle > :not([hidden]) ~ :not([hidden]) {
+          border-inline-start-width: 20px;
+          border-inline-end-width: 0px;
       }
-          }
       }"
     `)
 
     expect(processRecipe('textStyle', { size: { base: 'h1', md: 'h2' } })).toMatchInlineSnapshot(`
       "@layer recipes {
-        @layer _base {
-          .textStyle {
-            font-family: var(--fonts-mono);
+        .textStyle {
+          font-family: var(--fonts-mono);
       }
 
-          .textStyle > :not([hidden]) ~ :not([hidden]) {
-            border-inline-start-width: 20px;
-            border-inline-end-width: 0px;
-      }
+        .textStyle > :not([hidden]) ~ :not([hidden]) {
+          border-inline-start-width: 20px;
+          border-inline-end-width: 0px;
       }
 
         .textStyle--size_h1 {
@@ -74,11 +68,9 @@ describe('recipe ruleset', () => {
   test('should work with complex selectors', () => {
     expect(processRecipe('tooltipStyle', {})).toMatchInlineSnapshot(`
       "@layer recipes {
-        @layer _base {
-          [data-theme=dark] .tooltipStyle[data-tooltip],.dark .tooltipStyle[data-tooltip],.tooltipStyle[data-tooltip].dark,.tooltipStyle[data-tooltip][data-theme=dark],[data-theme=dark] .tooltipStyle [data-tooltip],.dark .tooltipStyle [data-tooltip],.tooltipStyle [data-tooltip].dark,.tooltipStyle [data-tooltip][data-theme=dark] {
-            color: red;
+        [data-theme=dark] .tooltipStyle[data-tooltip],.dark .tooltipStyle[data-tooltip],.tooltipStyle[data-tooltip].dark,.tooltipStyle[data-tooltip][data-theme=dark],[data-theme=dark] .tooltipStyle [data-tooltip],.dark .tooltipStyle [data-tooltip],.tooltipStyle [data-tooltip].dark,.tooltipStyle [data-tooltip][data-theme=dark] {
+          color: red;
       }
-          }
       }"
     `)
   })
@@ -186,18 +178,16 @@ describe('recipe ruleset', () => {
 
     expect(processRecipe('buttonStyle', { variant: 'solid' })).toMatchInlineSnapshot(`
       "@layer recipes {
-        @layer _base {
-          .buttonStyle {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+        .buttonStyle {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
       }
 
-          .buttonStyle:is(:hover, [data-hover]) {
-            background-color: var(--colors-red-200);
-            font-size: var(--font-sizes-3xl);
-            color: var(--colors-white);
-      }
+        .buttonStyle:is(:hover, [data-hover]) {
+          background-color: var(--colors-red-200);
+          font-size: var(--font-sizes-3xl);
+          color: var(--colors-white);
       }
 
         .buttonStyle--size_md {
@@ -225,18 +215,16 @@ describe('recipe ruleset', () => {
 
     expect(processRecipe('buttonStyle', { variant: { base: 'solid', lg: 'outline' } })).toMatchInlineSnapshot(`
       "@layer recipes {
-        @layer _base {
-          .buttonStyle {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+        .buttonStyle {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
       }
 
-          .buttonStyle:is(:hover, [data-hover]) {
-            background-color: var(--colors-red-200);
-            font-size: var(--font-sizes-3xl);
-            color: var(--colors-white);
-      }
+        .buttonStyle:is(:hover, [data-hover]) {
+          background-color: var(--colors-red-200);
+          font-size: var(--font-sizes-3xl);
+          color: var(--colors-white);
       }
 
         .buttonStyle--size_md {

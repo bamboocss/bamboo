@@ -182,28 +182,26 @@ describe('sort style rules', () => {
 
     expect(sheet.toCss()).toMatchInlineSnapshot(`
       "@layer recipes {
-        @layer _base {
-          .btn {
-            outline: var(--borders-none);
-            line-height: 1.2;
-            display: inline-flex;
+        .btn {
+          outline: var(--borders-none);
+          line-height: 1.2;
+          display: inline-flex;
       }
 
-          .btn:is(:disabled, [disabled], [data-disabled], [aria-disabled=true]) {
-            opacity: 0.4;
+        .btn:is(:disabled, [disabled], [data-disabled], [aria-disabled=true]) {
+          opacity: 0.4;
       }
 
-          .btn:is(:focus-visible, [data-focus-visible]) {
-            box-shadow: outline;
+        .btn:is(:focus-visible, [data-focus-visible]) {
+          box-shadow: outline;
       }
 
-          .btn:is(:focus, [data-focus]) {
-            z-index: 1;
+        .btn:is(:focus, [data-focus]) {
+          z-index: 1;
       }
 
-          .btn:is(:hover, [data-hover]):is(:disabled, [disabled], [data-disabled], [aria-disabled=true]) {
-            background: initial;
-      }
+        .btn:is(:hover, [data-hover]):is(:disabled, [disabled], [data-disabled], [aria-disabled=true]) {
+          background: initial;
       }
 
         .btn--size_sm {
@@ -230,28 +228,26 @@ describe('sort style rules', () => {
 
     expect(sheet2.toCss()).toMatchInlineSnapshot(`
       "@layer recipes {
-        @layer _base {
-          .btn {
-            outline: var(--borders-none);
-            line-height: 1.2;
-            display: inline-flex;
+        .btn {
+          outline: var(--borders-none);
+          line-height: 1.2;
+          display: inline-flex;
       }
 
-          .btn:is(:disabled, [disabled], [data-disabled], [aria-disabled=true]) {
-            opacity: 0.4;
+        .btn:is(:disabled, [disabled], [data-disabled], [aria-disabled=true]) {
+          opacity: 0.4;
       }
 
-          .btn:is(:focus-visible, [data-focus-visible]) {
-            box-shadow: outline;
+        .btn:is(:focus-visible, [data-focus-visible]) {
+          box-shadow: outline;
       }
 
-          .btn:is(:focus, [data-focus]) {
-            z-index: 1;
+        .btn:is(:focus, [data-focus]) {
+          z-index: 1;
       }
 
-          .btn:is(:hover, [data-hover]):is(:disabled, [disabled], [data-disabled], [aria-disabled=true]) {
-            background: initial;
-      }
+        .btn:is(:hover, [data-hover]):is(:disabled, [disabled], [data-disabled], [aria-disabled=true]) {
+          background: initial;
       }
 
         .btn--size_sm {

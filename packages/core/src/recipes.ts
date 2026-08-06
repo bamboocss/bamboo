@@ -317,9 +317,14 @@ export class Recipes {
       slots.add(name)
     })
 
-    Object.values(recipe.variants ?? {}).forEach((variants) => {
-      Object.keys(variants).forEach((name) => {
-        slots.add(name)
+    // `variants` nests one level deeper than `base` does: `{ size: { sm: { root: {…} } } }`.
+    // Reading the keys of `{ sm: … }` collects the variant *value* as a slot, so a recipe
+    // with a `size.sm` variant grew a phantom `sm` slot — and then had rules emitted for it.
+    Object.values(recipe.variants ?? {}).forEach((values) => {
+      Object.values(values ?? {}).forEach((slotStyles) => {
+        Object.keys(slotStyles ?? {}).forEach((name) => {
+          slots.add(name)
+        })
       })
     })
 

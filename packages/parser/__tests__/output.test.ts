@@ -539,18 +539,16 @@ describe('extract to css output pipeline', () => {
 
     expect(result.css).toMatchInlineSnapshot(`
       "@layer recipes {
-        @layer _base {
-          .pinkRecipe {
-            color: var(--colors-pink-100);
+        .pinkRecipe {
+          color: var(--colors-pink-100);
       }
 
-          .greenRecipe {
-            color: var(--colors-green-100);
+        .greenRecipe {
+          color: var(--colors-green-100);
       }
 
-          .blueRecipe {
-            color: var(--colors-blue-100);
-      }
+        .blueRecipe {
+          color: var(--colors-blue-100);
       }
 
         .pinkRecipe--variant_small,.greenRecipe--variant_small,.blueRecipe--variant_small {
@@ -708,10 +706,8 @@ describe('extract to css output pipeline', () => {
 
     expect(result.css).toMatchInlineSnapshot(`
       "@layer recipes {
-        @layer _base {
-          .pinkRecipe {
-            color: var(--colors-pink-100);
-      }
+        .pinkRecipe {
+          color: var(--colors-pink-100);
       }
 
         .pinkRecipe--variant_small {
@@ -1837,10 +1833,8 @@ describe('extract to css output pipeline', () => {
 
     expect(result.css).toMatchInlineSnapshot(`
       "@layer recipes {
-        @layer _base {
-          .button {
-            font-size: var(--font-sizes-lg);
-      }
+        .button {
+          font-size: var(--font-sizes-lg);
       }
 
         .button--size_md {
@@ -2259,18 +2253,16 @@ describe('extract to css output pipeline', () => {
 
     expect(result.css).toMatchInlineSnapshot(`
       "@layer recipes {
-        @layer _base {
-          .buttonStyle {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+        .buttonStyle {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
       }
 
-          .buttonStyle:is(:hover, [data-hover]) {
-            background-color: var(--colors-red-200);
-            font-size: var(--font-sizes-3xl);
-            color: var(--colors-white);
-      }
+        .buttonStyle:is(:hover, [data-hover]) {
+          background-color: var(--colors-red-200);
+          font-size: var(--font-sizes-3xl);
+          color: var(--colors-white);
       }
 
         .buttonStyle--size_md {
@@ -2385,18 +2377,16 @@ describe('extract to css output pipeline', () => {
 
     expect(result.css).toMatchInlineSnapshot(`
       "@layer recipes {
-        @layer _base {
-          .buttonStyle {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+        .buttonStyle {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
       }
 
-          .buttonStyle:is(:hover, [data-hover]) {
-            background-color: var(--colors-red-200);
-            font-size: var(--font-sizes-3xl);
-            color: var(--colors-white);
-      }
+        .buttonStyle:is(:hover, [data-hover]) {
+          background-color: var(--colors-red-200);
+          font-size: var(--font-sizes-3xl);
+          color: var(--colors-white);
       }
 
         .buttonStyle--size_md {
@@ -2691,11 +2681,9 @@ describe('extract to css output pipeline', () => {
 
     expect(result.css).toMatchInlineSnapshot(`
       "@layer recipes {
-        @layer _base {
-          .button {
-            background: var(--colors-red-900);
-            color: var(--colors-sky-100);
-      }
+        .button {
+          background: var(--colors-red-900);
+          color: var(--colors-sky-100);
       }
 
         .button--size_md {
@@ -2795,22 +2783,20 @@ describe('extract to css output pipeline', () => {
 
     expect(result.css).toMatchInlineSnapshot(`
       "@layer recipes {
-        @layer _base {
-          .card {
-            color: blue;
-      }
-
-          @media screen and (min-width: 40rem) {
-            .card {
-              color: red;
-      }
-      }
+        .card {
+          color: blue;
       }
 
         .card--size_sm {
           padding: var(--spacing-2);
           margin: var(--spacing-4);
           border-radius: var(--radii-sm);
+      }
+
+        @media screen and (min-width: 40rem) {
+          .card {
+            color: red;
+      }
       }
       }
 
@@ -4103,11 +4089,9 @@ describe('extract to css output pipeline', () => {
 
     expect(result.css).toMatchInlineSnapshot(`
       "@layer recipes {
-        @layer _base {
-          .testRecipe {
-            display: flex;
+        .testRecipe {
+          display: flex;
       }
-          }
       }"
     `)
   })
@@ -4151,11 +4135,9 @@ describe('extract to css output pipeline', () => {
 
     expect(result.css).toMatchInlineSnapshot(`
       "@layer recipes.slots {
-        @layer _base {
-          .testSlotRecipe__root {
-            display: flex;
+        .testSlotRecipe__root {
+          display: flex;
       }
-          }
       }"
     `)
   })

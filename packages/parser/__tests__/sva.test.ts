@@ -187,11 +187,6 @@ describe('ast parser / sva', () => {
                   "textStyle": "xl",
                 },
               },
-              "slots": [
-                "root",
-                "content",
-                "title",
-              ],
             },
           ],
           "name": "sva",
@@ -267,7 +262,7 @@ describe('ast parser / sva', () => {
                 },
               },
               "slots": [
-                "root",
+                undefined,
               ],
             },
           ],

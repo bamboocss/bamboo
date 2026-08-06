@@ -71,22 +71,20 @@ describe('static-css', () => {
     ).toMatchInlineSnapshot(`
       {
         "css": "@layer recipes {
-        @layer _base {
-          .buttonStyle {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+        .buttonStyle {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
       }
 
-          .buttonStyle:is(:hover, [data-hover]) {
-            background-color: var(--colors-red-200);
-            font-size: var(--font-sizes-3xl);
-            color: white;
+        .buttonStyle:is(:hover, [data-hover]) {
+          background-color: var(--colors-red-200);
+          font-size: var(--font-sizes-3xl);
+          color: white;
       }
 
-          [data-theme=dark] .tooltipStyle[data-tooltip],.dark .tooltipStyle[data-tooltip],.tooltipStyle[data-tooltip].dark,.tooltipStyle[data-tooltip][data-theme=dark],[data-theme=dark] .tooltipStyle [data-tooltip],.dark .tooltipStyle [data-tooltip],.tooltipStyle [data-tooltip].dark,.tooltipStyle [data-tooltip][data-theme=dark] {
-            color: red;
-      }
+        [data-theme=dark] .tooltipStyle[data-tooltip],.dark .tooltipStyle[data-tooltip],.tooltipStyle[data-tooltip].dark,.tooltipStyle[data-tooltip][data-theme=dark],[data-theme=dark] .tooltipStyle [data-tooltip],.dark .tooltipStyle [data-tooltip],.tooltipStyle [data-tooltip].dark,.tooltipStyle [data-tooltip][data-theme=dark] {
+          color: red;
       }
 
         .buttonStyle--size_md {
@@ -351,18 +349,16 @@ describe('static-css', () => {
     ).toMatchInlineSnapshot(`
       {
         "css": "@layer recipes {
-        @layer _base {
-          .buttonStyle {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+        .buttonStyle {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
       }
 
-          .buttonStyle:is(:hover, [data-hover]) {
-            background-color: var(--colors-red-200);
-            font-size: var(--font-sizes-3xl);
-            color: white;
-      }
+        .buttonStyle:is(:hover, [data-hover]) {
+          background-color: var(--colors-red-200);
+          font-size: var(--font-sizes-3xl);
+          color: white;
       }
 
         .buttonStyle--size_md {
@@ -673,18 +669,16 @@ describe('static-css', () => {
     ).toMatchInlineSnapshot(`
       {
         "css": "@layer recipes {
-        @layer _base {
-          .buttonStyle {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+        .buttonStyle {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
       }
 
-          .buttonStyle:is(:hover, [data-hover]) {
-            background-color: var(--colors-red-200);
-            font-size: var(--font-sizes-3xl);
-            color: white;
-      }
+        .buttonStyle:is(:hover, [data-hover]) {
+          background-color: var(--colors-red-200);
+          font-size: var(--font-sizes-3xl);
+          color: white;
       }
 
         .buttonStyle--size_md {
@@ -747,21 +741,19 @@ describe('static-css', () => {
     ).toMatchInlineSnapshot(`
       {
         "css": "@layer recipes.slots {
-        @layer _base {
-          .checkbox__root {
-            gap: 2px;
-            display: flex;
-            align-items: center;
+        .checkbox__root {
+          gap: 2px;
+          display: flex;
+          align-items: center;
       }
 
-          .checkbox__control {
-            border-width: 1px;
-            border-radius: var(--radii-sm);
+        .checkbox__control {
+          border-width: 1px;
+          border-radius: var(--radii-sm);
       }
 
-          .checkbox__label {
-            margin-inline-start: 2px;
-      }
+        .checkbox__label {
+          margin-inline-start: 2px;
       }
 
         .checkbox__control--size_sm {
@@ -1801,31 +1793,29 @@ describe('static-css', () => {
     expect(getStaticCss({ recipes: '*' })).toMatchInlineSnapshot(`
       {
         "css": "@layer recipes {
-        @layer _base {
-          .textStyle {
-            font-family: var(--fonts-mono);
+        .textStyle {
+          font-family: var(--fonts-mono);
       }
 
-          .textStyle > :not([hidden]) ~ :not([hidden]) {
-            border-inline-start-width: 20px;
-            border-inline-end-width: 0px;
+        .textStyle > :not([hidden]) ~ :not([hidden]) {
+          border-inline-start-width: 20px;
+          border-inline-end-width: 0px;
       }
 
-          [data-theme=dark] .tooltipStyle[data-tooltip],.dark .tooltipStyle[data-tooltip],.tooltipStyle[data-tooltip].dark,.tooltipStyle[data-tooltip][data-theme=dark],[data-theme=dark] .tooltipStyle [data-tooltip],.dark .tooltipStyle [data-tooltip],.tooltipStyle [data-tooltip].dark,.tooltipStyle [data-tooltip][data-theme=dark] {
-            color: red;
+        [data-theme=dark] .tooltipStyle[data-tooltip],.dark .tooltipStyle[data-tooltip],.tooltipStyle[data-tooltip].dark,.tooltipStyle[data-tooltip][data-theme=dark],[data-theme=dark] .tooltipStyle [data-tooltip],.dark .tooltipStyle [data-tooltip],.tooltipStyle [data-tooltip].dark,.tooltipStyle [data-tooltip][data-theme=dark] {
+          color: red;
       }
 
-          .buttonStyle {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+        .buttonStyle {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
       }
 
-          .buttonStyle:is(:hover, [data-hover]) {
-            background-color: var(--colors-red-200);
-            font-size: var(--font-sizes-3xl);
-            color: white;
-      }
+        .buttonStyle:is(:hover, [data-hover]) {
+          background-color: var(--colors-red-200);
+          font-size: var(--font-sizes-3xl);
+          color: white;
       }
 
         .textStyle--size_h1 {
@@ -1891,26 +1881,24 @@ describe('static-css', () => {
       }
 
       @layer recipes.slots {
-        @layer _base {
-          .checkbox__root {
-            gap: 2px;
-            display: flex;
-            align-items: center;
+        .checkbox__root {
+          gap: 2px;
+          display: flex;
+          align-items: center;
       }
 
-          .checkbox__control {
-            border-width: 1px;
-            border-radius: var(--radii-sm);
+        .checkbox__control {
+          border-width: 1px;
+          border-radius: var(--radii-sm);
       }
 
-          .checkbox__label {
-            margin-inline-start: 2px;
+        .checkbox__label {
+          margin-inline-start: 2px;
       }
 
-          .badge__title {
-            background: red.300;
-            border-radius: var(--radii-sm);
-      }
+        .badge__title {
+          background: red.300;
+          border-radius: var(--radii-sm);
       }
 
         .checkbox__control--size_sm {
@@ -2105,10 +2093,8 @@ describe('static-css', () => {
     ).toMatchInlineSnapshot(`
       {
         "css": "@layer recipes {
-        @layer _base {
-          .withCompound {
-            font-size: 1px;
-      }
+        .withCompound {
+          font-size: 1px;
       }
 
         .withCompound--size_sm {

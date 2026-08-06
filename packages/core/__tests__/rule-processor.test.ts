@@ -429,18 +429,16 @@ describe('rule processor', () => {
     `)
     expect(result.css).toMatchInlineSnapshot(`
       "@layer recipes {
-        @layer _base {
-          .buttonStyle {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+        .buttonStyle {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
       }
 
-          .buttonStyle:is(:hover, [data-hover]) {
-            background-color: var(--colors-red-200);
-            font-size: var(--font-sizes-3xl);
-            color: var(--colors-white);
-      }
+        .buttonStyle:is(:hover, [data-hover]) {
+          background-color: var(--colors-red-200);
+          font-size: var(--font-sizes-3xl);
+          color: var(--colors-white);
       }
 
         .buttonStyle--size_sm {
@@ -676,21 +674,19 @@ describe('rule processor', () => {
     `)
     expect(result.css).toMatchInlineSnapshot(`
       "@layer recipes.slots {
-        @layer _base {
-          .checkbox__root {
-            gap: var(--spacing-2);
-            display: flex;
-            align-items: center;
+        .checkbox__root {
+          gap: var(--spacing-2);
+          display: flex;
+          align-items: center;
       }
 
-          .checkbox__control {
-            border-width: 1px;
-            border-radius: var(--radii-sm);
+        .checkbox__control {
+          border-width: 1px;
+          border-radius: var(--radii-sm);
       }
 
-          .checkbox__label {
-            margin-inline-start: var(--spacing-2);
-      }
+        .checkbox__label {
+          margin-inline-start: var(--spacing-2);
       }
 
         .checkbox__control--size_sm {
@@ -850,29 +846,27 @@ describe('rule processor', () => {
     `)
     expect(result.toCss()).toMatchInlineSnapshot(`
       "@layer recipes {
-        @layer _base {
-          .btn {
-            outline: var(--borders-none);
-            line-height: 1.2;
-            display: inline-flex;
+        .btn {
+          outline: var(--borders-none);
+          line-height: 1.2;
+          display: inline-flex;
       }
 
-          .btn:is(:disabled, [disabled], [data-disabled], [aria-disabled=true]) {
-            opacity: 0.4;
+        .btn:is(:disabled, [disabled], [data-disabled], [aria-disabled=true]) {
+          opacity: 0.4;
       }
 
-          .btn:is(:focus-visible, [data-focus-visible]) {
-            box-shadow: outline;
+        .btn:is(:focus-visible, [data-focus-visible]) {
+          box-shadow: outline;
       }
 
-          .btn:is(:focus, [data-focus]) {
-            z-index: 1;
+        .btn:is(:focus, [data-focus]) {
+          z-index: 1;
       }
 
-          .btn:is(:hover, [data-hover]):is(:disabled, [disabled], [data-disabled], [aria-disabled=true]) {
-            background: initial;
+        .btn:is(:hover, [data-hover]):is(:disabled, [disabled], [data-disabled], [aria-disabled=true]) {
+          background: initial;
       }
-          }
       }"
     `)
   })
@@ -929,28 +923,26 @@ describe('rule processor', () => {
 
     expect(processor.toCss()).toMatchInlineSnapshot(`
       "@layer recipes {
-        @layer _base {
-          .btn {
-            outline: var(--borders-none);
-            line-height: 1.2;
-            display: inline-flex;
+        .btn {
+          outline: var(--borders-none);
+          line-height: 1.2;
+          display: inline-flex;
       }
 
-          .btn:is(:disabled, [disabled], [data-disabled], [aria-disabled=true]) {
-            opacity: 0.4;
+        .btn:is(:disabled, [disabled], [data-disabled], [aria-disabled=true]) {
+          opacity: 0.4;
       }
 
-          .btn:is(:focus-visible, [data-focus-visible]) {
-            box-shadow: outline;
+        .btn:is(:focus-visible, [data-focus-visible]) {
+          box-shadow: outline;
       }
 
-          .btn:is(:focus, [data-focus]) {
-            z-index: 1;
+        .btn:is(:focus, [data-focus]) {
+          z-index: 1;
       }
 
-          .btn:is(:hover, [data-hover]):is(:disabled, [disabled], [data-disabled], [aria-disabled=true]) {
-            background: initial;
-      }
+        .btn:is(:hover, [data-hover]):is(:disabled, [disabled], [data-disabled], [aria-disabled=true]) {
+          background: initial;
       }
       }
 
@@ -1018,18 +1010,16 @@ describe('rule processor', () => {
 
     expect(processor.toCss()).toMatchInlineSnapshot(`
       "@layer recipes {
-        @layer _base {
-          .buttonStyle {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+        .buttonStyle {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
       }
 
-          .buttonStyle:is(:hover, [data-hover]) {
-            background-color: var(--colors-red-200);
-            font-size: var(--font-sizes-3xl);
-            color: var(--colors-white);
-      }
+        .buttonStyle:is(:hover, [data-hover]) {
+          background-color: var(--colors-red-200);
+          font-size: var(--font-sizes-3xl);
+          color: var(--colors-white);
       }
 
         .variant_solid {
@@ -1066,21 +1056,19 @@ describe('rule processor', () => {
     step3.decoder.collect(step3.encoder)
     expect(step3.toCss()).toMatchInlineSnapshot(`
       "@layer recipes.slots {
-        @layer _base {
-          .checkbox__root {
-            gap: var(--spacing-2);
-            display: flex;
-            align-items: center;
+        .checkbox__root {
+          gap: var(--spacing-2);
+          display: flex;
+          align-items: center;
       }
 
-          .checkbox__control {
-            border-width: 1px;
-            border-radius: var(--radii-sm);
+        .checkbox__control {
+          border-width: 1px;
+          border-radius: var(--radii-sm);
       }
 
-          .checkbox__label {
-            margin-inline-start: var(--spacing-2);
-      }
+        .checkbox__label {
+          margin-inline-start: var(--spacing-2);
       }
 
         .checkbox__control--size_md {

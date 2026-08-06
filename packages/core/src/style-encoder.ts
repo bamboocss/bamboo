@@ -469,9 +469,16 @@ export class StyleEncoder {
 
   processAtomicSlotRecipe = (recipe: PartialBy<SlotRecipeDefinition, 'slots'>) => {
     const inferredSlots = Recipes.inferSlots(recipe)
-    recipe.slots = uniq([...(recipe.slots ?? []), ...inferredSlots].filter(Boolean))
 
-    const slots = getSlotRecipes(recipe)
+    // Copied rather than assigned back. `recipe` is the extractor's own `ResultItem.data`,
+    // and writing to it left the config permanently changed for everything downstream —
+    // including anything deriving an identity from it, which would then digest a config the
+    // runtime never had.
+    const withSlots = Object.assign({}, recipe, {
+      slots: uniq([...(recipe.slots ?? []), ...inferredSlots].filter(Boolean)),
+    })
+
+    const slots = getSlotRecipes(withSlots)
 
     for (const slotRecipe of Object.values(slots)) {
       this.processAtomicRecipe(slotRecipe)

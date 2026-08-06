@@ -217,18 +217,16 @@ describe('config.importMap', () => {
 
     expect(result.css).toMatchInlineSnapshot(`
       "@layer recipes {
-        @layer _base {
-          .buttonStyle {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+        .buttonStyle {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
       }
 
-          .buttonStyle:is(:hover, [data-hover]) {
-            background-color: var(--colors-red-200);
-            font-size: var(--font-sizes-3xl);
-            color: var(--colors-white);
-      }
+        .buttonStyle:is(:hover, [data-hover]) {
+          background-color: var(--colors-red-200);
+          font-size: var(--font-sizes-3xl);
+          color: var(--colors-white);
       }
 
         .buttonStyle--size_md {

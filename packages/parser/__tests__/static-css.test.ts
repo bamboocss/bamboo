@@ -20,15 +20,13 @@ describe('static css', () => {
 
     expect(css).toMatchInlineSnapshot(`
       "@layer recipes {
-        @layer _base {
-          .textStyle {
-            font-family: var(--fonts-mono);
+        .textStyle {
+          font-family: var(--fonts-mono);
       }
 
-          .textStyle > :not([hidden]) ~ :not([hidden]) {
-            border-inline-start-width: 20px;
-            border-inline-end-width: 0px;
-      }
+        .textStyle > :not([hidden]) ~ :not([hidden]) {
+          border-inline-start-width: 20px;
+          border-inline-end-width: 0px;
       }
 
         .textStyle--size_h1 {
@@ -55,11 +53,9 @@ describe('static css', () => {
 
     expect(css).toMatchInlineSnapshot(`
       "@layer recipes {
-        @layer _base {
-          [data-theme=dark] .tooltipStyle[data-tooltip],.dark .tooltipStyle[data-tooltip],.tooltipStyle[data-tooltip].dark,.tooltipStyle[data-tooltip][data-theme=dark],[data-theme=dark] .tooltipStyle [data-tooltip],.dark .tooltipStyle [data-tooltip],.tooltipStyle [data-tooltip].dark,.tooltipStyle [data-tooltip][data-theme=dark] {
-            color: red;
+        [data-theme=dark] .tooltipStyle[data-tooltip],.dark .tooltipStyle[data-tooltip],.tooltipStyle[data-tooltip].dark,.tooltipStyle[data-tooltip][data-theme=dark],[data-theme=dark] .tooltipStyle [data-tooltip],.dark .tooltipStyle [data-tooltip],.tooltipStyle [data-tooltip].dark,.tooltipStyle [data-tooltip][data-theme=dark] {
+          color: red;
       }
-          }
       }"
     `)
   })
@@ -113,14 +109,12 @@ describe('static css', () => {
 
     expect(css).toMatchInlineSnapshot(`
       "@layer recipes.slots {
-        @layer _base {
-          .button__container {
-            font-family: var(--fonts-mono);
+        .button__container {
+          font-family: var(--fonts-mono);
       }
 
-          .button__icon {
-            font-size: 1.5rem;
-      }
+        .button__icon {
+          font-size: 1.5rem;
       }
 
         .button__container--size_sm {

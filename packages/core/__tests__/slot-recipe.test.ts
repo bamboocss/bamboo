@@ -6,21 +6,19 @@ describe('slot recipe ruleset', () => {
   test('should work', () => {
     expect(processRecipe('checkbox', { size: 'sm' })).toMatchInlineSnapshot(`
       "@layer recipes.slots {
-        @layer _base {
-          .checkbox__root {
-            gap: var(--spacing-2);
-            display: flex;
-            align-items: center;
+        .checkbox__root {
+          gap: var(--spacing-2);
+          display: flex;
+          align-items: center;
       }
 
-          .checkbox__control {
-            border-width: 1px;
-            border-radius: var(--radii-sm);
+        .checkbox__control {
+          border-width: 1px;
+          border-radius: var(--radii-sm);
       }
 
-          .checkbox__label {
-            margin-inline-start: var(--spacing-2);
-      }
+        .checkbox__label {
+          margin-inline-start: var(--spacing-2);
       }
 
         .checkbox__control--size_sm {
