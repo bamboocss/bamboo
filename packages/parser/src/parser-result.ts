@@ -167,8 +167,9 @@ export class ParserResult implements ParserResultInterface {
     set.add(this.append(Object.assign({ type: 'pattern', name }, result)))
 
     const encoder = this.encoder
+    const grouped = this.context.config.cssMode === 'grouped'
     result.data.forEach((obj) =>
-      encoder.processPattern(name, obj, (result.type as 'pattern' | undefined) ?? 'pattern', result.name),
+      encoder.processPattern(name, obj, (result.type as 'pattern' | undefined) ?? 'pattern', result.name, grouped),
     )
   }
 

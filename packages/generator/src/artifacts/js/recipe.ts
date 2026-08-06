@@ -22,7 +22,7 @@ export function generateCreateRecipe(ctx: Context) {
     dts: '',
     js: outdent`
    ${ctx.file.import('finalizeConditions, sortConditions', '../css/conditions')}
-   ${ctx.file.import('css', '../css/css')}
+   ${ctx.file.import('__atomicCss', '../css/css')}
    ${ctx.file.import('assertCompoundVariant, getCompoundVariantCss', '../css/cva')}
    ${ctx.file.import('cx', '../css/cx')}
    ${ctx.file.import('compact, createCss, splitProps, uniq, withoutSpace', '../helpers')}
@@ -66,7 +66,9 @@ export function generateCreateRecipe(ctx: Context) {
 
       if (withCompoundVariants) {
         const compoundVariantStyles = getCompoundVariantCss(compoundVariants, recipeStyles)
-        return cx(recipeCss(recipeStyles), css(compoundVariantStyles))
+        // Compound variants are extracted atomically with the rest of the recipe, so this
+        // half has to name classes atomically too — see \`__atomicCss\`.
+        return cx(recipeCss(recipeStyles), __atomicCss(compoundVariantStyles))
       }
 
       return recipeCss(recipeStyles)

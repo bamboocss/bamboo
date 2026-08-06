@@ -547,7 +547,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       insert: cx.insert,
     }
   }
-  const runtimeRecipe = createRuntimeRecipe(ctx, runtimeCss)
+  const runtimeRecipe = createRuntimeRecipe(ctx)
   const runtimeToken = createRuntimeToken(ctx)
 
   /**

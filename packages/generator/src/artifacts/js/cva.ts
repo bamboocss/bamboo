@@ -5,7 +5,7 @@ export function generateCvaFn(ctx: Context) {
   return {
     js: outdent`
     ${ctx.file.import('cloneStyles, compact, mergeProps, memo, splitProps, uniq', '../helpers')}
-    ${ctx.file.import('css, mergeCss', './css')}
+    ${ctx.file.import('__atomicCss, mergeCss', './css')}
 
     const defaults = (conf) => ({
       base: {},
@@ -69,7 +69,7 @@ export function generateCvaFn(ctx: Context) {
       const resolveVariants = memo(resolve)
 
       function cvaFn(props) {
-        return css(resolve(props))
+        return __atomicCss(resolve(props))
       }
 
       const variantKeys = Object.keys(variants)

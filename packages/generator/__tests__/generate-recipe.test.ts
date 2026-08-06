@@ -20,7 +20,7 @@ describe('generate recipes', () => {
       {
         "dts": "",
         "js": "import { finalizeConditions, sortConditions } from '../css/conditions.mjs';
-      import { css } from '../css/css.mjs';
+      import { __atomicCss } from '../css/css.mjs';
       import { assertCompoundVariant, getCompoundVariantCss } from '../css/cva.mjs';
       import { cx } from '../css/cx.mjs';
       import { compact, createCss, splitProps, uniq, withoutSpace } from '../helpers.mjs';
@@ -64,7 +64,9 @@ describe('generate recipes', () => {
 
          if (withCompoundVariants) {
            const compoundVariantStyles = getCompoundVariantCss(compoundVariants, recipeStyles)
-           return cx(recipeCss(recipeStyles), css(compoundVariantStyles))
+           // Compound variants are extracted atomically with the rest of the recipe, so this
+           // half has to name classes atomically too — see \`__atomicCss\`.
+           return cx(recipeCss(recipeStyles), __atomicCss(compoundVariantStyles))
          }
 
          return recipeCss(recipeStyles)

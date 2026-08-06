@@ -1,4 +1,4 @@
-import { createContext } from '@bamboocss/fixture'
+import { createContext, createGeneratorContext } from '@bamboocss/fixture'
 import { describe, expect, test } from 'vitest'
 import { generateCssFn } from '../src/artifacts/js/css-fn'
 import { generateStringLiteralCssFn } from '../src/artifacts/js/css-fn.string-literal'
@@ -28,6 +28,15 @@ describe('generate css-fn', () => {
       }
 
       export declare const css: CssFunction;
+
+      /**
+       * \`css\`, but always naming one class per property.
+       *
+       * The seam \`cva\` and \`sva\` use: their variants are extracted atomically whatever
+       * \`cssMode\` says, so their runtime has to name classes the same way. Identical to \`css\`
+       * unless \`cssMode: 'grouped'\` is set. Internal — prefer \`css\`.
+       */
+      export declare const __atomicCss: CssFunction;
 
       /**
        * Build a fallback value: a list of candidates, most-preferred first, emitted as repeated
@@ -113,6 +122,9 @@ describe('generate css-fn', () => {
       // condition object would otherwise poison it for everyone after them.
       css.raw = (...styles) => cloneStyles(mergeCss(...styles))
 
+      // \`cssMode\` is atomic, so the recipe runtimes can share \`css\` itself.
+      export const __atomicCss = css
+
       // Emitted for the source transform, which rewrites a single dynamic style leaf into a
       // call to this rather than leaving a \`css()\` behind. \`prefix\` is the class up to the
       // value, resolved at build time; \`prop\` is only used for the shapes \`leafClass\`
@@ -178,6 +190,15 @@ describe('generate css-fn', () => {
       }
 
       export declare const css: CssFunction;
+
+      /**
+       * \`css\`, but always naming one class per property.
+       *
+       * The seam \`cva\` and \`sva\` use: their variants are extracted atomically whatever
+       * \`cssMode\` says, so their runtime has to name classes the same way. Identical to \`css\`
+       * unless \`cssMode: 'grouped'\` is set. Internal — prefer \`css\`.
+       */
+      export declare const __atomicCss: CssFunction;
 
       /**
        * Build a fallback value: a list of candidates, most-preferred first, emitted as repeated
@@ -267,6 +288,9 @@ describe('generate css-fn', () => {
       // The merged result is cached and shared, so a caller mutating a nested
       // condition object would otherwise poison it for everyone after them.
       css.raw = (...styles) => cloneStyles(mergeCss(...styles))
+
+      // \`cssMode\` is atomic, so the recipe runtimes can share \`css\` itself.
+      export const __atomicCss = css
 
       // Emitted for the source transform, which rewrites a single dynamic style leaf into a
       // call to this rather than leaving a \`css()\` behind. \`prefix\` is the class up to the
@@ -361,5 +385,23 @@ describe('generate string-literal css-fn', () => {
       css.raw = (...styles) => cloneStyles(mergeProps(...styles.filter(Boolean).map(fn)))",
       }
     `)
+  })
+})
+
+describe('generate css-fn — the recipe seam', () => {
+  // `cva`/`sva`/config recipes are extracted atomically whatever `cssMode` says, so their
+  // runtime has to name classes atomically too. Under `grouped` that needs a second
+  // `createCss`; under `atomic` it must stay a bare alias, costing nothing.
+  test('grouped builds get their own atomic css instance', () => {
+    const js = generateCssFn(createGeneratorContext({ cssMode: 'grouped' }) as any).js
+    expect(js).toContain('createCss({ ...context, grouped: false })')
+    expect(js).toContain('export const __atomicCss = /* @__PURE__ */ memo(')
+    expect(js).toContain('__atomicCss.raw = css.raw')
+  })
+
+  test('atomic builds alias it, adding no second instance', () => {
+    const js = generateCssFn(createGeneratorContext() as any).js
+    expect(js).toContain('export const __atomicCss = css')
+    expect(js).not.toContain('grouped: false')
   })
 })

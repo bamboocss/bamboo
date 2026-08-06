@@ -3,6 +3,7 @@ import {
   getOrCreateSet,
   getSlotRecipes,
   isObjectOrArray,
+  mergeProps,
   normalizeStyleObject,
   toResponsiveObject,
   traverse,
@@ -284,20 +285,35 @@ export class StyleEncoder {
     const styles = this.filterStyleProps(styleProps)
     const rest = {} as Dict
 
+    // Grouped mode names a class after a whole `css()` call, and the JSX factory makes one:
+    // `css(propStyles, cssStyles)`. Hashing the `css` prop apart from the rest would name a
+    // class the runtime never asks for, leaving the element with no styles at all. A `*Css`
+    // prop is a different slot's element and keeps its own call.
+    const ownCss: Dict[] = []
+
     for (const [key, value] of Object.entries(styles)) {
       // css and *Css props (e.g. inputCss, wrapperCss) are style objects
       if (key === 'css' || key.endsWith('Css')) {
+        const mergesWithRest = grouped && key === 'css'
         if (Array.isArray(value)) {
-          value.forEach((style) => processFn(style))
+          value.forEach((style) => (mergesWithRest ? ownCss.push(style) : processFn(style)))
         } else if (value) {
-          processFn(value)
+          mergesWithRest ? ownCss.push(value) : processFn(value)
         }
       } else {
         rest[key] = value
       }
     }
 
-    processFn(rest)
+    // Mirror `mergeCss` exactly: normalize each operand, *then* deep-merge. Merging raw and
+    // normalizing once afterwards is not the same function — `p` and `padding` only collide
+    // after normalization, and `walkObject` assigns rather than merges when it renames, so
+    // one of the two would be dropped from the stylesheet entirely. `Object.assign` is wrong
+    // for the same reason one level up: a shared key holding a condition object would keep
+    // only whichever came last.
+    processFn(
+      ownCss.length ? mergeProps(...[rest, ...ownCss].map((style) => normalizeStyleObject(style, this.context))) : rest,
+    )
   }
 
   processConfigSlotRecipeBase = (recipeName: string, config: SlotRecipeDefinition) => {
@@ -422,13 +438,16 @@ export class StyleEncoder {
     patternProps: StyleResultObject,
     type?: 'pattern' | 'jsx-pattern',
     jsxName?: string | undefined,
+    grouped = false,
   ) => {
     let fnName = name
     if (type === 'jsx-pattern' && jsxName) {
       fnName = this.context.patterns.find(jsxName)
     }
     const styleProps = this.context.patterns.transform(fnName, patternProps)
-    this.processStyleProps(styleProps)
+    // A pattern is a `css()` call with the transform already applied — `css(stackStyles(props))` —
+    // so grouped mode names it the same way it names any other one.
+    this.processStyleProps(styleProps, grouped)
   }
 
   processAtomicRecipe = (recipe: Pick<RecipeConfig, 'base' | 'variants' | 'compoundVariants'>) => {

@@ -3,7 +3,7 @@ import { createMergeCss } from '@bamboocss/shared'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { beforeAll, describe, expect, test } from 'vitest'
-import { createCssContext, createRuntimeCss, createRuntimeRecipe, getCompoundVariantCss } from '../src/runtime-css'
+import { createCssContext, createRuntimeRecipe, getCompoundVariantCss } from '../src/runtime-css'
 
 /**
  * `createRuntimeRecipe` reproduces the generated `createRecipe`, and mirrors
@@ -22,7 +22,7 @@ let generated: Record<string, (variants: Record<string, unknown>) => string>
 
 beforeAll(async () => {
   const ctx = await loadConfigAndCreateContext({ cwd })
-  resolve = createRuntimeRecipe(ctx, createRuntimeCss(ctx))
+  resolve = createRuntimeRecipe(ctx)
 
   const recipes = await import(join(cwd, 'styled-system/recipes/index.mjs'))
   generated = recipes as never

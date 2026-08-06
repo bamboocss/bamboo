@@ -101,7 +101,7 @@ export const createRuntimeToken =
 /**
  * The generated `createRecipe`, rebuilt in-process.
  *
- * A config recipe call resolves to `cx(recipeCss(variants), css(compoundVariantStyles))`.
+ * A config recipe call resolves to `cx(recipeCss(variants), __atomicCss(compoundVariantStyles))`.
  * Both halves are reachable from shared primitives. Where the generated `cx` resolves
  * conflicts at all it never merges a recipe class, and the first half is nothing else — so
  * joining the two here agrees with it. The recipe's own `createCss` differs from the ordinary one only
@@ -119,9 +119,16 @@ export interface RuntimeRecipe {
   (name: string, variants: Dict): string | undefined
 }
 
-export const createRuntimeRecipe = (ctx: Context, runtimeCss: RuntimeCss): RuntimeRecipe => {
+export const createRuntimeRecipe = (ctx: Context): RuntimeRecipe => {
   const separator = ctx.utility.separator
-  const { mergeCss } = createMergeCss(createCssContext(ctx))
+  const cssContext = createCssContext(ctx)
+  const { mergeCss } = createMergeCss(cssContext)
+
+  // Atomic whatever `cssMode` says, because the generated `createRecipe` names this half
+  // through `__atomicCss` — compound variants are extracted atomically, so grouping them
+  // would fold a class neither the stylesheet nor the runtime has.
+  const compoundCssFn = createCss({ ...cssContext, grouped: false })
+  const compoundCss = (styles: Dict) => compoundCssFn(mergeCss(styles))
 
   return (name, variants) => {
     const config = ctx.recipes.getConfig(name)
@@ -167,7 +174,7 @@ export const createRuntimeRecipe = (ctx: Context, runtimeCss: RuntimeCss): Runti
 
     const compoundStyles = getCompoundVariantCss(compoundVariants as Dict[], recipeStyles, mergeCss)
 
-    return [recipeCss(recipeStyles), runtimeCss(compoundStyles)].filter(Boolean).join(' ')
+    return [recipeCss(recipeStyles), compoundCss(compoundStyles)].filter(Boolean).join(' ')
   }
 }
 

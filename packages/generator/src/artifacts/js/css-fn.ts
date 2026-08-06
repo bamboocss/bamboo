@@ -31,6 +31,15 @@ export function generateCssFn(ctx: Context) {
     export declare const css: CssFunction;
 
     /**
+     * \`css\`, but always naming one class per property.
+     *
+     * The seam \`cva\` and \`sva\` use: their variants are extracted atomically whatever
+     * \`cssMode\` says, so their runtime has to name classes the same way. Identical to \`css\`
+     * unless \`cssMode: 'grouped'\` is set. Internal — prefer \`css\`.
+     */
+    export declare const __atomicCss: CssFunction;
+
+    /**
      * Build a fallback value: a list of candidates, most-preferred first, emitted as repeated
      * declarations so the browser keeps the last one it understands.
      *
@@ -167,6 +176,25 @@ export function generateCssFn(ctx: Context) {
     // The merged result is cached and shared, so a caller mutating a nested
     // condition object would otherwise poison it for everyone after them.
     css.raw = (...styles) => cloneStyles(mergeCss(...styles))
+
+    ${
+      ctx.config.cssMode === 'grouped'
+        ? outdent`
+          // \`cva\` and \`sva\` are extracted atomically whatever \`cssMode\` says, because which
+          // variants a caller selects is not knowable at build time — the build would have to
+          // emit a rule per combination. So their runtime names classes atomically too:
+          // sharing the grouped \`css\` above would return a class no rule was ever emitted
+          // for, leaving the element with no styles at all rather than merely the wrong ones.
+          const atomicCssFn = createCss({ ...context, grouped: false })
+          export const __atomicCss = /* @__PURE__ */ memo((...styles) => atomicCssFn(mergeCss(...styles)))
+          // \`raw\` names no class, so the two share one.
+          __atomicCss.raw = css.raw
+        `
+        : outdent`
+          // \`cssMode\` is atomic, so the recipe runtimes can share \`css\` itself.
+          export const __atomicCss = css
+        `
+    }
 
     // Emitted for the source transform, which rewrites a single dynamic style leaf into a
     // call to this rather than leaving a \`css()\` behind. \`prefix\` is the class up to the
