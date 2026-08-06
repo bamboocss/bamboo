@@ -38,8 +38,6 @@ export default defineConfig({
   include: ['./src/**/*.{tsx,jsx}', './pages/**/*.{jsx,tsx}'],
   exclude: [],
   outdir: 'styled-system',
-  jsxFactory: 'bamboo',
-  jsxFramework: 'react',
   theme: {
     semanticTokens: {
       colors: {

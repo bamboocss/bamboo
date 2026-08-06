@@ -297,15 +297,10 @@ export function classifyProject(ctx: ParserOptions, resultMap: ParserResultMap):
 
     const localMaps = createReportMaps()
 
-    const componentFn = (item: ResultItem) => {
-      processResultItemFn({ item, filepath, localMaps, type: 'component' })
-    }
-
     const functionFn = (item: ResultItem) => {
       processResultItemFn({ item, filepath, localMaps, type: 'function' })
     }
 
-    parserResult.jsx.forEach(componentFn)
     parserResult.css.forEach(functionFn)
     parserResult.cva.forEach(functionFn)
     parserResult.pattern.forEach((itemList) => {

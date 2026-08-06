@@ -56,7 +56,6 @@ describe('DiffEngine affecteds', () => {
         "design-tokens",
         "types",
         "css-fn",
-        "jsx-is-valid-prop",
         "themes",
         "static-css",
       }
@@ -119,7 +118,6 @@ describe('DiffEngine affecteds', () => {
         "design-tokens",
         "types",
         "css-fn",
-        "jsx-is-valid-prop",
         "themes",
         "static-css",
       }
@@ -238,7 +236,6 @@ describe('DiffEngine affecteds', () => {
         "design-tokens",
         "types",
         "css-fn",
-        "jsx-is-valid-prop",
         "themes",
         "static-css",
       }
@@ -693,7 +690,6 @@ describe('DiffEngine affecteds', () => {
         "types",
         "css-fn",
         "create-recipe",
-        "jsx-is-valid-prop",
       }
     `)
     expect(affecteds.diffs).toMatchInlineSnapshot(`

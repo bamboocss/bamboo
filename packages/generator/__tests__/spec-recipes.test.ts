@@ -50,16 +50,6 @@ describe('generateRecipesSpec', () => {
         "button({ primary: true, disabled: true, size: 'sm' })",
       ]
     `)
-
-    // Check JSX examples
-    expect(buttonSpec.jsxExamples).toMatchInlineSnapshot(`
-      [
-        "<Button primary={true} />",
-        "<Button disabled={true} />",
-        "<Button size="sm" />",
-        "<Button primary={true} disabled={true} size="sm" />",
-      ]
-    `)
   })
 
   test('should handle recipe without boolean variants', () => {
@@ -97,14 +87,6 @@ describe('generateRecipesSpec', () => {
         "card({ variant: 'solid' })",
         "card({ size: 'sm' })",
         "card({ variant: 'solid', size: 'sm' })",
-      ]
-    `)
-
-    expect(cardSpec.jsxExamples).toMatchInlineSnapshot(`
-      [
-        "<Card variant="solid" />",
-        "<Card size="sm" />",
-        "<Card variant="solid" size="sm" />",
       ]
     `)
   })

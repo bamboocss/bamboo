@@ -11,7 +11,6 @@ export default defineConfig({
   exclude: [],
 
   outdir: 'styled-system-grouped',
-  jsxFramework: 'react',
 
   // The point of the scenario. Nothing else in this repo builds with it, so every bug in
   // grouped mode has had to be found by hand.

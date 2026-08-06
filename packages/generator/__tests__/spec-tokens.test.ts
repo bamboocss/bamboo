@@ -85,12 +85,6 @@ describe('generateTokensSpec', () => {
           "token.var('colors.red')",
         ]
       `)
-
-      expect(colorsGroup.jsxExamples).toMatchInlineSnapshot(`
-        [
-          "<Box color="red" />",
-        ]
-      `)
     }
 
     // Find spacing group
@@ -166,52 +160,6 @@ describe('generateTokensSpec', () => {
         ]
       `)
     }
-  })
-
-  test('should handle different jsxStyleProps settings', () => {
-    const ctx = createContext({
-      eject: true,
-      jsxStyleProps: 'minimal',
-      theme: {
-        tokens: {
-          colors: {
-            primary: { value: '#007bff' },
-          },
-        },
-      },
-    })
-
-    const spec = generateTokensSpec(ctx)
-    const colorsGroup = spec.data.find((group) => group.type === 'colors')
-    expect(colorsGroup).toBeDefined()
-    if (!colorsGroup) return
-
-    expect(colorsGroup.jsxExamples).toMatchInlineSnapshot(`
-      [
-        "<Box css={{ color: 'primary' }} />",
-      ]
-    `)
-  })
-
-  test('should handle jsxStyleProps none setting', () => {
-    const ctx = createContext({
-      eject: true,
-      jsxStyleProps: 'none',
-      theme: {
-        tokens: {
-          colors: {
-            primary: { value: '#007bff' },
-          },
-        },
-      },
-    })
-
-    const spec = generateTokensSpec(ctx)
-    const colorsGroup = spec.data.find((group) => group.type === 'colors')
-    expect(colorsGroup).toBeDefined()
-    if (!colorsGroup) return
-
-    expect(colorsGroup.jsxExamples).toMatchInlineSnapshot(`[]`)
   })
 
   test('should filter out semantic, virtual, and conditional tokens', () => {
@@ -346,12 +294,6 @@ describe('generateSemanticTokensSpec', () => {
         [
           "token('colors.primary')",
           "token.var('colors.primary')",
-        ]
-      `)
-
-      expect(colorsGroup.jsxExamples).toMatchInlineSnapshot(`
-        [
-          "<Box color="primary" />",
         ]
       `)
     }
@@ -492,33 +434,5 @@ describe('generateSemanticTokensSpec', () => {
     const spec = generateSemanticTokensSpec(ctx)
     expect(spec.type).toBe('semantic-tokens')
     expect(spec.data).toEqual([])
-  })
-
-  test('should handle different jsxStyleProps settings for semantic tokens', () => {
-    const ctx = createContext({
-      eject: true,
-      jsxStyleProps: 'minimal',
-      theme: {
-        tokens: {
-          colors: {
-            blue: { value: '#0000ff' },
-          },
-        },
-        semanticTokens: {
-          colors: {
-            primary: { value: '{colors.blue}' },
-          },
-        },
-      },
-    })
-
-    const spec = generateSemanticTokensSpec(ctx)
-    const colorsGroup = spec.data.find((group) => group.type === 'colors')
-
-    expect(colorsGroup?.jsxExamples).toMatchInlineSnapshot(`
-      [
-        "<Box css={{ color: 'primary' }} />",
-      ]
-    `)
   })
 })

@@ -1,5 +1,4 @@
 import type { Context } from '@bamboocss/core'
-import { match } from 'ts-pattern'
 import composition from '../generated/composition.d.ts.json' assert { type: 'json' }
 import csstype from '../generated/csstype.d.ts.json' assert { type: 'json' }
 import parts from '../generated/parts.d.ts.json' assert { type: 'json' }
@@ -21,22 +20,8 @@ export function getGeneratedTypes(ctx: Context) {
   }
 }
 
-const jsxStyleProps = 'export type JsxStyleProps = SystemStyleObject & WithCss'
-
 export function getGeneratedSystemTypes(ctx: Context) {
   return {
-    system: ctx.file.rewriteTypeImport(
-      match(ctx.jsx.styleProps)
-        .with('all', () => system.content)
-        .with('minimal', () =>
-          system.content
-            .replace('WithHTMLProps<T>,', 'T,')
-            .replace(jsxStyleProps, 'export type JsxStyleProps = WithCss'),
-        )
-        .with('none', () =>
-          system.content.replace('WithHTMLProps<T>,', 'T,').replace(jsxStyleProps, 'export type JsxStyleProps = {}'),
-        )
-        .exhaustive(),
-    ),
+    system: ctx.file.rewriteTypeImport(system.content),
   }
 }

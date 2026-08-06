@@ -24,10 +24,10 @@ eslintTester.run(RULE_NAME, rule, {
 
     {
       code: multiline`
-  import { styled } from './bamboo/jsx';
+  import { css } from './bamboo/css';
   
   function App(){
-    return <styled.div marginX="2" />;
+    return <div className={css({ marginX: "2" })} />;
   }`,
       errors: [{ messageId: 'noMargin' }],
     },

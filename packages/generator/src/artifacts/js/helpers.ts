@@ -1,14 +1,10 @@
-import type { Context } from '@bamboocss/core'
 import { outdent } from 'outdent'
 import helpersMjs from '../generated/helpers.mjs.json' assert { type: 'json' }
-import normalizeHtmlMjs from '../generated/normalize-html.mjs.json' assert { type: 'json' }
 
-export function generateHelpers(ctx: Context) {
+export function generateHelpers() {
   return {
     js: outdent`
   ${helpersMjs.content}
-
-  ${ctx.jsx.framework ? `${normalizeHtmlMjs.content}` : ''}
 
   export function __spreadValues(a, b) {
     return { ...a, ...b }

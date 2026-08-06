@@ -243,20 +243,6 @@ describe('extract Vue templates', () => {
           "name": "css",
           "type": "css",
         },
-        {
-          "data": [
-            {},
-          ],
-          "name": "IconRadioSelected",
-          "type": "jsx",
-        },
-        {
-          "data": [
-            {},
-          ],
-          "name": "IconRadio",
-          "type": "jsx",
-        },
       ]
     `)
 

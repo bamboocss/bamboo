@@ -204,18 +204,12 @@ export type CheckboxVariants = RecipeVariantProps<typeof checkbox>
 
 ### Usage in JSX
 
-Unlike the atomic recipe or `cva`, slot recipes are not meant to be used directly in the `styled` factory since it
-returns an object of classes instead of a single class.
+A slot recipe returns a record of classes rather than a single class, so each slot picks its own.
 
 ```jsx
 import { css } from '../styled-system/css'
-import { styled } from '../styled-system/jsx'
 import { checkbox, type CheckboxVariants } from './checkbox.recipe'
 
-// ❌ Won't work
-const Checkbox = styled('label', checkbox)
-
-// ✅ Works
 const Checkbox = (props: CheckboxVariants) => {
   const classes = checkbox(props)
   return (
@@ -231,7 +225,7 @@ const Checkbox = (props: CheckboxVariants) => {
 ### Styling JSX Compound Components
 
 Compound components are a great way to create reusable components for better composition. Slot recipes play nicely with
-this pattern and requires a context provider for the component.
+this pattern, and one written this way needs a context provider so every slot can see the variant chosen at the root.
 
 > **Note:** This is an advanced topic and you don't need to understand it to use slot recipes. If you use React, be
 > aware that context require adding 'use client' to the top of the file.
@@ -360,7 +354,6 @@ import { checkboxRecipe } from './checkbox.recipe'
 
 export default defineConfig({
   //...
-  jsxFramework: 'react',
   theme: {
     extend: {
       slotRecipes: {

@@ -121,7 +121,6 @@ export function run(action: 'matchImports', options: Options, result: MatchImpor
 export function run(action: 'filterImports', options: Options, imports: MatchImportResult[]): MatchImportResult[]
 export function run(action: 'getPropCategory', options: Options, property: string): string
 export function run(action: 'filterDeprecatedTokens', options: Options, tokens: DeprecatedToken[]): DeprecatedToken[]
-export function run(action: 'getJsxFactory', options: Options): string | undefined
 export function run(action: string, options: Options, ...args: any[]): any {
   // @ts-expect-error cast
   return runAsync(action, options, ...args)
@@ -153,7 +152,6 @@ export function runAsync(
   options: Options,
   tokens: DeprecatedToken[],
 ): Promise<DeprecatedToken[]>
-export function runAsync(action: 'getJsxFactory', options: Options): Promise<string | undefined>
 export async function runAsync(action: string, options: Options, ...args: any): Promise<any> {
   const context = await getContext(options)
 
@@ -167,8 +165,6 @@ export async function runAsync(action: string, options: Options, ...args: any): 
     case 'filterInvalidTokens':
       // @ts-expect-error cast
       return filterInvalidTokens(context, ...args)
-    case 'getJsxFactory':
-      return getJsxFactory(context)
     case 'getPropCategory':
       // @ts-expect-error cast
       return getPropertyCategory(context, ...args)
@@ -218,14 +214,6 @@ const isValidProperty = (context: Generator, name: string, patternName?: string)
   }
 
   if (!patternName) {
-    return false
-  }
-
-  // If the pattern name is the jsxFactory (e.g., 'styled'), we should accept
-  // any property that is valid according to the global property check
-  // Since styled components are generic wrappers, we don't need pattern-specific checks
-  if (patternName === context.config.jsxFactory) {
-    // Already checked globally above, so return false if we got here
     return false
   }
 
@@ -297,10 +285,6 @@ const resolveLongHand = (context: Generator, name: string): string | undefined =
 // Refactored to arrow function, removed async
 const resolveShorthands = (context: Generator, name: string): string[] | undefined => {
   return context.utility.getPropShorthandsMap().get(name)
-}
-
-const getJsxFactory = (context: Generator): string | undefined => {
-  return context.config.jsxFactory
 }
 
 runAsWorker(run as any)

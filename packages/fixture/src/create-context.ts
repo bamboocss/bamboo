@@ -18,7 +18,6 @@ const defaults: UserConfig = {
   include: [],
   //
   cssVarRoot: ':where(html)',
-  jsxFramework: 'react',
 }
 const config = Object.assign({}, fixturePreset, defaults)
 

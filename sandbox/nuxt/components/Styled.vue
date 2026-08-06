@@ -1,7 +1,7 @@
 <script setup>
-import { styled } from '../styled-system/jsx'
+import { cva } from '../styled-system/css'
 
-const StyledButton = styled('button', {
+const styledButton = cva({
   base: {
     bgColor: 'black',
   },
@@ -27,7 +27,7 @@ const StyledButton = styled('button', {
 })
 </script>
 <template>
-  <StyledButton id="test" class="test">
+  <button id="test" :class="[styledButton(), 'test']">
     <slot></slot>
-  </StyledButton>
+  </button>
 </template>

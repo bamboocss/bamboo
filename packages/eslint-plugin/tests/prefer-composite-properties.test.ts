@@ -24,10 +24,10 @@ eslintTester.run(RULE_NAME, rule, {
 
     {
       code: multiline`
-  import { styled } from './bamboo/jsx';
+  import { css } from './bamboo/css';
   
   function App(){
-    return <styled.div _hover={{  borderTopStyle: 'solid', borderTopWidth: '1px', borderTopColor: 'blue' }} />;
+    return <div className={css({ _hover: {  borderTopStyle: 'solid', borderTopWidth: '1px', borderTopColor: 'blue' } })} />;
   }`,
       errors: [{ messageId: 'composite' }, { messageId: 'composite' }, { messageId: 'composite' }],
     },
@@ -51,10 +51,10 @@ eslintTester.run(RULE_NAME, rule, {
 
     {
       code: multiline`
-  import { styled } from './bamboo/jsx';
+  import { css } from './bamboo/css';
   
   function App(){
-    return <styled.div _hover={{  borderTop: 'solid 1px blue' }} />;
+    return <div className={css({ _hover: {  borderTop: 'solid 1px blue' } })} />;
   }`,
     },
   ],

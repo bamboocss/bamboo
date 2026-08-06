@@ -2,7 +2,6 @@ import { ASTViewer } from '@/src/components/ASTViewer'
 import { GeneratedCss } from '@/src/components/GeneratedCss'
 import { useBamboo } from '@/src/hooks/useBamboo'
 import { css, cva, cx } from '@/styled-system/css'
-import { bamboo } from '@/styled-system/jsx'
 import { flex } from '@/styled-system/patterns'
 import { segmentGroup } from '@/styled-system/recipes'
 import { SegmentGroup } from '@ark-ui/react/segment-group'
@@ -102,14 +101,16 @@ export const ArtifactsPanel = React.memo(function ArtifactsPanel(props: Artifact
               </SegmentGroup.Item>
             ))}
           </SegmentGroup.Root>
-          <bamboo.span
-            data-expanded={open ? '' : undefined}
-            transform={{ _expanded: 'rotate(180deg)' }}
-            transition="all .2s ease"
-            color={{ _expanded: { _dark: 'primary' } }}
+          <span
+            className={css({
+              expanded: open ? '' : undefined,
+              transform: { _expanded: 'rotate(180deg)' },
+              transition: 'all .2s ease',
+              color: { _expanded: { _dark: 'primary' } },
+            })}
           >
             <ChevronUpIcon />
-          </bamboo.span>
+          </span>
         </div>
         {activeTab === 'ast' && <ASTViewer parserResult={props.bamboo.parserResult} />}
         {/* Using visible cause it's better to let the monaco editor be loaded with the others */}

@@ -1032,20 +1032,6 @@ describe('choices the extractor could not decide', () => {
     }
   })
 
-  test('a chain is judged on the element surface too', () => {
-    const { fold } = createFoldFixture()
-    // `css` is imported because element splitting needs `cx` alongside it, and the fold
-    // will not add an import to a file that has neither.
-    const code = `import { css } from 'styled-system/css'\nimport { styled } from 'styled-system/jsx'\nexport const El = () => <styled.div margin="2" color={fn() || 'red.300' || 'blue.500'} />\n`
-    const result = fold(code)
-
-    // The same guard runs for style props, and an element fold writes the class straight
-    // into the attribute where nothing downstream would notice it was invented.
-    expect(result.code).not.toContain('c_red.300')
-    // The static half still folds, so an element that folded nothing would not pass.
-    expect(result.code).toContain('m_2')
-  })
-
   test('a comparison is not folded to one of its operands', () => {
     const { fold } = createFoldFixture()
 

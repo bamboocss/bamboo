@@ -15,5 +15,4 @@ export default defineConfig({
   theme: {
     extend: {},
   },
-  jsxFramework: 'react',
 })

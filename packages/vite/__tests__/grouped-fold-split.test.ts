@@ -81,29 +81,6 @@ describe('folding a css() call under cssMode: grouped', () => {
   })
 })
 
-describe('folding a styled element under cssMode: grouped', () => {
-  test('a whole-element fold still happens', () => {
-    const { code, missing } = foldGrouped(
-      `import { styled } from "styled-system/jsx"\nexport const A = () => <styled.div margin="2" color="red.300" />`,
-    )
-    expect(code).not.toContain('styled.div')
-    expect(missing).toEqual([])
-  })
-
-  test('a literal is not hoisted out beside a runtime call', () => {
-    // `planJsxFold` takes props whole and never recurses into a block, so its static half is
-    // a strict subset of what the extractor resolved — the hoisted class has no rule. The
-    // `css`/`cx` imports are what make the split path reachable at all.
-    const { code, missing } = foldGrouped(
-      `import { css, cx } from "styled-system/css"
-       import { styled } from "styled-system/jsx"
-       export const A = ({ tone }) => <styled.div margin="2" _hover={{ color: 'red.300', background: tone }} />`,
-    )
-    expect(code).toContain('styled.div')
-    expect(missing).toEqual([])
-  })
-})
-
 describe('cssMode: atomic is unaffected', () => {
   const foldAtomic = (code: string) => createFoldFixture().fold(code).code
 
@@ -112,14 +89,5 @@ describe('cssMode: atomic is unaffected', () => {
       `import { css } from "styled-system/css"\nexport const a = (c) => css({ margin: '2', color: c ? 'red.300' : 'green.300' })`,
     )
     expect(code).toContain('m_2')
-  })
-
-  test('an element still splits', () => {
-    const code = foldAtomic(
-      `import { css, cx } from "styled-system/css"
-       import { styled } from "styled-system/jsx"
-       export const A = ({ tone }) => <styled.div margin="2" _hover={{ color: 'red.300', background: tone }} />`,
-    )
-    expect(code).toContain('cx(')
   })
 })

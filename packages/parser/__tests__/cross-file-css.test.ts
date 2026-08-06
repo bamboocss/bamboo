@@ -77,19 +77,6 @@ describe('cross-file composition emits CSS', () => {
     expect(css).toContain(':is(:hover, [data-hover])')
   })
 
-  test('the JSX css prop folds an imported style', () => {
-    const ctx = createProject({
-      'app/src/styles.ts': `${CSS_IMPORT}
-       export const button = css.raw({ borderWidth: '2px' })`,
-      'app/src/app.tsx': `import { styled } from '../../styled-system/jsx'
-       import { button } from './styles'
-       export const App = () => <styled.div css={button} />`,
-    })
-
-    const css = cssFor(ctx, 'app/src/app.tsx')
-    expect(css).toContain('border-width: 2px')
-  })
-
   test('a plain exported object reaches the stylesheet', () => {
     const ctx = createProject({
       'app/src/tokens.ts': `export const surface = { color: 'red.500', borderWidth: '2px' }`,

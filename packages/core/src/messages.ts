@@ -10,7 +10,6 @@ export const artifactsGenerated = (ctx: Pick<Context, 'config' | 'recipes' | 'pa
     recipes,
     patterns,
     tokens,
-    jsx,
   } = ctx
 
   return () =>
@@ -29,10 +28,6 @@ export const artifactsGenerated = (ctx: Pick<Context, 'config' | 'recipes' | 'pa
       !recipes.isEmpty() &&
         outdent`
       ${tick} ${quote(outdir, '/recipes')}: functions to create multi-variant styles
-      `,
-      jsx.framework &&
-        outdent`
-      ${tick} ${quote(outdir, '/jsx')}: styled jsx elements for ${jsx.framework}
       `,
       themes &&
         outdent`

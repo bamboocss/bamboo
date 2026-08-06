@@ -1,5 +1,4 @@
-import { cva } from '@/styled-system/css'
-import { bamboo } from '@/styled-system/jsx'
+import { cva, cx, type RecipeVariantProps } from '@/styled-system/css'
 
 const buttonRecipe = cva({
   base: {
@@ -134,4 +133,9 @@ const buttonRecipe = cva({
   },
 })
 
-export const Button = bamboo('button', buttonRecipe)
+type ButtonProps = RecipeVariantProps<typeof buttonRecipe> & React.ComponentProps<'button'>
+
+export const Button = (props: ButtonProps) => {
+  const [variantProps, rest] = buttonRecipe.splitVariantProps(props)
+  return <button {...rest} className={cx(buttonRecipe(variantProps), props.className)} />
+}

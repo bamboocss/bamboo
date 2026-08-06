@@ -1,6 +1,6 @@
 import type { Context } from '@bamboocss/core'
 import type { RecipeSpec } from '@bamboocss/types'
-import { buildFunctionProps, buildJsxProps, formatFunctionValue, formatJsxValue } from '../shared'
+import { buildFunctionProps, formatFunctionValue } from '../shared'
 
 const getFirstVariantValue = (variantKeyMap: Record<string, string[]>, key: string): string | null => {
   const values = variantKeyMap[key]
@@ -25,33 +25,27 @@ const buildVariantProps = (
 export const generateRecipesSpec = (ctx: Context): RecipeSpec => {
   const recipes = ctx.recipes.details.map((node) => {
     const recipeName = node.baseName
-    const jsxName = node.jsxName
     const variantKeys = Object.keys(node.variantKeyMap)
 
     const functionExamples: string[] = []
-    const jsxExamples: string[] = []
 
     if (variantKeys.length === 0) {
       functionExamples.push(`${recipeName}()`)
-      jsxExamples.push(`<${jsxName} />`)
     } else {
       // Generate examples for each variant key
       variantKeys.forEach((variantKey) => {
         const firstValue = getFirstVariantValue(node.variantKeyMap, variantKey)
         if (firstValue) {
           functionExamples.push(`${recipeName}({ ${variantKey}: ${formatFunctionValue(firstValue)} })`)
-          jsxExamples.push(`<${jsxName} ${variantKey}=${formatJsxValue(firstValue)} />`)
         }
       })
 
       // Generate an example with multiple variants if there are multiple variant keys
       if (variantKeys.length > 1) {
         const props = buildVariantProps(variantKeys, node.variantKeyMap, buildFunctionProps, ', ')
-        const jsxProps = buildVariantProps(variantKeys, node.variantKeyMap, buildJsxProps, ' ')
 
-        if (props && jsxProps) {
+        if (props) {
           functionExamples.push(`${recipeName}({ ${props} })`)
-          jsxExamples.push(`<${jsxName} ${jsxProps} />`)
         }
       }
     }
@@ -62,7 +56,6 @@ export const generateRecipesSpec = (ctx: Context): RecipeSpec => {
       variants: node.variantKeyMap,
       defaultVariants: node.config.defaultVariants ?? {},
       functionExamples,
-      jsxExamples,
     }
   })
 

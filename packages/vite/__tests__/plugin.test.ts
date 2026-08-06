@@ -119,17 +119,15 @@ describe('generated output', () => {
 })
 
 /**
- * `jsx` and `partial` are documented escape hatches, and for a while they existed only on
- * the internal `FoldOptions` — the plugin accepted them in a user's config and silently
- * folded anyway. These assert the option a user writes is the option the fold receives.
+ * `partial` is a documented escape hatch, and for a while it existed only on the internal
+ * `FoldOptions` — the plugin accepted it in a user's config and silently folded anyway.
+ * This asserts the option a user writes is the option the fold receives.
  *
- * Needs a real config, since nothing folds without one; `sandbox/codegen` has one, with
- * `jsxFramework: 'react'` so the element surface is live.
+ * Needs a real config, since nothing folds without one; `sandbox/codegen` has one.
  */
 describe('fold toggles', () => {
   const cwd = join(dirname(fileURLToPath(import.meta.url)), '../../../sandbox/codegen')
 
-  const ELEMENT = `import { styled } from 'styled-system/jsx'\nexport const El = () => <styled.div color="red.300" />\n`
   const PARTIAL = `import { css } from 'styled-system/css'\nexport const cls = (pad: string) => css({ color: 'red.300', padding: pad })\n`
 
   const fold = async (options: Parameters<typeof bamboocss>[0], code: string, file: string) => {
@@ -141,11 +139,6 @@ describe('fold toggles', () => {
 
     return typeof result === 'object' && result !== null ? result.code : null
   }
-
-  test('jsx: false leaves elements alone, and null means untouched', async () => {
-    expect(await fold({}, ELEMENT, 'src/toggle-jsx-on.tsx')).toContain('<div')
-    expect(await fold({ jsx: false }, ELEMENT, 'src/toggle-jsx-off.tsx')).toBeNull()
-  })
 
   test('partial: false declines a call the split would have folded', async () => {
     expect(await fold({}, PARTIAL, 'src/toggle-partial-on.tsx')).toContain('c_red.300')

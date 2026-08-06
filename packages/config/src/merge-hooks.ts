@@ -69,20 +69,6 @@ const reducers = {
 
     return content
   }),
-  'parser:preprocess': createReducer<'parser:preprocess'>((fns) => (_args) => {
-    const args = Object.assign({}, _args)
-    const original = _args.data
-    let data = args.data
-
-    for (const hookFn of fns) {
-      const result = hookFn(Object.assign(args, { data, original }))
-      if (result !== undefined) {
-        data = result
-      }
-    }
-
-    return data
-  }),
   'cssgen:done': createReducer<'cssgen:done'>((fns) => (_args) => {
     const args = Object.assign({}, _args)
     const original = _args.content
@@ -145,7 +131,6 @@ const reducers = {
 const syncHooks: Array<keyof BambooHooks> = [
   'context:created',
   'parser:before',
-  'parser:preprocess',
   'parser:after',
   'cssgen:done',
   'css:optimize',

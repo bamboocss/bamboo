@@ -398,25 +398,22 @@ css({ _hover: { color: on ? 'red' : 'blue' }, padding: '4' }) // a ternary insid
 css(base, { padding: '4' }) //                               operands with no shared key
 css([base, { padding: '4' }]) //                             the same, as an array
 stack({ gap: '4' }) //                                       a pattern, resolved end to end
-<styled.div color="red" padding="4" css={{ fontSize: 'xl' }} /> // an element, resolved end to end
 ```
 
 A call site drops back to atomic when the build cannot name the call the runtime will make:
 
-| shape                                                                        | why                                                                        |
-| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `css({ color: props.tone, padding: '4' })`                                   | a value it cannot evaluate                                                 |
-| `css({ ...props.styles, color: 'red' })`                                     | a spread or computed key, so it cannot say what the call sets              |
-| `css({ color: { base: 'red' } }, { color: { _hover: 'blue' } })`             | two arguments setting one property: a merge it cannot tell from a ternary  |
-| a call whose ternaries multiply out past 32 combinations                     | more branches than it will enumerate                                       |
-| `<styled.div color={on ? 'red' : 'blue'} padding="2" />`                     | only `css()` enumerates branches; an element encodes what it was given     |
-| `stack({ gap: on ? '2' : '4', padding: '2' })`                               | the same, for a pattern                                                    |
-| `styled(Component, cvaConfig)`, `createStyleContext`                         | the component's runtime merges its own styles in, out of the build's sight |
-| a config-recipe element with style props, a `css` prop or a compound variant | the same merge, inside the recipe's factory                                |
+| shape                                                            | why                                                                       |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `css({ color: props.tone, padding: '4' })`                       | a value it cannot evaluate                                                |
+| `css({ ...props.styles, color: 'red' })`                         | a spread or computed key, so it cannot say what the call sets             |
+| `css({ color: { base: 'red' } }, { color: { _hover: 'blue' } })` | two arguments setting one property: a merge it cannot tell from a ternary |
+| a call whose ternaries multiply out past 32 combinations         | more branches than it will enumerate                                      |
+| `stack({ gap: on ? '2' : '4', padding: '2' })`                   | only `css()` enumerates branches; a pattern encodes what it was given     |
+| a config-recipe element with a compound variant                  | the recipe's runtime merges its own styles in, out of the build's sight   |
 
-Every `css()` row there warns, with a file and line and what to change. The rows below them do not: a conditional style
-prop is ordinary code, and warning on each one would be noise rather than a signal. Reach for `css()` at those call
-sites if the extra classes matter to you.
+Every `css()` row there warns, with a file and line and what to change. The rows below them do not: a conditional
+pattern prop is ordinary code, and warning on each one would be noise rather than a signal. Reach for `css()` at those
+call sites if the extra classes matter to you.
 
 <Callout type="warning">
   [`staticCss`](/docs/guides/static) is not a workaround for a degraded call. It enumerates atoms — one rule per
@@ -502,8 +499,7 @@ The output directory for the generated css.
 
 **Type**: `string | Partial<OutdirImportMap>`
 
-**Default**:
-`{ "css": "styled-system/css", "recipes": "styled-system/recipes", "patterns": "styled-system/patterns", "jsx": "styled-system/jsx" }`
+**Default**: `{ "css": "styled-system/css", "recipes": "styled-system/recipes", "patterns": "styled-system/patterns" }`
 
 Allows you to customize the import paths for the generated outdir.
 
@@ -512,8 +508,7 @@ Allows you to customize the import paths for the generated outdir.
   "importMap": {
     "css": "@acme/styled-system",
     "recipes": "@acme/styled-system",
-    "patterns": "@acme/styled-system",
-    "jsx": "@acme/styled-system"
+    "patterns": "@acme/styled-system"
   }
 }
 ```
@@ -533,8 +528,7 @@ is the equivalent of:
   "importMap": {
     "css": "@scope/styled-system/css",
     "recipes": "@scope/styled-system/recipes",
-    "patterns": "@scope/styled-system/patterns",
-    "jsx": "@scope/styled-system/jsx"
+    "patterns": "@scope/styled-system/patterns"
   }
 }
 ```
@@ -1055,70 +1049,6 @@ Global font face definitions.
 
 Check out the [Custom Fonts](/docs/guides/fonts#global-font-face) guide for more information on how to use the
 `globalFontface` option.
-
-## JSX options
-
-### jsxFramework
-
-**Type**: `'react' | 'solid' | 'preact' | 'vue' | 'qwik' | (string & {})`
-
-JS Framework for generated JSX elements.
-
-```json
-{
-  "jsxFramework": "react"
-}
-```
-
-### jsxFactory
-
-**Type**: `string`
-
-The factory name of the element
-
-```json
-{
-  "jsxFactory": "bamboo"
-}
-```
-
-Ex:
-
-```tsx
-<bamboo.button marginTop="40px">Click me</bamboo.button>
-```
-
-### jsxStyleProps
-
-**Type**: `all` | `minimal` | `none`
-
-**Default**: `all`
-
-The style props allowed on generated JSX components
-
-- When set to 'all', all style props are allowed.
-- When set to 'minimal', only the `css` prop is allowed.
-- When set to 'none', no style props are allowed and therefore the `jsxFactory` will not be usable as a component:
-  - `<styled.div />` and `styled("div")` aren't valid
-  - but the recipe usage is still valid `styled("div", { base: { color: "red.300" }, variants: { ...} })`
-
-Ex with 'all':
-
-```jsx
-<styled.button marginTop="40px">Click me</styled.button>
-```
-
-Ex with 'minimal':
-
-```jsx
-<styled.button css={{ marginTop: '40px' }}>Click me</styled.button>
-```
-
-Ex with 'none':
-
-```jsx
-<button className={css({ marginTop: '40px' })}>Click me</button>
-```
 
 ## Diagnostics options
 

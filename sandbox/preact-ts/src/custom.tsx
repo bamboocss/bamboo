@@ -1,5 +1,4 @@
-import { sva } from '../styled-system/css'
-import { createStyleContext } from '../styled-system/jsx'
+import { cx, sva } from '../styled-system/css'
 import { custom } from '../styled-system/recipes'
 
 const _custom = sva({
@@ -33,7 +32,12 @@ const _custom = sva({
   },
 })
 
-const { withProvider, withContext } = createStyleContext(custom)
+const styles = custom({ size: 'sm' })
 
-export const Root = withProvider('div', 'root')
-export const Label = withContext('label', 'label')
+export const Root = ({ className, ...props }: React.ComponentProps<'div'>) => (
+  <div {...props} className={cx(styles.root, 'group', className)} />
+)
+
+export const Label = ({ className, ...props }: React.ComponentProps<'label'>) => (
+  <label {...props} className={cx(styles.label, 'group__item', className)} />
+)

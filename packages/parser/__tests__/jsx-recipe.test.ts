@@ -80,20 +80,10 @@ describe('recipe jsx', () => {
                   "type": "literal",
                   "value": "sm",
                 },
-                "mt" => {
-                  "column": 37,
-                  "endColumn": 43,
-                  "endLineNumber": 12,
-                  "line": 12,
-                  "node": "StringLiteral",
-                  "type": "literal",
-                  "value": "40px",
-                },
               },
             },
             "data": [
               {
-                "mt": "40px",
                 "size": "sm",
               },
             ],
@@ -232,41 +222,6 @@ describe('recipe jsx', () => {
           ],
           "name": "Tabs.Root",
           "type": "jsx-recipe",
-        },
-        {
-          "data": [
-            {},
-          ],
-          "name": "Tabs.List",
-          "type": "jsx",
-        },
-        {
-          "data": [
-            {},
-          ],
-          "name": "Tabs.Trigger",
-          "type": "jsx",
-        },
-        {
-          "data": [
-            {},
-          ],
-          "name": "Tabs.Trigger",
-          "type": "jsx",
-        },
-        {
-          "data": [
-            {},
-          ],
-          "name": "Tabs.Trigger",
-          "type": "jsx",
-        },
-        {
-          "data": [
-            {},
-          ],
-          "name": "Tabs.Indicator",
-          "type": "jsx",
         },
       ]
     `)

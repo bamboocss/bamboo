@@ -37,7 +37,7 @@ const cssImport = (name: string, alias = name): ImportResult => ({
 })
 
 /** Memoized instance methods, built once per file whatever the imports are. */
-const MEMOIZED_METHODS = 6
+const MEMOIZED_METHODS = 5
 /**
  * Matchers built while assigning aliases: the css barrel and tokens eagerly, plus recipes
  * and patterns, which are lazy but which the alias loop always reaches on its first

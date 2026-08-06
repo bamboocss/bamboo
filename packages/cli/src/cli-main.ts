@@ -52,7 +52,6 @@ export async function main() {
     .option('--no-codegen', "Don't run the codegen logic")
     .option('--out-extension <ext>', "The extension of the generated js files (default: 'mjs')")
     .option('--outdir <dir>', 'The output directory for the generated files')
-    .option('--jsx-framework <framework>', 'The jsx framework to use')
     .option('--strict-tokens', 'Using strictTokens: true')
     .option('--logfile <file>', 'Outputs logs to a file')
     .action(async (initFlags: Partial<InitCommandFlags> = {}) => {
@@ -64,7 +63,7 @@ export async function main() {
 
       const flags = { ...initFlags, ...options }
 
-      const { force, postcss, silent, gitignore, outExtension, jsxFramework, config: configPath } = flags
+      const { force, postcss, silent, gitignore, outExtension, config: configPath } = flags
 
       const cwd = resolve(flags.cwd ?? '')
 
@@ -87,7 +86,6 @@ export async function main() {
         compact({
           force,
           outExtension,
-          jsxFramework,
           outdir: flags.outdir,
         }),
       )
@@ -529,10 +527,6 @@ export async function main() {
 
       if (!ctx.recipes.isEmpty()) {
         exports.push(['./recipes', createEntry('recipes')])
-      }
-
-      if (!ctx.patterns.isEmpty()) {
-        exports.push(['./jsx', createEntry('jsx')])
       }
 
       if (ctx.config.themes) {

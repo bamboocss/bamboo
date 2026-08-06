@@ -51,7 +51,6 @@ export default defineConfig({
       },
     },
   },
-  jsxFramework: 'react',
   globalCss: {
     '*': {
       fontFamily: 'Inter',

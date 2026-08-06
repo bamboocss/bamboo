@@ -105,8 +105,6 @@ export const docsNavigation: NavItem = {
         { title: 'Patterns', url: 'patterns' },
         { title: 'Recipes', url: 'recipes' },
         { title: 'Slot Recipes', url: 'slot-recipes' },
-        { title: 'JSX Style Props', url: 'style-props' },
-        { title: 'JSX Style Context', url: 'jsx-style-context' },
         { title: 'Color opacity modifier', url: 'color-opacity-modifier' },
         { title: 'Hooks', url: 'hooks' },
         { title: 'Styled System', url: 'styled-system' },

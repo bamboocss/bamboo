@@ -50,7 +50,6 @@ export const generatePatternsSpec = (ctx: Context): PatternSpec => {
         defaultValue: defaultValues[name],
       })),
       functionExamples,
-      jsxExamples: [],
     }
   })
 

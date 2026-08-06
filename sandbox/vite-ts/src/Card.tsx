@@ -1,5 +1,4 @@
-import { cva } from '../styled-system/css'
-import { bamboo } from '../styled-system/jsx'
+import { cva, cx, type RecipeVariantProps } from '../styled-system/css'
 
 const card = cva({
   base: {
@@ -52,4 +51,9 @@ const card = cva({
   ],
 })
 
-export const Card = bamboo('section', card)
+type CardProps = RecipeVariantProps<typeof card> & React.ComponentProps<'section'>
+
+export const Card = (props: CardProps) => {
+  const [variantProps, rest] = card.splitVariantProps(props)
+  return <section {...rest} className={cx(card(variantProps), props.className)} />
+}

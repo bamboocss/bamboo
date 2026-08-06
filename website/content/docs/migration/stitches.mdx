@@ -101,12 +101,12 @@ const Button = styled('button', {
 })
 ```
 
-In Bamboo, the base styles object needs to added to the `base` key.
+In Bamboo, the base styles object needs to added to the `base` key of a `cva`.
 
 ```tsx
-import { styled } from '../styled-system/jsx'
+import { cva } from '../styled-system/css'
 
-const Button = styled('button', {
+const button = cva({
   // base styles
   base: {
     backgroundColor: 'gainsboro',
@@ -129,12 +129,12 @@ const Button = styled('button', {})
 
 In Bamboo, you can decide if you want unique classNames for the recipe or you want atomic classNames.
 
-- **Atomic classes** using the `cva` function or defining the recipe inline in the `styled` function
+- **Atomic classes** using the `cva` function
 
 ```tsx
-import { styled } from '../styled-system/jsx'
+import { cva } from '../styled-system/css'
 
-const Button = styled('button', {
+const button = cva({
   base: {
     backgroundColor: 'gainsboro',
     borderRadius: '9999px',
@@ -174,14 +174,8 @@ export default defineConfig({
 > You might need to run `bamboo codegen --clean` to generate the recipe functions.
 
 ```tsx
-import { styled } from '../styled-system/jsx'
 import { buttonStyle } from '../styled-system/recipes'
-
-// create a styled component using the recipe function
-const Button = styled('button', buttonStyle)
-
-// or you can use directly in the JSX
-<button className={buttonStyle({ variant: 'primary' })}>Button</button>
+;<button className={buttonStyle({ variant: 'primary' })}>Button</button>
 
 // => <button className="button button--variant-primary">Button</button>
 ```
@@ -390,13 +384,11 @@ In Bamboo, there's no special syntax, you need to use the css variable syntax. C
 tokens directly using dot notation
 
 ```ts
-import { styled } from '../styled-system/jsx'
+import { css } from '../styled-system/css'
 
-const Button = styled('button', {
-  base: {
-    '--shadowColor': 'colors.pink500',
-    boxShadow: '0 0 0 15px var(--shadowColor)',
-  },
+const button = css({
+  '--shadowColor': 'colors.pink500',
+  boxShadow: '0 0 0 15px var(--shadowColor)',
 })
 ```
 

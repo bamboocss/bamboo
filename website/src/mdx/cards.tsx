@@ -1,5 +1,4 @@
 import { css, cx } from '@/styled-system/css'
-import { bamboo } from '@/styled-system/jsx'
 import { grid, hstack, stack } from '@/styled-system/patterns'
 import { LuChevronRight } from 'react-icons/lu'
 import { Anchor } from '../components/ui/anchor'
@@ -30,25 +29,25 @@ export const Card = (props: Props) => {
   const animatedArrow = arrow ? <Arrow /> : null
 
   return (
-    <bamboo.div borderWidth="1px" px="6" py="4" rounded="lg">
+    <div className={css({ borderWidth: '1px', px: '6', py: '4', rounded: 'lg' })}>
       <Anchor className="group" href={href}>
         {image || children}
         {icon}
         <span>
           <div className={stack({ gap: '1' })}>
-            <bamboo.span textStyle="lg" fontWeight="semibold">
+            <span className={css({ textStyle: 'lg', fontWeight: 'semibold' })}>
               <span className={hstack()}>
                 {title}
                 {animatedArrow}
               </span>
-            </bamboo.span>
+            </span>
             {description && (
-              <bamboo.span color={{ base: 'neutral.700', _dark: 'neutral.400' }}>{description}</bamboo.span>
+              <span className={css({ color: { base: 'neutral.700', _dark: 'neutral.400' } })}>{description}</span>
             )}
           </div>
         </span>
       </Anchor>
-    </bamboo.div>
+    </div>
   )
 }
 

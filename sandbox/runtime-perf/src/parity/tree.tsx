@@ -1,5 +1,4 @@
-import { css } from '../../styled-system/css'
-import { styled } from '../../styled-system/jsx'
+import { css, cx } from '../../styled-system/css'
 import { box, hstack, stack } from '../../styled-system/patterns'
 
 /**
@@ -9,64 +8,63 @@ import { box, hstack, stack } from '../../styled-system/patterns'
  * which the class-string assertions elsewhere cannot show.
  */
 export const Tree = ({ tone, rest, flag }: { tone: string; rest: Record<string, unknown>; flag: boolean }) => (
-  <styled.div padding="md" backgroundColor="gray100">
-    {/* folds: style props only */}
-    <styled.span color="blue600" fontWeight="bold">
-      plain
-    </styled.span>
+  <div className={css({ padding: 'md', backgroundColor: 'gray100' })}>
+    {/* folds: a static call resolves to a class literal */}
+    <span className={css({ color: 'blue600', fontWeight: 'bold' })}>plain</span>
 
-    {/* folds: non-style props pass through to the DOM */}
-    <styled.button color="white" backgroundColor="blue600" id="cta" data-testid="cta" aria-label="Call to action">
+    {/* folds: non-style props are untouched beside it */}
+    <button
+      className={css({ color: 'white', backgroundColor: 'blue600' })}
+      id="cta"
+      data-testid="cta"
+      aria-label="Call to action"
+    >
       passthrough
-    </styled.button>
+    </button>
 
-    {/* folds: static className is appended where cx would put it */}
-    <styled.p color="gray800" className="prose">
-      classname
-    </styled.p>
+    {/* folds: a static className is joined where cx would put it */}
+    <p className={cx(css({ color: 'gray800' }), 'prose')}>classname</p>
 
     {/* folds: conditions and nested values */}
-    <styled.div color="gray800" _hover={{ color: 'red600' }} fontSize={{ base: 'body', md: 'h4' }}>
+    <div className={css({ color: 'gray800', _hover: { color: 'red600' }, fontSize: { base: 'body', md: 'h4' } })}>
       conditions
-    </styled.div>
+    </div>
 
-    {/* folds: boolean and numeric props */}
-    <styled.div zIndex={10} padding="xs">
-      scalars
-    </styled.div>
+    {/* folds: boolean and numeric values */}
+    <div className={css({ zIndex: 10, padding: 'xs' })}>scalars</div>
 
     {/* folds: nested elements, both levels */}
-    <styled.div padding="xs">
-      <styled.span color="red600">nested</styled.span>
-    </styled.div>
+    <div className={css({ padding: 'xs' })}>
+      <span className={css({ color: 'red600' })}>nested</span>
+    </div>
 
     {/* declines: a responsive array is one class per breakpoint, which no prefix describes */}
-    <styled.div padding={['sm', tone]}>dynamic</styled.div>
+    <div className={css({ padding: ['sm', tone] })}>dynamic</div>
 
-    {/* partially folds: static props become a literal, the dynamic one goes to css() */}
-    <styled.div padding="xs" fontWeight="bold" backgroundColor={tone}>
-      partial element
-    </styled.div>
+    {/* partially folds: the static half becomes a literal, the dynamic one is lowered */}
+    <div className={css({ padding: 'xs', fontWeight: 'bold', backgroundColor: tone })}>partial call</div>
 
     {/* the shape a scalar-only fixture cannot reach: the dynamic leaf is *inside* the
         nested values, not beside them. Folding used to resolve the static leaves and drop
-        the rest, which renders as a styled element missing half its rules. */}
-    <styled.div color="blue600" _hover={{ color: tone }} fontSize={{ base: 'body', md: tone }} padding="xs">
+        the rest, which renders missing half its rules. */}
+    <div
+      className={css({
+        color: 'blue600',
+        _hover: { color: tone },
+        fontSize: { base: 'body', md: tone },
+        padding: 'xs',
+      })}
+    >
       partial with a dynamic leaf
-    </styled.div>
+    </div>
 
-    {/* declines: spread */}
-    <styled.div color="green600" {...rest}>
+    {/* declines: a spread leaves the build unable to say which properties the call sets */}
+    <div className={css({ color: 'green600', ...rest })} title="spread title">
       spread
-    </styled.div>
+    </div>
 
-    {/* folds: a static as prop names the tag */}
-    <styled.div as="section" color="yellow600">
-      as
-    </styled.div>
-
-    {/* declines: css prop */}
-    <styled.div css={{ color: 'gray600' }}>css prop</styled.div>
+    {/* folds: the tag is written out, so any element can carry the class */}
+    <section className={css({ color: 'yellow600' })}>as</section>
 
     {/* folds: a pattern call site resolves to its class string */}
     <div className={stack({ gap: 'sm' })}>
@@ -100,5 +98,5 @@ export const Tree = ({ tone, rest, flag }: { tone: string; rest: Record<string, 
     <div className={css({ padding: 'xs', mx: flag ? 'xs' : 'sm', marginInline: flag ? 'md' : 'xxs' })}>
       colliding branches
     </div>
-  </styled.div>
+  </div>
 )

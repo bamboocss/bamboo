@@ -61,12 +61,6 @@ export function recipeParser(code: string) {
   return data.recipe
 }
 
-export function jsxParser(code: string) {
-  const project = getProject(code, { jsxFramework: 'react' })
-  const data = project.parseSourceFile(filePath)!
-  return data.jsx
-}
-
 export function patternParser(code: string) {
   const project = getProject(code, {
     patterns: {

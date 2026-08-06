@@ -3,13 +3,12 @@ import type { BoxNodeArray, BoxNodeLiteral, BoxNodeMap, Unboxed } from '@bambooc
 export interface ResultItem {
   name?: string
   data: Array<Unboxed['raw']>
-  type?: 'css' | 'cva' | 'sva' | 'token' | 'pattern' | 'recipe' | 'jsx-factory' | 'jsx-recipe' | 'jsx'
+  type?: 'css' | 'cva' | 'sva' | 'token' | 'pattern' | 'recipe' | 'jsx-recipe'
   box?: BoxNodeMap | BoxNodeLiteral | BoxNodeArray
 }
 
 export interface ParserResultInterface {
   all: Array<ResultItem>
-  jsx: Set<ResultItem>
   css: Set<ResultItem>
   cva: Set<ResultItem>
   sva: Set<ResultItem>
@@ -26,7 +25,6 @@ export interface ParserResultInterface {
   setSva: (result: ResultItem) => void
   setToken: (result: ResultItem) => void
   setViewTransition: (result: ResultItem) => void
-  setJsx: (result: ResultItem) => void
   setPattern: (name: string, result: ResultItem) => void
   setRecipe: (name: string, result: ResultItem) => void
 }

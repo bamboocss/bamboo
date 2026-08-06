@@ -10,7 +10,7 @@ import { getArbitraryValue } from '@bamboocss/shared'
 //* This test is just to ensure that the plugin correctly recognises bamboo in various kinds of code.
 
 const imports = `import { css } from './bamboo/css';
-import { styled } from './bamboo/jsx';\n\n`
+import { css } from './bamboo/css';\n\n`
 
 // ? For testing correct parsing
 
@@ -21,9 +21,6 @@ const valids = [
   { code: 'const randomFunc = f({ debug: true })' },
   { code: '<NonBambooComponent debug={true} />' },
   { code: '<NonBambooComponent debug={true}>content</NonBambooComponent>' },
-  {
-    code: `const BambooComp = styled(div); function App(){ const a = 1;  return (<BambooComp someProp={{ debug: true }} />)}`,
-  },
 ]
 
 const invalids = [
@@ -39,20 +36,9 @@ const invalids = [
   {
     code: 'const styles = css({ bg: "red", "&:hover": { "&:disabled": { debug: true } } })',
   },
-  { code: '<styled.div debug />' },
-  { code: '<styled.div debug={true} />' },
-  { code: '<styled.div css={{ debug: true }} />' },
-  { code: '<styled.div css={{ "&:hover": { debug: true } }} />' },
-  { code: '<styled.div _hover={{ debug: true }} />' },
-  {
-    code: `const BambooComp = styled(div); <BambooComp css={{ debug: true }} />`,
-  },
-  {
-    code: `function App() {
-  const BambooComp = styled(div);
-  return <BambooComp css={{ debug: true }} />;
-}`,
-  },
+  { code: '<div className={css({ debug: true })} />' },
+  { code: '<div className={css({ "&:hover": { debug: true } })} />' },
+  { code: '<div className={css({ _hover: { debug: true } })} />' },
 ]
 
 eslintTester.run(RULE_NAME, rule as any, {
@@ -71,13 +57,17 @@ const valids2 = [
   'const styles = css({ bg: `red` })',
   'const styles = css({ bg: 1 })',
   'const styles = css({ debug: true })',
-  '<styled.div debug={true} />',
-  '<styled.div color={"red"} />',
-  '<styled.div color={`red`} />',
-  '<styled.div _hover={{ bg: "red.100" }} />',
+  '<div className={css({ debug: true })} />',
+  '<div className={css({ color: "red" })} />',
+  '<div className={css({ color: `red` })} />',
+  '<div className={css({ _hover: { bg: "red.100" } })} />',
 ]
 
-const invalids2 = ['const styles = css({ bg: color })', '<styled.div debug={bool} />', '<styled.div color={color} />']
+const invalids2 = [
+  'const styles = css({ bg: color })',
+  '<div className={css({ debug: bool })} />',
+  '<div className={css({ color: color })} />',
+]
 
 eslintTester.run(RULE_NAME2, rule2 as any, {
   invalid: invalids2.map((code) => ({
@@ -113,7 +103,7 @@ const valids3 = [
       gridTemplateColumns: \`${getArbitraryValue(namedGridLines)}\`,
     });
     `,
-  `<styled.div gridTemplateColumns={\`${getArbitraryValue(namedGridLines)}\`} />`,
+  `<div className={css({ gridTemplateColumns: \`${getArbitraryValue(namedGridLines)}\` })} />`,
 ]
 
 const invalids3 = [
@@ -125,7 +115,7 @@ const invalids3 = [
   `,
   },
   {
-    code: `<styled.div gridTemplateColumns={\`${namedGridLines}\`} />`,
+    code: `<div className={css({ gridTemplateColumns: \`${namedGridLines}\` })} />`,
   },
 ]
 
@@ -144,7 +134,7 @@ eslintTester.run(RULE_NAME3, rule3 as any, {
 
 const imports4 = `import { css } from './bamboo/css';
 import { token as tk } from './bamboo/tokens'
-import { styled } from './bamboo/jsx';\n\n`
+import { css } from './bamboo/css';\n\n`
 
 const valids4 = [
   'const styles = css({ bg: "token(colors.red.300) 50%" })',
@@ -159,7 +149,7 @@ const invalids4 = [
     code: 'const styles = css({ bg: tk(`colors.red.300`) })',
   },
 
-  { code: '<styled.div bg={tk("colors.red.300")} />' },
+  { code: '<div className={css({ bg: tk("colors.red.300") })} />' },
 ]
 
 eslintTester.run(RULE_NAME4, rule4 as any, {
@@ -175,13 +165,10 @@ eslintTester.run(RULE_NAME4, rule4 as any, {
 
 // ? Testing token paths in template literals syntax
 
-const imports5 = `import { css } from './bamboo/css';
-import { styled } from './bamboo/jsx';\n\n`
+const imports5 = `import { css } from './bamboo/css';\n\n`
 
 const valids5 = [
   'const className = css`\n  font-size: {fontSizes.md};`',
-  'const className = styled.h1`\n  font-size: {fontSizes.md};`',
-  'const className = styled(Wrapper)`\n  font-size: {fontSizes.md};`',
   `const className = css\`\n  
     @media (min-width: token(breakpoints.lg)) {
       grid-template-columns: auto 450px;
@@ -189,14 +176,8 @@ const valids5 = [
   \``,
 ]
 
-const invalids5 = [
+const invalids5: Array<{ code: string; errors?: number }> = [
   { code: 'const className = css`\n  font-size: {fontSizes.emd};`' },
-  { code: 'const Heading = styled.h1`\n  font-size: {fontSizes.emd};`' },
-  { code: 'const Comp = styled(Wrapper)`\n  font-size: {fontSizes.emd};`' },
-  {
-    code: 'const Comp = styled(Wrapper)`\n  margin: {sizess.4} {sizes.f4};`',
-    errors: 2,
-  },
 ]
 
 eslintTester.run(RULE_NAME5, rule5 as any, {

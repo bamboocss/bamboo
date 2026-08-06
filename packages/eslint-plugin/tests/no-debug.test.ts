@@ -52,22 +52,22 @@ eslintTester.run(RULE_NAME, rule, {
 
     {
       code: multiline`
-  import { styled } from './bamboo/jsx';
+  import { css } from './bamboo/css';
   
   function App(){
-    return <styled.div _hover={{ position: 'absolute' }} debug />;
+    return <div className={css({ _hover: { position: 'absolute' }, debug: true })} />;
   }`,
       errors: [
         {
           messageId: 'debug',
           suggestions: [
             {
-              messageId: 'prop',
+              messageId: 'property',
               output: multiline`
-  import { styled } from './bamboo/jsx';
+  import { css } from './bamboo/css';
   
   function App(){
-    return <styled.div _hover={{ position: 'absolute' }}  />;
+    return <div className={css({ _hover: { position: 'absolute' }, })} />;
   }`,
             },
           ],
@@ -94,10 +94,10 @@ eslintTester.run(RULE_NAME, rule, {
 
     {
       code: multiline`
-  import { styled } from './bamboo/jsx';
+  import { css } from './bamboo/css';
   
   function App(){
-    return <styled.div _hover={{ position: 'absolute' }} />;
+    return <div className={css({ _hover: { position: 'absolute' } })} />;
   }`,
     },
   ],

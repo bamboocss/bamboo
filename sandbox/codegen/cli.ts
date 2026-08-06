@@ -4,20 +4,7 @@ import cac from 'cac'
 import { spawn } from 'child_process'
 
 const cli = cac('sct')
-const scenarioList = [
-  'preact',
-  'qwik',
-  'react',
-  'solid',
-  'vue',
-  'strict-tokens',
-  'strict-property-values',
-  'strict',
-  'jsx-minimal',
-  'jsx-none',
-  'format-names',
-  'grouped',
-]
+const scenarioList = ['strict-tokens', 'strict-property-values', 'strict', 'format-names', 'grouped']
 
 const isValidScenario = (scenario) => {
   if (!scenarioList.includes(scenario)) {

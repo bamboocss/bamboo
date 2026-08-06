@@ -2,7 +2,7 @@ import type { Config } from '@bamboocss/types'
 
 export interface InitCommandFlags extends Pick<
   Config,
-  'jsxFramework' | 'cwd' | 'poll' | 'watch' | 'gitignore' | 'outExtension' | 'outdir'
+  'cwd' | 'poll' | 'watch' | 'gitignore' | 'outExtension' | 'outdir'
 > {
   force?: boolean
   postcss?: boolean

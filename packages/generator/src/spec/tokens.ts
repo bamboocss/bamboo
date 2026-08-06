@@ -11,8 +11,6 @@ import type {
 import { generateTokenExamples } from './token-examples'
 
 export const generateTokensSpec = (ctx: Context): TokenSpec => {
-  const jsxStyleProps = ctx.config.jsxStyleProps
-
   // Create grouped data structure using tokens.view.categoryMap
   const groupedData: TokenGroupDefinition[] = Array.from(ctx.tokens.view.categoryMap.entries())
     .map(([category, tokenMap]) => {
@@ -30,7 +28,7 @@ export const generateTokensSpec = (ctx: Context): TokenSpec => {
 
       // Get examples from first token of this type (they'll be the same for all)
       const firstToken = typeTokens[0]
-      const { functionExamples, tokenFunctionExamples, jsxExamples } = generateTokenExamples(firstToken, jsxStyleProps)
+      const { functionExamples, tokenFunctionExamples } = generateTokenExamples(firstToken)
 
       const values: TokenValue[] = typeTokens.map((token) => ({
         name: token.extensions.prop || token.name,
@@ -45,7 +43,6 @@ export const generateTokensSpec = (ctx: Context): TokenSpec => {
         values,
         tokenFunctionExamples,
         functionExamples,
-        jsxExamples,
       }
     })
     .filter(Boolean) as TokenGroupDefinition[]
@@ -57,8 +54,6 @@ export const generateTokensSpec = (ctx: Context): TokenSpec => {
 }
 
 export const generateSemanticTokensSpec = (ctx: Context): SemanticTokenSpec => {
-  const jsxStyleProps = ctx.config.jsxStyleProps
-
   // Create grouped data structure using tokens.view.categoryMap
   const groupedData: SemanticTokenGroupDefinition[] = Array.from(ctx.tokens.view.categoryMap.entries())
     .map(([category, tokenMap]) => {
@@ -72,7 +67,7 @@ export const generateSemanticTokensSpec = (ctx: Context): SemanticTokenSpec => {
 
       // Get examples from first token of this type
       const firstToken = typeTokens[0]
-      const { functionExamples, tokenFunctionExamples, jsxExamples } = generateTokenExamples(firstToken, jsxStyleProps)
+      const { functionExamples, tokenFunctionExamples } = generateTokenExamples(firstToken)
 
       const values: SemanticTokenValue[] = typeTokens.map((token) => {
         const conditions: Array<{ value: string; condition?: string }> = []
@@ -95,7 +90,6 @@ export const generateSemanticTokensSpec = (ctx: Context): SemanticTokenSpec => {
         values,
         tokenFunctionExamples,
         functionExamples,
-        jsxExamples,
       }
     })
     .filter(Boolean) as SemanticTokenGroupDefinition[]

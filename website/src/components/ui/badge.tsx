@@ -1,6 +1,6 @@
-import { bamboo } from '@/styled-system/jsx'
+import { cva, cx, type RecipeVariantProps } from '@/styled-system/css'
 
-export const Badge = bamboo('span', {
+const badgeRecipe = cva({
   base: {
     fontWeight: 'medium',
     fontSize: '11px',
@@ -25,3 +25,10 @@ export const Badge = bamboo('span', {
     variant: 'outline',
   },
 })
+
+type BadgeProps = RecipeVariantProps<typeof badgeRecipe> & React.ComponentProps<'span'>
+
+export const Badge = (props: BadgeProps) => {
+  const [variantProps, rest] = badgeRecipe.splitVariantProps(props)
+  return <span {...rest} className={cx(badgeRecipe(variantProps), props.className)} />
+}

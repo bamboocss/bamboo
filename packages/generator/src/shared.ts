@@ -4,10 +4,8 @@ import type { AnimationStyleSpec, LayerStyleSpec, TextStyleSpec } from '@bambooc
 export const isBooleanValue = (value: string) => value === 'true' || value === 'false'
 
 export const formatFunctionValue = (value: string): string => (isBooleanValue(value) ? value : `'${value}'`)
-export const formatJsxValue = (value: string): string => (isBooleanValue(value) ? `{${value}}` : `"${value}"`)
 
 export const buildFunctionProps = (key: string, value: string) => `${key}: ${formatFunctionValue(value)}`
-export const buildJsxProps = (key: string, value: string) => `${key}=${formatJsxValue(value)}`
 
 export interface FormatPropsOptions {
   keyValueSeparator?: string
@@ -22,11 +20,6 @@ export const formatProps = (props: Record<string, string | null | undefined>, op
     .filter(([_, value]) => value != null)
     .map(([key, value]) => `${key}${keyValueSeparator}${quote}${value}${quote}`)
     .join(propSeparator)
-}
-
-const formatJsxComponent = (component: string, props: Record<string, string | null | undefined>) => {
-  const formattedProps = formatProps(props, { keyValueSeparator: '=', propSeparator: ' ', quoteStyle: 'double' })
-  return `<${component}${formattedProps ? ' ' + formattedProps : ''} />`
 }
 
 const collectCompositionStyles = (values: Record<string, any>): Array<{ name: string; description?: string }> => {
@@ -51,44 +44,6 @@ const collectCompositionStyles = (values: Record<string, any>): Array<{ name: st
   return result
 }
 
-export type JsxStyleProps = 'all' | 'minimal' | 'none'
-
-/**
- * Generates a single JSX example based on jsxStyleProps setting
- */
-export const generateJsxExample = (
-  props: Record<string, string | null | undefined>,
-  jsxStyleProps: JsxStyleProps = 'all',
-  component = 'Box',
-): string | null => {
-  if (jsxStyleProps === 'all') {
-    return formatJsxComponent(component, props)
-  }
-  if (jsxStyleProps === 'minimal') {
-    return `<${component} css={{ ${formatProps(props)} }} />`
-  }
-  return null
-}
-
-/**
- * Generates function and JSX examples for a style property
- */
-const generateJsxExamples = (
-  props: Record<string, string | null | undefined>,
-  jsxStyleProps: JsxStyleProps = 'all',
-  component = 'Box',
-): { functionExamples: string[]; jsxExamples: string[] } => {
-  const functionExamples = [`css({ ${formatProps(props)} })`]
-  const jsxExamples: string[] = []
-
-  const jsxExample = generateJsxExample(props, jsxStyleProps, component)
-  if (jsxExample) {
-    jsxExamples.push(jsxExample)
-  }
-
-  return { functionExamples, jsxExamples }
-}
-
 export type CompositionStyleType = 'text-styles' | 'layer-styles' | 'animation-styles'
 
 const COMPOSITION_STYLE_CONFIG: Record<CompositionStyleType, { prop: string; themeKey: string }> = {
@@ -106,7 +61,6 @@ type CompositionStyleSpec<T extends CompositionStyleType> = T extends 'text-styl
 export function generateCompositionStyleSpec<T extends CompositionStyleType>(
   type: T,
   theme: Record<string, any> | undefined,
-  jsxStyleProps?: JsxStyleProps,
 ): CompositionStyleSpec<T> {
   const { prop, themeKey } = COMPOSITION_STYLE_CONFIG[type]
   const styles = collectCompositionStyles(theme?.[themeKey] ?? {})
@@ -114,7 +68,7 @@ export function generateCompositionStyleSpec<T extends CompositionStyleType>(
   const data = styles.map((style) => ({
     name: style.name,
     description: style.description,
-    ...generateJsxExamples({ [prop]: style.name }, jsxStyleProps),
+    functionExamples: [`css({ ${formatProps({ [prop]: style.name })} })`],
   }))
 
   return { type, data } as CompositionStyleSpec<T>

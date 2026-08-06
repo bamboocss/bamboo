@@ -1,6 +1,6 @@
 import type { Context } from '@bamboocss/core'
 import type { ColorPaletteSpec } from '@bamboocss/types'
-import { formatProps, generateJsxExample } from '../shared'
+import { formatProps } from '../shared'
 
 const getColorPaletteExampleValues = (ctx: Context, paletteValues: string[]) => {
   const examplePalette = paletteValues[0]
@@ -28,7 +28,6 @@ export const generateColorPaletteSpec = (ctx: Context): ColorPaletteSpec | null 
     return null
   }
 
-  const jsxStyleProps = ctx.config.jsxStyleProps
   const values = Array.from(ctx.tokens.view.colorPalettes.keys()).sort()
 
   // If there are no color palettes, don't emit the spec
@@ -40,26 +39,15 @@ export const generateColorPaletteSpec = (ctx: Context): ColorPaletteSpec | null 
   const { examplePalette, bgToken, colorToken } = getColorPaletteExampleValues(ctx, values)
 
   const functionExamples: string[] = []
-  const jsxExamples: string[] = []
 
   // Basic example with just colorPalette
   const basicProps = { colorPalette: examplePalette }
   functionExamples.push(`css({ ${formatProps(basicProps)} })`)
 
-  const basicJsx = generateJsxExample(basicProps, jsxStyleProps)
-  if (basicJsx) {
-    jsxExamples.push(basicJsx)
-  }
-
   // Extended example with bg and color tokens
   if (bgToken || colorToken) {
     const extendedProps = { colorPalette: examplePalette, bg: bgToken, color: colorToken }
     functionExamples.push(`css({ ${formatProps(extendedProps)} })`)
-
-    const extendedJsx = generateJsxExample(extendedProps, jsxStyleProps)
-    if (extendedJsx) {
-      jsxExamples.push(extendedJsx)
-    }
   }
 
   return {
@@ -67,7 +55,6 @@ export const generateColorPaletteSpec = (ctx: Context): ColorPaletteSpec | null 
     data: {
       values,
       functionExamples,
-      jsxExamples,
     },
   }
 }

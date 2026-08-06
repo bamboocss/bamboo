@@ -68,47 +68,6 @@ buttonStyle({ size: 'sm' })
 <div className={css({ px: '4' })} />
 ```
 
-### JSX elements
-
-A `styled.*` element collapses to the intrinsic tag it renders:
-
-```tsx
-// you write
-<styled.div color="red.300" onClick={fn}>hi</styled.div>
-
-// the bundle gets
-<div onClick={fn} className={"c_red.300"}>hi</div>
-```
-
-This is the one that matters most at runtime. The factory runs `splitProps`, `css()` and `cx` for every element on every
-render, inside a `forwardRef` component – folding removes all of it, including the component layer.
-
-Measured on `sandbox/runtime-perf`, rendering fifty trees, warm: **3.2× faster** on a mixed tree, and **2.9×** on one
-whose style props are all runtime-valued. The second is the weaker case and still the more interesting one – nothing
-about those elements resolves at build time, so what folding removes there is the factory itself rather than the styles.
-Both sides are warmed first, which is the conservative reading: the runtime's style memo is full, so this is the
-steady-state win rather than the cold-start one, and cold start is where the gap is widest.
-
-Props are handled the way the factory handles them. For a factory with no recipe attached, `defaultShouldForwardProp`
-reduces to "css properties are consumed, everything else reaches the DOM unchanged", so `onClick` and `id` pass through
-verbatim while `color` becomes part of the class. A static `className` is appended, in the position `cx` would have put
-it.
-
-A static `as` names the tag to fold to, rather than blocking the fold:
-
-```tsx
-<styled.div as="section" color="red.300">hi</styled.div>
-<section className={"c_red.300"}>hi</section>
-```
-
-It works for a component too – `as={Link}` folds to `<Link className={…}>`. `splitProps` keys off the factory's own
-config rather than off what `as` points at, so the class and the forwarded props are the same whatever the tag becomes.
-An `as` only known at runtime still bails.
-
-An element bails if it carries anything else the factory gives extra meaning to: a spread, a dynamic style prop,
-`unstyled`, `css`, `ref`, `key`, an explicit `children`, a dynamic `className`, or one of the `html*` props that
-`normalizeHTMLProps` renames.
-
 ### `token()` calls
 
 `token()` is the one fold that produces a value rather than a class. It is what you reach for when a design token is
@@ -278,20 +237,15 @@ One case declines despite resolving: a spread the extractor _evaluated_ rather t
 came from is no longer recoverable – and a literal that depends on a file the build cannot name is a file it cannot
 watch.
 
-## Partly static calls and elements
+## Partly static calls
 
-A single-argument `css()` call, or a `styled.*` element, does not have to be entirely static. The part that resolves
-becomes a literal and the rest keeps its runtime call:
+A single-argument `css()` call does not have to be entirely static. The part that resolves becomes a literal and the
+rest keeps its runtime call:
 
 ```tsx
 css({ color: 'red.300', padding: p })
 cx('c_red.300', css({ padding: p }))
-
-<styled.div color="red.300" backgroundColor={tone} />
-<div className={cx('c_red.300', css({ backgroundColor: tone }))} />
 ```
-
-The element still collapses to its intrinsic tag, so the factory goes with it.
 
 A top-level ternary is neither half. Both its branches are known, so each resolves now and the choice becomes a ternary
 between two literals:
@@ -402,19 +356,12 @@ its style calls pre-resolved. So the transform stays where it pays for itself.
   the repeated `css({ … })` calls they replace compressed almost to nothing.
 - **It does not remove the now-unused import.** `import { css } from 'styled-system/css'` stays after its last call
   folds. Bundlers tree-shake it.
-- **It does not fold recipe elements.** A config recipe's `jsx` components – `<Button size="sm" />` – keep their runtime
-  path, even though the equivalent `buttonStyle({ size: 'sm' })` call folds. `styled.*` and pattern elements are the two
-  element surfaces that fold. A recipe element is not counted in the coverage summary either, so a project using them
-  reads as having fewer sites than it has.
+- **It does not fold recipe elements.** A config recipe's `jsx` components – `<Button size="sm" />`, which you write
+  yourself – keep their runtime path, even though the equivalent `buttonStyle({ size: 'sm' })` call folds. A recipe
+  element is not counted in the coverage summary either, so a project using them reads as having fewer sites than it
+  has.
 - **It does not fold slot recipe calls.** One resolves to a class per slot rather than to a single string, so there is
   no single literal to substitute. Reported as `unsupported-kind`.
-- **It only sees JSX written as JSX.** Element folding matches tags in the source, so an element already compiled to
-  `_jsx(...)` keeps its runtime path. A `css()` call _inside_ that output is still a call site and does fold.
-- **It does not fold an element past a JSX spread.** `<styled.div color="red.300" {...rest} />` declines whole rather
-  than emitting the static half beside a runtime split of `rest`. Object spreads inside `css()` do fold when they can be
-  accounted for – see [Spreads](#spreads) – but a JSX spread is a different problem: it can carry `as`, `children`,
-  `className`, `css`, or an `html*` prop, each of which decides something the fold has already committed to. `as` alone
-  changes the tag, so `{...{ as: 'section' }}` has to render a `<section>` where the fold has written a `<div>`.
 - **It does not hoist repeated class literals.** Two call sites resolving to the same string each get their own literal.
   Measured on `sandbox/runtime-perf`, a folded module repeats seven strings, most of them short leaf-helper prefixes —
   and the compression cost noted above comes from literals being _distinct_, which hoisting cannot address. Across

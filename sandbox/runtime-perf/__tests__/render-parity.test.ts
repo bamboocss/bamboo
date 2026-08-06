@@ -47,7 +47,7 @@ afterAll(() => {
   rmSync(foldedPath, { force: true })
 })
 
-const props = { tone: 'red600', rest: { title: 'spread title' }, flag: true }
+const props = { tone: 'red600', rest: { margin: 'xs' }, flag: true }
 
 /** Markup with the tokens inside every `class` attribute sorted. */
 const sortClasses = (html: string) =>
@@ -96,13 +96,11 @@ describe('render parity', () => {
     expect(skippedCount).toBeGreaterThan(0)
   })
 
-  test('the folded module no longer goes through the factory for folded elements', () => {
+  test('the folded module resolves what it can to a literal', () => {
     expect(foldedCode).toContain('className={"')
-    // A static `as` names the folded tag rather than blocking the fold.
-    expect(foldedCode).toContain('<section className={')
-    // The declining shapes must still be there.
-    expect(foldedCode).toContain('{...rest}')
-    expect(foldedCode).toContain('css={{')
+    // The declining shapes must still be there, still calling `css` at runtime.
+    expect(foldedCode).toContain('...rest')
+    expect(foldedCode).toContain('css({')
   })
 
   test('renders byte-identical markup with and without the transform', async () => {

@@ -142,9 +142,6 @@ describe('setup-artifacts', () => {
           "tokens/tokens.d.ts",
         ],
         [
-          "types/jsx.d.ts",
-        ],
-        [
           "types/global.d.ts",
           "types/index.d.ts",
         ],
@@ -250,25 +247,6 @@ describe('setup-artifacts', () => {
           "patterns/visually-hidden.d.ts",
           "patterns/cq.mjs",
           "patterns/cq.d.ts",
-        ],
-        [
-          "jsx/is-valid-prop.mjs",
-          "jsx/is-valid-prop.d.ts",
-        ],
-        [
-          "jsx/factory.mjs",
-          "jsx/factory.d.ts",
-        ],
-        [
-          "jsx/factory-helper.mjs",
-        ],
-        [
-          "jsx/create-style-context.mjs",
-          "jsx/create-style-context.d.ts",
-        ],
-        [
-          "jsx/index.mjs",
-          "jsx/index.d.ts",
         ],
         [
           "css/index.mjs",

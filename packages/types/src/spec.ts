@@ -13,7 +13,6 @@ export type SpecType =
 
 interface Examples {
   functionExamples: string[]
-  jsxExamples: string[]
 }
 
 export interface TokenValue {
@@ -139,7 +138,6 @@ export interface ColorPaletteSpec {
   data: {
     values: string[]
     functionExamples: string[]
-    jsxExamples: string[]
   }
 }
 

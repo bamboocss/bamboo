@@ -11,7 +11,6 @@ export default defineConfig({
   // name so the next scratch artifact is covered without another debugging session.
   exclude: ['**/*.folded.tsx', '**/*.broken.tsx'],
   outdir: 'styled-system',
-  jsxFramework: 'react',
   theme: {
     tokens: {
       colors: {

@@ -1,5 +1,4 @@
-import { css } from '@/styled-system/css'
-import { bamboo } from '@/styled-system/jsx'
+import { css, cx } from '@/styled-system/css'
 import { hstack } from '@/styled-system/patterns'
 
 interface CodeBlockProps {
@@ -45,12 +44,8 @@ interface CodeLangIconProps {
   type: CodeLang | (string & {})
 }
 
-const Svg = bamboo('svg', {
-  base: {
-    boxSize: '1em',
-    fontSize: 'md',
-  },
-})
+const svgStyle = css({ boxSize: '1em', fontSize: 'md' })
+const Svg = (props: React.ComponentProps<'svg'>) => <svg {...props} className={cx(svgStyle, props.className)} />
 
 const CodeLangIcon = (props: CodeLangIconProps) => {
   switch (props.type) {

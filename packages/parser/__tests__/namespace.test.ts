@@ -140,68 +140,6 @@ describe('extract namespace', () => {
     `)
   })
 
-  test('TS namespaces - jsx', () => {
-    const code = `
-        import * as JSX from "styled-system/jsx"
-    
-        const App = () => {
-          return <>
-          <JSX.styled.div color="red" />
-          <JSX.Stack color="blue" />
-          <JSX.Grid color="green" />
-          </>
-        }
-         `
-    const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "color": "red",
-            },
-          ],
-          "name": "styled.div",
-          "type": "jsx-factory",
-        },
-        {
-          "data": [
-            {
-              "color": "blue",
-            },
-          ],
-          "name": "Stack",
-          "type": "jsx",
-        },
-        {
-          "data": [
-            {
-              "color": "green",
-            },
-          ],
-          "name": "Grid",
-          "type": "jsx",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .c_red {
-          color: red;
-      }
-
-        .c_blue {
-          color: blue;
-      }
-
-        .c_green {
-          color: green;
-      }
-      }"
-    `)
-  })
-
   test('TS namespaces - ignore not from bamboo', () => {
     const code = `
         import * as bamboo from "not-bamboo"
@@ -214,52 +152,6 @@ describe('extract namespace', () => {
     expect(result.json).toMatchInlineSnapshot(`[]`)
 
     expect(result.css).toMatchInlineSnapshot(`""`)
-  })
-
-  test('TS namespaces - JSX factory', () => {
-    const code = `
-        import * as bambooJsx from '../styled-system/jsx';
-    
-        bambooJsx.styled('div', { base: { color: 'red' } })
-        const App = () => <bambooJsx.styled.span color="blue">Hello</bambooJsx.styled.span>
-         `
-    const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "base": {
-                "color": "red",
-              },
-            },
-          ],
-          "name": "styled",
-          "type": "cva",
-        },
-        {
-          "data": [
-            {
-              "color": "blue",
-            },
-          ],
-          "name": "styled.span",
-          "type": "jsx-factory",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .c_red {
-          color: red;
-      }
-
-        .c_blue {
-          color: blue;
-      }
-      }"
-    `)
   })
 
   test('TS namespaces - ignore not from bamboo', () => {

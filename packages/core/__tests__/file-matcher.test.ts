@@ -65,29 +65,13 @@ describe('file matcher', () => {
   test('match tag', () => {
     const ctx = createContext()
 
-    const file = ctx.imports.file([
-      { mod: 'styled-system/jsx', name: 'Stack', alias: 'Stack' },
-      { mod: 'styled-system/jsx', name: 'VStack', alias: '__VStack' },
-    ])
+    const file = ctx.imports.file([{ mod: 'styled-system/recipes', name: 'buttonStyle', alias: 'buttonStyle' }])
 
-    expect(file.matchTag('Stack')).toMatchInlineSnapshot('true')
-    // should match arbitrary tag names (so we can track style props)
-    expect(file.matchTag('RandomJsx')).toMatchInlineSnapshot('true')
+    // a recipe's own jsx tag
+    expect(file.matchTag('ButtonStyle')).toMatchInlineSnapshot('true')
+    // an arbitrary component carries nothing the build can read
+    expect(file.matchTag('RandomJsx')).toMatchInlineSnapshot('false')
     expect(file.matchTag('random')).toMatchInlineSnapshot('false')
-  })
-
-  test('is jsx factory', () => {
-    const ctx = createContext()
-
-    const file = ctx.imports.file([
-      { mod: 'styled-system/jsx', name: 'styled', alias: 'styled' },
-      { mod: 'styled-system/jsx', name: 'Stack', alias: 'Stack' },
-      { mod: 'styled-system/jsx', name: 'VStack', alias: '__VStack' },
-    ])
-
-    expect(file.isJsxFactory('styled')).toMatchInlineSnapshot(`true`)
-    expect(file.isJsxFactory('styled.div')).toMatchInlineSnapshot(`true`)
-    expect(file.isJsxFactory('Comp')).toMatchInlineSnapshot(`undefined`)
   })
 
   test('is valid pattern', () => {
@@ -190,36 +174,18 @@ describe('file matcher', () => {
     expect(file.isValidPattern('p.grid')).toMatchInlineSnapshot(`true`)
   })
 
-  test('matchTagProp - css prop aliases', () => {
+  test('matchTagProp - a recipe variant, and nothing else', () => {
     const ctx = createContext()
 
-    const file = ctx.imports.file([{ mod: 'styled-system/jsx', name: 'styled', alias: 'styled' }])
+    const file = ctx.imports.file([{ mod: 'styled-system/recipes', name: 'buttonStyle', alias: 'buttonStyle' }])
 
-    // css prop itself
-    expect(file.matchTagProp('styled.div', 'css')).toBe(true)
+    // a variant the recipe declares
+    expect(file.matchTagProp('ButtonStyle', 'size')).toBe(true)
 
-    // *Css convention
-    expect(file.matchTagProp('styled.div', 'inputCss')).toBe(true)
-    expect(file.matchTagProp('styled.div', 'contentCss')).toBe(true)
-    expect(file.matchTagProp('styled.div', 'wrapperCss')).toBe(true)
-
-    // non-matching props should not match
-    expect(file.matchTagProp('styled.div', 'onClick')).toBe(false)
-    expect(file.matchTagProp('styled.div', 'success')).toBe(false)
-
-    // uppercase components (jsx tracking)
-    expect(file.matchTagProp('MyComponent', 'inputCss')).toBe(true)
-  })
-
-  test('matchTagProp - css prop aliases (minimal mode)', () => {
-    const ctx = createContext({ jsxStyleProps: 'minimal' })
-
-    const file = ctx.imports.file([{ mod: 'styled-system/jsx', name: 'styled', alias: 'styled' }])
-
-    expect(file.matchTagProp('styled.div', 'css')).toBe(true)
-    expect(file.matchTagProp('styled.div', 'inputCss')).toBe(true)
-
-    // regular style props should NOT match in minimal mode
-    expect(file.matchTagProp('styled.div', 'color')).toBe(false)
+    // with no style props, nothing else on a tag is a style
+    expect(file.matchTagProp('ButtonStyle', 'css')).toBe(false)
+    expect(file.matchTagProp('ButtonStyle', 'color')).toBe(false)
+    expect(file.matchTagProp('ButtonStyle', 'onClick')).toBe(false)
+    expect(file.matchTagProp('MyComponent', 'size')).toBe(false)
   })
 })

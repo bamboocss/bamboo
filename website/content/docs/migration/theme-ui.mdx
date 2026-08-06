@@ -98,37 +98,20 @@ export const Demo = (props) => (
 )
 ```
 
-Bamboo offers three similar ways to style components. The first approach is to use the `styled` element syntax and
-rename `sx` to `css`
+Bamboo offers two similar ways to style components. The first is `cva`, which lets you name the styles and add variants.
 
 ```jsx
-import { styled } from 'styled-system/jsx'
+import { cva } from 'styled-system/css'
 
-export const Demo = (props) => (
-  <styled.div
-    {...props}
-    css={{
-      color: 'white',
-      bg: 'primary',
-      fontSize: 4,
-    }}
-  />
-)
-```
-
-The second approach is to create styled components using the `styled` function. This approach allows you to create style
-variants.
-
-```jsx
-import { styled } from 'styled-system/jsx'
-
-export const Demo = styled('div', {
+const demo = cva({
   base: {
     color: 'white',
     bg: 'primary',
     fontSize: 4,
   },
 })
+
+export const Demo = (props) => <div {...props} className={demo()} />
 ```
 
 The simplest approach is to use the `css` function to write one-off styles.

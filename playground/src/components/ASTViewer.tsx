@@ -1,5 +1,4 @@
 import { css, cva } from '@/styled-system/css'
-import { bamboo } from '@/styled-system/jsx'
 import { hstack, stack } from '@/styled-system/patterns'
 import type { ResultItem } from '@bamboocss/types'
 import { useTheme } from 'next-themes'
@@ -65,11 +64,11 @@ const ResultItemRow = (props: { result: ResultItem }) => {
   const { resolvedTheme } = useTheme()
   return (
     <div className={stack({ px: '6' })}>
-      <bamboo.div className={hstack()}>
+      <div className={hstack()}>
         <span className={resultType({ type: result.type })}>{result.type}</span>{' '}
         <span className={resultType({ name: result.name as 'cva' | 'css' })}>{result.name}</span>
-        <bamboo.span ml="auto">(l{getReportRange(result)})</bamboo.span>
-      </bamboo.div>
+        <span className={css({ ml: 'auto' })}>(l{getReportRange(result)})</span>
+      </div>
       <ResultItemRowJson theme={resolvedTheme} data={result.data} className={rowClassName} />
     </div>
   )

@@ -2,7 +2,7 @@ import type { ImportResult, ParserOptions } from '@bamboocss/core'
 import { BoxNodeMap, box, extract, unbox, type EvaluateOptions, type Unboxed } from '@bamboocss/extractor'
 import type { Generator } from '@bamboocss/generator'
 import { logger } from '@bamboocss/logger'
-import type { ParserResultConfigureOptions, ResultItem, JsxFactoryResultTransform } from '@bamboocss/types'
+import type { ParserResultConfigureOptions } from '@bamboocss/types'
 import type { SourceFile } from 'ts-morph'
 import { Node } from 'ts-morph'
 import { match } from 'ts-pattern'
@@ -40,7 +40,7 @@ export function createParser(context: ParserOptions) {
   return function parse(
     sourceFile: SourceFile | undefined,
     encoder?: Generator['encoder'],
-    options?: ParserResultConfigureOptions & Partial<JsxFactoryResultTransform>,
+    options?: ParserResultConfigureOptions,
   ) {
     if (!sourceFile) return
 
@@ -102,11 +102,7 @@ export function createParser(context: ParserOptions) {
       functions: {
         matchFn: (prop) => file.matchFn(prop.fnName),
         matchProp: () => true,
-        matchArg: (prop) => {
-          // skip resolving `badge` here: `bamboo("span", badge)`
-          if (file.isJsxFactory(prop.fnName) && prop.index === 1 && Node.isIdentifier(prop.argNode)) return false
-          return true
-        },
+        matchArg: () => true,
       },
       getEvaluateOptions: (node) => {
         if (!Node.isCallExpression(node)) return evaluateOptions
@@ -230,115 +226,23 @@ export function createParser(context: ParserOptions) {
               }
             })
           })
-          // bamboo("span", { ... }) or bamboo("div", badge)
-          // or bamboo("span", { color: "red.100", ... })
-          .when(jsx.isJsxFactory, () => {
-            result.queryList.forEach((query) => {
-              if (query.kind === 'call-expression' && query.box.value[1]) {
-                const map = query.box.value[1]
-                const boxNode = box.isMap(map) ? map : box.fallback(query.box)
-
-                const combined = combineResult(unbox(boxNode))
-                const transformed = options?.transform?.({ type: 'jsx-factory', data: combined })
-
-                // ensure that data is always an object
-                const result = { name, box: boxNode, data: transformed ?? combined } as ResultItem
-
-                // CallExpression factory inline recipe
-                // bamboo("span", { base: {}, variants: { ... } })
-                if (box.isRecipe(map)) {
-                  parserResult.setCva(result)
-                } else {
-                  // CallExpression factory css
-                  // bamboo("span", { color: "red.100", ... })
-                  parserResult.set('css', result)
-                }
-
-                // bamboo("div", badge, { ... })
-                const recipeOptions = query.box.value[2]
-                if (
-                  box.isUnresolvable(map) &&
-                  recipeOptions &&
-                  box.isMap(recipeOptions) &&
-                  recipeOptions.value.has('defaultProps')
-                ) {
-                  const maybeIdentifier = map.getNode()
-
-                  if (Node.isIdentifier(maybeIdentifier)) {
-                    const name = maybeIdentifier.getText()
-                    const recipeName = file.getName(name)
-
-                    // set it as JSX-recipe so that recipe & style props will be split correctly
-                    parserResult.setRecipe(recipeName, {
-                      type: 'jsx-recipe',
-                      name: recipeName,
-                      box: recipeOptions,
-                      data: combineResult(unbox(recipeOptions.value.get('defaultProps'))),
-                    })
-                  }
-                }
-              }
-            })
-          })
-          // bamboo.span({ ... }) or bamboo.div` ...`
-          .when(file.isJsxFactory, (name) => {
-            result.queryList.forEach((query) => {
-              if (query.kind === 'call-expression') {
-                const map = query.box.value[0]
-                const boxNode = box.isMap(map) ? map : box.fallback(query.box)
-
-                const combined = combineResult(unbox(boxNode))
-                const transformed = options?.transform?.({ type: 'jsx-factory', data: combined })
-
-                // ensure that data is always an object
-                const result = { name, box: boxNode, data: transformed ?? combined } as ResultItem
-
-                // PropertyAccess factory inline recipe
-                // bamboo.span({ base: {}, variants: { ... } })
-                if (box.isRecipe(map)) {
-                  parserResult.setCva(result)
-                } else {
-                  // PropertyAccess factory css
-                  // bamboo.span({ ... })
-                  parserResult.set('css', result)
-                }
-              }
-            })
-          })
           .otherwise(() => {
             //
           })
         //
       } else if (jsx.isEnabled && result.kind === 'component') {
-        //
+        // A recipe component the project wrote itself. Its variant props are only visible
+        // here — the recipe call inside it takes `props`, which resolves to nothing.
         result.queryList.forEach((query) => {
-          //
           const data = combineResult(unbox(query.box))
 
-          switch (true) {
-            case file.isJsxFactory(name) || file.isJsxFactory(alias): {
-              parserResult.setJsx({ type: 'jsx-factory', name: name, box: query.box, data })
-              break
-            }
-            // name: Trigger
-            case jsx.isJsxTagRecipe(name): {
-              const matchingRecipes = recipes.filter(name)
-              matchingRecipes.map((recipe) => {
-                parserResult.setRecipe(recipe.baseName, { type: 'jsx-recipe', name: name, box: query.box, data })
-              })
-              break
-            }
-            // alias: Tabs.Trigger
-            case jsx.isJsxTagRecipe(alias): {
-              const matchingRecipes = recipes.filter(alias)
-              matchingRecipes.map((recipe) => {
-                parserResult.setRecipe(recipe.baseName, { type: 'jsx-recipe', name: alias, box: query.box, data })
-              })
-              break
-            }
-            default: {
-              parserResult.setJsx({ type: 'jsx', name, box: query.box, data })
-            }
+          for (const tag of [name, alias]) {
+            if (!jsx.isJsxTagRecipe(tag)) continue
+
+            recipes.filter(tag).forEach((recipe) => {
+              parserResult.setRecipe(recipe.baseName, { type: 'jsx-recipe', name: tag, box: query.box, data })
+            })
+            break
           }
         })
       }

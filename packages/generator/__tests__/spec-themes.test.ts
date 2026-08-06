@@ -52,9 +52,6 @@ describe('generateThemesSpec', () => {
                 "functionExamples": [
                   "css({ color: 'red' })",
                 ],
-                "jsxExamples": [
-                  "<Box color="red" />",
-                ],
                 "tokenFunctionExamples": [
                   "token('colors.red')",
                   "token.var('colors.red')",
@@ -134,9 +131,6 @@ describe('generateThemesSpec', () => {
                 "functionExamples": [
                   "css({ color: 'primary' })",
                 ],
-                "jsxExamples": [
-                  "<Box color="primary" />",
-                ],
                 "tokenFunctionExamples": [
                   "token('colors.primary')",
                   "token.var('colors.primary')",
@@ -210,9 +204,6 @@ describe('generateThemesSpec', () => {
           "functionExamples": [
             "css({ color: 'red' })",
           ],
-          "jsxExamples": [
-            "<Box color="red" />",
-          ],
           "tokenFunctionExamples": [
             "token('colors.red')",
             "token.var('colors.red')",
@@ -241,9 +232,6 @@ describe('generateThemesSpec', () => {
         {
           "functionExamples": [
             "css({ color: 'red' })",
-          ],
-          "jsxExamples": [
-            "<Box color="red" />",
           ],
           "tokenFunctionExamples": [
             "token('colors.red')",

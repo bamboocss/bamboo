@@ -18,8 +18,6 @@ const sandboxConfig = defineConfig({
     },
   },
   include: ['./src/**/*.{tsx,jsx}', './pages/**/*.{jsx,tsx}'],
-  jsxFactory: 'bamboo',
-  jsxFramework: 'react',
   outdir: 'styled-system',
   preflight: true,
   theme: {
@@ -125,7 +123,6 @@ const config: UserConfig = {
   cssVarRoot: ':where(html)',
   cwd: '',
   include: [],
-  jsxFramework: 'react',
   outdir: 'styled-system',
 }
 

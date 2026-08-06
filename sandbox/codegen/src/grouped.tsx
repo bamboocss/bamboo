@@ -1,6 +1,5 @@
-import { css, cva } from '../styled-system-grouped/css'
+import { css, cva, cx } from '../styled-system-grouped/css'
 import { stack } from '../styled-system-grouped/patterns'
-import { styled } from '../styled-system-grouped/jsx'
 
 /**
  * Every route a style takes to a class name under `cssMode: 'grouped'`.
@@ -28,8 +27,8 @@ export const Conditional = () => (
 // A pattern is a `css()` call with its transform already applied.
 export const Pattern = () => <div className={stack({ gap: '4' })} />
 
-// The JSX factory merges style props and the `css` prop into a single call.
-export const Factory = () => <styled.div color="red.300" padding="4" css={{ fontSize: 'xl' }} />
+// Two operands merged into a single call.
+export const Merged = () => <div className={css({ color: 'red.300', padding: '4' }, { fontSize: 'xl' })} />
 
 // `css.raw` composition — two operands merged before naming.
 const rawBase = css.raw({ color: 'red.300' })
@@ -47,12 +46,13 @@ export const Dynamic = ({ tone }: { tone: string }) => (
   <div className={css({ fontSize: 'xl', padding: '4', color: tone })} />
 )
 
-// `styled(Component, cvaConfig)` — the shape whose style props used to be dropped.
-const Button = styled('button', {
+// A cva class joined with a `css()` class — the two are named independently, and both
+// have to be backed.
+const buttonCva = cva({
   base: { color: 'red.300' },
   variants: { size: { sm: { padding: '2' }, md: { padding: '4' } } },
 })
-export const WithCva = () => <Button size="sm" fontSize="xl" />
+export const WithCva = () => <button className={cx(buttonCva({ size: 'sm' }), css({ fontSize: 'xl' }))} />
 
 // A bare `cva`, which stays atomic under grouped by design.
 export const bareCva = cva({
@@ -74,7 +74,7 @@ export const ArrayArg = () => <div className={css([{ color: 'red.300' }, { fontS
 // A conditional style prop beside a static one. Only `css()` enumerates combinations, so
 // the element falls back to atomic names — which have to have rules behind them.
 export const ConditionalProp = ({ on }: { on: boolean }) => (
-  <styled.div color={on ? 'red.300' : 'blue.300'} padding="4" />
+  <div className={css({ color: on ? 'red.300' : 'blue.300', padding: '4' })} />
 )
 
 // The same shape in a pattern.
@@ -83,7 +83,7 @@ export const ConditionalPattern = ({ on }: { on: boolean }) => (
 )
 
 // A value the build cannot see, beside one it can. The resolved half must survive.
-export const DynamicProp = ({ tone }: { tone: string }) => <styled.div color={tone} padding="4" />
+export const DynamicProp = ({ tone }: { tone: string }) => <div className={css({ color: tone, padding: '4' })} />
 
 // A spread the build cannot enumerate.
 export const DynamicSpread = ({ styles }: { styles: Record<string, string> }) => (

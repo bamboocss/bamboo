@@ -37,10 +37,6 @@ describe('color palette spec generation', () => {
             "css({ colorPalette: 'blue' })",
             "css({ colorPalette: 'blue', bg: 'colorPalette.100', color: 'colorPalette.200' })",
           ],
-          "jsxExamples": [
-            "<Box colorPalette="blue" />",
-            "<Box colorPalette="blue" bg="colorPalette.100" color="colorPalette.200" />",
-          ],
           "values": [
             "blue",
             "red",
@@ -79,10 +75,6 @@ describe('color palette spec generation', () => {
           "functionExamples": [
             "css({ colorPalette: 'brand' })",
             "css({ colorPalette: 'brand', bg: 'colorPalette.primary', color: 'colorPalette.secondary' })",
-          ],
-          "jsxExamples": [
-            "<Box colorPalette="brand" />",
-            "<Box colorPalette="brand" bg="colorPalette.primary" color="colorPalette.secondary" />",
           ],
           "values": [
             "brand",
@@ -125,10 +117,6 @@ describe('color palette spec generation', () => {
             "css({ colorPalette: 'accent' })",
             "css({ colorPalette: 'accent', bg: 'colorPalette', color: 'colorPalette.active' })",
           ],
-          "jsxExamples": [
-            "<Box colorPalette="accent" />",
-            "<Box colorPalette="accent" bg="colorPalette" color="colorPalette.active" />",
-          ],
           "values": [
             "accent",
             "neutral",
@@ -158,10 +146,6 @@ describe('color palette spec generation', () => {
           "functionExamples": [
             "css({ colorPalette: 'primary' })",
             "css({ colorPalette: 'primary', bg: 'colorPalette' })",
-          ],
-          "jsxExamples": [
-            "<Box colorPalette="primary" />",
-            "<Box colorPalette="primary" bg="colorPalette" />",
           ],
           "values": [
             "primary",
@@ -196,83 +180,8 @@ describe('color palette spec generation', () => {
             "css({ colorPalette: 'basic' })",
             "css({ colorPalette: 'basic', bg: 'colorPalette.blue', color: 'colorPalette.green' })",
           ],
-          "jsxExamples": [
-            "<Box colorPalette="basic" />",
-            "<Box colorPalette="basic" bg="colorPalette.blue" color="colorPalette.green" />",
-          ],
           "values": [
             "basic",
-          ],
-        },
-        "type": "color-palette",
-      }
-    `)
-  })
-
-  test('should handle jsxStyleProps minimal setting', () => {
-    const ctx = createContext({
-      eject: true,
-      jsxStyleProps: 'minimal',
-      theme: {
-        tokens: {
-          colors: {
-            theme: {
-              light: { value: '#f8f9fa' },
-              dark: { value: '#212529' },
-            },
-          },
-        },
-      },
-    })
-
-    const spec = generateColorPaletteSpec(ctx)
-    expect(spec).toMatchInlineSnapshot(`
-      {
-        "data": {
-          "functionExamples": [
-            "css({ colorPalette: 'theme' })",
-            "css({ colorPalette: 'theme', bg: 'colorPalette.dark', color: 'colorPalette.light' })",
-          ],
-          "jsxExamples": [
-            "<Box css={{ colorPalette: 'theme' }} />",
-            "<Box css={{ colorPalette: 'theme', bg: 'colorPalette.dark', color: 'colorPalette.light' }} />",
-          ],
-          "values": [
-            "theme",
-          ],
-        },
-        "type": "color-palette",
-      }
-    `)
-  })
-
-  test('should handle jsxStyleProps none setting', () => {
-    const ctx = createContext({
-      eject: true,
-      jsxStyleProps: 'none',
-      theme: {
-        tokens: {
-          colors: {
-            status: {
-              success: { value: '#10b981' },
-              error: { value: '#ef4444' },
-            },
-          },
-        },
-      },
-    })
-
-    const spec = generateColorPaletteSpec(ctx)
-    expect(spec).toMatchInlineSnapshot(`
-      {
-        "data": {
-          "functionExamples": [
-            "css({ colorPalette: 'status' })",
-            "css({ colorPalette: 'status', bg: 'colorPalette.error', color: 'colorPalette.success' })",
-          ],
-          "jsxExamples": [],
-          "values": [
-            "status",
           ],
         },
         "type": "color-palette",
@@ -328,10 +237,6 @@ describe('color palette spec generation', () => {
           "functionExamples": [
             "css({ colorPalette: 'theme' })",
             "css({ colorPalette: 'theme', bg: 'colorPalette.primary.active', color: 'colorPalette.primary.base' })",
-          ],
-          "jsxExamples": [
-            "<Box colorPalette="theme" />",
-            "<Box colorPalette="theme" bg="colorPalette.primary.active" color="colorPalette.primary.base" />",
           ],
           "values": [
             "theme",

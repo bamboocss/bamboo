@@ -30,12 +30,10 @@ const tokens: ConfigPath[] = [
   'theme.containerSizes',
 ]
 
-const jsx: ConfigPath[] = ['jsxFramework', 'jsxFactory', 'jsxStyleProps']
-
-const common = tokens.concat(jsx, format)
+const common = tokens.concat(format)
 
 const artifactConfigDeps: Record<ArtifactId, ConfigPath[]> = {
-  helpers: ['jsxFramework'],
+  helpers: [],
   keyframes: ['theme.keyframes', 'layers'],
   'design-tokens': ['layers', '!utilities.*.className'].concat(tokens),
   types: ['!utilities.*.className'].concat(common),
@@ -48,16 +46,10 @@ const artifactConfigDeps: Record<ArtifactId, ConfigPath[]> = {
   recipes: ['theme.recipes', 'theme.slotRecipes'],
   'patterns-index': ['patterns'],
   patterns: ['patterns'],
-  'jsx-is-valid-prop': common,
-  'jsx-factory': jsx,
-  'jsx-helpers': jsx,
-  'jsx-index': jsx,
-  'jsx-create-style-context': jsx,
   'css-index': [],
   'package.json': ['forceConsistentTypeExtension', 'outExtension'],
   'types-styles': ['shorthands'],
   'types-conditions': ['conditions'],
-  'types-jsx': jsx,
   'types-entry': [],
   'types-gen': [],
   'types-gen-system': [],

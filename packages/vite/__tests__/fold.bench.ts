@@ -73,31 +73,31 @@ export const guessed${index} = (e: boolean) => css({ padding: '${index % 8}', co
 `
 
 /**
- * A JSX-heavy module, which the sandbox files above barely are — between them they hold
- * two factory elements, so nothing there exercises the element surface.
+ * A call-heavy module, which the sandbox files above barely are — between them they hold
+ * only a handful of call sites.
  *
- * That surface is per-element work rather than per-call work, and a component file is
- * where elements come in bulk, so this is the shape that shows what it costs.
+ * A component file is where `css()` calls come in bulk, so this is the shape that shows
+ * what folding one costs when there are many.
  */
 const JSX_MODULE = `
-import { styled } from 'styled-system/jsx'
+import { css } from 'styled-system/css'
 import { box, hstack, stack } from 'styled-system/patterns'
 
 export const View = ({ tone, rest }) => (
-  <styled.div padding="4" backgroundColor="gray.100">
+  <div className={css({ padding: '4', backgroundColor: 'gray.100' })}>
     ${Array.from(
       { length: 12 },
-      (_, i) => `<styled.span color="blue.500" fontWeight="bold" id="s${i}">plain ${i}</styled.span>`,
+      (_, i) => `<span className={css({ color: 'blue.500', fontWeight: 'bold' })} id="s${i}">plain ${i}</span>`,
     ).join('\n    ')}
-    <styled.div color="gray.800" _hover={{ color: 'red.300' }} fontSize={{ base: 'sm', md: 'lg' }}>conditions</styled.div>
-    <styled.div as="section" color="red.300">as</styled.div>
-    <styled.div color={tone}>dynamic</styled.div>
-    <styled.div color="green.300" {...rest}>spread</styled.div>
+    <div className={css({ color: 'gray.800', _hover: { color: 'red.300' }, fontSize: { base: 'sm', md: 'lg' } })}>conditions</div>
+    <section className={css({ color: 'red.300' })}>as</section>
+    <div className={css({ color: tone })}>dynamic</div>
+    <div className={css({ color: 'green.300', ...rest })}>spread</div>
     <div className={stack({ gap: '4' })}>
       <div className={box({ padding: '2', backgroundColor: 'white' })}>box</div>
       <div className={hstack({ gap: '1', color: 'gray.700' })}>hstack</div>
     </div>
-  </styled.div>
+  </div>
 )
 `
 

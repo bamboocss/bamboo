@@ -79,10 +79,10 @@ function App() {
 or use in JSX style props
 
 ```jsx
-import { styled } from '../styled-system/jsx'
+import { css } from '../styled-system/css'
 
 function App() {
-  return <styled.div br="sm" />
+  return <div className={css({ br: 'sm' })} />
 }
 ```
 

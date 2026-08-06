@@ -1,7 +1,6 @@
 import type { ParserOptions } from '@bamboocss/core'
 import type {
   ConfigTsOptions,
-  JsxFactoryResultTransform,
   BambooHooks,
   ParserResultConfigureOptions,
   ParserResultInterface,
@@ -307,7 +306,7 @@ export class Project {
 
     const original = sourceFile.getText()
 
-    const options: ParserResultConfigureOptions & Partial<JsxFactoryResultTransform> = {}
+    const options: ParserResultConfigureOptions = {}
     const custom = hooks['parser:before']?.({
       filePath,
       content: original,
@@ -330,10 +329,6 @@ export class Project {
     // or if the hook returned a different content
     if (original !== transformed) {
       sourceFile.replaceWithText(transformed)
-    }
-
-    if (hooks['parser:preprocess']) {
-      options.transform = hooks['parser:preprocess']
     }
 
     const result = this.parser(sourceFile, encoder, options)?.setFilePath(filePath)

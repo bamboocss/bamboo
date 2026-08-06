@@ -14,7 +14,6 @@ function cartesian<T>(arrays: T[][]): T[][] {
 export class ParserResult implements ParserResultInterface {
   /** Ordered list of all ResultItem */
   all: ResultItem[] = []
-  jsx = new Set<ResultItem>()
   css = new Set<ResultItem>()
   cva = new Set<ResultItem>()
   sva = new Set<ResultItem>()
@@ -246,31 +245,6 @@ export class ParserResult implements ParserResultInterface {
     result.data.forEach((obj) => encoder.processViewTransition(obj))
   }
 
-  setJsx(result: ResultItem) {
-    this.jsx.add(this.append(Object.assign({ type: 'jsx' }, result)))
-
-    const encoder = this.encoder
-    const grouped = this.context.config.cssMode === 'grouped'
-    result.data.forEach((obj) => encoder.processStyleProps(obj, grouped))
-
-    // An element whose component the build cannot see through may carry a `cva` —
-    // `styled(Component, cvaConfig)` is the shape — and that component's runtime merges the
-    // cva's styles with these props into a single `css()` call. The build sees only the
-    // props, so the group it encodes here is a strict *subset* of the one the runtime asks
-    // for and can never match it. The style props were silently dropped as a result:
-    // `<Button size="sm" fontSize="30px" />` rendered with no font size at all.
-    //
-    // Encoding them atomically as well gives the runtime's fallback rules to land on, so
-    // the element keeps its style props. The cva's own styles are already atomic
-    // (`processAtomicRecipe`), so the two halves agree.
-    //
-    // A `jsx-factory` element has no cva to merge, so its group is exact — unless the build
-    // could not see the whole element, which is what `groupIsExact` asks.
-    if (grouped && (result.type !== 'jsx-factory' || !this.groupIsExact(result))) {
-      result.data.forEach((obj) => encoder.processStyleProps(obj, false))
-    }
-  }
-
   setPattern(name: string, result: ResultItem) {
     const set = getOrCreateSet(this.pattern, name)
     set.add(this.append(Object.assign({ type: 'pattern', name }, result)))
@@ -346,7 +320,6 @@ export class ParserResult implements ParserResultInterface {
     result.sva.forEach((item) => this.sva.add(this.append(item)))
     result.token.forEach((item) => this.token.add(this.append(item)))
     result.viewTransition.forEach((item) => this.viewTransition.add(this.append(item)))
-    result.jsx.forEach((item) => this.jsx.add(this.append(item)))
 
     result.recipe.forEach((items, name) => {
       const set = getOrCreateSet(this.recipe, name)
@@ -377,7 +350,6 @@ export class ParserResult implements ParserResultInterface {
       sva: Array.from(this.sva),
       token: Array.from(this.token),
       viewTransition: Array.from(this.viewTransition),
-      jsx: Array.from(this.jsx),
       recipe: Object.fromEntries(Array.from(this.recipe.entries()).map(([key, value]) => [key, Array.from(value)])),
       pattern: Object.fromEntries(Array.from(this.pattern.entries()).map(([key, value]) => [key, Array.from(value)])),
     }

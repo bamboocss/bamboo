@@ -50,7 +50,6 @@ export class FileMatcher {
   private svaAliases = new Set<string>()
   private tokenAliases = new Set<string>()
   private viewTransitionAliases = new Set<string>()
-  private jsxFactoryAliases = new Set<string>()
 
   private recipeAliases = new Set<string>()
   private patternAliases = new Set<string>()
@@ -112,10 +111,6 @@ export class FileMatcher {
         if (result.name === 'token') {
           this.tokenAliases.add(result.alias)
         }
-      }
-
-      if (result.name === this.context.jsx.factoryName) {
-        this.jsxFactoryAliases.add(result.alias)
       }
 
       if (result.kind === 'namespace') {
@@ -251,8 +246,7 @@ export class FileMatcher {
       this.cssAliases.has(fnName) ||
       this.svaAliases.has(fnName) ||
       this.tokenAliases.has(fnName) ||
-      this.viewTransitionAliases.has(fnName) ||
-      this.isJsxFactory(fnName)
+      this.viewTransitionAliases.has(fnName)
     )
   })
 
@@ -279,51 +273,26 @@ export class FileMatcher {
     return false
   })
 
-  isJsxFactory = memo((tagName: string) => {
-    const { jsx } = this.context
-    if (!jsx.isEnabled) return false
-
-    for (const alias of this.jsxFactoryAliases) {
-      if (tagName.startsWith(alias)) return true
-    }
-
-    const [namespace, identifier] = tagName.split('.')
-    const ns = this.namespaces.get(namespace)
-    if (ns && this.importMap.jsx.some((m) => ns.mod.includes(m)) && identifier === this.context.jsx.factoryName) {
-      return true
-    }
-  })
-
   isBambooComponent = memo((tagName: string) => {
     // ignore fragments
     if (!tagName) return false
-    const { jsx } = this.context
-    return this.components.has(tagName) || this.isJsxFactory(tagName) || jsx.isJsxTagRecipe(tagName)
+    return this.components.has(tagName) || this.context.jsx.isJsxTagRecipe(tagName)
   })
 
+  /**
+   * Only a recipe's own tags. Bamboo generates no components, so an arbitrary uppercase
+   * tag carries nothing the build can read — matching it would walk every element in the
+   * file to find no props worth extracting.
+   */
   matchTag = memo((tagName: string) => {
-    return this.isBambooComponent(tagName) || isUpperCase(tagName)
+    return this.isBambooComponent(tagName)
   })
 
+  /**
+   * A recipe's variant props, and nothing else. With no style props there is no other
+   * kind of prop on a JSX tag the build has anything to say about.
+   */
   matchTagProp = memo((tagName: string, propName: string) => {
-    const { jsx, isValidProperty } = this.context
-    switch (jsx.styleProps) {
-      case 'all':
-        return (
-          Boolean(this.components.get(tagName)?.has(propName)) ||
-          isValidProperty(propName) ||
-          this.propertiesMap.has(propName) ||
-          jsx.isRecipeProp(tagName, propName) ||
-          propName.endsWith('Css')
-        )
-      case 'minimal':
-        return propName === 'css' || propName.endsWith('Css') || jsx.isRecipeProp(tagName, propName)
-      case 'none':
-        return jsx.isRecipeProp(tagName, propName)
-      default:
-        return false
-    }
+    return this.context.jsx.isRecipeProp(tagName, propName)
   })
 }
-
-const isUpperCase = (value: string) => value[0] === value[0]?.toUpperCase()

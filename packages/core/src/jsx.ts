@@ -1,4 +1,4 @@
-import { capitalize, memo } from '@bamboocss/shared'
+import { memo } from '@bamboocss/shared'
 import type { Context } from './context'
 import type { RecipeNode } from './types'
 
@@ -7,6 +7,18 @@ interface JsxMatcher {
   regex: RegExp[]
 }
 
+/**
+ * Which JSX tags a recipe is tracked through.
+ *
+ * Bamboo generates no components, so a recipe component is one the project writes itself.
+ * Its variant props reach the build only through this matcher: a hand-written
+ * `<Button variant="danger">` whose body calls `button(props)` resolves to nothing on its
+ * own, and the variant's rule would never be emitted. Matching the tag recovers it.
+ *
+ * Every recipe contributes at least its capitalized name, so this is on for any project
+ * with recipes and off — along with the extractor's whole component surface — for one
+ * without.
+ */
 export class JsxEngine {
   nodes: RecipeNode[] = []
   names: string[] = []
@@ -14,16 +26,14 @@ export class JsxEngine {
   recipeMatcher: JsxMatcher = { string: new Set(), regex: [] }
   recipePropertiesByJsxName = new Map<string, Set<string>>()
 
-  constructor(private context: Pick<Context, 'recipes' | 'config'>) {
+  constructor(private context: Pick<Context, 'recipes'>) {
     this.nodes = [...context.recipes.details]
-    this.names = [this.factoryName, ...this.nodes.map((node) => node.jsxName)]
+    this.names = this.nodes.map((node) => node.jsxName)
 
     this.assignRecipeMatcher()
   }
 
   assignRecipeMatcher() {
-    if (!this.isEnabled) return
-
     for (const recipe of this.context.recipes.details) {
       this.recipePropertiesByJsxName.set(recipe.jsxName, new Set(recipe.props ?? []))
       recipe.jsx.forEach((jsx) => {
@@ -36,50 +46,8 @@ export class JsxEngine {
     }
   }
 
-  private get jsxFactory() {
-    return this.context.config.jsxFactory ?? 'styled'
-  }
-
-  get styleProps() {
-    return this.context.config.jsxStyleProps ?? 'all'
-  }
-
-  get framework() {
-    return this.context.config.jsxFramework
-  }
-
   get isEnabled() {
-    return this.framework != null
-  }
-
-  get factoryName() {
-    return this.jsxFactory
-  }
-
-  get upperName() {
-    return capitalize(this.jsxFactory)
-  }
-
-  get typeName() {
-    return `HTML${capitalize(this.jsxFactory)}Props`
-  }
-
-  get variantName() {
-    return `${capitalize(this.jsxFactory)}VariantProps`
-  }
-
-  get componentName() {
-    return `${capitalize(this.jsxFactory)}Component`
-  }
-
-  isJsxFactory = (name: string) => {
-    // `styled` -> true
-    const isFactory = name === this.factoryName
-    if (isFactory) return true
-
-    // `bambooJsx.styled` -> true
-    const [_namespace, identifier] = name.split('.')
-    return identifier === this.factoryName
+    return !this.context.recipes.isEmpty()
   }
 
   isJsxTagRecipe = memo((tagName: string) => {

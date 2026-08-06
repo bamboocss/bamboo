@@ -5,7 +5,6 @@ export default defineConfig({
   include: ['./pages/**/*.{vue,ts,tsx}', './components/**/*.{vue,ts,tsx}'],
   exclude: [],
   outdir: 'styled-system',
-  jsxFramework: 'vue',
   theme: {
     extend: {
       slotRecipes: {

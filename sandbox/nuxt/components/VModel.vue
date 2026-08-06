@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { cva } from '../styled-system/css'
-import { styled } from '../styled-system/jsx'
+import { css, cva } from '../styled-system/css'
 import { vstack } from '../styled-system/patterns'
 
 const CustomInputStyle = cva({
@@ -12,8 +11,6 @@ const CustomInputStyle = cva({
   },
 })
 
-const CustomJSXInput = styled('input', CustomInputStyle)
-
 const jsxModel = ref('')
 const nativeInputModel = ref('')
 const styledModel = ref('')
@@ -23,12 +20,12 @@ const styledModel = ref('')
   <div :class="vstack()">
     <label>
       JSXModel:
-      <CustomJSXInput v-model="jsxModel" />
+      <input v-model="jsxModel" :class="CustomInputStyle()" />
       Result: {{ jsxModel }}
     </label>
     <label>
       Styled Component:
-      <styled.input px="4" py="2" bgColor="gray.200" v-model="styledModel" />
+      <input v-model="styledModel" :class="css({ px: '4', py: '2', bgColor: 'gray.200' })" />
       Result: {{ styledModel }}
     </label>
     <label>

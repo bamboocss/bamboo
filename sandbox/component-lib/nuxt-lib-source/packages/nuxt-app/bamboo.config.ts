@@ -9,5 +9,4 @@ export default defineConfig({
   ],
   exclude: [],
   outdir: '@sandbox-nuxt-lib-source/styled-system',
-  jsxFramework: 'vue',
 })

@@ -269,23 +269,25 @@ export const EXAMPLES = [
 
   {
     id: 'jsx',
-    label: 'JSX Style Props',
-    code: outdent`import { styled } from 'styled-system/jsx';
+    label: 'Conditional Values',
+    code: outdent`import { css } from 'styled-system/css';
     import { center } from 'styled-system/patterns';
 
     export const App = () => {
       return (
         <div className={center({ height: 'full' })}>
-          <styled.button
-            rounded="md"
-            fontWeight="semibold"
-            height="10"
-            px="4"
-            bg={{ base: 'yellow.500', _dark: 'yellow.300' }}
-            color={{ base: 'white', _dark: 'gray.800' }}
+          <button
+            className={css({
+              rounded: 'md',
+              fontWeight: 'semibold',
+              height: '10',
+              px: '4',
+              bg: { base: 'yellow.500', _dark: 'yellow.300' },
+              color: { base: 'white', _dark: 'gray.800' },
+            })}
           >
             Button
-          </styled.button>
+          </button>
         </div>
       );
     };

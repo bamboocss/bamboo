@@ -10,9 +10,6 @@ describe('import map', () => {
         "css": [
           "styled-system/css",
         ],
-        "jsx": [
-          "styled-system/jsx",
-        ],
         "pattern": [
           "styled-system/patterns",
         ],
@@ -29,16 +26,13 @@ describe('import map', () => {
   test('partial value - has fallbacks', () => {
     const ctx = createContext({
       importMap: {
-        jsx: ['styled-system/jsx', 'custom-entrypoint'],
+        css: ['styled-system/css', 'custom-entrypoint'],
       },
     })
     expect(ctx.imports.value).toMatchInlineSnapshot(`
       {
         "css": [
           "styled-system/css",
-        ],
-        "jsx": [
-          "styled-system/jsx",
           "custom-entrypoint",
         ],
         "pattern": [
@@ -61,9 +55,6 @@ describe('import map', () => {
         "css": [
           "@acme/org/css",
         ],
-        "jsx": [
-          "@acme/org/jsx",
-        ],
         "pattern": [
           "@acme/org/patterns",
         ],
@@ -85,11 +76,6 @@ describe('import map', () => {
           "@acme/org/css",
           "@foo/org/css",
           "@bar/org/css",
-        ],
-        "jsx": [
-          "@acme/org/jsx",
-          "@foo/org/jsx",
-          "@bar/org/jsx",
         ],
         "pattern": [
           "@acme/org/patterns",
@@ -124,9 +110,6 @@ describe('import map', () => {
           "@acme/org/css",
           "@foo/org/css",
           "@bar/org/css",
-        ],
-        "jsx": [
-          "styled-system/jsx",
         ],
         "pattern": [
           "@acme/org/patterns",

@@ -18,7 +18,6 @@ For most projects this is a find-and-replace of `panda` with `bamboo`, plus a re
 - The config shape, with one exception. Every key you have in `panda.config.ts` is valid in `bamboo.config.ts` except
   `studio`, which has no equivalent – delete it.
 - The output directory. It still defaults to `styled-system`, so imports like `styled-system/css` do not move.
-- `jsxFactory`, which still defaults to `styled`.
 
 Because the generated output directory keeps its name and shape, the only imports you have to touch are the ones that
 name the tool itself – the config file, the PostCSS plugin, and any direct `@pandacss/*` imports.
@@ -166,8 +165,24 @@ See [Classname concatenation](/docs/concepts/writing-styles#classname-concatenat
 ## Things that are easy to miss
 
 - **`PANDA_DEBUG`** is now `BAMBOO_DEBUG`. See [Debugging](/docs/guides/debugging).
-- **`jsxFactory: 'panda'`.** If you set this, the factory is imported under whatever name you choose, so `panda.div`
-  keeps working. Rename it only if you want to.
+- **There is no JSX factory.** `styled.div`, `panda.div`, `styled('button', recipe)`, `createStyleContext` and
+  `splitCssProps` have no equivalent, and `styled-system/jsx` is not generated at all. Style props become a `css()`
+  call, and a recipe component becomes an ordinary component that calls the recipe:
+
+  ```tsx
+  // panda
+  const Button = styled('button', buttonRecipe)
+  <Button size="sm" />
+
+  // bamboo
+  const Button = (props: ButtonProps) => {
+    const [variantProps, rest] = buttonRecipe.splitVariantProps(props)
+    return <button {...rest} className={cx(buttonRecipe(variantProps), props.className)} />
+  }
+  ```
+
+  `jsxFramework`, `jsxFactory` and `jsxStyleProps` are gone from the config with it — delete them.
+
 - **The ESLint plugin** is `@bamboocss/eslint-plugin`.
 - **Editor and CI caches.** The TypeScript server holds on to the old `styled-system` types; restart it after
   regenerating.

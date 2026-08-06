@@ -14,8 +14,6 @@ export default defineConfig({
   include: ['./src/**/*.{tsx,ts,jsx}', './pages/**/*.{jsx,tsx}', './app/**/*.{jsx,tsx}'],
   exclude: [],
   outdir: 'styled-system',
-  jsxFramework: 'react',
-  jsxFactory: 'bamboo',
   conditions: {
     extend: {
       dark: '.dark &, [data-theme="dark"] &',

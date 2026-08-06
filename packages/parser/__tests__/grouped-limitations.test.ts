@@ -208,48 +208,6 @@ const expectNothingLost = (
  * carries every declaration it names — which is what `cssMode: 'atomic'` would have given.
  */
 describe('cssMode: grouped — what degrades to atomic', () => {
-  test('a conditional value beside another prop on a JSX element keeps both', () => {
-    const result = parseAndExtract(
-      `import { styled } from "styled-system/jsx"
-       export const A = ({ on }) => <styled.div color={on ? "red" : "blue"} padding="2" />`,
-      { cssMode: 'grouped' },
-    )
-
-    // The group covering both properties is not emitted — `setJsx` does not recombine the
-    // entries — so the runtime falls back, and the fallback has rules to land on.
-    const classNames = createRuntime(result)({ color: 'red', padding: '2' })
-    expect(classNames.length).toBeGreaterThan(1)
-    expectNothingLost(result, classNames, ['color: red', 'padding'])
-  })
-
-  test('a conditional value on its own still groups, with no atomic duplication', () => {
-    const result = parseAndExtract(
-      `import { styled } from "styled-system/jsx"
-       export const A = ({ on }) => <styled.div color={on ? "red" : "blue"} />`,
-      { cssMode: 'grouped' },
-    )
-
-    // Each branch is a complete object, so each is a complete group.
-    for (const color of ['red', 'blue']) {
-      const classNames = createRuntime(result)({ color })
-      expect(classNames).toHaveLength(1)
-      expect(backed(result.css, classNames)).toEqual(classNames)
-    }
-  })
-
-  test('a fully static JSX element still groups, with no atomic duplication', () => {
-    const result = parseAndExtract(
-      `import { styled } from "styled-system/jsx"
-       export const A = () => <styled.div color="red" padding="2" />`,
-      { cssMode: 'grouped' },
-    )
-
-    expect(result.encoder.atomic.size).toBe(0)
-    const classNames = createRuntime(result)({ color: 'red', padding: '2' })
-    expect(classNames).toHaveLength(1)
-    expect(backed(result.css, classNames)).toEqual(classNames)
-  })
-
   test('a pattern with a conditional value beside another prop keeps both', () => {
     const result = parseAndExtract(
       `import { stack } from "styled-system/patterns"
@@ -277,18 +235,6 @@ describe('cssMode: grouped — what degrades to atomic', () => {
     const classNames = createRuntime(result)({ gap: '2', display: 'flex', flexDirection: 'column' })
     expect(classNames).toHaveLength(1)
     expect(backed(result.css, classNames)).toEqual(classNames)
-  })
-
-  test('an unresolvable value beside another prop on a JSX element keeps the resolved one', () => {
-    const result = parseAndExtract(
-      `import { styled } from "styled-system/jsx"
-       export const A = (props) => <styled.div color={props.tone} padding="2" />`,
-      { cssMode: 'grouped' },
-    )
-
-    // `color` has no rule under any mode — the build never saw the value. `padding` does.
-    const classNames = createRuntime(result)({ color: 'tomato', padding: '2' })
-    expectNothingLost(result, classNames, ['padding'])
   })
 })
 

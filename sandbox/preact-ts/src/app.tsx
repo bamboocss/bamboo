@@ -1,10 +1,9 @@
-import { css } from 'styled-system/css'
-import { styled } from 'styled-system/jsx'
+import { css, cva } from 'styled-system/css'
 import { box, stack } from 'styled-system/patterns'
 import { btn } from 'styled-system/recipes'
 import { token } from 'styled-system/tokens'
 
-const Notice = styled('div', {
+const notice = cva({
   base: {
     bg: 'red',
     color: 'white',
@@ -28,11 +27,9 @@ const Notice = styled('div', {
 export const App = () => {
   return (
     <div className={box({ p: '4', spaceY: '4', colorPalette: 'blue', bg: token('colors.colorPalette.500') })}>
-      <Notice>Styled</Notice>
-      <Notice unstyled bg="pink" color="green">
-        Unstyled + css
-      </Notice>
-      <Notice size="lg">Styled + variants (font-size: 3xl)</Notice>
+      <div className={notice()}>Styled</div>
+      <div className={css({ bg: 'pink', color: 'green' })}>Unstyled + css</div>
+      <div className={notice({ size: 'lg' })}>Styled + variants (font-size: 3xl)</div>
       <div className={stack()}>
         <a className={css({ mb: '3', paddingEnd: '2' })}>Click me</a>
       </div>

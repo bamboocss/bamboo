@@ -141,7 +141,6 @@ describe('extract to css output pipeline', () => {
 
   test('basic usage', () => {
     const code = `
-      import { styled } from "styled-system/jsx"
       import { css } from "styled-system/css"
 
       const color = "red.100";
@@ -162,21 +161,18 @@ describe('extract to css output pipeline', () => {
                 boxShadow: "0 0 0 4px var(--shadow)",
                 outlineColor: "var(--colors-pink-200)",
               })} />
-              <styled.div
-                debug
-                p="2"
-                md={{
+              <div className={css({
+                p: "2",
+                md: {
                   m: {
                     base: "1px",
                     sm: "4px",
                   },
                   color,
                   _dark: { _hover: { m: -2 } }
-                }}
-                css={{
-                  md: { p: 4 },
-                  _hover: { color: "#2ecc71", backgroundColor: "var(--some-bg)" }
-                }}>Click me</styled.div>
+                },
+                _hover: { color: "#2ecc71", backgroundColor: "var(--some-bg)" }
+              })}>Click me</div>
             </div>
         )
        }
@@ -206,16 +202,10 @@ describe('extract to css output pipeline', () => {
         {
           "data": [
             {
-              "css": {
-                "_hover": {
-                  "backgroundColor": "var(--some-bg)",
-                  "color": "#2ecc71",
-                },
-                "md": {
-                  "p": 4,
-                },
+              "_hover": {
+                "backgroundColor": "var(--some-bg)",
+                "color": "#2ecc71",
               },
-              "debug": true,
               "md": {
                 "_dark": {
                   "_hover": {
@@ -231,8 +221,8 @@ describe('extract to css output pipeline', () => {
               "p": "2",
             },
           ],
-          "name": "styled.div",
-          "type": "jsx-factory",
+          "name": "css",
+          "type": "css",
         },
       ]
     `)
@@ -275,14 +265,6 @@ describe('extract to css output pipeline', () => {
           outline-color: var(--colors-pink-200);
       }
 
-        .debug_true {
-          outline: 1px solid blue !important;
-      }
-
-        .debug_true>* {
-          outline: 1px solid red !important;
-      }
-
         [data-theme=dark] .dark\\:--shadow_colors\\.gray\\.800,.dark .dark\\:--shadow_colors\\.gray\\.800,.dark\\:--shadow_colors\\.gray\\.800.dark,.dark\\:--shadow_colors\\.gray\\.800[data-theme=dark] {
           --shadow: var(--colors-gray-800);
       }
@@ -296,9 +278,6 @@ describe('extract to css output pipeline', () => {
       }
 
         @media screen and (min-width: 48rem) {
-          .md\\:p_4 {
-            padding: var(--spacing-4);
-      }
           .md\\:m_1px {
             margin: 1px;
       }
@@ -741,24 +720,7 @@ describe('extract to css output pipeline', () => {
 
      `
     const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {},
-          ],
-          "name": "SectionLearn",
-          "type": "jsx",
-        },
-        {
-          "data": [
-            {},
-          ],
-          "name": "SectionVideos",
-          "type": "jsx",
-        },
-      ]
-    `)
+    expect(result.json).toMatchInlineSnapshot(`[]`)
 
     expect(result.css).toMatchInlineSnapshot('""')
   })
@@ -1185,204 +1147,8 @@ describe('extract to css output pipeline', () => {
     `)
   })
 
-  test('factory css', () => {
-    const code = `
-    import { styled } from "styled-system/jsx"
-
-    // PropertyAccess factory css
-    styled.div({
-      color: "red.100",
-    })
-
-    // CallExpression factory css
-    styled("div", {
-        color: "yellow.100",
-    })
-
-    // TaggedTemplateExpression factory css
-    styled.div\`
-      color: var(--colors-purple-100);
-    \`
-   `
-    const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "color": "red.100",
-            },
-          ],
-          "name": "styled.div",
-          "type": "css",
-        },
-        {
-          "data": [
-            {
-              "color": "yellow.100",
-            },
-          ],
-          "name": "styled",
-          "type": "css",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .c_red\\.100 {
-          color: var(--colors-red-100);
-      }
-
-        .c_yellow\\.100 {
-          color: var(--colors-yellow-100);
-      }
-      }"
-    `)
-  })
-
-  test('cva and factory recipes', () => {
-    const code = `
-      import { styled } from "styled-system/jsx"
-      import { cva } from "styled-system/css"
-
-      // PropertyAccess factory inline recipe
-      styled.div({
-        base: {
-          color: "blue.100",
-        },
-        variants: {
-          //
-        }
-      })
-
-      // CallExpression factory inline recipe
-      styled("div", {
-        base: {
-          color: "green.100",
-        },
-        variants: {
-          //
-        }
-      })
-
-      // PropertyAccess factory + cva
-      styled.div(cva({
-        base: {
-          color: "rose.100",
-        },
-      }))
-
-      const buttonRecipe = cva({
-        base: {
-          color: "sky.100",
-          bg: "red.900",
-        }
-      })
-
-      function App () {
-        return (
-          <>
-            <Input />
-          </>
-        )
-      }
-     `
-    const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "base": {
-                "color": "blue.100",
-              },
-              "variants": {},
-            },
-          ],
-          "name": "styled.div",
-          "type": "cva",
-        },
-        {
-          "data": [
-            {},
-          ],
-          "name": "styled.div",
-          "type": "css",
-        },
-        {
-          "data": [
-            {
-              "base": {
-                "color": "green.100",
-              },
-              "variants": {},
-            },
-          ],
-          "name": "styled",
-          "type": "cva",
-        },
-        {
-          "data": [
-            {
-              "base": {
-                "color": "rose.100",
-              },
-            },
-          ],
-          "name": "cva",
-          "type": "cva",
-        },
-        {
-          "data": [
-            {
-              "base": {
-                "bg": "red.900",
-                "color": "sky.100",
-              },
-            },
-          ],
-          "name": "cva",
-          "type": "cva",
-        },
-        {
-          "data": [
-            {},
-          ],
-          "name": "Input",
-          "type": "jsx",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .bg_red\\.900 {
-          background: var(--colors-red-900);
-      }
-
-        .c_blue\\.100 {
-          color: var(--colors-blue-100);
-      }
-
-        .c_green\\.100 {
-          color: var(--colors-green-100);
-      }
-
-        .c_rose\\.100 {
-          color: var(--colors-rose-100);
-      }
-
-        .c_sky\\.100 {
-          color: var(--colors-sky-100);
-      }
-      }"
-    `)
-  })
-
   test('should extract config recipes', () => {
     const code = `
-       import { bamboo, Stack } from "styled-system/jsx"
       import { button, anotherButton, complexButton } from "styled-system/recipes"
 
       function AnotherButtonWithRegex({ children, variant, size, css: cssProp }: ButtonProps) {
@@ -1401,8 +1167,6 @@ describe('extract to css output pipeline', () => {
          return (
             <div marginTop="55555px">
                 <Stack>
-                    <styled.button marginTop="40px" marginBottom="42px">Click me</styled.button>
-                    <styled.div bg="red.200">Click me</styled.div>
                     <AnotherButtonWithRegex variant="danger" size="md" />
                     <AnotherButton spacing="sm" />
                     <ComplexDesignSystemButton color="blue" />
@@ -1490,13 +1254,6 @@ describe('extract to css output pipeline', () => {
         },
         {
           "data": [
-            {},
-          ],
-          "name": "Stack",
-          "type": "jsx",
-        },
-        {
-          "data": [
             {
               "size": "md",
               "variant": "danger",
@@ -1555,133 +1312,6 @@ describe('extract to css output pipeline', () => {
       @layer utilities {
         .z_100 {
           z-index: 100;
-      }
-      }"
-    `)
-  })
-
-  test('should allow JSX props along with recipe components', () => {
-    const code = `
-    import { styled, type HTMLStyledProps } from 'styled-system/jsx';
-    type ButtonProps = HTMLStyledProps<'button'>;
-    const StyledButton = styled('button', { base: { padding: '10' } });
-
-    const Button = ({ children, ...props }: ButtonProps) => (
-      <StyledButton {...props}>{children}</StyledButton>
-    );
-
-    const TomatoButton = (props: ButtonProps) => (
-      <Button backgroundColor="tomato" {...props} />
-    );
-
-    export const App = () => {
-      return (
-        <>
-          <div>
-            <TomatoButton>Button</TomatoButton>
-            <Button backgroundColor="yellow">Button</Button>
-            <TomatoButton color="purple" css={{ color: "pink" }}>Button</TomatoButton>
-          </div>
-        </>
-      );
-    };
-
-     `
-    const result = parseAndExtract(code, {
-      outdir: 'styled-system',
-      jsxFactory: 'styled',
-      theme: {
-        extend: {
-          recipes: {
-            button: {
-              className: 'my-button',
-              jsx: [/Button.*/],
-            },
-          },
-        },
-      },
-    })
-
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "base": {
-                "padding": "10",
-              },
-            },
-          ],
-          "name": "styled",
-          "type": "cva",
-        },
-        {
-          "data": [
-            {},
-          ],
-          "name": "StyledButton",
-          "type": "jsx-recipe",
-        },
-        {
-          "data": [
-            {
-              "backgroundColor": "tomato",
-            },
-          ],
-          "name": "Button",
-          "type": "jsx-recipe",
-        },
-        {
-          "data": [
-            {
-              "backgroundColor": "yellow",
-            },
-          ],
-          "name": "Button",
-          "type": "jsx-recipe",
-        },
-        {
-          "data": [
-            {},
-          ],
-          "name": "TomatoButton",
-          "type": "jsx-recipe",
-        },
-        {
-          "data": [
-            {
-              "color": "purple",
-              "css": {
-                "color": "pink",
-              },
-            },
-          ],
-          "name": "TomatoButton",
-          "type": "jsx-recipe",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .p_10 {
-          padding: var(--spacing-10);
-      }
-
-        .bg-c_tomato {
-          background-color: tomato;
-      }
-
-        .bg-c_yellow {
-          background-color: yellow;
-      }
-
-        .c_pink {
-          color: pink;
-      }
-
-        .c_purple {
-          color: purple;
       }
       }"
     `)
@@ -1889,7 +1519,6 @@ describe('extract to css output pipeline', () => {
         css: 'controlled-import-map/css',
         recipes: 'controlled-import-map/common',
         patterns: 'controlled-import-map/common',
-        jsx: 'controlled-import-map',
       },
     })
 
@@ -1921,15 +1550,6 @@ describe('extract to css output pipeline', () => {
           ],
           "name": "buttonStyle",
           "type": "recipe",
-        },
-        {
-          "data": [
-            {
-              "color": "red",
-            },
-          ],
-          "name": "Box",
-          "type": "jsx",
         },
       ]
     `)
@@ -1985,10 +1605,6 @@ describe('extract to css output pipeline', () => {
 
         .flex-d_column {
           flex-direction: column;
-      }
-
-        .c_red {
-          color: red;
       }
       }"
     `)
@@ -2046,15 +1662,6 @@ describe('extract to css output pipeline', () => {
           "name": "buttonStyle",
           "type": "recipe",
         },
-        {
-          "data": [
-            {
-              "color": "red",
-            },
-          ],
-          "name": "Box",
-          "type": "jsx",
-        },
       ]
     `)
 
@@ -2110,10 +1717,6 @@ describe('extract to css output pipeline', () => {
         .flex-d_column {
           flex-direction: column;
       }
-
-        .c_red {
-          color: red;
-      }
       }"
     `)
   })
@@ -2130,29 +1733,9 @@ describe('extract to css output pipeline', () => {
        `
 
     const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "paddingLeft": [
-                0,
-              ],
-            },
-          ],
-          "name": "Box",
-          "type": "jsx",
-        },
-      ]
-    `)
+    expect(result.json).toMatchInlineSnapshot(`[]`)
 
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .pl_0 {
-          padding-left: var(--spacing-0);
-      }
-      }"
-    `)
+    expect(result.css).toMatchInlineSnapshot(`""`)
   })
 
   test('array syntax - simple conditional', () => {
@@ -2167,39 +1750,9 @@ describe('extract to css output pipeline', () => {
        `
 
     const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "paddingLeft": [
-                0,
-              ],
-            },
-            {
-              "paddingLeft": [
-                4,
-              ],
-            },
-            {},
-          ],
-          "name": "Box",
-          "type": "jsx",
-        },
-      ]
-    `)
+    expect(result.json).toMatchInlineSnapshot(`[]`)
 
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .pl_0 {
-          padding-left: var(--spacing-0);
-      }
-
-        .pl_4 {
-          padding-left: var(--spacing-4);
-      }
-      }"
-    `)
+    expect(result.css).toMatchInlineSnapshot(`""`)
   })
 
   test('array syntax - conditional in middle', () => {
@@ -2214,192 +1767,9 @@ describe('extract to css output pipeline', () => {
        `
 
     const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "py": [
-                undefined,
-                2,
-              ],
-            },
-            {
-              "py": [
-                undefined,
-                3,
-              ],
-            },
-            {
-              "py": [
-                2,
-                undefined,
-                4,
-              ],
-            },
-          ],
-          "name": "Box",
-          "type": "jsx",
-        },
-      ]
-    `)
+    expect(result.json).toMatchInlineSnapshot(`[]`)
 
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .py_2 {
-          padding-block: var(--spacing-2);
-      }
-
-        @media screen and (min-width: 40rem) {
-          .sm\\:py_2 {
-            padding-block: var(--spacing-2);
-      }
-          .sm\\:py_3 {
-            padding-block: var(--spacing-3);
-      }
-      }
-
-        @media screen and (min-width: 48rem) {
-          .md\\:py_4 {
-            padding-block: var(--spacing-4);
-      }
-      }
-      }"
-    `)
-  })
-
-  test('styled FactoryOptions defaultProps extraction', () => {
-    const code = `
-    import { styled } from "styled-system/jsx"
-    import { cva } from "styled-system/css"
-    import { button as aliasedButton } from "styled-system/recipes"
-
-    const Button = styled("button", aliasedButton, {
-      defaultProps: {
-        size: 'md',
-        variant: 'second',
-        color: {
-          base: "amber.400",
-          _dark: "sky.300"
-          _hover: {
-            base: "amber.500",
-            _dark: "sky.200"
-          }
-        },
-      }
-    })
-
-    export default function Page() {
-      return (
-        <>
-          <Button>Click me!</Button>
-        </>
-      )
-    }
-
-     `
-    const result = parseAndExtract(code, {
-      theme: {
-        extend: {
-          recipes: {
-            button: {
-              className: 'button',
-              jsx: ['Button'],
-              base: {
-                color: 'sky.100',
-                bg: 'red.900',
-              },
-              variants: {
-                size: {
-                  sm: { borderRadius: 'sm' },
-                  md: { borderRadius: 'md' },
-                },
-                variant: {
-                  first: { backgroundColor: 'blue.500' },
-                  second: { backgroundColor: 'red.500' },
-                },
-              },
-              defaultVariants: { size: 'sm' },
-            },
-          },
-        },
-      },
-    })
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {},
-          ],
-          "name": "styled",
-          "type": "css",
-        },
-        {
-          "data": [
-            {
-              "color": {
-                "_dark": "sky.300",
-                "_hover": {
-                  "_dark": "sky.200",
-                  "base": "amber.500",
-                },
-                "base": "amber.400",
-              },
-              "size": "md",
-              "variant": "second",
-            },
-          ],
-          "name": "button",
-          "type": "jsx-recipe",
-        },
-        {
-          "data": [
-            {},
-          ],
-          "name": "Button",
-          "type": "jsx-recipe",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer recipes {
-        .button {
-          background: var(--colors-red-900);
-          color: var(--colors-sky-100);
-      }
-
-        .button--size_md {
-          border-radius: var(--radii-md);
-      }
-
-        .button--variant_second {
-          background-color: var(--colors-red-500);
-      }
-
-        .button--size_sm {
-          border-radius: var(--radii-sm);
-      }
-      }
-
-      @layer utilities {
-        .c_amber\\.400 {
-          color: var(--colors-amber-400);
-      }
-
-        [data-theme=dark] .dark\\:c_sky\\.300,.dark .dark\\:c_sky\\.300,.dark\\:c_sky\\.300.dark,.dark\\:c_sky\\.300[data-theme=dark] {
-          color: var(--colors-sky-300);
-      }
-
-        .hover\\:c_amber\\.500:is(:hover, [data-hover]) {
-          color: var(--colors-amber-500);
-      }
-
-        [data-theme=dark] .hover\\:dark\\:c_sky\\.200:is(:hover, [data-hover]),.dark .hover\\:dark\\:c_sky\\.200:is(:hover, [data-hover]),.hover\\:dark\\:c_sky\\.200:is(:hover, [data-hover]).dark,.hover\\:dark\\:c_sky\\.200:is(:hover, [data-hover])[data-theme=dark] {
-          color: var(--colors-sky-200);
-      }
-      }"
-    `)
+    expect(result.css).toMatchInlineSnapshot(`""`)
   })
 
   test('array syntax within config recipes', () => {
@@ -2626,19 +1996,7 @@ describe('extract to css output pipeline', () => {
     }
      `
     const result = parseAndExtract(code, { strictTokens: true })
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "content": "https://www.buymeacoffee.com/grizzlycodes",
-            },
-          ],
-          "name": "CopyButton",
-          "type": "jsx",
-        },
-      ]
-    `)
+    expect(result.json).toMatchInlineSnapshot(`[]`)
 
     expect(result.css).toMatchInlineSnapshot('""')
   })
@@ -2699,88 +2057,6 @@ describe('extract to css output pipeline', () => {
     `)
   })
 
-  test('recipe issue', () => {
-    const code = `
-    import { css } from 'styled-system/css';
-    import { styled } from 'styled-system/jsx';
-    import { cardStyle2  } from 'styled-system/recipes';
-    import { cardStyle } from 'styled-system/recipes';
-
-    const CardStyle = styled("div", cardStyle)
-    const CardStyle2 = styled("div", cardStyle2)
-
-    export const App = () => {
-      return (
-        <CardStyle rounded={true}>Card rounded={"true"}</CardStyle>
-        <CardStyle rounded={false}>Card rounded={"false"}</CardStyle>
-
-        <CardStyle2 isRounded={true}>Card2 isRounded={"true"}</CardStyle2>
-        <CardStyle2 isRounded={false}>Card2 isRounded={"false"}</CardStyle2>
-      );
-    };
-
-     `
-    const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {},
-          ],
-          "name": "styled",
-          "type": "css",
-        },
-        {
-          "data": [
-            {},
-          ],
-          "name": "styled",
-          "type": "css",
-        },
-        {
-          "data": [
-            {
-              "rounded": true,
-            },
-          ],
-          "name": "CardStyle",
-          "type": "jsx-recipe",
-        },
-        {
-          "data": [
-            {
-              "rounded": false,
-            },
-          ],
-          "name": "CardStyle",
-          "type": "jsx-recipe",
-        },
-        {
-          "data": [
-            {},
-          ],
-          "name": "CardStyle2",
-          "type": "jsx",
-        },
-        {
-          "data": [
-            {},
-          ],
-          "name": "CardStyle2",
-          "type": "jsx",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer recipes {
-        .card--rounded_true {
-          border-radius: 0.375rem;
-      }
-      }"
-    `)
-  })
-
   test('extract aliased {xxx}.raw', () => {
     const code = `
     import { css } from 'styled-system/css';
@@ -2828,58 +2104,9 @@ describe('extract to css output pipeline', () => {
     }
      `
     const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "direction": "column",
-            },
-          ],
-          "name": "Stack",
-          "type": "jsx",
-        },
-        {
-          "data": [
-            {
-              "fontSize": "12px",
-            },
-          ],
-          "name": "Random",
-          "type": "jsx",
-        },
-        {
-          "data": [
-            {
-              "content": "this will be extrated",
-              "padding": "4",
-            },
-          ],
-          "name": "OkComponent",
-          "type": "jsx",
-        },
-      ]
-    `)
+    expect(result.json).toMatchInlineSnapshot(`[]`)
 
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .p_4 {
-          padding: var(--spacing-4);
-      }
-
-        .direction_column {
-          direction: column;
-      }
-
-        .fs_12px {
-          font-size: 12px;
-      }
-
-        .content_this_will_be_extrated {
-          content: this will be extrated;
-      }
-      }"
-    `)
+    expect(result.css).toMatchInlineSnapshot(`""`)
   })
 
   test('custom matchTag', () => {
@@ -2909,27 +2136,9 @@ describe('extract to css output pipeline', () => {
         },
       },
     })
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "padding": "4",
-            },
-          ],
-          "name": "OkComponent",
-          "type": "jsx",
-        },
-      ]
-    `)
+    expect(result.json).toMatchInlineSnapshot(`[]`)
 
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .p_4 {
-          padding: var(--spacing-4);
-      }
-      }"
-    `)
+    expect(result.css).toMatchInlineSnapshot(`""`)
   })
 
   test('custom matchTag in extend mode preserves bamboo component matching', () => {
@@ -2995,19 +2204,7 @@ describe('extract to css output pipeline', () => {
         "Stack": false,
       }
     `)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "padding": "4",
-            },
-          ],
-          "name": "OkComponent",
-          "type": "jsx",
-        },
-      ]
-    `)
+    expect(result.json).toMatchInlineSnapshot(`[]`)
   })
 
   test('multiple css alias', () => {
@@ -3459,26 +2656,28 @@ describe('extract to css output pipeline', () => {
 
   test('config.outdir detection with baseUrl', () => {
     const code = `
-    import { styled } from "styled-system/jsx";
+    import { css } from "styled-system/css";
 
     export const Markdown = () => {
       return (
         <ReactMarkdown
           components={{
             blockquote: ({ ref, node, ...props }) => (
-              <styled.blockquote
-                borderLeftWidth="4px"
-                borderLeftStyle="solid"
-                borderLeftColor="border.default"
-                padding={4}
+              <blockquote
+                className={css({
+                  borderLeftWidth: "4px",
+                  borderLeftStyle: "solid",
+                  borderLeftColor: "border.default",
+                  padding: 4,
+                })}
                 {...props}
               />
             ),
             ul: ({ ref, node, ...props }) => (
-              <styled.ul pl="4" listStyleType="disc" {...props} />
+              <ul className={css({ pl: "4", listStyleType: "disc" })} {...props} />
             ),
             ol: ({ ref, node, ...props }) => (
-              <styled.ol pl="4" listStyleType="decimal" {...props} />
+              <ol className={css({ pl: "4", listStyleType: "decimal" })} {...props} />
             ),
           }}
         >
@@ -3503,13 +2702,6 @@ describe('extract to css output pipeline', () => {
       [
         {
           "data": [
-            {},
-          ],
-          "name": "ReactMarkdown",
-          "type": "jsx",
-        },
-        {
-          "data": [
             {
               "borderLeftColor": "border.default",
               "borderLeftStyle": "solid",
@@ -3517,8 +2709,8 @@ describe('extract to css output pipeline', () => {
               "padding": 4,
             },
           ],
-          "name": "styled.blockquote",
-          "type": "jsx-factory",
+          "name": "css",
+          "type": "css",
         },
         {
           "data": [
@@ -3527,8 +2719,8 @@ describe('extract to css output pipeline', () => {
               "pl": "4",
             },
           ],
-          "name": "styled.ul",
-          "type": "jsx-factory",
+          "name": "css",
+          "type": "css",
         },
         {
           "data": [
@@ -3537,8 +2729,8 @@ describe('extract to css output pipeline', () => {
               "pl": "4",
             },
           ],
-          "name": "styled.ol",
-          "type": "jsx-factory",
+          "name": "css",
+          "type": "css",
         },
       ]
     `)
@@ -3578,26 +2770,28 @@ describe('extract to css output pipeline', () => {
 
   test('config.outdir detection in nested folder with baseUrl', () => {
     const code = `
-    import { styled } from "styled-system/jsx";
+    import { css } from "styled-system/css";
 
     export const Markdown = () => {
       return (
         <ReactMarkdown
           components={{
             blockquote: ({ ref, node, ...props }) => (
-              <styled.blockquote
-                borderLeftWidth="4px"
-                borderLeftStyle="solid"
-                borderLeftColor="border.default"
-                padding={4}
+              <blockquote
+                className={css({
+                  borderLeftWidth: "4px",
+                  borderLeftStyle: "solid",
+                  borderLeftColor: "border.default",
+                  padding: 4,
+                })}
                 {...props}
               />
             ),
             ul: ({ ref, node, ...props }) => (
-              <styled.ul pl="4" listStyleType="disc" {...props} />
+              <ul className={css({ pl: "4", listStyleType: "disc" })} {...props} />
             ),
             ol: ({ ref, node, ...props }) => (
-              <styled.ol pl="4" listStyleType="decimal" {...props} />
+              <ol className={css({ pl: "4", listStyleType: "decimal" })} {...props} />
             ),
           }}
         >
@@ -3622,13 +2816,6 @@ describe('extract to css output pipeline', () => {
       [
         {
           "data": [
-            {},
-          ],
-          "name": "ReactMarkdown",
-          "type": "jsx",
-        },
-        {
-          "data": [
             {
               "borderLeftColor": "border.default",
               "borderLeftStyle": "solid",
@@ -3636,8 +2823,8 @@ describe('extract to css output pipeline', () => {
               "padding": 4,
             },
           ],
-          "name": "styled.blockquote",
-          "type": "jsx-factory",
+          "name": "css",
+          "type": "css",
         },
         {
           "data": [
@@ -3646,8 +2833,8 @@ describe('extract to css output pipeline', () => {
               "pl": "4",
             },
           ],
-          "name": "styled.ul",
-          "type": "jsx-factory",
+          "name": "css",
+          "type": "css",
         },
         {
           "data": [
@@ -3656,8 +2843,8 @@ describe('extract to css output pipeline', () => {
               "pl": "4",
             },
           ],
-          "name": "styled.ol",
-          "type": "jsx-factory",
+          "name": "css",
+          "type": "css",
         },
       ]
     `)

@@ -1,23 +1,10 @@
 import { useState } from 'react'
 import { css, cx } from '../styled-system/css'
-import { bamboo } from '../styled-system/jsx'
 import { circle as circleLike, hstack, stack, vstack } from '../styled-system/patterns'
 import { button, someRecipe } from '../styled-system/recipes'
 import { Badge, badge } from './Badge'
 import { AnotherButtonWithRegex, Button, ListedButton } from './Button'
 import { Card } from './Card'
-
-const SomeRecipe = bamboo('div', someRecipe)
-
-const PrimaryButtonLike = bamboo('span', button, {
-  dataAttr: true,
-  defaultProps: {
-    variant: 'purple',
-  },
-  shouldForwardProp: (prop, _variantKeys) => {
-    return !prop.startsWith('_')
-  },
-})
 
 /** A shared style object, spread into calls below — the shape the fold now accounts for. */
 const surface = { borderWidth: '1px', borderRadius: 'md' }
@@ -83,7 +70,7 @@ function App() {
         <AnotherButtonWithRegex aria-label="AnotherButtonWithRegex" variant="secondary" size="sm">
           AnotherButtonWithRegex
         </AnotherButtonWithRegex>
-        <PrimaryButtonLike>Default props override</PrimaryButtonLike>
+        <span className={button({ variant: 'purple' })}>Default variant at the call site</span>
       </section>
 
       <section className={css({ padding: '5', borderWidth: '1px' })}>
@@ -113,9 +100,7 @@ function App() {
           <div className={circleLike({ size: '40px', bg: 'red.300', fontSize: '1.2em', fontWeight: 'bold' })}>S</div>
           <div className={hstack({ gap: '40px', debug: true })}>
             <div className={className}>Element 1</div>
-            <bamboo.div color="red" fontWeight="bold" fontSize="50px">
-              Element 2
-            </bamboo.div>
+            <div className={css({ color: 'red', fontWeight: 'bold', fontSize: '50px' })}>Element 2</div>
           </div>
         </div>
       </section>
@@ -138,9 +123,9 @@ function App() {
         <div className={badge({ status: 'success' })}>Warning</div>
       </section>
 
-      <SomeRecipe size="small" color="red.400">
-        config recipe compoundVariants overriding within styled, should be red.100
-      </SomeRecipe>
+      <div className={cx(someRecipe({ size: 'small' }), css({ color: 'red.400' }))}>
+        config recipe compoundVariants overriding at the call site, should be red.100
+      </div>
       <span
         className={css({
           height: '5',

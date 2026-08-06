@@ -4,7 +4,6 @@ import { type BoxNode, box, unbox } from '@bamboocss/extractor'
 import type { Dict, ParserResultInterface, ResultItem } from '@bamboocss/types'
 import MagicString from 'magic-string'
 import { Node, type SourceFile, SyntaxKind } from 'ts-morph'
-import { type JsxEdit, planJsxFold } from './fold-jsx'
 import {
   accountsForSource,
   ensureCxImport,
@@ -87,13 +86,8 @@ export interface FoldOptions {
   /** Reuse one runtime `css` across files in a build. */
   runtimeCss?: RuntimeCss
   /**
-   * Also collapse `styled.*` and pattern elements to the tag they render. On by default,
-   * since the JSX factory is where most style resolution happens at runtime.
-   */
-  jsx?: boolean
-  /**
-   * Split a `css()` call or a `styled.*` element that is only partly static, keeping the
-   * dynamic half at runtime. On by default.
+   * Split a `css()` call that is only partly static, keeping the dynamic half at runtime.
+   * On by default.
    */
   partial?: boolean
 }
@@ -139,9 +133,6 @@ const isInertArgument = (node: Node): boolean =>
   node.getKind() === SyntaxKind.FalseKeyword ||
   node.getKind() === SyntaxKind.NullKeyword ||
   (Node.isIdentifier(node) && node.getText() === 'undefined')
-
-/** Element surfaces `foldJsx` handles, as opposed to call sites. */
-const JSX_TYPES = new Set(['jsx-factory'])
 
 /**
  * Source files a box tree reaches, other than the one being folded.
@@ -242,22 +233,6 @@ const calleeRootName = (call: Node): string | undefined => {
   if (!Node.isCallExpression(call)) return undefined
 
   let current: Node = call.getExpression()
-  while (Node.isPropertyAccessExpression(current)) {
-    current = current.getExpression()
-  }
-
-  return Node.isIdentifier(current) ? current.getText() : undefined
-}
-
-/**
- * The identifier a JSX tag is rooted at: `styled` for `<styled.div>`, `bamboo` for
- * `<bamboo.styled.div>`. The same question `calleeRootName` answers for a call, and it
- * feeds the same import and shadowing checks.
- */
-const tagRootName = (element: Node): string | undefined => {
-  if (!Node.isJsxOpeningElement(element) && !Node.isJsxSelfClosingElement(element)) return undefined
-
-  let current: Node = element.getTagNameNode()
   while (Node.isPropertyAccessExpression(current)) {
     current = current.getExpression()
   }
@@ -408,7 +383,7 @@ const argumentsAccountedFor = (call: Node, boxNode: BoxNode): boolean => {
 }
 
 export const foldSource = (options: FoldOptions): FoldResult => {
-  const { ctx, code, parserResult, jsx = true, partial: partial_ = true, runtimeCss = createRuntimeCss(ctx) } = options
+  const { ctx, code, parserResult, partial: partial_ = true, runtimeCss = createRuntimeCss(ctx) } = options
 
   /**
    * Recover the static half of a call the whole-call path gave up on. Only a
@@ -578,17 +553,14 @@ export const foldSource = (options: FoldOptions): FoldResult => {
 
   const isBambooCssModule = (mod: string) => matchesModule(mod, cssModules)
   const isGeneratedCssModule = (mod: string) => matchesModule(mod, [generatedCssModule])
-  const jsxDeps = { isBambooCssModule, isGeneratedCssModule, isShadowed }
 
   const folded: FoldedCall[] = []
   const skipped: SkippedCall[] = []
 
   interface Candidate {
     item: ResultItem
-    /** The call to replace, for a call site. Absent for a JSX element. */
+    /** The call to replace. */
     call?: Node
-    /** Pre-planned edits and class, for a JSX element. */
-    edits?: JsxEdit[]
     className?: string
     /** Every class literal emitted, when that is more than `className` — see FoldedCall. */
     classNames?: string[]
@@ -624,48 +596,6 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     if (!item.box) continue
 
     const call = findCallExpression(item.box)
-
-    if (jsx && JSX_TYPES.has(type)) {
-      const element = item.box.getNode?.()
-      if (!element) continue
-
-      const elementStart = element.getStart()
-      const elementEnd = element.getEnd()
-
-      // Same two guards the call path applies, for the same reasons: offsets only mean
-      // something against the module being rewritten, and the parser matches a factory
-      // by name without requiring the import to be the one in scope. Collapsing a
-      // `styled.div` that is really the user's own binding does not just change a
-      // string — it deletes their component from the markup.
-      if (code.slice(elementStart, elementEnd) !== element.getText()) {
-        skipped.push({ name, reason: 'no-call-expression', start: 0, end: 0 })
-        continue
-      }
-
-      const rootName = tagRootName(element)
-      if (!rootName || !importsFor(element.getSourceFile()).has(rootName) || isShadowed(element, rootName)) {
-        skipped.push({ name, reason: 'not-imported', start: elementStart, end: elementEnd })
-        continue
-      }
-
-      const plan = planJsxFold(item, ctx, runtimeCss, partial_ ? jsxDeps : undefined)
-
-      if ('reason' in plan) {
-        skipped.push({ name, reason: plan.reason, start: elementStart, end: elementEnd })
-        continue
-      }
-
-      candidates.push({
-        item,
-        node: element,
-        edits: plan.edits,
-        className: plan.className,
-        insert: plan.insert,
-        start: plan.start,
-        end: plan.end,
-      })
-      continue
-    }
 
     // `token()` resolves to a CSS value rather than a class, so it takes its own path:
     // none of the class-producing machinery below has anything to say about it. Folding it
@@ -860,9 +790,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     const { item, start, end } = candidate
     const name = item.name ?? item.type ?? ''
 
-    const ranges: Array<[number, number]> = candidate.edits
-      ? candidate.edits.map((edit) => [edit.start, edit.end])
-      : [[start, end]]
+    const ranges: Array<[number, number]> = [[start, end]]
 
     if (collides(ranges)) {
       skipped.push({ name, reason: 'overlapping', start, end })
@@ -882,25 +810,6 @@ export const foldSource = (options: FoldOptions): FoldResult => {
 
     if (candidate.replacement) {
       magic.overwrite(start, end, candidate.replacement)
-      applyInsert(candidate.insert)
-      applied.push(...ranges)
-      folded.push({
-        name,
-        kind: 'class',
-        className: candidate.className!,
-        // Filtered, because an element or call whose classes are all built at runtime
-        // resolves no literal — `classNames` is what a consumer checks for CSS behind it,
-        // and an empty string is not a class to check.
-        classNames: (candidate.classNames ?? [candidate.className!]).filter(Boolean),
-        start,
-        end,
-      })
-      collectSourceFiles(item.box, dependencyScan)
-      continue
-    }
-
-    if (candidate.edits) {
-      for (const edit of candidate.edits) magic.overwrite(edit.start, edit.end, edit.text)
       applyInsert(candidate.insert)
       applied.push(...ranges)
       folded.push({

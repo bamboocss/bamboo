@@ -32,14 +32,13 @@ export default defineConfig({
       include: ['{packages,sandbox}/*/__tests__/**/*.bench.ts'],
       outputJson: 'bench/latest.json',
     },
-    // https://vitest.dev/config/#exclude defaults + sandbox/codegen/frameworks
+    // https://vitest.dev/config/#exclude defaults
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
       '**/cypress/**',
       '**/.{idea,git,cache,output,temp}/**',
       '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsdown,build}.config.*',
-      'sandbox/codegen/__tests__/frameworks',
       // Browser parity runs two full Vite builds and drives Chromium, so it needs a
       // browser on the machine and costs far more than the rest of the suite combined.
       // Out of the default run for the same reason benchmarks are: `pnpm test` is the

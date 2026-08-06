@@ -9,7 +9,6 @@ const generateThemeTokenGroups = (
   themeName: string,
   filterFn: (token: Token) => boolean,
 ): ThemeTokenGroupDefinition[] => {
-  const jsxStyleProps = ctx.config.jsxStyleProps
   const condName = '_theme' + capitalize(themeName)
 
   // Use allTokens instead of categoryMap to avoid deduplication issues
@@ -32,7 +31,7 @@ const generateThemeTokenGroups = (
       if (!typeTokens.length) return null
 
       const firstToken = typeTokens[0]
-      const { functionExamples, tokenFunctionExamples, jsxExamples } = generateTokenExamples(firstToken, jsxStyleProps)
+      const { functionExamples, tokenFunctionExamples } = generateTokenExamples(firstToken)
 
       const values: ThemeTokenValue[] = typeTokens.map((token) => {
         const conditions: Array<{ value: string; condition?: string }> = []
@@ -58,7 +57,6 @@ const generateThemeTokenGroups = (
         values,
         tokenFunctionExamples,
         functionExamples,
-        jsxExamples,
       }
     })
     .filter(Boolean) as ThemeTokenGroupDefinition[]

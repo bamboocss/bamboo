@@ -1,10 +1,7 @@
 import { readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 
-const fileMap = [
-  ['shared.mjs', 'helpers.mjs'],
-  ['normalize-html.mjs', 'normalize-html.mjs'],
-]
+const fileMap = [['shared.mjs', 'helpers.mjs']]
 
 async function main() {
   fileMap.forEach(([input, outfile]) => {

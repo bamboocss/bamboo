@@ -36,7 +36,6 @@ export class ImportMap {
     this.matchers.pattern = this.createMatcher(importMap.pattern)
 
     if (jsx.isEnabled) {
-      this.matchers.jsx = this.createMatcher(importMap.jsx, jsx.names)
     }
 
     this.value = importMap
@@ -76,7 +75,7 @@ export class ImportMap {
    * ```
    */
   buildImportMap = (option: UserConfig['importMap']): ImportMapOutput<string> => {
-    const output: ImportMapOutput<string> = { css: [], recipe: [], pattern: [], jsx: [], tokens: [] }
+    const output: ImportMapOutput<string> = { css: [], recipe: [], pattern: [], tokens: [] }
     const inputs = asArray(option)
 
     inputs.forEach((input) => {
@@ -85,7 +84,6 @@ export class ImportMap {
       output.recipe.push(...normalized.recipe)
       output.pattern.push(...normalized.pattern)
       output.tokens.push(...normalized.tokens)
-      if (normalized.jsx) output.jsx.push(...normalized.jsx)
     })
 
     return output
@@ -96,18 +94,16 @@ export class ImportMap {
       css: [[map, 'css'].join('/')],
       recipe: [[map, 'recipes'].join('/')],
       pattern: [[map, 'patterns'].join('/')],
-      jsx: [[map, 'jsx'].join('/')],
       tokens: [[map, 'tokens'].join('/')],
     }
   }
 
   private fromInput = (map: ImportMapInput | undefined): ImportMapOutput => {
-    const { css, recipes, patterns, jsx, tokens } = map ?? {}
+    const { css, recipes, patterns, tokens } = map ?? {}
     return {
       css: css ? asArray(css) : [[this.outdir, 'css'].join('/')],
       recipe: recipes ? asArray(recipes) : [[this.outdir, 'recipes'].join('/')],
       pattern: patterns ? asArray(patterns) : [[this.outdir, 'patterns'].join('/')],
-      jsx: jsx ? asArray(jsx) : [[this.outdir, 'jsx'].join('/')],
       tokens: tokens ? asArray(tokens) : [[this.outdir, 'tokens'].join('/')],
     }
   }

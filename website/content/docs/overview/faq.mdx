@@ -294,10 +294,7 @@ Both are opt-in and change nothing until switched on.
 ### Less JavaScript
 
 - The generated output now declares `sideEffects`, so a bundler can tree-shake the barrels. Previously
-  `import { Box } from 'styled-system/jsx'` retained every pattern module.
-- The JSX property list is emitted once rather than twice. It carried the browser CSS properties and your project's
-  properties as two constants that the runtime immediately concatenated, with 285 entries appearing in both; the module
-  drops from 15,684 to 11,468 bytes.
+  `import { box } from 'styled-system/patterns'` retained every pattern module.
 
 Together a JSX barrel import goes from 41.2 KB to 30.1 KB minified, and 12.6 KB to 10.2 KB gzipped.
 
@@ -345,10 +342,9 @@ HTML is rarely cached and lands on every initial render. The
 [upstream proposal](https://github.com/chakra-ui/panda/pull/3531) has the benchmarks behind that.
 
 `css()` is the surface that always groups: the build reconstructs the call it will make, including a ternary's branches
-and the properties written beside them. Everywhere else — a JSX element, a pattern, `styled(Component, cvaConfig)`,
-`createStyleContext` — groups when the build can see the whole call and falls back to atomic classes when it cannot, so
-the element keeps every declaration either way. The [cases that fall back](/docs/references/config#cssmode) are worth
-reading before you enable it.
+and the properties written beside them. A pattern or a recipe groups when the build can see the whole call and falls
+back to atomic classes when it cannot, so the element keeps every declaration either way. The
+[cases that fall back](/docs/references/config#cssmode) are worth reading before you enable it.
 
 ### Faster builds
 
@@ -378,14 +374,6 @@ When running `pnpm bamboo`, here's what's happening under the hood:
 
 In such a case, check the [`outExtension`](/docs/references/config#outextension) in your `bamboo.config` and set it to
 "js". This will ensure your modules are resolved correctly.
-
----
-
-## Why does importing `styled` not exist?
-
-You should use [`config.jsxFramework`](/docs/concepts/style-props#configure-jsx) when you need to import styled
-components. You can then use the [`jsxFactory`](/references/config#jsxfactory) option to set the name of the factory
-component.
 
 ---
 

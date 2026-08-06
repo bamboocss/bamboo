@@ -37,8 +37,6 @@ import { Utility } from './utility'
 
 const defaults = (config: UserConfig): UserConfig => ({
   cssVarRoot: ':where(:root, :host)',
-  jsxFactory: 'styled',
-  jsxStyleProps: 'all',
   outExtension: 'mjs',
   shorthands: true,
   ...config,
@@ -152,10 +150,7 @@ export class Context {
       decoder: this.decoder,
     })
 
-    this.jsx = new JsxEngine({
-      recipes: this.recipes,
-      config,
-    })
+    this.jsx = new JsxEngine({ recipes: this.recipes })
 
     this.imports = new ImportMap({
       jsx: this.jsx,

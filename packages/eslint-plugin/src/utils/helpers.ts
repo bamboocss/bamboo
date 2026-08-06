@@ -128,13 +128,6 @@ const isBambooIsh = (name: string, context: RuleContext<any, any>) => {
     return false
   }
 
-  // Check if the name is the jsx factory
-  const jsxFactory = syncAction('getJsxFactory', getSyncOptions(context))
-  if (jsxFactory && name === jsxFactory) {
-    // Check if the jsx factory is imported
-    return imports.some((imp) => imp.name === name || imp.alias === name)
-  }
-
   return matchFile(name, imports, context)
 }
 

@@ -5,5 +5,4 @@ export default defineConfig({
   include: ['./src/**/*.{js,jsx,ts,tsx}'],
   exclude: [],
   outdir: '@sandbox-nuxt-lib-source/styled-system',
-  jsxFramework: 'vue',
 })

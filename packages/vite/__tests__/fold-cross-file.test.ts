@@ -364,25 +364,6 @@ export const El = () => _jsx('div', { className: css({ color: 'red.300' }) })
     expect(result.folded).toHaveLength(1)
     expect(result.code).toContain(`className: "c_red.300"`)
   })
-
-  test('a compiled css *prop* is extracted but left to the runtime', () => {
-    const { fold, getCss } = createFoldFixture()
-
-    const code = `import { jsx as _jsx } from 'react/jsx-runtime'
-import { Box } from 'styled-system/jsx'
-export const El = () => _jsx(Box, { css: { color: 'red.300' } })
-`
-
-    const result = fold(code, 'app/compiled-prop.tsx')
-
-    // JSX style props are a different surface from call sites; the fold does not
-    // rewrite them in this phase, whether the JSX is compiled or not.
-    expect(result.folded).toHaveLength(0)
-    expect(result.code).toBe(code)
-
-    // Extraction is unaffected — the styles still reach the stylesheet.
-    expect(getCss()).toContain('--colors-red-300')
-  })
 })
 
 describe('dependency reporting', () => {

@@ -69,20 +69,6 @@ describe('fallback values', () => {
     expect(result.css).not.toContain('fallback(')
   })
 
-  test('extracts from a jsx style prop', () => {
-    const code = `
-    import { styled } from "styled-system/jsx"
-
-    const App = () => <styled.div cursor="fallback(-webkit-grab, grab, move)" />
-    `
-
-    const result = parseAndExtract(code)
-
-    expect(result.css).toContain('cursor: move')
-    expect(result.css).toContain('cursor: grab')
-    expect(result.css).toContain('cursor: -webkit-grab')
-  })
-
   test('extracts from a recipe variant', () => {
     const code = `
     import { cva } from "styled-system/css"

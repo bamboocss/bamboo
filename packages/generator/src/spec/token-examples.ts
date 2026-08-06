@@ -1,5 +1,4 @@
 import type { Token } from '@bamboocss/token-dictionary'
-import { generateJsxExample, type JsxStyleProps } from '../shared'
 
 const CATEGORY_PROPERTY_MAP: Record<string, string> = {
   colors: 'color',
@@ -28,7 +27,7 @@ const getCategoryProperty = (category?: string): string => {
   return category ? (CATEGORY_PROPERTY_MAP[category] ?? 'color') : 'color'
 }
 
-export const generateTokenExamples = (token: Token, jsxStyleProps: JsxStyleProps = 'all') => {
+export const generateTokenExamples = (token: Token) => {
   const prop = getCategoryProperty(token.extensions?.category)
 
   const tokenName = token.extensions.prop
@@ -36,16 +35,10 @@ export const generateTokenExamples = (token: Token, jsxStyleProps: JsxStyleProps
 
   const functionExamples: string[] = [`css({ ${prop}: '${tokenName}' })`]
   const tokenFunctionExamples: string[] = [`token('${fullTokenName}')`]
-  const jsxExamples: string[] = []
-
-  const jsxExample = generateJsxExample({ [prop]: tokenName }, jsxStyleProps)
-  if (jsxExample) {
-    jsxExamples.push(jsxExample)
-  }
 
   if (token.extensions.varRef) {
     tokenFunctionExamples.push(`token.var('${fullTokenName}')`)
   }
 
-  return { functionExamples, tokenFunctionExamples, jsxExamples }
+  return { functionExamples, tokenFunctionExamples }
 }

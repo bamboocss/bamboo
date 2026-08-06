@@ -251,7 +251,6 @@ export type ButtonVariants = RecipeVariant<typeof buttonStyle>
 Use `RecipeVariantProps` when you want to use the recipe in JSX and need type safety for the variants as optional props.
 
 ```tsx
-import { styled } from '../styled-system/jsx'
 import { cva, type RecipeVariantProps } from '../styled-system/css'
 
 const buttonStyle = cva({
@@ -277,17 +276,11 @@ export type ButtonVariants = RecipeVariantProps<typeof buttonStyle>
 
 ### Usage in JSX
 
-You can create a JSX component from any existing atomic recipe by using the `styled` function from the `/jsx`
-entrypoint.
+Bamboo generates no components, so a recipe component is one you write. `splitVariantProps` separates the recipe's own
+variants from everything else, so the rest can pass through to the element.
 
-The `styled` function takes the element type as its first argument, and the recipe as its second argument.
-
-> Make sure to add the `jsxFramework` option to your `bamboo.config` file, and run `bamboo codegen` to generate the JSX
-> entrypoint.
-
-```js
-import { cva } from '../styled-system/css'
-import { styled } from '../styled-system/jsx'
+```tsx
+import { cva, cx, type RecipeVariantProps } from '../styled-system/css'
 
 const buttonStyle = cva({
   base: {
@@ -306,7 +299,12 @@ const buttonStyle = cva({
   },
 })
 
-const Button = styled('button', buttonStyle)
+type ButtonProps = RecipeVariantProps<typeof buttonStyle> & React.ComponentProps<'button'>
+
+export const Button = (props: ButtonProps) => {
+  const [variantProps, rest] = buttonStyle.splitVariantProps(props)
+  return <button {...rest} className={cx(buttonStyle(variantProps), props.className)} />
+}
 ```
 
 Then you can use the component in JSX
@@ -314,6 +312,9 @@ Then you can use the component in JSX
 ```jsx
 <Button size="large">Click me</Button>
 ```
+
+A consumer's `className` wins over the recipe's own styles, because `css()` output sits in the `utilities` layer and a
+recipe's in `recipes`. See [Cascade Layers](/docs/concepts/cascade-layers).
 
 ## Config Recipe
 
@@ -373,7 +374,6 @@ import { buttonRecipe } from './button.recipe'
 
 export default defineConfig({
   //...
-  jsxFramework: 'react',
   theme: {
     extend: {
       recipes: {
@@ -552,7 +552,6 @@ import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   //...
-  jsxFramework: 'react',
   theme: {
     extend: {
       recipes: {

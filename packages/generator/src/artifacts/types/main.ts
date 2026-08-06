@@ -1,7 +1,7 @@
 import type { Context } from '@bamboocss/core'
 import { outdent } from 'outdent'
 
-export const generateTypesEntry = (ctx: Context, isJsxRequired: boolean) => {
+export const generateTypesEntry = (ctx: Context) => {
   const indexExports = [
     // We need to export types used in the global.d.ts here to avoid TS errors such as `The inferred type of 'xxx' cannot be named without a reference to 'yyy'`
     `import '${ctx.file.extDts('./global')}'`,
@@ -9,7 +9,6 @@ export const generateTypesEntry = (ctx: Context, isJsxRequired: boolean) => {
     ctx.file.exportTypeStar('./pattern'),
     ctx.file.exportTypeStar('./recipe'),
     ctx.file.exportTypeStar('./system-types'),
-    isJsxRequired && ctx.file.exportTypeStar('./jsx'),
     ctx.file.exportTypeStar('./style-props'),
   ].filter(Boolean)
 

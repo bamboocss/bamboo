@@ -1,5 +1,4 @@
-import { styled } from 'styled-system/jsx'
-import { cva } from 'styled-system/css'
+import { cva, cx, type RecipeVariantProps } from 'styled-system/css'
 
 export const badge = cva({
   base: {
@@ -31,4 +30,9 @@ export const badge = cva({
   },
 })
 
-export const Badge = styled('span', badge)
+type BadgeProps = RecipeVariantProps<typeof badge> & React.ComponentProps<'span'>
+
+export const Badge = (props: BadgeProps) => {
+  const [variantProps, rest] = badge.splitVariantProps(props)
+  return <span {...rest} className={cx(badge(variantProps), props.className)} />
+}

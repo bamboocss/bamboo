@@ -14,8 +14,4 @@ export default defineConfig({
 
   // The output directory for your css system
   outdir: 'styled-system-jsx-minimal',
-
-  // The JSX framework to use
-  jsxFramework: 'react',
-  jsxStyleProps: 'minimal',
 })

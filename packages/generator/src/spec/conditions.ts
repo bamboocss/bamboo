@@ -1,22 +1,5 @@
 import type { Context } from '@bamboocss/core'
 import type { ConditionSpec } from '@bamboocss/types'
-import type { JsxStyleProps } from '../shared'
-
-const generateConditionJsxExamples = (conditionName: string, jsxStyleProps: JsxStyleProps = 'all'): string[] => {
-  if (jsxStyleProps === 'all') {
-    return [
-      `<styled.div margin={{ base: '2', ${conditionName}: '4' }} />`,
-      `<styled.div margin="2" ${conditionName}={{ margin: '4' }} />`,
-    ]
-  }
-  if (jsxStyleProps === 'minimal') {
-    return [
-      `<styled.div css={{ margin: { base: '2', ${conditionName}: '4' } }} />`,
-      `<styled.div css={{ margin: '2', ${conditionName}: { margin: '4' } }} />`,
-    ]
-  }
-  return []
-}
 
 /**
  * Walk an object condition collecting every path that ends in `@slot`.
@@ -39,7 +22,6 @@ const formatObjectCondition = (raw: Record<string, any>): string => {
 }
 
 export const generateConditionsSpec = (ctx: Context): ConditionSpec => {
-  const jsxStyleProps = ctx.config.jsxStyleProps
   const breakpointKeys = new Set(Object.keys(ctx.conditions.breakpoints.conditions))
 
   const conditions = Object.entries(ctx.conditions.values).map(([name, detail]) => {
@@ -64,7 +46,6 @@ export const generateConditionsSpec = (ctx: Context): ConditionSpec => {
         `css({ margin: { base: '2', ${conditionName}: '4' } })`,
         `css({ margin: '2', ${conditionName}: { margin: '4' } })`,
       ],
-      jsxExamples: generateConditionJsxExamples(conditionName, jsxStyleProps),
     }
   })
 

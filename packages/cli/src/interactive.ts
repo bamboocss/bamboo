@@ -24,29 +24,6 @@ export const interactive = async () => {
             { value: 'no', label: 'No' },
           ],
         }),
-      jsxOptions: () =>
-        p.group({
-          styleProps: () =>
-            p.select({
-              message: 'Would you like to use JSX Style Props ?',
-              initialValue: 'yes',
-              options: [
-                { value: 'yes', label: 'Yes' },
-                { value: 'no', label: 'No' },
-              ],
-            }),
-          jsxFramework: () =>
-            p.select({
-              message: 'What JSX framework?',
-              initialValue: 'react',
-              options: [
-                { value: 'react', label: 'React' },
-                { value: 'vue', label: 'Vue' },
-                { value: 'solid', label: 'Solid' },
-                { value: 'qwik', label: 'Qwik' },
-              ],
-            }),
-        }),
       withStrictTokens: () =>
         p.select({
           message: 'Use strict tokens to enforce full type-safety?',
@@ -81,7 +58,6 @@ export const interactive = async () => {
   return {
     postcss: initFlags.usePostcss === 'yes',
     outExtension: initFlags.useMjsExtension === 'yes' ? 'mjs' : 'js',
-    jsxFramework: initFlags.jsxOptions.jsxFramework,
     strictTokens: initFlags.withStrictTokens === 'yes',
     gitignore: initFlags.shouldUpdateGitignore === 'yes',
   } as InitFlags
@@ -90,6 +66,5 @@ export const interactive = async () => {
 interface InitFlags {
   postcss: boolean
   outExtension: string
-  jsxFramework: string
   gitignore: boolean
 }

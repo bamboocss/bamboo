@@ -33,22 +33,22 @@ eslintTester.run(RULE_NAME, rule, {
 
     {
       code: multiline`
-  import { styled } from './bamboo/jsx';
+  import { css } from './bamboo/css';
   
   function App(){
     const bool = true;
-    return <styled.div debug={bool} />;
+    return <div className={css({ debug: bool })} />;
   }`,
       errors: [{ messageId: 'dynamic' }],
     },
 
     {
       code: multiline`
-  import { styled } from './bamboo/jsx';
+  import { css } from './bamboo/css';
   
   function App(){
     const color = 'red.100';
-    return <styled.div color={color} />;
+    return <div className={css({ color: color })} />;
   }`,
       errors: [{ messageId: 'dynamic' }],
     },
@@ -96,19 +96,19 @@ eslintTester.run(RULE_NAME, rule, {
 
     {
       code: multiline`
-  import { styled } from './bamboo/jsx';
+  import { css } from './bamboo/css';
   
   function App(){
-    return <styled.div debug={true} />;
+    return <div className={css({ debug: true })} />;
   }`,
     },
 
     {
       code: multiline`
-  import { styled } from './bamboo/jsx';
+  import { css } from './bamboo/css';
   
   function App(){
-    return <styled.div color='red.100' />;
+    return <div className={css({ color: 'red.100' })} />;
   }`,
     },
     {

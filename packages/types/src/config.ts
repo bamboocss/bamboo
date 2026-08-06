@@ -184,7 +184,6 @@ export interface ImportMapInput {
   css?: string | string[]
   recipes?: string | string[]
   patterns?: string | string[]
-  jsx?: string | string[]
   tokens?: string | string[]
 }
 
@@ -192,7 +191,6 @@ export interface ImportMapOutput<T = string> {
   css: T[]
   recipe: T[]
   pattern: T[]
-  jsx: T[]
   tokens: T[]
 }
 
@@ -259,49 +257,6 @@ interface FileSystemOptions {
    * @default 'info'
    */
   logLevel?: 'debug' | 'info' | 'warn' | 'error' | 'silent'
-}
-
-export type JsxFramework = 'react' | 'solid' | 'preact' | 'vue' | 'qwik'
-
-interface JsxOptions {
-  /**
-   * The framework to use for generating supercharged elements.
-   */
-  jsxFramework?: JsxFramework | (string & {})
-  /**
-   * The factory name of the element
-   * @default 'styled'
-   *
-   * @example
-   * ```jsx
-   * <styled.button marginTop="40px">Click me</styled.button>
-   * ```
-   */
-  jsxFactory?: string
-  /**
-   * The style props allowed on generated JSX components
-   * - When set to 'all', all style props are allowed.
-   * - When set to 'minimal', only the `css` prop is allowed.
-   * - When set to 'none', no style props are allowed and therefore the jsxFactory will not be importable.
-   *
-   * @default 'all'
-   *
-   * @example with 'all':
-   * ```jsx
-   * <styled.button marginTop="40px">Click me</styled.button>
-   * ```
-   *
-   * @example with 'minimal':
-   * ```jsx
-   * <styled.button css={{ marginTop: "40px" }}>Click me</styled.button>
-   * ```
-   *
-   * @example with 'none':
-   * ```jsx
-   * <button className={css({ marginTop: "40px" })}>Click me</button>
-   * ```
-   */
-  jsxStyleProps?: 'all' | 'minimal' | 'none'
 }
 
 interface CssgenOptions {
@@ -474,7 +429,6 @@ export interface Config
     CssgenOptions,
     CodegenOptions,
     FileSystemOptions,
-    JsxOptions,
     PresetOptions,
     HooksOptions,
     PluginsOptions {

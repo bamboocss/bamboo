@@ -3,7 +3,6 @@ import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   preflight: true,
-  jsxFramework: 'react',
   conditions: {
     extend: {
       closed: '&:is([data-state=closed])',
@@ -15,7 +14,6 @@ export default defineConfig({
   include: ['./src/**/*.{tsx,jsx,ts}', './pages/**/*.{jsx,tsx,ts}'],
   exclude: [],
   outdir: 'styled-system',
-  jsxFactory: 'bamboo',
   theme: {
     extend: {
       tokens: {

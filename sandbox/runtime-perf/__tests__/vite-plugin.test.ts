@@ -60,10 +60,9 @@ describe('vite plugin, real build', () => {
   test('declining shapes survive a real build', async () => {
     const code = await bundle({ transform: true })
 
-    // Still routed through the factory, with the prop that made each one decline.
-    expect(code).toContain('styled.div, { padding:')
+    // Still calling `css` at runtime, with the value that made each one decline.
+    expect(code).toContain('padding: ["sm", tone]')
     expect(code).toContain('...rest')
-    expect(code).toContain('css: { color: "gray600" }')
 
     // And the dynamic pattern call site still calls the pattern.
     expect(code).toContain('stack({ gap: tone')
