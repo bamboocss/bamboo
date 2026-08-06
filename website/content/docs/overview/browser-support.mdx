@@ -11,6 +11,10 @@ Bamboo supports the latest, stable releases of major browsers that support the f
 - Modern selectors, such as [`:where()`](https://caniuse.com/mdn-css_selectors_where) and
   [`:is()`](https://caniuse.com/css-matches-pseudo)
 
+One further feature, [`@scope`](https://caniuse.com/css-cascade-scope), is used only by projects that write slot recipes
+a particular way. It raises the floor when it applies — see [Slot recipes and `@scope`](#slot-recipes-and-scope) — and
+is not emitted at all otherwise.
+
 ## Browserlist
 
 Based on the above criteria, the following browsers are supported:
@@ -28,6 +32,42 @@ Android >= 115
 Opera >= 73
 ```
 
+## Slot recipes and `@scope`
+
+A [slot recipe](/docs/concepts/slot-recipes) that declares a slot named `root` emits its non-root slots' variant styles
+inside an `@scope` rule, so that no slot has to be handed the variant at runtime:
+
+```css
+@scope (.checkbox__root--size_md) to (.checkbox__root) {
+  .checkbox__control {
+    width: 10;
+  }
+}
+```
+
+That is the only place Bamboo emits `@scope`. A project with no slot recipes, or whose slot recipes declare no `root`
+slot, never produces one and keeps the baseline above.
+
+Where it does apply, the floor rises to:
+
+```txt
+Chrome >= 118
+Edge >= 118
+Firefox >= 128
+iOS >= 17.4
+Safari >= 17.4
+Android >= 118
+Opera >= 104
+```
+
+There is no polyfill. `@scope` decides between two matching rules by DOM proximity, which a build step cannot compute
+and a stylesheet cannot express — the whole point is that the nearest root wins over an outer one. Anything claiming to
+polyfill it either ignores nesting or needs a runtime.
+
+If you need to support browsers below that line, name the slots so that none of them is called `root`. Bamboo has no
+ancestor to scope by then, so it falls back to a variant class per slot and emits no `@scope` — every slot stays
+callable, and the variant is delivered through the class as before.
+
 ## Polyfills
 
 In event that you need to support older browsers, you can use the following polyfills in your PostCSS config:
@@ -36,6 +76,8 @@ In event that you need to support older browsers, you can use the following poly
   [Can I Use](https://caniuse.com/).
 - [postcss-cascade-layers](https://www.npmjs.com/package/@csstools/postcss-cascade-layers): Adds support for CSS Cascade
   Layers.
+
+There is deliberately none listed for `@scope`; see above for why, and for the way out.
 
 Here is an example of a `postcss.config.js` file that uses these polyfills:
 
