@@ -188,7 +188,10 @@ cx(css({ paddingX: '4' }), css({ paddingX: '2' })) // => 'px_2'
 
 Recipe classes are never merged, which is why the example above keeps `button` and `button--size-small` intact. See
 [Classname concatenation](/docs/concepts/writing-styles#classname-concatenation) for the full rules, including the case
-where a hand-written class shaped like a utility class gets merged away.
+where a hand-written class shaped like a utility class gets merged away and the builds where `cx` cannot merge at all.
+
+The config recipe override above does not rely on that merge — `utilities` is declared after `recipes`, so it wins by
+layer order whatever `cx` does with the class names.
 
 ## Merging within JSX component
 

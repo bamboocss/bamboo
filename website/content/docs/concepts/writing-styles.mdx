@@ -530,9 +530,9 @@ cx('btn px_4', 'btn px_2') // 'btn px_2 btn'
 </Callout>
 
 <Callout type="info">
-  This only applies to classes whose property is still visible in the name. With [`hash`](#hashing) enabled every class
-  is an opaque hash, so `cx` can only concatenate – compose with `css(a, b)` instead, which merges the style objects
-  before any class name exists.
+  This only applies to classes whose property is still visible in the name. With [`hash`](#hashing) or [`cssMode:
+  'grouped'`](/docs/references/config#cssmode) every class is an opaque hash, so `cx` can only concatenate – compose
+  with `css(a, b)` instead, which merges the style objects before any class name exists.
 </Callout>
 
 An `!important` class is the same declaration as its plain form, so argument order decides between them –

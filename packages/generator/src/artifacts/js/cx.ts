@@ -1,7 +1,7 @@
 import type { Context } from '@bamboocss/core'
 import outdent from 'outdent'
 
-const dts = outdent`
+export const mergingDts = outdent`
    type Argument = string | boolean | null | undefined | Argument[]
 
    /**
@@ -11,6 +11,29 @@ const dts = outdent`
     * same conditions cannot both apply, and which one the browser picks would otherwise
     * depend on their order in the stylesheet rather than on the order you passed them.
     * Classes bamboo did not generate are left alone, duplicates included.
+    */
+   export declare function cx(...args: Argument[]): string
+  `
+
+/**
+ * The declaration emitted alongside {@link concatOnly}.
+ *
+ * Which implementation a build gets is the one difference between the two that a caller
+ * cannot see from the source, so the declaration is where it has to be said.
+ */
+export const concatOnlyDts = outdent`
+   type Argument = string | boolean | null | undefined | Argument[]
+
+   /**
+    * Join classNames into a single string.
+    *
+    * This build does **not** resolve conflicts between them: \`cx('px_4', 'px_2')\` keeps
+    * both, and the browser picks by their order in the stylesheet rather than by the order
+    * you passed them. Merging compares the property each class sets, and this build cannot
+    * recover one from the class name.
+    *
+    * To override a style rather than append to it, merge the style objects instead —
+    * \`css(base, override)\` resolves per property before any class name exists.
     */
    export declare function cx(...args: Argument[]): string
   `
@@ -76,8 +99,13 @@ export function generateCx(ctx: Context) {
   // A hashed class name is an opaque `[a-zA-Z]+` with neither the separator nor a
   // condition path in it, so `mergeKey` would decline every one of them anyway. Emitting
   // the smaller function says so up front. Same when there are no utilities to match.
-  if (hash.className || utilityClassNames.length === 0) {
-    return { js: concatOnly(), dts }
+  //
+  // `cssMode: 'grouped'` hashes too — a group's class is `toHash(['grouped', groupId])`
+  // whatever `hash.className` says — so the matcher is equally blind there. Keeping it
+  // would be worse than dead weight: no class a grouped runtime returns can match it,
+  // leaving only a hand-written class shaped like a utility, which it would then drop.
+  if (hash.className || ctx.config.cssMode === 'grouped' || utilityClassNames.length === 0) {
+    return { js: concatOnly(), dts: concatOnlyDts }
   }
 
   // All three are fixed by the config, so they are baked rather than read at runtime.
@@ -232,6 +260,6 @@ export function generateCx(ctx: Context) {
 
     export { cx }
   `,
-    dts,
+    dts: mergingDts,
   }
 }

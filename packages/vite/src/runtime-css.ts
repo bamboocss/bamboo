@@ -102,9 +102,9 @@ export const createRuntimeToken =
  * The generated `createRecipe`, rebuilt in-process.
  *
  * A config recipe call resolves to `cx(recipeCss(variants), css(compoundVariantStyles))`.
- * Both halves are reachable from shared primitives. The generated `cx` resolves conflicts,
- * but it never merges a recipe class and the first half is nothing else — so joining the
- * two here agrees with it. The recipe's own `createCss` differs from the ordinary one only
+ * Both halves are reachable from shared primitives. Where the generated `cx` resolves
+ * conflicts at all it never merges a recipe class, and the first half is nothing else — so
+ * joining the two here agrees with it. The recipe's own `createCss` differs from the ordinary one only
  * in its `transform`, which names classes `recipe--prop_value` instead of going through the
  * utility table.
  *

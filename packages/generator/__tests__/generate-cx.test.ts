@@ -1,7 +1,7 @@
 import { createGeneratorContext } from '@bamboocss/fixture'
 import type { Config } from '@bamboocss/types'
 import { describe, expect, test } from 'vitest'
-import { generateCx } from '../src/artifacts/js/cx'
+import { concatOnlyDts, generateCx, mergingDts } from '../src/artifacts/js/cx'
 
 type Cx = (...args: unknown[]) => string
 
@@ -127,6 +127,46 @@ describe('generated cx with hashed class names', () => {
     const plain = generateCx(createGeneratorContext() as any).js
     expect(hashed).not.toContain('mergeKey')
     expect(hashed.length).toBeLessThan(plain.length)
+  })
+})
+
+describe('generated cx — the declaration matches the implementation', () => {
+  // Which implementation a build gets is invisible from the source, so the declaration is
+  // the only place a caller finds out before shipping. Asserting the pairing rather than
+  // the wording keeps this from breaking every time either doc comment is edited, and
+  // catches a new config that turns merging off without saying so.
+  test.each([
+    ['default', undefined],
+    ['hash.className', { hash: true }],
+    ['cssMode: grouped', { cssMode: 'grouped' }],
+  ] as const)('%s', (_label, config) => {
+    const { js, dts } = generateCx(createGeneratorContext(config as Config) as any)
+    expect(dts).toBe(js.includes('mergeKey') ? mergingDts : concatOnlyDts)
+  })
+
+  test('the two declarations actually differ', () => {
+    expect(mergingDts).not.toBe(concatOnlyDts)
+  })
+})
+
+// A grouped class is `toHash(['grouped', groupId])` however `hash.className` is set, so the
+// matcher can never key one. Shipping it would leave it matching nothing but a hand-written
+// class shaped like a utility — which it would then drop.
+describe('generated cx with grouped class names', () => {
+  test('falls back to concatenation', () => {
+    const cx = compile({ cssMode: 'grouped' })
+    expect(cx('hfpJjH', 'fqxEbp')).toBe('hfpJjH fqxEbp')
+  })
+
+  test('keeps a hand-written class shaped like a utility', () => {
+    expect(compile({ cssMode: 'grouped' })('px_4', 'px_2')).toBe('px_4 px_2')
+  })
+
+  test('emits the smaller function', () => {
+    const grouped = generateCx(createGeneratorContext({ cssMode: 'grouped' }) as any).js
+    const plain = generateCx(createGeneratorContext() as any).js
+    expect(grouped).not.toContain('mergeKey')
+    expect(grouped.length).toBeLessThan(plain.length)
   })
 })
 

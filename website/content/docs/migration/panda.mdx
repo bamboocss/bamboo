@@ -157,6 +157,10 @@ caller's `className` now reliably overrides the component's own styles. Two cons
   `css({ top: 'bar' })`, so it merges with `top_0`. If you pass your own classes through a styled component, avoid names
   of the form `<utility><separator><value>`.
 
+Neither applies if you set [`hash.className`](/docs/references/config#hash) or
+[`cssMode: 'grouped'`](/docs/references/config#cssmode). Both leave a class name with no property in it, so `cx`
+concatenates exactly as Panda's did.
+
 See [Classname concatenation](/docs/concepts/writing-styles#classname-concatenation) for the full rules.
 
 ## Things that are easy to miss

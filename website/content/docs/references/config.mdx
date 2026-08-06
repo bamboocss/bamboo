@@ -308,6 +308,10 @@ Then the result looks like this:
 }
 ```
 
+Hashing also turns off [`cx` merging](/docs/concepts/writing-styles#classname-concatenation), since the property it
+compares is no longer in the class name. Watch for this if you hash in production only: the merge holds in development
+and is gone from the build you ship.
+
 ### cssMode
 
 **Type**: `'atomic' | 'grouped'`
@@ -345,8 +349,9 @@ browser has fewer declarations to walk during style recalculation. That favours 
 cached and arrives on every initial render. `hash` shortens class names rather than reducing their count, so the two
 address different costs.
 
-Cascade layers, `cva`, recipes and patterns are unaffected. Note that
-[`@bamboocss/vite`](/docs/guides/source-transformation) declines element splitting under `grouped`, since that
+Cascade layers, `cva`, recipes and patterns are unaffected. A group's class name is always a hash, so `grouped` turns
+off [`cx` merging](/docs/concepts/writing-styles#classname-concatenation) for the same reason `hash.className` does.
+Note that [`@bamboocss/vite`](/docs/guides/source-transformation) declines element splitting under `grouped`, since that
 optimization builds a class from a prefix and a value.
 
 ## File system options
