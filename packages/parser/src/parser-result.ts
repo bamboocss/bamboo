@@ -214,6 +214,23 @@ export class ParserResult implements ParserResultInterface {
     const encoder = this.encoder
     const grouped = this.context.config.cssMode === 'grouped'
     result.data.forEach((obj) => encoder.processStyleProps(obj, grouped))
+
+    // An element whose component the build cannot see through may carry a `cva` —
+    // `styled(Component, cvaConfig)` is the shape — and that component's runtime merges the
+    // cva's styles with these props into a single `css()` call. The build sees only the
+    // props, so the group it encodes here is a strict *subset* of the one the runtime asks
+    // for and can never match it. The style props were silently dropped as a result:
+    // `<Button size="sm" fontSize="30px" />` rendered with no font size at all.
+    //
+    // Encoding them atomically as well gives the runtime's fallback rules to land on, so
+    // the element keeps its style props. The cva's own styles are already atomic
+    // (`processAtomicRecipe`), so the two halves agree.
+    //
+    // Not for `jsx-factory` — `styled.div` has no cva, its runtime groups exactly what was
+    // encoded above, and the duplication would be pure waste.
+    if (grouped && result.type !== 'jsx-factory') {
+      result.data.forEach((obj) => encoder.processStyleProps(obj, false))
+    }
   }
 
   setPattern(name: string, result: ResultItem) {
