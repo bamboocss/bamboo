@@ -344,6 +344,10 @@ bundle or the HTML payload, so it is opt-in and atomic stays the default. It mat
 HTML is rarely cached and lands on every initial render. The
 [upstream proposal](https://github.com/chakra-ui/panda/pull/3531) has the benchmarks behind that.
 
+Read the [limitations](/docs/references/config#cssmode) before enabling it. `styled(Component, cvaConfig)` and
+`createStyleContext` do not group under `grouped` yet — the build cannot reconstruct the call, so the element keeps the
+styles the build could resolve and carries atomic classes for them rather than one grouped class.
+
 ### Faster builds
 
 - The dependency graph resolves imports without initializing the TypeScript type checker, which was costing hundreds of

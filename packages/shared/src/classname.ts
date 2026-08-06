@@ -11,6 +11,27 @@ export interface CreateCssContext {
   hash?: boolean
   grouped?: boolean
   /**
+   * The group classes the build emitted a rule for.
+   *
+   * Grouping names a class after a whole `css()` call, so the build has to have seen that
+   * exact call to emit its rule. When it has not — a value it could not resolve, a
+   * combination it declined to enumerate — the runtime returns a class with nothing behind
+   * it and the element renders with *no* styles rather than losing one declaration.
+   *
+   * Given this set, a class the build never emitted falls back to naming each declaration
+   * atomically instead. That is not a complete recovery: an atomic class only helps if some
+   * rule exists for it. But it degrades to the same partial styling `cssMode: 'atomic'`
+   * would give, rather than to nothing.
+   *
+   * Omit it and the runtime behaves exactly as before, at no cost — which is what a build
+   * that cannot supply one should do.
+   *
+   * Membership is read through `has` so the caller can choose the representation, but it
+   * must be *exact*: a probabilistic structure trades a false positive for size, and a
+   * false positive here returns a class with no rule, which is the failure being fixed.
+   */
+  knownGroups?: { has: (className: string) => boolean }
+  /**
    * Partial properties from the Utility class
    */
   utility: {
@@ -39,6 +60,26 @@ const fallbackCondition: NonNullable<CreateCssContext['conditions']> = {
 const ENTRY_SEP = ']___['
 const COND_SEP = '<___>'
 
+/**
+ * The class a whole grouped `css()` call resolves to, given its group id.
+ *
+ * Shared with `StyleDecoder.collectGrouped` on purpose: both sides name this class, and
+ * deriving it twice is what let `hash.className` re-hash on the build side only, leaving
+ * every grouped element carrying a class no rule was emitted for.
+ *
+ * A group id already digests every declaration in the call, so it is hashed exactly once
+ * and `hash.className` is deliberately not consulted — that option shortens *utility*
+ * class names, and a grouped class is not one. The build `esc()`s the result for a
+ * selector; the runtime does not. That asymmetry belongs to the callers.
+ */
+export function groupClassName(
+  groupId: string,
+  toHashFn: (path: string[], hashFn: (str: string) => string) => string,
+  formatClassName: (str: string) => string,
+) {
+  return formatClassName(toHashFn(['grouped', groupId], toHash))
+}
+
 export function createCss(context: CreateCssContext) {
   const { utility, hash, grouped, conditions: conds = fallbackCondition } = context
 
@@ -65,11 +106,27 @@ export function createCss(context: CreateCssContext) {
     return [...finalized, formatClassName(className)].join(':')
   }
 
+  /** One declaration, kept only when there is a fallback that might need to name it. */
+  const atomicName = (prop: string, value: any, conditions: string[]) => {
+    const important = isImportant(value)
+    const transformed = utility.transform(prop, withoutImportant(sanitize(value)))
+    const className = hashFn(conditions, transformed.className)
+    return important ? `${className}!` : className
+  }
+
   if (grouped) {
+    const { knownGroups } = context
+
     return memo(({ base, ...styles }: Record<string, any> = {}) => {
       const styleObject = Object.assign(styles, base)
       const normalizedObject = normalizeStyleObject(styleObject, context)
       const hashes: string[] = []
+      // Collected only when a fallback is possible, and deliberately not *transformed*
+      // here: `utility.transform` is the expensive part of naming a declaration, and the
+      // overwhelmingly common case is a group the build did emit. Recording the three
+      // arguments costs a push; running the transform on every call would price the miss
+      // path into every hit.
+      const leaves: Array<[string, any, string[]]> | undefined = knownGroups ? [] : undefined
 
       walkObject(normalizedObject, (value, paths) => {
         if (value == null) return
@@ -82,14 +139,31 @@ export function createCss(context: CreateCssContext) {
           parts.push(`cond:${conditions.join(COND_SEP)}`)
         }
         hashes.push(parts.join(ENTRY_SEP))
+        leaves?.push([prop, value, conditions])
       })
 
       if (hashes.length === 0) return ''
 
       hashes.sort()
-      const groupId = hashes.join('|')
-      const shortHash = utility.toHash(['grouped', groupId], toHash)
-      return formatClassName(shortHash)
+      const className = groupClassName(hashes.join('|'), utility.toHash, formatClassName)
+
+      if (!leaves || knownGroups!.has(className)) return className
+
+      // A miss keeps the group class and *adds* the atomic names, rather than replacing it.
+      //
+      // That is what makes an incomplete registry harmless. A registry can lag the
+      // stylesheet — it is written by the build that emits the CSS, and a stale or empty one
+      // is a question of when files land, not of correctness. Replacing the class would turn
+      // every such lag into an element stripped of styles it actually had. Adding to it
+      // means a wrong miss costs one class that matches nothing, and a right miss still
+      // reaches whatever atomic rules the stylesheet carries.
+      //
+      // So only a false *hit* can hurt, which is why `knownGroups` has to be exact.
+      const classNames = new Set<string>([className])
+      for (const [prop, value, conditions] of leaves) {
+        classNames.add(atomicName(prop, value, conditions))
+      }
+      return Array.from(classNames).join(' ')
     })
   }
 
@@ -101,17 +175,11 @@ export function createCss(context: CreateCssContext) {
     walkObject(normalizedObject, (value, paths) => {
       if (value == null) return
 
-      const important = isImportant(value)
-
       const [prop, ...allConditions] = conds.shift(paths)
-      const conditions = filterBaseConditions(allConditions)
-
-      const transformed = utility.transform(prop, withoutImportant(sanitize(value)))
-
-      let className = hashFn(conditions, transformed.className)
-      if (important) className = `${className}!`
-
-      classNames.add(className)
+      // Shared with the grouped fallback above, so a group that misses names its
+      // declarations exactly as `cssMode: 'atomic'` would have. Two spellings could drift,
+      // and the fallback would then reach for rules the stylesheet does not carry.
+      classNames.add(atomicName(prop, value, filterBaseConditions(allConditions)))
     })
 
     return Array.from(classNames).join(' ')

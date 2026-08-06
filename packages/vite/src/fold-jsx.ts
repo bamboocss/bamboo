@@ -583,6 +583,16 @@ export const planJsxFold = (
     // to be worth it even with no static half: the factory layer goes with it.
     if (!resolved && !lowered.length) return { reason: 'dynamic' }
 
+    // Under `cssMode: 'grouped'` one class names the element's whole style object, so a
+    // literal beside a runtime call hashes a fragment on each side and the build emits a
+    // rule for neither — the same reason `planPartialFold` declines a split there.
+    if (
+      ctx.config.cssMode === 'grouped' &&
+      (resolved ? 1 : 0) + lowered.length + (runtime.length ? 1 : 0) + (dynamicClassName ? 1 : 0) > 1
+    ) {
+      return { reason: 'dynamic' }
+    }
+
     const ordered = kinds.startsWith('r') ? [...runtime, ...lowered] : [...lowered, ...runtime]
     const parts = dynamicClassName ? [...ordered, dynamicClassName] : ordered
     const plan = buildEdits(

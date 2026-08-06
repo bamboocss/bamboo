@@ -353,9 +353,37 @@ Patterns group too — `stack({ gap: '4' })` is a `css()` call with the pattern'
 and a config recipe's compound variants stay atomic: which variants a caller selects is not knowable at build time, so
 grouping them would need a rule per combination.
 
+### How grouped degrades
+
+The build has to have seen a `css()` call to emit its rule, because the class names the whole call. When it has not, the
+runtime notices and adds atomic class names alongside the group class, so the element keeps whatever the build _could_
+resolve instead of rendering with nothing.
+
+```tsx
+// The build resolves `padding` but not `color`.
+css({ color: props.tone, padding: '4' })
+// -> "jVBLPx c_blue p_4"
+```
+
+| class    |          | why                                                    |
+| -------- | -------- | ------------------------------------------------------ |
+| `jVBLPx` | no rule  | the build never saw this exact call, so never named it |
+| `c_blue` | no rule  | the build never saw the value `blue`                   |
+| `p_4`    | has rule | the build resolved `padding`, so the padding applies   |
+
+So the rule is: an atomic class carries a rule when the build resolved that declaration at that call site. The group
+class carries one only when the build saw the whole call.
+
+A value the build never saw — `props.tone` above — has no rule under any mode. That is the same limit `atomic` has, and
+[`staticCss`](/docs/guides/static) is the escape hatch for it there.
+
+This costs a little CSS: an at-risk call site emits its atomic rules as well as its group. It is bounded by how many
+call sites are unresolvable, not by the size of your stylesheet, and the build [warns for each one](#cssmode) with a
+file and line so you can decide whether to make it static.
+
 <Callout type="warning">
-  Some constructs do not work under `grouped` yet, and fail by rendering the element with **no** styles rather than
-  wrong ones — the class the runtime asks for has no rule behind it. Use `cssMode: 'atomic'` if your app relies on them:
+  These constructs still resolve to fewer styles than you wrote, because the build cannot reconstruct the call — you get
+  what it resolved rather than what you asked for. Use `cssMode: 'atomic'` if your app leans on them:
 
 - `styled(Component, cvaConfig)`, `createStyleContext`, and a config-recipe JSX element carrying style props or a `css`
   prop, or matching a compound variant. Each merges style objects inside a JSX factory into one grouped call the build
@@ -368,12 +396,20 @@ grouping them would need a rule per combination.
 - Two `css()` operands whose shared key holds a condition object —
   `css({ color: { base: 'red' } }, { color: { _hover: 'blue' } })`.
 
+[`staticCss`](/docs/guides/static) is not a workaround for any of these. It enumerates atoms — one rule per property,
+value and condition — while `grouped` names a class after a whole `css()` call, so backing an arbitrary call site would
+mean pre-generating every combination of properties rather than every value. Its rules are still emitted and are still
+valid classes to write by hand, but nothing a grouped runtime returns will match them. The build warns when both are
+configured.
+
 </Callout>
 
 A group's class name is always a hash, so `grouped` turns off
-[`cx` merging](/docs/concepts/writing-styles#classname-concatenation) for the same reason `hash.className` does. Note
-that [`@bamboocss/vite`](/docs/guides/source-transformation) declines element splitting under `grouped`, since that
-optimization builds a class from a prefix and a value.
+[`cx` merging](/docs/concepts/writing-styles#classname-concatenation) for the same reason `hash.className` does.
+[`@bamboocss/vite`](/docs/guides/source-transformation) still folds under `grouped`, but only whole calls and whole
+elements: a group is hashed as a whole rather than built from a prefix and a value, so it declines leaf lowering, and
+declines to split one call across several class names. A fully static call folds, and so does a lone ternary; a static
+half beside a dynamic one keeps its runtime call instead.
 
 ## File system options
 

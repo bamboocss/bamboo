@@ -91,6 +91,14 @@ export async function generate(config: Config, configPath?: string) {
 
       const css = ctx.getCss(sheet)
       await ctx.runtime.fs.writeFile(outfile, css)
+
+      // This loop parses through `project` directly rather than through `parseFiles` or
+      // `Builder.extract`, so it is the one CSS-emitting path neither of those covers.
+      // Without this the registry keeps the set from the last full build, and every call
+      // site edited in the session degrades to group-plus-atomic names — correct, but not
+      // what the same code produces in production.
+      await ctx.writeGroupRegistry()
+
       done()
     }
 

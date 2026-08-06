@@ -3,6 +3,7 @@ import { createContext } from '@bamboocss/fixture'
 import type { Config, TSConfig } from '@bamboocss/types'
 import type { BambooContext } from '../../node/src/create-context'
 import { getImportDeclarations } from '../src/get-import-declarations'
+import type { ParserResult } from '../src/parser-result'
 
 const filePath = 'app/src/test.tsx'
 
@@ -140,6 +141,8 @@ interface ParseAndExtractReturn {
   styles: StyleDecoder
   json: any[]
   css: string
+  /** The raw result, for assertions about what the parser saw rather than what it emitted. */
+  parserResult: ParserResult
 }
 
 export const parseAndExtract = (code: string, userConfig?: Config, tsconfig?: TSConfig): ParseAndExtractReturn => {
@@ -154,5 +157,6 @@ export const parseAndExtract = (code: string, userConfig?: Config, tsconfig?: TS
     styles,
     json: result?.toArray().flatMap(({ box, ...item }) => item),
     css: ctx.getParserCss(styles),
+    parserResult: result,
   }
 }

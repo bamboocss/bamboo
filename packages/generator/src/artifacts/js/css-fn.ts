@@ -83,7 +83,13 @@ export function generateCssFn(ctx: Context) {
       'cloneStyles, createCss, createMergeCss, hypenateProperty, leafClass, memo, viewTransitionClassName, withoutSpace',
       '../helpers',
     )}
-    ${ctx.file.import('sortConditions, finalizeConditions', './conditions')}
+    ${[
+      ctx.file.import('sortConditions, finalizeConditions', './conditions'),
+      // Only grouped builds have a registry to consult, and only they emit the module.
+      ctx.config.cssMode === 'grouped' ? ctx.file.import('groups', './groups') : '',
+    ]
+      .filter(Boolean)
+      .join('\n')}
 
     const utilities = "${utility
       .entries()
@@ -148,7 +154,17 @@ export function generateCssFn(ctx: Context) {
     }
 
     const context = {
-      ${[hash.className && 'hash: true,', ctx.config.cssMode === 'grouped' && 'grouped: true,'].filter(Boolean).join('\n      ')}
+      ${[
+        hash.className && 'hash: true,',
+        // `knownGroups` lets a call the build never saw fall back to atomic class names
+        // instead of returning a group class with no rule behind it. The registry is
+        // rewritten by the CSS build; an empty or stale one only costs a class that
+        // matches nothing, because the fallback adds to the group class rather than
+        // replacing it.
+        ctx.config.cssMode === 'grouped' && 'grouped: true,\n      knownGroups: groups,',
+      ]
+        .filter(Boolean)
+        .join('\n      ')}
       conditions: {
         shift: sortConditions,
         finalize: finalizeConditions,

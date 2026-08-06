@@ -1,6 +1,7 @@
 import type { ParserOptions } from '@bamboocss/core'
 import { BambooError, getOrCreateSet } from '@bamboocss/shared'
 import type { ParserResultInterface, ResultItem } from '@bamboocss/types'
+import { findUnresolvedStyles, type UnresolvedStyle } from './unresolved-styles'
 
 function cartesian<T>(arrays: T[][]): T[][] {
   if (arrays.length === 0) return [[]]
@@ -25,11 +26,36 @@ export class ParserResult implements ParserResultInterface {
   filePath: string | undefined
   encoder: ParserOptions['encoder']
 
+  /**
+   * `css()` calls whose styles the build could not fully see.
+   *
+   * Only collected under `cssMode: 'grouped'`, where one class names the whole call, so a
+   * property the build cannot resolve changes the class rather than dropping a declaration
+   * from it — and the element renders with no styles at all. Under `atomic` the same call
+   * keeps everything the build did resolve, which is not worth interrupting a build over.
+   */
+  unresolved: UnresolvedStyle[] = []
+
   constructor(
     private context: ParserOptions,
     encoder?: ParserOptions['encoder'],
   ) {
     this.encoder = encoder ?? context.encoder
+  }
+
+  /**
+   * Record a call whose styles the build could not fully see, at the call's own position.
+   *
+   * Used for losses the box tree cannot show — a ternary past the combination cap emits
+   * fragments rather than whole objects, and every individual box in it resolved fine.
+   */
+  private reportUnresolved(result: ResultItem, reason: UnresolvedStyle['reason']) {
+    const node = result.box?.getNode()
+    const sourceFile = node?.getSourceFile()
+    if (!node || !sourceFile) return
+
+    const { line, column } = sourceFile.getLineAndColumnAtPos(node.getStart())
+    this.unresolved.push({ filePath: sourceFile.getFilePath(), line, column, reason })
   }
 
   append(result: ResultItem) {
@@ -64,6 +90,26 @@ export class ParserResult implements ParserResultInterface {
 
     const encoder = this.encoder
     const grouped = this.context.config.cssMode === 'grouped'
+
+    if (grouped) {
+      const unresolved = findUnresolvedStyles(result)
+      if (unresolved.length) {
+        this.unresolved.push(...unresolved)
+
+        // Emit atomic rules for this call as well as its group.
+        //
+        // The runtime cannot name the group for a call the build could not fully see, so it
+        // falls back to naming each declaration — and that only helps if rules for those
+        // names exist. Grouped builds emit none, so without this the fallback lands on
+        // nothing and the element is as unstyled as before.
+        //
+        // Gated on the call actually being at risk, so the duplication is bounded by how
+        // many call sites are unresolvable rather than by the size of the stylesheet. The
+        // declarations the build *did* resolve are the ones that end up applying, which is
+        // exactly what `cssMode: 'atomic'` would have given for the same source.
+        result.data.forEach((obj) => encoder.processAtomic(obj))
+      }
+    }
 
     if (!grouped || result.data.length <= 1) {
       result.data.forEach((obj) => (grouped ? encoder.processGrouped(obj) : encoder.processAtomic(obj)))
@@ -118,7 +164,15 @@ export class ParserResult implements ParserResultInterface {
     const totalCombinations = groupArrays.reduce((acc, g) => acc * g.length, 1)
 
     if (totalCombinations > 32) {
-      result.data.forEach((obj) => encoder.processGrouped(obj))
+      // Past the cap the branches are emitted as fragments rather than as whole objects,
+      // so the runtime asks for a class none of them named. This *is* a loss, and it is
+      // reported here rather than by the box walk because only this knows the count.
+      // Atomic rules go out alongside them so the runtime's fallback has somewhere to land.
+      this.reportUnresolved(result, 'missing-property')
+      result.data.forEach((obj) => {
+        encoder.processGrouped(obj)
+        encoder.processAtomic(obj)
+      })
       return
     }
 
@@ -223,6 +277,12 @@ export class ParserResult implements ParserResultInterface {
       const set = getOrCreateSet(this.pattern, name)
       items.forEach((item) => set.add(this.append(item)))
     })
+
+    // Carried for the same reason every other field is: an aggregate that dropped it would
+    // report nothing. Nothing in this repo calls `merge` today — the build reports per file
+    // as it parses — but this is public API on an exported class, and a consumer that does
+    // merge should not silently lose the diagnostics.
+    if (result.unresolved.length) this.unresolved.push(...result.unresolved)
 
     return this
   }

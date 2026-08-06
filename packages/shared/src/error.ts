@@ -13,6 +13,7 @@ export type BambooErrorCode =
   | 'MISSING_PARAMS'
   | 'NO_CONTEXT'
   | 'INVALID_TOKEN'
+  | 'NAMING_DISAGREEMENT'
 
 export class BambooError extends Error {
   readonly code: string

@@ -83,3 +83,41 @@ describe('css() runtime', () => {
     { time: 2000 },
   )
 })
+
+/**
+ * `cssMode: 'grouped'` names one class per call instead of one per property, and had no
+ * benchmark at all — so nothing would have shown a regression on the branch that builds
+ * the group id and hashes it.
+ *
+ * The atomic cases above are the control: they run the same `createCss` with `grouped`
+ * off, so a reading that moves in both is the machine, not the code. Only the
+ * high-cardinality pair reaches the naming branch on every iteration — everything cheaper
+ * is answered by `memo` before the branch is entered, which is exactly why the pair is
+ * here rather than a single case.
+ */
+const groupedCss = (() => {
+  const ctx = { ...makeContext(), grouped: true }
+  const cssFn = createCss(ctx)
+  const { mergeCss } = createMergeCss(ctx)
+  return memo((...styles: any[]) => cssFn(mergeCss(...styles)))
+})()
+
+describe('grouped css() runtime', () => {
+  bench(`grouped inline css() x${ITERATIONS}`, () => {
+    for (let i = 0; i < ITERATIONS; i++) groupedCss({ color: 'red', fontSize: '12px', padding: '4px' })
+  })
+
+  bench(`grouped conditions css() x${ITERATIONS}`, () => {
+    for (let i = 0; i < ITERATIONS; i++) groupedCss({ color: 'red', _hover: { color: 'blue' }, md: { padding: '4px' } })
+  })
+
+  // The miss path, where the group id is built, sorted, joined and hashed. Same 2000ms
+  // budget as its atomic counterpart and for the same reason.
+  bench(
+    `high-cardinality grouped css() x${ITERATIONS}`,
+    () => {
+      for (let i = 0; i < ITERATIONS; i++) groupedCss({ color: 'red', width: `${i}px` })
+    },
+    { time: 2000 },
+  )
+})

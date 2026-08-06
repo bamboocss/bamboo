@@ -3,6 +3,7 @@ import {
   deepSet,
   esc,
   getOrCreateSet,
+  groupClassName,
   isImportant,
   markImportant,
   viewTransitionPseudo,
@@ -377,8 +378,9 @@ export class StyleDecoder {
       const groupKey = 'grouped:' + groupId
       const style = this.getGroup(hashSet, groupKey)
 
-      const shortHash = this.context.utility.toHash(['grouped', groupId], this.context.utility.defaultHashFn)
-      const className = this.formatSelector([], shortHash)
+      // Not `formatSelector`: that hashes again under `hash.className`, and a group id is
+      // already a digest. Shared with the runtime so the two cannot name it differently.
+      const className = esc(groupClassName(groupId, this.context.utility.toHash, this.context.utility.formatClassName))
 
       const result: GroupedResult = {
         ...style,

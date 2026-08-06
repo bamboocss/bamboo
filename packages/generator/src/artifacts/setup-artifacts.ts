@@ -130,14 +130,24 @@ function setupGeneratedSystemTypes(ctx: Context): Artifact {
 function setupCss(ctx: Context): Artifact {
   const code = ctx.isTemplateLiteralSyntax ? generateStringLiteralCssFn(ctx) : generateCssFn(ctx)
   const conditions = ctx.isTemplateLiteralSyntax ? generateStringLiteralConditions(ctx) : generateConditions(ctx)
+
+  const files = [
+    { file: ctx.file.ext('conditions'), code: conditions.js },
+    { file: ctx.file.ext('css'), code: code.js },
+    { file: ctx.file.extDts('css'), code: code.dts },
+  ]
+
+  // The group registry is deliberately *not* emitted here, even though `css.mjs` imports
+  // it under `grouped`. This runs on config change with nothing extracted, so it would
+  // only ever write an empty set — discarding whatever the last CSS build put there until
+  // the next one. `BambooContext.writeGroupRegistry` owns the file instead: it seeds an
+  // empty one when none exists, so the import always resolves, and otherwise writes only
+  // what it actually extracted.
+
   return {
     id: 'css-fn',
     dir: ctx.paths.css,
-    files: [
-      { file: ctx.file.ext('conditions'), code: conditions.js },
-      { file: ctx.file.ext('css'), code: code.js },
-      { file: ctx.file.extDts('css'), code: code.dts },
-    ],
+    files,
   }
 }
 

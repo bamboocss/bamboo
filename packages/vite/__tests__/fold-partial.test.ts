@@ -925,12 +925,16 @@ describe('lowering an open-ended value', () => {
     expect(result.code).toContain('css({ color: tone })')
   })
 
-  test('grouped mode declines for the same reason', () => {
+  test('grouped mode declines the lowering, and the split with it', () => {
     const { fold } = createFoldFixture({ cssMode: 'grouped' })
     const result = fold(src(`export const f = (tone) => css({ margin: '2', color: tone })`))
 
     expect(result.code).not.toContain('cssLeaf')
-    expect(result.code).toContain('css({ color: tone })')
+    // Hoisting the static half is what an atomic build does. Under `grouped` a class names
+    // the whole call, so the split is declined — see `grouped-fold-split.test.ts` for the
+    // shapes where the hoisted half really does hash a fragment with no rule behind it.
+    // In this one it resolves, so the call stays whole for uniformity rather than repair.
+    expect(result.code).toContain(`css({ margin: '2', color: tone })`)
   })
 
   test('a condition key is declined rather than lowered', () => {
