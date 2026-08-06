@@ -19,15 +19,19 @@ const PrimaryButtonLike = bamboo('span', button, {
   },
 })
 
+/** A shared style object, spread into calls below — the shape the fold now accounts for. */
+const surface = { borderWidth: '1px', borderRadius: 'md' }
+
 function App() {
   const paddingY = '22px'
   const className = css({ padding: paddingY, fontSize: paddingY ? '2xl' : '4xl' })
+  const panel = css({ padding: '5', ...surface })
 
   const [color] = useState('lime.300')
 
   return (
     <div className={stack({ padding: '40px', align: 'stretch', color: 'red.300' })}>
-      <section className={css({ padding: '5', borderWidth: '1px' })}>
+      <section className={panel}>
         <p className={css({ fontWeight: 'semibold', mb: '2' })}>CSS - Function</p>
         <div className={css({ maxWidth: '840px', marginX: 'auto', textAlign: 'center' })}>
           <div>

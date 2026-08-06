@@ -219,7 +219,7 @@ Everything else is left byte-identical. A call Bamboo cannot fully resolve keeps
 // ❌ a value only known at runtime
 css({ color: tone })
 
-// ❌ a spread of anything but an inline object literal
+// ❌ a spread whose contribution cannot be accounted for
 css({ color: 'red.300', ...rest })
 
 // ❌ a computed key
@@ -275,9 +275,8 @@ how a bundler discovers imports at all – so re-transforming it is not enough o
 holding the previous contents and would fold the same stale class again. The plugin re-reads a changed module as the
 rebuild starts, before anything folds against it.
 
-The one cross-file shape that does **not** fold is an imported value spread inside a nested selector
-(`css({ '& svg': { ...icon } })`). Extraction handles it and the CSS is still emitted – only the rewrite is declined,
-for the spread reason below.
+A spread of an imported static object folds too, and registers that module as a dependency – see [Spreads](#spreads) for
+the one shape that still declines.
 
 ### Never folded
 
@@ -287,13 +286,47 @@ Two kinds of call never fold, because they do not evaluate to anything a literal
   to a string would break every consumer.
 - **`cva()` and `sva()`** return a function. Their definitions stay as they are.
 
-### Why spreads are conservative
+### Spreads
 
-`{ ...base }` where `base` is a static local object _is_ resolvable, and Bamboo's extractor resolves it. But once the
-extractor flattens a spread into its result, a spread it understood and a spread it silently skipped look identical –
-both simply contribute keys, or fail to. Folding the second case would drop styles without any error.
+A spread folds when the extractor walked it structurally, which covers a static object whether it is local or imported:
 
-Rather than guess, the fold declines any spread that is not an inline object literal.
+```tsx
+const known = { padding: '4' }
+css({ color: 'red.300', ...known }) // → "c_red.300 p_4"
+
+// styles.ts
+export const shared = { padding: '4' }
+// use.tsx
+css({ color: 'red.300', ...shared }) // → "c_red.300 p_4", and styles.ts becomes a watch dependency
+```
+
+Order is preserved, so a spread still overrides what it lands on: `css({ color: 'red.300', ...override })` folds to
+whatever `override.color` says.
+
+A spread declines when its contribution cannot be accounted for. That is the case for a runtime value, a conditional
+spread, and one inside a condition block – and also for a spread of an object that is _itself_ not fully accounted for:
+
+```tsx
+const partial = { padding: '4', ...rest } // rest is unknown
+css({ color: 'red.300', ...partial }) // ❌ declines
+
+const computed = { padding: '4', [key]: '2' } // key is unknown
+css({ color: 'red.300', ...computed }) // ❌ declines
+```
+
+The distinction matters because a spread the extractor flattened and one it silently skipped look identical in the
+result: both simply contribute keys, or fail to. So the extractor records the ones it walked, and anything not on that
+list declines. Being walked is not the same as being complete, though – the extractor omits what it cannot evaluate at
+any depth – so a recorded spread gets the same audit the call itself gets, rather than being trusted for having been
+seen.
+
+The list is of _successes_ on purpose. A list of failures would only be safe while it was exhaustive, and being wrong
+there means dropping styles rather than missing a fold.
+
+One case declines despite resolving: a spread the extractor _evaluated_ rather than walked, such as an imported
+`css.raw()` value spread inside a nested selector. Its keys are re-boxed against the spread site, so the module they
+came from is no longer recoverable – and a literal that depends on a file the build cannot name is a file it cannot
+watch.
 
 ## Partly static calls and elements
 

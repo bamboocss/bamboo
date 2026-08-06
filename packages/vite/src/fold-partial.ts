@@ -275,8 +275,24 @@ export const accountsForSource = (node: Node | undefined, boxNode: BoxNode | und
 
   for (const property of unwrapped.getProperties()) {
     if (Node.isSpreadAssignment(property)) {
-      const expression = property.getExpression()
-      if (!Node.isObjectLiteralExpression(expression)) return false
+      const expression = unwrapExpression(property.getExpression())
+
+      // An inline object literal is self-evidently accounted for: its keys are right there.
+      if (Node.isObjectLiteralExpression(expression)) continue
+
+      // Otherwise ask the extractor, which records the spreads it walked. Absence is a
+      // decline, not an acceptance: an unrecorded spread may have contributed keys nobody
+      // can see, and that is the case this rule has always existed to refuse.
+      const walked = boxNode.resolvedSpreads?.find((entry) => entry.node === expression)
+      if (!walked) return false
+
+      // Being walked is not being accounted for. The extractor omits what it cannot
+      // evaluate at any depth, so the spread object gets the same audit the literal itself
+      // is getting — otherwise `{ ...{ padding: '4', ...rest } }` folds while quietly
+      // dropping `rest`, and a getter or a computed key inside it goes the same way.
+      const origin = walked.box.getNode()
+      if (!accountsForSource(origin, walked.box)) return false
+
       continue
     }
 

@@ -86,6 +86,148 @@ export const cls = css({ '& svg': { ...icon, color: 'red.300' } })
   })
 })
 
+/**
+ * Spreads, which used to be declined as a class rather than judged one at a time.
+ *
+ * The rule was "an inline object literal, or nothing", because a spread the extractor
+ * flattened and one it silently skipped were indistinguishable in the result — both simply
+ * contribute keys, or fail to. The extractor now records the spreads it walked
+ * structurally, so the two can be told apart, and only the second has to decline.
+ *
+ * The recorded list is of *successes*, deliberately: absence means decline. A list of
+ * failures answers "may I trust this" only while it is exhaustive, and the cost of an
+ * omission there is a wrong fold rather than a missed one.
+ */
+describe('spreads', () => {
+  test('a spread of a static local object folds', () => {
+    const { fold, getCss } = createFoldFixture()
+
+    const result = fold(`
+      import { css } from 'styled-system/css'
+      const known = { padding: '4' }
+      export const cls = css({ color: 'red.300', ...known })
+    `)
+
+    expect(result.folded).toHaveLength(1)
+    expect(result.folded[0]!.className).toBe('c_red.300 p_4')
+
+    const css = getCss()
+    for (const selector of selectorsFor(result.folded[0]!.className)) expect(css).toContain(selector)
+  })
+
+  test('a spread overrides what it lands on, in source order', () => {
+    const { fold } = createFoldFixture()
+
+    const result = fold(`
+      import { css } from 'styled-system/css'
+      const override = { color: 'blue.500' }
+      export const cls = css({ color: 'red.300', ...override })
+    `)
+
+    // The later spread wins, exactly as the runtime merge would have it.
+    expect(result.folded[0]!.className).toBe('c_blue.500')
+  })
+
+  test('a spread from another module folds and reports that module', () => {
+    const { fold, addFiles } = createFoldFixture()
+
+    addFiles({ 'app/styles.ts': `export const shared = { padding: '4' }\n` })
+
+    const result = fold(
+      `import { css } from 'styled-system/css'
+import { shared } from './styles'
+export const cls = css({ color: 'red.300', ...shared })
+`,
+      'app/use.tsx',
+    )
+
+    expect(result.folded[0]!.className).toBe('c_red.300 p_4')
+
+    // The literal now depends on a file this module only imports. Without the edge, editing
+    // it would leave the old class behind — which is the whole reason the fold reports
+    // dependencies at all.
+    expect(result.dependencies).toContain('/app/styles.ts')
+  })
+
+  test.each([
+    ['a spread of a runtime value', `export const make = (rest) => css({ color: 'red.300', ...rest })`],
+    [
+      'a conditional spread',
+      `export const make = (f) => css({ color: 'red.300', ...(f ? { margin: '2' } : { margin: '4' }) })`,
+    ],
+    ['a spread inside a condition block', `export const make = (r) => css({ _hover: { color: 'red.300', ...r } })`],
+  ])('%s declines', (_name, body) => {
+    const { fold } = createFoldFixture()
+    const code = `
+      import { css } from 'styled-system/css'
+      ${body}
+    `
+
+    const result = fold(code)
+
+    expect(result.folded).toHaveLength(0)
+    expect(result.code).toBe(code)
+  })
+
+  /**
+   * A spread the extractor *walked* is not a spread it accounted for.
+   *
+   * It builds a map whenever it walked the object literal, however many of that object's
+   * properties it silently dropped along the way — and once they are flattened into the
+   * result, what was dropped is unrecoverable. So the spread object gets the same audit the
+   * literal being folded gets, rather than being waved through for having been walked.
+   *
+   * Every case here folds — wrongly, and silently — if that recursion is removed. They are
+   * the ones the simpler "is it on the list" check got wrong.
+   */
+  test.each([
+    [
+      'a nested unresolvable spread',
+      `export const make = (r) => { const g = { padding: '4', ...r }; return css({ color: 'red.300', ...g }) }`,
+    ],
+    [
+      'a dynamic computed key',
+      `export const make = (k) => { const g = { padding: '4', [k]: '2' }; return css({ color: 'red.300', ...g }) }`,
+    ],
+    [
+      'a getter that branches',
+      `export const make = (x) => { const g = { padding: '4', get mm() { if (x) return '1'; return '2' } }; return css({ color: 'red.300', ...g }) }`,
+    ],
+    [
+      'a method',
+      `export const make = (p) => { const g = { padding: '4', mm() { return p } }; return css({ color: 'red.300', ...g }) }`,
+    ],
+    [
+      'an unresolvable spread inside a condition block of the spread object',
+      `export const make = (r) => { const g = { padding: '4', _hover: { color: 'blue.500', ...r } }; return css({ color: 'red.300', ...g }) }`,
+    ],
+  ])('a spread carrying %s declines', (_name, body) => {
+    const { fold } = createFoldFixture()
+    const code = `
+      import { css } from 'styled-system/css'
+      ${body}
+    `
+
+    const result = fold(code)
+
+    expect(result.folded).toHaveLength(0)
+    expect(result.code).toBe(code)
+  })
+
+  test('a statically resolvable computed key inside a spread still folds', () => {
+    const { fold } = createFoldFixture()
+
+    const result = fold(`
+      import { css } from 'styled-system/css'
+      const K = 'padding'
+      export const cls = css({ color: 'red.300', ...{ [K]: '4' } })
+    `)
+
+    // The audit is about what could not be resolved, not about the syntax used to write it.
+    expect(result.folded[0]!.className).toBe('c_red.300 p_4')
+  })
+})
+
 describe('pure local helpers', () => {
   test('a pure arrow-function helper call folds', () => {
     const { fold } = createFoldFixture()

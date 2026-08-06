@@ -133,6 +133,29 @@ const recipeProps = ['compoundVariants', 'defaultVariants', 'variants', 'base']
 export class BoxNodeMap extends BoxNodeType<MapType> {
   public value: MapType['value']
   public spreadConditions?: BoxNodeConditional[]
+  /**
+   * Spreads the extractor walked structurally, paired with what it walked them into.
+   *
+   * The map records what a spread *contributed*, so a spread that flattened and one that
+   * was silently skipped look identical once folded in — both simply add keys, or fail to.
+   * That ambiguity is why a consumer rewriting source would otherwise have to decline every
+   * spread rather than only the ones it cannot account for.
+   *
+   * The *walked* ones are listed rather than the skipped ones deliberately: a consumer asks
+   * "may I trust this spread", and a list of failures answers that only while it is
+   * exhaustive. A list of successes is safe to be incomplete — the worst an omission costs
+   * is a fold that does not happen.
+   *
+   * `box` is the map the spread flattened, and being here is **not** a promise that every
+   * one of its keys survived — the extractor omits what it cannot evaluate, at any depth. It
+   * is the handle a consumer needs to go and check for itself, which it cannot do from the
+   * flattened result. `node` is the spread's own expression, so the pair can be matched
+   * against the source being inspected.
+   *
+   * Deliberately kept off `value`, and therefore invisible to `unbox` — this describes the
+   * extraction, not the styles, and nothing that generates CSS should see it.
+   */
+  public resolvedSpreads?: Array<{ node: Node; box: BoxNodeMap }>
 
   constructor(definition: MapType) {
     super(definition)

@@ -264,6 +264,12 @@ export const extract = ({ ast, ...ctx }: ExtractOptions) => {
           if (box.isMap(boxNode) && boxNode.spreadConditions?.length) {
             boxMap.spreadConditions = boxNode.spreadConditions
           }
+          // Carried across the rebuild for the same reason `spreadConditions` is: the map
+          // is reconstructed here, and an annotation left behind reads downstream as
+          // "there were no such spreads" rather than as "nobody looked".
+          if (box.isMap(boxNode) && boxNode.resolvedSpreads?.length) {
+            boxMap.resolvedSpreads = boxNode.resolvedSpreads
+          }
 
           return boxMap
         }
