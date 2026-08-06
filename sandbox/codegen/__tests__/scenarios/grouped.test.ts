@@ -77,6 +77,66 @@ describe('cssMode: grouped — the build emits a rule for every class the runtim
   })
 })
 
+describe('cssMode: grouped — css() groups the call the runtime will make', () => {
+  test('a ternary inside a condition block travels with the property beside it', () => {
+    for (const color of ['red.300', 'blue.300']) {
+      const value = css({ _hover: { color }, fontSize: 'xl' })
+      expect(classesOf(value)).toHaveLength(1)
+      expectAllBacked(value)
+    }
+  })
+
+  test('an array argument is one call, so it is one class', () => {
+    const value = css([{ color: 'red.300' }, { fontSize: 'xl' }])
+    expect(classesOf(value)).toHaveLength(1)
+    expectAllBacked(value)
+  })
+})
+
+/**
+ * Everything that is not `css()` encodes each extracted object on its own, so a call the
+ * runtime merges out of several of them was never emitted as a group. What it must not do is
+ * leave the element unstyled: the build emits these call sites' atomic rules alongside their
+ * groups, and the fallback lands on those.
+ */
+describe('cssMode: grouped — the shapes that degrade keep every declaration', () => {
+  /** Some class carries a rule, and each expected declaration reaches the stylesheet. */
+  const expectNothingLost = (value: string, declarations: string[]) => {
+    const classes = classesOf(value)
+    expect(classes.filter(hasRule).length, `nothing backed in "${value}"`).toBeGreaterThan(0)
+    for (const declaration of declarations) {
+      expect(sheet, `no rule declares ${declaration}`).toContain(declaration)
+    }
+  }
+
+  test('a conditional style prop beside a static one', () => {
+    // What the factory computes for `<styled.div color={on ? 'red.300' : 'blue.300'} padding="4" />`.
+    for (const color of ['red.300', 'blue.300']) {
+      expectNothingLost(css({ color, padding: '4' }), ['--colors-red-300', '--spacing-4'])
+    }
+  })
+
+  test('a conditional value in a pattern', () => {
+    expectNothingLost(stack({ gap: '2', padding: '4' }), ['--spacing-2', '--spacing-4', 'display: flex'])
+  })
+
+  test('a value the build cannot see, beside one it can', () => {
+    // `color` has no rule under any mode. `padding` must still apply.
+    expectNothingLost(css({ color: 'some-unresolvable-value', padding: '4' }), ['--spacing-4'])
+  })
+
+  test('a spread the build cannot enumerate', () => {
+    expectNothingLost(css({ fontSize: 'xl', color: 'red.300' }), ['--colors-red-300'])
+  })
+
+  test('two operands sharing a key that holds a condition object', () => {
+    expectNothingLost(css({ color: { base: 'red.300' } }, { color: { _hover: 'blue.300' } }), [
+      '--colors-red-300',
+      '--colors-blue-300',
+    ])
+  })
+})
+
 describe('cssMode: grouped — a call the build could not resolve degrades rather than breaking', () => {
   // The build sees `{ fontSize, padding }` and not `color`, so the group the runtime asks
   // for was never emitted. It must fall back to atomic names, and the declarations the build

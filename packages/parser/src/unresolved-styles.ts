@@ -8,8 +8,17 @@ export interface UnresolvedStyle {
   filePath: string
   line: number
   column: number
-  /** How the build lost it — a value it could not evaluate, or a key that never arrived. */
-  reason: 'unresolvable-value' | 'missing-property'
+  /**
+   * How the build lost the call:
+   *
+   * - `unresolvable-value` — a value it could not evaluate.
+   * - `missing-property` — a key that never arrived in the box tree at all.
+   * - `unenumerable-keys` — a spread or computed key, so it cannot say what the call sets.
+   * - `ambiguous-merge` — two arguments setting one property, which it cannot tell from a
+   *   pair of alternatives.
+   * - `too-many-combinations` — more ternary branches than it will enumerate.
+   */
+  reason: 'unresolvable-value' | 'missing-property' | 'unenumerable-keys' | 'ambiguous-merge' | 'too-many-combinations'
 }
 
 /**
@@ -60,6 +69,17 @@ const findUnresolvable = (node: BoxNode | undefined, path: string[], out: string
   }
 }
 
+interface WrittenProps {
+  /** The names this could read directly. */
+  names: string[]
+  /**
+   * Whether something in the literal contributes keys this cannot enumerate — an object
+   * spread, or a computed key. The names are still usable; they are just not the whole
+   * story, so the caller has to account for the rest another way.
+   */
+  uncertain: boolean
+}
+
 /**
  * Property names written at the top level of the call's own object literal.
  *
@@ -69,11 +89,10 @@ const findUnresolvable = (node: BoxNode | undefined, path: string[], out: string
  * disappears with no trace in the box tree. Reading the source back is the only way to
  * notice, and it is why `css({ color: getColor() })` needs this and not just the walk above.
  *
- * Returns `undefined` when the shape cannot be read confidently — a spread, a computed
- * key, or an argument that is not an object literal — so the caller reports nothing rather
- * than something wrong.
+ * Returns `undefined` only when the argument is not a single object literal at all, so the
+ * caller reports nothing rather than something wrong.
  */
-const writtenProps = (node: Node | undefined): string[] | undefined => {
+const writtenProps = (node: Node | undefined): WrittenProps | undefined => {
   // The box for a `css()` call records the *call*, not its argument, so the object literal
   // has to be recovered from it. A multi-argument call is declined: the operands merge
   // last-wins at runtime, so a key absent from one of them is not necessarily absent from
@@ -88,19 +107,24 @@ const writtenProps = (node: Node | undefined): string[] | undefined => {
   if (!literal || !Node.isObjectLiteralExpression(literal)) return undefined
 
   const names: string[] = []
+  let uncertain = false
+
   for (const property of literal.getProperties()) {
     if (Node.isPropertyAssignment(property) || Node.isShorthandPropertyAssignment(property)) {
       const name = property.getName()
       // A computed or quoted-dynamic key is not comparable against a resolved key.
-      if (name.startsWith('[')) return undefined
+      if (name.startsWith('[')) {
+        uncertain = true
+        continue
+      }
       names.push(name.replace(/^['"]|['"]$/g, ''))
       continue
     }
     // A spread contributes keys this cannot enumerate.
-    return undefined
+    uncertain = true
   }
 
-  return names
+  return { names, uncertain }
 }
 
 /**
@@ -119,15 +143,10 @@ export const findUnresolvedStyles = (item: ResultItem): UnresolvedStyle[] => {
   const sourceFile = node?.getSourceFile()
   if (!node || !sourceFile) return []
 
-  const filePath = sourceFile.getFilePath()
-  const { line, column } = sourceFile.getLineAndColumnAtPos(node.getStart())
-  const at = { filePath, line, column }
-
   const found: string[] = []
   findUnresolvable(boxNode, [], found)
 
-  const results: UnresolvedStyle[] = found.map((prop) => ({
-    ...at,
+  const losses: Array<Pick<UnresolvedStyle, 'prop' | 'reason'>> = found.map((prop) => ({
     prop: prop || undefined,
     reason: 'unresolvable-value' as const,
   }))
@@ -141,10 +160,38 @@ export const findUnresolvedStyles = (item: ResultItem): UnresolvedStyle[] => {
     }
     if (box.isMap(boxNode)) for (const key of boxNode.value.keys()) resolved.add(key)
 
-    for (const prop of written) {
-      if (!resolved.has(prop)) results.push({ ...at, prop, reason: 'missing-property' })
+    for (const prop of written.names) {
+      if (!resolved.has(prop)) losses.push({ prop, reason: 'missing-property' })
+    }
+
+    // A spread or a computed key contributes properties this cannot name, so the check
+    // above cannot see them go missing. What it can see is whether they arrived at all: a
+    // spread the extractor resolved puts its keys in `resolved`, and one it could not
+    // resolve leaves nothing behind but the keys written beside it.
+    //
+    // Reporting on that is a guess in one direction only. `css({ ...base, color: 'red' })`
+    // where `base` happens to hold nothing but `color` is read as a loss when it is not,
+    // and costs this call site its atomic rules. The other way round would cost the element
+    // every style it has.
+    if (written.uncertain && !hasKeyOutside(resolved, written.names)) {
+      losses.push({ reason: 'unenumerable-keys' })
     }
   }
 
-  return results
+  if (!losses.length) return []
+
+  // Only once there is something to report. `getLineAndColumnAtPos` counts newlines from the
+  // top of the file, and this now runs for every JSX element and pattern call a grouped
+  // build sees — where the answer is almost always that nothing was lost.
+  const { line, column } = sourceFile.getLineAndColumnAtPos(node.getStart())
+  const at = { filePath: sourceFile.getFilePath(), line, column }
+
+  return losses.map((loss) => ({ ...at, ...loss }))
+}
+
+const hasKeyOutside = (resolved: Set<string>, names: string[]) => {
+  for (const key of resolved) {
+    if (!names.includes(key)) return true
+  }
+  return false
 }

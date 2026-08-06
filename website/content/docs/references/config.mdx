@@ -356,8 +356,8 @@ grouping them would need a rule per combination.
 ### How grouped degrades
 
 The build has to have seen a `css()` call to emit its rule, because the class names the whole call. When it has not, the
-runtime notices and adds atomic class names alongside the group class, so the element keeps whatever the build _could_
-resolve instead of rendering with nothing.
+runtime notices — it checks the class it just built against the set the build emitted — and adds atomic class names
+alongside the group class, so the element can keep whatever the build _could_ resolve instead of rendering with nothing.
 
 ```tsx
 // The build resolves `padding` but not `color`.
@@ -377,31 +377,53 @@ class carries one only when the build saw the whole call.
 A value the build never saw — `props.tone` above — has no rule under any mode. That is the same limit `atomic` has, and
 [`staticCss`](/docs/guides/static) is the escape hatch for it there.
 
-This costs a little CSS: an at-risk call site emits its atomic rules as well as its group. It is bounded by how many
-call sites are unresolvable, not by the size of your stylesheet, and the build [warns for each one](#cssmode) with a
-file and line so you can decide whether to make it static.
+That recovery works because the build emits an at-risk call site's atomic rules alongside its group, giving the fallback
+somewhere to land. So the practical rule is:
+
+**`css()` groups. Everything else groups when the build can see the whole call, and degrades to atomic when it cannot.**
+
+Degrading costs a little CSS — an at-risk call site emits its atomic rules as well as its group — and it costs the
+element the one-class benefit of the mode. It never costs a declaration.
+
+### What only `css()` can do
+
+`css()` is the one surface the build reconstructs rather than merely reading: it enumerates a ternary's branches, merges
+them with the properties written beside them, and emits a group for each combination. So these all group, and produce a
+single class:
+
+```tsx
+css({ color: 'red', padding: '4' }) //                       static
+css({ color: on ? 'red' : 'blue', padding: '4' }) //         a ternary, both branches
+css({ _hover: { color: on ? 'red' : 'blue' }, padding: '4' }) // a ternary inside a condition
+css(base, { padding: '4' }) //                               operands with no shared key
+css([base, { padding: '4' }]) //                             the same, as an array
+stack({ gap: '4' }) //                                       a pattern, resolved end to end
+<styled.div color="red" padding="4" css={{ fontSize: 'xl' }} /> // an element, resolved end to end
+```
+
+A call site drops back to atomic when the build cannot name the call the runtime will make:
+
+| shape                                                                        | why                                                                        |
+| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `css({ color: props.tone, padding: '4' })`                                   | a value it cannot evaluate                                                 |
+| `css({ ...props.styles, color: 'red' })`                                     | a spread or computed key, so it cannot say what the call sets              |
+| `css({ color: { base: 'red' } }, { color: { _hover: 'blue' } })`             | two arguments setting one property: a merge it cannot tell from a ternary  |
+| a call whose ternaries multiply out past 32 combinations                     | more branches than it will enumerate                                       |
+| `<styled.div color={on ? 'red' : 'blue'} padding="2" />`                     | only `css()` enumerates branches; an element encodes what it was given     |
+| `stack({ gap: on ? '2' : '4', padding: '2' })`                               | the same, for a pattern                                                    |
+| `styled(Component, cvaConfig)`, `createStyleContext`                         | the component's runtime merges its own styles in, out of the build's sight |
+| a config-recipe element with style props, a `css` prop or a compound variant | the same merge, inside the recipe's factory                                |
+
+Every `css()` row there warns, with a file and line and what to change. The rows below them do not: a conditional style
+prop is ordinary code, and warning on each one would be noise rather than a signal. Reach for `css()` at those call
+sites if the extra classes matter to you.
 
 <Callout type="warning">
-  These constructs still resolve to fewer styles than you wrote, because the build cannot reconstruct the call — you get
-  what it resolved rather than what you asked for. Use `cssMode: 'atomic'` if your app leans on them:
-
-- `styled(Component, cvaConfig)`, `createStyleContext`, and a config-recipe JSX element carrying style props or a `css`
-  prop, or matching a compound variant. Each merges style objects inside a JSX factory into one grouped call the build
-  cannot reconstruct.
-- A conditional value alongside any other prop on a JSX element or in a pattern call —
-  `<styled.div color={active ? 'red' : 'blue'} padding="2" />`. Only `css()` enumerates the combinations, and only up to
-  32 of them.
-- A style object the build cannot fully resolve — `css({ color: props.color })`. Grouping hashes the whole object, so a
-  value missing at build time changes the class rather than dropping one declaration from it.
-- Two `css()` operands whose shared key holds a condition object —
-  `css({ color: { base: 'red' } }, { color: { _hover: 'blue' } })`.
-
-[`staticCss`](/docs/guides/static) is not a workaround for any of these. It enumerates atoms — one rule per property,
-value and condition — while `grouped` names a class after a whole `css()` call, so backing an arbitrary call site would
-mean pre-generating every combination of properties rather than every value. Its rules are still emitted and are still
-valid classes to write by hand, but nothing a grouped runtime returns will match them. The build warns when both are
-configured.
-
+  [`staticCss`](/docs/guides/static) is not a workaround for a degraded call. It enumerates atoms — one rule per
+  property, value and condition — while `grouped` names a class after a whole `css()` call, so backing an arbitrary call
+  site would mean pre-generating every combination of properties rather than every value. Its rules are still emitted
+  and are still valid classes to write by hand, but nothing a grouped runtime returns will match them. The build warns
+  when both are configured.
 </Callout>
 
 A group's class name is always a hash, so `grouped` turns off

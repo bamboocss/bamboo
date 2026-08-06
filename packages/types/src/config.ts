@@ -445,6 +445,10 @@ interface CodegenOptions {
    * - `'grouped'`: one class per `css()` call, grouping all properties together
    *
    * Grouped mode reduces the number of classes in the HTML at the cost of potential CSS duplication.
+   *
+   * A grouped class names a whole call, so the build has to have seen that exact call to emit its rule.
+   * Where it cannot, the runtime falls back to atomic class names — and a few shapes lose their styles
+   * entirely, without a warning. Read https://bamboocss.com/docs/references/config#cssmode before enabling it.
    * @default 'atomic'
    */
   cssMode?: 'atomic' | 'grouped'

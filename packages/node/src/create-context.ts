@@ -12,6 +12,37 @@ import { DiffEngine } from './diff-engine'
 import { nodeRuntime } from './node-runtime'
 import { OutputEngine } from './output-engine'
 
+/**
+ * What each loss is, and what the author can do about it.
+ *
+ * Kept apart from the sentence around it so every reason has to answer both questions.
+ * "Make the value static" is the fix for a value the build could not evaluate and no help
+ * at all for two arguments it could not tell apart, and a diagnostic that gives the wrong
+ * instruction is worse than one that gives none.
+ */
+const unresolvedReasons: Record<ParserResult['unresolved'][number]['reason'], (prop: string) => [string, string]> = {
+  'unresolvable-value': (prop) => [
+    `${prop} will not reach the stylesheet because its value is not statically known`,
+    'Make the value static to group it.',
+  ],
+  'missing-property': (prop) => [
+    `${prop} will not reach the stylesheet because its value could not be evaluated at build time`,
+    'Make the value static to group it.',
+  ],
+  'unenumerable-keys': () => [
+    'an object spread or computed key leaves the build unable to tell which properties this call sets',
+    'Write the properties out, or spread a value the build can resolve, to group it.',
+  ],
+  'ambiguous-merge': () => [
+    'two of these arguments set the same property, and the build cannot tell a merge from a pair of alternatives',
+    'Merge them into a single object to group it.',
+  ],
+  'too-many-combinations': () => [
+    'this call has more conditional branches than the build will enumerate',
+    'Split it into fewer conditional properties to group it.',
+  ],
+}
+
 export class BambooContext extends Generator {
   runtime: Runtime
   project: Project
@@ -81,13 +112,10 @@ export class BambooContext extends Generator {
     for (const entry of unresolved) {
       const where = `${entry.filePath}:${entry.line}:${entry.column}`
       const prop = entry.prop ? `\`${entry.prop}\`` : 'a property'
-      const why =
-        entry.reason === 'missing-property'
-          ? 'its value could not be evaluated at build time'
-          : 'its value is not statically known'
+      const [what, fix] = unresolvedReasons[entry.reason](prop)
       logger.warn(
         'grouped',
-        `${where} — ${prop} will not reach the stylesheet because ${why}. Under \`cssMode: 'grouped'\` one class names the whole \`css()\` call, so this call cannot use one: it falls back to naming each declaration separately and keeps only the ones the build could resolve. Make the value static to group it. See https://bamboocss.com/docs/references/config#cssmode`,
+        `${where} — ${what}. Under \`cssMode: 'grouped'\` one class names the whole \`css()\` call, so this call cannot use one: it falls back to naming each declaration separately and keeps only the ones the build could resolve. ${fix} See https://bamboocss.com/docs/references/config#cssmode`,
       )
     }
   }

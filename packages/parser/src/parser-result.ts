@@ -1,6 +1,7 @@
 import type { ParserOptions } from '@bamboocss/core'
 import { BambooError, getOrCreateSet } from '@bamboocss/shared'
 import type { ParserResultInterface, ResultItem } from '@bamboocss/types'
+import { Node } from 'ts-morph'
 import { findUnresolvedStyles, type UnresolvedStyle } from './unresolved-styles'
 
 function cartesian<T>(arrays: T[][]): T[][] {
@@ -91,6 +92,17 @@ export class ParserResult implements ParserResultInterface {
     const encoder = this.encoder
     const grouped = this.context.config.cssMode === 'grouped'
 
+    // `css([a, b])` arrives as a single entry holding an array, and `mergeCss` flattens it
+    // before merging. Hashing the array itself instead reads its indices as a responsive
+    // array — `css([{ color }, { padding }])` emitted the padding at the `sm` breakpoint,
+    // in both modes. Flattened here so every path below sees the operands the runtime sees.
+    //
+    // Tested for before flattening: array arguments are rare, and `flatMap` allocates a
+    // second array for every `css()` call in the codebase to serve them.
+    const data = (
+      result.data.some(Array.isArray) ? result.data.flatMap((obj) => (Array.isArray(obj) ? obj : [obj])) : result.data
+    ) as Record<string, any>[]
+
     if (grouped) {
       const unresolved = findUnresolvedStyles(result)
       if (unresolved.length) {
@@ -107,19 +119,19 @@ export class ParserResult implements ParserResultInterface {
         // many call sites are unresolvable rather than by the size of the stylesheet. The
         // declarations the build *did* resolve are the ones that end up applying, which is
         // exactly what `cssMode: 'atomic'` would have given for the same source.
-        result.data.forEach((obj) => encoder.processAtomic(obj))
+        data.forEach((obj) => encoder.processAtomic(obj))
       }
     }
 
-    if (!grouped || result.data.length <= 1) {
-      result.data.forEach((obj) => (grouped ? encoder.processGrouped(obj) : encoder.processAtomic(obj)))
+    if (!grouped || data.length <= 1) {
+      data.forEach((obj) => (grouped ? encoder.processGrouped(obj) : encoder.processAtomic(obj)))
       return
     }
 
     // Multiple entries in grouped mode (ternaries, css.raw merging):
     // reconstruct the combinations the runtime would evaluate to.
     const keyCounts = new Map<string, number>()
-    for (const obj of result.data) {
+    for (const obj of data) {
       for (const key of Object.keys(obj)) {
         keyCounts.set(key, (keyCounts.get(key) || 0) + 1)
       }
@@ -129,8 +141,23 @@ export class ParserResult implements ParserResultInterface {
 
     if (!hasOverlap) {
       // No overlapping keys (css.raw merge): combine all entries into one group
-      encoder.processGrouped(Object.assign({}, ...result.data))
+      encoder.processGroupedMerge(data)
       return
+    }
+
+    // A shared key means one of two things, and the extracted entries look identical either
+    // way: alternatives to enumerate (a ternary's branches) or operands to merge (a second
+    // argument overriding the first). The reconstruction below assumes alternatives, which
+    // is right for `css({ color: on ? 'red' : 'blue' })` and wrong for
+    // `css({ color: { base: 'red' } }, { color: { _hover: 'blue' } })` — where the runtime
+    // deep-merges the two into a group this never emits.
+    //
+    // Telling them apart needs the source: a ternary lives inside one argument. So a
+    // multi-argument call that overlaps is treated as at-risk and emits its atomic rules
+    // too, leaving the element with every declaration rather than none.
+    if (this.callArgumentCount(result) > 1) {
+      this.reportUnresolved(result, 'ambiguous-merge')
+      data.forEach((obj) => encoder.processAtomic(obj))
     }
 
     // Overlapping keys (ternary branches): separate base from branches,
@@ -140,14 +167,14 @@ export class ParserResult implements ParserResultInterface {
       if (count > 1) overlappingKeys.add(key)
     })
 
-    const base: Record<string, any> = {}
+    const baseEntries: Record<string, any>[] = []
     const branchEntries: Record<string, any>[] = []
 
-    for (const obj of result.data) {
+    for (const obj of data) {
       if (Object.keys(obj).some((k) => overlappingKeys.has(k))) {
         branchEntries.push(obj)
       } else {
-        Object.assign(base, obj)
+        baseEntries.push(obj)
       }
     }
 
@@ -168,8 +195,8 @@ export class ParserResult implements ParserResultInterface {
       // so the runtime asks for a class none of them named. This *is* a loss, and it is
       // reported here rather than by the box walk because only this knows the count.
       // Atomic rules go out alongside them so the runtime's fallback has somewhere to land.
-      this.reportUnresolved(result, 'missing-property')
-      result.data.forEach((obj) => {
+      this.reportUnresolved(result, 'too-many-combinations')
+      data.forEach((obj) => {
         encoder.processGrouped(obj)
         encoder.processAtomic(obj)
       })
@@ -177,8 +204,19 @@ export class ParserResult implements ParserResultInterface {
     }
 
     for (const combo of cartesian(groupArrays)) {
-      encoder.processGrouped(Object.assign({}, base, ...combo))
+      encoder.processGroupedMerge([...baseEntries, ...combo])
     }
+  }
+
+  /**
+   * How many arguments the call this result came from was written with.
+   *
+   * Returns 1 for anything that is not a call — a JSX element, or a box that lost its node —
+   * since the question only separates operands from branches and neither has operands.
+   */
+  private callArgumentCount(result: ResultItem) {
+    const node = result.box?.getNode()
+    return node && Node.isCallExpression(node) ? node.getArguments().length : 1
   }
 
   setCva(result: ResultItem) {
@@ -226,9 +264,9 @@ export class ParserResult implements ParserResultInterface {
     // the element keeps its style props. The cva's own styles are already atomic
     // (`processAtomicRecipe`), so the two halves agree.
     //
-    // Not for `jsx-factory` — `styled.div` has no cva, its runtime groups exactly what was
-    // encoded above, and the duplication would be pure waste.
-    if (grouped && result.type !== 'jsx-factory') {
+    // A `jsx-factory` element has no cva to merge, so its group is exact — unless the build
+    // could not see the whole element, which is what `groupIsExact` asks.
+    if (grouped && (result.type !== 'jsx-factory' || !this.groupIsExact(result))) {
       result.data.forEach((obj) => encoder.processStyleProps(obj, false))
     }
   }
@@ -239,9 +277,34 @@ export class ParserResult implements ParserResultInterface {
 
     const encoder = this.encoder
     const grouped = this.context.config.cssMode === 'grouped'
-    result.data.forEach((obj) =>
-      encoder.processPattern(name, obj, (result.type as 'pattern' | undefined) ?? 'pattern', result.name, grouped),
-    )
+    const type = (result.type as 'pattern' | undefined) ?? 'pattern'
+    result.data.forEach((obj) => encoder.processPattern(name, obj, type, result.name, grouped))
+
+    // A pattern resolves to a single `css()` call, but the build never recombines the
+    // entries a conditional value splits it into — `stack({ gap: on ? '2' : '4', padding: '2' })`
+    // encodes a group per entry and the runtime asks for the merge of them. Only `setCss`
+    // enumerates combinations, so the rest degrade instead: atomic rules go out alongside
+    // the groups, and the element keeps every declaration.
+    if (grouped && !this.groupIsExact(result)) {
+      result.data.forEach((obj) => encoder.processPattern(name, obj, type, result.name, false))
+    }
+  }
+
+  /**
+   * Whether the group encoded for this result is the one the runtime will ask for.
+   *
+   * True only when the build saw the whole thing at once: one style object, with every
+   * value in it resolved. Several objects means the runtime merges them into a call this
+   * never encoded — `setCss` reconstructs those combinations, and nothing else does — and
+   * an unresolved value means the merge would not have matched anyway.
+   *
+   * Answering "no" costs a call site its atomic rules, which is CSS that duplicates the
+   * group. Answering a wrong "yes" costs the element every style it has, so this is
+   * deliberately conservative.
+   */
+  private groupIsExact(result: ResultItem) {
+    if (result.data.length !== 1) return false
+    return findUnresolvedStyles(result).length === 0
   }
 
   setRecipe(recipeName: string, result: ResultItem) {

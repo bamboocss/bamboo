@@ -236,6 +236,24 @@ export class StyleEncoder {
     })
   }
 
+  /**
+   * Group several style objects as the one call the runtime will make of them.
+   *
+   * `css(a, b)` and a reconstructed ternary branch are both several objects that become a
+   * single class, and the runtime names that class off `mergeCss(a, b)` — which normalizes
+   * each operand and *then* deep-merges. Combining them any other way names a different
+   * class: `Object.assign` keeps only the last of two condition objects under a shared key,
+   * and merging before normalizing lets `p` and `padding` survive as two properties when
+   * the runtime has already collapsed them into one.
+   *
+   * Shared with `processStyleProps`, which folds a `css` prop into an element's style props
+   * for exactly the same reason.
+   */
+  processGroupedMerge = (styles: StyleResultObject[]) => {
+    if (styles.length === 1) return this.processGrouped(styles[0] as StyleResultObject)
+    this.processGrouped(mergeProps(...styles.map((style) => normalizeStyleObject(style, this.context))))
+  }
+
   processGrouped = (styles: StyleResultObject) => {
     const groupSet = new Set<string>()
     this.hashStyleObject(groupSet, styles)

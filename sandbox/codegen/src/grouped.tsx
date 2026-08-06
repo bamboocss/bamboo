@@ -59,3 +59,39 @@ export const bareCva = cva({
   base: { color: 'red.300' },
   variants: { size: { sm: { padding: '2' } } },
 })
+
+// A ternary nested inside a condition block, beside another property. `css()` reconstructs
+// the branches, so this has to group — the condition and the property travel together.
+export const NestedTernary = ({ on }: { on: boolean }) => (
+  <div className={css({ _hover: { color: on ? 'red.300' : 'blue.300' }, fontSize: 'xl' })} />
+)
+
+// An array argument. `mergeCss` flattens it, so it is one call and one class.
+export const ArrayArg = () => <div className={css([{ color: 'red.300' }, { fontSize: 'xl' }])} />
+
+// --- The shapes that degrade to atomic. Each must keep every declaration it wrote. ---
+
+// A conditional style prop beside a static one. Only `css()` enumerates combinations, so
+// the element falls back to atomic names — which have to have rules behind them.
+export const ConditionalProp = ({ on }: { on: boolean }) => (
+  <styled.div color={on ? 'red.300' : 'blue.300'} padding="4" />
+)
+
+// The same shape in a pattern.
+export const ConditionalPattern = ({ on }: { on: boolean }) => (
+  <div className={stack({ gap: on ? '2' : '4', padding: '4' })} />
+)
+
+// A value the build cannot see, beside one it can. The resolved half must survive.
+export const DynamicProp = ({ tone }: { tone: string }) => <styled.div color={tone} padding="4" />
+
+// A spread the build cannot enumerate.
+export const DynamicSpread = ({ styles }: { styles: Record<string, string> }) => (
+  <div className={css({ ...styles, color: 'red.300' })} />
+)
+
+// Two operands sharing a key that holds a condition object: a merge the build reads as a
+// pair of alternatives, so it degrades rather than guessing.
+export const SharedConditionKey = () => (
+  <div className={css({ color: { base: 'red.300' } }, { color: { _hover: 'blue.300' } })} />
+)
