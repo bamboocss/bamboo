@@ -58,6 +58,14 @@ export function generateCvaFn(ctx: Context) {
       //
       // \`raw\` still clones what it returns. The memoized object is shared, so handing it to a
       // caller that mutated it would poison every later call.
+      //
+      // A recipe whose variants are all boolean could index an array instead of hashing, and
+      // that was built and measured: +25% to +35% on \`raw()\`. It is not here because the
+      // trade is bad. Correctness needs the selection read from own enumerable keys only, and
+      // every variant to carry a boolean default so the merge order is pinned — and once that
+      // gate is honest, no \`cva\`/\`sva\` call site in this repo passes it, because real recipes
+      // mix a string variant in. The cost is unconditional: +289 B gzipped on that module for
+      // every consumer, qualifying or not.
       const resolveVariants = memo(resolve)
 
       function cvaFn(props) {
