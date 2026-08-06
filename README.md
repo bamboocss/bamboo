@@ -27,6 +27,8 @@ what it costs.
   conflicting utilities, so the last one passed wins instead of whichever the stylesheet ordered last
 - 🛟 [Fallback values](https://bamboocss.com/docs/concepts/writing-styles#fallback-values) – `fallback(100dvh, 100vh)`
   for progressive enhancement, in one declaration
+- 🎬 [View transitions](https://bamboocss.com/docs/concepts/view-transitions) – `viewTransition()` writes the
+  `::view-transition-*` rules and hands back one class to share across elements
 - 🦄 Works with most JavaScript frameworks
 - 🚀 Recipes and Variants – composable style variants, an API [inspired by Stitches](https://stitches.dev/)
 - 🎨 High-level design tokens support for simultaneous themes
