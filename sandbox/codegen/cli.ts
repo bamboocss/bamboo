@@ -16,6 +16,7 @@ const scenarioList = [
   'jsx-minimal',
   'jsx-none',
   'format-names',
+  'grouped',
 ]
 
 const isValidScenario = (scenario) => {
@@ -82,6 +83,21 @@ cli.command('codegen [scenario]', 'Generate code').action(async (scenario) => {
   )
 
   await Promise.all(commands.map(runCommand))
+
+  // The grouped scenario asserts that every class its runtime returns has a rule behind it,
+  // so it needs the emitted stylesheet as well as the generated artifacts. `codegen` writes
+  // one without the other.
+  if (!scenario || scenario === 'grouped') {
+    await runCommand('pnpm bamboo cssgen --config bamboo.grouped.config.ts')
+    // A second copy under an extension vite will not treat as CSS. The scenario's test
+    // imports the stylesheet with `?raw` to compare it against the generated runtime, and
+    // vite's CSS pipeline intercepts `?raw` on a `.css` file and hands back an empty string.
+    // Reading it with `node:fs` instead would typecheck against a tsconfig that has no node
+    // types — and vitest's typecheck runs over the whole project, so no scenario can opt out.
+    await runCommand(
+      'pnpm bamboo cssgen --config bamboo.grouped.config.ts --outfile styled-system-grouped/styles.css.txt',
+    )
+  }
 })
 
 cli.help()

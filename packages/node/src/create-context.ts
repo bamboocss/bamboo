@@ -87,7 +87,7 @@ export class BambooContext extends Generator {
           : 'its value is not statically known'
       logger.warn(
         'grouped',
-        `${where} — ${prop} will not reach the stylesheet because ${why}. Under \`cssMode: 'grouped'\` one class names the whole \`css()\` call, so this element renders with no styles at all rather than losing one declaration. See https://bamboocss.com/docs/references/config#cssmode`,
+        `${where} — ${prop} will not reach the stylesheet because ${why}. Under \`cssMode: 'grouped'\` one class names the whole \`css()\` call, so this call cannot use one: it falls back to naming each declaration separately and keeps only the ones the build could resolve. Make the value static to group it. See https://bamboocss.com/docs/references/config#cssmode`,
       )
     }
   }

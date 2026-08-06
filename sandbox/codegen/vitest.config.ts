@@ -72,6 +72,15 @@ const options: TestUserConfig = {
       typecheck: { enabled: typecheck, include: ['**/__tests__/scenarios/format-names.{test,spec}.{j,t}s?(x)'] },
     },
   },
+  grouped: {
+    test: {
+      environment: 'happy-dom',
+      include: ['**/__tests__/scenarios/grouped.{test,spec}.{j,t}s?(x)'],
+      // No `typecheck` entry: this scenario asserts the emitted stylesheet against the
+      // generated runtime, and reads the sheet with `node:fs`, which the sandbox's tsconfig
+      // has no types for. The type-level scenarios are `strict*`.
+    },
+  },
   //
   preact: {
     plugins: [preact()],
