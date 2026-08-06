@@ -27,6 +27,13 @@ export function generateCvaFn(ctx: Context) {
             variantCss = mergeCss(variantCss, variants[key][value])
           }
         }
+        // A recipe with no compound variants has nothing left to merge, and the merge is
+        // not free just because its second operand is empty: \`mergeCss\` is memoized on its
+        // arguments, so the call hashes the whole accumulated style object before finding
+        // there is nothing to do. Most recipes declare no compound variants at all, so
+        // this is the common shape rather than a special case.
+        if (compoundVariants.length === 0) return variantCss
+
         const compoundVariantCss = getCompoundVariantCss(compoundVariants, computedVariants)
         return mergeCss(variantCss, compoundVariantCss)
       }

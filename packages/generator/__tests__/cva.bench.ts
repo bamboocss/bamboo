@@ -62,8 +62,14 @@ const getCompoundVariantCss = (compoundVariants: any[], variantMap: Record<strin
   return result
 }
 
-const build = () => {
-  const { base, variants, defaultVariants, compoundVariants } = config as any
+/**
+ * `shortCircuit` is the emitted runtime's `if (compoundVariants.length === 0) return
+ * variantCss`. Both forms are built here so the pair can be measured in one run: a
+ * stash-and-rerun A/B cannot reach this file's mirror of the artifact, and comparing two
+ * readings taken minutes apart on a shared machine is how a 5% effect gets lost in drift.
+ */
+const build = (source: typeof config, shortCircuit = true) => {
+  const { base, variants, defaultVariants, compoundVariants } = source as any
   const getVariantProps = (v: Record<string, unknown>) => ({ ...defaultVariants, ...compact(v) })
 
   function resolve(props: Record<string, unknown> = {}) {
@@ -72,6 +78,7 @@ const build = () => {
     for (const [key, value] of Object.entries(computedVariants)) {
       if (variants[key]?.[value as string]) variantCss = mergeCss(variantCss, variants[key][value as string])
     }
+    if (shortCircuit && compoundVariants.length === 0) return variantCss
     return mergeCss(variantCss, getCompoundVariantCss(compoundVariants, computedVariants))
   }
 
@@ -82,7 +89,12 @@ const build = () => {
   }
 }
 
-const { raw, cvaFn } = build()
+/** The same recipe with its compound variant removed — the shape most recipes have. */
+const plainConfig = { ...config, compoundVariants: [] as any[] }
+
+const { raw, cvaFn } = build(config)
+const plain = build(plainConfig)
+const plainUnconditional = build(plainConfig, false)
 const ITERATIONS = 10_000
 
 // Two prop sets alternating, so a cache that only ever sees one shape is not flattered.
@@ -108,4 +120,40 @@ describe('cva() runtime', () => {
     },
     { time: 2000 },
   )
+})
+
+/**
+ * The compound-free recipe, which is what most recipes are, measured both ways in one run.
+ *
+ * The pair is the point. Read them against each other rather than against a previous run:
+ * they share a process, a warm-up and a machine, so the difference between them is the
+ * change and nothing else.
+ *
+ * `all-miss` is where any difference has to show. Warm, both forms return from the memo
+ * without reaching `resolve` at all.
+ */
+describe('cva() runtime, no compound variants', () => {
+  bench(
+    `raw() all-miss, short-circuited x${ITERATIONS}`,
+    () => {
+      for (let i = 0; i < ITERATIONS; i++) plain.raw({ size: 'md', tone: 'primary', ghost: i })
+    },
+    { time: 2000 },
+  )
+
+  bench(
+    `raw() all-miss, merging against empty x${ITERATIONS}`,
+    () => {
+      for (let i = 0; i < ITERATIONS; i++) plainUnconditional.raw({ size: 'md', tone: 'primary', ghost: i })
+    },
+    { time: 2000 },
+  )
+
+  bench(`raw() warm, short-circuited x${ITERATIONS}`, () => {
+    for (let i = 0; i < ITERATIONS; i++) plain.raw(i % 2 ? A : B)
+  })
+
+  bench(`raw() warm, merging against empty x${ITERATIONS}`, () => {
+    for (let i = 0; i < ITERATIONS; i++) plainUnconditional.raw(i % 2 ? A : B)
+  })
 })
