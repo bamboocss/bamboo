@@ -14,7 +14,6 @@ import type {
   ExtractedComponentResult,
   ExtractedFunctionInstance,
   ExtractedFunctionResult,
-  ExtractedTaggedTemplateInstance,
   MatchFnPropArgs,
   MatchPropArgs,
 } from './types'
@@ -34,7 +33,7 @@ const isImportOrExport = (node: Node) => Node.isImportDeclaration(node) || Node.
 const isJsxElement = (node: Node) => Node.isJsxOpeningElement(node) || Node.isJsxSelfClosingElement(node)
 
 export const extract = ({ ast, ...ctx }: ExtractOptions) => {
-  const { components, functions, taggedTemplates } = ctx
+  const { components, functions } = ctx
   const compiledJsx = createCompiledJsxContext(ast)
 
   /** contains all the extracted nodes from this ast parsing */
@@ -282,25 +281,6 @@ export const extract = ({ ast, ...ctx }: ExtractOptions) => {
         name: fnName,
         box: box.array(nodeList, node, []),
       } as ExtractedFunctionInstance
-      fnResultMap.queryList.push(query)
-    }
-
-    if (taggedTemplates && Node.isTaggedTemplateExpression(node)) {
-      const tag = node.getTag()
-      // styled('span')`...` or styled.span`...`
-      const fnName = Node.isCallExpression(tag) ? tag.getExpression().getText() : tag.getText()
-      if (!taggedTemplates.matchTaggedTemplate({ taggedTemplateNode: node, fnName })) return
-
-      if (!byName.has(fnName)) {
-        byName.set(fnName, { kind: 'function', nodesByProp: new Map(), queryList: [] })
-      }
-
-      const fnResultMap = byName.get(fnName)! as ExtractedFunctionResult
-      const query = {
-        kind: 'tagged-template',
-        name: fnName,
-        box: maybeBoxNode(node, [], ctx),
-      } as ExtractedTaggedTemplateInstance
       fnResultMap.queryList.push(query)
     }
   })

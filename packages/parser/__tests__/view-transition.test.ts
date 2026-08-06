@@ -233,15 +233,6 @@ describe('viewTransition', () => {
     expect(css).not.toContain('view-transition-class')
   })
 
-  test('is not extracted under template-literal syntax, where it is not generated', () => {
-    const code = `
-    import { viewTransition } from 'styled-system/css'
-    const t = viewTransition({ old: { animationName: 'fade-out' } })
-    `
-
-    expect(parseAndExtract(code, { syntax: 'template-literal' }).css).toBe('')
-  })
-
   test('the class carries the config prefix', () => {
     const code = `
     import { viewTransition } from 'styled-system/css'

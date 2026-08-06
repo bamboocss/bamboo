@@ -159,37 +159,6 @@ the fallback, which is exactly what declining preserves.
 
 `token.var()` is left alone.
 
-### Template literal syntax
-
-Under [`syntax: 'template-literal'`](/docs/references/config#syntax), a static `css` tag folds the same way a call does:
-
-```tsx
-// you write
-const cls = css`
-  color: red.300;
-  padding: 4px;
-`
-
-// the bundle gets
-const cls = 'color_red.300 padding_4px'
-```
-
-Only the `css` tag. In this mode the parser records every styling tag alike, `styled.button` and `styled('span')`
-included – and those define components, not classes. The fold establishes what the tag actually is before rewriting
-anything, so component definitions are left exactly as written.
-
-A template with an interpolation declines. The parser reads the template's _text_, and an interpolation carries a value
-that text does not:
-
-```tsx
-css`
-  color: red.300;
-` // ✅ folds
-css`
-  color: ${tone};
-` // ❌ declines
-```
-
 ### Pattern elements
 
 `<Stack>`, `<Box>`, `<HStack>` and the rest fold too, and they save more than a `styled.*` element does. A pattern

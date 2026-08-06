@@ -49,11 +49,6 @@ type NamingContext = Pick<Context, 'config' | 'conditions' | 'utility' | 'hash' 
  * is about to emit.
  */
 export function checkNamingAgreement(ctx: NamingContext): NamingDisagreement | undefined {
-  // Template-literal syntax builds its runtime from a different generator, which never
-  // passes `grouped` through. Comparing against the object-syntax runtime would report a
-  // disagreement that does not exist in the artifact that ships.
-  if (ctx.config.syntax === 'template-literal') return
-
   const grouped = ctx.config.cssMode === 'grouped'
 
   const cssContext = {

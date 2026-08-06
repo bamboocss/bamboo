@@ -16,7 +16,6 @@ const cssPropListRegex =
 const memoFnDeclarationRegex = /function memo(?:.+?)\n((?:var|const|let) cssPropertySelectorRegex)/s
 
 export function generateIsValidProp(ctx: Context) {
-  if (ctx.isTemplateLiteralSyntax) return
   let content = isValidPropJson.content
 
   const propertyList = content.match(cssPropListRegex)

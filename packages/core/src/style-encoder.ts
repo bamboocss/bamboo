@@ -111,15 +111,9 @@ export class StyleEncoder {
     return scope
   }
 
-  constructor(
-    private context: Pick<
-      Context,
-      'isTemplateLiteralSyntax' | 'isValidProperty' | 'recipes' | 'patterns' | 'conditions' | 'utility'
-    >,
-  ) {}
+  constructor(private context: Pick<Context, 'isValidProperty' | 'recipes' | 'patterns' | 'conditions' | 'utility'>) {}
 
   filterStyleProps = (props: Dict): Dict => {
-    if (this.context.isTemplateLiteralSyntax) return props
     return filterProps(this.context.isValidProperty, props)
   }
 

@@ -53,7 +53,6 @@ export async function main() {
     .option('--out-extension <ext>', "The extension of the generated js files (default: 'mjs')")
     .option('--outdir <dir>', 'The output directory for the generated files')
     .option('--jsx-framework <framework>', 'The jsx framework to use')
-    .option('--syntax <syntax>', 'The css syntax preference')
     .option('--strict-tokens', 'Using strictTokens: true')
     .option('--logfile <file>', 'Outputs logs to a file')
     .action(async (initFlags: Partial<InitCommandFlags> = {}) => {
@@ -65,7 +64,7 @@ export async function main() {
 
       const flags = { ...initFlags, ...options }
 
-      const { force, postcss, silent, gitignore, outExtension, jsxFramework, config: configPath, syntax } = flags
+      const { force, postcss, silent, gitignore, outExtension, jsxFramework, config: configPath } = flags
 
       const cwd = resolve(flags.cwd ?? '')
 
@@ -89,7 +88,6 @@ export async function main() {
           force,
           outExtension,
           jsxFramework,
-          syntax,
           outdir: flags.outdir,
         }),
       )

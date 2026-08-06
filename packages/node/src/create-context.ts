@@ -204,7 +204,7 @@ export class BambooContext extends Generator {
    * rather than replacing it, so a stale registry costs a class that matches nothing.
    */
   writeGroupRegistry = () => {
-    if (this.config.cssMode !== 'grouped' || this.isTemplateLiteralSyntax) return
+    if (this.config.cssMode !== 'grouped') return
 
     const names = this.getGroupRegistry()
 

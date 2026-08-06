@@ -2,7 +2,6 @@ import type { ImportResult, ParserOptions } from '@bamboocss/core'
 import { BoxNodeMap, box, extract, unbox, type EvaluateOptions, type Unboxed } from '@bamboocss/extractor'
 import type { Generator } from '@bamboocss/generator'
 import { logger } from '@bamboocss/logger'
-import { astish } from '@bamboocss/shared'
 import type { ParserResultConfigureOptions, ResultItem, JsxFactoryResultTransform } from '@bamboocss/types'
 import type { SourceFile } from 'ts-morph'
 import { Node } from 'ts-morph'
@@ -36,8 +35,7 @@ const evaluateOptions: EvaluateOptions = {
 }
 
 export function createParser(context: ParserOptions) {
-  const { jsx, imports, recipes, config } = context
-  const syntax = config.syntax
+  const { jsx, imports, recipes } = context
 
   return function parse(
     sourceFile: SourceFile | undefined,
@@ -110,12 +108,6 @@ export function createParser(context: ParserOptions) {
           return true
         },
       },
-      taggedTemplates:
-        syntax === 'template-literal'
-          ? {
-              matchTaggedTemplate: (tag) => file.matchFn(tag.fnName),
-            }
-          : undefined,
       getEvaluateOptions: (node) => {
         if (!Node.isCallExpression(node)) return evaluateOptions
         const propAccessExpr = node.getExpression()
@@ -183,15 +175,6 @@ export function createParser(context: ParserOptions) {
                     data: combineResult(unbox(query.box.value[0])),
                   })
                 }
-                //
-              } else if (query.kind === 'tagged-template') {
-                // css` ... `
-                const obj = astish(query.box.value as string)
-                parserResult.set(name, {
-                  name,
-                  box: query.box ?? box.fallback(query.box),
-                  data: [obj],
-                })
               }
             })
           })
@@ -236,23 +219,19 @@ export function createParser(context: ParserOptions) {
           // Below the recipe and pattern branches, not above them: a project that has both
           // this import and a recipe of the same name is ambiguous, and the recipe is the
           // one whose styles would otherwise be silently dropped.
-          .when(
-            (name: string) => syntax !== 'template-literal' && file.isViewTransitionFn(name),
-            (name: string) => {
-              result.queryList.forEach((query) => {
-                if (query.kind === 'call-expression') {
-                  parserResult.setViewTransition({
-                    name,
-                    box: (query.box.value[0] as BoxNodeMap) ?? box.fallback(query.box),
-                    data: combineResult(unbox(query.box.value[0])),
-                  })
-                }
-              })
-            },
-          )
+          .when(file.isViewTransitionFn, (name: string) => {
+            result.queryList.forEach((query) => {
+              if (query.kind === 'call-expression') {
+                parserResult.setViewTransition({
+                  name,
+                  box: (query.box.value[0] as BoxNodeMap) ?? box.fallback(query.box),
+                  data: combineResult(unbox(query.box.value[0])),
+                })
+              }
+            })
+          })
           // bamboo("span", { ... }) or bamboo("div", badge)
           // or bamboo("span", { color: "red.100", ... })
-          // or bamboo('span')` color: red; `
           .when(jsx.isJsxFactory, () => {
             result.queryList.forEach((query) => {
               if (query.kind === 'call-expression' && query.box.value[1]) {
@@ -298,15 +277,6 @@ export function createParser(context: ParserOptions) {
                     })
                   }
                 }
-              } else if (query.kind === 'tagged-template') {
-                // TaggedTemplateExpression factory css
-                // bamboo('span')` color: red; `
-                const obj = astish(query.box.value as string)
-                parserResult.set('css', {
-                  name,
-                  box: query.box ?? box.fallback(query.box),
-                  data: [obj],
-                })
               }
             })
           })
@@ -332,13 +302,6 @@ export function createParser(context: ParserOptions) {
                   // bamboo.span({ ... })
                   parserResult.set('css', result)
                 }
-              } else if (query.kind === 'tagged-template') {
-                const obj = astish(query.box.value as string)
-                parserResult.set('css', {
-                  name,
-                  box: query.box ?? box.fallback(query.box),
-                  data: [obj],
-                })
               }
             })
           })

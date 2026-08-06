@@ -18,15 +18,7 @@ const all: ConfigPath[] = [
   'hooks',
 ]
 
-const format: ConfigPath[] = [
-  'syntax',
-  'hash',
-  'prefix',
-  'separator',
-  'strictTokens',
-  'strictPropertyValues',
-  'shorthands',
-]
+const format: ConfigPath[] = ['hash', 'prefix', 'separator', 'strictTokens', 'strictPropertyValues', 'shorthands']
 
 const tokens: ConfigPath[] = [
   'utilities',
@@ -38,31 +30,31 @@ const tokens: ConfigPath[] = [
   'theme.containerSizes',
 ]
 
-const jsx: ConfigPath[] = ['jsxFramework', 'jsxFactory', 'jsxStyleProps', 'syntax']
+const jsx: ConfigPath[] = ['jsxFramework', 'jsxFactory', 'jsxStyleProps']
 
 const common = tokens.concat(jsx, format)
 
 const artifactConfigDeps: Record<ArtifactId, ConfigPath[]> = {
-  helpers: ['syntax', 'jsxFramework'],
+  helpers: ['jsxFramework'],
   keyframes: ['theme.keyframes', 'layers'],
   'design-tokens': ['layers', '!utilities.*.className'].concat(tokens),
   types: ['!utilities.*.className'].concat(common),
   'css-fn': common,
-  cva: ['syntax'],
-  sva: ['syntax'],
+  cva: [],
+  sva: [],
   cx: [],
   'create-recipe': ['separator', 'prefix', 'hash'],
   'recipes-index': ['theme.recipes', 'theme.slotRecipes'],
   recipes: ['theme.recipes', 'theme.slotRecipes'],
-  'patterns-index': ['syntax', 'patterns'],
-  patterns: ['syntax', 'patterns'],
+  'patterns-index': ['patterns'],
+  patterns: ['patterns'],
   'jsx-is-valid-prop': common,
   'jsx-factory': jsx,
   'jsx-helpers': jsx,
   'jsx-patterns': jsx.concat('patterns'),
   'jsx-patterns-index': jsx.concat('patterns'),
   'jsx-create-style-context': jsx,
-  'css-index': ['syntax'],
+  'css-index': [],
   'package.json': ['forceConsistentTypeExtension', 'outExtension'],
   'types-styles': ['shorthands'],
   'types-conditions': ['conditions'],

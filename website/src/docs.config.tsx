@@ -98,7 +98,6 @@ export const docsNavigation: NavItem = {
         { title: 'Writing Styles', url: 'writing-styles' },
         { title: 'Merging Styles', url: 'merging-styles' },
         { title: 'Global Styles', url: 'global-styles' },
-        { title: 'Template Literals', url: 'template-literals' },
         { title: 'Conditional Styles', url: 'conditional-styles' },
         { title: 'Responsive Design', url: 'responsive-design' },
         { title: 'View Transitions', url: 'view-transitions' },

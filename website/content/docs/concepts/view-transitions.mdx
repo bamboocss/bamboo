@@ -155,8 +155,6 @@ Import it anywhere. The CSS is emitted once, from wherever the extractor found t
 
 ## Limitations
 
-- **Object syntax only.** `viewTransition()` is not generated for
-  [template literal syntax](/docs/concepts/template-literals) configs.
 - **The whole bag has to be static.** This is stricter than `css()`, and the difference matters. Because one class
   covers all four slots, a single value bamboo cannot resolve at build time changes the hash for the _entire_ bag — so
   the static slots lose their CSS too, not just the dynamic one:

@@ -14049,11 +14049,6 @@ export interface CssgenOptions {
    */
   cssVarRoot?: string
   /**
-   * The css syntax kind to use
-   * @default 'object-literal'
-   */
-  syntax?: 'template-literal' | 'object-literal'
-  /**
    * Whether to use `lightningcss` instead of `postcss` for css optimization.
    * @default false
    */

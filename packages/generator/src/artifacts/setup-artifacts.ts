@@ -2,9 +2,7 @@ import type { Context } from '@bamboocss/core'
 import type { AffectedArtifacts, Artifact, ArtifactFilters, ArtifactId } from '@bamboocss/types'
 import outdent from 'outdent'
 import { generateConditions } from './js/conditions'
-import { generateStringLiteralConditions } from './js/conditions.string-literal'
 import { generateCssFn } from './js/css-fn'
-import { generateStringLiteralCssFn } from './js/css-fn.string-literal'
 import { generateCvaFn } from './js/cva'
 import { generateCx } from './js/cx'
 import { generateHelpers } from './js/helpers'
@@ -128,8 +126,8 @@ function setupGeneratedSystemTypes(ctx: Context): Artifact {
 }
 
 function setupCss(ctx: Context): Artifact {
-  const code = ctx.isTemplateLiteralSyntax ? generateStringLiteralCssFn(ctx) : generateCssFn(ctx)
-  const conditions = ctx.isTemplateLiteralSyntax ? generateStringLiteralConditions(ctx) : generateConditions(ctx)
+  const code = generateCssFn(ctx)
+  const conditions = generateConditions(ctx)
 
   const files = [
     { file: ctx.file.ext('conditions'), code: conditions.js },
@@ -151,9 +149,7 @@ function setupCss(ctx: Context): Artifact {
   }
 }
 
-function setupCva(ctx: Context): Artifact | undefined {
-  if (ctx.isTemplateLiteralSyntax) return
-
+function setupCva(ctx: Context): Artifact {
   const code = generateCvaFn(ctx)
   return {
     id: 'cva',
@@ -165,9 +161,7 @@ function setupCva(ctx: Context): Artifact | undefined {
   }
 }
 
-function setupSva(ctx: Context): Artifact | undefined {
-  if (ctx.isTemplateLiteralSyntax) return
-
+function setupSva(ctx: Context): Artifact {
   const code = generateSvaFn(ctx)
   return {
     id: 'sva',
@@ -242,9 +236,7 @@ function setupRecipes(ctx: Context, filters?: ArtifactFilters): Artifact | undef
   }
 }
 
-function setupPatternsIndex(ctx: Context): Artifact | undefined {
-  if (ctx.isTemplateLiteralSyntax) return
-
+function setupPatternsIndex(ctx: Context): Artifact {
   const fileNames = ctx.patterns.details.map((pattern) => pattern.dashName)
   const index = {
     js: outdent.string(fileNames.map((file) => ctx.file.exportStar(`./${file}`)).join('\n')),
@@ -262,8 +254,6 @@ function setupPatternsIndex(ctx: Context): Artifact | undefined {
 }
 
 function setupPatterns(ctx: Context, filters?: ArtifactFilters): Artifact | undefined {
-  if (ctx.isTemplateLiteralSyntax) return
-
   const files = generatePattern(ctx, filters)
   if (!files) return
 
@@ -278,7 +268,7 @@ function setupPatterns(ctx: Context, filters?: ArtifactFilters): Artifact | unde
 }
 
 function setupJsxIsValidProp(ctx: Context): Artifact | undefined {
-  if (!ctx.jsx.framework || ctx.isTemplateLiteralSyntax) return
+  if (!ctx.jsx.framework) return
 
   const isValidProp = generateIsValidProp(ctx)
 
@@ -324,7 +314,7 @@ function setupJsxHelpers(ctx: Context): Artifact | undefined {
 }
 
 function setupJsxPatterns(ctx: Context, filters?: ArtifactFilters): Artifact | undefined {
-  if (!ctx.jsx.framework || ctx.isTemplateLiteralSyntax) return
+  if (!ctx.jsx.framework) return
 
   const patterns = generateJsxPatterns(ctx, filters)
   if (!patterns) return
@@ -342,7 +332,7 @@ function setupJsxPatterns(ctx: Context, filters?: ArtifactFilters): Artifact | u
 }
 
 function setupJsxCreateStyleContext(ctx: Context): Artifact | undefined {
-  if (!ctx.jsx.framework || ctx.isTemplateLiteralSyntax) return
+  if (!ctx.jsx.framework) return
 
   const createStyleContext = generateJsxCreateStyleContext(ctx)
   if (!createStyleContext) return
@@ -360,22 +350,21 @@ function setupJsxCreateStyleContext(ctx: Context): Artifact | undefined {
 function setupJsxPatternsIndex(ctx: Context): Artifact | undefined {
   if (!ctx.jsx.framework) return
 
-  const isStyleProp = !ctx.isTemplateLiteralSyntax
   const patternNames = ctx.patterns.details.map((pattern) => pattern.dashName)
   const styleContextExclude = ['qwik', 'svelte']
 
   const index = {
     js: outdent`
   ${ctx.file.exportStar('./factory')}
-  ${isStyleProp ? ctx.file.exportStar('./is-valid-prop') : ''}
-  ${isStyleProp && !styleContextExclude.includes(ctx.jsx.framework) ? ctx.file.exportStar('./create-style-context') : ''}
-  ${isStyleProp ? outdent.string(patternNames.map((file) => ctx.file.exportStar(`./${file}`)).join('\n')) : ''}
+  ${ctx.file.exportStar('./is-valid-prop')}
+  ${!styleContextExclude.includes(ctx.jsx.framework) ? ctx.file.exportStar('./create-style-context') : ''}
+  ${outdent.string(patternNames.map((file) => ctx.file.exportStar(`./${file}`)).join('\n'))}
   `,
     dts: outdent`
   ${ctx.file.exportTypeStar('./factory')}
-  ${isStyleProp ? ctx.file.exportTypeStar('./is-valid-prop') : ''}
-  ${isStyleProp ? ctx.file.exportTypeStar('./create-style-context') : ''}
-  ${isStyleProp ? outdent.string(patternNames.map((file) => ctx.file.exportTypeStar(`./${file}`)).join('\n')) : ''}
+  ${ctx.file.exportTypeStar('./is-valid-prop')}
+  ${ctx.file.exportTypeStar('./create-style-context')}
+  ${outdent.string(patternNames.map((file) => ctx.file.exportTypeStar(`./${file}`)).join('\n'))}
   ${ctx.file.exportType([ctx.jsx.typeName, ctx.jsx.componentName].join(', '), '../types/jsx')}
     `,
   }
@@ -395,14 +384,14 @@ function setupCssIndex(ctx: Context): Artifact {
     js: outdent`
   ${ctx.file.exportStar('./css')}
   ${ctx.file.exportStar('./cx')}
-  ${ctx.isTemplateLiteralSyntax ? '' : ctx.file.exportStar('./cva')}
-  ${ctx.isTemplateLiteralSyntax ? '' : ctx.file.exportStar('./sva')}
+  ${ctx.file.exportStar('./cva')}
+  ${ctx.file.exportStar('./sva')}
  `,
     dts: outdent`
   ${ctx.file.exportTypeStar('./css')}
   ${ctx.file.exportTypeStar('./cx')}
-  ${ctx.isTemplateLiteralSyntax ? '' : ctx.file.exportTypeStar('./cva')}
-  ${ctx.isTemplateLiteralSyntax ? '' : ctx.file.exportTypeStar('./sva')}
+  ${ctx.file.exportTypeStar('./cva')}
+  ${ctx.file.exportTypeStar('./sva')}
   `,
   }
 

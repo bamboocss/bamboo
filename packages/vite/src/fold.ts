@@ -227,31 +227,6 @@ const findCallExpression = (node: BoxNode): Node | undefined => {
 }
 
 /**
- * The tagged template to replace, for `css` under `syntax: 'template-literal'`.
- *
- * The parser boxes the template literal itself rather than the expression tagging it, so
- * the node to rewrite is its parent. Deliberately narrow — one level, and only this shape.
- */
-const findTaggedTemplate = (node: BoxNode): Node | undefined => {
-  const own = node.getNode?.()
-  if (!own) return undefined
-  if (Node.isTaggedTemplateExpression(own)) return own
-
-  const parent = own.getParent()
-  return parent && Node.isTaggedTemplateExpression(parent) ? parent : undefined
-}
-
-/** The identifier an expression is rooted at: `styled` for `styled.button`, `css` for `css`. */
-const rootIdentifierName = (node: Node): string | undefined => {
-  let current: Node = node
-  while (Node.isPropertyAccessExpression(current)) {
-    current = current.getExpression()
-  }
-
-  return Node.isIdentifier(current) ? current.getText() : undefined
-}
-
-/**
  * `css.raw(...)` must keep returning a style object — folding it to a class string
  * breaks every caller composing those styles. The file matcher strips `.raw` when it
  * normalizes function names, so the parser result cannot tell us; the callee text can.
@@ -551,67 +526,6 @@ export const foldSource = (options: FoldOptions): FoldResult => {
   const runtimeToken = createRuntimeToken(ctx)
 
   /**
-   * Is this tagged template one that resolves to a class string?
-   *
-   * Under `syntax: 'template-literal'` the parser records *every* styling tag as type
-   * `css` — `css`, but also `styled.button` and `styled('span')`, which define components.
-   * Folding one of those to a string would replace a component with text, so the tag is
-   * checked structurally rather than taken on the entry's word:
-   *
-   * - a bare identifier, or a property access whose leaf is the css export
-   * - never a call (`styled('span')`) and never a factory member (`styled.button`)
-   *
-   * The parser's own name is required to agree. It has already normalized an aliased
-   * `css as xcss` back to `css`, so a disagreement means one of the two is reading the
-   * tag wrong, and neither is worth folding on.
-   */
-  type TaggedAdmission =
-    | { start: number; end: number; seen: boolean }
-    | { reason: SkipReason; start: number; end: number }
-
-  const admitTaggedTemplate = (tagged: Node, item: ResultItem, name: string): TaggedAdmission => {
-    const start = tagged.getStart()
-    const end = tagged.getEnd()
-    const decline = (reason: SkipReason): TaggedAdmission => ({ reason, start, end })
-
-    // The same foreign-module guard the call path applies, for the same reason.
-    if (code.slice(start, end) !== tagged.getText()) {
-      return { reason: 'no-call-expression', start: 0, end: 0 }
-    }
-
-    const rangeKey = `${start}:${end}`
-    if (seenRanges.has(rangeKey)) return { start, end, seen: true }
-    seenRanges.add(rangeKey)
-
-    if (!Node.isTaggedTemplateExpression(tagged)) return decline('unsupported-kind')
-
-    // An interpolation carries a value the template *text* cannot, and the text is what
-    // the parser read. Only a template with none of them is wholly accounted for.
-    if (!Node.isNoSubstitutionTemplateLiteral(tagged.getTemplate())) return decline('dynamic')
-
-    const tag = tagged.getTag()
-    const leaf = Node.isIdentifier(tag)
-      ? name
-      : Node.isPropertyAccessExpression(tag)
-        ? tag.getNameNode().getText()
-        : undefined
-
-    if (leaf === undefined || !ctx.imports.matchers.css.match(leaf) || name !== 'css') {
-      return decline('unsupported-kind')
-    }
-
-    const rootName = rootIdentifierName(tag)
-    if (!rootName || !importsFor(tagged.getSourceFile()).has(rootName) || isShadowed(tagged, rootName)) {
-      return decline('not-imported')
-    }
-
-    // One style object, exactly as the ordinary path requires of a resolved call.
-    if (!hasStyles(item.data) || item.data.length !== 1) return decline('dynamic')
-
-    return { start, end, seen: false }
-  }
-
-  /**
    * Does this specifier name a module that exports the css API, exactly?
    *
    * `ImportMap.match` is substring-based, which is right for deciding whether a call is
@@ -855,22 +769,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       continue
     }
 
-    // `css` under `syntax: 'template-literal'`, which is a tagged template rather than a
-    // call and so never reaches `findCallExpression`. It resolves to a class string like
-    // any other `css`, so once the tag is confirmed it rejoins the ordinary path.
     if (!call) {
-      const tagged = findTaggedTemplate(item.box)
-      if (tagged) {
-        const taggedResult = admitTaggedTemplate(tagged, item, name)
-        if ('reason' in taggedResult) {
-          skipped.push({ name, reason: taggedResult.reason, start: taggedResult.start, end: taggedResult.end })
-          continue
-        }
-        if (taggedResult.seen) continue
-        candidates.push({ item, call: tagged, node: tagged, start: taggedResult.start, end: taggedResult.end })
-        continue
-      }
-
       skipped.push({ name, reason: 'no-call-expression', start: 0, end: 0 })
       continue
     }

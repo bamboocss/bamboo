@@ -708,8 +708,6 @@ export const leafPrefix = (
   ctx: Context,
   runtimeCss: (...styles: Dict[]) => string,
 ): string | undefined => {
-  if (ctx.isTemplateLiteralSyntax) return undefined
-
   // A condition key names a block, not a declaration. Its value is an object in every
   // real use, which `leafClass` declines at runtime — so lowering one only buys a wasted
   // call before the fallback, and gives it a prefix (`_hover_`) that describes a shape

@@ -31,10 +31,6 @@ describe('checkNamingAgreement', () => {
     expect(check(config)).toBeUndefined()
   })
 
-  test('declines template-literal syntax, whose runtime is generated elsewhere', () => {
-    expect(check({ syntax: 'template-literal' })).toBeUndefined()
-  })
-
   // A disagreement is only ever two sides configured differently, so that is what is
   // simulated: an encoder and decoder built without a prefix, asked about a utility that
   // has one. Reverting the real defect is not expressible from a test, but this exercises

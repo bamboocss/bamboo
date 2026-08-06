@@ -47,15 +47,6 @@ export const interactive = async () => {
               ],
             }),
         }),
-      whatSyntax: () =>
-        p.select({
-          message: 'What css syntax would you like to use?',
-          initialValue: 'object',
-          options: [
-            { value: 'object-literal', label: 'Object' },
-            { value: 'template-literal', label: 'Template literal' },
-          ],
-        }),
       withStrictTokens: () =>
         p.select({
           message: 'Use strict tokens to enforce full type-safety?',
@@ -91,7 +82,6 @@ export const interactive = async () => {
     postcss: initFlags.usePostcss === 'yes',
     outExtension: initFlags.useMjsExtension === 'yes' ? 'mjs' : 'js',
     jsxFramework: initFlags.jsxOptions.jsxFramework,
-    syntax: initFlags.whatSyntax,
     strictTokens: initFlags.withStrictTokens === 'yes',
     gitignore: initFlags.shouldUpdateGitignore === 'yes',
   } as InitFlags
@@ -101,6 +91,5 @@ interface InitFlags {
   postcss: boolean
   outExtension: string
   jsxFramework: string
-  syntax: string
   gitignore: boolean
 }

@@ -41,7 +41,6 @@ const defaults = (config: UserConfig): UserConfig => ({
   jsxStyleProps: 'all',
   outExtension: 'mjs',
   shorthands: true,
-  syntax: 'object-literal',
   ...config,
   layers: {
     reset: 'reset',
@@ -126,7 +125,6 @@ export class Context {
       recipes: this.recipes,
       conditions: this.conditions,
       patterns: this.patterns,
-      isTemplateLiteralSyntax: this.isTemplateLiteralSyntax,
       isValidProperty: this.isValidProperty,
     })
 
@@ -196,7 +194,6 @@ export class Context {
       tokens: this.tokens,
       recipes: this.recipes,
       patterns: this.patterns,
-      isTemplateLiteralSyntax: this.isTemplateLiteralSyntax,
     })
 
     this.parserOptions = {
@@ -225,10 +222,6 @@ export class Context {
 
   get hooks() {
     return this.conf.hooks ?? ({} as BambooHooks)
-  }
-
-  get isTemplateLiteralSyntax() {
-    return this.config.syntax === 'template-literal'
   }
 
   get hash(): HashOptions {
@@ -261,7 +254,7 @@ export class Context {
     return new Utility({
       prefix: this.prefix.className,
       tokens: this.tokens,
-      config: this.isTemplateLiteralSyntax ? {} : Object.assign({}, config.utilities),
+      config: Object.assign({}, config.utilities),
       separator: config.separator,
       shorthands: config.shorthands,
       strictTokens: config.strictTokens,

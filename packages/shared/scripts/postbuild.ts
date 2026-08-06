@@ -3,7 +3,6 @@ import { join } from 'path'
 
 const fileMap = [
   ['shared.mjs', 'helpers.mjs'],
-  ['astish.mjs', 'astish.mjs'],
   ['normalize-html.mjs', 'normalize-html.mjs'],
 ]
 
