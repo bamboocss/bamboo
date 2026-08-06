@@ -3,6 +3,7 @@ import {
   capitalize,
   createRegex,
   dashCase,
+  esc,
   getSlotRecipes,
   isObject,
   memo,
@@ -20,6 +21,9 @@ import type {
 import merge from 'lodash.merge'
 import type { RecipeNode } from './types'
 import { transformStyles, type SerializeContext } from './serialize'
+
+/** The slot every other slot nests inside, by convention. */
+const ROOT_SLOT = 'root'
 
 interface RecipeRecord {
   [key: string]: RecipeConfig | SlotRecipeConfig
@@ -42,6 +46,20 @@ const sharedState = {
    * The map of recipe key to slot key + slot recipe
    */
   slots: new Map<string, Map<string, RecipeConfig>>(),
+  /**
+   * Where a non-root slot's variant rule is emitted, keyed the same way as `styles`.
+   *
+   * A slot recipe's variants are chosen at the root, but the slots that react to them are
+   * authored by the consumer somewhere below it — in a compound component, arbitrarily
+   * deep and out of reach of any prop. Rather than deliver the variant to each slot at
+   * runtime, the rule is scoped by the class the root already carries, so the slot's own
+   * class stays constant.
+   *
+   * `to (.recipe__root)` bounds the scope at the next nested instance. Without it an outer
+   * `<Tabs size="lg">` would style the triggers of an inner `<Tabs size="sm">`, and at
+   * equal specificity the winner would be stylesheet order rather than proximity.
+   */
+  slotScopes: new Map<string, { prelude: string; selector: string }>(),
 }
 
 export class Recipes {
@@ -92,17 +110,30 @@ export class Recipes {
     this.keys = Object.keys(this.recipes)
   }
 
+  /**
+   * The slot every other slot is nested inside, if the recipe declares one.
+   *
+   * By name rather than by position: a recipe whose slots are siblings — `['title',
+   * 'body']` — has no ancestor to scope by, and scoping one to another would emit rules
+   * that match nothing. Those keep a variant class per slot.
+   */
+  static getRootSlot = (recipe: SlotRecipeConfig): string | undefined => {
+    return recipe.slots.includes(ROOT_SLOT) ? ROOT_SLOT : undefined
+  }
+
   saveOne = (name: string, recipe: RecipeConfig | SlotRecipeConfig) => {
     if (Recipes.isSlotRecipeConfig(recipe)) {
       // extract recipes for each slot
       const slots = getSlotRecipes(recipe)
 
       const slotsMap = new Map()
+      const rootSlot = Recipes.getRootSlot(recipe)
+      const rootClassName = rootSlot ? this.getSlotKey(recipe.className ?? name, rootSlot) : undefined
 
       // normalize each recipe
       Object.entries(slots).forEach(([slot, slotRecipe]) => {
         const slotName = this.getSlotKey(name, slot)
-        this.normalize(slotName, slotRecipe)
+        this.normalize(slotName, slotRecipe, rootSlot && slot !== rootSlot ? rootClassName : undefined)
         slotsMap.set(slotName, slotRecipe)
       })
 
@@ -124,8 +155,6 @@ export class Recipes {
   inferJsxSlots = (name: string, recipe: RecipeConfig | SlotRecipeConfig) => {
     const capitalized = capitalize(name)
     const jsx = Array.from(recipe.jsx ?? [capitalized])
-
-    const ROOT_SLOT = 'root'
 
     if (Recipes.isSlotRecipeConfig(recipe)) {
       const jsxRootName = capitalize(ROOT_SLOT)
@@ -238,7 +267,7 @@ export class Recipes {
     return 'slots' in config && Array.isArray(config.slots) && config.slots.length > 0
   }
 
-  normalize = (name: string, config: RecipeConfig) => {
+  normalize = (name: string, config: RecipeConfig, scopedByRootClass?: string) => {
     const {
       jsx = [capitalize(name)],
       base = {},
@@ -278,6 +307,13 @@ export class Recipes {
         sharedState.styles.set(propKey, styleObject)
         sharedState.classNames.set(propKey, className)
 
+        if (scopedByRootClass) {
+          sharedState.slotScopes.set(propKey, {
+            prelude: `@scope (.${esc(this.getClassName(scopedByRootClass, key, variantKey))}) to (.${esc(scopedByRootClass)})`,
+            selector: `.${esc(recipe.className)}`,
+          })
+        }
+
         merge(recipe.variants, {
           [key]: { [variantKey]: styleObject },
         })
@@ -302,6 +338,7 @@ export class Recipes {
       return {
         className: sharedState.classNames.get(propKey)!,
         styles: sharedState.styles.get(propKey) ?? {},
+        scope: sharedState.slotScopes.get(propKey),
       }
     }
   }

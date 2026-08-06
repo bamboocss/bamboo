@@ -137,6 +137,8 @@ describe('generate recipes', () => {
         variantKeys: Array<keyof TextStyleVariant>
         splitVariantProps<Props extends TextStyleVariantProps>(props: Props): [TextStyleVariantProps, Pretty<DistributiveOmit<Props, keyof TextStyleVariantProps>>]
         getVariantProps: (props?: TextStyleVariantProps) => TextStyleVariantProps
+        
+        
       }
 
 
@@ -199,6 +201,8 @@ describe('generate recipes', () => {
         variantKeys: Array<keyof TooltipStyleVariant>
         splitVariantProps<Props extends TooltipStyleVariantProps>(props: Props): [TooltipStyleVariantProps, Pretty<DistributiveOmit<Props, keyof TooltipStyleVariantProps>>]
         getVariantProps: (props?: TooltipStyleVariantProps) => TooltipStyleVariantProps
+        
+        
       }
 
 
@@ -256,6 +260,8 @@ describe('generate recipes', () => {
         variantKeys: Array<keyof CardStyleVariant>
         splitVariantProps<Props extends CardStyleVariantProps>(props: Props): [CardStyleVariantProps, Pretty<DistributiveOmit<Props, keyof CardStyleVariantProps>>]
         getVariantProps: (props?: CardStyleVariantProps) => CardStyleVariantProps
+        
+        
       }
 
 
@@ -324,6 +330,8 @@ describe('generate recipes', () => {
         variantKeys: Array<keyof ButtonStyleVariant>
         splitVariantProps<Props extends ButtonStyleVariantProps>(props: Props): [ButtonStyleVariantProps, Pretty<DistributiveOmit<Props, keyof ButtonStyleVariantProps>>]
         getVariantProps: (props?: ButtonStyleVariantProps) => ButtonStyleVariantProps
+        
+        
       }
 
 
@@ -396,6 +404,12 @@ describe('generate recipes', () => {
         variantKeys: Array<keyof CheckboxVariant>
         splitVariantProps<Props extends CheckboxVariantProps>(props: Props): [CheckboxVariantProps, Pretty<DistributiveOmit<Props, keyof CheckboxVariantProps>>]
         getVariantProps: (props?: CheckboxVariantProps) => CheckboxVariantProps
+        /** Which slots each variant writes styles for. */
+      slotsAffectedBy: Record<keyof CheckboxVariant, CheckboxSlot[]>
+        /** The only slot that takes variants — every other one is scoped by its class. */
+      root: (props?: CheckboxVariantProps) => string
+      control: string
+      label: string
       }
 
 
@@ -422,11 +436,20 @@ describe('generate recipes', () => {
           "checkbox__label"
         ]
       ]
-      const checkboxSlotFns = /* @__PURE__ */ checkboxSlotNames.map(([slotName, slotKey]) => [slotName, createRecipe(slotKey, checkboxDefaultVariants, getSlotCompoundVariant(checkboxCompoundVariants, slotName))])
+      /**
+       * Only the root takes variants. Every other slot's variant styles are emitted as
+       * rules scoped by the class the root carries, so the slot's class is constant and
+       * nothing has to reach it at runtime — see \`checkbox.root\`.
+       */
+      const checkboxRootFn = /* @__PURE__ */ createRecipe('checkbox__root', checkboxDefaultVariants, getSlotCompoundVariant(checkboxCompoundVariants, 'root'))
+      const checkboxStaticSlots = /* @__PURE__ */ Object.fromEntries(
+        checkboxSlotNames.filter(([slotName]) => slotName !== 'root'),
+      )
 
-      const checkboxFn = memo((props = {}) => {
-        return Object.fromEntries(checkboxSlotFns.map(([slotName, slotFn]) => [slotName, slotFn.recipeFn(props)]))
-      })
+      const checkboxFn = memo((props = {}) => ({
+        ...checkboxStaticSlots,
+        root: checkboxRootFn.recipeFn(props),
+      }))
 
       const checkboxVariantKeys = [
         "size"
@@ -446,10 +469,19 @@ describe('generate recipes', () => {
           "lg"
         ]
       },
+        /** Which slots each variant actually reaches, for a slot a scope cannot get to. */
+        slotsAffectedBy: {
+        "size": [
+          "control",
+          "label"
+        ]
+      },
         splitVariantProps(props) {
           return splitProps(props, checkboxVariantKeys)
         },
-        getVariantProps
+        getVariantProps,
+        root: checkboxRootFn.recipeFn,
+      ...checkboxStaticSlots,
       })",
           "name": "checkbox",
         },
@@ -481,6 +513,9 @@ describe('generate recipes', () => {
         variantKeys: Array<keyof BadgeVariant>
         splitVariantProps<Props extends BadgeVariantProps>(props: Props): [BadgeVariantProps, Pretty<DistributiveOmit<Props, keyof BadgeVariantProps>>]
         getVariantProps: (props?: BadgeVariantProps) => BadgeVariantProps
+        /** Which slots each variant writes styles for. */
+      slotsAffectedBy: Record<keyof BadgeVariant, BadgeSlot[]>
+        
       }
 
 
@@ -537,10 +572,21 @@ describe('generate recipes', () => {
           "true"
         ]
       },
+        /** Which slots each variant actually reaches, for a slot a scope cannot get to. */
+        slotsAffectedBy: {
+        "size": [
+          "title",
+          "body"
+        ],
+        "raised": [
+          "title"
+        ]
+      },
         splitVariantProps(props) {
           return splitProps(props, badgeVariantKeys)
         },
-        getVariantProps
+        getVariantProps,
+        
       })",
           "name": "badge",
         },

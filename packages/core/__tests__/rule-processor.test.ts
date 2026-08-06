@@ -689,24 +689,27 @@ describe('rule processor', () => {
           margin-inline-start: var(--spacing-2);
       }
 
-        .checkbox__control--size_sm {
-          font-size: 2rem;
-          font-weight: var(--font-weights-bold);
-          width: var(--sizes-8);
-          height: var(--sizes-8);
+        @scope (.checkbox__root--size_sm) to (.checkbox__root) {
+          .checkbox__control {
+            font-size: 2rem;
+            font-weight: var(--font-weights-bold);
+            width: var(--sizes-8);
+            height: var(--sizes-8);
+      }
+          .checkbox__label {
+            font-size: var(--font-sizes-sm);
+      }
       }
 
-        .checkbox__label--size_sm {
-          font-size: var(--font-sizes-sm);
+        @scope (.checkbox__root--size_md) to (.checkbox__root) {
+          @media screen and (min-width: 48rem) {
+            .checkbox__control {
+              width: var(--sizes-10);
+              height: var(--sizes-10);
       }
-
-        @media screen and (min-width: 48rem) {
-          .md\\:checkbox__control--size_md {
-            width: var(--sizes-10);
-            height: var(--sizes-10);
+            .checkbox__label {
+              font-size: var(--font-sizes-md);
       }
-          .md\\:checkbox__label--size_md {
-            font-size: var(--font-sizes-md);
       }
       }
       }"
@@ -1071,13 +1074,14 @@ describe('rule processor', () => {
           margin-inline-start: var(--spacing-2);
       }
 
-        .checkbox__control--size_md {
-          width: var(--sizes-10);
-          height: var(--sizes-10);
+        @scope (.checkbox__root--size_md) to (.checkbox__root) {
+          .checkbox__control {
+            width: var(--sizes-10);
+            height: var(--sizes-10);
       }
-
-        .checkbox__label--size_md {
-          font-size: var(--font-sizes-md);
+          .checkbox__label {
+            font-size: var(--font-sizes-md);
+      }
       }
       }
 

@@ -222,10 +222,66 @@ const Checkbox = (props: CheckboxVariants) => {
 }
 ```
 
+### Only the root takes variants
+
+A recipe that declares a slot named `root` is scoped: only the root takes variants, and every other slot is a constant
+string.
+
+```jsx
+checkbox.root({ size: 'md' }) // 'checkbox__root checkbox__root--size_md'
+checkbox.control //              'checkbox__control'  — a property, not a call
+```
+
+That is possible because a non-root slot's variant styles are not emitted as a class the slot has to carry. They are
+emitted as rules scoped by the class the root already carries:
+
+```css
+/* not this — the control would have to be told which size it is */
+.checkbox__control--size_md {
+  width: 10;
+}
+
+/* but this — the root already says so */
+@scope (.checkbox__root--size_md) to (.checkbox__root) {
+  .checkbox__control {
+    width: 10;
+  }
+}
+```
+
+So a slot deep inside a tree needs nothing delivered to it. No provider, no context, no wrapper per slot — and it works
+the same in React, Vue, Solid or a plain template.
+
+`to (.checkbox__root)` bounds the scope at the next nested instance, so an outer `size="md"` does not reach the control
+of a checkbox nested inside it.
+
+Precedence is unaffected. The scoped selector is more specific than the slot's base rule, but specificity never crosses
+a [cascade layer](/docs/concepts/cascade-layers) — a consumer's `css()` output sits in `utilities` and still wins.
+
+A recipe whose slots are siblings, with no slot named `root`, has no ancestor to scope by. Those keep a variant class
+per slot, and every slot stays callable.
+
 ### Styling JSX Compound Components
 
-Compound components are a great way to create reusable components for better composition. Slot recipes play nicely with
-this pattern, and one written this way needs a context provider so every slot can see the variant chosen at the root.
+Compound components are a great way to create reusable components for better composition. With scoping, a compound
+component needs no context at all — each part reads its own constant class:
+
+```jsx
+const Checkbox = ({ size, children }) => <label className={checkbox.root({ size })}>{children}</label>
+Checkbox.Control = () => <div className={checkbox.control} />
+Checkbox.Label = ({ children }) => <span className={checkbox.label}>{children}</span>
+```
+
+The exception is a **portal**. A positioner rendered outside the root's subtree breaks DOM ancestry, so CSS cannot reach
+it and the variant has to be delivered by hand. `slotsAffectedBy` says which slots a variant actually writes styles for,
+so only those need threading:
+
+```js
+checkbox.variantKeys //          ['size']
+checkbox.slotsAffectedBy.size // ['control', 'label']
+```
+
+For that case, a context provider is still the answer.
 
 > **Note:** This is an advanced topic and you don't need to understand it to use slot recipes. If you use React, be
 > aware that context require adding 'use client' to the top of the file.

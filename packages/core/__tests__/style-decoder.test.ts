@@ -1574,11 +1574,13 @@ describe('style decoder', () => {
           "hash": "size]___[value:sm]___[recipe:checkbox]___[slot:control",
           "layer": undefined,
           "result": {
-            ".checkbox__control--size_sm": {
-              "fontSize": "2rem",
-              "fontWeight": "var(--font-weights-bold)",
-              "height": "var(--sizes-8)",
-              "width": "var(--sizes-8)",
+            "@scope (.checkbox__root--size_sm) to (.checkbox__root)": {
+              ".checkbox__control": {
+                "fontSize": "2rem",
+                "fontWeight": "var(--font-weights-bold)",
+                "height": "var(--sizes-8)",
+                "width": "var(--sizes-8)",
+              },
             },
           },
         },
@@ -1594,8 +1596,10 @@ describe('style decoder', () => {
           "hash": "size]___[value:sm]___[recipe:checkbox]___[slot:label",
           "layer": undefined,
           "result": {
-            ".checkbox__label--size_sm": {
-              "fontSize": "var(--font-sizes-sm)",
+            "@scope (.checkbox__root--size_sm) to (.checkbox__root)": {
+              ".checkbox__label": {
+                "fontSize": "var(--font-sizes-sm)",
+              },
             },
           },
         },
@@ -1646,10 +1650,12 @@ describe('style decoder', () => {
           "hash": "size]___[value:md]___[cond:md]___[recipe:checkbox]___[slot:control",
           "layer": undefined,
           "result": {
-            ".md\\:checkbox__control--size_md": {
-              "@media screen and (min-width: 48rem)": {
-                "height": "var(--sizes-10)",
-                "width": "var(--sizes-10)",
+            "@scope (.checkbox__root--size_md) to (.checkbox__root)": {
+              ".checkbox__control": {
+                "@media screen and (min-width: 48rem)": {
+                  "height": "var(--sizes-10)",
+                  "width": "var(--sizes-10)",
+                },
               },
             },
           },
@@ -1675,9 +1681,11 @@ describe('style decoder', () => {
           "hash": "size]___[value:md]___[cond:md]___[recipe:checkbox]___[slot:label",
           "layer": undefined,
           "result": {
-            ".md\\:checkbox__label--size_md": {
-              "@media screen and (min-width: 48rem)": {
-                "fontSize": "var(--font-sizes-md)",
+            "@scope (.checkbox__root--size_md) to (.checkbox__root)": {
+              ".checkbox__label": {
+                "@media screen and (min-width: 48rem)": {
+                  "fontSize": "var(--font-sizes-md)",
+                },
               },
             },
           },
@@ -2364,9 +2372,11 @@ describe('style decoder', () => {
               "hash": "size]___[value:md]___[recipe:checkbox]___[slot:container]___[slot:control",
               "layer": undefined,
               "result": {
-                ".checkbox__control--size_md": {
-                  "height": "var(--sizes-10)",
-                  "width": "var(--sizes-10)",
+                "@scope (.checkbox__root--size_md) to (.checkbox__root)": {
+                  ".checkbox__control": {
+                    "height": "var(--sizes-10)",
+                    "width": "var(--sizes-10)",
+                  },
                 },
               },
             },
@@ -2382,8 +2392,10 @@ describe('style decoder', () => {
               "hash": "size]___[value:md]___[recipe:checkbox]___[slot:container]___[slot:label",
               "layer": undefined,
               "result": {
-                ".checkbox__label--size_md": {
-                  "fontSize": "var(--font-sizes-md)",
+                "@scope (.checkbox__root--size_md) to (.checkbox__root)": {
+                  ".checkbox__label": {
+                    "fontSize": "var(--font-sizes-md)",
+                  },
                 },
               },
             },
@@ -2414,9 +2426,11 @@ describe('style decoder', () => {
               "hash": "size]___[value:md]___[recipe:checkbox]___[slot:control]___[slot:control",
               "layer": undefined,
               "result": {
-                ".checkbox__control--size_md": {
-                  "height": "var(--sizes-10)",
-                  "width": "var(--sizes-10)",
+                "@scope (.checkbox__root--size_md) to (.checkbox__root)": {
+                  ".checkbox__control": {
+                    "height": "var(--sizes-10)",
+                    "width": "var(--sizes-10)",
+                  },
                 },
               },
             },
@@ -2432,8 +2446,10 @@ describe('style decoder', () => {
               "hash": "size]___[value:md]___[recipe:checkbox]___[slot:control]___[slot:label",
               "layer": undefined,
               "result": {
-                ".checkbox__label--size_md": {
-                  "fontSize": "var(--font-sizes-md)",
+                "@scope (.checkbox__root--size_md) to (.checkbox__root)": {
+                  ".checkbox__label": {
+                    "fontSize": "var(--font-sizes-md)",
+                  },
                 },
               },
             },
@@ -2464,9 +2480,11 @@ describe('style decoder', () => {
               "hash": "size]___[value:md]___[recipe:checkbox]___[slot:label]___[slot:control",
               "layer": undefined,
               "result": {
-                ".checkbox__control--size_md": {
-                  "height": "var(--sizes-10)",
-                  "width": "var(--sizes-10)",
+                "@scope (.checkbox__root--size_md) to (.checkbox__root)": {
+                  ".checkbox__control": {
+                    "height": "var(--sizes-10)",
+                    "width": "var(--sizes-10)",
+                  },
                 },
               },
             },
@@ -2482,8 +2500,10 @@ describe('style decoder', () => {
               "hash": "size]___[value:md]___[recipe:checkbox]___[slot:label]___[slot:label",
               "layer": undefined,
               "result": {
-                ".checkbox__label--size_md": {
-                  "fontSize": "var(--font-sizes-md)",
+                "@scope (.checkbox__root--size_md) to (.checkbox__root)": {
+                  ".checkbox__label": {
+                    "fontSize": "var(--font-sizes-md)",
+                  },
                 },
               },
             },

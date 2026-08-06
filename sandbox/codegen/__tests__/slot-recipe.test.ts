@@ -7,7 +7,7 @@ describe('sva', () => {
 
     expect(result).toMatchInlineSnapshot(`
       {
-        "icon": "slot-button__icon slot-button__icon--visual_unstyled",
+        "icon": "slot-button__icon",
         "root": "slot-button__root slot-button__root--visual_unstyled",
       }
     `)
@@ -19,7 +19,7 @@ describe('sva', () => {
     expect(result).toMatchInlineSnapshot(
       `
       {
-        "icon": "slot-button__icon slot-button__icon--visual_solid",
+        "icon": "slot-button__icon",
         "root": "slot-button__root slot-button__root--visual_solid",
       }
     `,
@@ -32,7 +32,7 @@ describe('sva', () => {
     expect(result).toMatchInlineSnapshot(
       `
       {
-        "icon": "slot-button__icon slot-button__icon--visual_outline",
+        "icon": "slot-button__icon",
         "root": "slot-button__root slot-button__root--visual_outline",
       }
     `,

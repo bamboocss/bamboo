@@ -134,10 +134,29 @@ export function generateRecipes(ctx: Context, filters?: ArtifactFilters) {
       return ctx.file.jsDocComment('', { default: defaultValue })
     }
 
+    const slotNames = Recipes.isSlotRecipeConfig(config) ? config.slots : []
+    const rootSlotName = Recipes.isSlotRecipeConfig(config) ? Recipes.getRootSlot(config) : undefined
+
     const jsCode = match(config)
-      .when(
-        Recipes.isSlotRecipeConfig,
-        (config) => outdent`
+      .when(Recipes.isSlotRecipeConfig, (config) => {
+        const rootSlot = Recipes.getRootSlot(config)
+
+        /**
+         * Which slots each variant writes styles for.
+         *
+         * A scope reaches every slot inside the root's subtree, which is all of them
+         * until a portal moves one out. That case needs the variant delivered by hand,
+         * and this is what says which slots it has to reach — the build already knows,
+         * and discarding it would leave the component layer guessing.
+         */
+        const slotsAffectedBy = Object.fromEntries(
+          Object.entries(config.variants ?? {}).map(([variant, values]) => [
+            variant,
+            Array.from(new Set(Object.values(values ?? {}).flatMap((slotStyles) => Object.keys(slotStyles ?? {})))),
+          ]),
+        )
+
+        return outdent`
         ${ctx.file.import('compact, getSlotCompoundVariant, memo, splitProps', '../helpers')}
         ${ctx.file.import('createRecipe', './create-recipe')}
 
@@ -145,11 +164,30 @@ export function generateRecipes(ctx: Context, filters?: ArtifactFilters) {
         const ${baseName}CompoundVariants = ${stringify(compoundVariants ?? [])}
 
         const ${baseName}SlotNames = ${stringify(config.slots.map((slot) => [slot, `${config.className}__${slot}`]))}
+        ${
+          rootSlot
+            ? outdent`
+        /**
+         * Only the root takes variants. Every other slot's variant styles are emitted as
+         * rules scoped by the class the root carries, so the slot's class is constant and
+         * nothing has to reach it at runtime — see \`${baseName}.${rootSlot}\`.
+         */
+        const ${baseName}RootFn = /* @__PURE__ */ createRecipe('${config.className}__${rootSlot}', ${baseName}DefaultVariants, getSlotCompoundVariant(${baseName}CompoundVariants, '${rootSlot}'))
+        const ${baseName}StaticSlots = /* @__PURE__ */ Object.fromEntries(
+          ${baseName}SlotNames.filter(([slotName]) => slotName !== '${rootSlot}'),
+        )
+
+        const ${baseName}Fn = memo((props = {}) => ({
+          ...${baseName}StaticSlots,
+          ${rootSlot}: ${baseName}RootFn.recipeFn(props),
+        }))`
+            : outdent`
         const ${baseName}SlotFns = /* @__PURE__ */ ${baseName}SlotNames.map(([slotName, slotKey]) => [slotName, createRecipe(slotKey, ${baseName}DefaultVariants, getSlotCompoundVariant(${baseName}CompoundVariants, slotName))])
 
         const ${baseName}Fn = memo((props = {}) => {
           return Object.fromEntries(${baseName}SlotFns.map(([slotName, slotFn]) => [slotName, slotFn.recipeFn(props)]))
-        })
+        })`
+        }
 
         const ${baseName}VariantKeys = ${stringify(Object.keys(variantKeyMap))}
         const getVariantProps = (variants) => ({ ...${baseName}DefaultVariants, ...compact(variants) })
@@ -161,13 +199,23 @@ export function generateRecipes(ctx: Context, filters?: ArtifactFilters) {
           classNameMap: {},
           variantKeys: ${baseName}VariantKeys,
           variantMap: ${stringify(variantKeyMap)},
+          /** Which slots each variant actually reaches, for a slot a scope cannot get to. */
+          slotsAffectedBy: ${stringify(slotsAffectedBy)},
           splitVariantProps(props) {
             return splitProps(props, ${baseName}VariantKeys)
           },
-          getVariantProps
+          getVariantProps,
+          ${
+            rootSlot
+              ? outdent`
+          ${rootSlot}: ${baseName}RootFn.recipeFn,
+          ...${baseName}StaticSlots,
+          `
+              : ''
+          }
         })
-        `,
-      )
+        `
+      })
       .otherwise(
         (config) => outdent`
         ${ctx.file.import('memo, splitProps', '../helpers')}
@@ -241,6 +289,24 @@ export function generateRecipes(ctx: Context, filters?: ArtifactFilters) {
           variantKeys: Array<keyof ${upperName}Variant>
           splitVariantProps<Props extends ${upperName}VariantProps>(props: Props): [${upperName}VariantProps, Pretty<DistributiveOmit<Props, keyof ${upperName}VariantProps>>]
           getVariantProps: (props?: ${upperName}VariantProps) => ${upperName}VariantProps
+          ${
+            Recipes.isSlotRecipeConfig(config)
+              ? outdent`
+          /** Which slots each variant writes styles for. */
+          slotsAffectedBy: Record<keyof ${upperName}Variant, ${upperName}Slot[]>`
+              : ''
+          }
+          ${
+            rootSlotName
+              ? outdent`
+          /** The only slot that takes variants — every other one is scoped by its class. */
+          ${rootSlotName}: (props?: ${upperName}VariantProps) => string
+          ${slotNames
+            .filter((slot) => slot !== rootSlotName)
+            .map((slot) => `${slot}: string`)
+            .join('\n')}`
+              : ''
+          }
         }
 
         ${ctx.file.jsDocComment(description, { deprecated })}

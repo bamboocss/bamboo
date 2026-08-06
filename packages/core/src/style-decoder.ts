@@ -116,6 +116,11 @@ export class StyleDecoder {
       styles,
       transformed,
       parts,
+      // A non-root slot's variant rule. The selector is the slot's *constant* class, put
+      // inside a scope the root's variant class opens — so nothing has to reach the slot
+      // to style it. `className` is left alone: it still identifies the rule for
+      // bookkeeping, it is just not what the rule selects on.
+      scope: (transformed as { scope?: { prelude: string; selector: string } }).scope,
     }
   }
 
@@ -174,9 +179,9 @@ export class StyleDecoder {
     const transformResult = this.getTransformResult(hash)
     if (!transformResult) return
 
-    const { className, classSelector, styles, transformed, parts } = transformResult
+    const { className, classSelector, styles, transformed, parts, scope } = transformResult
 
-    const basePath = [classSelector]
+    const basePath = scope ? [scope.prelude, scope.selector] : [classSelector]
 
     const obj: StyleResultObject = {}
 

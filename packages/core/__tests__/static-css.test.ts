@@ -756,33 +756,37 @@ describe('static-css', () => {
           margin-inline-start: 2px;
       }
 
-        .checkbox__control--size_sm {
-          font-size: 2rem;
-          font-weight: var(--font-weights-bold);
-          width: var(--sizes-8);
-          height: var(--sizes-8);
+        @scope (.checkbox__root--size_sm) to (.checkbox__root) {
+          .checkbox__control {
+            font-size: 2rem;
+            font-weight: var(--font-weights-bold);
+            width: var(--sizes-8);
+            height: var(--sizes-8);
+      }
+          .checkbox__label {
+            font-size: var(--font-sizes-sm);
+      }
       }
 
-        .checkbox__label--size_sm {
-          font-size: var(--font-sizes-sm);
-      }
-
-        .checkbox__control--size_lg {
-          width: var(--sizes-12);
-          height: var(--sizes-12);
-      }
-
-        .checkbox__label--size_lg {
-          font-size: var(--font-sizes-lg);
-      }
-
-        @media screen and (min-width: 64rem) {
-          .lg\\:checkbox__control--size_lg {
+        @scope (.checkbox__root--size_lg) to (.checkbox__root) {
+          .checkbox__control {
             width: var(--sizes-12);
             height: var(--sizes-12);
       }
-          .lg\\:checkbox__label--size_lg {
+          .checkbox__label {
             font-size: var(--font-sizes-lg);
+      }
+      }
+
+        @scope (.checkbox__root--size_lg) to (.checkbox__root) {
+          @media screen and (min-width: 64rem) {
+            .checkbox__control {
+              width: var(--sizes-12);
+              height: var(--sizes-12);
+      }
+            .checkbox__label {
+              font-size: var(--font-sizes-lg);
+      }
       }
       }
       }",
@@ -1901,33 +1905,36 @@ describe('static-css', () => {
           border-radius: var(--radii-sm);
       }
 
-        .checkbox__control--size_sm {
-          font-size: 2rem;
-          font-weight: var(--font-weights-bold);
-          width: var(--sizes-8);
-          height: var(--sizes-8);
+        @scope (.checkbox__root--size_sm) to (.checkbox__root) {
+          .checkbox__control {
+            font-size: 2rem;
+            font-weight: var(--font-weights-bold);
+            width: var(--sizes-8);
+            height: var(--sizes-8);
+      }
+          .checkbox__label {
+            font-size: var(--font-sizes-sm);
+      }
       }
 
-        .checkbox__label--size_sm {
-          font-size: var(--font-sizes-sm);
+        @scope (.checkbox__root--size_md) to (.checkbox__root) {
+          .checkbox__control {
+            width: var(--sizes-10);
+            height: var(--sizes-10);
+      }
+          .checkbox__label {
+            font-size: var(--font-sizes-md);
+      }
       }
 
-        .checkbox__control--size_md {
-          width: var(--sizes-10);
-          height: var(--sizes-10);
+        @scope (.checkbox__root--size_lg) to (.checkbox__root) {
+          .checkbox__control {
+            width: var(--sizes-12);
+            height: var(--sizes-12);
       }
-
-        .checkbox__label--size_md {
-          font-size: var(--font-sizes-md);
+          .checkbox__label {
+            font-size: var(--font-sizes-lg);
       }
-
-        .checkbox__control--size_lg {
-          width: var(--sizes-12);
-          height: var(--sizes-12);
-      }
-
-        .checkbox__label--size_lg {
-          font-size: var(--font-sizes-lg);
       }
 
         .badge__title--size_sm {

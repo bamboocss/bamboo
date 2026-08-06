@@ -21,15 +21,16 @@ describe('slot recipe ruleset', () => {
           margin-inline-start: var(--spacing-2);
       }
 
-        .checkbox__control--size_sm {
-          font-size: 2rem;
-          font-weight: var(--font-weights-bold);
-          width: var(--sizes-8);
-          height: var(--sizes-8);
+        @scope (.checkbox__root--size_sm) to (.checkbox__root) {
+          .checkbox__control {
+            font-size: 2rem;
+            font-weight: var(--font-weights-bold);
+            width: var(--sizes-8);
+            height: var(--sizes-8);
       }
-
-        .checkbox__label--size_sm {
-          font-size: var(--font-sizes-sm);
+          .checkbox__label {
+            font-size: var(--font-sizes-sm);
+      }
       }
       }"
     `)
