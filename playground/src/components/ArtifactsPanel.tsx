@@ -2,7 +2,8 @@ import { ASTViewer } from '@/src/components/ASTViewer'
 import { GeneratedCss } from '@/src/components/GeneratedCss'
 import { useBamboo } from '@/src/hooks/useBamboo'
 import { css, cva, cx } from '@/styled-system/css'
-import { Flex, bamboo } from '@/styled-system/jsx'
+import { bamboo } from '@/styled-system/jsx'
+import { flex } from '@/styled-system/patterns'
 import { segmentGroup } from '@/styled-system/recipes'
 import { SegmentGroup } from '@ark-ui/react/segment-group'
 import { Splitter } from '@ark-ui/react/splitter'
@@ -38,17 +39,19 @@ export const ArtifactsPanel = React.memo(function ArtifactsPanel(props: Artifact
         <div />
       </Splitter.ResizeTrigger>
       <Splitter.Panel id="artifacts" className={artifactsPanel({ open })}>
-        <Flex
-          w="full"
-          h="12"
-          cursor="pointer"
-          px="6"
-          py="2"
-          align="center"
-          justify="space-between"
-          borderBottomWidth="1px"
+        <div
+          className={flex({
+            w: 'full',
+            h: '12',
+            cursor: 'pointer',
+            px: '6',
+            py: '2',
+            align: 'center',
+            justify: 'space-between',
+            borderBottomWidth: '1px',
+            zIndex: 2,
+          })}
           onClick={handleClick}
-          zIndex={2}
         >
           <SegmentGroup.Root
             data-expanded={open ? '' : undefined}
@@ -107,7 +110,7 @@ export const ArtifactsPanel = React.memo(function ArtifactsPanel(props: Artifact
           >
             <ChevronUpIcon />
           </bamboo.span>
-        </Flex>
+        </div>
         {activeTab === 'ast' && <ASTViewer parserResult={props.bamboo.parserResult} />}
         {/* Using visible cause it's better to let the monaco editor be loaded with the others */}
         <GeneratedCss cssArtifacts={props.bamboo.cssArtifacts} visible={activeTab === 'generated' && open} />

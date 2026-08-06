@@ -2,7 +2,8 @@
 import React from 'react'
 import { createDOM } from '@builder.io/qwik/testing'
 import { describe, expect, test } from 'vitest'
-import { Box, Stack, styled } from '../../styled-system-qwik/jsx'
+import { styled } from '../../styled-system-qwik/jsx'
+import { box, stack } from '../../styled-system-qwik/patterns'
 import { buttonWithCompoundVariants } from '../../styled-system-qwik/recipes'
 
 describe('styled factory - cva', async () => {
@@ -354,7 +355,7 @@ describe('styled factory - button recipe', async () => {
 
   test('box pattern', async () => {
     const { render, screen } = await createDOM()
-    await render(<Box color="red.300">Click me</Box>)
+    await render(<styled.div class={box({ color: 'red.300' })}>Click me</styled.div>)
 
     const container = screen.querySelector('div')!
     expect(container.outerHTML).toMatchInlineSnapshot(`"<div class="c_red.300">Click me</div>"`)
@@ -362,11 +363,7 @@ describe('styled factory - button recipe', async () => {
 
   test('stack pattern', async () => {
     const { render, screen } = await createDOM()
-    await render(
-      <Stack direction="column" color="red.400">
-        Click me
-      </Stack>,
-    )
+    await render(<styled.div class={stack({ direction: 'column', color: 'red.400' })}>Click me</styled.div>)
 
     const container = screen.querySelector('div')!
     expect(container.outerHTML).toMatchInlineSnapshot(

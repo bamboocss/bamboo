@@ -1,30 +1,10 @@
 import type { Context } from '@bamboocss/core'
-import type { ArtifactFilters, JsxFramework } from '@bamboocss/types'
-import {
-  generatePreactJsxFactory,
-  generatePreactJsxPattern,
-  generatePreactJsxTypes,
-  generatePreactCreateStyleContext,
-} from './preact-jsx'
-import { generateQwikJsxFactory, generateQwikJsxPattern, generateQwikJsxTypes } from './qwik-jsx'
-import {
-  generateReactJsxFactory,
-  generateReactJsxPattern,
-  generateReactJsxTypes,
-  generateReactCreateStyleContext,
-} from './react-jsx'
-import {
-  generateSolidJsxFactory,
-  generateSolidJsxPattern,
-  generateSolidJsxTypes,
-  generateSolidCreateStyleContext,
-} from './solid-jsx'
-import {
-  generateVueJsxFactory,
-  generateVueJsxPattern,
-  generateVueJsxTypes,
-  generateVueCreateStyleContext,
-} from './vue-jsx'
+import type { JsxFramework } from '@bamboocss/types'
+import { generatePreactJsxFactory, generatePreactJsxTypes, generatePreactCreateStyleContext } from './preact-jsx'
+import { generateQwikJsxFactory, generateQwikJsxTypes } from './qwik-jsx'
+import { generateReactJsxFactory, generateReactJsxTypes, generateReactCreateStyleContext } from './react-jsx'
+import { generateSolidJsxFactory, generateSolidJsxTypes, generateSolidCreateStyleContext } from './solid-jsx'
+import { generateVueJsxFactory, generateVueJsxTypes, generateVueCreateStyleContext } from './vue-jsx'
 
 /* -----------------------------------------------------------------------------
  * JSX Types
@@ -62,24 +42,6 @@ export function generateJsxFactory(ctx: Context) {
   if (!ctx.jsx.framework) return
   if (!isKnownFramework(ctx.jsx.framework)) return
   return factoryMap[ctx.jsx.framework]?.(ctx)
-}
-
-/* -----------------------------------------------------------------------------
- * Pattern JSX
- * -----------------------------------------------------------------------------*/
-
-const patternMap = {
-  react: generateReactJsxPattern,
-  solid: generateSolidJsxPattern,
-  preact: generatePreactJsxPattern,
-  vue: generateVueJsxPattern,
-  qwik: generateQwikJsxPattern,
-}
-
-export function generateJsxPatterns(ctx: Context, filters?: ArtifactFilters) {
-  if (ctx.patterns.isEmpty() || !ctx.jsx.framework) return []
-  if (!isKnownFramework(ctx.jsx.framework)) return
-  return patternMap[ctx.jsx.framework!](ctx, filters)
 }
 
 /* -----------------------------------------------------------------------------

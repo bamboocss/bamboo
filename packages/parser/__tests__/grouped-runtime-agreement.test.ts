@@ -121,11 +121,6 @@ describe('cssMode: grouped — the build emits a rule for the class the runtime 
     expect(result.css).toContain(runtimeCss(true)({ display: 'flex', flexDirection: 'column', gap: '4' }))
   })
 
-  test('jsx pattern', () => {
-    const result = extract(`import { Stack } from "styled-system/jsx"\nconst A = () => <Stack gap="4" />`)
-    expect(result.css).toContain(runtimeCss(true)({ display: 'flex', flexDirection: 'column', gap: '4' }))
-  })
-
   test('styled jsx, style props only', () => {
     const result = extract(
       `import { styled } from "styled-system/jsx"\nconst A = () => <styled.div color="red" padding="2" />`,

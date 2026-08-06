@@ -52,10 +52,10 @@ eslintTester.run(RULE_NAME, rule, {
 
     {
       code: multiline`
-  import { Circle } from './bamboo/jsx';
+  import { styled } from './bamboo/jsx';
   
   function App(){
-    return <Circle _hover={{  borderBottom: 'solid 1px' }} />;
+    return <styled.div _hover={{  borderBottom: 'solid 1px' }} />;
   }`,
       errors: [
         {
@@ -64,10 +64,10 @@ eslintTester.run(RULE_NAME, rule, {
             {
               messageId: 'replace',
               output: multiline`
-  import { Circle } from './bamboo/jsx';
+  import { styled } from './bamboo/jsx';
   
   function App(){
-    return <Circle _hover={{  borderBlockEnd: 'solid 1px' }} />;
+    return <styled.div _hover={{  borderBlockEnd: 'solid 1px' }} />;
   }`,
             },
           ],
@@ -125,10 +125,10 @@ eslintTester.run(RULE_NAME, rule, {
     // textAlign with physical values - JSX expression container
     {
       code: multiline`
-  import { Box } from './bamboo/jsx';
+  import { styled } from './bamboo/jsx';
   
   function App(){
-    return <Box textAlign={"left"} />;
+    return <styled.div textAlign={"left"} />;
   }`,
       errors: [
         {
@@ -137,10 +137,10 @@ eslintTester.run(RULE_NAME, rule, {
             {
               messageId: 'replace',
               output: multiline`
-  import { Box } from './bamboo/jsx';
+  import { styled } from './bamboo/jsx';
   
   function App(){
-    return <Box textAlign={"start"} />;
+    return <styled.div textAlign={"start"} />;
   }`,
             },
           ],
@@ -150,10 +150,10 @@ eslintTester.run(RULE_NAME, rule, {
 
     {
       code: multiline`
-  import { Box } from './bamboo/jsx';
+  import { styled } from './bamboo/jsx';
   
   function App(){
-    return <Box textAlign={"right"} />;
+    return <styled.div textAlign={"right"} />;
   }`,
       errors: [
         {
@@ -162,10 +162,10 @@ eslintTester.run(RULE_NAME, rule, {
             {
               messageId: 'replace',
               output: multiline`
-  import { Box } from './bamboo/jsx';
+  import { styled } from './bamboo/jsx';
   
   function App(){
-    return <Box textAlign={"end"} />;
+    return <styled.div textAlign={"end"} />;
   }`,
             },
           ],
@@ -192,10 +192,10 @@ eslintTester.run(RULE_NAME, rule, {
 
     {
       code: multiline`
-  import { Circle } from './bamboo/jsx';
+  import { styled } from './bamboo/jsx';
   
   function App(){
-    return <Circle _hover={{  borderBlockEnd: 'solid 1px' }} />;
+    return <styled.div _hover={{  borderBlockEnd: 'solid 1px' }} />;
   }`,
     },
 
@@ -219,19 +219,19 @@ eslintTester.run(RULE_NAME, rule, {
     // textAlign with non-physical values - JSX expression container
     {
       code: multiline`
-  import { Box } from './bamboo/jsx';
+  import { styled } from './bamboo/jsx';
   
   function App(){
-    return <Box textAlign={"start"} />;
+    return <styled.div textAlign={"start"} />;
   }`,
     },
 
     {
       code: multiline`
-  import { Box } from './bamboo/jsx';
+  import { styled } from './bamboo/jsx';
   
   function App(){
-    return <Box textAlign={"end"} />;
+    return <styled.div textAlign={"end"} />;
   }`,
     },
   ],

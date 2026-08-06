@@ -1,4 +1,4 @@
-import { HStack, Flex } from '@/styled-system/jsx'
+import { flex, hstack } from '@/styled-system/patterns'
 import { PropsWithChildren } from 'react'
 import { Logo } from './Logo'
 import { css } from '@/styled-system/css'
@@ -6,8 +6,8 @@ import pkgJson from '@bamboocss/dev/package.json'
 import { ColorModeSwitch } from '@/src/components/ColorModeSwitch'
 
 export const Toolbar = (props: PropsWithChildren) => (
-  <Flex px="6" minH="16" borderBottomWidth="1px" align="center" justify="space-between">
-    <HStack gap="4">
+  <div className={flex({ px: '6', minH: '16', borderBottomWidth: '1px', align: 'center', justify: 'space-between' })}>
+    <div className={hstack({ gap: '4' })}>
       <a href="/">
         <Logo />
       </a>
@@ -18,16 +18,16 @@ export const Toolbar = (props: PropsWithChildren) => (
       >
         v{pkgJson.version}
       </span>
-    </HStack>
-    <HStack
-      css={{
+    </div>
+    <div
+      className={hstack({
         '& > *:not(:last-child):not(:first-child)': {
           hideBelow: 'md',
         },
-      }}
+      })}
     >
       {props.children}
       <ColorModeSwitch />
-    </HStack>
-  </Flex>
+    </div>
+  </div>
 )

@@ -1,7 +1,7 @@
 import { docsNavigation, type NavItem } from '@/docs.config'
 import { ChevronRightIcon } from '@/icons'
 import { css } from '@/styled-system/css'
-import { Box, HStack } from '@/styled-system/jsx'
+import { hstack } from '@/styled-system/patterns'
 import Link from 'next/link'
 
 interface PaginationItem {
@@ -72,10 +72,10 @@ export const Pagination = ({ slug }: Props) => {
   }
 
   return (
-    <HStack justify="space-between" mt="12" gap="4">
-      {prev ? <PagationLink item={prev} type="prev" /> : <Box flex="1" />}
-      {next ? <PagationLink item={next} type="next" /> : <Box flex="1" />}
-    </HStack>
+    <div className={hstack({ justify: 'space-between', mt: '12', gap: '4' })}>
+      {prev ? <PagationLink item={prev} type="prev" /> : <div className={css({ flex: '1' })} />}
+      {next ? <PagationLink item={next} type="next" /> : <div className={css({ flex: '1' })} />}
+    </div>
   )
 }
 
@@ -103,10 +103,10 @@ const PagationLink = (props: PagationLinkProps) => {
       })}
     >
       {type === 'prev' && <ChevronRightIcon className={css({ transform: 'rotate(180deg)' })} />}
-      <Box textAlign="start" minW="0" flex="1">
-        <Box className={css({ textStyle: 'sm', mb: '1' })}>{item.category}</Box>
-        <Box className={css({ fontWeight: 'medium', color: 'fg', truncate: true })}>{item.title}</Box>
-      </Box>
+      <div className={css({ textAlign: 'start', minW: '0', flex: '1' })}>
+        <div className={css({ textStyle: 'sm', mb: '1' })}>{item.category}</div>
+        <div className={css({ fontWeight: 'medium', color: 'fg', truncate: true })}>{item.title}</div>
+      </div>
       {type === 'next' && <ChevronRightIcon />}
     </Link>
   )

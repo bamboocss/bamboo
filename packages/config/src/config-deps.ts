@@ -2,7 +2,7 @@ import type { ArtifactId, ConfigPath } from '@bamboocss/types'
 import { createMatcher } from './create-matcher'
 
 // Below is the list of all the config paths that can affect an artifact generation
-// For some, such as recipes/patterns/jsx-patterns we'll specify which item was specifically affected (e.g. recipes.xxx-yyy)
+// For some, such as recipes/patterns we'll specify which item was specifically affected (e.g. recipes.xxx-yyy)
 // so we can avoid generating/re-writing all the other artifacts of the same kind (e.g. recipes.aaa, recipes.bbb, etc.) that didn't change
 
 const all: ConfigPath[] = [
@@ -51,8 +51,7 @@ const artifactConfigDeps: Record<ArtifactId, ConfigPath[]> = {
   'jsx-is-valid-prop': common,
   'jsx-factory': jsx,
   'jsx-helpers': jsx,
-  'jsx-patterns': jsx.concat('patterns'),
-  'jsx-patterns-index': jsx.concat('patterns'),
+  'jsx-index': jsx,
   'jsx-create-style-context': jsx,
   'css-index': [],
   'package.json': ['forceConsistentTypeExtension', 'outExtension'],

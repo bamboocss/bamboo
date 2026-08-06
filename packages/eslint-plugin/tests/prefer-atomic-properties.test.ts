@@ -24,10 +24,10 @@ eslintTester.run(RULE_NAME, rule, {
 
     {
       code: multiline`
-  import { Circle } from './bamboo/jsx';
+  import { styled } from './bamboo/jsx';
   
   function App(){
-    return <Circle _hover={{  borderTop: 'solid 1px blue' }} />;
+    return <styled.div _hover={{  borderTop: 'solid 1px blue' }} />;
   }`,
       errors: [{ messageId: 'atomic' }],
     },
@@ -51,10 +51,10 @@ eslintTester.run(RULE_NAME, rule, {
 
     {
       code: multiline`
-  import { Circle } from './bamboo/jsx';
+  import { styled } from './bamboo/jsx';
   
   function App(){
-    return <Circle _hover={{  borderTopStyle: 'solid', borderTopWidth: '1px', borderTopColor: 'blue' }} />;
+    return <styled.div _hover={{  borderTopStyle: 'solid', borderTopWidth: '1px', borderTopColor: 'blue' }} />;
   }`,
     },
   ],

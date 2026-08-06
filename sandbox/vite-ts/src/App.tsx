@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { css, cx } from '../styled-system/css'
-import { Circle, HStack, Stack, bamboo } from '../styled-system/jsx'
-import { circle as circleLike, stack, vstack } from '../styled-system/patterns'
+import { bamboo } from '../styled-system/jsx'
+import { circle as circleLike, hstack, stack, vstack } from '../styled-system/patterns'
 import { button, someRecipe } from '../styled-system/recipes'
 import { Badge, badge } from './Badge'
 import { AnotherButtonWithRegex, Button, ListedButton } from './Button'
@@ -100,18 +100,24 @@ function App() {
       </section>
 
       <section className={css({ padding: '5', borderWidth: '1px' })}>
-        <p className={css({ fontWeight: 'semibold', mb: '2' })}>Pattern - JSX</p>
-        <Stack align="center" padding="20px" marginBottom="30px" bg="green.100" gap={{ base: '4', md: '10' }}>
-          <Circle size="40px" bg="red.300" fontSize="1.2em" fontWeight="bold">
-            S
-          </Circle>
-          <HStack gap="40px" debug>
+        <p className={css({ fontWeight: 'semibold', mb: '2' })}>Pattern - Function (nested)</p>
+        <div
+          className={stack({
+            align: 'center',
+            padding: '20px',
+            marginBottom: '30px',
+            bg: 'green.100',
+            gap: { base: '4', md: '10' },
+          })}
+        >
+          <div className={circleLike({ size: '40px', bg: 'red.300', fontSize: '1.2em', fontWeight: 'bold' })}>S</div>
+          <div className={hstack({ gap: '40px', debug: true })}>
             <div className={className}>Element 1</div>
             <bamboo.div color="red" fontWeight="bold" fontSize="50px">
               Element 2
             </bamboo.div>
-          </HStack>
-        </Stack>
+          </div>
+        </div>
       </section>
 
       <section className={css({ padding: '5', borderWidth: '1px' })}>

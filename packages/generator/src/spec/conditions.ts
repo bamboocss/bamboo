@@ -5,14 +5,14 @@ import type { JsxStyleProps } from '../shared'
 const generateConditionJsxExamples = (conditionName: string, jsxStyleProps: JsxStyleProps = 'all'): string[] => {
   if (jsxStyleProps === 'all') {
     return [
-      `<Box margin={{ base: '2', ${conditionName}: '4' }} />`,
-      `<Box margin="2" ${conditionName}={{ margin: '4' }} />`,
+      `<styled.div margin={{ base: '2', ${conditionName}: '4' }} />`,
+      `<styled.div margin="2" ${conditionName}={{ margin: '4' }} />`,
     ]
   }
   if (jsxStyleProps === 'minimal') {
     return [
-      `<Box css={{ margin: { base: '2', ${conditionName}: '4' } }} />`,
-      `<Box css={{ margin: '2', ${conditionName}: { margin: '4' } }} />`,
+      `<styled.div css={{ margin: { base: '2', ${conditionName}: '4' } }} />`,
+      `<styled.div css={{ margin: '2', ${conditionName}: { margin: '4' } }} />`,
     ]
   }
   return []

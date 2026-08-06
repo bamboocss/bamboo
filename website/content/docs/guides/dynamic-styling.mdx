@@ -192,18 +192,18 @@ const App = () => {
 Due to the static nature of Bamboo, you can't rename properties at runtime.
 
 ```tsx filename="App.tsx"
-import { Circle, CircleProps } from '../styled-system/jsx'
+import { styled } from '../styled-system/jsx'
 
 type Props = {
-  circleSize?: CircleProps['size']
+  boxPadding?: string
 }
 
-const CustomCircle = (props: Props) => {
-  const { circleSize = '3' } = props
+const CustomBox = (props: Props) => {
+  const { boxPadding = '3' } = props
   return (
-    <Circle
-      // ❌ Avoid: Bamboo can't determine the value of circleSize at build-time
-      size={circleSize}
+    <styled.div
+      // ❌ Avoid: Bamboo can't determine the value of boxPadding at build-time
+      padding={boxPadding}
     />
   )
 }
@@ -352,20 +352,20 @@ the generating the corresponding CSS for each possible branches.
 ```tsx
 import { useState } from 'react'
 import { css } from '../styled-system/css'
-import { Stack } from '../styled-system/jsx'
+import { styled } from '../styled-system/jsx'
 
 const App = () => {
   const [isHovered, setIsHovered] = useState(false)
 
   return (
-    <Stack
+    <styled.div
       color={isHovered ? { _hover: 'red.100' } : 'red.200'}
       _hover={{
         color: { base: 'red.300', md: isHovered ? 'red.400' : undefined },
       }}
     >
       <div className={css({ color: isHovered ? 'red.500' : 'red.600' })} />
-    </Stack>
+    </styled.div>
   )
 }
 ```
@@ -541,12 +541,12 @@ const Button = () => {
 <styled.div color={colors[getColorName()]} />
 <styled.div color={colors[colorFromAnotherFile]} />
 
-const CustomCircle = (props) => {
-  const { circleSize = '3' } = props
+const CustomBox = (props) => {
+  const { boxPadding = '3' } = props
   return (
-    <Circle
-      // ❌ Avoid: Bamboo can't determine the value of circleSize at build-time
-      size={circleSize}
+    <styled.div
+      // ❌ Avoid: Bamboo can't determine the value of boxPadding at build-time
+      padding={boxPadding}
     />
   )
 }

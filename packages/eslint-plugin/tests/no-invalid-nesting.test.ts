@@ -32,11 +32,11 @@ eslintTester.run(RULE_NAME, rule, {
 
     {
       code: multiline`
-  import { Circle } from './bamboo/jsx';
+  import { styled } from './bamboo/jsx';
   
   function App() {
     return (
-      <Circle
+      <styled.div
         css={{
           '[data-focus]': { position: 'absolute' },
         }}
@@ -73,11 +73,11 @@ eslintTester.run(RULE_NAME, rule, {
 
     {
       code: multiline`
-  import { Circle } from './bamboo/jsx';
+  import { styled } from './bamboo/jsx';
   
   function App() {
     return (
-      <Circle
+      <styled.div
         css={{
           '&[data-focus]': { position: 'absolute' },
         }}

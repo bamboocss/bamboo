@@ -33,11 +33,11 @@ eslintTester.run(RULE_NAME, rule, {
 
     {
       code: multiline`
-  import { Circle } from './bamboo/jsx';
+  import { styled } from './bamboo/jsx';
   
   function App(){
     const bool = true;
-    return <Circle debug={bool} />;
+    return <styled.div debug={bool} />;
   }`,
       errors: [{ messageId: 'dynamic' }],
     },
@@ -96,10 +96,10 @@ eslintTester.run(RULE_NAME, rule, {
 
     {
       code: multiline`
-  import { Circle } from './bamboo/jsx';
+  import { styled } from './bamboo/jsx';
   
   function App(){
-    return <Circle debug={true} />;
+    return <styled.div debug={true} />;
   }`,
     },
 

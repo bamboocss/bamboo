@@ -78,7 +78,6 @@ export interface PatternSpecDefinition extends Examples {
   name: string
   description?: string
   properties: PatternSpecProperty[]
-  jsx?: string
 }
 
 export interface PatternSpec {

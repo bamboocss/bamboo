@@ -53,12 +53,10 @@ describe('file matcher', () => {
   test('isBambooComponent', () => {
     const ctx = createContext()
 
-    const file = ctx.imports.file([
-      { mod: 'styled-system/jsx', name: 'Stack', alias: 'Stack' },
-      { mod: 'styled-system/jsx', name: 'VStack', alias: '__VStack' },
-    ])
+    const file = ctx.imports.file([{ mod: 'styled-system/recipes', name: 'buttonStyle', alias: 'buttonStyle' }])
 
-    expect(file.isBambooComponent('Stack')).toMatchInlineSnapshot('true')
+    // a recipe's jsx tag
+    expect(file.isBambooComponent('ButtonStyle')).toMatchInlineSnapshot('true')
     // should match arbitrary tag names (so we can track style props)
     expect(file.isBambooComponent('RandomJsx')).toMatchInlineSnapshot(`false`)
     expect(file.isBambooComponent('random')).toMatchInlineSnapshot('false')

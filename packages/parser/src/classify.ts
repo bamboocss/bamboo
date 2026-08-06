@@ -100,7 +100,7 @@ export function classifyProject(ctx: ParserOptions, resultMap: ParserResultMap):
   const processPattern = (opts: ProcessPatternOpts): ComponentReportItem | undefined => {
     const { boxNode, data, item, filepath, localMaps } = opts
     const name = item.componentName
-    const pattern = ctx.patterns.details.find((p) => p.match.test(name) || p.baseName === name)
+    const pattern = ctx.patterns.details.find((p) => p.baseName === name)
     if (!pattern) return
     const cssObj = pattern.config.transform?.(data || {}, patternFns) ?? {}
     const newItem: ResultItem = {
@@ -138,7 +138,7 @@ export function classifyProject(ctx: ParserOptions, resultMap: ParserResultMap):
       debug: Reflect.has(item, 'debug'),
     } satisfies ComponentReportItem
 
-    if (item.type === 'pattern' || item.type === 'jsx-pattern') {
+    if (item.type === 'pattern') {
       return processPattern({ boxNode: item.box, data: item.data[0], item: componentReportItem, filepath, localMaps })
     }
 

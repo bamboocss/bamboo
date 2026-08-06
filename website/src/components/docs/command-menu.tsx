@@ -12,7 +12,7 @@ import { useEnvironmentContext } from '@ark-ui/react/environment'
 import { Portal } from '@ark-ui/react/portal'
 import { useRouter } from 'next/navigation'
 import { useDeferredValue, useEffect, useMemo, useState } from 'react'
-import { Box, Center, Stack } from 'styled-system/jsx'
+import { center, stack } from 'styled-system/patterns'
 
 interface Props {
   mediaQuery: string
@@ -126,11 +126,11 @@ export const CommandMenu = (props: Props) => {
               >
                 <Combobox.List>
                   {collection.items.length === 0 && (
-                    <Center p="3" minH="40">
-                      <Box color="fg.muted" textStyle="sm">
-                        No results found for <Box as="strong">{inputValue}</Box>
-                      </Box>
-                    </Center>
+                    <div className={center({ p: '3', minH: '40' })}>
+                      <div className={css({ color: 'fg.muted', textStyle: 'sm' })}>
+                        No results found for <strong>{inputValue}</strong>
+                      </div>
+                    </div>
                   )}
                   {collection.group().map(([group, items]) => (
                     <Combobox.ItemGroup key={group || 'results'}>
@@ -162,15 +162,15 @@ export const CommandMenu = (props: Props) => {
                             },
                           })}
                         >
-                          <Stack gap="1">
-                            <Box fontWeight="semibold">
+                          <div className={stack({ gap: '1' })}>
+                            <div className={css({ fontWeight: 'semibold' })}>
                               {item.label}
                               {item.type === 'heading' && <Badge>{item.category}</Badge>}
-                            </Box>
-                            <Box textStyle="sm" color="fg.muted" lineClamp={2}>
+                            </div>
+                            <div className={css({ textStyle: 'sm', color: 'fg.muted', lineClamp: 2 })}>
                               {item.description}
-                            </Box>
-                          </Stack>
+                            </div>
+                          </div>
                         </Combobox.Item>
                       ))}
                     </Combobox.ItemGroup>

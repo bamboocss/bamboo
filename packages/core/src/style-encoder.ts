@@ -445,18 +445,8 @@ export class StyleEncoder {
     }
   }
 
-  processPattern = (
-    name: string,
-    patternProps: StyleResultObject,
-    type?: 'pattern' | 'jsx-pattern',
-    jsxName?: string | undefined,
-    grouped = false,
-  ) => {
-    let fnName = name
-    if (type === 'jsx-pattern' && jsxName) {
-      fnName = this.context.patterns.find(jsxName)
-    }
-    const styleProps = this.context.patterns.transform(fnName, patternProps)
+  processPattern = (name: string, patternProps: StyleResultObject, grouped = false) => {
+    const styleProps = this.context.patterns.transform(name, patternProps)
     // A pattern is a `css()` call with the transform already applied — `css(stackStyles(props))` —
     // so grouped mode names it the same way it names any other one.
     this.processStyleProps(styleProps, grouped)

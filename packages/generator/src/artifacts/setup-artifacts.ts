@@ -13,7 +13,7 @@ import { generatePattern } from './js/pattern'
 import { generateCreateRecipe, generateRecipes } from './js/recipe'
 import { generateSvaFn } from './js/sva'
 import { generateTokenJs } from './js/token'
-import { generateJsxFactory, generateJsxPatterns, generateJsxTypes, generateJsxCreateStyleContext } from './jsx'
+import { generateJsxFactory, generateJsxTypes, generateJsxCreateStyleContext } from './jsx'
 import { getGeneratedSystemTypes, getGeneratedTypes } from './types/generated'
 import { generateTypesEntry } from './types/main'
 import { generatePropTypes } from './types/prop-types'
@@ -313,24 +313,6 @@ function setupJsxHelpers(ctx: Context): Artifact | undefined {
   }
 }
 
-function setupJsxPatterns(ctx: Context, filters?: ArtifactFilters): Artifact | undefined {
-  if (!ctx.jsx.framework) return
-
-  const patterns = generateJsxPatterns(ctx, filters)
-  if (!patterns) return
-
-  return {
-    id: 'jsx-patterns',
-    dir: ctx.paths.jsx,
-    files: [
-      ...patterns.flatMap((file) => [
-        { file: ctx.file.ext(file.name), code: file.js },
-        { file: ctx.file.extDts(file.name), code: file.dts },
-      ]),
-    ],
-  }
-}
-
 function setupJsxCreateStyleContext(ctx: Context): Artifact | undefined {
   if (!ctx.jsx.framework) return
 
@@ -347,10 +329,9 @@ function setupJsxCreateStyleContext(ctx: Context): Artifact | undefined {
   }
 }
 
-function setupJsxPatternsIndex(ctx: Context): Artifact | undefined {
+function setupJsxIndex(ctx: Context): Artifact | undefined {
   if (!ctx.jsx.framework) return
 
-  const patternNames = ctx.patterns.details.map((pattern) => pattern.dashName)
   const styleContextExclude = ['qwik', 'svelte']
 
   const index = {
@@ -358,19 +339,17 @@ function setupJsxPatternsIndex(ctx: Context): Artifact | undefined {
   ${ctx.file.exportStar('./factory')}
   ${ctx.file.exportStar('./is-valid-prop')}
   ${!styleContextExclude.includes(ctx.jsx.framework) ? ctx.file.exportStar('./create-style-context') : ''}
-  ${outdent.string(patternNames.map((file) => ctx.file.exportStar(`./${file}`)).join('\n'))}
   `,
     dts: outdent`
   ${ctx.file.exportTypeStar('./factory')}
   ${ctx.file.exportTypeStar('./is-valid-prop')}
   ${ctx.file.exportTypeStar('./create-style-context')}
-  ${outdent.string(patternNames.map((file) => ctx.file.exportTypeStar(`./${file}`)).join('\n'))}
   ${ctx.file.exportType([ctx.jsx.typeName, ctx.jsx.componentName].join(', '), '../types/jsx')}
     `,
   }
 
   return {
-    id: 'jsx-patterns-index',
+    id: 'jsx-index',
     dir: ctx.paths.jsx,
     files: [
       { file: ctx.file.ext('index'), code: index.js },
@@ -499,9 +478,8 @@ const entries: ArtifactEntry[] = [
   ['jsx-is-valid-prop', setupJsxIsValidProp],
   ['jsx-factory', setupJsxFactory],
   ['jsx-helpers', setupJsxHelpers],
-  ['jsx-patterns', setupJsxPatterns],
   ['jsx-create-style-context', setupJsxCreateStyleContext],
-  ['jsx-patterns-index', setupJsxPatternsIndex],
+  ['jsx-index', setupJsxIndex],
   ['css-index', setupCssIndex],
   ['themes', setupThemes],
 ]

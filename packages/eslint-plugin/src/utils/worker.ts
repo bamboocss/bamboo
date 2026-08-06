@@ -229,8 +229,7 @@ const isValidProperty = (context: Generator, name: string, patternName?: string)
     return false
   }
 
-  const pattern = context.patterns.details.find((p) => p.baseName === patternName || p.jsx.includes(patternName))
-    ?.config.properties
+  const pattern = context.patterns.details.find((p) => p.baseName === patternName)?.config.properties
   if (!pattern) {
     return false
   }

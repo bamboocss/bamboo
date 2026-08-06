@@ -277,8 +277,7 @@ export class ParserResult implements ParserResultInterface {
 
     const encoder = this.encoder
     const grouped = this.context.config.cssMode === 'grouped'
-    const type = (result.type as 'pattern' | undefined) ?? 'pattern'
-    result.data.forEach((obj) => encoder.processPattern(name, obj, type, result.name, grouped))
+    result.data.forEach((obj) => encoder.processPattern(name, obj, grouped))
 
     // A pattern resolves to a single `css()` call, but the build never recombines the
     // entries a conditional value splits it into — `stack({ gap: on ? '2' : '4', padding: '2' })`
@@ -286,7 +285,7 @@ export class ParserResult implements ParserResultInterface {
     // enumerates combinations, so the rest degrade instead: atomic rules go out alongside
     // the groups, and the element keeps every declaration.
     if (grouped && !this.groupIsExact(result)) {
-      result.data.forEach((obj) => encoder.processPattern(name, obj, type, result.name, false))
+      result.data.forEach((obj) => encoder.processPattern(name, obj, false))
     }
   }
 

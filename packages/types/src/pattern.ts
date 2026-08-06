@@ -33,11 +33,6 @@ export interface PatternConfig<T extends PatternProperties = PatternProperties> 
    */
   description?: string
   /**
-   * The JSX element rendered by the pattern
-   * @default 'div'
-   */
-  jsxElement?: string
-  /**
    * The properties of the pattern.
    */
   properties?: T
@@ -53,17 +48,6 @@ export interface PatternConfig<T extends PatternProperties = PatternProperties> 
    * Whether the pattern is deprecated.
    */
   deprecated?: boolean | string
-  /**
-   * The jsx element name this pattern will generate.
-   */
-  jsxName?: string
-  /**
-   * The jsx elements to track for this pattern. Can be string or Regexp.
-   *
-   * @default capitalize(pattern.name)
-   * @example ['Button', 'Link', /Button$/]
-   */
-  jsx?: Array<string | RegExp>
   /**
    * Whether to only generate types for the specified properties.
    * This will disallow css properties

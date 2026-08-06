@@ -80,7 +80,8 @@ export const guessed${index} = (e: boolean) => css({ padding: '${index % 8}', co
  * where elements come in bulk, so this is the shape that shows what it costs.
  */
 const JSX_MODULE = `
-import { styled, Stack, Box, HStack } from 'styled-system/jsx'
+import { styled } from 'styled-system/jsx'
+import { box, hstack, stack } from 'styled-system/patterns'
 
 export const View = ({ tone, rest }) => (
   <styled.div padding="4" backgroundColor="gray.100">
@@ -92,10 +93,10 @@ export const View = ({ tone, rest }) => (
     <styled.div as="section" color="red.300">as</styled.div>
     <styled.div color={tone}>dynamic</styled.div>
     <styled.div color="green.300" {...rest}>spread</styled.div>
-    <Stack gap="4">
-      <Box padding="2" backgroundColor="white">box</Box>
-      <HStack gap="1" color="gray.700">hstack</HStack>
-    </Stack>
+    <div className={stack({ gap: '4' })}>
+      <div className={box({ padding: '2', backgroundColor: 'white' })}>box</div>
+      <div className={hstack({ gap: '1', color: 'gray.700' })}>hstack</div>
+    </div>
   </styled.div>
 )
 `

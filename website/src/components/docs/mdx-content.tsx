@@ -21,7 +21,6 @@ import { Tab, Tabs } from '@/mdx/tabs'
 import { Text } from '@/mdx/text'
 import { TokenDocs } from '@/mdx/token-docs'
 import { css } from '@/styled-system/css'
-import { Box, Flex } from '@/styled-system/jsx'
 import * as React from 'react'
 import * as runtime from 'react/jsx-runtime'
 
@@ -30,10 +29,6 @@ const headings = createHeadings({ index: 0 })
 
 // Define shared components for MDX
 const sharedComponents = {
-  // Styled system components
-  Box,
-  Flex,
-
   a: Link,
   blockquote: Callout,
   img: (props: any) => (

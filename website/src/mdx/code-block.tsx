@@ -1,4 +1,6 @@
-import { Box, HStack, bamboo } from '@/styled-system/jsx'
+import { css } from '@/styled-system/css'
+import { bamboo } from '@/styled-system/jsx'
+import { hstack } from '@/styled-system/patterns'
 
 interface CodeBlockProps {
   title: string
@@ -14,28 +16,26 @@ export const CodeBlock = (props: CodeBlockProps) => {
   const resolvedLang = extLang !== lang ? extLang : lang
 
   return (
-    <Box
+    <div
       {...rest}
       data-lang={lang}
-      spaceY="0!"
-      marginY="1.6em"
-      rounded="10px"
-      css={{
+      className={css({
+        spaceY: '0!',
+        marginY: '1.6em',
+        rounded: '10px',
         '& pre.shiki': {
           roundedTop: '0!',
           roundedBottom: 'lg!',
           shadow: 'none!',
         },
-      }}
+      })}
     >
-      <HStack bg="bg.muted" px="4" py="3" roundedTop="lg" borderBottomWidth="1px">
+      <div className={hstack({ bg: 'bg.muted', px: '4', py: '3', roundedTop: 'lg', borderBottomWidth: '1px' })}>
         {resolvedLang && <CodeLangIcon type={resolvedLang} />}
-        <Box as="p" textStyle="sm" fontFamily="mono">
-          {title}
-        </Box>
-      </HStack>
+        <p className={css({ textStyle: 'sm', fontFamily: 'mono' })}>{title}</p>
+      </div>
       {children}
-    </Box>
+    </div>
   )
 }
 

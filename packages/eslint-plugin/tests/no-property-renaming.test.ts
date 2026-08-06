@@ -27,12 +27,12 @@ eslintTester.run(RULE_NAME, rule, {
     // TODO detect pattern attributes as bamboo property
     //   {
     //     code: multiline`
-    // import { Circle } from './bamboo/jsx';
+    // import { styled } from './bamboo/jsx';
 
     // function CustomCircle(props){
     //   const { circleSize = '3' } = props
     //   return (
-    //     <Circle
+    //     <styled.div
     //       size={circleSize}
     //     />
     //   )
@@ -41,11 +41,11 @@ eslintTester.run(RULE_NAME, rule, {
 
     //   {
     //     code: multiline`
-    // import { Circle } from './bamboo/jsx';
+    // import { styled } from './bamboo/jsx';
 
     // function CustomCircle(props){
     //   return (
-    //     <Circle
+    //     <styled.div
     //       size={props.circleSize}
     //     />
     //   )
@@ -73,12 +73,12 @@ eslintTester.run(RULE_NAME, rule, {
 
     {
       code: multiline`
-  import { Circle } from './bamboo/jsx';
+  import { styled } from './bamboo/jsx';
   
   function CustomCircle(props){
     const { size = '3' } = props
     return (
-      <Circle
+      <styled.div
         size={size}
       />
     )
@@ -87,11 +87,11 @@ eslintTester.run(RULE_NAME, rule, {
 
     {
       code: multiline`
-  import { Circle } from './bamboo/jsx';
+  import { styled } from './bamboo/jsx';
   
   function CustomCircle(props){
     return (
-      <Circle
+      <styled.div
         size={props.size}
       />
     )

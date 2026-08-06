@@ -530,8 +530,6 @@ describe('DiffEngine affecteds', () => {
         "patterns-index",
         "patterns.new-pattern",
         "patterns",
-        "jsx-patterns",
-        "jsx-patterns-index",
         "static-css",
       }
     `)
@@ -574,8 +572,6 @@ describe('DiffEngine affecteds', () => {
         "patterns-index",
         "patterns.new-pattern",
         "patterns",
-        "jsx-patterns",
-        "jsx-patterns-index",
         "static-css",
       }
     `)
@@ -606,8 +602,6 @@ describe('DiffEngine affecteds', () => {
         "patterns-index",
         "patterns.new-pattern",
         "patterns",
-        "jsx-patterns",
-        "jsx-patterns-index",
         "static-css",
       }
     `)
@@ -653,8 +647,6 @@ describe('DiffEngine affecteds', () => {
         "patterns-index",
         "patterns.flex",
         "patterns",
-        "jsx-patterns",
-        "jsx-patterns-index",
         "static-css",
       }
     `)

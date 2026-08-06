@@ -1,6 +1,6 @@
 import { css, cx } from '@/styled-system/css'
-import { HStack, Stack, bamboo } from '@/styled-system/jsx'
-import { grid } from '@/styled-system/patterns'
+import { bamboo } from '@/styled-system/jsx'
+import { grid, hstack, stack } from '@/styled-system/patterns'
 import { LuChevronRight } from 'react-icons/lu'
 import { Anchor } from '../components/ui/anchor'
 
@@ -35,17 +35,17 @@ export const Card = (props: Props) => {
         {image || children}
         {icon}
         <span>
-          <Stack gap="1">
+          <div className={stack({ gap: '1' })}>
             <bamboo.span textStyle="lg" fontWeight="semibold">
-              <HStack>
+              <span className={hstack()}>
                 {title}
                 {animatedArrow}
-              </HStack>
+              </span>
             </bamboo.span>
             {description && (
               <bamboo.span color={{ base: 'neutral.700', _dark: 'neutral.400' }}>{description}</bamboo.span>
             )}
-          </Stack>
+          </div>
         </span>
       </Anchor>
     </bamboo.div>

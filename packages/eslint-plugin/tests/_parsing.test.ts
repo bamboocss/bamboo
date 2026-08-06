@@ -10,7 +10,7 @@ import { getArbitraryValue } from '@bamboocss/shared'
 //* This test is just to ensure that the plugin correctly recognises bamboo in various kinds of code.
 
 const imports = `import { css } from './bamboo/css';
-import { styled, Circle } from './bamboo/jsx';\n\n`
+import { styled } from './bamboo/jsx';\n\n`
 
 // ? For testing correct parsing
 
@@ -39,10 +39,10 @@ const invalids = [
   {
     code: 'const styles = css({ bg: "red", "&:hover": { "&:disabled": { debug: true } } })',
   },
-  { code: '<Circle debug />' },
-  { code: '<Circle debug={true} />' },
-  { code: '<Circle css={{ debug: true }} />' },
-  { code: '<Circle css={{ "&:hover": { debug: true } }} />' },
+  { code: '<styled.div debug />' },
+  { code: '<styled.div debug={true} />' },
+  { code: '<styled.div css={{ debug: true }} />' },
+  { code: '<styled.div css={{ "&:hover": { debug: true } }} />' },
   { code: '<styled.div _hover={{ debug: true }} />' },
   {
     code: `const BambooComp = styled(div); <BambooComp css={{ debug: true }} />`,
@@ -71,13 +71,13 @@ const valids2 = [
   'const styles = css({ bg: `red` })',
   'const styles = css({ bg: 1 })',
   'const styles = css({ debug: true })',
-  '<Circle debug={true} />',
-  '<Circle color={"red"} />',
-  '<Circle color={`red`} />',
-  '<Circle _hover={{ bg: "red.100" }} />',
+  '<styled.div debug={true} />',
+  '<styled.div color={"red"} />',
+  '<styled.div color={`red`} />',
+  '<styled.div _hover={{ bg: "red.100" }} />',
 ]
 
-const invalids2 = ['const styles = css({ bg: color })', '<Circle debug={bool} />', '<styled.div color={color} />']
+const invalids2 = ['const styles = css({ bg: color })', '<styled.div debug={bool} />', '<styled.div color={color} />']
 
 eslintTester.run(RULE_NAME2, rule2 as any, {
   invalid: invalids2.map((code) => ({
@@ -113,7 +113,7 @@ const valids3 = [
       gridTemplateColumns: \`${getArbitraryValue(namedGridLines)}\`,
     });
     `,
-  `<Circle gridTemplateColumns={\`${getArbitraryValue(namedGridLines)}\`} />`,
+  `<styled.div gridTemplateColumns={\`${getArbitraryValue(namedGridLines)}\`} />`,
 ]
 
 const invalids3 = [
@@ -125,7 +125,7 @@ const invalids3 = [
   `,
   },
   {
-    code: `<Circle gridTemplateColumns={\`${namedGridLines}\`} />`,
+    code: `<styled.div gridTemplateColumns={\`${namedGridLines}\`} />`,
   },
 ]
 
@@ -144,7 +144,7 @@ eslintTester.run(RULE_NAME3, rule3 as any, {
 
 const imports4 = `import { css } from './bamboo/css';
 import { token as tk } from './bamboo/tokens'
-import { Circle } from './bamboo/jsx';\n\n`
+import { styled } from './bamboo/jsx';\n\n`
 
 const valids4 = [
   'const styles = css({ bg: "token(colors.red.300) 50%" })',
@@ -159,7 +159,7 @@ const invalids4 = [
     code: 'const styles = css({ bg: tk(`colors.red.300`) })',
   },
 
-  { code: '<Circle bg={tk("colors.red.300")} />' },
+  { code: '<styled.div bg={tk("colors.red.300")} />' },
 ]
 
 eslintTester.run(RULE_NAME4, rule4 as any, {
@@ -176,12 +176,12 @@ eslintTester.run(RULE_NAME4, rule4 as any, {
 // ? Testing token paths in template literals syntax
 
 const imports5 = `import { css } from './bamboo/css';
-import { Circle, styled } from './bamboo/jsx';\n\n`
+import { styled } from './bamboo/jsx';\n\n`
 
 const valids5 = [
   'const className = css`\n  font-size: {fontSizes.md};`',
   'const className = styled.h1`\n  font-size: {fontSizes.md};`',
-  'const className = styled(Circle)`\n  font-size: {fontSizes.md};`',
+  'const className = styled(Wrapper)`\n  font-size: {fontSizes.md};`',
   `const className = css\`\n  
     @media (min-width: token(breakpoints.lg)) {
       grid-template-columns: auto 450px;
@@ -192,9 +192,9 @@ const valids5 = [
 const invalids5 = [
   { code: 'const className = css`\n  font-size: {fontSizes.emd};`' },
   { code: 'const Heading = styled.h1`\n  font-size: {fontSizes.emd};`' },
-  { code: 'const Comp = styled(Circle)`\n  font-size: {fontSizes.emd};`' },
+  { code: 'const Comp = styled(Wrapper)`\n  font-size: {fontSizes.emd};`' },
   {
-    code: 'const Comp = styled(Circle)`\n  margin: {sizess.4} {sizes.f4};`',
+    code: 'const Comp = styled(Wrapper)`\n  margin: {sizess.4} {sizes.f4};`',
     errors: 2,
   },
 ]

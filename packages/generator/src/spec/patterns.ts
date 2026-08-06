@@ -18,33 +18,22 @@ const getExampleValue = (prop: { type?: string; value?: unknown }): string => {
 }
 
 export const generatePatternsSpec = (ctx: Context): PatternSpec => {
-  const jsxStyleProps = ctx.config.jsxStyleProps
-
   const patterns = ctx.patterns.details.map((node) => {
     const patternName = node.baseName
-    const jsxName = node.jsxName
 
     const properties = Object.entries(node.config.properties ?? {})
 
     // Generate examples for each property
     const functionExamples: string[] = []
-    const jsxExamples: string[] = []
 
     if (properties.length === 0) {
       // No properties, just show basic usage
       functionExamples.push(`${patternName}()`)
-      if (jsxStyleProps !== 'none') {
-        jsxExamples.push(`<${jsxName} />`)
-      }
     } else {
       // Generate examples for each property
       properties.forEach(([propName, prop]) => {
         const exampleValue = getExampleValue(prop)
         functionExamples.push(`${patternName}({ ${propName}: ${exampleValue} })`)
-
-        if (jsxStyleProps !== 'none') {
-          jsxExamples.push(`<${jsxName} ${propName}={${exampleValue}} />`)
-        }
       })
     }
 
@@ -60,9 +49,8 @@ export const generatePatternsSpec = (ctx: Context): PatternSpec => {
         description: prop.description,
         defaultValue: defaultValues[name],
       })),
-      jsx: jsxName,
       functionExamples,
-      jsxExamples,
+      jsxExamples: [],
     }
   })
 

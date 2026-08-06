@@ -1,7 +1,8 @@
 /** @jsxImportSource solid-js */
 import { render } from '@solidjs/testing-library'
 import { describe, expect, test } from 'vitest'
-import { Box, Stack, styled } from '../../styled-system-solid/jsx'
+import { styled } from '../../styled-system-solid/jsx'
+import { box, stack } from '../../styled-system-solid/patterns'
 import { buttonWithCompoundVariants } from '../../styled-system-solid/recipes'
 
 describe('styled factory - cva', () => {
@@ -405,7 +406,7 @@ describe('styled factory - button recipe', () => {
   })
 
   test('box pattern', () => {
-    const { container } = render(() => <Box color="red.300">Click me</Box>)
+    const { container } = render(() => <div class={box({ color: 'red.300' })}>Click me</div>)
 
     expect(container.firstChild).toMatchInlineSnapshot(
       `
@@ -419,11 +420,7 @@ describe('styled factory - button recipe', () => {
   })
 
   test('stack pattern', () => {
-    const { container } = render(() => (
-      <Stack direction="column" color="red.400">
-        Click me
-      </Stack>
-    ))
+    const { container } = render(() => <div class={stack({ direction: 'column', color: 'red.400' })}>Click me</div>)
 
     expect(container.firstChild).toMatchInlineSnapshot(
       `

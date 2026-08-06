@@ -1,6 +1,7 @@
 /** @jsxImportSource preact */
 import { describe, expect, test } from 'vitest'
-import { Box, Stack, styled } from '../../styled-system-preact/jsx'
+import { styled } from '../../styled-system-preact/jsx'
+import { box, stack } from '../../styled-system-preact/patterns'
 // @ts-expect-error https://github.com/vitest-dev/vitest/issues/747#issuecomment-1140225294
 import tlp = require('@testing-library/preact')
 const render = tlp.render
@@ -337,17 +338,13 @@ describe('styled factory - button recipe', () => {
   })
 
   test('box pattern', () => {
-    const { container } = render(<Box color="red.300">Click me</Box>)
+    const { container } = render(<div className={box({ color: 'red.300' })}>Click me</div>)
 
     expect(container.firstElementChild?.outerHTML).toMatchInlineSnapshot(`"<div class="c_red.300">Click me</div>"`)
   })
 
   test('stack pattern', () => {
-    const { container } = render(
-      <Stack direction="column" color="red.400">
-        Click me
-      </Stack>,
-    )
+    const { container } = render(<div className={stack({ direction: 'column', color: 'red.400' })}>Click me</div>)
 
     expect(container.firstElementChild?.outerHTML).toMatchInlineSnapshot(
       `"<div class="d_flex flex-d_column gap_8px c_red.400">Click me</div>"`,

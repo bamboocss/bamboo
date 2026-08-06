@@ -9,7 +9,7 @@ import { docsConfig } from '@/docs.config'
 import { GithubIcon, MenuIcon } from '@/icons'
 import { useMatchMedia } from '@/lib/use-match-media'
 import { css, cx } from '@/styled-system/css'
-import { Center } from '@/styled-system/jsx'
+import { center } from '@/styled-system/patterns'
 import { navbar } from '@/styled-system/recipes'
 import { Icon } from '@/theme/icons'
 import { Dialog, useDialog } from '@ark-ui/react/dialog'
@@ -138,9 +138,9 @@ const MobileNavDrawer = (props: MobileNavDrawerProps) => {
         <Dialog.Content className={classes.content}>
           <div className={cx(classes.body, 'scroll-area')}>{children}</div>
           <Dialog.CloseTrigger className={classes.closeTrigger}>
-            <Center width="5" height="5" color="fg">
+            <div className={center({ width: '5', height: '5', color: 'fg' })}>
               <Icon icon="Close" className={css({ width: '1em', height: 'auto' })} />
-            </Center>
+            </div>
           </Dialog.CloseTrigger>
         </Dialog.Content>
       </Dialog.Positioner>

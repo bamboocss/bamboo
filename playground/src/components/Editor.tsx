@@ -1,6 +1,6 @@
 import { FormatCode, LoaderIcon, WrapText } from '@/src/components/icons'
 import { css, cva, cx } from '@/styled-system/css'
-import { Flex } from '@/styled-system/jsx'
+import { flex } from '@/styled-system/patterns'
 import { segmentGroup } from '@/styled-system/recipes'
 import { SegmentGroup } from '@ark-ui/react/segment-group'
 import MonacoEditor, { DiffEditor } from '@monaco-editor/react'
@@ -33,7 +33,7 @@ export const Editor = memo(function Editor(props: BambooEditorProps) {
   } = useEditor(props)
 
   return (
-    <Flex flex="1" direction="column" align="flex-start" minW="0">
+    <div className={flex({ flex: '1', direction: 'column', align: 'flex-start', minW: '0' })}>
       <div className={css({ flex: '1', width: 'full', display: 'flex', flexDirection: 'column' })}>
         <SegmentGroup.Root
           className={cx(
@@ -119,7 +119,7 @@ export const Editor = memo(function Editor(props: BambooEditorProps) {
           )}
         </div>
       </div>
-    </Flex>
+    </div>
   )
 })
 

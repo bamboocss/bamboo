@@ -56,10 +56,10 @@ eslintTester.run(RULE_NAME, rule, {
 
     {
       code: multiline`
-    import { Circle } from './bamboo/jsx';
+    import { styled } from './bamboo/jsx';
   
     function App(){
-      return <Circle margin='[{sizes.4}]' />;
+      return <styled.div margin='[{sizes.4}]' />;
     }`,
       errors: [
         {
@@ -68,10 +68,10 @@ eslintTester.run(RULE_NAME, rule, {
             {
               messageId: 'replace',
               output: multiline`
-    import { Circle } from './bamboo/jsx';
+    import { styled } from './bamboo/jsx';
   
     function App(){
-      return <Circle margin='4' />;
+      return <styled.div margin='4' />;
     }`,
             },
           ],
@@ -99,10 +99,10 @@ eslintTester.run(RULE_NAME, rule, {
 
     {
       code: multiline`
-  import { Circle } from './bamboo/jsx';
+  import { styled } from './bamboo/jsx';
   
   function App(){
-    return <Circle _hover={{  border: 'solid 1px {colors.blue.400}' }} />;
+    return <styled.div _hover={{  border: 'solid 1px {colors.blue.400}' }} />;
   }`,
     },
   ],

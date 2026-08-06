@@ -1,6 +1,6 @@
 import { defaultEditorOptions } from '@/src/hooks/useEditor'
 import { css } from '@/styled-system/css'
-import { Stack } from '@/styled-system/jsx'
+import { stack } from '@/styled-system/patterns'
 import { SegmentGroup } from '@ark-ui/react/segment-group'
 import MonacoEditor from '@monaco-editor/react'
 import { format } from '@projectwallace/format-css'
@@ -26,13 +26,13 @@ export const GeneratedCss = React.memo(function GeneratedCss({
   }, [cssArtifacts, activeTab])
 
   return (
-    <Stack
-      h="full"
-      overflow="auto"
-      hidden={!visible}
-      css={{
+    <div
+      className={stack({
+        h: 'full',
+        overflow: 'auto',
         '&[hidden]': { display: 'none' },
-      }}
+      })}
+      hidden={!visible}
     >
       <SegmentGroup.Root
         className={css({
@@ -101,6 +101,6 @@ export const GeneratedCss = React.memo(function GeneratedCss({
         path={activeTab}
         options={{ ...defaultEditorOptions, readOnly: true, wordWrap }}
       />
-    </Stack>
+    </div>
   )
 })

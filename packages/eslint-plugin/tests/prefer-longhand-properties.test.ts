@@ -52,10 +52,10 @@ eslintTester.run(RULE_NAME, rule, {
 
     {
       code: multiline`
-  import { Circle } from './bamboo/jsx';
+  import { styled } from './bamboo/jsx';
   
   function App(){
-    return <Circle _hover={{  pos: 'absolute' }} />;
+    return <styled.div _hover={{  pos: 'absolute' }} />;
   }`,
       errors: [
         {
@@ -64,10 +64,10 @@ eslintTester.run(RULE_NAME, rule, {
             {
               messageId: 'replace',
               output: multiline`
-  import { Circle } from './bamboo/jsx';
+  import { styled } from './bamboo/jsx';
   
   function App(){
-    return <Circle _hover={{  position: 'absolute' }} />;
+    return <styled.div _hover={{  position: 'absolute' }} />;
   }`,
             },
           ],
@@ -94,10 +94,10 @@ eslintTester.run(RULE_NAME, rule, {
 
     {
       code: multiline`
-  import { Circle } from './bamboo/jsx';
+  import { styled } from './bamboo/jsx';
   
   function App(){
-    return <Circle _hover={{  position: 'absolute' }} />;
+    return <styled.div _hover={{  position: 'absolute' }} />;
   }`,
     },
   ],

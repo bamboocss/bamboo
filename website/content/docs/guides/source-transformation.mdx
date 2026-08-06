@@ -159,26 +159,7 @@ the fallback, which is exactly what declining preserves.
 
 `token.var()` is left alone.
 
-### Pattern elements
-
-`<Stack>`, `<Box>`, `<HStack>` and the rest fold too, and they save more than a `styled.*` element does. A pattern
-component is a second layer: it splits its own props out, runs them through the pattern's transform, and hands the
-result to `styled.<jsxElement>`, which then does everything above. Folding collapses both layers at once.
-
-```tsx
-<Stack gap="sm" id="x">hi</Stack>
-<div id="x" className={"d_flex flex-d_column gap_sm"}>hi</div>
-```
-
-Pattern props and style props are both consumed; anything else passes through. `as` and a static `className` behave as
-they do on a `styled.*` element.
-
-Pattern elements only fold under the default `jsxStyleProps: 'all'`. Under `minimal` and `none` the pattern's styles
-reach the factory through the `css` prop rather than being spread, which reverses which side wins when a prop is set in
-both places.
-
-`jsx: false` turns element folding off altogether – both `styled.*` and pattern elements – leaving call sites folding on
-their own.
+`jsx: false` turns element folding off altogether, leaving call sites folding on their own.
 
 ## What does not fold
 

@@ -153,7 +153,6 @@ export class Context {
     })
 
     this.jsx = new JsxEngine({
-      patterns: this.patterns,
       recipes: this.recipes,
       config,
     })

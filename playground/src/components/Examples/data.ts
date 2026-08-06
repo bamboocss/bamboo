@@ -270,11 +270,12 @@ export const EXAMPLES = [
   {
     id: 'jsx',
     label: 'JSX Style Props',
-    code: outdent`import { styled, Center } from 'styled-system/jsx';
+    code: outdent`import { styled } from 'styled-system/jsx';
+    import { center } from 'styled-system/patterns';
 
     export const App = () => {
       return (
-        <Center height="full">
+        <div className={center({ height: 'full' })}>
           <styled.button
             rounded="md"
             fontWeight="semibold"
@@ -285,7 +286,7 @@ export const EXAMPLES = [
           >
             Button
           </styled.button>
-        </Center>
+        </div>
       );
     };
     `,

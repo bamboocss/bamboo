@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { cva } from '../styled-system/css'
-import { styled, VStack } from '../styled-system/jsx'
+import { styled } from '../styled-system/jsx'
+import { vstack } from '../styled-system/patterns'
 
 const CustomInputStyle = cva({
   base: {
@@ -19,7 +20,7 @@ const styledModel = ref('')
 </script>
 
 <template>
-  <VStack>
+  <div :class="vstack()">
     <label>
       JSXModel:
       <CustomJSXInput v-model="jsxModel" />
@@ -35,5 +36,5 @@ const styledModel = ref('')
       <input v-model="nativeInputModel" :class="CustomInputStyle()" />
       Result: {{ nativeInputModel }}
     </label>
-  </VStack>
+  </div>
 </template>

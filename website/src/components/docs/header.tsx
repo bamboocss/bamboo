@@ -1,6 +1,6 @@
 import { Docs } from '.velite'
 import { css } from '@/styled-system/css'
-import { Flex } from '@/styled-system/jsx'
+import { flex } from '@/styled-system/patterns'
 import { CopyMdxWidget } from './copy-mdx-widget'
 
 interface Props {
@@ -9,16 +9,18 @@ interface Props {
 
 export const Header = ({ doc }: Props) => {
   return (
-    <Flex
-      direction={{ base: 'column', md: 'row' }}
-      justify={{ md: 'space-between' }}
-      align="flex-start"
-      gap="4"
-      // Body paragraphs sit 6 apart (see mdx/text.tsx). 12 put the title block at
-      // exactly double that, which read as a gap rather than as separation; 6 would
-      // make the heading look like another paragraph. 8 splits them.
-      mb="8"
-      mt="8"
+    <div
+      className={flex({
+        direction: { base: 'column', md: 'row' },
+        justify: { md: 'space-between' },
+        align: 'flex-start',
+        gap: '4',
+        // Body paragraphs sit 6 apart (see mdx/text.tsx). 12 put the title block at
+        // exactly double that, which read as a gap rather than as separation; 6 would
+        // make the heading look like another paragraph. 8 splits them.
+        mb: '8',
+        mt: '8',
+      })}
     >
       <div>
         <h1
@@ -39,6 +41,6 @@ export const Header = ({ doc }: Props) => {
       </div>
 
       <CopyMdxWidget doc={doc} />
-    </Flex>
+    </div>
   )
 }

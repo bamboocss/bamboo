@@ -1,13 +1,4 @@
-import {
-  capitalize,
-  createRegex,
-  dashCase,
-  getPatternStyles,
-  isObject,
-  memo,
-  uncapitalize,
-  unionType,
-} from '@bamboocss/shared'
+import { capitalize, dashCase, getPatternStyles, isObject, unionType } from '@bamboocss/shared'
 import type { TokenDictionary } from '@bamboocss/token-dictionary'
 import type {
   ArtifactFilters,
@@ -44,7 +35,6 @@ export class Patterns {
 
   private createDetail(name: string, pattern: PatternConfig): PatternNode {
     const names = this.getNames(name)
-    const jsx = (pattern.jsx ?? []).concat([names.jsxName])
 
     if (pattern.deprecated) {
       this.deprecated.add(name)
@@ -56,8 +46,6 @@ export class Patterns {
       blocklistType: pattern?.blocklist ? `| '${pattern.blocklist.join("' | '")}'` : '',
       config: pattern,
       type: 'pattern' as const,
-      match: createRegex(jsx),
-      jsx,
     }
   }
 
@@ -78,17 +66,8 @@ export class Patterns {
       baseName: name,
       dashName: dashCase(name),
       styleFnName: `get${upperName}Style`,
-      jsxName: this.patterns[name]?.jsxName ?? upperName,
     }
   }
-
-  find = memo((jsxName: string) => {
-    return this.details.find((node) => node.match.test(jsxName))?.baseName ?? uncapitalize(jsxName)
-  })
-
-  filter = memo((jsxName: string): PatternNode[] => {
-    return this.details.filter((node) => node.match.test(jsxName))
-  })
 
   isEmpty(): boolean {
     return this.keys.length === 0
@@ -191,7 +170,6 @@ interface PatternNames {
   baseName: string
   dashName: string
   styleFnName: string
-  jsxName: string
 }
 
 export interface PatternNode extends PatternNames {
@@ -199,6 +177,4 @@ export interface PatternNode extends PatternNames {
   blocklistType: string
   config: PatternConfig
   type: 'pattern'
-  match: RegExp
-  jsx: NonNullable<PatternConfig['jsx']>
 }

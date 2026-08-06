@@ -298,12 +298,7 @@ export class FileMatcher {
     // ignore fragments
     if (!tagName) return false
     const { jsx } = this.context
-    return (
-      this.components.has(tagName) ||
-      this.isJsxFactory(tagName) ||
-      jsx.isJsxTagRecipe(tagName) ||
-      jsx.isJsxTagPattern(tagName)
-    )
+    return this.components.has(tagName) || this.isJsxFactory(tagName) || jsx.isJsxTagRecipe(tagName)
   })
 
   matchTag = memo((tagName: string) => {
@@ -318,13 +313,13 @@ export class FileMatcher {
           Boolean(this.components.get(tagName)?.has(propName)) ||
           isValidProperty(propName) ||
           this.propertiesMap.has(propName) ||
-          jsx.isRecipeOrPatternProp(tagName, propName) ||
+          jsx.isRecipeProp(tagName, propName) ||
           propName.endsWith('Css')
         )
       case 'minimal':
-        return propName === 'css' || propName.endsWith('Css') || jsx.isRecipeOrPatternProp(tagName, propName)
+        return propName === 'css' || propName.endsWith('Css') || jsx.isRecipeProp(tagName, propName)
       case 'none':
-        return jsx.isRecipeOrPatternProp(tagName, propName)
+        return jsx.isRecipeProp(tagName, propName)
       default:
         return false
     }

@@ -1,6 +1,6 @@
 import { css } from 'styled-system/css'
-import { Box, styled } from 'styled-system/jsx'
-import { stack } from 'styled-system/patterns'
+import { styled } from 'styled-system/jsx'
+import { box, stack } from 'styled-system/patterns'
 import { btn } from 'styled-system/recipes'
 import { token } from 'styled-system/tokens'
 
@@ -27,7 +27,7 @@ const Notice = styled('div', {
 
 export const App = () => {
   return (
-    <Box p="4" spaceY="4" colorPalette="blue" bg={token('colors.colorPalette.500')}>
+    <div className={box({ p: '4', spaceY: '4', colorPalette: 'blue', bg: token('colors.colorPalette.500') })}>
       <Notice>Styled</Notice>
       <Notice unstyled bg="pink" color="green">
         Unstyled + css
@@ -38,6 +38,6 @@ export const App = () => {
       </div>
       <div className={css({ color: 'yellow' })}></div>
       <div className={btn()}>aaaa Click me</div>
-    </Box>
+    </div>
   )
 }

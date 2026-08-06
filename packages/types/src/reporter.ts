@@ -8,7 +8,6 @@ export type ReportItemType =
   | 'pattern'
   | 'recipe'
   | 'jsx-factory'
-  | 'jsx-pattern'
   | 'jsx-recipe'
   | 'jsx'
 

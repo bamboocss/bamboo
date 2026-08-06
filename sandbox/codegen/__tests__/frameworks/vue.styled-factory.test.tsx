@@ -1,6 +1,7 @@
 /** @jsxImportSource vue */
 import { describe, expect, test } from 'vitest'
-import { Box, Stack, styled } from '../../styled-system-vue/jsx'
+import { styled } from '../../styled-system-vue/jsx'
+import { box, stack } from '../../styled-system-vue/patterns'
 import '@testing-library/jest-dom/vitest'
 import { render } from '@testing-library/vue'
 import { buttonWithCompoundVariants } from '../../styled-system-vue/recipes'
@@ -405,7 +406,7 @@ describe('styled factory - button recipe', () => {
   })
 
   test('box pattern', () => {
-    const { container } = render(<Box color="red.300">Click me</Box>)
+    const { container } = render(<styled.div class={box({ color: 'red.300' })}>Click me</styled.div>)
     const { firstChild } = container as HTMLElement
     expect(firstChild).toMatchInlineSnapshot(
       `
@@ -420,9 +421,7 @@ describe('styled factory - button recipe', () => {
 
   test('stack pattern', () => {
     const { container } = render(
-      <Stack direction="column" color="red.400">
-        Click me
-      </Stack>,
+      <styled.div class={stack({ direction: 'column', color: 'red.400' })}>Click me</styled.div>,
     )
     const { firstChild } = container as HTMLElement
     expect(firstChild).toMatchInlineSnapshot(

@@ -370,21 +370,8 @@ const Demo = () => (
 )
 ```
 
-In Bamboo, these are called "layout patterns", or "patterns" for short. Bamboo provides similar patterns that can be
-used as a function or JSX element just like Theme UI.
-
-```jsx
-import { Box, Grid } from 'styled-system/jsx'
-
-const Demo = () => (
-  <Grid width={[128, null, 192]}>
-    <Box bg="primary">Box</Box>
-    <Box bg="muted">Box</Box>
-  </Grid>
-)
-```
-
-The function approach can be handy as well
+In Bamboo, these are called "layout patterns", or "patterns" for short. Each one is a function that returns a class
+name, so it composes with any element.
 
 ```jsx
 import { css } from 'styled-system/css'

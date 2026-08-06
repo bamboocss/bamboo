@@ -33,10 +33,10 @@ eslintTester.run(RULE_NAME, rule, {
 
     {
       code: multiline`
-  import { Circle } from './bamboo/jsx';
+  import { styled } from './bamboo/jsx';
   
   function App(){
-    return <Circle _hover={{  borderColor: 'hsl(220deg, 14%, 96%)' }} />;
+    return <styled.div _hover={{  borderColor: 'hsl(220deg, 14%, 96%)' }} />;
   }`,
       errors: [{ messageId: 'invalidColor' }],
     },
@@ -67,10 +67,10 @@ eslintTester.run(RULE_NAME, rule, {
 
     {
       code: multiline`
-  import { Circle } from './bamboo/jsx';
+  import { styled } from './bamboo/jsx';
   
   function App(){
-    return <Circle _hover={{  borderColor: 'gray.100' }} />;
+    return <styled.div _hover={{  borderColor: 'gray.100' }} />;
   }`,
     },
   ],

@@ -1,6 +1,6 @@
 import { css, cva } from '@/styled-system/css'
-import { Stack, bamboo } from '@/styled-system/jsx'
-import { hstack } from '@/styled-system/patterns'
+import { bamboo } from '@/styled-system/jsx'
+import { hstack, stack } from '@/styled-system/patterns'
 import type { ResultItem } from '@bamboocss/types'
 import { useTheme } from 'next-themes'
 import { useBamboo } from '../hooks/useBamboo'
@@ -15,11 +15,11 @@ export const ASTViewer = React.memo(function ASTViewer(props: {
   if (!props.parserResult) return null
 
   return (
-    <Stack py="4" h="full" overflow="auto">
+    <div className={stack({ py: '4', h: 'full', overflow: 'auto' })}>
       {Array.from(props.parserResult.toArray()).map((result, index) => {
         return <ResultItemRow key={index} result={result} />
       })}
-    </Stack>
+    </div>
   )
 })
 
@@ -64,14 +64,14 @@ const ResultItemRow = (props: { result: ResultItem }) => {
   const { result } = props
   const { resolvedTheme } = useTheme()
   return (
-    <Stack px="6">
+    <div className={stack({ px: '6' })}>
       <bamboo.div className={hstack()}>
         <span className={resultType({ type: result.type })}>{result.type}</span>{' '}
         <span className={resultType({ name: result.name as 'cva' | 'css' })}>{result.name}</span>
         <bamboo.span ml="auto">(l{getReportRange(result)})</bamboo.span>
       </bamboo.div>
       <ResultItemRowJson theme={resolvedTheme} data={result.data} className={rowClassName} />
-    </Stack>
+    </div>
   )
 }
 

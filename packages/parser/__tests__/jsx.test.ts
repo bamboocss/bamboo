@@ -805,7 +805,7 @@ describe('jsx', () => {
             },
           ],
           "name": "Box",
-          "type": "jsx-pattern",
+          "type": "jsx",
         },
         {
           "data": [
@@ -817,7 +817,7 @@ describe('jsx', () => {
             },
           ],
           "name": "Box",
-          "type": "jsx-pattern",
+          "type": "jsx",
         },
         {
           "data": [
@@ -829,7 +829,7 @@ describe('jsx', () => {
             },
           ],
           "name": "Box",
-          "type": "jsx-pattern",
+          "type": "jsx",
         },
       ]
     `)
@@ -916,7 +916,7 @@ describe('jsx', () => {
             },
           ],
           "name": "Box",
-          "type": "jsx-pattern",
+          "type": "jsx",
         },
         {
           "data": [
@@ -928,7 +928,7 @@ describe('jsx', () => {
             },
           ],
           "name": "Box",
-          "type": "jsx-pattern",
+          "type": "jsx",
         },
       ]
     `)
@@ -1299,7 +1299,7 @@ describe('jsx', () => {
             },
           ],
           "name": "Box",
-          "type": "jsx-pattern",
+          "type": "jsx",
         },
       ]
     `)
@@ -1352,7 +1352,7 @@ describe('jsx', () => {
             },
           ],
           "name": "Box",
-          "type": "jsx-pattern",
+          "type": "jsx",
         },
       ]
     `)

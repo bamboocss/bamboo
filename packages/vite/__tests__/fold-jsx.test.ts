@@ -184,25 +184,6 @@ describe('declines', () => {
     },
   )
 
-  // The runtime hands `jsxElement` to `createElement` as a string, so it always names an
-  // intrinsic element there. Written back as JSX, `Section` is a variable reference and
-  // `foo.bar` a member expression — `<Section />` folds to `createElement(undefined)` and
-  // throws. The `div` row is the control: without it, an `extend` that clobbered the
-  // pattern would make the zeros pass for the wrong reason.
-  test.each([
-    ['div', 1],
-    ['linearGradient', 1],
-    ['my-element', 1],
-    ['Section', 0],
-    ['foo.bar', 0],
-  ])('a pattern whose jsxElement is %s folds: %i', (jsxElement, folded) => {
-    const { fold } = createFoldFixture({ patterns: { extend: { stack: { jsxElement } } } } as never)
-    const code = pat(`export const A = () => <Stack gap="4" />`)
-
-    expect(fold(code).folded).toHaveLength(folded)
-    if (!folded) expect(fold(code).code).toBe(code)
-  })
-
   test('a ref survives an as that names a component', () => {
     const { fold } = createFoldFixture()
     // `createElement(Element, { …, ref })` is what the factory already does, so handing
@@ -488,126 +469,13 @@ describe('the as prop', () => {
   })
 })
 
-const pat = (body: string) => `import { Box, Stack, HStack, Circle } from 'styled-system/jsx'\n${body}\n`
-
-describe('pattern elements', () => {
-  test('a pattern element collapses to the tag it renders', () => {
-    const { fold, ctx, runtimeCss } = createFoldFixture()
-    const result = fold(pat(`export const A = () => <Stack gap="4">hi</Stack>`))
-
-    expect(result.folded).toHaveLength(1)
-    // Same call the encoder makes, so the class is backed by an emitted rule.
-    expect(result.folded[0]!.className).toBe(runtimeCss(ctx.patterns.transform('stack', { gap: '4' })))
-    expect(result.code).toContain('>hi</div>')
-  })
-
-  test('the folded class is backed by emitted CSS', () => {
-    const { fold, getCss } = createFoldFixture()
-    const result = fold(pat(`export const A = () => <Stack gap="4" align="center" />`))
-
-    const css = getCss()
-    for (const selector of selectorsFor(result.folded[0]!.className)) expect(css).toContain(selector)
-  })
-
-  test('style props alongside pattern props are consumed', () => {
-    const { fold, ctx, runtimeCss } = createFoldFixture()
-    const result = fold(pat(`export const A = () => <Stack gap="4" color="red.300" />`))
-
-    expect(result.folded[0]!.className).toBe(
-      runtimeCss(ctx.patterns.transform('stack', { gap: '4', color: 'red.300' })),
-    )
-  })
-
-  test('non-style props pass through', () => {
-    const { fold } = createFoldFixture()
-    const result = fold(pat(`export const A = () => <Box padding="4" id="x" onClick={fn} />`))
-
-    expect(result.code).toContain('id="x"')
-    expect(result.code).toContain('onClick={fn}')
-  })
-
-  test('a static as prop names the tag', () => {
-    const { fold } = createFoldFixture()
-    const result = fold(pat(`export const A = () => <Stack gap="4" as="section">hi</Stack>`))
-
-    expect(result.code).toContain('<section className={')
-    expect(result.code).toContain('</section>')
-  })
-
-  test('a static className is appended', () => {
-    const { fold } = createFoldFixture()
-    const result = fold(pat(`export const A = () => <Box padding="4" className="mine" />`))
-
-    expect(result.folded[0]!.className.endsWith(' mine')).toBe(true)
-  })
-
-  test('a pattern element keeps a ref too', () => {
-    const { fold } = createFoldFixture()
-    const result = fold(pat(`export const A = ({ r }) => <Stack gap="4" ref={r} />`))
-
-    expect(result.folded).toHaveLength(1)
-    expect(result.code).toContain('<div ref={r} className={"d_flex flex-d_column gap_4"} />')
-  })
-
-  test.each([
-    ['a spread', `export const A = ({ rest }) => <Stack gap="4" {...rest} />`],
-    ['a dynamic pattern prop', `export const A = ({ g }) => <Stack gap={g} />`],
-    ['a dynamic style prop', `export const A = ({ t }) => <Stack gap="4" color={t} />`],
-    ['a css prop', `export const A = () => <Stack gap="4" css={{ color: 'red.300' }} />`],
-  ])('declines %s', (_name, body) => {
-    const { fold } = createFoldFixture()
-    const code = pat(body)
-
-    expect(fold(code).folded).toHaveLength(0)
-    expect(fold(code).code).toBe(code)
-  })
-
-  test('declines when jsxStyleProps is not all', () => {
-    // Under `minimal`/`none` the pattern styles reach the factory through the css prop,
-    // which reverses which side wins for a prop set in both places.
-    const { fold } = createFoldFixture({ jsxStyleProps: 'minimal' })
-    const code = pat(`export const A = () => <Stack gap="4" />`)
-
-    expect(fold(code).folded).toHaveLength(0)
-  })
-})
-
 describe('the component has to come from bamboo', () => {
-  /**
-   * The parser matches an element by its tag name, whatever module it came from. That is
-   * harmless for extraction and destructive here: replacing a third-party component with
-   * a bamboo div deletes it.
-   */
-  test('a pattern-named component from a library is not folded', () => {
-    const { fold } = createFoldFixture()
-    const code = `import { Stack } from '@mui/material'\nexport const A = () => <Stack gap="4">hi</Stack>\n`
-
-    const result = fold(code)
-    expect(result.folded).toHaveLength(0)
-    expect(result.code).toBe(code)
-    expect(result.skipped.map((s) => s.reason)).toContain('not-imported')
-  })
-
   test('a factory-named import from a library is not folded', () => {
     const { fold } = createFoldFixture()
     const code = `import { styled } from '@emotion/styled'\nexport const A = () => <styled.div color="red.300" />\n`
 
     expect(fold(code).folded).toHaveLength(0)
     expect(fold(code).code).toBe(code)
-  })
-
-  test('a locally defined pattern-named component is not folded', () => {
-    const { fold } = createFoldFixture()
-    const code = `const Stack = (p) => null\nexport const A = () => <Stack gap="4">hi</Stack>\n`
-
-    expect(fold(code).folded).toHaveLength(0)
-  })
-
-  test('the real import still folds', () => {
-    const { fold } = createFoldFixture()
-    const result = fold(`import { Stack } from 'styled-system/jsx'\nexport const A = () => <Stack gap="4">hi</Stack>\n`)
-
-    expect(result.folded).toHaveLength(1)
   })
 })
 

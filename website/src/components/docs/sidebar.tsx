@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { docsNavigation, type NavItem } from '@/docs.config'
 import { ChevronDownIcon, ChevronRightIcon } from '@/icons'
 import { css } from '@/styled-system/css'
-import { Box, HStack, Stack } from '@/styled-system/jsx'
+import { hstack, stack } from '@/styled-system/patterns'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
@@ -63,9 +63,10 @@ export function Sidebar({ slug: currentSlug }: Props) {
   }
 
   return (
-    <Stack as="nav" gap="1">
+    <nav className={stack({ gap: '1' })}>
       {sidebarStructure.map((section) => {
         const isExpanded = expandedSections.has(section.slug) || isSectionActive(section)
+        const ChevronIcon = isExpanded ? ChevronDownIcon : ChevronRightIcon
 
         return (
           <div key={section.slug}>
@@ -92,24 +93,24 @@ export function Sidebar({ slug: currentSlug }: Props) {
                 cursor: 'pointer',
               })}
             >
-              <HStack>
+              <span className={hstack()}>
                 <span>{section.title}</span>
                 {section.tag && <Badge variant="solid">{section.tag}</Badge>}
-              </HStack>
-              {section.children && (
-                <Box as={isExpanded ? ChevronDownIcon : ChevronRightIcon} w="4" h="4" color="fg.muted" />
-              )}
+              </span>
+              {section.children && <ChevronIcon className={css({ w: '4', h: '4', color: 'fg.muted' })} />}
             </button>
 
             {isExpanded && section.children && (
-              <Stack
-                gap="0"
-                mt="1"
-                // Hairline the children hang off, so a section reads as one group and
-                // the active marker has something to sit on.
-                ms="3"
-                borderInlineStartWidth="1px"
-                borderColor="border.muted"
+              <div
+                className={stack({
+                  gap: '0',
+                  mt: '1',
+                  // Hairline the children hang off, so a section reads as one group and
+                  // the active marker has something to sit on.
+                  ms: '3',
+                  borderInlineStartWidth: '1px',
+                  borderColor: 'border.muted',
+                })}
               >
                 {section.children.map((item) => {
                   const linkStyles = css({
@@ -170,11 +171,11 @@ export function Sidebar({ slug: currentSlug }: Props) {
                     </Link>
                   )
                 })}
-              </Stack>
+              </div>
             )}
           </div>
         )
       })}
-    </Stack>
+    </nav>
   )
 }

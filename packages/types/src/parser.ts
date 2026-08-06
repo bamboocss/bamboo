@@ -3,7 +3,7 @@ import type { BoxNodeArray, BoxNodeLiteral, BoxNodeMap, Unboxed } from '@bambooc
 export interface ResultItem {
   name?: string
   data: Array<Unboxed['raw']>
-  type?: 'css' | 'cva' | 'sva' | 'token' | 'pattern' | 'recipe' | 'jsx-factory' | 'jsx-pattern' | 'jsx-recipe' | 'jsx'
+  type?: 'css' | 'cva' | 'sva' | 'token' | 'pattern' | 'recipe' | 'jsx-factory' | 'jsx-recipe' | 'jsx'
   box?: BoxNodeMap | BoxNodeLiteral | BoxNodeArray
 }
 

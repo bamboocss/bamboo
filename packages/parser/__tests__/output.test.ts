@@ -1185,79 +1185,6 @@ describe('extract to css output pipeline', () => {
     `)
   })
 
-  test('jsx patterns + custom wrapper', () => {
-    const code = `
-      import { stack } from "styled-system/patterns"
-
-      const CustomStack = ({ align = "center", ...props }) => (
-        <div className={stack({ align, ...props })} />
-      )
-
-      function Button() {
-        return (
-          <div>
-              <CustomStack align="flex-end">Click me</CustomStack>
-          </div>
-        )
-      }
-     `
-    const result = parseAndExtract(code, {
-      patterns: {
-        extend: {
-          stack: {
-            jsx: ['CustomStack'],
-          },
-        },
-      },
-    })
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "align": "center",
-            },
-          ],
-          "name": "stack",
-          "type": "pattern",
-        },
-        {
-          "data": [
-            {
-              "align": "flex-end",
-            },
-          ],
-          "name": "CustomStack",
-          "type": "jsx-pattern",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .gap_8px {
-          gap: 8px;
-      }
-
-        .d_flex {
-          display: flex;
-      }
-
-        .flex-d_column {
-          flex-direction: column;
-      }
-
-        .ai_center {
-          align-items: center;
-      }
-
-        .ai_flex-end {
-          align-items: flex-end;
-      }
-      }"
-    `)
-  })
-
   test('factory css', () => {
     const code = `
     import { styled } from "styled-system/jsx"
@@ -1566,7 +1493,7 @@ describe('extract to css output pipeline', () => {
             {},
           ],
           "name": "Stack",
-          "type": "jsx-pattern",
+          "type": "jsx",
         },
         {
           "data": [
@@ -1626,20 +1553,8 @@ describe('extract to css output pipeline', () => {
       }
 
       @layer utilities {
-        .gap_8px {
-          gap: 8px;
-      }
-
         .z_100 {
           z-index: 100;
-      }
-
-        .d_flex {
-          display: flex;
-      }
-
-        .flex-d_column {
-          flex-direction: column;
       }
       }"
     `)
@@ -2014,7 +1929,7 @@ describe('extract to css output pipeline', () => {
             },
           ],
           "name": "Box",
-          "type": "jsx-pattern",
+          "type": "jsx",
         },
       ]
     `)
@@ -2138,7 +2053,7 @@ describe('extract to css output pipeline', () => {
             },
           ],
           "name": "Box",
-          "type": "jsx-pattern",
+          "type": "jsx",
         },
       ]
     `)
@@ -2226,7 +2141,7 @@ describe('extract to css output pipeline', () => {
             },
           ],
           "name": "Box",
-          "type": "jsx-pattern",
+          "type": "jsx",
         },
       ]
     `)
@@ -2269,7 +2184,7 @@ describe('extract to css output pipeline', () => {
             {},
           ],
           "name": "Box",
-          "type": "jsx-pattern",
+          "type": "jsx",
         },
       ]
     `)
@@ -2324,7 +2239,7 @@ describe('extract to css output pipeline', () => {
             },
           ],
           "name": "Box",
-          "type": "jsx-pattern",
+          "type": "jsx",
         },
       ]
     `)
@@ -2922,7 +2837,7 @@ describe('extract to css output pipeline', () => {
             },
           ],
           "name": "Stack",
-          "type": "jsx-pattern",
+          "type": "jsx",
         },
         {
           "data": [
@@ -2952,16 +2867,8 @@ describe('extract to css output pipeline', () => {
           padding: var(--spacing-4);
       }
 
-        .gap_8px {
-          gap: 8px;
-      }
-
-        .d_flex {
-          display: flex;
-      }
-
-        .flex-d_column {
-          flex-direction: column;
+        .direction_column {
+          direction: column;
       }
 
         .fs_12px {
@@ -3007,15 +2914,6 @@ describe('extract to css output pipeline', () => {
         {
           "data": [
             {
-              "direction": "column",
-            },
-          ],
-          "name": "Stack",
-          "type": "jsx-pattern",
-        },
-        {
-          "data": [
-            {
               "padding": "4",
             },
           ],
@@ -3029,18 +2927,6 @@ describe('extract to css output pipeline', () => {
       "@layer utilities {
         .p_4 {
           padding: var(--spacing-4);
-      }
-
-        .gap_8px {
-          gap: 8px;
-      }
-
-        .d_flex {
-          display: flex;
-      }
-
-        .flex-d_column {
-          flex-direction: column;
       }
       }"
     `)
@@ -3071,22 +2957,10 @@ describe('extract to css output pipeline', () => {
 
     expect(Object.fromEntries(calls)).toMatchInlineSnapshot(`
       {
-        "Stack": true,
+        "Stack": false,
       }
     `)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "direction": "column",
-            },
-          ],
-          "name": "Stack",
-          "type": "jsx-pattern",
-        },
-      ]
-    `)
+    expect(result.json).toMatchInlineSnapshot(`[]`)
   })
 
   test('custom matchTag in override mode controls bamboo component matching', () => {
@@ -3118,7 +2992,7 @@ describe('extract to css output pipeline', () => {
     expect(Object.fromEntries(calls)).toMatchInlineSnapshot(`
       {
         "OkComponent": false,
-        "Stack": true,
+        "Stack": false,
       }
     `)
     expect(result.json).toMatchInlineSnapshot(`

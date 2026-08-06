@@ -112,18 +112,18 @@ const Button = ({ children }) => (
 <Callout type="warning">Due to the static nature of Bamboo, you can't rename properties at runtime.</Callout>
 
 ```tsx filename="App.tsx"
-import { Circle, CircleProps } from '../styled-system/jsx'
+import { styled } from '../styled-system/jsx'
 
 type Props = {
-  circleSize?: CircleProps['size']
+  boxPadding?: string
 }
 
-const CustomCircle = (props: Props) => {
-  const { circleSize = '3' } = props
+const CustomBox = (props: Props) => {
+  const { boxPadding = '3' } = props
   return (
-    <Circle
-      // ❌ Avoid: Bamboo can't know that you're mapping `circleSize` to `size`
-      size={circleSize}
+    <styled.div
+      // ❌ Avoid: Bamboo can't know that you're mapping `boxPadding` to `padding`
+      padding={boxPadding}
     />
   )
 }
@@ -132,13 +132,13 @@ const CustomCircle = (props: Props) => {
 
 const App = () => {
   return (
-    // In this case, you should keep the `size` naming
-    <CustomCircle circleSize="4" />
+    // In this case, you should keep the `padding` naming
+    <CustomBox boxPadding="4" />
   )
 }
 ```
 
-The same principles apply to all style props, recipe variants, and pattern props.
+The same principles apply to all style props and recipe variants.
 
 <Callout type="info">
   If you still need to rename properties at runtime, you can use `config.staticCss` as an escape-hatch to pre-generate
@@ -322,25 +322,23 @@ You can reduce the allowed JSX properties on the factory using
 > Removing style props (from `all` to either `minimal` or `none`) will reduce the size of the generated code due to not
 > having to check which props are style props at runtime.
 
-## JSX Patterns
+## Patterns
 
 Patterns are common layout patterns like `stack`, `grid`, `circle` that can be used to speed up your css. Think of them
 as a way to avoid repetitive layout styles.
 
-All the patterns provided by Bamboo are available as JSX components.
+Each pattern is a function that returns a class name, so it composes with any element.
 
 > Learn more about the [patterns](/docs/customization/patterns) we provide.
 
 ```jsx
-import { Stack, Circle } from '../styled-system/jsx'
+import { circle, stack } from '../styled-system/patterns'
 
 const App = () => (
-  <Stack gap="4" align="flex-start">
+  <div className={stack({ gap: '4', align: 'flex-start' })}>
     <button>Button</button>
-    <Circle size="4" bg="red.300">
-      4
-    </Circle>
-  </Stack>
+    <div className={circle({ size: '4', bg: 'red.300' })}>4</div>
+  </div>
 )
 ```
 

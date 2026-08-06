@@ -1,5 +1,6 @@
 import { css } from '@/styled-system/css'
-import { Container, VStack, bamboo } from '@/styled-system/jsx'
+import { bamboo } from '@/styled-system/jsx'
+import { container, vstack } from '@/styled-system/patterns'
 import Link from 'next/link'
 
 export default function Page() {
@@ -7,8 +8,8 @@ export default function Page() {
   // rather than following the theme's foreground.
   return (
     <bamboo.div bg="yellow.300" color="black" height="dvh">
-      <Container py="20" textAlign="center">
-        <VStack>
+      <div className={container({ py: '20', textAlign: 'center' })}>
+        <div className={vstack()}>
           <bamboo.h1 textStyle="bamboo.h1" fontWeight="bold">
             404
           </bamboo.h1>
@@ -27,8 +28,8 @@ export default function Page() {
               Back to docs
             </Link>
           </bamboo.p>
-        </VStack>
-      </Container>
+        </div>
+      </div>
     </bamboo.div>
   )
 }

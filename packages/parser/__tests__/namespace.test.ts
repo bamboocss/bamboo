@@ -171,7 +171,7 @@ describe('extract namespace', () => {
             },
           ],
           "name": "Stack",
-          "type": "jsx-pattern",
+          "type": "jsx",
         },
         {
           "data": [
@@ -180,35 +180,19 @@ describe('extract namespace', () => {
             },
           ],
           "name": "Grid",
-          "type": "jsx-pattern",
+          "type": "jsx",
         },
       ]
     `)
 
     expect(result.css).toMatchInlineSnapshot(`
       "@layer utilities {
-        .gap_8px {
-          gap: 8px;
-      }
-
         .c_red {
           color: red;
       }
 
-        .d_flex {
-          display: flex;
-      }
-
-        .flex-d_column {
-          flex-direction: column;
-      }
-
         .c_blue {
           color: blue;
-      }
-
-        .d_grid {
-          display: grid;
       }
 
         .c_green {

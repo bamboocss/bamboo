@@ -39,42 +39,6 @@ describe('preset patterns', () => {
     `)
   })
 
-  test('jsx box', () => {
-    const code = `
-      import { Box } from "styled-system/jsx"
-
-      function Button() {
-        return (
-          <div>
-              <Box color="blue.100">Click me</div>
-          </div>
-          )
-      }
-     `
-    const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "color": "blue.100",
-            },
-          ],
-          "name": "Box",
-          "type": "jsx-pattern",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .c_blue\\.100 {
-          color: var(--colors-blue-100);
-      }
-      }"
-    `)
-  })
-
   test('flex', () => {
     const code = `
       import { flex } from "styled-system/patterns"
@@ -104,46 +68,6 @@ describe('preset patterns', () => {
       "@layer utilities {
         .d_flex {
           display: flex;
-      }
-      }"
-    `)
-  })
-
-  test('jsx flex', () => {
-    const code = `
-      import { Flex } from "styled-system/jsx"
-
-      function Button() {
-        return (
-          <div>
-              <Flex color="blue.100">Click me</div>
-          </div>
-          )
-      }
-     `
-    const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "color": "blue.100",
-            },
-          ],
-          "name": "Flex",
-          "type": "jsx-pattern",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .d_flex {
-          display: flex;
-      }
-
-        .c_blue\\.100 {
-          color: var(--colors-blue-100);
       }
       }"
     `)
@@ -186,54 +110,6 @@ describe('preset patterns', () => {
 
         .flex-d_column {
           flex-direction: column;
-      }
-      }"
-    `)
-  })
-
-  test('jsx stack', () => {
-    const code = `
-      import { Stack } from "styled-system/jsx"
-
-      function Button() {
-        return (
-          <div>
-              <Stack color="blue.100">Click me</div>
-          </div>
-          )
-      }
-     `
-    const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "color": "blue.100",
-            },
-          ],
-          "name": "Stack",
-          "type": "jsx-pattern",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .gap_8px {
-          gap: 8px;
-      }
-
-        .d_flex {
-          display: flex;
-      }
-
-        .flex-d_column {
-          flex-direction: column;
-      }
-
-        .c_blue\\.100 {
-          color: var(--colors-blue-100);
       }
       }"
     `)
@@ -285,58 +161,6 @@ describe('preset patterns', () => {
     `)
   })
 
-  test('jsx vStack', () => {
-    const code = `
-      import { VStack } from "styled-system/jsx"
-
-      function Button() {
-        return (
-          <div>
-              <VStack color="blue.100">Click me</div>
-          </div>
-          )
-      }
-     `
-    const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "color": "blue.100",
-            },
-          ],
-          "name": "VStack",
-          "type": "jsx-pattern",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .gap_8px {
-          gap: 8px;
-      }
-
-        .d_flex {
-          display: flex;
-      }
-
-        .ai_center {
-          align-items: center;
-      }
-
-        .flex-d_column {
-          flex-direction: column;
-      }
-
-        .c_blue\\.100 {
-          color: var(--colors-blue-100);
-      }
-      }"
-    `)
-  })
-
   test('hstack', () => {
     const code = `
       import { hstack } from "styled-system/patterns"
@@ -378,58 +202,6 @@ describe('preset patterns', () => {
 
         .flex-d_row {
           flex-direction: row;
-      }
-      }"
-    `)
-  })
-
-  test('jsx hStack', () => {
-    const code = `
-      import { HStack } from "styled-system/jsx"
-
-      function Button() {
-        return (
-          <div>
-              <HStack color="blue.100">Click me</div>
-          </div>
-          )
-      }
-     `
-    const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "color": "blue.100",
-            },
-          ],
-          "name": "HStack",
-          "type": "jsx-pattern",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .gap_8px {
-          gap: 8px;
-      }
-
-        .d_flex {
-          display: flex;
-      }
-
-        .ai_center {
-          align-items: center;
-      }
-
-        .flex-d_row {
-          flex-direction: row;
-      }
-
-        .c_blue\\.100 {
-          color: var(--colors-blue-100);
       }
       }"
     `)
@@ -597,113 +369,6 @@ describe('preset patterns', () => {
     `)
   })
 
-  test('jsx linkOverlay', () => {
-    const code = `
-      import { Box, LinkOverlay } from "styled-system/jsx"
-
-      function Button() {
-        return (
-          <Box pos="relative">
-              <LinkOverlay>Click me</LinkOverlay>
-          </Box>
-        )
-      }
-     `
-    const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "pos": "relative",
-            },
-          ],
-          "name": "Box",
-          "type": "jsx-pattern",
-        },
-        {
-          "data": [
-            {},
-          ],
-          "name": "LinkOverlay",
-          "type": "jsx-pattern",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .pos_relative {
-          position: relative;
-      }
-
-        .before\\:inset_0::before {
-          inset: var(--spacing-0);
-      }
-
-        .before\\:content_\\"\\"::before {
-          content: "";
-      }
-
-        .before\\:pos_absolute::before {
-          position: absolute;
-      }
-
-        .before\\:z_0::before {
-          z-index: 0;
-      }
-      }"
-    `)
-  })
-
-  test('jsx spacer', () => {
-    const code = `
-      import { Spacer } from "styled-system/jsx"
-
-      function Button() {
-        return (
-          <div>
-              <Spacer color="blue.100">Click me</div>
-          </div>
-          )
-      }
-     `
-    const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "color": "blue.100",
-            },
-          ],
-          "name": "Spacer",
-          "type": "jsx-pattern",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .flex_1 {
-          flex: 1 1 0%;
-      }
-
-        .as_stretch {
-          align-self: stretch;
-      }
-
-        .justify-self_stretch {
-          justify-self: stretch;
-      }
-
-        .c_blue\\.100 {
-          color: var(--colors-blue-100);
-      }
-      }"
-    `)
-  })
-
   test('circle', () => {
     const code = `
       import { circle } from "styled-system/patterns"
@@ -749,62 +414,6 @@ describe('preset patterns', () => {
 
         .jc_center {
           justify-content: center;
-      }
-      }"
-    `)
-  })
-
-  test('jsx circle', () => {
-    const code = `
-      import { Circle } from "styled-system/jsx"
-
-      function Button() {
-        return (
-          <div>
-              <Circle color="blue.100">Click me</div>
-          </div>
-          )
-      }
-     `
-    const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "color": "blue.100",
-            },
-          ],
-          "name": "Circle",
-          "type": "jsx-pattern",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .flex_0_0_auto {
-          flex: 0 0 auto;
-      }
-
-        .bdr_9999px {
-          border-radius: 9999px;
-      }
-
-        .d_flex {
-          display: flex;
-      }
-
-        .ai_center {
-          align-items: center;
-      }
-
-        .jc_center {
-          justify-content: center;
-      }
-
-        .c_blue\\.100 {
-          color: var(--colors-blue-100);
       }
       }"
     `)
@@ -876,78 +485,6 @@ describe('preset patterns', () => {
     `)
   })
 
-  test('jsx absoluteCenter', () => {
-    const code = `
-      import { Float } from "styled-system/jsx"
-
-      function Button() {
-        return (
-          <div>
-              <Float color="blue.100">Click me</div>
-          </div>
-          )
-      }
-     `
-    const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "color": "blue.100",
-            },
-          ],
-          "name": "Float",
-          "type": "jsx-pattern",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .d_inline-flex {
-          display: inline-flex;
-      }
-
-        .jc_center {
-          justify-content: center;
-      }
-
-        .ai_center {
-          align-items: center;
-      }
-
-        .pos_absolute {
-          position: absolute;
-      }
-
-        .inset-bs_0 {
-          inset-block-start: var(--spacing-0);
-      }
-
-        .inset-be_auto {
-          inset-block-end: auto;
-      }
-
-        .inset-s_auto {
-          inset-inline-start: auto;
-      }
-
-        .inset-e_0 {
-          inset-inline-end: var(--spacing-0);
-      }
-
-        .translate_50\\%_-50\\% {
-          translate: 50% -50%;
-      }
-
-        .c_blue\\.100 {
-          color: var(--colors-blue-100);
-      }
-      }"
-    `)
-  })
-
   test('grid', () => {
     const code = `
       import { grid } from "styled-system/patterns"
@@ -986,50 +523,6 @@ describe('preset patterns', () => {
     `)
   })
 
-  test('jsx grid', () => {
-    const code = `
-      import { Grid } from "styled-system/jsx"
-
-      function Button() {
-        return (
-          <div>
-              <Grid color="blue.100">Click me</div>
-          </div>
-          )
-      }
-     `
-    const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "color": "blue.100",
-            },
-          ],
-          "name": "Grid",
-          "type": "jsx-pattern",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .gap_8px {
-          gap: 8px;
-      }
-
-        .d_grid {
-          display: grid;
-      }
-
-        .c_blue\\.100 {
-          color: var(--colors-blue-100);
-      }
-      }"
-    `)
-  })
-
   test('gridItem', () => {
     const code = `
       import { gridItem } from "styled-system/patterns"
@@ -1056,42 +549,6 @@ describe('preset patterns', () => {
     `)
 
     expect(result.css).toMatchInlineSnapshot('""')
-  })
-
-  test('jsx gridItem', () => {
-    const code = `
-      import { GridItem } from "styled-system/jsx"
-
-      function Button() {
-        return (
-          <div>
-              <GridItem color="blue.100">Click me</div>
-          </div>
-          )
-      }
-     `
-    const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "color": "blue.100",
-            },
-          ],
-          "name": "GridItem",
-          "type": "jsx-pattern",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .c_blue\\.100 {
-          color: var(--colors-blue-100);
-      }
-      }"
-    `)
   })
 
   test('wrap', () => {
@@ -1131,54 +588,6 @@ describe('preset patterns', () => {
 
         .flex-wrap_wrap {
           flex-wrap: wrap;
-      }
-      }"
-    `)
-  })
-
-  test('jsx wrap', () => {
-    const code = `
-      import { Wrap } from "styled-system/jsx"
-
-      function Button() {
-        return (
-          <div>
-              <Wrap color="blue.100">Click me</div>
-          </div>
-          )
-      }
-     `
-    const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "color": "blue.100",
-            },
-          ],
-          "name": "Wrap",
-          "type": "jsx-pattern",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .gap_8px {
-          gap: 8px;
-      }
-
-        .d_flex {
-          display: flex;
-      }
-
-        .flex-wrap_wrap {
-          flex-wrap: wrap;
-      }
-
-        .c_blue\\.100 {
-          color: var(--colors-blue-100);
       }
       }"
     `)
@@ -1242,70 +651,6 @@ describe('preset patterns', () => {
     `)
   })
 
-  test('jsx container', () => {
-    const code = `
-      import { Container } from "styled-system/jsx"
-
-      function Button() {
-        return (
-          <div>
-              <Container color="blue.100">Click me</div>
-          </div>
-          )
-      }
-     `
-    const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "color": "blue.100",
-            },
-          ],
-          "name": "Container",
-          "type": "jsx-pattern",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .mx_auto {
-          margin-inline: auto;
-      }
-
-        .px_4 {
-          padding-inline: var(--spacing-4);
-      }
-
-        .pos_relative {
-          position: relative;
-      }
-
-        .c_blue\\.100 {
-          color: var(--colors-blue-100);
-      }
-
-        .max-w_8xl {
-          max-width: var(--sizes-8xl);
-      }
-
-        @media screen and (min-width: 48rem) {
-          .md\\:px_6 {
-            padding-inline: var(--spacing-6);
-      }
-      }
-
-        @media screen and (min-width: 64rem) {
-          .lg\\:px_8 {
-            padding-inline: var(--spacing-8);
-      }
-      }
-      }"
-    `)
-  })
-
   test('center', () => {
     const code = `
       import { center } from "styled-system/patterns"
@@ -1343,54 +688,6 @@ describe('preset patterns', () => {
 
         .jc_center {
           justify-content: center;
-      }
-      }"
-    `)
-  })
-
-  test('jsx center', () => {
-    const code = `
-      import { Center } from "styled-system/jsx"
-
-      function Button() {
-        return (
-          <div>
-              <Center color="blue.100">Click me</div>
-          </div>
-          )
-      }
-     `
-    const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "color": "blue.100",
-            },
-          ],
-          "name": "Center",
-          "type": "jsx-pattern",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .d_flex {
-          display: flex;
-      }
-
-        .ai_center {
-          align-items: center;
-      }
-
-        .jc_center {
-          justify-content: center;
-      }
-
-        .c_blue\\.100 {
-          color: var(--colors-blue-100);
       }
       }"
     `)
@@ -1482,98 +779,6 @@ describe('preset patterns', () => {
     `)
   })
 
-  test('jsx aspectRatio', () => {
-    const code = `
-      import { AspectRatio } from "styled-system/jsx"
-
-      function Button() {
-        return (
-          <div>
-              <AspectRatio color="blue.100">Click me</div>
-          </div>
-          )
-      }
-     `
-    const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "color": "blue.100",
-            },
-          ],
-          "name": "AspectRatio",
-          "type": "jsx-pattern",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .pos_relative {
-          position: relative;
-      }
-
-        .c_blue\\.100 {
-          color: var(--colors-blue-100);
-      }
-
-        .\\[\\&\\>\\*\\]\\:inset_0>* {
-          inset: var(--spacing-0);
-      }
-
-        .\\[\\&\\>\\*\\]\\:ov_hidden>* {
-          overflow: hidden;
-      }
-
-        .before\\:content_\\"\\"::before {
-          content: "";
-      }
-
-        .before\\:d_block::before {
-          display: block;
-      }
-
-        .\\[\\&\\>\\*\\]\\:d_flex>* {
-          display: flex;
-      }
-
-        .\\[\\&\\>\\*\\]\\:jc_center>* {
-          justify-content: center;
-      }
-
-        .\\[\\&\\>\\*\\]\\:ai_center>* {
-          align-items: center;
-      }
-
-        .\\[\\&\\>\\*\\]\\:pos_absolute>* {
-          position: absolute;
-      }
-
-        .\\[\\&\\>img\\,_\\&\\>video\\]\\:obj-f_cover>img,.\\[\\&\\>img\\,_\\&\\>video\\]\\:obj-f_cover>video {
-          object-fit: cover;
-      }
-
-        .before\\:h_0::before {
-          height: var(--sizes-0);
-      }
-
-        .before\\:pb_75\\%::before {
-          padding-bottom: 75%;
-      }
-
-        .\\[\\&\\>\\*\\]\\:w_100\\%>* {
-          width: 100%;
-      }
-
-        .\\[\\&\\>\\*\\]\\:h_100\\%>* {
-          height: 100%;
-      }
-      }"
-    `)
-  })
-
   test('cq', () => {
     const code = `
       import { cq } from "styled-system/patterns"
@@ -1608,79 +813,6 @@ describe('preset patterns', () => {
           ],
           "name": "cq",
           "type": "pattern",
-        },
-        {
-          "data": [
-            {
-              "fontSize": {
-                "@sidebar/sm": "md",
-                "base": "lg",
-              },
-            },
-          ],
-          "name": "css",
-          "type": "css",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .cq-t_inline-size {
-          container-type: inline-size;
-      }
-
-        .cq-n_sidebar {
-          container-name: sidebar;
-      }
-
-        .fs_lg {
-          font-size: var(--font-sizes-lg);
-      }
-
-        @container sidebar (min-width: 24rem) {
-          .\\@sidebar\\/sm\\:fs_md {
-            font-size: var(--font-sizes-md);
-      }
-      }
-      }"
-    `)
-  })
-
-  test('jsx Cq', () => {
-    const code = `
-      import { Cq } from "styled-system/jsx"
-      import { css } from "styled-system/css"
-
-      function Nav() {
-        return (
-          <Cq name="sidebar">
-            <div
-              className={css({
-                fontSize: { base: 'lg', '@sidebar/sm': 'md' },
-              })}
-            />
-          </Cq>
-        )
-      }
-     `
-    const result = parseAndExtract(code, {
-      theme: {
-        extend: {
-          containerNames: ['sidebar', 'content'],
-        },
-      },
-    })
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "name": "sidebar",
-            },
-          ],
-          "name": "Cq",
-          "type": "jsx-pattern",
         },
         {
           "data": [

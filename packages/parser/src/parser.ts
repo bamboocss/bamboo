@@ -320,10 +320,6 @@ export function createParser(context: ParserOptions) {
               parserResult.setJsx({ type: 'jsx-factory', name: name, box: query.box, data })
               break
             }
-            case jsx.isJsxTagPattern(name) || jsx.isJsxTagPattern(alias): {
-              parserResult.setPattern(name, { type: 'jsx-pattern', name: name, box: query.box, data })
-              break
-            }
             // name: Trigger
             case jsx.isJsxTagRecipe(name): {
               const matchingRecipes = recipes.filter(name)

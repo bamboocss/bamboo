@@ -14,10 +14,10 @@ eslintTester.run(RULE_NAME, rule, {
 
     {
       code: multiline`
-  import { Circle } from './bamboo/jsx';
+  import { styled } from './bamboo/jsx';
   
   function App(){
-    return <Circle border="solid 1px" borderColor="gray.800" />;
+    return <styled.div border="solid 1px" borderColor="gray.800" />;
   }`,
       errors: [{ messageId: 'unify' }],
     },
@@ -32,10 +32,10 @@ eslintTester.run(RULE_NAME, rule, {
 
     {
       code: multiline`
-  import { Circle } from './bamboo/jsx';
+  import { styled } from './bamboo/jsx';
   
   function App(){
-    return <Circle borderStyle="solid" borderColor="gray.900" borderWidth="1px" />;
+    return <styled.div borderStyle="solid" borderColor="gray.900" borderWidth="1px" />;
   }`,
     },
   ],

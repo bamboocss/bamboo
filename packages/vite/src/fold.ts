@@ -4,7 +4,7 @@ import { type BoxNode, box, unbox } from '@bamboocss/extractor'
 import type { Dict, ParserResultInterface, ResultItem } from '@bamboocss/types'
 import MagicString from 'magic-string'
 import { Node, type SourceFile, SyntaxKind } from 'ts-morph'
-import { type JsxEdit, planJsxFold, planPatternFold } from './fold-jsx'
+import { type JsxEdit, planJsxFold } from './fold-jsx'
 import {
   accountsForSource,
   ensureCxImport,
@@ -141,7 +141,7 @@ const isInertArgument = (node: Node): boolean =>
   (Node.isIdentifier(node) && node.getText() === 'undefined')
 
 /** Element surfaces `foldJsx` handles, as opposed to call sites. */
-const JSX_TYPES = new Set(['jsx-factory', 'jsx-pattern'])
+const JSX_TYPES = new Set(['jsx-factory'])
 
 /**
  * Source files a box tree reaches, other than the one being folded.
@@ -648,10 +648,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
         continue
       }
 
-      const plan =
-        type === 'jsx-pattern'
-          ? planPatternFold(item, ctx, runtimeCss)
-          : planJsxFold(item, ctx, runtimeCss, partial_ ? jsxDeps : undefined)
+      const plan = planJsxFold(item, ctx, runtimeCss, partial_ ? jsxDeps : undefined)
 
       if ('reason' in plan) {
         skipped.push({ name, reason: plan.reason, start: elementStart, end: elementEnd })
