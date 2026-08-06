@@ -460,11 +460,11 @@ its style calls pre-resolved. So the transform stays where it pays for itself.
   no single literal to substitute. Reported as `unsupported-kind`.
 - **It only sees JSX written as JSX.** Element folding matches tags in the source, so an element already compiled to
   `_jsx(...)` keeps its runtime path. A `css()` call _inside_ that output is still a call site and does fold.
-- **It does not fold past a spread it cannot resolve.** `<styled.div color="red.300" {...rest} />` declines whole rather
-  than emitting the static half beside a runtime split of `rest`. Doing that safely needs the extractor to say _which_
-  spread it failed to resolve, and it deliberately does not: a spread it understood and one it skipped both simply
-  contribute keys, which is the same reason [spreads are conservative](#why-spreads-are-conservative). Recovering that
-  would mean the extractor recording unresolved sites explicitly rather than omitting them.
+- **It does not fold an element past a JSX spread.** `<styled.div color="red.300" {...rest} />` declines whole rather
+  than emitting the static half beside a runtime split of `rest`. Object spreads inside `css()` do fold when they can be
+  accounted for – see [Spreads](#spreads) – but a JSX spread is a different problem: it can carry `as`, `children`,
+  `className`, `css`, or an `html*` prop, each of which decides something the fold has already committed to. `as` alone
+  changes the tag, so `{...{ as: 'section' }}` has to render a `<section>` where the fold has written a `<div>`.
 - **It does not hoist repeated class literals.** Two call sites resolving to the same string each get their own literal.
   Measured on `sandbox/runtime-perf`, a folded module repeats seven strings, most of them short leaf-helper prefixes —
   and the compression cost noted above comes from literals being _distinct_, which hoisting cannot address. Across
