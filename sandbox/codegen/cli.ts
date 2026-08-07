@@ -69,6 +69,16 @@ cli.command('codegen [scenario]', 'Generate code').action(async (scenario) => {
     (fw) => `pnpm bamboo codegen --clean --config bamboo.${fw}.config.ts`,
   )
 
+  // The default config, whose `outdir` is the base `styled-system` that every non-scenario
+  // test in `__tests__` imports from — and `packages/vite`'s recipe parity test with it.
+  //
+  // Not a scenario, and easy to forget it is generated here at all: it used to fall out of
+  // the `react` scenario, whose config also wrote to `styled-system`. Removing that scenario
+  // took the base directory with it, and nothing failed locally because the directory was
+  // already on disk from an earlier run. CI installs from scratch, so `prepare` is the only
+  // thing that creates it there.
+  if (!scenario) commands.push('pnpm bamboo codegen --clean')
+
   await Promise.all(commands.map(runCommand))
 
   // The grouped scenario asserts that every class its runtime returns has a rule behind it,

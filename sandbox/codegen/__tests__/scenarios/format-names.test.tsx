@@ -46,7 +46,7 @@ describe('cva', () => {
 
     expect(container.firstChild).toMatchInlineSnapshot(`
       <button
-        class="c-$red-500 bg-$blue-500 hover:c-$red-600 hover:bg-$blue-600"
+        class="cva_iZfUVA"
       >
         Click me
       </button>
@@ -58,7 +58,7 @@ describe('cva', () => {
 
     expect(container.firstChild).toMatchInlineSnapshot(`
       <button
-        class="c-$red-500 bg-$blue-500 hover:c-$red-600 hover:bg-$blue-600 fs-$sm px-$sm py-$xs"
+        class="cva_iZfUVA cva_iZfUVA--size-sm"
       >
         Click me
       </button>
@@ -70,7 +70,7 @@ describe('cva', () => {
 
     expect(container.firstChild).toMatchInlineSnapshot(`
       <button
-        class="c-$red-500 bg-$blue-500 hover:c-$red-600 hover:bg-$blue-600 fs-$sm px-$sm py-$xs custom-btn"
+        class="cva_iZfUVA cva_iZfUVA--size-sm custom-btn"
       >
         Click me
       </button>
@@ -82,7 +82,7 @@ describe('cva', () => {
 
     expect(container.firstChild).toMatchInlineSnapshot(`
       <button
-        class="c-$red-500 bg-$blue-500 hover:c-$red-600 hover:bg-$blue-600 mx-2 custom-btn"
+        class="cva_iZfUVA mx-2 custom-btn"
       >
         Click me
       </button>
@@ -96,7 +96,7 @@ describe('cva', () => {
 
     expect(container.firstChild).toMatchInlineSnapshot(`
       <button
-        class="c-$red-500 bg-$blue-500 hover:c-$red-600 hover:bg-$blue-600 fs-$sm px-$sm py-$xs mx-2 custom-btn"
+        class="cva_iZfUVA cva_iZfUVA--size-sm mx-2 custom-btn"
       >
         Click me
       </button>
@@ -110,7 +110,7 @@ describe('cva', () => {
 
     expect(container.firstChild).toMatchInlineSnapshot(`
       <button
-        class="c-$red-100 bg-$blue-500 hover:c-$red-600 hover:bg-$blue-600 fs-$md custom-btn"
+        class="cva_iZfUVA c-$red-100 fs-$md custom-btn"
       >
         Click me
       </button>
@@ -126,7 +126,7 @@ describe('cva', () => {
 
     expect(container.firstChild).toMatchInlineSnapshot(`
       <button
-        class="c-$red-100 bg-$blue-500 hover:c-$red-600 hover:bg-$blue-600 fs-$md px-$sm py-$xs custom-btn"
+        class="cva_iZfUVA cva_iZfUVA--size-sm c-$red-100 fs-$md custom-btn"
       >
         Click me
       </button>
@@ -144,7 +144,7 @@ describe('cva', () => {
 
     expect(container.firstChild).toMatchInlineSnapshot(`
       <button
-        class="c-$red-200 bg-$blue-500 hover:c-$red-600 hover:bg-$blue-600 fs-$xl px-123px py-$md z-1 mx-$2 custom-btn"
+        class="cva_iZfUVA cva_iZfUVA--size-lg mx-$2 c-$red-200 fs-$xl custom-btn"
       >
         Click me
       </button>
@@ -262,7 +262,7 @@ describe('button recipe', () => {
 
     expect(container.firstChild).toMatchInlineSnapshot(`
       <button
-        class="button button--visual-outline button--size-md c-$red-200 mx--$2 fs-$xl custom-btn"
+        class="button button--visual-outline button--size-md mx--$2 c-$red-200 fs-$xl custom-btn"
       >
         Click me
       </button>
