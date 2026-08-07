@@ -113,6 +113,19 @@ export class BambooContext extends Generator {
       const where = `${entry.filePath}:${entry.line}:${entry.column}`
       const prop = entry.prop ? `\`${entry.prop}\`` : 'a property'
       const [what, fix] = unresolvedReasons[entry.reason](prop)
+
+      // A recipe does not degrade the way a grouped `css()` call does, so it does not get
+      // the same explanation. Its classes are named from a hash of its config: a
+      // declaration the build cannot see changes that hash, the browser asks for a name no
+      // rule was emitted under, and *every* style is lost rather than the unresolved one.
+      if (entry.kind === 'recipe') {
+        logger.warn(
+          'recipe',
+          `${where} — ${what}. A recipe's classes are named from a hash of its config, so a declaration the build cannot see gives the build and the browser different names and the element renders with no styles at all. Set \`className\` on the recipe, so its name does not depend on what the build could resolve. ${fix} See https://bamboocss.com/docs/concepts/recipes`,
+        )
+        continue
+      }
+
       logger.warn(
         'grouped',
         `${where} — ${what}. Under \`cssMode: 'grouped'\` one class names the whole \`css()\` call, so this call cannot use one: it falls back to naming each declaration separately and keeps only the ones the build could resolve. ${fix} See https://bamboocss.com/docs/references/config#cssmode`,

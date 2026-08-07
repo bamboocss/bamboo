@@ -2,7 +2,7 @@ import type { ParserOptions } from '@bamboocss/core'
 import { BambooError, getOrCreateSet } from '@bamboocss/shared'
 import type { ParserResultInterface, ResultItem } from '@bamboocss/types'
 import { Node } from 'ts-morph'
-import { findUnresolvedStyles, type UnresolvedStyle } from './unresolved-styles'
+import { findUnresolvedRecipeStyles, findUnresolvedStyles, type UnresolvedStyle } from './unresolved-styles'
 
 function cartesian<T>(arrays: T[][]): T[][] {
   if (arrays.length === 0) return [[]]
@@ -55,7 +55,7 @@ export class ParserResult implements ParserResultInterface {
     if (!node || !sourceFile) return
 
     const { line, column } = sourceFile.getLineAndColumnAtPos(node.getStart())
-    this.unresolved.push({ filePath: sourceFile.getFilePath(), line, column, reason })
+    this.unresolved.push({ filePath: sourceFile.getFilePath(), kind: 'grouped', line, column, reason })
   }
 
   append(result: ResultItem) {
@@ -221,6 +221,8 @@ export class ParserResult implements ParserResultInterface {
   setCva(result: ResultItem) {
     this.cva.add(this.append(Object.assign({ type: 'cva' }, result)))
 
+    this.reportUnresolvedRecipe(result)
+
     const encoder = this.encoder
     result.data.forEach((data) => encoder.processAtomicRecipe(data))
   }
@@ -228,8 +230,33 @@ export class ParserResult implements ParserResultInterface {
   setSva(result: ResultItem) {
     this.sva.add(this.append(Object.assign({ type: 'sva' }, result)))
 
+    this.reportUnresolvedRecipe(result)
+
     const encoder = this.encoder
     result.data.forEach((data) => encoder.processAtomicSlotRecipe(data))
+  }
+
+  /**
+   * Record a recipe config the build could not fully read.
+   *
+   * Not gated on `cssMode`, unlike the `css()` check in `setCss`. That one exists because
+   * grouping names a whole call with one class; this one exists because a recipe is named
+   * from a *hash of its config*, which is true in every mode. A declaration the build cannot
+   * see changes the hash, so the build emits rules under one name and the browser asks for
+   * another, and the element renders with no styles at all.
+   *
+   * There is no fallback to pair with it either. Grouped can emit atomic rules alongside the
+   * group and let the runtime's degraded naming land on them; nothing can rescue a diverged
+   * hash except an explicit `className`, which is what the message says to reach for.
+   */
+  private reportUnresolvedRecipe(result: ResultItem) {
+    // A recipe that names itself is immune: `getRecipeIdentity` short-circuits on
+    // `className` and never hashes the styles, so extraction fidelity stops deciding the
+    // name and the loss degrades to the missing declarations alone.
+    if (result.data.some((data) => typeof (data as { className?: unknown })?.className === 'string')) return
+
+    const unresolved = findUnresolvedRecipeStyles(result)
+    if (unresolved.length) this.unresolved.push(...unresolved)
   }
 
   setToken(result: ResultItem) {

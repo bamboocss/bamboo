@@ -3,6 +3,17 @@ import type { ResultItem } from '@bamboocss/types'
 import { Node } from 'ts-morph'
 
 export interface UnresolvedStyle {
+  /**
+   * What the loss costs, which decides how it is explained.
+   *
+   * - `grouped` — a `css()` call under `cssMode: 'grouped'`. It degrades: the runtime falls
+   *   back to naming each declaration, and the build emits atomic rules alongside the group
+   *   so the ones it resolved still apply.
+   * - `recipe` — a `cva`/`sva` config. There is no degrading. A recipe's classes are named
+   *   from a hash of its config, so a declaration the build cannot see gives the two sides
+   *   different names and *every* rule misses.
+   */
+  kind: 'grouped' | 'recipe'
   /** The property the build could not resolve, or `undefined` when only the count differs. */
   prop?: string
   filePath: string
@@ -135,7 +146,89 @@ const writtenProps = (node: Node | undefined): WrittenProps | undefined => {
  * the element renders with no styles at all. Under `atomic` the same call loses one
  * declaration and keeps the rest, which is why this is not reported there.
  */
-export const findUnresolvedStyles = (item: ResultItem): UnresolvedStyle[] => {
+/**
+ * Object literals in a recipe config the build could not fully read.
+ *
+ * `findUnresolvedStyles` reads the *call's* literal, which for a recipe holds `base` and
+ * `variants` rather than declarations — so a spread inside `base` is nested out of its
+ * reach, and an unresolvable one leaves no trace in the box tree either. This walks the
+ * written source against the resolved data, level by level, and reports a level whose
+ * spread or computed key contributed nothing.
+ *
+ * The same one-directional guess `findUnresolvedStyles` documents applies: a spread of a
+ * value that happens to hold only keys written beside it reads as a loss when it is not.
+ * That costs a warning; the other way round costs the element every style it has.
+ */
+const findUnresolvedInLiteral = (
+  literal: Node | undefined,
+  resolved: unknown,
+  path: string[],
+  out: Array<Pick<UnresolvedStyle, 'prop' | 'reason'>>,
+) => {
+  if (!literal || !Node.isObjectLiteralExpression(literal)) return
+
+  const written: string[] = []
+  let uncertain = false
+
+  for (const property of literal.getProperties()) {
+    if (Node.isSpreadAssignment(property)) {
+      uncertain = true
+      continue
+    }
+    if (!Node.isPropertyAssignment(property) && !Node.isShorthandPropertyAssignment(property)) continue
+
+    const name = property.getName()
+    if (name.startsWith('[')) {
+      uncertain = true
+      continue
+    }
+    written.push(name.replace(/^['"]|['"]$/g, ''))
+  }
+
+  const resolvedKeys = resolved && typeof resolved === 'object' ? Object.keys(resolved as object) : []
+  if (uncertain && !resolvedKeys.some((key) => !written.includes(key))) {
+    out.push({ prop: path.join('.') || undefined, reason: 'unenumerable-keys' })
+  }
+
+  for (const property of literal.getProperties()) {
+    if (!Node.isPropertyAssignment(property)) continue
+    const name = property.getName().replace(/^['"]|['"]$/g, '')
+    if (name.startsWith('[')) continue
+    findUnresolvedInLiteral(
+      property.getInitializer(),
+      (resolved as Record<string, unknown> | undefined)?.[name],
+      [...path, name],
+      out,
+    )
+  }
+}
+
+/** A recipe config the build could not fully read — see `findUnresolvedInLiteral`. */
+export const findUnresolvedRecipeStyles = (item: ResultItem): UnresolvedStyle[] => {
+  const boxNode = item.box
+  const node = boxNode?.getNode()
+  const sourceFile = node?.getSourceFile()
+  if (!node || !sourceFile) return []
+
+  let literal: Node | undefined = node
+  if (Node.isCallExpression(literal)) {
+    const args = literal.getArguments()
+    if (args.length !== 1) return []
+    literal = args[0]
+  }
+
+  const losses: Array<Pick<UnresolvedStyle, 'prop' | 'reason'>> = []
+  findUnresolvedInLiteral(literal, item.data[0], [], losses)
+  if (!losses.length) return []
+
+  const { line, column } = sourceFile.getLineAndColumnAtPos(node.getStart())
+  return losses.map((loss) => ({ column, filePath: sourceFile.getFilePath(), kind: 'recipe' as const, line, ...loss }))
+}
+
+export const findUnresolvedStyles = (
+  item: ResultItem,
+  kind: UnresolvedStyle['kind'] = 'grouped',
+): UnresolvedStyle[] => {
   const boxNode = item.box
   if (!boxNode) return []
 
@@ -186,7 +279,7 @@ export const findUnresolvedStyles = (item: ResultItem): UnresolvedStyle[] => {
   const { line, column } = sourceFile.getLineAndColumnAtPos(node.getStart())
   const at = { filePath: sourceFile.getFilePath(), line, column }
 
-  return losses.map((loss) => ({ ...at, ...loss }))
+  return losses.map((loss) => ({ ...at, kind, ...loss }))
 }
 
 const hasKeyOutside = (resolved: Set<string>, names: string[]) => {

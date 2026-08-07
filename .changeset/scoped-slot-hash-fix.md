@@ -24,5 +24,10 @@ Fixed on both sides: the build stores the scope's class names raw and formats th
 generated runtime formats a constant slot class through the same prefix-and-hash the rest of a recipe's classes go
 through. Inline `sva` had the identical bug and is fixed with it.
 
-`checkNamingAgreement` now covers slot recipes, so this cannot recur silently — it already covered `css()` and inline
-`cva`, and a slot recipe's constant half was exactly the gap.
+`checkNamingAgreement` now covers slot recipes, so this derivation cannot drift again — it already covered `css()` and
+inline `cva`, and a slot recipe's constant half was exactly the gap.
+
+To be precise about what that guard does and does not do: it runs a **canary config** through both derivations, so it
+checks that hashing, prefixing and separators agree. It never looks at your code, so it cannot see a class name that
+diverges because the build read a _different config_ than the browser holds — see the separate fix for a recipe config
+the build cannot fully read.
