@@ -1,6 +1,6 @@
-import type { Context } from '@bamboocss/core'
-import { compact, createCss, createMergeCss, withoutSpace } from '@bamboocss/shared'
-import type { Dict } from '@bamboocss/types'
+import { Recipes, type Context } from '@bamboocss/core'
+import { compact, createCss, createMergeCss, getSlotCompoundVariant, withoutSpace } from '@bamboocss/shared'
+import type { Dict, SlotRecipeConfig } from '@bamboocss/types'
 
 /**
  * The generated runtime's `css`, rebuilt in-process from a resolved context.
@@ -114,22 +114,59 @@ export const createRuntimeToken =
  * Mirrors `generateCreateRecipeFn` in `@bamboocss/generator`.
  */
 export interface RuntimeRecipe {
-  (name: string, variants: Dict): string | undefined
+  /**
+   * `slot` resolves one slot of a slot recipe. Without it a slot recipe is declined, since
+   * the whole call returns an object rather than a string.
+   */
+  (name: string, variants: Dict, slot?: string): string | undefined
 }
+
+/**
+ * Whether a slot's class is independent of the variant props.
+ *
+ * A scoped slot recipe delivers variants through `@scope` rules anchored on an enclosing
+ * slot, so every *other* slot carries a constant class — the same string whatever the props
+ * are. That is what makes `recipe(anything).slot` foldable even when the variant is fully
+ * dynamic, which was not true before scoping existed.
+ */
+export const createConstantSlotCheck =
+  (ctx: Context) =>
+  (name: string, slot: string): boolean => {
+    const config = ctx.recipes.getConfig(name)
+    if (!config || !('slots' in config)) return false
+
+    const slots = (config as SlotRecipeConfig).slots as string[]
+    if (!slots.includes(slot)) return false
+
+    const anchors = Recipes.getScopeRoots(config as SlotRecipeConfig)
+    return anchors.length > 0 && !anchors.includes(slot)
+  }
 
 export const createRuntimeRecipe = (ctx: Context): RuntimeRecipe => {
   const separator = ctx.utility.separator
 
-  return (name, variants) => {
+  return (name, variants, slot) => {
     const config = ctx.recipes.getConfig(name)
     const node = ctx.recipes.getRecipe(name)
     if (!config || !node) return undefined
 
-    // Slot recipes resolve to one class per slot rather than to a single string.
-    if ('slots' in config) return undefined
+    const isSlotRecipe = 'slots' in config
+    // A whole slot recipe call returns one class per slot rather than a string, so it can
+    // only be folded a slot at a time.
+    if (isSlotRecipe !== Boolean(slot)) return undefined
+    if (slot && !((config as SlotRecipeConfig).slots as string[]).includes(slot)) return undefined
 
-    const className = node.className
-    const { defaultVariants = {}, compoundVariants = [] } = config
+    // A slot that no anchor takes variants for is a constant: its class does not depend on
+    // the props at all, so it folds even when the variant is fully dynamic. That is what
+    // scoping bought — before it, every slot carried a variant class.
+    const anchors = isSlotRecipe ? Recipes.getScopeRoots(config as SlotRecipeConfig) : []
+    const isConstantSlot = Boolean(slot) && anchors.length > 0 && !anchors.includes(slot as string)
+
+    const className = slot ? ctx.recipes.getSlotKey(node.className, slot) : node.className
+    const { defaultVariants = {} } = config
+    const compoundVariants = slot
+      ? getSlotCompoundVariant((config.compoundVariants ?? []) as Array<{ css: any }>, slot)
+      : ((config.compoundVariants ?? []) as Dict[])
 
     const recipeCss = createCss({
       hash: Boolean(ctx.hash.className),
@@ -150,7 +187,12 @@ export const createRuntimeRecipe = (ctx: Context): RuntimeRecipe => {
       },
     })
 
-    const recipeStyles = { [className]: '__ignore__', ...defaultVariants, ...compact(variants) }
+    // Built through `recipeCss` even for a constant, rather than by concatenating the name:
+    // `hash.className` and `prefix` are applied there, and reconstructing the string is
+    // exactly how the runtime and the stylesheet drifted apart once already.
+    const recipeStyles = isConstantSlot
+      ? { [className]: '__ignore__' }
+      : { [className]: '__ignore__', ...defaultVariants, ...compact(variants) }
 
     // The generated `transform` calls `assertCompoundVariant` on every prop, which throws
     // for a conditional variant value on a recipe that has compound variants. So the
@@ -158,7 +200,11 @@ export const createRuntimeRecipe = (ctx: Context): RuntimeRecipe => {
     // on its runtime path and the crash where the user put it; folding would quietly
     // repair a bug rather than preserve behaviour. Spelled the way the assert spells it,
     // `typeof` against the variants as passed, so the two agree on the edge cases.
-    if (compoundVariants.length > 0 && Object.keys(recipeStyles).some((prop) => typeof variants[prop] === 'object')) {
+    if (
+      !isConstantSlot &&
+      compoundVariants.length > 0 &&
+      Object.keys(recipeStyles).some((prop) => typeof variants[prop] === 'object')
+    ) {
       return undefined
     }
 

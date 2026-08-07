@@ -12,7 +12,13 @@ import {
   LEAF_HELPER,
   planPartialFold,
 } from './fold-partial'
-import { createRuntimeCss, createRuntimeRecipe, createRuntimeToken, type RuntimeCss } from './runtime-css'
+import {
+  createConstantSlotCheck,
+  createRuntimeCss,
+  createRuntimeRecipe,
+  createRuntimeToken,
+  type RuntimeCss,
+} from './runtime-css'
 
 /**
  * Why a call site was left alone. Surfaced through `panda`-style diagnostics so a
@@ -510,6 +516,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     }
   }
   const runtimeRecipe = createRuntimeRecipe(ctx)
+  const isConstantSlot = createConstantSlotCheck(ctx)
   const runtimeToken = createRuntimeToken(ctx)
 
   /**
@@ -585,6 +592,14 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     node: Node
     start: number
     end: number
+    /**
+     * The slot of a `recipe(props).slot` access, and the end of that whole member
+     * expression. A slot recipe call returns one class per slot, so what resolves to a
+     * string — and what gets replaced — is the property access rather than the call.
+     */
+    slot?: string
+    /** The slot's class does not depend on the props, so the call folds however dynamic they are. */
+    constantSlot?: boolean
   }
 
   const candidates: Candidate[] = []
@@ -716,6 +731,15 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     const start = call.getStart()
     const end = call.getEnd()
 
+    // `recipe(props).slot` — a slot recipe call returns one class per slot, so the
+    // expression that resolves to a string is the property access, not the call. Fold the
+    // whole member expression when the call is what it reads from.
+    const memberParent = call.getParent()
+    const memberAccess =
+      Node.isPropertyAccessExpression(memberParent) && memberParent.getExpression() === call ? memberParent : undefined
+    const slot = memberAccess?.getNameNode().getText()
+    const foldEnd = memberAccess ? memberAccess.getEnd() : end
+
     // Offsets are only meaningful against the module being rewritten, and a box can
     // carry nodes from any module the extractor resolved through. Text equality is
     // the check that this call really is this module's — cheap, and independent of
@@ -727,7 +751,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     }
 
     // The parser can record the same call more than once; fold it once.
-    const rangeKey = `${start}:${end}`
+    const rangeKey = `${start}:${foldEnd}`
     if (seenRanges.has(rangeKey)) continue
     seenRanges.add(rangeKey)
 
@@ -739,6 +763,13 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     const rootName = calleeRootName(call)
     if (!rootName || !importsFor(call.getSourceFile()).has(rootName) || isShadowed(call, rootName)) {
       skipped.push({ name, reason: 'not-imported', start, end })
+      continue
+    }
+
+    // A constant slot resolves the same whatever the props are, so it folds before the
+    // static-argument check the rest of the class path depends on.
+    if (slot && isConstantSlot(name, slot)) {
+      candidates.push({ item, call, node: call, start, end: foldEnd, slot, constantSlot: true })
       continue
     }
 
@@ -754,7 +785,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       continue
     }
 
-    candidates.push({ item, call, node: call, start, end })
+    candidates.push({ item, call, node: call, start, end: foldEnd, slot })
   }
 
   if (candidates.length === 0) {
@@ -846,7 +877,11 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       } else if (item.type === 'recipe') {
         // A recipe call takes one variant object; anything else is not a shape the
         // generated recipe function accepts.
-        const resolved = item.data.length === 1 ? runtimeRecipe(name, item.data[0] as Dict) : undefined
+        const resolved = candidate.constantSlot
+          ? runtimeRecipe(name, {}, candidate.slot)
+          : item.data.length === 1
+            ? runtimeRecipe(name, item.data[0] as Dict, candidate.slot)
+            : undefined
         if (resolved == null) {
           skipped.push({ name, reason: 'unsupported-kind', start, end })
           continue
