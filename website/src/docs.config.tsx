@@ -46,6 +46,7 @@ export const docsNavigation: NavItem = {
       url: 'overview',
       items: [
         { title: 'Getting Started', url: 'getting-started' },
+        { title: 'Cheat Sheet', url: 'cheat-sheet' },
         { title: 'Why Bamboo?', url: 'why-bamboo' },
         { title: 'FAQs', url: 'faq' },
         { title: 'Browser Support', url: 'browser-support' },
