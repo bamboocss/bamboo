@@ -30,7 +30,14 @@ const buildCanary = (isCondition: (key: string) => boolean) => {
  */
 const RECIPE_CANARY = {
   base: { color: 'red' },
-  variants: { size: { 'x large': { paddingTop: '2' }, sm: { paddingTop: '1' } } },
+  // A compound too. Its selector is assembled from class names rather than produced by
+  // `createCss`, which is exactly how it came to bypass `hash.className` and `prefix` — the
+  // canary has to carry one or that half is unchecked.
+  compoundVariants: [{ css: { fontWeight: 'bold' }, size: 'sm', tone: 'a' }],
+  variants: {
+    size: { 'x large': { paddingTop: '2' }, sm: { paddingTop: '1' } },
+    tone: { a: { paddingBottom: '1' } },
+  },
 }
 
 /**

@@ -3,7 +3,6 @@ import {
   capitalize,
   createRegex,
   dashCase,
-  esc,
   getSlotRecipes,
   isObject,
   memo,
@@ -86,7 +85,7 @@ const sharedState = {
    * `styles`. A selector list rather than a class, because a compound selection with an
    * `OneOrMore` value covers several combinations at once.
    */
-  compoundSelectors: new Map<string, string>(),
+  compoundSelectors: new Map<string, string[][]>(),
   /**
    * Where a non-anchor slot's variant rules are emitted, keyed the same way as `styles`.
    *
@@ -105,7 +104,7 @@ const sharedState = {
    * outer `<Tabs size="lg">` would style the triggers of an inner `<Tabs size="sm">`, and
    * at equal specificity the winner would be stylesheet order rather than proximity.
    */
-  slotScopes: new Map<string, Array<{ anchorVariantClass: string; anchorClass: string; slotClass: string }>>(),
+  slotScopes: new Map<string, Array<{ anchorVariantClasses: string[]; anchorClass: string; slotClass: string }>>(),
 }
 
 export class Recipes {
@@ -389,7 +388,7 @@ export class Recipes {
           sharedState.slotScopes.set(
             propKey,
             scopedByAnchorClasses.map((anchorClass) => ({
-              anchorVariantClass: this.getClassName(anchorClass, key, variantKey),
+              anchorVariantClasses: [this.getClassName(anchorClass, key, variantKey)],
               anchorClass,
               slotClass: recipe.className,
             })),
@@ -411,24 +410,48 @@ export class Recipes {
     compoundVariants.forEach((compoundVariant, index) => {
       if (!compoundVariant?.css) return
 
+      // Raw class names, one list per combination. `hash.className` and `prefix` are applied
+      // by the decoder's `formatSelector` — building the selector string here skipped both,
+      // so the rule selected `.btn--size_sm` while the element carried `bam-btn--size_sm`,
+      // and every compound variant was dead under either option.
       const selectors = compoundSelections(compoundVariant)
         .map((combination) =>
-          combination
-            .map(([variant, value]) => `.${esc(this.getClassName(recipe.className, variant, value))}`)
-            .join(''),
+          combination.map(([variant, value]) => this.getClassName(recipe.className, variant, value)),
         )
-        .filter(Boolean)
+        .filter((combination) => combination.length > 0)
 
       if (!selectors.length) return
 
       const propKey = this.getPropKey(name, COMPOUND_VARIANT, index)
+
+      // A scoped slot carries only its constant class, so a compound selecting on that
+      // slot's variant classes matches nothing — the variants reach it through an anchor's
+      // scope, and so must the compound. One scope per anchor per combination, with the
+      // compound's classes taken from the *anchor*.
+      if (scopedByAnchorClasses?.length) {
+        sharedState.styles.set(propKey, transformStyles(this.context, compoundVariant.css, recipe.className))
+        sharedState.classNames.set(propKey, `${recipe.className}--compound${this.separator}${index}`)
+        sharedState.slotScopes.set(
+          propKey,
+          scopedByAnchorClasses.flatMap((anchorClass) =>
+            compoundSelections(compoundVariant).map((combination) => ({
+              anchorVariantClasses: combination.map(([variant, value]) =>
+                this.getClassName(anchorClass, variant, value),
+              ),
+              anchorClass,
+              slotClass: recipe.className,
+            })),
+          ),
+        )
+        return
+      }
       // Never reaches the DOM — the rule selects on the variant classes the element already
       // carries. This only has to be stable and distinct, so the decoder can key on it.
       const className = `${recipe.className}--compound${this.separator}${index}`
 
       sharedState.styles.set(propKey, transformStyles(this.context, compoundVariant.css, className))
       sharedState.classNames.set(propKey, className)
-      sharedState.compoundSelectors.set(propKey, selectors.join(', '))
+      sharedState.compoundSelectors.set(propKey, selectors)
     })
 
     return recipe

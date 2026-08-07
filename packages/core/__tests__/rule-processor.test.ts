@@ -683,60 +683,60 @@ describe('rule processor', () => {
 
     expect(checkbox.className).toMatchInlineSnapshot(`
       [
-        "sva_cURWwc__root--size_sm",
-        "sva_cURWwc__root--size_md",
-        "sva_cURWwc__root--size_lg",
-        "sva_cURWwc__root",
-        "sva_cURWwc__control",
-        "sva_cURWwc__label",
+        "sva_jyzfQI__root--size_sm",
+        "sva_jyzfQI__root--size_md",
+        "sva_jyzfQI__root--size_lg",
+        "sva_jyzfQI__root",
+        "sva_jyzfQI__control",
+        "sva_jyzfQI__label",
       ]
     `)
     expect(checkbox.css).toMatchInlineSnapshot(`
       "@layer recipes.slots {
-        .sva_cURWwc__root {
+        .sva_jyzfQI__root {
           gap: var(--spacing-2);
           display: flex;
           align-items: center;
       }
 
-        .sva_cURWwc__control {
+        .sva_jyzfQI__control {
           border-width: 1px;
           border-radius: var(--radii-sm);
       }
 
-        .sva_cURWwc__label {
+        .sva_jyzfQI__label {
           margin-inline-start: var(--spacing-2);
       }
 
-        @scope (.sva_cURWwc__root--size_sm) to (.sva_cURWwc__root) {
-          .sva_cURWwc__control {
+        @scope (.sva_jyzfQI__root--size_sm) to (.sva_jyzfQI__root) {
+          .sva_jyzfQI__control {
             width: var(--sizes-8);
             height: var(--sizes-8);
       }
 
-          .sva_cURWwc__label {
+          .sva_jyzfQI__label {
             font-size: var(--font-sizes-sm);
       }
       }
 
-        @scope (.sva_cURWwc__root--size_md) to (.sva_cURWwc__root) {
-          .sva_cURWwc__control {
+        @scope (.sva_jyzfQI__root--size_md) to (.sva_jyzfQI__root) {
+          .sva_jyzfQI__control {
             width: var(--sizes-10);
             height: var(--sizes-10);
       }
 
-          .sva_cURWwc__label {
+          .sva_jyzfQI__label {
             font-size: var(--font-sizes-md);
       }
       }
 
-        @scope (.sva_cURWwc__root--size_lg) to (.sva_cURWwc__root) {
-          .sva_cURWwc__control {
+        @scope (.sva_jyzfQI__root--size_lg) to (.sva_jyzfQI__root) {
+          .sva_jyzfQI__control {
             width: var(--sizes-12);
             height: var(--sizes-12);
       }
 
-          .sva_cURWwc__label {
+          .sva_jyzfQI__label {
             font-size: var(--font-sizes-lg);
       }
       }

@@ -23,8 +23,12 @@ export function generateSvaFn(ctx: Context) {
       // one before the split — the identity when the config declares none — so the guard
       // that used to sit here left an anonymous \`sva\` reporting no slot classes despite
       // emitting them.
+      // Formatted, like the classes \`svaFn\` returns. Left raw, this reported the name the
+      // element does *not* carry under \`hash\` or \`prefix\` — and \`auditSlotScopes\` builds
+      // its selectors from this map, so the diagnostic went silent in exactly the configs
+      // where a naming bug is likeliest.
       const classNameMap = slots.reduce((acc, [slot, cvaFn]) => {
-        acc[slot] = cvaFn.config.className
+        acc[slot] = formatRecipeClass(cvaFn.config.className)
         return acc
       }, {})
 

@@ -197,7 +197,7 @@ describe('ast parser / sva', () => {
 
     expect(result.css).toMatchInlineSnapshot(`
       "@layer recipes.slots {
-        .sva_gbRdhD__root {
+        .sva_jwrDBf__root {
           padding: var(--spacing-6);
           margin: var(--spacing-4);
           border-radius: var(--radii-md);
@@ -205,12 +205,12 @@ describe('ast parser / sva', () => {
           width: var(--sizes-md);
       }
 
-        [data-theme=dark] .sva_gbRdhD__root,.dark .sva_gbRdhD__root,.sva_gbRdhD__root.dark,.sva_gbRdhD__root[data-theme=dark] {
+        [data-theme=dark] .sva_jwrDBf__root,.dark .sva_jwrDBf__root,.sva_jwrDBf__root.dark,.sva_jwrDBf__root[data-theme=dark] {
           background: #262626;
           color: var(--colors-white);
       }
 
-        .sva_gbRdhD__title {
+        .sva_jwrDBf__title {
           font-weight: var(--font-weights-semibold);
           padding-bottom: var(--spacing-2);
       }
@@ -256,7 +256,7 @@ describe('ast parser / sva', () => {
 
     expect(result.css).toMatchInlineSnapshot(`
       "@layer recipes.slots {
-        .sva_gaUUaS__root {
+        .sva_bnNoSD__root {
           padding: var(--spacing-6);
       }
       }"

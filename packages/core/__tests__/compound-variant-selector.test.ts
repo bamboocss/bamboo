@@ -53,3 +53,37 @@ describe('compound variants', () => {
     expect(css.indexOf('.btn--size_sm.btn--tone_a')).toBeGreaterThan(css.indexOf('.btn--size_sm {'))
   })
 })
+
+/**
+ * A compound's selector is built from class names, so it has to be built the way every
+ * other class name is.
+ *
+ * It was not: the selector string was assembled from raw names while the element carried
+ * prefixed or hashed ones, so under either option every compound variant in the project
+ * selected nothing. The same defect had already been found and fixed for `@scope` preludes;
+ * this is the other place that bypassed `formatSelector`.
+ */
+describe('the compound selector is built from classes the element carries', () => {
+  test.each([
+    ['default', {}],
+    ['prefix', { prefix: 'bam' }],
+    ['hash', { hash: true }],
+    ['hash + prefix', { hash: true, prefix: 'bam' }],
+    ['separator', { separator: '=' }],
+  ])('%s', (_name, config) => {
+    const rule = createRuleProcessor(config as never).cva({
+      base: { color: 'red' },
+      className: 'btn',
+      compoundVariants: [{ css: { fontWeight: 'bold' }, size: 'sm', tone: 'a' }] as never,
+      variants: { size: { sm: { padding: '2' } }, tone: { a: { borderColor: 'blue' } } },
+    })
+
+    const carried = new Set(rule.getClassNames())
+    const compound = rule.toCss().match(/^\s*(\.\S+\.\S+) \{/m)?.[1]
+    expect(compound).toBeDefined()
+
+    for (const className of compound!.split('.').filter(Boolean)) {
+      expect(carried).toContain(className)
+    }
+  })
+})

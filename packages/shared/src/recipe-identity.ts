@@ -1,8 +1,18 @@
 import { toHash } from './hash'
 import { withoutSpace } from './important'
 
-/** The fields that decide what CSS a recipe produces. Anything else is metadata. */
-const STYLE_FIELDS = ['base', 'variants', 'compoundVariants', 'defaultVariants'] as const
+/**
+ * The fields that decide what CSS a recipe produces. Anything else is metadata.
+ *
+ * `slots` and `scopeRoots` count. They do not change a declaration, but they change the
+ * *shape* of what is emitted — which slots exist, and whether a slot's variants become
+ * `@scope` rules or a class of its own. Two `sva`s differing only in `scopeRoots` hashed to
+ * one name, and since an inline recipe is registered once, whichever was extracted first
+ * decided the emission for both; the other's runtime then asked for classes no rule
+ * existed under. "Same styles, different DOM topology" is exactly what `scopeRoots` is for,
+ * so it is the collision most likely to happen.
+ */
+const STYLE_FIELDS = ['base', 'variants', 'compoundVariants', 'defaultVariants', 'slots', 'scopeRoots'] as const
 
 /**
  * A serialization that depends on the config's *content* and not on how it was written.
@@ -28,6 +38,8 @@ const stable = (value: unknown): string => {
 
 export interface RecipeIdentityConfig {
   className?: string
+  slots?: unknown
+  scopeRoots?: unknown
   base?: unknown
   variants?: unknown
   compoundVariants?: unknown

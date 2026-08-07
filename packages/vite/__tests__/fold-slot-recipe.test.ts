@@ -55,3 +55,45 @@ describe('folding slot recipes', () => {
     expect(getCss()).toContain('.checkbox__control')
   })
 })
+
+/**
+ * The fold replaces a *longer* range for a slot access — the member expression rather than
+ * the call. Widening it for anything else deletes the property read, which turns a fold from
+ * "wrong class" into "TypeError": `css({ color: 'red' }).trim()` became `"c_red"()`.
+ */
+describe('a member access that is not a slot', () => {
+  const foldWith = (source: string) => createFoldFixture().fold(source)
+
+  test('a property access on a css() call survives', () => {
+    const r = foldWith(`
+import { css } from '../styled-system/css'
+export const a = css({ color: 'red' }).trim()`)
+    expect(r.code).toContain('"c_red".trim()')
+  })
+
+  test('a property access on a pattern call survives', () => {
+    const r = foldWith(`
+import { flex } from '../styled-system/patterns'
+export const a = flex({ direction: 'row' }).split(' ')`)
+    expect(r.code).toContain(".split(' ')")
+    expect(r.code).not.toMatch(/"[^"]*"\(' '\)/)
+  })
+
+  test('a property access on a non-slot recipe still folds the call', () => {
+    const r = foldWith(`
+import { buttonStyle } from '../styled-system/recipes'
+export const a = buttonStyle({ size: 'sm' }).length`)
+    expect(r.code).toContain('.length')
+    expect(r.code).toMatch(/"buttonStyle[^"]*"\.length/)
+  })
+
+  test('a property that is not a declared slot does not fold to a class', () => {
+    // `.raw` is a real member of the recipe object; folding it to a slot class would be
+    // silently wrong rather than a crash.
+    const r = foldWith(`
+import { checkbox } from '../styled-system/recipes'
+export const a = checkbox({ size: 'sm' }).raw`)
+    expect(r.code).toContain('.raw')
+    expect(r.code).not.toContain('"checkbox__raw"')
+  })
+})

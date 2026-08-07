@@ -42,8 +42,8 @@ describe('sva', () => {
 
     expect(result).toMatchInlineSnapshot(`
       {
-        "icon": "sva_XfaJN__icon",
-        "root": "sva_XfaJN__root sva_XfaJN__root--visual_unstyled",
+        "icon": "sva_grxEQD__icon",
+        "root": "sva_grxEQD__root sva_grxEQD__root--visual_unstyled",
       }
     `)
   })
@@ -54,8 +54,8 @@ describe('sva', () => {
     expect(result).toMatchInlineSnapshot(
       `
       {
-        "icon": "sva_XfaJN__icon",
-        "root": "sva_XfaJN__root sva_XfaJN__root--visual_solid",
+        "icon": "sva_grxEQD__icon",
+        "root": "sva_grxEQD__root sva_grxEQD__root--visual_solid",
       }
     `,
     )
@@ -67,8 +67,8 @@ describe('sva', () => {
     expect(result).toMatchInlineSnapshot(
       `
       {
-        "icon": "sva_XfaJN__icon",
-        "root": "sva_XfaJN__root sva_XfaJN__root--visual_outline",
+        "icon": "sva_grxEQD__icon",
+        "root": "sva_grxEQD__root sva_grxEQD__root--visual_outline",
       }
     `,
     )

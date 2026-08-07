@@ -732,12 +732,24 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     const end = call.getEnd()
 
     // `recipe(props).slot` — a slot recipe call returns one class per slot, so the
-    // expression that resolves to a string is the property access, not the call. Fold the
-    // whole member expression when the call is what it reads from.
+    // expression that resolves to a string is the property access, not the call.
+    //
+    // Narrow on purpose. Widening the replaced range for anything else deletes the property
+    // read: `css({ color: 'red' }).trim()` became `"c_red"()`, a TypeError rather than a
+    // wrong class. So this fires only for a `recipe` whose accessed property names a slot
+    // the recipe declares — `.raw`, `.length` and a misspelled slot all leave the range at
+    // the call, where they fold exactly as they did before.
     const memberParent = call.getParent()
-    const memberAccess =
-      Node.isPropertyAccessExpression(memberParent) && memberParent.getExpression() === call ? memberParent : undefined
-    const slot = memberAccess?.getNameNode().getText()
+    const accessed =
+      type === 'recipe' && Node.isPropertyAccessExpression(memberParent) && memberParent.getExpression() === call
+        ? memberParent
+        : undefined
+    const accessedName = accessed?.getNameNode().getText()
+    const declaredSlots = accessed
+      ? ((ctx.recipes.getConfig(name) as { slots?: string[] } | undefined)?.slots ?? [])
+      : []
+    const memberAccess = accessedName && declaredSlots.includes(accessedName) ? accessed : undefined
+    const slot = memberAccess ? accessedName : undefined
     const foldEnd = memberAccess ? memberAccess.getEnd() : end
 
     // Offsets are only meaningful against the module being rewritten, and a box can

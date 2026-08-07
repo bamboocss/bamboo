@@ -181,3 +181,53 @@ describe('slot recipes spanning a portal', () => {
     expect(one.match(/@scope/g)).toHaveLength(1)
   })
 })
+
+/**
+ * A scoped slot carries only its constant class. A compound variant selecting on that
+ * slot's variant classes therefore matches nothing, ever — the variants reach the slot
+ * through an anchor's scope, and the compound has to arrive the same way.
+ */
+describe('compound variants on a scoped slot recipe', () => {
+  const scoped = (compound: Record<string, unknown>) =>
+    createRuleProcessor()
+      .sva({
+        base: { root: { display: 'flex' } },
+        className: 'cmp',
+        compoundVariants: [compound],
+        scopeRoots: ['root'],
+        slots: ['root', 'item'],
+        variants: { size: { lg: { item: { paddingInline: '3' } } }, tone: { a: { item: { color: 'red' } } } },
+      } as never)
+      .toCss()
+
+  test('the compound is scoped by the anchor, not selected on the slot', () => {
+    const css = scoped({ css: { item: { fontWeight: 'bold' } }, size: 'lg', tone: 'a' })
+
+    expect(css).toContain('@scope (.cmp__root--size_lg.cmp__root--tone_a) to (.cmp__root)')
+    expect(css).not.toContain('.cmp__item--size_lg')
+  })
+
+  test('every class the compound scope opens on is one the anchor carries', () => {
+    const rule = createRuleProcessor().sva({
+      base: { root: { display: 'flex' } },
+      className: 'cmp',
+      compoundVariants: [{ css: { item: { fontWeight: 'bold' } }, size: 'lg', tone: 'a' }],
+      scopeRoots: ['root'],
+      slots: ['root', 'item'],
+      variants: { size: { lg: { item: { paddingInline: '3' } } }, tone: { a: { item: { color: 'red' } } } },
+    } as never)
+
+    const carried = new Set(rule.getClassNames())
+    const prelude = rule.toCss().match(/@scope \((\.\S+\.\S+)\)/)?.[1]
+    expect(prelude).toBeDefined()
+
+    for (const className of prelude!.split('.').filter(Boolean)) {
+      expect(carried).toContain(className)
+    }
+  })
+
+  test('a compound on the anchor itself still selects on the anchor', () => {
+    const css = scoped({ css: { root: { fontWeight: 'bold' } }, size: 'lg', tone: 'a' })
+    expect(css).toContain('.cmp__root--size_lg.cmp__root--tone_a')
+  })
+})

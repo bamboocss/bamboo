@@ -84,3 +84,29 @@ describe('getRecipeIdentity', () => {
     expect(a).toBe(b)
   })
 })
+
+/**
+ * `slots` and `scopeRoots` change the *shape* of what is emitted rather than a declaration,
+ * but an inline recipe is registered once per identity — so two configs sharing a name make
+ * whichever is extracted first decide the emission for both, and the other's runtime asks
+ * for classes no rule exists under.
+ */
+describe('slot recipe topology is part of the identity', () => {
+  const styles = {
+    base: { root: { color: 'red' } },
+    slots: ['root', 'item'],
+    variants: { size: { lg: { item: { paddingLeft: '3' } } } },
+  }
+
+  test('scopeRoots changes the identity', () => {
+    expect(getRecipeIdentity({ ...styles, scopeRoots: ['root'] } as never, 'sva')).not.toBe(
+      getRecipeIdentity({ ...styles, scopeRoots: [] } as never, 'sva'),
+    )
+  })
+
+  test('slots changes the identity', () => {
+    expect(getRecipeIdentity({ ...styles, slots: ['root', 'item'] } as never, 'sva')).not.toBe(
+      getRecipeIdentity({ ...styles, slots: ['root', 'other'] } as never, 'sva'),
+    )
+  })
+})
