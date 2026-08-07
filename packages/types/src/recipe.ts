@@ -140,6 +140,20 @@ export interface SlotRecipeRuntimeFn<
   raw: (props?: RecipeSelection<T>) => Record<S, SystemStyleObject>
   variantKeys: (keyof T)[]
   variantMap: RecipeVariantMap<T>
+  /** The config this recipe was created from. */
+  config: SlotRecipeDefinition<S, T>
+  /** Each slot's constant class, for targeting a slot in the DOM. */
+  classNameMap: Partial<Record<S, string>>
+  /**
+   * Which slots each variant writes styles for.
+   *
+   * A variant's styles reach a slot through a scope opened at an anchor, which covers every
+   * slot in that anchor's subtree. A slot under no anchor — moved out by a portal, with no
+   * second anchor named in `scopeRoots` — is not reached, and nothing at build time can
+   * detect that. This says which slots a variant has to get to, so whatever a scope cannot
+   * reach can be threaded by hand.
+   */
+  slotsAffectedBy: Record<keyof T, S[]>
   splitVariantProps<Props extends RecipeSelection<T>>(
     props: Props,
   ): [RecipeSelection<T>, Pretty<DistributiveOmit<Props, keyof T>>]

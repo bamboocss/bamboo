@@ -63,6 +63,20 @@ export function generateSvaFn(ctx: Context) {
         Object.entries(variants).map(([key, value]) => [key, Object.keys(value)])
       );
 
+      // Which slots each variant writes styles for.
+      //
+      // A scope reaches every slot inside an anchor's subtree. A slot under no anchor is
+      // not reached, and nothing at build time can detect that — reachability is a fact
+      // about the DOM. This is what says which slots a variant has to get to, so the
+      // component layer can thread the ones a scope cannot. Config slot recipes have always
+      // exposed it; an inline \`sva\` had no way to answer the question at all.
+      const slotsAffectedBy = Object.fromEntries(
+        Object.entries(variants).map(([variant, values]) => [
+          variant,
+          [...new Set(Object.values(values ?? {}).flatMap((slotStyles) => Object.keys(slotStyles ?? {})))],
+        ])
+      );
+
       return Object.assign(memo(svaFn), {
         __cva__: false,
         raw,
@@ -70,6 +84,7 @@ export function generateSvaFn(ctx: Context) {
         variantMap,
         variantKeys,
         classNameMap,
+        slotsAffectedBy,
         splitVariantProps,
         getVariantProps,
       })

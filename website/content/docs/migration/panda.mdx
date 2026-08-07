@@ -11,9 +11,11 @@ For most projects this is a find-and-replace of `panda` with `bamboo`, plus a re
 
 ## What stays the same
 
-- `css`, `cva`, `sva`, `cx`, the pattern functions and the JSX factory – same names, same signatures. `cx` resolves
-  conflicts rather than concatenating, which is a behaviour change; see [below](#cx-resolves-conflicts).
-- Recipes, slot recipes, variants, compound variants and default variants.
+- `css`, `cva`, `sva`, `cx` and the pattern functions – same names, same signatures. Two of them behave differently:
+  `cx` joins rather than resolving conflicts ([below](#cx-joins-in-both-tools)), and `cva`/`sva` emit into the `recipes`
+  cascade layer rather than atomic classes ([below](#recipes-are-named-not-atomic)).
+- Recipes, variants, compound variants and default variants. **Slot recipes are the exception** – their output changes
+  shape, and it changes silently; see [below](#slot-recipes-scope-their-variants).
 - Tokens, semantic tokens, conditions, breakpoints, themes, `staticCss`, cascade layers.
 - The config shape, with one exception. Every key you have in `panda.config.ts` is valid in `bamboo.config.ts` except
   `studio`, which has no equivalent – delete it.
@@ -141,6 +143,79 @@ What differs is the advice about what to do instead. A **recipe** — `cva()` or
 `theme.recipes` — lands in the `recipes` layer, so a consumer's `css()` in `utilities` overrides it deterministically.
 This is a difference from Panda, where an inline `cva()` emits atomic classes. See
 [Merging styles](/docs/concepts/merging-styles).
+
+## Slot recipes scope their variants
+
+The largest behavioural change in the migration, and the one most likely to bite, because nothing about your config has
+to change for it to happen.
+
+In Panda, every slot of a slot recipe carries its own variant class:
+
+```html
+<div class="checkbox__root checkbox__root--size_md">
+  <div class="checkbox__control checkbox__control--size_md">
+    <span class="checkbox__label checkbox__label--size_md"></span>
+  </div>
+</div>
+```
+
+In Bamboo, **a slot recipe that declares a slot named `root` is scoped automatically**. The root keeps its variant
+class; every other slot's variant styles become `@scope` rules anchored on it, and those slots carry a constant class:
+
+```html
+<div class="checkbox__root checkbox__root--size_md">
+  <div class="checkbox__control">
+    <span class="checkbox__label"></span>
+  </div>
+</div>
+```
+
+```css
+@scope (.checkbox__root--size_md) to (.checkbox__root) {
+  .checkbox__control {
+    width: 10;
+  }
+}
+```
+
+The upside is that a slot arbitrarily deep in a compound component needs nothing delivered to it — no context, no
+provider, no wrapper. See [Slot recipes](/docs/concepts/slot-recipes#only-the-root-takes-variants).
+
+### What this means for a migrating app
+
+- **Selectors you wrote against a non-root slot's variant class no longer match.** `.checkbox__control--size_md` is not
+  emitted any more. Anything targeting one — a test, a Playwright locator, a global stylesheet, a snapshot — needs
+  updating.
+- **The browser floor moves.** `@scope` needs Chrome 118, Firefox 128, Safari 17.4. There is no polyfill. If you support
+  older browsers, set `scopeRoots: []` on the recipe to opt out and keep a variant class per slot. See
+  [Browser support](/docs/overview/browser-support).
+- **A portaled slot needs a second anchor.** A `<Select>` whose listbox renders through a portal is outside the root's
+  subtree, so a scope opened at the root cannot reach it — its base styles still apply, so it renders _nearly_ right.
+  Name both enclosing slots:
+
+  ```ts
+  scopeRoots: ['root', 'positioner']
+  ```
+
+  See [Components that span a portal](/docs/concepts/slot-recipes#components-that-span-a-portal).
+
+If you would rather migrate without any of this and revisit it later, `scopeRoots: []` on each slot recipe reproduces
+Panda's output exactly.
+
+## Recipes are named, not atomic
+
+`cva()` and `sva()` emit one class per variant, into the `recipes` cascade layer:
+
+```js
+cva({ base: { padding: '4' }, variants: { size: { sm: { fontSize: 'sm' } } } })
+// panda:  'p_4'                                  in @layer utilities
+// bamboo: 'cva_a1b2c3' + 'cva_a1b2c3--size_sm'   in @layer recipes
+```
+
+The class name is derived from the config — set `className: 'button'` for a readable one. The practical difference is
+that a component written with `cva` is reliably overridable: its styles are in a lower layer than a consumer's `css()`,
+so the consumer wins by cascade rather than by stylesheet order. In Panda an inline `cva` is atomic and sits in the same
+layer as its consumer.
 
 ## Things that are easy to miss
 

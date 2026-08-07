@@ -222,14 +222,26 @@ const Checkbox = (props: CheckboxVariants) => {
 }
 ```
 
+## Variant scoping
+
+Everything below applies to **both** kinds of slot recipe — the `sva()` above and the
+[config slot recipe](#config-slot-recipe) further down. It is the same emission either way; only the API differs, and
+the examples show both.
+
 ### Only the root takes variants
 
 A recipe that declares a slot named `root` is scoped: only the root takes variants, and every other slot is a constant
 string.
 
 ```jsx
+// a config slot recipe exposes each slot on the recipe
 checkbox.root({ size: 'md' }) // 'checkbox__root checkbox__root--size_md'
 checkbox.control //              'checkbox__control'  — a property, not a call
+
+// an inline sva returns them all from one call
+const classes = checkbox({ size: 'md' })
+classes.root //    'checkbox__root checkbox__root--size_md'
+classes.control // 'checkbox__control'
 ```
 
 That is possible because a non-root slot's variant styles are not emitted as a class the slot has to carry. They are
@@ -438,14 +450,18 @@ const Checkbox = { Root, Control, Label }
 
 ## Config Slot Recipe
 
-Config slot recipes are very similar atomic recipes except that they use well-defined classNames and store the styles in
-the `recipes` cascade layer.
+Config slot recipes are very similar to atomic recipes. Both store their styles in the `recipes` cascade layer and name
+their classes from the config; a config recipe is declared in `theme.slotRecipes` under a key, so it gets a readable
+name and a generated module to import.
 
 The config slot recipe takes the following additional properties:
 
 - `className`: The name of the recipe. Used in the generated class name
 - `jsx`: An array of JSX components that use the recipe. Defaults to the uppercase version of the recipe name
 - `description`: An optional description of the recipe (used in the js-doc comments)
+
+Both kinds accept `scopeRoots`, which names the slots that enclose other slots — see
+[Variant scoping](#variant-scoping).
 
 ### Defining the recipe
 

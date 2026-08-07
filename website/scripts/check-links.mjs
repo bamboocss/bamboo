@@ -74,6 +74,13 @@ for (const file of files) {
         (match) => match[1],
       )
 
+      // Same-page links, which name no page at all: `[below](#cx-joins-in-both-tools)`.
+      // These were not checked at all until a stale one — left behind by a renamed heading
+      // — shipped in the migration guide and was found by a reader rather than by this.
+      const fragments = [...line.matchAll(/\]\(#([^)\s]+)\)/g), ...line.matchAll(/href="#([^"]+)"/g)].map(
+        (match) => match[1],
+      )
+
       for (const link of links) {
         const [path, anchor] = link.slice('/docs/'.length).split('#')
         const target = path.replace(/\/$/, '')
@@ -83,6 +90,11 @@ for (const file of files) {
         } else if (anchor && !pages.get(target).has(anchor)) {
           failures.push({ from, line: index + 1, link, why: 'no such heading' })
         }
+      }
+
+      for (const anchor of fragments) {
+        if (pages.get(from).has(anchor)) continue
+        failures.push({ from, line: index + 1, link: `#${anchor}`, why: 'no such heading on this page' })
       }
     })
 }

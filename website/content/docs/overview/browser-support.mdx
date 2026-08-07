@@ -64,9 +64,22 @@ There is no polyfill. `@scope` decides between two matching rules by DOM proximi
 and a stylesheet cannot express — the whole point is that the nearest root wins over an outer one. Anything claiming to
 polyfill it either ignores nesting or needs a runtime.
 
-If you need to support browsers below that line, name the slots so that none of them is called `root`. Bamboo has no
-ancestor to scope by then, so it falls back to a variant class per slot and emits no `@scope` — every slot stays
-callable, and the variant is delivered through the class as before.
+If you need to support browsers below that line, set `scopeRoots: []` on the slot recipe. Bamboo then has no anchor to
+scope by, so it falls back to a variant class per slot and emits no `@scope` — every slot stays callable, and the
+variant is delivered through the class as before.
+
+```ts
+defineSlotRecipe({
+  className: 'checkbox',
+  slots: ['root', 'control', 'label'],
+  scopeRoots: [], // no @scope; every slot carries its own variant class
+  variants: { size: { md: { control: { width: '10' } } } },
+})
+```
+
+Renaming a slot to avoid the scoping default also works, since the anchor defaults to a slot called `root` — but a
+slot's name is part of your component's public API, and changing it to dodge a browser constraint is the worse of the
+two.
 
 ## Polyfills
 
