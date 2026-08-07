@@ -39,3 +39,6 @@ dist-parity-*
 # Scratch fixture written by packages/vite/__tests__/fold-watch.test.ts
 sandbox/codegen/__fold-watch-tmp/
 sandbox/runtime-perf/__watch-tmp/
+
+# Coverage reports (pnpm test:coverage)
+coverage/
