@@ -40,10 +40,9 @@ your `className`, both classes are in the `utilities` layer and the browser pick
 
 The fix is to give the two styles different origins, or to stop overriding through a class name at all.
 
-Declaring the component's styles as a **config recipe** — in `theme.recipes` or `theme.slotRecipes` — puts them in the
+Declaring the component's styles as a **recipe** — `cva()` or `sva()`, inline or in `theme.recipes` — puts them in the
 `recipes` layer, so a consumer's `css()` in `utilities` wins by [cascade layer](/docs/concepts/cascade-layers) in every
-build. An inline `cva()` does **not** do this: its output is atomic, exactly like `css()`, and lands in `utilities`
-alongside the consumer.
+build.
 
 The alternative needs no layer at all — accept a style object rather than a class name. `css(base, props.css)` merges
 per property before any class name exists, so it resolves the same way in every build.

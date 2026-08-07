@@ -8,10 +8,10 @@ import multiline from 'multiline-ts'
  * classes in the `utilities` layer, and which one applies is decided by stylesheet order
  * rather than by the caller.
  *
- * The fix is a difference in *origin*: a config recipe lands in `recipes` and loses to the
+ * The fix is a difference in *origin*: a recipe lands in `recipes` and loses to the
  * consumer's `css()` by layer, or the component takes a style object and merges it before
- * any class name exists. An inline `cva()` is not a fix — it is atomic, exactly like
- * `css()`, and lands in the same layer.
+ * any class name exists. `cva` counts either way — inline or declared in `theme.recipes`,
+ * its classes are named semantically and emitted into `recipes`.
  */
 eslintTester.run(RULE_NAME, rule, {
   invalid: [
@@ -20,15 +20,6 @@ eslintTester.run(RULE_NAME, rule, {
   import { css, cx } from './bamboo/css';
 
   const Card = (props) => <div className={cx(css({ padding: '4' }), props.className)} />`,
-      errors: [{ messageId: 'unlayeredOverride' }],
-    },
-    {
-      // An inline cva is atomic too, so it has the same problem.
-      code: multiline`
-  import { cva, cx } from './bamboo/css';
-
-  const button = cva({ base: { padding: '4' } });
-  const Button = (props) => <button className={cx(button(), props.className)} />`,
       errors: [{ messageId: 'unlayeredOverride' }],
     },
     {
@@ -48,6 +39,23 @@ eslintTester.run(RULE_NAME, rule, {
   import { button } from './bamboo/recipes';
 
   const Button = (props) => <button className={cx(button(), props.className)} />`,
+    },
+    {
+      // So is an inline cva. Its classes are named from its config — `btn--size_sm` — and
+      // emitted into `recipes`, exactly as a declared recipe's are.
+      code: multiline`
+  import { cva, cx } from './bamboo/css';
+
+  const button = cva({ base: { padding: '4' } });
+  const Button = (props) => <button className={cx(button(), props.className)} />`,
+    },
+    {
+      // And an inline sva, per slot.
+      code: multiline`
+  import { cx, sva } from './bamboo/css';
+
+  const card = sva({ slots: ['root'], base: { root: { padding: '4' } } });
+  const Card = (props) => <div className={cx(card().root, props.className)} />`,
     },
     {
       // Merging style objects resolves per property, before any class name exists.

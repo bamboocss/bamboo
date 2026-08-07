@@ -42,8 +42,8 @@ describe('sva', () => {
 
     expect(result).toMatchInlineSnapshot(`
       {
-        "icon": "fs_2xl",
-        "root": "bdr_md fw_semibold h_10 px_4",
+        "icon": "sva_XfaJN__icon",
+        "root": "sva_XfaJN__root sva_XfaJN__root--visual_unstyled",
       }
     `)
   })
@@ -54,8 +54,8 @@ describe('sva', () => {
     expect(result).toMatchInlineSnapshot(
       `
       {
-        "icon": "fs_2xl c_white",
-        "root": "bdr_md fw_semibold h_10 px_4 bg_colorPalette.500 dark:bg_colorPalette.300 c_white dark:c_gray.800",
+        "icon": "sva_XfaJN__icon",
+        "root": "sva_XfaJN__root sva_XfaJN__root--visual_solid",
       }
     `,
     )
@@ -67,8 +67,8 @@ describe('sva', () => {
     expect(result).toMatchInlineSnapshot(
       `
       {
-        "icon": "fs_2xl bd_1px_solid",
-        "root": "bdr_md fw_semibold h_10 px_4 bd_1px_solid c_colorPalette.600 dark:c_colorPalette.200 bd-c_currentColor",
+        "icon": "sva_XfaJN__icon",
+        "root": "sva_XfaJN__root sva_XfaJN__root--visual_outline",
       }
     `,
     )

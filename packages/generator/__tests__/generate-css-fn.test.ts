@@ -29,15 +29,6 @@ describe('generate css-fn', () => {
       export declare const css: CssFunction;
 
       /**
-       * \`css\`, but always naming one class per property.
-       *
-       * The seam \`cva\` and \`sva\` use: their variants are extracted atomically whatever
-       * \`cssMode\` says, so their runtime has to name classes the same way. Identical to \`css\`
-       * unless \`cssMode: 'grouped'\` is set. Internal — prefer \`css\`.
-       */
-      export declare const __atomicCss: CssFunction;
-
-      /**
        * Build a fallback value: a list of candidates, most-preferred first, emitted as repeated
        * declarations so the browser keeps the last one it understands.
        *
@@ -121,8 +112,6 @@ describe('generate css-fn', () => {
       // condition object would otherwise poison it for everyone after them.
       css.raw = (...styles) => cloneStyles(mergeCss(...styles))
 
-      // \`cssMode\` is atomic, so the recipe runtimes can share \`css\` itself.
-      export const __atomicCss = css
 
       // Emitted for the source transform, which rewrites a single dynamic style leaf into a
       // call to this rather than leaving a \`css()\` behind. \`prefix\` is the class up to the
@@ -189,15 +178,6 @@ describe('generate css-fn', () => {
       }
 
       export declare const css: CssFunction;
-
-      /**
-       * \`css\`, but always naming one class per property.
-       *
-       * The seam \`cva\` and \`sva\` use: their variants are extracted atomically whatever
-       * \`cssMode\` says, so their runtime has to name classes the same way. Identical to \`css\`
-       * unless \`cssMode: 'grouped'\` is set. Internal — prefer \`css\`.
-       */
-      export declare const __atomicCss: CssFunction;
 
       /**
        * Build a fallback value: a list of candidates, most-preferred first, emitted as repeated
@@ -288,8 +268,6 @@ describe('generate css-fn', () => {
       // condition object would otherwise poison it for everyone after them.
       css.raw = (...styles) => cloneStyles(mergeCss(...styles))
 
-      // \`cssMode\` is atomic, so the recipe runtimes can share \`css\` itself.
-      export const __atomicCss = css
 
       // Emitted for the source transform, which rewrites a single dynamic style leaf into a
       // call to this rather than leaving a \`css()\` behind. \`prefix\` is the class up to the
@@ -317,19 +295,24 @@ describe('generate css-fn', () => {
 })
 
 describe('generate css-fn — the recipe seam', () => {
-  // `cva`/`sva`/config recipes are extracted atomically whatever `cssMode` says, so their
-  // runtime has to name classes atomically too. Under `grouped` that needs a second
-  // `createCss`; under `atomic` it must stay a bare alias, costing nothing.
-  test('grouped builds get their own atomic css instance', () => {
-    const js = generateCssFn(createGeneratorContext({ cssMode: 'grouped' }) as any).js
-    expect(js).toContain('createCss({ ...context, grouped: false })')
-    expect(js).toContain('export const __atomicCss = /* @__PURE__ */ memo(')
-    expect(js).toContain('__atomicCss.raw = css.raw')
-  })
-
-  test('atomic builds alias it, adding no second instance', () => {
-    const js = generateCssFn(createGeneratorContext() as any).js
-    expect(js).toContain('export const __atomicCss = css')
+  /**
+   * There is no longer a seam to keep.
+   *
+   * Recipes used to be extracted atomically whatever `cssMode` said, because which variant
+   * combination a caller selects is not knowable at build time and grouping would have
+   * needed a rule per combination. That forced a second `createCss` under `grouped`,
+   * exported as `__atomicCss`, purely so the recipe runtimes could name classes the way the
+   * stylesheet did.
+   *
+   * A recipe now names its classes semantically — `btn--size_sm`, from the config — which
+   * is knowable at build time in every mode. So no second instance, in either mode.
+   */
+  test.each([
+    ['atomic', {}],
+    ['grouped', { cssMode: 'grouped' as const }],
+  ])('no second css instance under %s', (_mode, config) => {
+    const js = generateCssFn(createGeneratorContext(config) as any).js
+    expect(js).not.toContain('__atomicCss')
     expect(js).not.toContain('grouped: false')
   })
 })

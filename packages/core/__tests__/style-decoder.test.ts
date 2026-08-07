@@ -61,6 +61,7 @@ describe('style decoder', () => {
               "border": "2px solid var(--colors-red-300)",
             },
           },
+          "scoped": false,
         },
       }
     `)
@@ -88,6 +89,7 @@ describe('style decoder', () => {
               "color": "blue",
             },
           },
+          "scoped": false,
         },
         {
           "className": "md\\:c_red",
@@ -114,6 +116,7 @@ describe('style decoder', () => {
               },
             },
           },
+          "scoped": false,
         },
       }
     `)
@@ -175,6 +178,7 @@ describe('style decoder', () => {
               "border": "1px solid var(--colors-red-100)",
             },
           },
+          "scoped": false,
         },
         {
           "className": "bg_blue\\.300",
@@ -190,6 +194,7 @@ describe('style decoder', () => {
               "background": "var(--colors-blue-300)",
             },
           },
+          "scoped": false,
         },
         {
           "className": "c_red",
@@ -205,6 +210,7 @@ describe('style decoder', () => {
               "color": "red !important",
             },
           },
+          "scoped": false,
         },
         {
           "className": "textStyle_headline\\.h1",
@@ -221,6 +227,7 @@ describe('style decoder', () => {
               "fontWeight": "var(--font-weights-bold)",
             },
           },
+          "scoped": false,
         },
         {
           "className": "fs_xs",
@@ -236,6 +243,7 @@ describe('style decoder', () => {
               "fontSize": "var(--font-sizes-xs)",
             },
           },
+          "scoped": false,
         },
         {
           "className": "w_1",
@@ -251,6 +259,7 @@ describe('style decoder', () => {
               "width": "var(--sizes-1)",
             },
           },
+          "scoped": false,
         },
         {
           "className": "dark\\:fs_2xl",
@@ -275,6 +284,7 @@ describe('style decoder', () => {
               },
             },
           },
+          "scoped": false,
         },
         {
           "className": "\\[\\&\\[data-attr\\=\\'test\\'\\]\\]\\:c_green",
@@ -299,6 +309,7 @@ describe('style decoder', () => {
               },
             },
           },
+          "scoped": false,
         },
         {
           "className": "hover\\:fs_md",
@@ -323,6 +334,7 @@ describe('style decoder', () => {
               },
             },
           },
+          "scoped": false,
         },
         {
           "className": "\\[\\&\\[data-attr\\=\\'test\\'\\]\\]\\:expanded\\:c_purple",
@@ -354,6 +366,7 @@ describe('style decoder', () => {
               },
             },
           },
+          "scoped": false,
         },
         {
           "className": "hover\\:focus\\:fs_xl",
@@ -385,6 +398,7 @@ describe('style decoder', () => {
               },
             },
           },
+          "scoped": false,
         },
         {
           "className": "\\[\\&\\[data-attr\\=\\'test\\'\\]\\]\\:expanded\\:\\[\\.target_\\&\\]\\:c_cyan",
@@ -423,6 +437,7 @@ describe('style decoder', () => {
               },
             },
           },
+          "scoped": false,
         },
         {
           "className": "\\[\\&\\[data-attr\\=\\'test\\'\\]\\]\\:expanded\\:\\[\\.target_\\&\\]\\:open\\:c_orange",
@@ -468,6 +483,7 @@ describe('style decoder', () => {
               },
             },
           },
+          "scoped": false,
         },
         {
           "className": "sm\\:fs_sm",
@@ -494,6 +510,7 @@ describe('style decoder', () => {
               },
             },
           },
+          "scoped": false,
         },
         {
           "className": "sm\\:c_yellow",
@@ -520,6 +537,7 @@ describe('style decoder', () => {
               },
             },
           },
+          "scoped": false,
         },
         {
           "className": "sm\\:bg-c_red",
@@ -546,6 +564,7 @@ describe('style decoder', () => {
               },
             },
           },
+          "scoped": false,
         },
         {
           "className": "sm\\:w_2",
@@ -572,6 +591,7 @@ describe('style decoder', () => {
               },
             },
           },
+          "scoped": false,
         },
         {
           "className": "sm\\:hover\\:bg-c_green",
@@ -605,6 +625,7 @@ describe('style decoder', () => {
               },
             },
           },
+          "scoped": false,
         },
         {
           "className": "hover\\:md\\:fs_lg",
@@ -638,6 +659,7 @@ describe('style decoder', () => {
               },
             },
           },
+          "scoped": false,
         },
         {
           "className": "xl\\:w_3",
@@ -664,6 +686,7 @@ describe('style decoder', () => {
               },
             },
           },
+          "scoped": false,
         },
         {
           "className": "\\[\\&\\[data-attr\\=\\'test\\'\\]\\]\\:expanded\\:\\[\\.target_\\&\\]\\:xl\\:c_pink",
@@ -711,6 +734,7 @@ describe('style decoder', () => {
               },
             },
           },
+          "scoped": false,
         },
       }
     `,
@@ -864,6 +888,7 @@ describe('style decoder', () => {
               "padding": "0 0.5rem",
             },
           },
+          "scoped": false,
         },
         {
           "className": "md\\:buttonStyle--size_md",
@@ -893,6 +918,7 @@ describe('style decoder', () => {
               },
             },
           },
+          "scoped": false,
         },
         {
           "className": "buttonStyle--variant_solid",
@@ -918,6 +944,7 @@ describe('style decoder', () => {
               "color": "var(--colors-white)",
             },
           },
+          "scoped": false,
         },
       }
     `)
@@ -979,428 +1006,7 @@ describe('style decoder', () => {
       },
     })
 
-    expect(buttonStyle).toMatchInlineSnapshot(`
-      Set {
-        {
-          "className": "p_0_0\\.5rem",
-          "conditions": undefined,
-          "entry": {
-            "prop": "padding",
-            "value": "0 0.5rem",
-          },
-          "hash": "padding]___[value:0 0.5rem",
-          "layer": undefined,
-          "result": {
-            ".p_0_0\\.5rem": {
-              "padding": "0 0.5rem",
-            },
-          },
-        },
-        {
-          "className": "p_0_0\\.75rem",
-          "conditions": undefined,
-          "entry": {
-            "prop": "padding",
-            "value": "0 0.75rem",
-          },
-          "hash": "padding]___[value:0 0.75rem",
-          "layer": undefined,
-          "result": {
-            ".p_0_0\\.75rem": {
-              "padding": "0 0.75rem",
-            },
-          },
-        },
-        {
-          "className": "bd_1px_solid_blue",
-          "conditions": undefined,
-          "entry": {
-            "prop": "border",
-            "value": "1px solid blue",
-          },
-          "hash": "border]___[value:1px solid blue",
-          "layer": undefined,
-          "result": {
-            ".bd_1px_solid_blue": {
-              "border": "1px solid blue",
-            },
-          },
-        },
-        {
-          "className": "d_inline-flex",
-          "conditions": undefined,
-          "entry": {
-            "prop": "display",
-            "value": "inline-flex",
-          },
-          "hash": "display]___[value:inline-flex",
-          "layer": undefined,
-          "result": {
-            ".d_inline-flex": {
-              "display": "inline-flex",
-            },
-          },
-        },
-        {
-          "className": "ai_center",
-          "conditions": undefined,
-          "entry": {
-            "prop": "alignItems",
-            "value": "center",
-          },
-          "hash": "alignItems]___[value:center",
-          "layer": undefined,
-          "result": {
-            ".ai_center": {
-              "alignItems": "center",
-            },
-          },
-        },
-        {
-          "className": "jc_center",
-          "conditions": undefined,
-          "entry": {
-            "prop": "justifyContent",
-            "value": "center",
-          },
-          "hash": "justifyContent]___[value:center",
-          "layer": undefined,
-          "result": {
-            ".jc_center": {
-              "justifyContent": "center",
-            },
-          },
-        },
-        {
-          "className": "textStyle_headline\\.h1",
-          "conditions": undefined,
-          "entry": {
-            "prop": "textStyle",
-            "value": "headline.h1",
-          },
-          "hash": "textStyle]___[value:headline.h1",
-          "layer": "compositions",
-          "result": {
-            ".textStyle_headline\\.h1": {
-              "fontSize": "2rem",
-              "fontWeight": "var(--font-weights-bold)",
-            },
-          },
-        },
-        {
-          "className": "bg-c_blue",
-          "conditions": undefined,
-          "entry": {
-            "prop": "backgroundColor",
-            "value": "blue",
-          },
-          "hash": "backgroundColor]___[value:blue",
-          "layer": undefined,
-          "result": {
-            ".bg-c_blue": {
-              "backgroundColor": "blue",
-            },
-          },
-        },
-        {
-          "className": "c_white",
-          "conditions": undefined,
-          "entry": {
-            "prop": "color",
-            "value": "white",
-          },
-          "hash": "color]___[value:white",
-          "layer": undefined,
-          "result": {
-            ".c_white": {
-              "color": "var(--colors-white)",
-            },
-          },
-        },
-        {
-          "className": "bg-c_transparent",
-          "conditions": undefined,
-          "entry": {
-            "prop": "backgroundColor",
-            "value": "transparent",
-          },
-          "hash": "backgroundColor]___[value:transparent",
-          "layer": undefined,
-          "result": {
-            ".bg-c_transparent": {
-              "backgroundColor": "var(--colors-transparent)",
-            },
-          },
-        },
-        {
-          "className": "c_blue",
-          "conditions": undefined,
-          "entry": {
-            "prop": "color",
-            "value": "blue",
-          },
-          "hash": "color]___[value:blue",
-          "layer": undefined,
-          "result": {
-            ".c_blue": {
-              "color": "blue",
-            },
-          },
-        },
-        {
-          "className": "h_2\\.5rem",
-          "conditions": undefined,
-          "entry": {
-            "prop": "height",
-            "value": "2.5rem",
-          },
-          "hash": "height]___[value:2.5rem",
-          "layer": undefined,
-          "result": {
-            ".h_2\\.5rem": {
-              "height": "2.5rem",
-            },
-          },
-        },
-        {
-          "className": "min-w_2\\.5rem",
-          "conditions": undefined,
-          "entry": {
-            "prop": "minWidth",
-            "value": "2.5rem",
-          },
-          "hash": "minWidth]___[value:2.5rem",
-          "layer": undefined,
-          "result": {
-            ".min-w_2\\.5rem": {
-              "minWidth": "2.5rem",
-            },
-          },
-        },
-        {
-          "className": "h_3rem",
-          "conditions": undefined,
-          "entry": {
-            "prop": "height",
-            "value": "3rem",
-          },
-          "hash": "height]___[value:3rem",
-          "layer": undefined,
-          "result": {
-            ".h_3rem": {
-              "height": "3rem",
-            },
-          },
-        },
-        {
-          "className": "min-w_3rem",
-          "conditions": undefined,
-          "entry": {
-            "prop": "minWidth",
-            "value": "3rem",
-          },
-          "hash": "minWidth]___[value:3rem",
-          "layer": undefined,
-          "result": {
-            ".min-w_3rem": {
-              "minWidth": "3rem",
-            },
-          },
-        },
-        {
-          "className": "\\[\\&\\[data-disabled\\]\\]\\:bd_1px_solid_gray",
-          "conditions": [
-            {
-              "raw": "&[data-disabled]",
-              "type": "self-nesting",
-              "value": "&[data-disabled]",
-            },
-          ],
-          "entry": {
-            "cond": "&[data-disabled]",
-            "prop": "border",
-            "value": "1px solid gray",
-          },
-          "hash": "border]___[value:1px solid gray]___[cond:&[data-disabled]",
-          "layer": undefined,
-          "result": {
-            ".\\[\\&\\[data-disabled\\]\\]\\:bd_1px_solid_gray": {
-              "&[data-disabled]": {
-                "border": "1px solid gray",
-              },
-            },
-          },
-        },
-        {
-          "className": "\\[\\&\\[data-disabled\\]\\]\\:bg-c_gray",
-          "conditions": [
-            {
-              "raw": "&[data-disabled]",
-              "type": "self-nesting",
-              "value": "&[data-disabled]",
-            },
-          ],
-          "entry": {
-            "cond": "&[data-disabled]",
-            "prop": "backgroundColor",
-            "value": "gray",
-          },
-          "hash": "backgroundColor]___[value:gray]___[cond:&[data-disabled]",
-          "layer": undefined,
-          "result": {
-            ".\\[\\&\\[data-disabled\\]\\]\\:bg-c_gray": {
-              "&[data-disabled]": {
-                "backgroundColor": "gray",
-              },
-            },
-          },
-        },
-        {
-          "className": "\\[\\&\\[data-disabled\\]\\]\\:c_black",
-          "conditions": [
-            {
-              "raw": "&[data-disabled]",
-              "type": "self-nesting",
-              "value": "&[data-disabled]",
-            },
-          ],
-          "entry": {
-            "cond": "&[data-disabled]",
-            "prop": "color",
-            "value": "black",
-          },
-          "hash": "color]___[value:black]___[cond:&[data-disabled]",
-          "layer": undefined,
-          "result": {
-            ".\\[\\&\\[data-disabled\\]\\]\\:c_black": {
-              "&[data-disabled]": {
-                "color": "var(--colors-black)",
-              },
-            },
-          },
-        },
-        {
-          "className": "\\[\\&\\[data-disabled\\]\\]\\:bg-c_transparent",
-          "conditions": [
-            {
-              "raw": "&[data-disabled]",
-              "type": "self-nesting",
-              "value": "&[data-disabled]",
-            },
-          ],
-          "entry": {
-            "cond": "&[data-disabled]",
-            "prop": "backgroundColor",
-            "value": "transparent",
-          },
-          "hash": "backgroundColor]___[value:transparent]___[cond:&[data-disabled]",
-          "layer": undefined,
-          "result": {
-            ".\\[\\&\\[data-disabled\\]\\]\\:bg-c_transparent": {
-              "&[data-disabled]": {
-                "backgroundColor": "var(--colors-transparent)",
-              },
-            },
-          },
-        },
-        {
-          "className": "\\[\\&\\[data-disabled\\]\\]\\:c_gray",
-          "conditions": [
-            {
-              "raw": "&[data-disabled]",
-              "type": "self-nesting",
-              "value": "&[data-disabled]",
-            },
-          ],
-          "entry": {
-            "cond": "&[data-disabled]",
-            "prop": "color",
-            "value": "gray",
-          },
-          "hash": "color]___[value:gray]___[cond:&[data-disabled]",
-          "layer": undefined,
-          "result": {
-            ".\\[\\&\\[data-disabled\\]\\]\\:c_gray": {
-              "&[data-disabled]": {
-                "color": "gray",
-              },
-            },
-          },
-        },
-        {
-          "className": "hover\\:bg-c_darkblue",
-          "conditions": [
-            {
-              "raw": "&:is(:hover, [data-hover])",
-              "type": "self-nesting",
-              "value": "&:is(:hover, [data-hover])",
-            },
-          ],
-          "entry": {
-            "cond": "_hover",
-            "prop": "backgroundColor",
-            "value": "darkblue",
-          },
-          "hash": "backgroundColor]___[value:darkblue]___[cond:_hover",
-          "layer": undefined,
-          "result": {
-            ".hover\\:bg-c_darkblue": {
-              "&:is(:hover, [data-hover])": {
-                "backgroundColor": "darkblue",
-              },
-            },
-          },
-        },
-        {
-          "className": "hover\\:bg-c_blue",
-          "conditions": [
-            {
-              "raw": "&:is(:hover, [data-hover])",
-              "type": "self-nesting",
-              "value": "&:is(:hover, [data-hover])",
-            },
-          ],
-          "entry": {
-            "cond": "_hover",
-            "prop": "backgroundColor",
-            "value": "blue",
-          },
-          "hash": "backgroundColor]___[value:blue]___[cond:_hover",
-          "layer": undefined,
-          "result": {
-            ".hover\\:bg-c_blue": {
-              "&:is(:hover, [data-hover])": {
-                "backgroundColor": "blue",
-              },
-            },
-          },
-        },
-        {
-          "className": "hover\\:c_white",
-          "conditions": [
-            {
-              "raw": "&:is(:hover, [data-hover])",
-              "type": "self-nesting",
-              "value": "&:is(:hover, [data-hover])",
-            },
-          ],
-          "entry": {
-            "cond": "_hover",
-            "prop": "color",
-            "value": "white",
-          },
-          "hash": "color]___[value:white]___[cond:_hover",
-          "layer": undefined,
-          "result": {
-            ".hover\\:c_white": {
-              "&:is(:hover, [data-hover])": {
-                "color": "var(--colors-white)",
-              },
-            },
-          },
-        },
-      }
-    `)
+    expect(buttonStyle).toMatchInlineSnapshot(`Set {}`)
   })
 
   test('slot recipe', () => {
@@ -1561,6 +1167,7 @@ describe('style decoder', () => {
           "result": {
             ".checkbox__root--size_sm": {},
           },
+          "scoped": false,
         },
         {
           "className": "checkbox__control--size_sm",
@@ -1583,6 +1190,7 @@ describe('style decoder', () => {
               },
             },
           },
+          "scoped": true,
         },
         {
           "className": "checkbox__label--size_sm",
@@ -1602,6 +1210,7 @@ describe('style decoder', () => {
               },
             },
           },
+          "scoped": true,
         },
         {
           "className": "md\\:checkbox__root--size_md",
@@ -1628,6 +1237,7 @@ describe('style decoder', () => {
               "@media screen and (min-width: 48rem)": {},
             },
           },
+          "scoped": false,
         },
         {
           "className": "md\\:checkbox__control--size_md",
@@ -1659,6 +1269,7 @@ describe('style decoder', () => {
               },
             },
           },
+          "scoped": true,
         },
         {
           "className": "md\\:checkbox__label--size_md",
@@ -1689,6 +1300,7 @@ describe('style decoder', () => {
               },
             },
           },
+          "scoped": true,
         },
       }
     `)
@@ -1724,235 +1336,7 @@ describe('style decoder', () => {
       },
     })
 
-    expect(checkbox).toMatchInlineSnapshot(`
-      Set {
-        {
-          "className": "gap_2",
-          "conditions": undefined,
-          "entry": {
-            "prop": "gap",
-            "value": 2,
-          },
-          "hash": "gap]___[value:2",
-          "layer": undefined,
-          "result": {
-            ".gap_2": {
-              "gap": "var(--spacing-2)",
-            },
-          },
-        },
-        {
-          "className": "bd-w_1px",
-          "conditions": undefined,
-          "entry": {
-            "prop": "borderWidth",
-            "value": "1px",
-          },
-          "hash": "borderWidth]___[value:1px",
-          "layer": undefined,
-          "result": {
-            ".bd-w_1px": {
-              "borderWidth": "1px",
-            },
-          },
-        },
-        {
-          "className": "bdr_sm",
-          "conditions": undefined,
-          "entry": {
-            "prop": "borderRadius",
-            "value": "sm",
-          },
-          "hash": "borderRadius]___[value:sm",
-          "layer": undefined,
-          "result": {
-            ".bdr_sm": {
-              "borderRadius": "var(--radii-sm)",
-            },
-          },
-        },
-        {
-          "className": "d_flex",
-          "conditions": undefined,
-          "entry": {
-            "prop": "display",
-            "value": "flex",
-          },
-          "hash": "display]___[value:flex",
-          "layer": undefined,
-          "result": {
-            ".d_flex": {
-              "display": "flex",
-            },
-          },
-        },
-        {
-          "className": "ai_center",
-          "conditions": undefined,
-          "entry": {
-            "prop": "alignItems",
-            "value": "center",
-          },
-          "hash": "alignItems]___[value:center",
-          "layer": undefined,
-          "result": {
-            ".ai_center": {
-              "alignItems": "center",
-            },
-          },
-        },
-        {
-          "className": "ms_2",
-          "conditions": undefined,
-          "entry": {
-            "prop": "marginInlineStart",
-            "value": 2,
-          },
-          "hash": "marginInlineStart]___[value:2",
-          "layer": undefined,
-          "result": {
-            ".ms_2": {
-              "marginInlineStart": "var(--spacing-2)",
-            },
-          },
-        },
-        {
-          "className": "fs_sm",
-          "conditions": undefined,
-          "entry": {
-            "prop": "fontSize",
-            "value": "sm",
-          },
-          "hash": "fontSize]___[value:sm",
-          "layer": undefined,
-          "result": {
-            ".fs_sm": {
-              "fontSize": "var(--font-sizes-sm)",
-            },
-          },
-        },
-        {
-          "className": "fs_md",
-          "conditions": undefined,
-          "entry": {
-            "prop": "fontSize",
-            "value": "md",
-          },
-          "hash": "fontSize]___[value:md",
-          "layer": undefined,
-          "result": {
-            ".fs_md": {
-              "fontSize": "var(--font-sizes-md)",
-            },
-          },
-        },
-        {
-          "className": "fs_lg",
-          "conditions": undefined,
-          "entry": {
-            "prop": "fontSize",
-            "value": "lg",
-          },
-          "hash": "fontSize]___[value:lg",
-          "layer": undefined,
-          "result": {
-            ".fs_lg": {
-              "fontSize": "var(--font-sizes-lg)",
-            },
-          },
-        },
-        {
-          "className": "w_8",
-          "conditions": undefined,
-          "entry": {
-            "prop": "width",
-            "value": 8,
-          },
-          "hash": "width]___[value:8",
-          "layer": undefined,
-          "result": {
-            ".w_8": {
-              "width": "var(--sizes-8)",
-            },
-          },
-        },
-        {
-          "className": "h_8",
-          "conditions": undefined,
-          "entry": {
-            "prop": "height",
-            "value": 8,
-          },
-          "hash": "height]___[value:8",
-          "layer": undefined,
-          "result": {
-            ".h_8": {
-              "height": "var(--sizes-8)",
-            },
-          },
-        },
-        {
-          "className": "w_10",
-          "conditions": undefined,
-          "entry": {
-            "prop": "width",
-            "value": 10,
-          },
-          "hash": "width]___[value:10",
-          "layer": undefined,
-          "result": {
-            ".w_10": {
-              "width": "var(--sizes-10)",
-            },
-          },
-        },
-        {
-          "className": "h_10",
-          "conditions": undefined,
-          "entry": {
-            "prop": "height",
-            "value": 10,
-          },
-          "hash": "height]___[value:10",
-          "layer": undefined,
-          "result": {
-            ".h_10": {
-              "height": "var(--sizes-10)",
-            },
-          },
-        },
-        {
-          "className": "w_12",
-          "conditions": undefined,
-          "entry": {
-            "prop": "width",
-            "value": 12,
-          },
-          "hash": "width]___[value:12",
-          "layer": undefined,
-          "result": {
-            ".w_12": {
-              "width": "var(--sizes-12)",
-            },
-          },
-        },
-        {
-          "className": "h_12",
-          "conditions": undefined,
-          "entry": {
-            "prop": "height",
-            "value": 12,
-          },
-          "hash": "height]___[value:12",
-          "layer": undefined,
-          "result": {
-            ".h_12": {
-              "height": "var(--sizes-12)",
-            },
-          },
-        },
-      }
-    `)
+    expect(checkbox).toMatchInlineSnapshot(`Set {}`)
   })
 
   test('simple recipe with alterning no-condition/condition props', () => {
@@ -2019,6 +1403,7 @@ describe('style decoder', () => {
               "color": "red",
             },
           },
+          "scoped": false,
         },
         {
           "className": "c_blue",
@@ -2034,6 +1419,7 @@ describe('style decoder', () => {
               "color": "blue",
             },
           },
+          "scoped": false,
         },
       }
     `)
@@ -2060,6 +1446,7 @@ describe('style decoder', () => {
                 "variant": "solid",
               },
             },
+            "scoped": false,
           },
         },
       }
@@ -2233,6 +1620,7 @@ describe('style decoder', () => {
                 "transition": "all .3s ease-in-out",
               },
             },
+            "scoped": false,
           },
           {
             "className": "d_none",
@@ -2248,6 +1636,7 @@ describe('style decoder', () => {
                 "display": "none",
               },
             },
+            "scoped": false,
           },
           {
             "className": "op_0",
@@ -2263,6 +1652,7 @@ describe('style decoder', () => {
                 "opacity": "0 !important",
               },
             },
+            "scoped": false,
           },
           {
             "className": "op_1",
@@ -2278,6 +1668,7 @@ describe('style decoder', () => {
                 "opacity": 1,
               },
             },
+            "scoped": false,
           },
           {
             "className": "bg-grad_to-b",
@@ -2295,6 +1686,7 @@ describe('style decoder', () => {
                 "backgroundImage": "linear-gradient(var(--gradient-stops))",
               },
             },
+            "scoped": false,
           },
           {
             "className": "grad-from_rgb\\(200_200_200_\\/_\\.4\\)",
@@ -2310,6 +1702,7 @@ describe('style decoder', () => {
                 "--gradient-from": "rgb(200 200 200 / .4)",
               },
             },
+            "scoped": false,
           },
           {
             "className": "h_100\\%",
@@ -2325,6 +1718,7 @@ describe('style decoder', () => {
                 "height": "100%",
               },
             },
+            "scoped": false,
           },
           {
             "className": "h_10px",
@@ -2340,6 +1734,7 @@ describe('style decoder', () => {
                 "height": "10px",
               },
             },
+            "scoped": false,
           },
         },
         "grouped": Set {},
@@ -2359,6 +1754,7 @@ describe('style decoder', () => {
               "result": {
                 ".checkbox__root--size_md": {},
               },
+              "scoped": false,
             },
             {
               "className": "checkbox__control--size_md",
@@ -2379,6 +1775,7 @@ describe('style decoder', () => {
                   },
                 },
               },
+              "scoped": true,
             },
             {
               "className": "checkbox__label--size_md",
@@ -2398,6 +1795,7 @@ describe('style decoder', () => {
                   },
                 },
               },
+              "scoped": true,
             },
             {
               "className": "checkbox__root--size_md",
@@ -2413,6 +1811,7 @@ describe('style decoder', () => {
               "result": {
                 ".checkbox__root--size_md": {},
               },
+              "scoped": false,
             },
             {
               "className": "checkbox__control--size_md",
@@ -2433,6 +1832,7 @@ describe('style decoder', () => {
                   },
                 },
               },
+              "scoped": true,
             },
             {
               "className": "checkbox__label--size_md",
@@ -2452,6 +1852,7 @@ describe('style decoder', () => {
                   },
                 },
               },
+              "scoped": true,
             },
             {
               "className": "checkbox__root--size_md",
@@ -2467,6 +1868,7 @@ describe('style decoder', () => {
               "result": {
                 ".checkbox__root--size_md": {},
               },
+              "scoped": false,
             },
             {
               "className": "checkbox__control--size_md",
@@ -2487,6 +1889,7 @@ describe('style decoder', () => {
                   },
                 },
               },
+              "scoped": true,
             },
             {
               "className": "checkbox__label--size_md",
@@ -2506,6 +1909,7 @@ describe('style decoder', () => {
                   },
                 },
               },
+              "scoped": true,
             },
           },
         },
@@ -2667,6 +2071,7 @@ describe('style decoder', () => {
           "result": {
             ".trunc_false": {},
           },
+          "scoped": false,
         },
       }
     `)
@@ -2690,6 +2095,7 @@ describe('style decoder', () => {
               "whiteSpace": "nowrap",
             },
           },
+          "scoped": false,
         },
       }
     `)
@@ -2712,54 +2118,6 @@ describe('style decoder', () => {
       },
     })
 
-    expect(result).toMatchInlineSnapshot(`
-      Set {
-        {
-          "className": "c_\\#fff",
-          "conditions": undefined,
-          "entry": {
-            "prop": "color",
-            "value": "#fff",
-          },
-          "hash": "color]___[value:#fff",
-          "layer": undefined,
-          "result": {
-            ".c_\\#fff": {
-              "color": "#fff",
-            },
-          },
-        },
-        {
-          "className": "d_block",
-          "conditions": undefined,
-          "entry": {
-            "prop": "display",
-            "value": "block",
-          },
-          "hash": "display]___[value:block",
-          "layer": undefined,
-          "result": {
-            ".d_block": {
-              "display": "block",
-            },
-          },
-        },
-        {
-          "className": "d_none",
-          "conditions": undefined,
-          "entry": {
-            "prop": "display",
-            "value": "none",
-          },
-          "hash": "display]___[value:none",
-          "layer": undefined,
-          "result": {
-            ".d_none": {
-              "display": "none",
-            },
-          },
-        },
-      }
-    `)
+    expect(result).toMatchInlineSnapshot(`Set {}`)
   })
 })

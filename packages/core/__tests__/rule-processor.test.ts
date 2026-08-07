@@ -531,125 +531,63 @@ describe('rule processor', () => {
 
     expect(buttonStyle.className).toMatchInlineSnapshot(`
       [
-        "p_0_0\\.5rem",
-        "p_0_0\\.75rem",
-        "bd_1px_solid_blue",
-        "d_inline-flex",
-        "ai_center",
-        "jc_center",
-        "textStyle_headline\\.h1",
-        "bg-c_blue",
-        "c_white",
-        "bg-c_transparent",
-        "c_blue",
-        "h_2\\.5rem",
-        "min-w_2\\.5rem",
-        "h_3rem",
-        "min-w_3rem",
-        "\\[\\&\\[data-disabled\\]\\]\\:bd_1px_solid_gray",
-        "\\[\\&\\[data-disabled\\]\\]\\:bg-c_gray",
-        "\\[\\&\\[data-disabled\\]\\]\\:c_black",
-        "\\[\\&\\[data-disabled\\]\\]\\:bg-c_transparent",
-        "\\[\\&\\[data-disabled\\]\\]\\:c_gray",
-        "hover\\:bg-c_darkblue",
-        "hover\\:bg-c_blue",
-        "hover\\:c_white",
+        "cva_ikTMbL--size_sm",
+        "cva_ikTMbL--size_md",
+        "cva_ikTMbL--variant_solid",
+        "cva_ikTMbL--variant_outline",
+        "cva_ikTMbL",
       ]
     `)
     expect(buttonStyle.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        @layer compositions {
-          .textStyle_headline\\.h1 {
-            font-size: 2rem;
-            font-weight: var(--font-weights-bold);
-      }
-      }
-
-        .p_0_0\\.5rem {
-          padding: 0 0.5rem;
-      }
-
-        .p_0_0\\.75rem {
-          padding: 0 0.75rem;
-      }
-
-        .bd_1px_solid_blue {
-          border: 1px solid blue;
-      }
-
-        .d_inline-flex {
+      "@layer recipes {
+        .cva_ikTMbL {
           display: inline-flex;
-      }
-
-        .ai_center {
           align-items: center;
-      }
-
-        .jc_center {
           justify-content: center;
       }
 
-        .bg-c_blue {
-          background-color: blue;
-      }
-
-        .c_white {
-          color: var(--colors-white);
-      }
-
-        .bg-c_transparent {
-          background-color: var(--colors-transparent);
-      }
-
-        .c_blue {
-          color: blue;
-      }
-
-        .h_2\\.5rem {
+        .cva_ikTMbL--size_sm {
+          padding: 0 0.5rem;
+          font-size: 2rem;
+          font-weight: var(--font-weights-bold);
           height: 2.5rem;
-      }
-
-        .min-w_2\\.5rem {
           min-width: 2.5rem;
       }
 
-        .h_3rem {
+        .cva_ikTMbL--size_md {
+          padding: 0 0.75rem;
           height: 3rem;
-      }
-
-        .min-w_3rem {
           min-width: 3rem;
       }
 
-        .\\[\\&\\[data-disabled\\]\\]\\:bd_1px_solid_gray[data-disabled] {
-          border: 1px solid gray;
+        .cva_ikTMbL--variant_solid {
+          background-color: blue;
+          color: var(--colors-white);
       }
 
-        .\\[\\&\\[data-disabled\\]\\]\\:bg-c_gray[data-disabled] {
+        .cva_ikTMbL--variant_solid[data-disabled] {
           background-color: gray;
-      }
-
-        .\\[\\&\\[data-disabled\\]\\]\\:c_black[data-disabled] {
           color: var(--colors-black);
       }
 
-        .\\[\\&\\[data-disabled\\]\\]\\:bg-c_transparent[data-disabled] {
-          background-color: var(--colors-transparent);
-      }
-
-        .\\[\\&\\[data-disabled\\]\\]\\:c_gray[data-disabled] {
-          color: gray;
-      }
-
-        .hover\\:bg-c_darkblue:is(:hover, [data-hover]) {
+        .cva_ikTMbL--variant_solid:is(:hover, [data-hover]) {
           background-color: darkblue;
       }
 
-        .hover\\:bg-c_blue:is(:hover, [data-hover]) {
-          background-color: blue;
+        .cva_ikTMbL--variant_outline {
+          border: 1px solid blue;
+          background-color: var(--colors-transparent);
+          color: blue;
       }
 
-        .hover\\:c_white:is(:hover, [data-hover]) {
+        .cva_ikTMbL--variant_outline[data-disabled] {
+          border: 1px solid gray;
+          background-color: var(--colors-transparent);
+          color: gray;
+      }
+
+        .cva_ikTMbL--variant_outline:is(:hover, [data-hover]) {
+          background-color: blue;
           color: var(--colors-white);
       }
       }"
@@ -662,11 +600,7 @@ describe('rule processor', () => {
     expect(result.className).toMatchInlineSnapshot(`
       [
         "checkbox__root--size_sm",
-        "checkbox__control--size_sm",
-        "checkbox__label--size_sm",
         "md\\:checkbox__root--size_md",
-        "md\\:checkbox__control--size_md",
-        "md\\:checkbox__label--size_md",
         "checkbox__root",
         "checkbox__control",
         "checkbox__label",
@@ -748,83 +682,59 @@ describe('rule processor', () => {
 
     expect(checkbox.className).toMatchInlineSnapshot(`
       [
-        "gap_2",
-        "bd-w_1px",
-        "bdr_sm",
-        "d_flex",
-        "ai_center",
-        "ms_2",
-        "fs_sm",
-        "fs_md",
-        "fs_lg",
-        "w_8",
-        "h_8",
-        "w_10",
-        "h_10",
-        "w_12",
-        "h_12",
+        "sva_cURWwc__root--size_sm",
+        "sva_cURWwc__root--size_md",
+        "sva_cURWwc__root--size_lg",
+        "sva_cURWwc__root",
+        "sva_cURWwc__control",
+        "sva_cURWwc__label",
       ]
     `)
     expect(checkbox.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .gap_2 {
+      "@layer recipes.slots {
+        .sva_cURWwc__root {
           gap: var(--spacing-2);
-      }
-
-        .bd-w_1px {
-          border-width: 1px;
-      }
-
-        .bdr_sm {
-          border-radius: var(--radii-sm);
-      }
-
-        .d_flex {
           display: flex;
-      }
-
-        .ai_center {
           align-items: center;
       }
 
-        .ms_2 {
+        .sva_cURWwc__control {
+          border-width: 1px;
+          border-radius: var(--radii-sm);
+      }
+
+        .sva_cURWwc__label {
           margin-inline-start: var(--spacing-2);
       }
 
-        .fs_sm {
-          font-size: var(--font-sizes-sm);
+        @scope (.sva_cURWwc__root--size_sm) to (.sva_cURWwc__root) {
+          .sva_cURWwc__control {
+            width: var(--sizes-8);
+            height: var(--sizes-8);
+      }
+          .sva_cURWwc__label {
+            font-size: var(--font-sizes-sm);
+      }
       }
 
-        .fs_md {
-          font-size: var(--font-sizes-md);
+        @scope (.sva_cURWwc__root--size_md) to (.sva_cURWwc__root) {
+          .sva_cURWwc__control {
+            width: var(--sizes-10);
+            height: var(--sizes-10);
+      }
+          .sva_cURWwc__label {
+            font-size: var(--font-sizes-md);
+      }
       }
 
-        .fs_lg {
-          font-size: var(--font-sizes-lg);
+        @scope (.sva_cURWwc__root--size_lg) to (.sva_cURWwc__root) {
+          .sva_cURWwc__control {
+            width: var(--sizes-12);
+            height: var(--sizes-12);
       }
-
-        .w_8 {
-          width: var(--sizes-8);
+          .sva_cURWwc__label {
+            font-size: var(--font-sizes-lg);
       }
-
-        .h_8 {
-          height: var(--sizes-8);
-      }
-
-        .w_10 {
-          width: var(--sizes-10);
-      }
-
-        .h_10 {
-          height: var(--sizes-10);
-      }
-
-        .w_12 {
-          width: var(--sizes-12);
-      }
-
-        .h_12 {
-          height: var(--sizes-12);
       }
       }"
     `)
@@ -947,27 +857,27 @@ describe('rule processor', () => {
         .btn:is(:hover, [data-hover]):is(:disabled, [disabled], [data-disabled], [aria-disabled=true]) {
           background: initial;
       }
-      }
 
-      @layer utilities {
-        .bd_2px_solid_token\\(colors\\.green\\.100\\) {
-          border: 2px solid var(--colors-green-100);
-      }
-
-        .c_blue\\.300 {
-          color: var(--colors-blue-300);
-      }
-
-        .fs_12px {
+        .cva_kmejoV {
           font-size: 12px;
       }
 
-        .fs_14px {
+        .cva_kmejoV--size_sm {
           font-size: 14px;
       }
 
-        .fs_16px {
+        .cva_kmejoV--size_md {
           font-size: 16px;
+      }
+
+        .cva_kmejoV--size_sm {
+          border: 2px solid var(--colors-green-100);
+      }
+      }
+
+      @layer utilities {
+        .c_blue\\.300 {
+          color: var(--colors-blue-300);
       }
 
         .hover\\:c_red\\.400:is(:hover, [data-hover]) {
@@ -1171,20 +1081,20 @@ describe('rule processor', () => {
     expect(result).toMatchInlineSnapshot(`
       {
         "className": [
-          "c_\\#fff",
-          "d_block",
-          "d_none",
+          "cva_fAqhGZ--checked_true",
+          "cva_fAqhGZ--checked_false",
+          "cva_fAqhGZ",
         ],
-        "css": "@layer utilities {
-        .c_\\#fff {
+        "css": "@layer recipes {
+        .cva_fAqhGZ {
           color: #fff;
       }
 
-        .d_block {
+        .cva_fAqhGZ--checked_true {
           display: block;
       }
 
-        .d_none {
+        .cva_fAqhGZ--checked_false {
           display: none;
       }
       }",

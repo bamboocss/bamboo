@@ -24,6 +24,14 @@ export interface AtomicStyleResult {
   className: string
   conditions?: ConditionDetails[]
   layer?: string
+  /**
+   * The rule selects through a `@scope` prelude rather than on `className`.
+   *
+   * A non-root slot's variant styles are reached from the class the *root* carries, so this
+   * result's own class names nothing. It still identifies the rule for bookkeeping, but
+   * reporting it would put a class on the element that no rule ever matches.
+   */
+  scoped?: boolean
 }
 
 export interface GroupedResult extends Pick<AtomicStyleResult, 'result' | 'className'> {

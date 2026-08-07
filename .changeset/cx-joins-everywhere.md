@@ -21,9 +21,9 @@ cx(css({ paddingX: '4' }), css({ paddingX: '2' }))
 
 Precedence is decided where every build can decide it the same way — by cascade layer:
 
-- **A component you want reliably overridable** needs a lower layer than its consumer, and only a **config recipe** —
-  declared in `theme.recipes` or `theme.slotRecipes` — lands in `recipes`. An inline `cva()` is atomic like `css()` and
-  sits in `utilities` alongside the consumer.
+- **A component you want reliably overridable** needs a lower layer than its consumer, and a **recipe** puts it there.
+  `cva()` and `sva()` name their classes from the config and emit them into `recipes`, whether declared inline or in
+  `theme.recipes`.
 - **Or accept a style object rather than a class name.** `css(base, props.css)` merges per property before any class
   name exists, so it resolves the same way in every build and needs no layer.
 - **Two `css()` calls you own** are in the same layer, so merge the objects instead: `css(a, b)`.

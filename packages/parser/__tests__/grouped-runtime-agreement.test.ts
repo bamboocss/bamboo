@@ -121,13 +121,26 @@ describe('cssMode: grouped — the build emits a rule for the class the runtime 
     expect(result.css).toContain(runtimeCss(true)({ display: 'flex', flexDirection: 'column', gap: '4' }))
   })
 
-  test('cva stays atomic, because its variant combinations are not knowable at build time', () => {
+  /**
+   * `cva` is named semantically rather than grouped or atomic, so `cssMode` does not reach
+   * it at all — the name comes from the config, and the build knows it without needing a
+   * rule per variant combination.
+   *
+   * This used to be the one primitive that stayed atomic under `grouped`, which is what
+   * `__atomicCss` existed for. The classes below are `cva_<hash>` and
+   * `cva_<hash>--size_sm`, in `@layer recipes`.
+   */
+  test('cva is named semantically, so cssMode does not reach it', () => {
     const result = extract(
       `import { cva } from "styled-system/css"\ncva({ base: { color: "red" }, variants: { size: { sm: { padding: "2" } } } })`,
     )
-    // Grouping would need a rule per combination; the runtime uses `__atomicCss` to match.
-    expect(result.css).toContain(runtimeCss(false)({ color: 'red' }))
-    expect(result.css).toContain(runtimeCss(false)({ padding: '2' }))
+
+    expect(result.css).toContain('@layer recipes')
+    expect(result.css).toMatch(/\.cva_[a-zA-Z]+ \{/)
+    expect(result.css).toMatch(/\.cva_[a-zA-Z]+--size_sm \{/)
+    // Neither naming scheme `cssMode` selects between appears for it.
+    expect(result.css).not.toContain(runtimeCss(false)({ color: 'red' }))
+    expect(result.css).not.toContain(runtimeCss(true)({ color: 'red', padding: '2' }))
   })
 })
 

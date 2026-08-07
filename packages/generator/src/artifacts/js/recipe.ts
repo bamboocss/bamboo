@@ -22,7 +22,6 @@ export function generateCreateRecipe(ctx: Context) {
     dts: '',
     js: outdent`
    ${ctx.file.import('finalizeConditions, sortConditions', '../css/conditions')}
-   ${ctx.file.import('__atomicCss', '../css/css')}
    ${ctx.file.import('assertCompoundVariant, getCompoundVariantCss', '../css/cva')}
    ${ctx.file.import('cx', '../css/cx')}
    ${ctx.file.import('compact, createCss, splitProps, uniq, withoutSpace', '../helpers')}
@@ -36,7 +35,7 @@ export function generateCreateRecipe(ctx: Context) {
       };
     };
 
-     const recipeFn = (variants, withCompoundVariants = true) => {
+     const recipeFn = (variants) => {
       const transform = (prop, value) => {
         assertCompoundVariant(name, compoundVariants, variants, prop)
 
@@ -64,13 +63,10 @@ export function generateCreateRecipe(ctx: Context) {
 
       const recipeStyles = getVariantProps(variants)
 
-      if (withCompoundVariants) {
-        const compoundVariantStyles = getCompoundVariantCss(compoundVariants, recipeStyles)
-        // Compound variants are extracted atomically with the rest of the recipe, so this
-        // half has to name classes atomically too — see \`__atomicCss\`.
-        return cx(recipeCss(recipeStyles), __atomicCss(compoundVariantStyles))
-      }
-
+      // No class for the compound variants. Their rule selects on the variant classes
+      // \`recipeCss\` just named — \`.btn--size_sm.btn--tone_a\` — so it applies on its own,
+      // and it is in the same layer as the rest of the recipe rather than atomically in
+      // \`utilities\` above it.
       return recipeCss(recipeStyles)
      }
 

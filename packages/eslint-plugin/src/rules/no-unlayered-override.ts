@@ -5,8 +5,16 @@ import { isCallExpression, isIdentifier, isMemberExpression } from '../utils/nod
 
 export const RULE_NAME = 'no-unlayered-override'
 
-/** The call whose result is a class string built from styles this file owns. */
-const STYLING_CALLS = new Set(['css', 'cva', 'sva'])
+/**
+ * The call whose result is a class string in the `utilities` layer — the same layer a
+ * consumer's `css()` is in, so neither can win over the other by cascade.
+ *
+ * `cva` and `sva` are deliberately absent. Their output is named semantically and emitted
+ * into `recipes`, whether they are declared inline or in `theme.recipes`, so a consumer's
+ * `css()` beats them by layer in every build. That is the fix this rule points at, and it
+ * would be incoherent to report it.
+ */
+const STYLING_CALLS = new Set(['css'])
 
 const calleeName = (node: TSESTree.Node): string | undefined => {
   if (!isCallExpression(node)) return undefined
@@ -30,30 +38,12 @@ const rule = createRule({
   create(context) {
     if (!isValidFile(context)) return {}
 
-    /**
-     * Names bound to an inline `cva`/`sva` in this file.
-     *
-     * These matter and an imported recipe does not: an inline recipe's output is atomic,
-     * so it lands in `utilities` beside the consumer, while a config recipe imported from
-     * `styled-system/recipes` is in `recipes` and loses to the consumer by layer. The two
-     * are indistinguishable at the call site — `button()` either way — so the binding is
-     * what tells them apart.
-     */
-    const localRecipes = new Set<string>()
-
     const isOwnStyles = (node: TSESTree.Node): boolean => {
       const name = calleeName(node)
-      if (name === undefined) return false
-      return STYLING_CALLS.has(name) || localRecipes.has(name)
+      return name !== undefined && STYLING_CALLS.has(name)
     }
 
     return {
-      VariableDeclarator(node: TSESTree.VariableDeclarator) {
-        if (!isIdentifier(node.id) || !node.init) return
-        const name = calleeName(node.init)
-        if (name === 'cva' || name === 'sva') localRecipes.add(node.id.name)
-      },
-
       CallExpression(node: TSESTree.CallExpression) {
         if (!isIdentifier(node.callee) || node.callee.name !== 'cx') return
         if (node.arguments.length < 2) return
@@ -78,7 +68,7 @@ const rule = createRule({
       unlayeredOverride: [
         '`cx` joins class names, it does not resolve conflicts between them.',
         'These styles and the ones being joined are both in the `utilities` layer, so which applies is decided by stylesheet order rather than by the caller.',
-        'Declare the component styles as a config recipe so they land in `recipes`, or accept a style object and merge it with `css(base, props.css)`.',
+        'Declare the component styles with `cva` so they land in the `recipes` layer, or accept a style object and merge it with `css(base, props.css)`.',
       ].join(' '),
     },
     schema: [],

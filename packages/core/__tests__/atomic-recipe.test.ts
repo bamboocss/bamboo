@@ -40,40 +40,32 @@ describe('Atomic recipe', () => {
     })
 
     expect(sheet).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .p_2 {
-          padding: var(--spacing-2);
-      }
-
-        .p_4 {
-          padding: var(--spacing-4);
-      }
-
-        .bdr_sm {
-          border-radius: var(--radii-sm);
-      }
-
-        .bdr_md {
-          border-radius: var(--radii-md);
-      }
-
-        .fs_lg {
+      "@layer recipes {
+        .cva_jgZhlc {
           font-size: var(--font-sizes-lg);
       }
 
-        .c_white {
-          color: var(--colors-white);
+        .cva_jgZhlc--size_sm {
+          padding: var(--spacing-2);
+          border-radius: var(--radii-sm);
       }
 
-        .bg-c_blue\\.500 {
+        .cva_jgZhlc--size_md {
+          padding: var(--spacing-4);
+          border-radius: var(--radii-md);
+      }
+
+        .cva_jgZhlc--variant_primary {
+          color: var(--colors-white);
           background-color: var(--colors-blue-500);
       }
 
-        .bg-c_red\\.500 {
+        .cva_jgZhlc--variant_danger {
+          color: var(--colors-white);
           background-color: var(--colors-red-500);
       }
 
-        .hover\\:c_green:is(:hover, [data-hover]) {
+        .cva_jgZhlc--variant_danger:is(:hover, [data-hover]) {
           color: green;
       }
       }"

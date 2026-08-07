@@ -20,7 +20,6 @@ describe('generate recipes', () => {
       {
         "dts": "",
         "js": "import { finalizeConditions, sortConditions } from '../css/conditions.mjs';
-      import { __atomicCss } from '../css/css.mjs';
       import { assertCompoundVariant, getCompoundVariantCss } from '../css/cva.mjs';
       import { cx } from '../css/cx.mjs';
       import { compact, createCss, splitProps, uniq, withoutSpace } from '../helpers.mjs';
@@ -34,7 +33,7 @@ describe('generate recipes', () => {
          };
        };
 
-        const recipeFn = (variants, withCompoundVariants = true) => {
+        const recipeFn = (variants) => {
          const transform = (prop, value) => {
            assertCompoundVariant(name, compoundVariants, variants, prop)
 
@@ -62,13 +61,10 @@ describe('generate recipes', () => {
 
          const recipeStyles = getVariantProps(variants)
 
-         if (withCompoundVariants) {
-           const compoundVariantStyles = getCompoundVariantCss(compoundVariants, recipeStyles)
-           // Compound variants are extracted atomically with the rest of the recipe, so this
-           // half has to name classes atomically too — see \`__atomicCss\`.
-           return cx(recipeCss(recipeStyles), __atomicCss(compoundVariantStyles))
-         }
-
+         // No class for the compound variants. Their rule selects on the variant classes
+         // \`recipeCss\` just named — \`.btn--size_sm.btn--tone_a\` — so it applies on its own,
+         // and it is in the same layer as the rest of the recipe rather than atomically in
+         // \`utilities\` above it.
          return recipeCss(recipeStyles)
         }
 

@@ -64,6 +64,20 @@ export interface RecipeDefinition<T extends RecipeVariantRecord = RecipeVariantR
    */
   base?: SystemStyleObject
   /**
+   * The prefix every class this recipe emits is built from — `button` gives `button` for
+   * the base styles and `button--size_sm` for a variant.
+   *
+   * Required for a recipe declared in `theme.recipes`, where it is the key it is declared
+   * under. Optional for an inline `cva`, which is otherwise named by hashing its own
+   * config: `cva_a1b2c3--size_sm`. Setting it buys readable class names and nothing else —
+   * the CSS is identical either way.
+   *
+   * It has to be unique across every recipe in the build. Two recipes sharing a name emit
+   * rules under the same selectors, and the later one wins for any variant they both
+   * declare.
+   */
+  className?: string
+  /**
    * Whether the recipe is deprecated.
    */
   deprecated?: boolean | string
@@ -85,10 +99,6 @@ export type RecipeCreatorFn = <T extends RecipeVariantRecord>(config: RecipeDefi
 
 interface RecipeConfigMeta {
   /**
-   * The class name of the recipe.
-   */
-  className: string
-  /**
    * The description of the recipe. This will be used in the JSDoc comment.
    */
   description?: string
@@ -106,7 +116,10 @@ interface RecipeConfigMeta {
 }
 
 export interface RecipeConfig<T extends RecipeVariantRecord = RecipeVariantRecord>
-  extends RecipeDefinition<T>, RecipeConfigMeta {}
+  extends RecipeDefinition<T>, RecipeConfigMeta {
+  /** Optional on `RecipeDefinition`, where an inline `cva` falls back to hashing its config. A recipe declared in `theme.recipes` always has one — the key it is declared under. */
+  className: string
+}
 
 /* -----------------------------------------------------------------------------
  * Recipe / Slot
@@ -142,7 +155,16 @@ export interface SlotRecipeDefinition<
   T extends SlotRecipeVariantRecord<S> = SlotRecipeVariantRecord<S>,
 > {
   /**
-   * An optional class name that can be used to target slots in the DOM.
+   * The prefix every class this recipe emits is built from, and the name to target its
+   * slots in the DOM by — `checkbox` gives `checkbox__control` for a slot and
+   * `checkbox__control--size_md` for that slot under a variant.
+   *
+   * Required for a recipe declared in `theme.slotRecipes`, where it is the key it is
+   * declared under. Optional for an inline `sva`, which is otherwise named by hashing its
+   * own config. Setting it buys readable class names and nothing else — the CSS is
+   * identical either way.
+   *
+   * It has to be unique across every recipe in the build.
    */
   className?: string
   /**
@@ -197,4 +219,8 @@ export type SlotRecipeCreatorFn = <S extends string, T extends SlotRecipeVariant
 export type SlotRecipeConfig<
   S extends string = string,
   T extends SlotRecipeVariantRecord<S> = SlotRecipeVariantRecord<S>,
-> = SlotRecipeDefinition<S, T> & RecipeConfigMeta
+> = SlotRecipeDefinition<S, T> &
+  RecipeConfigMeta & {
+    /** Optional on `SlotRecipeDefinition`, where an inline `sva` falls back to hashing its config. A recipe declared in `theme.slotRecipes` always has one — the key it is declared under. */
+    className: string
+  }

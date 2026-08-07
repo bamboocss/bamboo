@@ -1,7 +1,8 @@
 import {
   BambooError,
   getOrCreateSet,
-  getSlotRecipes,
+  getRecipeIdentity,
+  getSlotCompoundVariant,
   isObjectOrArray,
   mergeProps,
   normalizeStyleObject,
@@ -16,6 +17,7 @@ import type {
   EncoderJson,
   PartialBy,
   RecipeConfig,
+  RecipeDefinition,
   ResultItem,
   SlotRecipeDefinition,
   StyleEntry,
@@ -24,7 +26,7 @@ import type {
 } from '@bamboocss/types'
 import { version } from '../package.json'
 import type { Context } from './context'
-import { Recipes } from './recipes'
+import { COMPOUND_VARIANT, Recipes } from './recipes'
 
 const urlRegex = /^https?:\/\//
 
@@ -347,7 +349,7 @@ export class StyleEncoder {
 
   processConfigSlotRecipe = (recipeName: string, variants: Record<string, any>) => {
     const config = this.context.recipes.getConfig(recipeName)
-    if (!Recipes.isSlotRecipeConfig(config)) return
+    if (!config || !Recipes.isSlotRecipeConfig(config)) return
 
     // process base styles
     this.processConfigSlotRecipeBase(recipeName, config)
@@ -359,13 +361,46 @@ export class StyleEncoder {
     // process compound variants
     if (!config.compoundVariants || this.compound_variants.has(recipeName)) return
     this.compound_variants.add(recipeName)
-    config.compoundVariants.forEach((compoundVariant) => {
-      if (!compoundVariant) return
-      Object.values(compoundVariant.css).forEach((values) => {
-        if (!values) return
-        this.processAtomic(values)
+    this.hashCompoundVariants(
+      recipeName,
+      config.compoundVariants as Array<Record<string, any>>,
+      config.slots as string[],
+    )
+  }
+
+  /**
+   * Hash a recipe's compound variants, one synthetic variant per compound.
+   *
+   * Deliberately *not* recorded on the active scope, unlike every other hash here. A
+   * compound rule selects on the variant classes the element already carries —
+   * `.btn--size_sm.btn--tone_a` — so it contributes no class of its own, and `scope` is
+   * what `filterClassNames` reads to answer "which classes does this call return". Putting
+   * it there would hand the runtime a class no element ever gets, and the fold would bake
+   * that into a literal.
+   *
+   * Slot recipes hash per slot, through the same `getSlotCompoundVariant` that `normalize`
+   * used. It filters out compounds that do not touch a slot, so both sides have to walk the
+   * filtered list or the indices they key on stop lining up.
+   */
+  private hashCompoundVariants = (
+    recipeName: string,
+    compoundVariants: Array<Record<string, any>>,
+    slots?: string[],
+  ) => {
+    const hash = (list: Array<Record<string, any>>, slot?: string) => {
+      const set = getOrCreateSet(this.recipes, recipeName)
+      list.forEach((compoundVariant, index) => {
+        if (!compoundVariant?.css) return
+        this.hashStyleObject(set, { [COMPOUND_VARIANT]: index }, { recipe: recipeName, slot, variants: true })
       })
-    })
+    }
+
+    if (!slots) {
+      hash(compoundVariants)
+      return
+    }
+
+    slots.forEach((slot) => hash(getSlotCompoundVariant(compoundVariants as Array<{ css: any }>, slot), slot))
   }
 
   /**
@@ -420,10 +455,7 @@ export class StyleEncoder {
     // process compound variants
     if (!config.compoundVariants || this.compound_variants.has(recipeName)) return
     this.compound_variants.add(recipeName)
-    config.compoundVariants.forEach((compoundVariant) => {
-      if (!compoundVariant) return
-      this.processAtomic(compoundVariant.css)
-    })
+    this.hashCompoundVariants(recipeName, config.compoundVariants as Array<Record<string, any>>)
   }
 
   processRecipe = (recipeName: string, variants: Record<string, any>) => {
@@ -452,21 +484,48 @@ export class StyleEncoder {
     this.processStyleProps(styleProps, grouped)
   }
 
-  processAtomicRecipe = (recipe: Pick<RecipeConfig, 'base' | 'variants' | 'compoundVariants'>) => {
-    const { base = {}, variants = {}, compoundVariants = [] } = recipe
+  /**
+   * An inline `cva`, emitted the way a config recipe is: `name--size_sm` in the `recipes`
+   * layer rather than atomic classes in `utilities`.
+   *
+   * The two differ only in where the name comes from — a config recipe is named by the key
+   * it is declared under, an inline one by `getRecipeIdentity` — so a consumer's `css()`
+   * wins by cascade layer against either.
+   *
+   * Every variant value is hashed, not just the ones some call site selected. A config
+   * recipe can emit only what is used because its call sites name their variants
+   * statically; an inline recipe's `button({ size: props.size })` does not, and a rule the
+   * build declined to emit is an element with no styles rather than a missing override.
+   */
+  processAtomicRecipe = (recipe: Pick<RecipeDefinition, 'base' | 'variants' | 'compoundVariants' | 'className'>) => {
+    const name = getRecipeIdentity(recipe)
+    this.context.recipes.registerInline(name, recipe as RecipeConfig)
+    this.hashInlineRecipe(name, recipe)
+  }
 
-    this.processAtomic(base)
+  private hashInlineRecipe = (
+    name: string,
+    recipe: Pick<RecipeDefinition, 'base' | 'variants' | 'compoundVariants'>,
+    slots?: string[],
+  ) => {
+    const { base, variants = {}, compoundVariants = [] } = recipe
 
-    for (const variant of Object.values(variants)) {
-      for (const styles of Object.values(variant)) {
-        this.processAtomic(styles)
+    if (base) {
+      this.activeScope?.recipes_base.add(name)
+      if (!this.recipes_base.has(name)) {
+        this.hashStyleObject(getOrCreateSet(this.recipes_base, name), base, { recipe: name })
       }
     }
 
-    compoundVariants.forEach((compoundVariant) => {
-      if (!compoundVariant) return
-      this.processAtomic(compoundVariant.css)
-    })
+    for (const [variantKey, values] of Object.entries(variants)) {
+      for (const variantValue of Object.keys(values ?? {})) {
+        this.hashVariants(name, { [variantKey]: variantValue }, { recipe: name, variants: true })
+      }
+    }
+
+    if (compoundVariants.length) {
+      this.hashCompoundVariants(name, compoundVariants as Array<Record<string, any>>, slots)
+    }
   }
 
   processAtomicSlotRecipe = (recipe: PartialBy<SlotRecipeDefinition, 'slots'>) => {
@@ -480,11 +539,22 @@ export class StyleEncoder {
       slots: uniq([...(recipe.slots ?? []), ...inferredSlots].filter(Boolean)),
     })
 
-    const slots = getSlotRecipes(withSlots)
+    const name = getRecipeIdentity(withSlots, 'sva')
+    this.context.recipes.registerInline(name, withSlots as never)
 
-    for (const slotRecipe of Object.values(slots)) {
-      this.processAtomicRecipe(slotRecipe)
-    }
+    // Base is per slot, so each gets its own `name__slot` rule. Variants are hashed against
+    // the recipe rather than against each slot, the way `processConfigSlotRecipe` does it —
+    // the decoder is what expands a variant across slots, and doing it here too would emit
+    // every slot's rule once per slot.
+    this.processConfigSlotRecipeBase(name, withSlots as SlotRecipeDefinition)
+    this.hashInlineRecipe(
+      name,
+      {
+        compoundVariants: withSlots.compoundVariants as never,
+        variants: withSlots.variants as never,
+      },
+      withSlots.slots,
+    )
   }
 
   getConfigRecipeHash = (recipeName: string) => {

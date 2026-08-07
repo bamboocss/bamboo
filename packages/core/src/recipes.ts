@@ -8,6 +8,7 @@ import {
   isObject,
   memo,
   splitProps,
+  withoutSpace,
 } from '@bamboocss/shared'
 import type {
   ArtifactFilters,
@@ -24,6 +25,31 @@ import { transformStyles, type SerializeContext } from './serialize'
 
 /** The slot every other slot nests inside, by convention. */
 const ROOT_SLOT = 'root'
+
+/**
+ * The synthetic variant key a compound variant is recorded under.
+ *
+ * A compound has no single variant/value pair to key on, but the encode/decode path is
+ * built around one, so each gets an index under this key. The name cannot collide with a
+ * real variant: `--` is what `getClassName` puts between a recipe and its variant, so no
+ * declared key can contain it.
+ */
+export const COMPOUND_VARIANT = '--compound'
+
+/** Every combination a compound variant's selection covers, expanded from its `OneOrMore` values. */
+const compoundSelections = (selection: Record<string, unknown>): Array<Array<[string, string]>> => {
+  let combinations: Array<Array<[string, string]>> = [[]]
+
+  for (const [variant, value] of Object.entries(selection)) {
+    if (variant === 'css' || value == null) continue
+    const alternatives = Array.isArray(value) ? value : [value]
+    combinations = combinations.flatMap((combination) =>
+      alternatives.map((alternative) => [...combination, [variant, String(alternative)] as [string, string]]),
+    )
+  }
+
+  return combinations
+}
 
 interface RecipeRecord {
   [key: string]: RecipeConfig | SlotRecipeConfig
@@ -47,6 +73,21 @@ const sharedState = {
    */
   slots: new Map<string, Map<string, RecipeConfig>>(),
   /**
+   * Configs for inline `cva`/`sva`, keyed by the identity derived from the config itself.
+   *
+   * Separate from `nodes` on purpose. `details` is `nodes`, and the generator turns every
+   * entry there into a `styled-system/recipes` module — an inline recipe wants a name in
+   * the stylesheet, not an artifact. The decoder resolves through `getConfig`, which reads
+   * both.
+   */
+  inlineConfigs: new Map<string, RecipeConfig | SlotRecipeConfig>(),
+  /**
+   * The selector a compound variant's rule is emitted against, keyed the same way as
+   * `styles`. A selector list rather than a class, because a compound selection with an
+   * `OneOrMore` value covers several combinations at once.
+   */
+  compoundSelectors: new Map<string, string>(),
+  /**
    * Where a non-root slot's variant rule is emitted, keyed the same way as `styles`.
    *
    * A slot recipe's variants are chosen at the root, but the slots that react to them are
@@ -69,6 +110,9 @@ export class Recipes {
 
   private deprecated = new Set<string>()
 
+  /** Inline recipes this context has already normalized. See `registerInline`. */
+  private inlineRegistered = new Set<string>()
+
   private context!: SerializeContext
 
   get config() {
@@ -87,8 +131,14 @@ export class Recipes {
     return this.context.utility.separator ?? '_'
   }
 
+  /**
+   * `withoutSpace` to match the runtime, which has always applied it — `createRecipe`'s
+   * transform does, and so does `getRecipeClassNames`. Without it a variant value with a
+   * space in it named `--size-x\ large` here and `--size-x_large` in the browser, and the
+   * element rendered unstyled. `checkNamingAgreement` covers it now.
+   */
   private getClassName = (className: string, variant: string, value: string) => {
-    return `${className}--${variant}${this.separator}${value}`
+    return `${className}--${variant}${this.separator}${withoutSpace(value)}`
   }
 
   // check this.recipes against sharedState.nodes
@@ -223,9 +273,15 @@ export class Recipes {
     return sharedState.nodes.get(name)
   })
 
-  getConfig = memo((name: string) => {
-    return this.recipes[name]
-  })
+  /**
+   * Not memoized, and not because it is cheap — `this.recipes[name]` is a property access,
+   * which memoizing makes slower rather than faster. An inline recipe is registered while
+   * its file is being encoded, so a memo that ran before then would cache the miss and keep
+   * returning it for every later build of the same name.
+   */
+  getConfig = (name: string): RecipeConfig | SlotRecipeConfig | undefined => {
+    return this.recipes[name] ?? sharedState.inlineConfigs.get(name)
+  }
 
   getConfigOrThrow = memo((name: string) => {
     const config = this.getConfig(name)
@@ -327,7 +383,93 @@ export class Recipes {
       }
     }
 
+    compoundVariants.forEach((compoundVariant, index) => {
+      if (!compoundVariant?.css) return
+
+      const selectors = compoundSelections(compoundVariant)
+        .map((combination) =>
+          combination
+            .map(([variant, value]) => `.${esc(this.getClassName(recipe.className, variant, value))}`)
+            .join(''),
+        )
+        .filter(Boolean)
+
+      if (!selectors.length) return
+
+      const propKey = this.getPropKey(name, COMPOUND_VARIANT, index)
+      // Never reaches the DOM — the rule selects on the variant classes the element already
+      // carries. This only has to be stable and distinct, so the decoder can key on it.
+      const className = `${recipe.className}--compound${this.separator}${index}`
+
+      sharedState.styles.set(propKey, transformStyles(this.context, compoundVariant.css, className))
+      sharedState.classNames.set(propKey, className)
+      sharedState.compoundSelectors.set(propKey, selectors.join(', '))
+    })
+
     return recipe
+  }
+
+  /**
+   * Make an inline `cva`/`sva` resolvable by name, the way a config recipe is.
+   *
+   * Deliberately `normalize` without `assignRecipe`. `normalize` populates the two maps
+   * `getTransform` reads — the styles and class name behind each `name--variant_value` —
+   * which is all the decoder needs to emit a rule. `assignRecipe` populates
+   * `sharedState.nodes`, and `details` is that map, so registering there would make the
+   * generator emit a `styled-system/recipes` module for every anonymous `cva` in the
+   * codebase. An inline recipe wants the naming, not the artifact.
+   *
+   * Nothing prunes these: `prune` walks `nodes`, which this does not touch. That is bounded
+   * rather than unbounded, because the name is a hash of the config — a rebuild of an
+   * unchanged recipe writes the same key rather than a new one.
+   */
+  registerInline = (name: string, config: RecipeConfig | SlotRecipeConfig) => {
+    // Guarded per instance, not on the module-global map. Class names depend on `hash`,
+    // `prefix` and `separator`, so two contexts with different configs derive different
+    // ones from the same recipe — and a guard on the shared map would let the second reuse
+    // the first's, emitting rules under names its own runtime never asks for.
+    if (this.inlineRegistered.has(name)) return
+    this.inlineRegistered.add(name)
+    sharedState.inlineConfigs.set(name, config)
+
+    if (Recipes.isSlotRecipeConfig(config)) {
+      const rootSlot = Recipes.getRootSlot(config)
+      const rootClassName = rootSlot ? this.getSlotKey(config.className ?? name, rootSlot) : undefined
+      const slotsMap = new Map<string, RecipeConfig>()
+
+      // The identity has to be the className before the split. `getSlotRecipes` builds each
+      // slot's class as `className__slot`, and with no className that collapses to the bare
+      // slot name — `root` rather than `sva_hAcRla__root`, which would collide with every
+      // other anonymous recipe that happens to have a slot called `root`. The runtime's
+      // `sva` injects it the same way, for the same reason.
+      const withName = { ...config, className: config.className ?? name }
+
+      Object.entries(getSlotRecipes(withName)).forEach(([slot, slotRecipe]) => {
+        const slotName = this.getSlotKey(name, slot)
+        this.normalize(slotName, slotRecipe, rootSlot && slot !== rootSlot ? rootClassName : undefined)
+        slotsMap.set(slotName, slotRecipe)
+      })
+
+      // `isSlotRecipe` is this map, and the decoder branches on it to expand a variant
+      // hash across slots. Without it an inline `sva` decodes as a plain recipe and every
+      // slot but the first is dropped.
+      sharedState.slots.set(name, slotsMap)
+      return
+    }
+
+    this.normalize(name, config)
+  }
+
+  /**
+   * The class a recipe's base rule is emitted under, for a config recipe or an inline one.
+   *
+   * A config recipe carries it on its node; an inline recipe has no node, and falls back to
+   * the identity it was registered under — which is exactly what `normalize` used as its
+   * `className`, so the two agree by construction.
+   */
+  getRecipeClassName = (name: string, slot?: string): string => {
+    const declared = sharedState.nodes.get(name)?.className ?? sharedState.inlineConfigs.get(name)?.className ?? name
+    return slot ? this.getSlotKey(declared, slot) : declared
   }
 
   getTransform = (name: string, slot?: boolean) => {
@@ -346,6 +488,7 @@ export class Recipes {
         className: sharedState.classNames.get(propKey)!,
         styles: sharedState.styles.get(propKey) ?? {},
         scope: sharedState.slotScopes.get(propKey),
+        selector: sharedState.compoundSelectors.get(propKey),
       }
     }
   }

@@ -1,4 +1,4 @@
-import { createCss, createMergeCss } from '@bamboocss/shared'
+import { createCss, createMergeCss, getRecipeClassNames, getRecipeIdentity, toHash } from '@bamboocss/shared'
 import type { Context } from './context'
 
 /**
@@ -21,8 +21,22 @@ const buildCanary = (isCondition: (key: string) => boolean) => {
   return base
 }
 
+/**
+ * An inline recipe touching both halves of the recipe naming contract: a base, and a
+ * variant whose value needs `withoutSpace` to become a class.
+ *
+ * `className` is deliberately absent, so this also exercises the hashed identity — the part
+ * the build and the runtime each derive on their own.
+ */
+const RECIPE_CANARY = {
+  base: { color: 'red' },
+  variants: { size: { 'x large': { paddingTop: '2' }, sm: { paddingTop: '1' } } },
+}
+
 export interface NamingDisagreement {
   mode: 'atomic' | 'grouped'
+  /** Which derivation disagreed. */
+  kind: 'css' | 'recipe'
   /** What the stylesheet emitted a rule for. */
   build: string[]
   /** What `css()` returns in the browser. */
@@ -87,21 +101,74 @@ export function checkNamingAgreement(ctx: NamingContext): NamingDisagreement | u
     .map((className) => className.replaceAll('\\', ''))
     .sort()
 
-  if (build.length === runtime.length && build.every((name, index) => name === runtime[index])) {
+  const mode = grouped ? 'grouped' : 'atomic'
+
+  if (!(build.length === runtime.length && build.every((name, index) => name === runtime[index]))) {
+    return { mode, kind: 'css', build, runtime }
+  }
+
+  return checkRecipeNamingAgreement(ctx, mode)
+}
+
+/**
+ * The same check for an inline `cva`.
+ *
+ * Its classes are derived twice as well — `getRecipeIdentity` plus `getRecipeClassNames` in
+ * the browser, the encoder and decoder on the way into the stylesheet — and they meet only
+ * in the DOM. The failure mode is identical: rules emitted under one name, a class asked for
+ * under another, and every element carrying it rendered unstyled with nothing reported.
+ */
+function checkRecipeNamingAgreement(ctx: NamingContext, mode: 'atomic' | 'grouped'): NamingDisagreement | undefined {
+  const name = getRecipeIdentity(RECIPE_CANARY)
+  const selection = { size: 'x large' }
+
+  // What `createCss` does to a recipe's class: prefix it, and hash it when `hash.className`
+  // is set. Recipe selections carry no conditions — `assertCompoundVariant` rejects them —
+  // so the condition half of `hashFn` is not in play.
+  const prefix = ctx.utility.prefix
+  const withPrefix = (className: string) => (prefix ? (className ? `${prefix}-${className}` : prefix) : className)
+  const format = ctx.hash.className
+    ? (className: string) => withPrefix(ctx.utility.toHash([className], toHash))
+    : withPrefix
+
+  const runtime = getRecipeClassNames(name, RECIPE_CANARY.variants, selection, ctx.utility.separator, format)
+    .split(' ')
+    .filter(Boolean)
+    .sort()
+
+  const encoder = ctx.encoder.clone()
+  const decoder = ctx.decoder.clone()
+  const scope = encoder.withScope(() => encoder.processAtomicRecipe(RECIPE_CANARY))
+  decoder.collect(encoder)
+
+  // The build emits a rule for every variant value, since which one a call site selects is
+  // not knowable; the runtime names only the selected one. Comparing the whole set against
+  // one selection would report a disagreement that is really that difference, so this
+  // narrows the build's side to the classes this selection asks for.
+  const wanted = new Set(runtime)
+  const build = decoder
+    .filterClassNames(scope)
+    .map((className) => className.replaceAll('\\', ''))
+    .filter((className) => wanted.has(className))
+    .sort()
+
+  if (build.length === runtime.length && build.every((className, index) => className === runtime[index])) {
     return
   }
 
-  return { mode: grouped ? 'grouped' : 'atomic', build, runtime }
+  return { mode, kind: 'recipe', build, runtime }
 }
 
 /** A message naming what disagreed, for a caller that wants to fail the build. */
 export function formatNamingDisagreement(result: NamingDisagreement) {
+  const asks = result.kind === 'recipe' ? 'cva() returns:  ' : 'css() returns:  '
+
   return [
-    `The stylesheet and the runtime disagree on class names under \`cssMode: '${result.mode}'\`.`,
+    `The stylesheet and the runtime disagree on ${result.kind === 'recipe' ? 'recipe ' : ''}class names under \`cssMode: '${result.mode}'\`.`,
     `Every element styled this way would render with no styles at all.`,
     ``,
-    `  stylesheet emits rules for: ${result.build.join(' ') || '(none)'}`,
-    `  css() returns:              ${result.runtime.join(' ') || '(none)'}`,
+    `  stylesheet emits: ${result.build.join(' ') || '(none)'}`,
+    `  ${asks}${result.runtime.join(' ') || '(none)'}`,
     ``,
     `This is a bug in bamboo, not in your config. Please report it with the`,
     `\`cssMode\`, \`hash\`, \`prefix\`, \`separator\` and \`utility:created\` values you use.`,

@@ -513,9 +513,10 @@ development and another in a minified production build, with no error either way
 
 Precedence is decided by origin instead:
 
-- **A component you want reliably overridable** needs its styles in a lower cascade layer than the consumer's. Only a
-  **config recipe** — one declared in `theme.recipes` or `theme.slotRecipes` — lands in `recipes`. An inline `cva()` is
-  atomic, exactly like `css()`, and sits in `utilities` alongside the consumer.
+- **A component you want reliably overridable** needs its styles in a lower cascade layer than the consumer's. A
+  **recipe** puts them there: `cva()` and `sva()` name their classes from the config — `button--size_sm` — and emit them
+  into `recipes`, whether you declare them inline or in `theme.recipes`. A consumer's `css()` is in `utilities`, so it
+  wins by layer in every build.
 - **Or take a style object instead of a class name.** `css(base, props.css)` merges per property before any class name
   exists, so it resolves the same way in every build and needs no layer at all:
 

@@ -16,18 +16,19 @@ the caller has no way to influence it.
 const Card = (props) => <div className={cx(css({ padding: '4' }), props.className)} />
 ```
 
-An inline `cva()` is the same case. Its output is atomic, exactly like `css()`, so it lands in `utilities` too.
+## How to fix it
+
+**Give the two styles different origins.** A recipe's classes are named from its config — `button--size_sm` — and
+emitted into the `recipes` layer, so a consumer's `css()` in `utilities` wins by layer, in every build:
 
 ```jsx
-// ⚠️ same problem — an inline cva is not in the `recipes` layer
 const button = cva({ base: { padding: '4' } })
+
 const Button = (props) => <button className={cx(button(), props.className)} />
 ```
 
-## How to fix it
-
-**Give the two styles different origins.** A config recipe — declared in `theme.recipes` or `theme.slotRecipes` — lands
-in the `recipes` layer, and a consumer's `css()` in `utilities` then wins by layer, in every build:
+Declaring it in `theme.recipes` behaves identically — the only difference is where the name comes from, and that a
+declared recipe gets a generated module to import:
 
 ```jsx
 import { button } from '../styled-system/recipes'

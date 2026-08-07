@@ -2,10 +2,24 @@ import type { Context } from '@bamboocss/core'
 import { outdent } from 'outdent'
 
 export function generateCvaFn(ctx: Context) {
+  const { utility, hash, prefix } = ctx
+
+  const withPrefix = prefix.className
+    ? `(className) => className ? ${JSON.stringify(prefix.className)} + '-' + className : ${JSON.stringify(prefix.className)}`
+    : `(className) => className`
+
   return {
     js: outdent`
-    ${ctx.file.import('cloneStyles, compact, mergeProps, memo, splitProps, uniq', '../helpers')}
-    ${ctx.file.import('__atomicCss, mergeCss', './css')}
+    ${ctx.file.import('cloneStyles, compact, getRecipeClassNames, getRecipeIdentity, mergeProps, memo, splitProps, toHash, uniq', '../helpers')}
+    ${ctx.file.import('mergeCss', './css')}
+
+    // What \`createCss\` does to a class name, for the recipe path: prefix it, and hash it
+    // when \`hash.className\` is set. The build applies the same two steps to the rules it
+    // emits — see \`checkNamingAgreement\`, which compares the results.
+    const withPrefix = ${withPrefix}
+    const formatRecipeClass = ${
+      hash.className ? `(className) => withPrefix((${utility.toHash})([className], toHash))` : `withPrefix`
+    }
 
     const defaults = (conf) => ({
       base: {},
@@ -18,6 +32,11 @@ export function generateCvaFn(ctx: Context) {
     export function cva(config) {
       const { base, variants, defaultVariants, compoundVariants } = defaults(config)
       const getVariantProps = (variants) => ({ ...defaultVariants, ...compact(variants) })
+
+      // Derived from the config, because the build derives it from the same config while
+      // emitting the stylesheet and the two never meet. \`className\` when the author set
+      // one, a hash of the styles otherwise.
+      const name = getRecipeIdentity(config)
 
       function resolve(props = {}) {
         const computedVariants = getVariantProps(props)
@@ -68,8 +87,15 @@ export function generateCvaFn(ctx: Context) {
       // every consumer, qualifying or not.
       const resolveVariants = memo(resolve)
 
+      // The class names the build emitted rules for: the recipe's own class, plus one per
+      // selected variant. Not \`css(resolve(props))\` — that would name classes by property,
+      // and the stylesheet names this recipe's rules semantically, in the \`recipes\` layer.
+      //
+      // Compound variants are absent on purpose. Their rule selects on the variant classes
+      // already in this list — \`.btn--size_sm.btn--tone_a\` — so it applies without anything
+      // being added here, and adding a class for it would name a rule that does not exist.
       function cvaFn(props) {
-        return __atomicCss(resolve(props))
+        return getRecipeClassNames(name, variants, getVariantProps(props), '${utility.separator}', formatRecipeClass)
       }
 
       const variantKeys = Object.keys(variants)

@@ -196,41 +196,23 @@ describe('ast parser / sva', () => {
     `)
 
     expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .p_6 {
+      "@layer recipes.slots {
+        .sva_gbRdhD__root {
           padding: var(--spacing-6);
-      }
-
-        .m_4 {
           margin: var(--spacing-4);
-      }
-
-        .bdr_md {
           border-radius: var(--radii-md);
-      }
-
-        .bx-sh_md {
           box-shadow: var(--shadows-md);
-      }
-
-        .fw_semibold {
-          font-weight: var(--font-weights-semibold);
-      }
-
-        .w_md {
           width: var(--sizes-md);
       }
 
-        .pb_2 {
-          padding-bottom: var(--spacing-2);
-      }
-
-        [data-theme=dark] .dark\\:bg_\\#262626,.dark .dark\\:bg_\\#262626,.dark\\:bg_\\#262626.dark,.dark\\:bg_\\#262626[data-theme=dark] {
+        [data-theme=dark] .sva_gbRdhD__root,.dark .sva_gbRdhD__root,.sva_gbRdhD__root.dark,.sva_gbRdhD__root[data-theme=dark] {
           background: #262626;
+          color: var(--colors-white);
       }
 
-        [data-theme=dark] .dark\\:c_white,.dark .dark\\:c_white,.dark\\:c_white.dark,.dark\\:c_white[data-theme=dark] {
-          color: var(--colors-white);
+        .sva_gbRdhD__title {
+          font-weight: var(--font-weights-semibold);
+          padding-bottom: var(--spacing-2);
       }
       }"
     `)
@@ -273,8 +255,8 @@ describe('ast parser / sva', () => {
     `)
 
     expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .p_6 {
+      "@layer recipes.slots {
+        .sva_gaUUaS__root {
           padding: var(--spacing-6);
       }
       }"
@@ -299,8 +281,8 @@ describe('ast parser / sva', () => {
 
     const result = parseAndExtract(code)
     expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .bg-c_red {
+      "@layer recipes.slots {
+        .tt__a {
           background-color: red;
       }
       }"

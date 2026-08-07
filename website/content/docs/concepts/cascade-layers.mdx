@@ -44,8 +44,10 @@ The generated CSS for the base layer looks like this:
 }
 ```
 
-- `@layer recipes` - The recipes layer contains styles for recipes created within the config (aka config recipes). You
-  can also use this layer to add your own component styles.
+- `@layer recipes` - The recipes layer contains styles for recipes: `cva()` and `sva()` calls as well as recipes
+  declared in `theme.recipes`. A recipe's classes are named from its config, so this layer is where component styles
+  live, below the `utilities` layer a consumer's `css()` lands in. You can also use this layer to add your own component
+  styles.
 
 The generated CSS for the recipes layer looks like this:
 

@@ -349,9 +349,9 @@ browser has fewer declarations to walk during style recalculation. That favours 
 cached and arrives on every initial render. `hash` shortens class names rather than reducing their count, so the two
 address different costs.
 
-Patterns group too — `stack({ gap: '4' })` is a `css()` call with the pattern's transform already applied. `cva`, `sva`
-and a config recipe's compound variants stay atomic: which variants a caller selects is not knowable at build time, so
-grouping them would need a rule per combination.
+Patterns group too — `stack({ gap: '4' })` is a `css()` call with the pattern's transform already applied. `cva` and
+`sva` are unaffected either way: a recipe's classes are named from its config — `button--size_sm` — rather than by
+property, so there is no per-property naming for `cssMode` to group.
 
 ### How grouped degrades
 

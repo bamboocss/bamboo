@@ -101,17 +101,15 @@ export const createRuntimeToken =
 /**
  * The generated `createRecipe`, rebuilt in-process.
  *
- * A config recipe call resolves to `cx(recipeCss(variants), __atomicCss(compoundVariantStyles))`.
- * Both halves are reachable from shared primitives. Where the generated `cx` resolves
- * conflicts at all it never merges a recipe class, and the first half is nothing else — so
- * joining the two here agrees with it. The recipe's own `createCss` differs from the ordinary one only
- * in its `transform`, which names classes `recipe--prop_value` instead of going through the
- * utility table.
+ * A config recipe call resolves to `recipeCss(variants)` and nothing else. The recipe's own
+ * `createCss` differs from the ordinary one only in its `transform`, which names classes
+ * `recipe--prop_value` instead of going through the utility table.
  *
- * `getCompoundVariantCss` is the one piece the generated artifact builds inline rather
- * than importing, so it is mirrored below. That is a second implementation and therefore
- * a drift risk, which is why `__tests__/recipe-runtime-parity.test.ts` checks this
- * against the recipe functions a real codegen produced rather than against itself.
+ * Compound variants contribute no class to either side: their rule selects on the variant
+ * classes `recipeCss` already named, so it applies without one. `getCompoundVariantCss`
+ * below is still mirrored from the generated artifact, but for `raw()` — which returns
+ * styles rather than classes — and `__tests__/recipe-runtime-parity.test.ts` checks it
+ * against the functions a real codegen produced rather than against itself.
  *
  * Mirrors `generateCreateRecipeFn` in `@bamboocss/generator`.
  */
@@ -121,14 +119,6 @@ export interface RuntimeRecipe {
 
 export const createRuntimeRecipe = (ctx: Context): RuntimeRecipe => {
   const separator = ctx.utility.separator
-  const cssContext = createCssContext(ctx)
-  const { mergeCss } = createMergeCss(cssContext)
-
-  // Atomic whatever `cssMode` says, because the generated `createRecipe` names this half
-  // through `__atomicCss` — compound variants are extracted atomically, so grouping them
-  // would fold a class neither the stylesheet nor the runtime has.
-  const compoundCssFn = createCss({ ...cssContext, grouped: false })
-  const compoundCss = (styles: Dict) => compoundCssFn(mergeCss(styles))
 
   return (name, variants) => {
     const config = ctx.recipes.getConfig(name)
@@ -172,9 +162,10 @@ export const createRuntimeRecipe = (ctx: Context): RuntimeRecipe => {
       return undefined
     }
 
-    const compoundStyles = getCompoundVariantCss(compoundVariants as Dict[], recipeStyles, mergeCss)
-
-    return [recipeCss(recipeStyles), compoundCss(compoundStyles)].filter(Boolean).join(' ')
+    // No class for the compound variants. Their rule selects on the variant classes
+    // `recipeCss` just named — `.button--visual_solid.button--size_sm` — so it applies
+    // without one, and the generated `createRecipe` returns none either.
+    return recipeCss(recipeStyles)
   }
 }
 

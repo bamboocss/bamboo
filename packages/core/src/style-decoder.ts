@@ -121,6 +121,11 @@ export class StyleDecoder {
       // to style it. `className` is left alone: it still identifies the rule for
       // bookkeeping, it is just not what the rule selects on.
       scope: (transformed as { scope?: { prelude: string; selector: string } }).scope,
+      // A compound variant. It selects on the variant classes the element already carries
+      // — `.btn--size_sm.btn--tone_a` — so it needs a selector that is not a single class,
+      // and it contributes no class of its own. `className` still identifies the rule for
+      // bookkeeping; it is just not what the rule selects on, and never reaches the DOM.
+      selector: (transformed as { selector?: string }).selector,
     }
   }
 
@@ -179,9 +184,9 @@ export class StyleDecoder {
     const transformResult = this.getTransformResult(hash)
     if (!transformResult) return
 
-    const { className, classSelector, styles, transformed, parts, scope } = transformResult
+    const { className, classSelector, styles, transformed, parts, scope, selector } = transformResult
 
-    const basePath = scope ? [scope.prelude, scope.selector] : [classSelector]
+    const basePath = scope ? [scope.prelude, scope.selector] : [selector ?? classSelector]
 
     const obj: StyleResultObject = {}
 
@@ -212,6 +217,7 @@ export class StyleDecoder {
       conditions,
       className,
       layer: transformed.layer,
+      scoped: Boolean(scope),
     }
 
     this.atomic_cache.set(hash, styleResult)
@@ -288,13 +294,10 @@ export class StyleDecoder {
     const recipeConfig = this.context.recipes.getConfig(recipeName)
     if (!recipeConfig) return
 
-    const recipeNode = this.context.recipes.getRecipe(recipeName)
-    if (!recipeNode) return
-
-    const className =
-      'slots' in recipeConfig && slot
-        ? this.context.recipes.getSlotKey(recipeNode.className, slot)
-        : recipeNode.className
+    const className = this.context.recipes.getRecipeClassName(
+      recipeName,
+      'slots' in recipeConfig && slot ? slot : undefined,
+    )
 
     const cached = this.recipe_base_cache.get(className)
     if (cached) return cached
@@ -305,7 +308,11 @@ export class StyleDecoder {
     const result = Object.assign({}, style, {
       result: { ['.' + selector]: style.result },
       recipe: recipeName,
-      className,
+      // The formatted name, not the raw one. `formatSelector` is what applies `prefix` and
+      // `hash.className`, and the rule is emitted against that — so reporting the raw name
+      // handed the fold a literal for a class no rule exists under. The variants have
+      // always reported the formatted name; this is the base catching up.
+      className: selector,
       slot,
     })
 
@@ -501,8 +508,14 @@ export class StyleDecoder {
 
     scope.grouped.forEach((groupId) => push(byGroupId.get(groupId)))
 
-    // Recipe variants are not sorted — each is already scoped by its recipe class.
-    scope.recipes.forEach((hashes) => collectResults(hashes).forEach((result) => push(result.className)))
+    // Recipe variants are not sorted — each is already scoped by its recipe class. A
+    // `@scope`-selected slot is skipped: the root's variant class is what opens the scope,
+    // so this slot's own variant class would style nothing.
+    scope.recipes.forEach((hashes) =>
+      collectResults(hashes).forEach((result) => {
+        if (!result.scoped) push(result.className)
+      }),
+    )
 
     scope.recipes_base.forEach((key) => push(byRecipeKey.get(key)))
 

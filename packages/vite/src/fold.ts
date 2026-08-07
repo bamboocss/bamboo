@@ -97,6 +97,18 @@ export interface FoldOptions {
  * *invocations* could, but those are separate call sites the parser does not record as
  * such. `token` also resolves to no class, but it does resolve to a literal, so it folds
  * through its own path rather than being declined outright.
+ *
+ * Folding an invocation is now *possible* in a way it was not: a recipe's classes are named
+ * semantically, so the build knows every class a call can produce from the config alone.
+ * What is missing is upstream — the parser matches calls by imported name, so a local
+ * `button()` from `const button = cva(...)` is never recorded, and tracking those bindings
+ * is a change to the extractor rather than to this set.
+ *
+ * Worth knowing before taking that on: semantic naming already took most of the prize.
+ * `cvaFn` used to run `mergeCss` and name a class per property on every call; it is now a
+ * memoized loop over `variantKeys` doing string concatenation. That is an inspection of the
+ * two implementations, not a measurement — benchmark it before deciding it is worth the
+ * extractor work.
  */
 const FOLDABLE_TYPES = new Set(['css', 'pattern', 'recipe'])
 

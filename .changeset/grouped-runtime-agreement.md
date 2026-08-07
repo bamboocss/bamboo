@@ -18,9 +18,8 @@ merely the wrong ones. Now fixed:
   and then deep-merging, so a shorthand and its longhand collide as they will at runtime and a shared key holding a
   condition object keeps every branch. A `*Css` prop belongs to another slot and still gets its own call.
 - **`cva()` and `sva()` called directly**, and **config recipe compound variants**, asked for a group while the build
-  hashed each variant's styles on its own — the only thing possible, since which combinations a caller selects is not
-  knowable at build time. Their runtime now names classes through a new internal `__atomicCss`, identical to `css`
-  unless `cssMode: 'grouped'` is set.
+  hashed each variant's styles on its own — the only thing possible while their classes were named by property. Recipes
+  are now named from their config instead, in the `recipes` layer, which `cssMode` does not reach at all.
 
 `@bamboocss/vite` folds the recipe half the same way, so a folded call agrees with both.
 

@@ -224,33 +224,7 @@ describe('style encoder', () => {
       },
     })
 
-    expect(buttonStyle).toMatchInlineSnapshot(`
-      Set {
-        "display]___[value:inline-flex",
-        "alignItems]___[value:center",
-        "justifyContent]___[value:center",
-        "textStyle]___[value:headline.h1",
-        "height]___[value:2.5rem",
-        "minWidth]___[value:2.5rem",
-        "padding]___[value:0 0.5rem",
-        "height]___[value:3rem",
-        "minWidth]___[value:3rem",
-        "padding]___[value:0 0.75rem",
-        "backgroundColor]___[value:blue",
-        "color]___[value:white",
-        "backgroundColor]___[value:darkblue]___[cond:_hover",
-        "backgroundColor]___[value:gray]___[cond:&[data-disabled]",
-        "color]___[value:black]___[cond:&[data-disabled]",
-        "backgroundColor]___[value:transparent",
-        "border]___[value:1px solid blue",
-        "color]___[value:blue",
-        "backgroundColor]___[value:blue]___[cond:_hover",
-        "color]___[value:white]___[cond:_hover",
-        "backgroundColor]___[value:transparent]___[cond:&[data-disabled]",
-        "border]___[value:1px solid gray]___[cond:&[data-disabled]",
-        "color]___[value:gray]___[cond:&[data-disabled]",
-      }
-    `)
+    expect(buttonStyle).toMatchInlineSnapshot(`Set {}`)
   })
 
   test('slot recipe', () => {
@@ -310,25 +284,7 @@ describe('style encoder', () => {
       },
     })
 
-    expect(checkbox).toMatchInlineSnapshot(`
-      Set {
-        "display]___[value:flex",
-        "alignItems]___[value:center",
-        "gap]___[value:2",
-        "borderWidth]___[value:1px",
-        "borderRadius]___[value:sm",
-        "width]___[value:8",
-        "height]___[value:8",
-        "width]___[value:10",
-        "height]___[value:10",
-        "width]___[value:12",
-        "height]___[value:12",
-        "marginInlineStart]___[value:2",
-        "fontSize]___[value:sm",
-        "fontSize]___[value:md",
-        "fontSize]___[value:lg",
-      }
-    `)
+    expect(checkbox).toMatchInlineSnapshot(`Set {}`)
   })
 
   test('sva + compound variants', () => {
@@ -361,16 +317,7 @@ describe('style encoder', () => {
       ],
     })
 
-    expect(badge).toMatchInlineSnapshot(`
-      Set {
-        "background]___[value:red.300",
-        "borderRadius]___[value:sm",
-        "paddingInline]___[value:4",
-        "boxShadow]___[value:md",
-        "color]___[value:ButtonHighlight",
-        "color]___[value:red",
-      }
-    `)
+    expect(badge).toMatchInlineSnapshot(`Set {}`)
   })
 
   test('recipe + compound variants', () => {
@@ -378,9 +325,7 @@ describe('style encoder', () => {
 
     expect(badge).toMatchInlineSnapshot(`
       {
-        "atomic": Set {
-          "color]___[value:ButtonHighlight",
-        },
+        "atomic": Set {},
         "base": {
           "body": undefined,
           "title": Set {
@@ -391,6 +336,7 @@ describe('style encoder', () => {
         "variants": Set {
           "size]___[value:sm]___[recipe:badge",
           "raised]___[value:true]___[recipe:badge",
+          "--compound]___[value:0]___[recipe:badge]___[slot:title",
         },
       }
     `)
@@ -752,6 +698,7 @@ describe('style encoder', () => {
           ],
           "recipes": {
             "badge": [
+              "--compound]___[value:0]___[recipe:badge]___[slot:title",
               "size]___[value:sm]___[recipe:badge",
               "raised]___[value:true]___[recipe:badge",
             ],

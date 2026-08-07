@@ -1289,6 +1289,10 @@ describe('extract to css output pipeline', () => {
           font-size: var(--font-sizes-lg);
       }
 
+        .button--variant_danger.button--size_md {
+          z-index: 100;
+      }
+
         .button--size_md {
           padding: var(--spacing-4);
           border-radius: var(--radii-md);
@@ -1306,12 +1310,6 @@ describe('extract to css output pipeline', () => {
 
         .complexButton--color_blue {
           color: var(--colors-blue-500);
-      }
-      }
-
-      @layer utilities {
-        .z_100 {
-          z-index: 100;
       }
       }"
     `)
@@ -1466,28 +1464,28 @@ describe('extract to css output pipeline', () => {
     `)
 
     expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .px_token\\(spacing\\.1\\) {
+      "@layer recipes {
+        .cva_bwOhLd--px_s {
           padding-inline: var(--spacing-1);
       }
 
-        .px_token\\(spacing\\.2\\) {
+        .cva_bwOhLd--px_m {
           padding-inline: var(--spacing-2);
       }
 
-        .px_token\\(spacing\\.3\\) {
+        .cva_bwOhLd--px_l {
           padding-inline: var(--spacing-3);
       }
 
-        .py_token\\(spacing\\.1\\) {
+        .cva_bwOhLd--py_s {
           padding-block: var(--spacing-1);
       }
 
-        .py_token\\(spacing\\.2\\) {
+        .cva_bwOhLd--py_m {
           padding-block: var(--spacing-2);
       }
 
-        .py_token\\(spacing\\.3\\) {
+        .cva_bwOhLd--py_l {
           padding-block: var(--spacing-3);
       }
       }"

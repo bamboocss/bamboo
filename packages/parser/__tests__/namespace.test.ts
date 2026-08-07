@@ -124,17 +124,21 @@ describe('extract namespace', () => {
     `)
 
     expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .c_red {
-          color: red;
-      }
-
-        .c_blue {
+      "@layer recipes {
+        .cva_bKHSlx {
           color: blue;
       }
+      }
 
-        .c_green {
+      @layer recipes.slots {
+        .sva_hAcRla__root {
           color: green;
+      }
+      }
+
+      @layer utilities {
+        .c_red {
+          color: red;
       }
       }"
     `)

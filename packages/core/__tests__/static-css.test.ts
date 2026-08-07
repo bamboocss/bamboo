@@ -1937,6 +1937,10 @@ describe('static-css', () => {
       }
       }
 
+        .badge__title--raised_true.badge__title--size_sm {
+          color: ButtonHighlight;
+      }
+
         .badge__title--size_sm {
           padding-inline: var(--spacing-4);
       }
@@ -2102,6 +2106,18 @@ describe('static-css', () => {
         "css": "@layer recipes {
         .withCompound {
           font-size: 1px;
+      }
+
+        .withCompound--size_sm {
+          font-size: 3px;
+      }
+
+        .withCompound--size_sm:is(:hover, [data-hover]) {
+          font-size: 4px;
+      }
+
+        [data-theme=dark] .withCompound--size_sm:is(:hover, [data-hover]),.dark .withCompound--size_sm:is(:hover, [data-hover]),.withCompound--size_sm:is(:hover, [data-hover]).dark,.withCompound--size_sm:is(:hover, [data-hover])[data-theme=dark] {
+          font-size: 5px;
       }
 
         .withCompound--size_sm {
