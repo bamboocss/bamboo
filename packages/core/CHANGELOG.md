@@ -1,5 +1,227 @@
 # @bamboocss/core
 
+## 1.17.0
+
+### Minor Changes
+
+- 355e573: Register composed custom properties with `@property` instead of resetting them on every element.
+
+  Utilities that build one declaration out of several variables — `filter` out of nine, `translate` out of its axes —
+  needed the variables nobody set to resolve to something harmless, and needed them not to inherit, since a parent's
+  `--blur` reaching its children is a leak rather than a default. Before `@property` the only way to say that was to
+  assign all of them a value on `*, ::before, ::after, ::backdrop`, which put 33 custom property declarations on every
+  element in the document.
+
+  `inherits: false` says it directly, and the initial value lives in the registration rather than in a declaration per
+  element.
+
+  ## `customProperties` on a utility
+
+  A utility now declares the properties it composes, so the guarantee that a variable exists sits with the code that
+  reads it:
+
+  ```ts
+  filter: {
+    className: 'filter',
+    values: { auto: 'var(--blur, ) var(--brightness, )' },
+    customProperties: {
+      '--blur': { syntax: '*', inherits: false },
+      '--brightness': { syntax: '*', inherits: false },
+    },
+  }
+  ```
+
+  Registrations are merged across every configured utility, so a reader and a writer may both name the same variable;
+  the first declaration wins, so one utility cannot retype a variable another already registered. Third-party presets
+  get the behaviour by declaring it next to the utility, with no second list to keep in step.
+
+  Every registration is `syntax: '*'`. A type would let these transition, and would also make a value outside it fail
+  silently to the initial value rather than loudly — `translateX: '50%'` under `<length>` renders as `0`. Typing is
+  worth doing per variable, where the value space is known, not in bulk.
+
+  Omitting `initialValue` gives a property the guaranteed-invalid value, which is what a `var(--x, )` read expects: the
+  reference takes its own empty fallback and composes to nothing. That is what the old `/*-*/ /*-*/` sentinel bought,
+  without a declaration per element to buy it.
+
+  ## What changed in the emitted CSS
+
+  The universal rule is gone, replaced by 32 `@property` rules. Against the 33 it declared:
+  - **`--rotate`, `--skew-x` and `--skew-y` are no longer declared.** No utility reads or writes them; they were left
+    behind by utilities that no longer exist. Stylesheets referencing them directly should set their own.
+  - **`--rotate-z` and `--translate-z` are now declared.** `rotate: 'auto-3d'` and `translate: 'auto-3d'` compose them,
+    but the reset never covered them — so they inherited, and a parent's value moved or rotated its descendants.
+
+  The three gradient stop positions are now read as `var(--gradient-from-position, )` rather than bare. A stop's
+  position is optional, and with no initial value a bare read would take the whole `--gradient-stops` declaration
+  invalid at computed-value time and drop the gradient.
+
+  ## Fixes
+
+  `@property` emission no longer falls back to `initial-value: initial` when a definition declares no initial value.
+  That keyword is not "no initial value" — under the universal syntax it is a token, so it became the property's value
+  and was substituted into whatever composed it, turning `filter: var(--blur, ) …` into `filter: initial …`, which is
+  invalid and drops the whole filter. The descriptor is now omitted, which is what the spec asks for.
+
+  Generated types are unchanged: these registrations never reach `globalVars`, so `CssVars` and `CssVarKeys` keep the
+  shapes they had. Routing them through `globalVars` would have closed the `CssVars` union to those names and broken
+  `var(--anything)` on the ~100 properties whose type union has no string fallback.
+
+### Patch Changes
+
+- 29f9bbe: Fix conditional token values being silently dropped on postcss `>= 8.5.25`.
+
+  A semantic token declared with a conditional value emitted only its `base` half — no error, no warning — so a themed
+  app kept its light values in dark mode:
+
+  ```ts
+  semanticTokens: {
+    colors: {
+      panel: { value: { base: '#ffffff', _osDark: '#131211' } },
+    },
+  }
+  ```
+
+  ```css
+  /* before — the `_osDark` half never reached the tokens layer */
+  @layer tokens {
+    :where(:root, :host) {
+      --colors-panel: #ffffff;
+    }
+  }
+  ```
+
+  `getDeepestRule` seeded its nesting chain with an empty-selector rule and relied on postcss-nested erasing `&` against
+  it. postcss 8.5.25 ("Fixed 8.5.17 visitor regression") changed that edge case to collapse the whole selector, so every
+  conditional token was emitted as a selectorless — and therefore discarded — rule. The chain is now built on a `Root`,
+  and the top-level `&` is resolved directly instead of through postcss-nested.
+
+- 66cb96c: **Fix:** a recipe variant whose value looks like a number to `Number()` emitted no rule at all.
+
+  ```ts
+  cva({
+    className: 'rt',
+    variants: { size: { '1.0': { padding: '1' }, sm: { padding: '4' } } },
+  })
+  // before: only `.rt--size_sm` existed; the runtime still returned `rt--size_1.0`
+  ```
+
+  A variant value is a _key_ of the `variants` object, so it is a string by construction, and the propKey it is stored
+  under keeps it as written. The decoder reinterpreted it with `parseValue` on the way back out — which coerces anything
+  `Number()` accepts — so `'1.0'`, `'1e3'` and `'0x10'` returned as `1`, `1000` and `16`, the lookup missed, and the
+  rule was dropped. Nothing was reported; the element simply carried a class no rule existed for.
+
+  Canonical numerics (`0`, `1`, `01`) and booleans round-tripped, which is why this held together at all. They are
+  unaffected.
+
+- 28463ce: Five fixes from an adversarial review of the previous batch. Four are in code that batch introduced.
+
+  **The fold declined where the runtime throws — but only for scoped recipes.** A slot recipe call runs a `recipeFn` per
+  slot, each calling `assertCompoundVariant`. Which slots get one depends on scoping: with anchors only they do, without
+  them every slot does. The guard read the anchors alone, and `[].some()` is false — so an _unscoped_ recipe with
+  compound variants folded a class where the call throws.
+
+  **`cva().merge()` was not associative.** `a.merge(b).merge(c)` dropped `b` entirely, because the merged object
+  re-exposed the left parent's `merge` closure and recomposed `a` with `c`. It now composes the _result_, so `merge` is
+  associative and `variantKeys` keeps every parent's.
+
+  **A merged recipe applied each parent's own defaults** while publishing merged ones, so `m()` and
+  `m(m.getVariantProps())` disagreed. The selection is now resolved once and handed to both parents.
+
+  **The fold rejected ordinary TypeScript.** `dyn as Size`, `dyn!`, `(dyn)` and `dyn ?? 'sm'` are erased before anything
+  runs, so they cannot add an effect — but the new inertness check rejected them, losing folds that landed before it
+  existed. It now sees through the erased wrappers, while still declining template substitutions and arithmetic, which
+  coerce and can reach a getter.
+
+  **A scoped compound variant lost its precedence, and a stale one could survive a rebuild.** Moving a compound into an
+  `@scope` rule made its inner selector one class — the same specificity and the same scoping root as every
+  single-variant scope — so the winner fell to stylesheet order, which for compounds is decided by whichever call site
+  the build walked first. The compound's inner selector is now `:scope .slot`, restoring `(0,2,0)` against a variant's
+  `(0,1,0)` without changing what it matches.
+
+  Separately, `slotScopes` was cleared for variants but not for compounds, both being module-global. A recipe that
+  stopped being scoped kept emitting the previous build's rule — naming an anchor nothing renders — and lost its own
+  compound entirely. Both maps are now cleared before either is written.
+
+- 6577023: **Fix:** a scoped slot recipe rendered every non-anchor slot unstyled under `hash: true` or `prefix`.
+
+  A scoped slot's class is a constant — that is the point of scoping, since the slot takes no variant props. Constants
+  never pass through `createCss`, which is where `hash.className` and `prefix` are applied, so the runtime handed back a
+  raw `checkbox__control` while the stylesheet emitted its rule as `.hEeOkj`. The `@scope` prelude had the same problem:
+
+  ```css
+  /* before, with `hash: true` */
+  .dHwbLC { … }                                          /* base rules hashed */
+  @scope (.checkbox__root--size_sm) to (.checkbox__root) /* prelude not hashed */
+    { .checkbox__control { … } }                         /* selector not hashed */
+  ```
+
+  Neither the anchor class nor the slot class existed in the DOM under those names, so the slot lost its base styles
+  _and_ its variant styles. Nothing was reported — it simply rendered unstyled. Both defaults (no `hash`, no `prefix`)
+  were unaffected, which is why it went unnoticed.
+
+  Fixed on both sides: the build stores the scope's class names raw and formats them through `formatSelector`, and the
+  generated runtime formats a constant slot class through the same prefix-and-hash the rest of a recipe's classes go
+  through. Inline `sva` had the identical bug and is fixed with it.
+
+  `checkNamingAgreement` now covers slot recipes, so this derivation cannot drift again — it already covered `css()` and
+  inline `cva`, and a slot recipe's constant half was exactly the gap.
+
+  To be precise about what that guard does and does not do: it runs a **canary config** through both derivations, so it
+  checks that hashing, prefixing and separators agree. It never looks at your code, so it cannot see a class name that
+  diverges because the build read a _different config_ than the browser holds — see the separate fix for a recipe config
+  the build cannot fully read.
+
+- d5347ab: Four fixes found by auditing the recipe work for edge cases. Three are silent failures of the same shape: a
+  class name derived one way for the stylesheet and another way for the browser.
+
+  **The fold emitted broken JavaScript for a property access on `css()` or a pattern.** Folding a slot access widened
+  the replaced range to cover the member expression — but the widening applied to every foldable call, so the property
+  read was deleted:
+
+  ```js
+  css({ color: 'red' }).trim() // → "c_red"()          TypeError
+  flex({ direction: 'row' }).split(' ') // → "d_flex flex-d_row"(' ')
+  ```
+
+  It now fires only for a recipe whose accessed property names a slot the recipe declares.
+
+  **Every compound variant was dead under `hash: true` or `prefix`.** A compound's selector is assembled from class
+  names, and it was assembled from raw ones while the element carried prefixed or hashed ones — so
+  `.btn--size_sm.btn--tone_a` selected nothing while the element carried `bam-btn--size_sm bam-btn--tone_a`. The
+  selector is now built through the same `formatSelector` as every other class.
+
+  **A compound variant on a scoped slot recipe matched nothing at all.** A scoped slot carries only its constant class,
+  so a compound selecting on that slot's variant classes can never apply. It is now scoped by the anchor, like the
+  variants it refines:
+
+  ```css
+  @scope (.cmp__root--size_lg.cmp__root--tone_a) to (.cmp__root) { .cmp__item { … } }
+  ```
+
+  **Two slot recipes differing only in `slots` or `scopeRoots` collided.** `getRecipeIdentity` hashed only the style
+  fields, so "same styles, different DOM topology" — exactly what `scopeRoots` exists for — produced one name. An inline
+  recipe is registered once, so whichever was extracted first decided the emission for both and the other rendered
+  unstyled. Both fields now count toward the identity, which changes the generated name of every anonymous `sva`.
+
+  **An `sva` that omits `slots` rendered unstyled.** The build infers slots and the runtime does not, so once `slots`
+  counted toward the identity the two sides derived different names. The identity is now hashed from the config as
+  written — what both sides actually see — and `checkNamingAgreement` gained a canary that leaves `slots` out, so it
+  cannot recur.
+
+  **`auditSlotScopes` was a no-op under `hash` or `prefix`.** It builds its selectors from `classNameMap`, and an inline
+  `sva` populated that map with raw names while returning formatted ones — so the diagnostic went silent in precisely
+  the configs where a naming bug is likeliest. Config slot recipes were already correct; the two now agree.
+
+- Updated dependencies [3cdd0d1]
+- Updated dependencies [d5347ab]
+- Updated dependencies [c6154dc]
+- Updated dependencies [355e573]
+  - @bamboocss/shared@1.17.0
+  - @bamboocss/types@1.17.0
+  - @bamboocss/token-dictionary@1.17.0
+  - @bamboocss/logger@1.17.0
+  - @bamboocss/is-valid-prop@1.17.0
+
 ## 1.16.1
 
 ### Patch Changes

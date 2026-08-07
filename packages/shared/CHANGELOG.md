@@ -1,5 +1,115 @@
 # @bamboocss/shared
 
+## 1.17.0
+
+### Patch Changes
+
+- 3cdd0d1: Stop `css()` paying for a second cache keyed on the arguments it just hashed.
+
+  The generated runtime was `css = memo((...styles) => cssFn(mergeCss(...styles)))`, and `mergeCss` is itself memoized
+  on its argument list. So a `css()` call consulted two caches keyed on the same thing — and the second one could never
+  answer. Reaching the merge at all means the outer cache missed, and a miss means those exact arguments have not been
+  seen, so the inner lookup is _guaranteed_ to miss too. The redundancy is structural, not a matter of hit rate.
+
+  Measured over 25,000 `css()` calls across four distinct styles, the inner memo served **zero** hits while paying a
+  hash, a bucket scan, a snapshot and an insert on each of the four misses. Driven directly with no memo above it, the
+  same function hit 24,996 times — which is why it stays memoized for the callers that reach it that way.
+
+  `createMergeCss` now also returns `mergeCssUncached`, the same merge without the cache, and the generated `css` calls
+  that instead. `css.raw`, `cva` and the Vite fold's runtime keep the memoized one: none of them sits behind a memo
+  keyed on the same arguments, so for them the cache is doing real work.
+
+  The win is on the miss path, which is where dynamic styles and SSR live. Cached calls are unchanged:
+
+  | bench                            | before  | after   |              |
+  | -------------------------------- | ------- | ------- | ------------ |
+  | high-cardinality `css()`         | 26.48ms | 19.73ms | −25.5%       |
+  | high-cardinality grouped `css()` | 28.23ms | 21.53ms | −23.7%       |
+  | inline `css()` (cached)          | 0.724ms | 0.689ms | −4.8%, noise |
+  | multi-arg `css(a, b)` (cached)   | 0.758ms | 0.767ms | +1.2%, noise |
+  | `stack()` pattern (cached)       | 4.223ms | 4.246ms | +0.5%, noise |
+
+  Per 10k iterations, interleaved new/old/new, controls read in every run.
+
+  Locked down by counting rather than timing, per the note in `CLAUDE.md`: an enumerable getter on the style object is
+  read once per pass over the arguments, so `packages/shared/__tests__/memo.test.ts` now asserts a miss costs four reads
+  (hash, snapshot, and the merge itself) rather than six. Reintroducing the inner memo fails that test with
+  `expected 6 to be 4`.
+
+- d5347ab: Four fixes found by auditing the recipe work for edge cases. Three are silent failures of the same shape: a
+  class name derived one way for the stylesheet and another way for the browser.
+
+  **The fold emitted broken JavaScript for a property access on `css()` or a pattern.** Folding a slot access widened
+  the replaced range to cover the member expression — but the widening applied to every foldable call, so the property
+  read was deleted:
+
+  ```js
+  css({ color: 'red' }).trim() // → "c_red"()          TypeError
+  flex({ direction: 'row' }).split(' ') // → "d_flex flex-d_row"(' ')
+  ```
+
+  It now fires only for a recipe whose accessed property names a slot the recipe declares.
+
+  **Every compound variant was dead under `hash: true` or `prefix`.** A compound's selector is assembled from class
+  names, and it was assembled from raw ones while the element carried prefixed or hashed ones — so
+  `.btn--size_sm.btn--tone_a` selected nothing while the element carried `bam-btn--size_sm bam-btn--tone_a`. The
+  selector is now built through the same `formatSelector` as every other class.
+
+  **A compound variant on a scoped slot recipe matched nothing at all.** A scoped slot carries only its constant class,
+  so a compound selecting on that slot's variant classes can never apply. It is now scoped by the anchor, like the
+  variants it refines:
+
+  ```css
+  @scope (.cmp__root--size_lg.cmp__root--tone_a) to (.cmp__root) { .cmp__item { … } }
+  ```
+
+  **Two slot recipes differing only in `slots` or `scopeRoots` collided.** `getRecipeIdentity` hashed only the style
+  fields, so "same styles, different DOM topology" — exactly what `scopeRoots` exists for — produced one name. An inline
+  recipe is registered once, so whichever was extracted first decided the emission for both and the other rendered
+  unstyled. Both fields now count toward the identity, which changes the generated name of every anonymous `sva`.
+
+  **An `sva` that omits `slots` rendered unstyled.** The build infers slots and the runtime does not, so once `slots`
+  counted toward the identity the two sides derived different names. The identity is now hashed from the config as
+  written — what both sides actually see — and `checkNamingAgreement` gained a canary that leaves `slots` out, so it
+  cannot recur.
+
+  **`auditSlotScopes` was a no-op under `hash` or `prefix`.** It builds its selectors from `classNameMap`, and an inline
+  `sva` populated that map with raw names while returning formatted ones — so the diagnostic went silent in precisely
+  the configs where a naming bug is likeliest. Config slot recipes were already correct; the two now agree.
+
+- c6154dc: Give `splitProps` a path for the shape it is actually called with.
+
+  Every call site in the project passes one array group — a recipe's `variantKeys` — and it runs per component per
+  render, inside `splitVariantProps`. The general implementation is built for several groups that may be predicates, and
+  paid for that shape on every call: a closure per group, a `map` and a `concat` to assemble the result, and a branch
+  per group to tell an array from a predicate. None of it is reachable with one array group.
+
+  How much this wins depends on what the framework hands over, so both ends are worth naming:
+
+  | props                      | before    | after |                     |
+  | -------------------------- | --------- | ----- | ------------------- |
+  | plain data, 2 variant keys | 650ns     | 395ns | −39%                |
+  | plain data, 8 variant keys | 709ns     | 440ns | −38%                |
+  | a non-enumerable key       | 915ns     | 662ns | −28%                |
+  | accessors or a proxy       | 2.3–4.9µs |       | ~0–9%, within noise |
+
+  Plain objects are what React and Vue pass. Solid passes a `mergeProps` proxy, where a trap per key dominates
+  everything around it — the saving is real there but small, because trap cost is not what this path skips. The general
+  path is unchanged to within its control (+0.0%).
+
+  Worth saying what it does _not_ skip, because both look skippable and neither is:
+  - The `own` set stays. Membership has to be answered from `ownKeys` rather than by asking the object: on a proxy —
+    which is what Solid's `mergeProps` hands over — every question is a trap, and a recipe naming eight variants would
+    otherwise fire eight traps to learn what one `ownKeys` already said.
+  - The two passes stay separate. The group bucket is in _group_ order and the rest bucket in _props_ order, and that
+    ordering reaches the emitted CSS.
+
+  Skipping either is where the bigger numbers come from, and both change behaviour. Reading `props[key]` instead of its
+  descriptor is faster still and is the change that broke Solid once already.
+
+  The per-key descriptor rules are now one function shared by both paths, rather than two copies to keep in step, and a
+  differential test pins the two paths against each other over the shapes that distinguish them.
+
 ## 1.16.1
 
 ## 1.16.0
