@@ -119,9 +119,14 @@ export class BambooContext extends Generator {
       // declaration the build cannot see changes that hash, the browser asks for a name no
       // rule was emitted under, and *every* style is lost rather than the unresolved one.
       if (entry.kind === 'recipe') {
+        // `at` rather than the shared `fix`: that one ends "to group it", which is
+        // grouped-mode language, and this warning fires in every mode. The path is what
+        // makes several losses in one config distinguishable — without it they render as
+        // identical lines at the same position.
+        const at = entry.prop ? ` at \`${entry.prop}\`` : ''
         logger.warn(
           'recipe',
-          `${where} — ${what}. A recipe's classes are named from a hash of its config, so a declaration the build cannot see gives the build and the browser different names and the element renders with no styles at all. Set \`className\` on the recipe, so its name does not depend on what the build could resolve. ${fix} See https://bamboocss.com/docs/concepts/recipes`,
+          `${where} — ${what}${at}. A recipe's classes are named from a hash of its config, so a declaration the build cannot see gives the build and the browser different names and the element renders with no styles at all. Set \`className\` on the recipe, so its name does not depend on what the build could resolve. See https://bamboocss.com/docs/concepts/recipes`,
         )
         continue
       }

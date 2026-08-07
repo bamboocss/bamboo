@@ -33,8 +33,21 @@ styles at all. Set `className` on the recipe, so its name does not depend on wha
 extraction fidelity stops deciding the name and the loss degrades to the missing declarations alone. A recipe that sets
 one is not reported.
 
-Reported per level with its path — `base`, `variants.size.sm`, `base.root` for a slot — and only where the spread
-actually contributed nothing, so a resolvable spread stays quiet.
+Reported per level with its path — `base`, `variants.size.sm`, `compoundVariants.0.css`, `base.root` for a slot. Three
+ways a level can lose something are covered:
+
+- a **spread or computed key** that contributed no keys beyond those written beside it;
+- a **value the build could not evaluate** (`{ color: getColor() }`), which leaves no trace in the box tree at all
+  because the pair is never recorded — this one needs the written source compared against the resolved data;
+- the config **not being an object literal**, as in `cva(someConfig)`, which is the quietest total loss of the lot.
+
+Every level is unwrapped first, so `as const` and `satisfies` — idiomatic on a recipe config — do not hide the loss. A
+spread of a literal is not reported, since its keys are written right there and nothing can have gone missing.
+
+**Cost.** The check walks the config, so it roughly doubles the walking a recipe already costs: on a file of eight
+variant-heavy recipes, parse goes from 1.087 ms to 1.390 ms (+28%). It is skipped entirely for a recipe that sets
+`className` — so the state this warning asks for is also the one that does not pay for it. Folding the comparison into
+extraction, rather than walking a second time, is the way to remove the cost outright.
 
 This does not change what CSS is emitted. `css()` in atomic mode still drops an unresolvable spread silently; that is
 unchanged and pre-existing.

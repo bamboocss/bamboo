@@ -253,7 +253,15 @@ export class ParserResult implements ParserResultInterface {
     // A recipe that names itself is immune: `getRecipeIdentity` short-circuits on
     // `className` and never hashes the styles, so extraction fidelity stops deciding the
     // name and the loss degrades to the missing declarations alone.
-    if (result.data.some((data) => typeof (data as { className?: unknown })?.className === 'string')) return
+    //
+    // Spelled the way `getRecipeIdentity` spells it — a non-empty string — because an empty
+    // one falls through to hashing there and would be exempted here for a safety it does
+    // not have. `every`, not `some`: one entry naming itself does not cover the rest.
+    const named = result.data.every((data) => {
+      const className = (data as { className?: unknown })?.className
+      return typeof className === 'string' && className !== ''
+    })
+    if (named) return
 
     const unresolved = findUnresolvedRecipeStyles(result)
     if (unresolved.length) this.unresolved.push(...unresolved)

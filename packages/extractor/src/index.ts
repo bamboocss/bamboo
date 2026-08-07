@@ -17,6 +17,7 @@ export type { NodeRange } from './get-node-range'
 export { extractJsxAttribute } from './jsx-attribute'
 export { extractJsxElementProps } from './jsx-element-props'
 export { extractJsxSpreadAttributeValues } from './jsx-spread-attribute'
+export { unwrapExpression } from './utils'
 export { clearBoxNodeCache, maybeBoxNode, maybeIdentifierValue } from './maybe-box-node'
 export type {
   BoxContext,

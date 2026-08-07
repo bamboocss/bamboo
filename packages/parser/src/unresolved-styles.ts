@@ -1,4 +1,4 @@
-import { type BoxNode, box } from '@bamboocss/extractor'
+import { type BoxNode, box, unwrapExpression } from '@bamboocss/extractor'
 import type { ResultItem } from '@bamboocss/types'
 import { Node } from 'ts-morph'
 
@@ -147,31 +147,70 @@ const writtenProps = (node: Node | undefined): WrittenProps | undefined => {
  * declaration and keeps the rest, which is why this is not reported there.
  */
 /**
- * Object literals in a recipe config the build could not fully read.
+ * A recipe config the build could not fully read, level by level.
  *
  * `findUnresolvedStyles` reads the *call's* literal, which for a recipe holds `base` and
- * `variants` rather than declarations — so a spread inside `base` is nested out of its
- * reach, and an unresolvable one leaves no trace in the box tree either. This walks the
- * written source against the resolved data, level by level, and reports a level whose
- * spread or computed key contributed nothing.
+ * `variants` rather than declarations — so a loss inside `base` is nested out of its reach.
+ * This walks the written source against the resolved data instead, and reports three ways a
+ * level can lose something:
  *
- * The same one-directional guess `findUnresolvedStyles` documents applies: a spread of a
- * value that happens to hold only keys written beside it reads as a loss when it is not.
- * That costs a warning; the other way round costs the element every style it has.
+ * - a key written in the source that never arrived in the data — an unresolvable *value*,
+ *   which leaves no trace in the box tree because the pair is never recorded at all;
+ * - a spread or computed key that contributed no keys beyond those written beside it;
+ * - the config not being an object literal at all, so nothing can be compared.
+ *
+ * Every level is unwrapped first. `as const` and `satisfies` are idiomatic on a recipe
+ * config, and reading through them is what the extractor does — a diagnostic that stops at
+ * the cast reports nothing for the exact configs most likely to be written that way.
  */
-const findUnresolvedInLiteral = (
-  literal: Node | undefined,
+const findUnresolvedInValue = (
+  node: Node | undefined,
   resolved: unknown,
-  path: string[],
+  // A string rather than an array: this runs per property at every level of every recipe
+  // config in the project, and the path is only ever read when something is reported.
+  path: string,
   out: Array<Pick<UnresolvedStyle, 'prop' | 'reason'>>,
 ) => {
-  if (!literal || !Node.isObjectLiteralExpression(literal)) return
+  const value = node ? unwrapExpression(node) : undefined
+  if (!value) return
 
+  if (Node.isArrayLiteralExpression(value)) {
+    value.getElements().forEach((element, index) => {
+      const at = path ? `${path}.${index}` : String(index)
+      // A spread the extractor could not resolve leaves a hole rather than an absence, so
+      // the element count still lines up. `slots: [...anatomy.keys(), 'body']` is the shape.
+      const element_ = (resolved as unknown[] | undefined)?.[index]
+      if (Node.isSpreadElement(element) && element_ == null) {
+        out.push({ prop: at || undefined, reason: 'unenumerable-keys' })
+        return
+      }
+      findUnresolvedInValue(element, element_, at, out)
+    })
+    return
+  }
+
+  if (!Node.isObjectLiteralExpression(value)) return
+
+  const properties = value.getProperties()
   const written: string[] = []
   let uncertain = false
 
-  for (const property of literal.getProperties()) {
+  for (const property of properties) {
     if (Node.isSpreadAssignment(property)) {
+      // A spread of a literal is not uncertain — its keys are written right there, so they
+      // count as written rather than as something that might have gone missing. Without
+      // this, `...{}` and a spread every key of which is overridden beside it both look
+      // exactly like a spread the extractor could not resolve.
+      const spread = unwrapExpression(property.getExpression())
+      if (Node.isObjectLiteralExpression(spread)) {
+        for (const inner of spread.getProperties()) {
+          if (!Node.isPropertyAssignment(inner) && !Node.isShorthandPropertyAssignment(inner)) continue
+          const innerName = inner.getName()
+          if (!innerName.startsWith('[')) written.push(innerName.replace(/^['"]|['"]$/g, ''))
+        }
+        continue
+      }
+
       uncertain = true
       continue
     }
@@ -185,50 +224,68 @@ const findUnresolvedInLiteral = (
     written.push(name.replace(/^['"]|['"]$/g, ''))
   }
 
-  const resolvedKeys = resolved && typeof resolved === 'object' ? Object.keys(resolved as object) : []
-  if (uncertain && !resolvedKeys.some((key) => !written.includes(key))) {
-    out.push({ prop: path.join('.') || undefined, reason: 'unenumerable-keys' })
+  const isObject = Boolean(resolved) && typeof resolved === 'object'
+  const resolvedKeys = isObject ? Object.keys(resolved as object) : []
+
+  // A key the source writes and the data never received. `maybeBoxNode` records nothing for
+  // a value it cannot evaluate, so `{ color: getColor() }` disappears without a trace — and
+  // it changes the hash exactly as a dropped spread does.
+  for (const name of written) {
+    if (!resolvedKeys.includes(name)) {
+      out.push({ prop: path ? `${path}.${name}` : name, reason: 'missing-property' })
+    }
   }
 
-  for (const property of literal.getProperties()) {
+  if (uncertain && !resolvedKeys.some((key) => !written.includes(key))) {
+    out.push({ prop: path || undefined, reason: 'unenumerable-keys' })
+  }
+
+  for (const property of properties) {
     if (!Node.isPropertyAssignment(property)) continue
     const name = property.getName().replace(/^['"]|['"]$/g, '')
     if (name.startsWith('[')) continue
-    findUnresolvedInLiteral(
+    findUnresolvedInValue(
       property.getInitializer(),
       (resolved as Record<string, unknown> | undefined)?.[name],
-      [...path, name],
+      path ? `${path}.${name}` : name,
       out,
     )
   }
 }
 
-/** A recipe config the build could not fully read — see `findUnresolvedInLiteral`. */
+/** A recipe config the build could not fully read — see `findUnresolvedInValue`. */
 export const findUnresolvedRecipeStyles = (item: ResultItem): UnresolvedStyle[] => {
   const boxNode = item.box
   const node = boxNode?.getNode()
   const sourceFile = node?.getSourceFile()
   if (!node || !sourceFile) return []
 
-  let literal: Node | undefined = node
-  if (Node.isCallExpression(literal)) {
-    const args = literal.getArguments()
+  let argument: Node | undefined = node
+  if (Node.isCallExpression(argument)) {
+    const args = argument.getArguments()
     if (args.length !== 1) return []
-    literal = args[0]
+    argument = args[0]
   }
 
   const losses: Array<Pick<UnresolvedStyle, 'prop' | 'reason'>> = []
-  findUnresolvedInLiteral(literal, item.data[0], [], losses)
+  const config = argument ? unwrapExpression(argument) : undefined
+
+  // `cva(config)` — nothing to compare the data against, and the extractor resolved
+  // whatever it could reach. This is the quietest total loss of the lot, so it is reported
+  // rather than skipped.
+  if (!config || !Node.isObjectLiteralExpression(config)) {
+    losses.push({ reason: 'unresolvable-value' })
+  } else {
+    findUnresolvedInValue(config, item.data[0], '', losses)
+  }
+
   if (!losses.length) return []
 
   const { line, column } = sourceFile.getLineAndColumnAtPos(node.getStart())
   return losses.map((loss) => ({ column, filePath: sourceFile.getFilePath(), kind: 'recipe' as const, line, ...loss }))
 }
 
-export const findUnresolvedStyles = (
-  item: ResultItem,
-  kind: UnresolvedStyle['kind'] = 'grouped',
-): UnresolvedStyle[] => {
+export const findUnresolvedStyles = (item: ResultItem): UnresolvedStyle[] => {
   const boxNode = item.box
   if (!boxNode) return []
 
@@ -279,7 +336,7 @@ export const findUnresolvedStyles = (
   const { line, column } = sourceFile.getLineAndColumnAtPos(node.getStart())
   const at = { filePath: sourceFile.getFilePath(), line, column }
 
-  return losses.map((loss) => ({ ...at, kind, ...loss }))
+  return losses.map((loss) => ({ ...at, kind: 'grouped' as const, ...loss }))
 }
 
 const hasKeyOutside = (resolved: Set<string>, names: string[]) => {
