@@ -50,6 +50,24 @@ It has to come from the config because the build and the browser each derive it 
 it from the binding — `const button = cva(...)` — would need the build to rewrite the call, and a pipeline without that
 transform would then name classes differently from one with it.
 
+### Faster at runtime
+
+Naming from the config means the runtime no longer resolves a style object to produce a class string. `cva()` used to
+run `mergeCss` per active variant and then name a class per property; it now walks the variant keys and concatenates.
+
+Measured with both shapes in one process, so the comparison cannot drift (`packages/generator/__tests__/cva.bench.ts`):
+
+```
+cva() all-miss x10000   173.72 hz ±2.23%   (semantic)
+                         33.38 hz ±0.91%   (the atomic shape this replaced)   → 5.2x
+cva() warm x10000      1,678    hz ±0.60%  (semantic)
+                       1,720    hz ±0.51%  (atomic)                           → within noise
+```
+
+All-miss is every call selecting a distinct variant combination, so nothing is reusable. Warm, both return from the memo
+without doing the work that distinguishes them, which is why they match. `raw()` is unchanged — it still resolves
+styles, because that is what it returns.
+
 ### The trade
 
 CSS grows. Two recipes that both set `padding: 4` no longer share one atomic rule, and a variant that repeats a
