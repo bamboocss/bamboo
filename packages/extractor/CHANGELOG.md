@@ -1,5 +1,12 @@
 # @bamboocss/extractor
 
+## 1.17.1
+
+### Patch Changes
+
+- Updated dependencies [fc381ca]
+  - @bamboocss/shared@1.17.1
+
 ## 1.17.0
 
 ### Minor Changes
