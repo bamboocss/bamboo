@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { collectTokenReferences } from '../src/token-references'
+import { collectKeyframeReferences, collectTokenReferences } from '../src/token-references'
 
 const tokenVars: Record<string, string> = {
   'colors.pink.400': 'var(--colors-pink-400)',
@@ -98,5 +98,77 @@ describe('collectTokenReferences', () => {
     const ctx = createContext({ 'styles.css': `.a{color:var(--colors-teal-300)}` }, { 'a.tsx': `token('spacing.4')` })
 
     expect(collectTokenReferences(ctx, [])).toEqual(new Set(['--colors-teal-300', '--spacing-4']))
+  })
+})
+
+/**
+ * The keyframes half, which had no test at all.
+ *
+ * `pruneKeyframes` drops any `@keyframes` the theme declares but nothing references, so a
+ * name this fails to find is an animation that stops working in production and not in dev —
+ * the stylesheet is smaller and the element simply never animates. A name it finds when it
+ * should not only costs bytes, so the two directions are not symmetric: a false negative is
+ * a bug, a false positive is waste.
+ */
+describe('collectKeyframeReferences', () => {
+  const collectKeyframes = (files: Record<string, string>, names: string[], tracked: Record<string, string> = {}) =>
+    collectKeyframeReferences(createContext(files, tracked), names)
+
+  test('finds a name used in a file', () => {
+    expect(collectKeyframes({ 'a.tsx': `css({ animation: 'spin 1s linear' })` }, ['spin'])).toEqual(new Set(['spin']))
+  })
+
+  test('does not match a name that is only part of a longer word', () => {
+    // The reason the match is word-bounded: `spinner` must not keep `spin` alive.
+    expect(collectKeyframes({ 'a.tsx': `const spinner = 1` }, ['spin'])).toEqual(new Set())
+  })
+
+  test('matches a name adjacent to punctuation rather than whitespace', () => {
+    expect(collectKeyframes({ 'a.tsx': `animation:'fade-in 1s'` }, ['fade-in'])).toEqual(new Set(['fade-in']))
+  })
+
+  test('finds several names across several files', () => {
+    const files = { 'a.tsx': `animation: 'spin'`, 'b.tsx': `animation: 'pulse'` }
+    expect(collectKeyframes(files, ['spin', 'pulse', 'wiggle'])).toEqual(new Set(['spin', 'pulse']))
+  })
+
+  test('declares nothing when the theme declares nothing', () => {
+    // Returns before touching the filesystem at all.
+    expect(collectKeyframes({ 'a.tsx': `animation: 'spin'` }, [])).toEqual(new Set())
+  })
+
+  test('reads text the project already holds instead of going to disk', () => {
+    expect(collectKeyframes({}, ['spin'], { 'a.tsx': `animation: 'spin'` })).toEqual(new Set(['spin']))
+  })
+
+  test('skips a file it cannot read rather than failing the build', () => {
+    // `b.tsx` is listed by `getFiles` but absent from both the project and disk, so reading
+    // it throws. The name in `a.tsx` still has to be found.
+    const ctx = createContext({ 'a.tsx': `animation: 'spin'` }, {})
+    ctx.getFiles = () => ['missing.tsx', 'a.tsx']
+
+    expect(collectKeyframeReferences(ctx, ['spin'])).toEqual(new Set(['spin']))
+  })
+
+  test('a name containing regex syntax is matched literally', () => {
+    // `escapeRegExp` exists for this: an unescaped `.` would match any character, so
+    // `fade.in` would be kept alive by `fadeXin`.
+    expect(collectKeyframes({ 'a.tsx': `animation: 'fadeXin'` }, ['fade.in'])).toEqual(new Set())
+    expect(collectKeyframes({ 'a.tsx': `animation: 'fade.in'` }, ['fade.in'])).toEqual(new Set(['fade.in']))
+  })
+
+  test('stops scanning once every declared name is accounted for', () => {
+    // The early exit is a performance guarantee, so it is asserted by observation: a file
+    // after the last match must not be read.
+    const read: string[] = []
+    const ctx = createContext({ 'a.tsx': `animation: 'spin'`, 'z.tsx': `nothing` }, {})
+    const original = ctx.runtime.fs.readFileSync
+    ctx.runtime.fs.readFileSync = (file: string) => {
+      read.push(file)
+      return original(file)
+    }
+
+    collectKeyframeReferences(ctx, ['spin'])
+    expect(read.some((file) => file.endsWith('z.tsx'))).toBe(false)
   })
 })
