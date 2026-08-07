@@ -1,5 +1,6 @@
 import { createContext } from '@bamboocss/fixture'
 import type { Config } from '@bamboocss/types'
+import postcss from 'postcss'
 import { describe, expect, test } from 'vitest'
 
 const tokenCss = (config?: Config) => {
@@ -544,7 +545,7 @@ describe('generator', () => {
 
         [data-color=material]:where([data-theme=dark], .dark) {
           --colors-surface: #m-d
-              }
+          }
 
         [data-color=pastel] {
           --colors-surface: #p-b
@@ -553,20 +554,20 @@ describe('generator', () => {
         @media screen and (min-width: 48rem) {
           [data-color=pastel]:where([data-theme=dark], .dark) {
             --colors-surface: #p-d
-                      }
                   }
+              }
 
         @media screen and (min-width: 64rem) {
           :where(html) {
             --spacing-gutter: var(--spacing-5)
-              }
           }
+      }
 
         @media (forced-colors: active) {
           :where([data-theme=dark], .dark) {
             --colors-complex: var(--colors-red-700)
-                  }
               }
+          }
       }"
     `)
   })
@@ -974,8 +975,8 @@ describe('generator', () => {
         @media (prefers-color-scheme: dark) {
           :where(html) {
             --colors-body: var(--colors-blue-400)
-              }
           }
+      }
       }"
     `)
   })
@@ -1048,11 +1049,11 @@ describe('generator', () => {
         @media (prefers-color-scheme: dark) {
           :where(html) {
             --colors-body: var(--colors-blue-400)
-              }
+          }
           [data-bamboo-theme=primary] {
             --colors-body: var(--colors-red-400)
-                  }
-          }
+              }
+      }
       }"
     `)
   })
@@ -1143,11 +1144,11 @@ describe('generator', () => {
         @media (prefers-color-scheme: dark) {
           :where(html) {
             --colors-body: var(--colors-blue-400)
-              }
+          }
           [data-bamboo-theme=primary] {
             --colors-body: var(--colors-red-400)
-                  }
-          }
+              }
+      }
       }"
     `)
   })
@@ -1220,11 +1221,11 @@ describe('generator', () => {
         @media (prefers-color-scheme: dark) {
           :where(html) {
             --colors-body: var(--colors-blue-400)
-              }
+          }
           [data-bamboo-theme=primary] {
             --colors-body: var(--colors-red-400)
-                  }
-          }
+              }
+      }
       }"
     `)
   })
@@ -1306,14 +1307,14 @@ describe('generator', () => {
         @media (hover: hover) {
           :is(:hover, [data-hover]) {
             --colors-accent: var(--colors-blue-500)
-                  }
-          }
+              }
+      }
 
         @media (hover: none) {
           :is(:active, [data-active]) {
             --colors-accent: var(--colors-blue-500)
-                  }
-          }
+              }
+      }
       }"
     `)
   })
@@ -1363,14 +1364,14 @@ describe('generator', () => {
         @media (hover: hover) {
           .dark:is(:hover, [data-hover]) {
             --colors-accent: var(--colors-zinc-700)
-                      }
-              }
+                  }
+          }
 
         @media (hover: none) {
           .dark:is(:active, [data-active]) {
             --colors-accent: var(--colors-zinc-700)
-                      }
-              }
+                  }
+          }
       }"
     `)
   })
@@ -1422,33 +1423,33 @@ describe('generator', () => {
           @media (prefers-color-scheme: light) {
             :is(:hover, [data-hover])[data-mode="light"] {
               --colors-accent: var(--colors-blue-500)
-                              }
-                      }
-          }
+                          }
+                  }
+      }
 
         @media (hover: hover) {
           @media (prefers-color-scheme: dark) {
             :is(:hover, [data-hover])[data-mode="dark"] {
               --colors-accent: var(--colors-blue-500)
-                              }
-                      }
-          }
+                          }
+                  }
+      }
 
         @media (hover: none) {
           @media (prefers-color-scheme: light) {
             :is(:active, [data-active])[data-mode="light"] {
               --colors-accent: var(--colors-blue-500)
-                              }
-                      }
-          }
+                          }
+                  }
+      }
 
         @media (hover: none) {
           @media (prefers-color-scheme: dark) {
             :is(:active, [data-active])[data-mode="dark"] {
               --colors-accent: var(--colors-blue-500)
-                              }
-                      }
-          }
+                          }
+                  }
+      }
       }"
     `)
   })
@@ -1491,6 +1492,52 @@ describe('generator', () => {
 
         [data-theme="dark"],[data-dark-theme] {
           --colors-surface: var(--colors-zinc-700)
+      }
+      }"
+    `)
+  })
+
+  test('conditional semantic tokens keep their selector', () => {
+    const config: Config = {
+      eject: true,
+      conditions: {
+        osDark: '@media (prefers-color-scheme: dark)',
+        dark: '.dark &',
+      },
+      theme: {
+        semanticTokens: {
+          colors: {
+            panel: { value: { base: '#ffffff', _osDark: '#131211' } },
+            ink: { value: { base: '#131211', _dark: '#ffffff' } },
+          },
+        },
+      },
+    }
+
+    const css = tokenCss(config)
+
+    // A rule that loses its selector is dropped by every downstream parser, so the
+    // conditional value disappears with no error. Guard the invariant directly:
+    // the conditional halves must reach the output, each under a real selector.
+    postcss.parse(css).walkRules((rule) => {
+      expect(rule.selector.trim()).not.toBe('')
+    })
+
+    expect(css).toMatchInlineSnapshot(`
+      "@layer tokens {
+        :where(html) {
+          --colors-panel: #ffffff;
+          --colors-ink: #131211;
+      }
+
+        .dark {
+          --colors-ink: #ffffff
+      }
+
+        @media (prefers-color-scheme: dark) {
+          :where(html) {
+            --colors-panel: #131211
+          }
       }
       }"
     `)

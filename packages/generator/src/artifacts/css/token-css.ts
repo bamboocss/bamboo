@@ -2,7 +2,7 @@ import type { Conditions, Context } from '@bamboocss/core'
 import { Stylesheet, expandNestedCss, extractParentSelectors, stringify } from '@bamboocss/core'
 import { logger } from '@bamboocss/logger'
 import type { ConditionQuery } from '@bamboocss/types'
-import postcss, { AtRule, CssSyntaxError, Rule } from 'postcss'
+import postcss, { Container, CssSyntaxError } from 'postcss'
 
 export function generateTokenCss(ctx: Context, sheet: Stylesheet) {
   const { config, conditions, tokens } = ctx
@@ -141,29 +141,48 @@ function transformSegment(seg: string): string {
   return parent ? `&${parent}` : seg
 }
 
+/**
+ * Build the nesting chain for one condition path.
+ *
+ * The outermost node is a `Root`, so the first segment has no enclosing rule and
+ * its `&` refers to nothing — it is resolved away here rather than by
+ * postcss-nested. Deeper segments keep their `&` and nest against the real
+ * parent selector as before.
+ *
+ * This used to be seeded with an empty-selector rule and leaned on
+ * postcss-nested to erase `&` against it. postcss 8.5.25 ("Fixed 8.5.17 visitor
+ * regression") changed that edge case to collapse the whole selector, so every
+ * conditional token was emitted as a selectorless — and therefore discarded —
+ * rule, leaving only the `base` value in the tokens layer.
+ */
 function getDeepestRule(root: string, selectors: string[]) {
-  const rule = postcss.rule({ selector: '' })
+  const container = postcss.root()
 
   for (const selector of selectors) {
-    const last = getDeepestNode(rule)
-    const node = last ?? rule
+    const node = getDeepestNode(container)
+    const isTopLevel = node === container
     if (selector.startsWith('@')) {
       // ASSUMPTION: the nature of parent selectors with tokens is that they're merged
       // [data-color-mode=dark][data-theme=pastel]
       // If we really want it nested, we remove the `&`
-      const atRule = postcss.rule({ selector, nodes: [postcss.rule({ selector: `${root}&` })] })
+      const inner = isTopLevel ? root : `${root}&`
+      const atRule = postcss.rule({ selector, nodes: [postcss.rule({ selector: inner })] })
       node.append(atRule)
     } else {
-      node.append(postcss.rule({ selector }))
+      node.append(postcss.rule({ selector: isTopLevel ? withoutParentSelector(selector) : selector }))
     }
   }
 
-  return rule
+  return container
 }
 
-function getDeepestNode(node: AtRule | Rule): Rule | AtRule | undefined {
+function withoutParentSelector(selector: string) {
+  return selector.replaceAll('&', '').trim()
+}
+
+function getDeepestNode<T extends Container>(node: T): Container {
   if (node.nodes && node.nodes.length) {
-    return getDeepestNode(node.nodes[node.nodes.length - 1] as AtRule | Rule)
+    return getDeepestNode(node.nodes[node.nodes.length - 1] as Container)
   }
   return node
 }
