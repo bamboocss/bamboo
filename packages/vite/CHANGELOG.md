@@ -1,5 +1,18 @@
 # @bamboocss/vite
 
+## 1.19.0
+
+### Patch Changes
+
+- Updated dependencies [510cdd3]
+  - @bamboocss/core@1.19.0
+  - @bamboocss/node@1.19.0
+  - @bamboocss/config@1.19.0
+  - @bamboocss/extractor@1.19.0
+  - @bamboocss/logger@1.19.0
+  - @bamboocss/shared@1.19.0
+  - @bamboocss/types@1.19.0
+
 ## 1.18.0
 
 ### Patch Changes
