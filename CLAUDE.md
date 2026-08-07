@@ -13,24 +13,37 @@ with workspace support.
 
 ```
 /packages/          # Core packages published to npm
-  /core/           # CSS processing, rule generation, optimization (PostCSS/LightningCSS)
+  /core/           # CSS processing, rule generation, optimization
+  /shared/         # Runtime helpers shipped into styled-system (css, cva, splitProps, memo)
   /node/           # Node.js APIs, config resolution, file watching
   /cli/            # CLI tool (@bamboocss/dev package)
   /parser/         # Static analysis and extraction
+  /extractor/      # Expression evaluation behind the parser
   /generator/      # Code generation for styled-system
-  /fixture/        # Shared test fixtures and utilities
+  /config/         # Config loading and resolution
+  /types/          # Type definitions (config options live here)
+  /vite/           # Vite plugin, including the build-time fold
   /postcss/        # PostCSS plugin
-  /preset-*/       # Design system presets
+  /plugin-*/       # Built-in plugins (lightningcss, vue, svelte)
+  /preset-*/       # Design system presets (base, bamboo, atlaskit, open-props)
+  /eslint-plugin/  # Lint rules
+  /fixture/        # Shared test fixtures and utilities
+  /logger/, /reporter/, /mcp/, /is-valid-prop/, /token-dictionary/
 
 /sandbox/          # Integration tests and examples
-  /codegen/        # Generated code validation tests
-  /vite-ts/        # Vite integration example
-  /next-js-*/      # Next.js examples
+  /codegen/        # Generated code validation tests (the scenario suites)
+  /runtime-perf/   # Render benchmarks and the browser-parity test
+  /vite-ts/, /next-js-*/, /remix/, /astro/, /nuxt/, /svelte/, /solid-ts/,
+  /preact-ts/, /qwik-ts/, /waku-ts/, /gatsby-ts/, /docusaurus-ts/,
+  /storybook/, /component-lib/    # per-framework integration apps
 
 /playground/       # Interactive playground application
 
 /website/          # Documentation site
 ```
+
+Keep this list honest when packages come and go. A stale entry here is not cosmetic — it sends agents looking for files
+that moved, and a removed suite documented as still running reads as coverage that does not exist.
 
 ### Key Concepts
 
@@ -82,13 +95,26 @@ pnpm --filter=./sandbox/codegen exec tsx ./cli.ts codegen     # all scenarios
 pnpm --filter=./sandbox/<name> exec bamboo codegen --clean    # one sandbox
 ```
 
-🚨 **`pnpm test` alone does not cover the framework artifacts.** The root `vitest.config.ts` excludes
-`sandbox/codegen/__tests__/frameworks`, so the Solid, Vue, Preact and Qwik suites run only under `pnpm test:codegen`.
-That is where a change to the shared runtime shows up as a broken framework: assigning props instead of copying their
-descriptors passed everything else and broke Solid's `createStyleContext`, because Solid compiles props to accessors and
-reading one eagerly builds a component's children before its provider exists.
+🚨 **`pnpm check` does not run `pnpm fmt`, and CI does.** `check` is
+`build && typecheck && lint && test run && test:codegen` — formatting is a separate CI job
+(`.github/workflows/quality.yml`, "Format"). A green `pnpm check` therefore says nothing about whether the branch
+formats, and an unformatted changeset is enough to fail the build. Run `pnpm fmt` before committing, or
+`pnpm exec oxfmt <paths>` to fix in place.
 
-`pnpm check` now runs it. CI has always run both (`.github/workflows/quality.yml`), so the gap was local only.
+🚨 **`pnpm test` skips the browser-parity suite.** The root `vitest.config.ts` excludes `**/browser-parity.test.ts`
+unless `BROWSER_PARITY` is set, because it runs two full Vite builds and drives Chromium. CI gives it its own job that
+installs Chromium first. To run it locally: `pnpm --filter sandbox-runtime-perf test:browser`.
+
+**Where the framework-runtime guarantees actually live.** Per-framework _test suites_ no longer exist — they were
+removed with the JSX factory in `f2d5df251`, and the `sandbox/*` framework apps that remain are integration examples,
+not assertions about the shared runtime. What protects that runtime now is
+`packages/shared/__tests__/split-props.test.ts`, which models the framework semantics directly: Solid-style accessor
+props, `mergeProps` proxies with trap counting, and key order within each bucket.
+
+That file exists because of a real regression: assigning props instead of copying their descriptors passed everything
+else and broke Solid's `createStyleContext`, because Solid compiles props to accessors and reading one eagerly builds a
+component's children before its provider exists. A change to `packages/shared/src` that touches how props are read
+belongs in that test, since nothing downstream will catch it.
 
 **Always run tests from the project root:**
 
@@ -112,8 +138,22 @@ pnpm build-fast               # Fast build without type definitions
 
 ### Benchmarks
 
-Perf-sensitive code has Vitest benchmarks in `{packages,sandbox}/*/__tests__/*.bench.ts` (core `static-css`, extractor,
-parser `ts-eval`, generator runtime `css()`, the vite fold's per-module cost, and a React render of a folded tree).
+Perf-sensitive code has Vitest benchmarks in `{packages,sandbox}/*/__tests__/**/*.bench.ts`:
+
+| bench                                           | covers                                 |
+| ----------------------------------------------- | -------------------------------------- |
+| `core/static-css-perf`, `static-css-real-world` | static css generation                  |
+| `core/sort-style-rules`                         | rule ordering                          |
+| `extractor/extract-speed`                       | expression evaluation                  |
+| `parser/ts-eval`, `parser/extract-modes`        | extraction                             |
+| `generator/css-fn`, `generator/cva`             | the generated runtime                  |
+| `shared/split-props`, `shared/leaf-class`       | runtime helpers on the per-render path |
+| `vite/fold`                                     | the fold's per-module cost             |
+| `sandbox/runtime-perf/render`                   | a React render of a folded tree        |
+
+A bench that measures a shape nothing calls is worse than no bench, because it reads as coverage. `split-props.bench.ts`
+spent a while measuring only the four-group shape that went away with the JSX factory, which left the one-array-group
+shape every recipe actually uses with nothing at all. When a caller is removed, check what its benchmarks were for.
 
 🚨 **Nothing in CI catches a performance regression.** The Quality workflow runs format, tests, lint, knip and typecheck
 — benchmarks are excluded on purpose, for the reason below. That makes measuring a _manual obligation before
@@ -201,7 +241,9 @@ pnpm update <package> --ignore-scripts
 
 - **PostCSS ecosystem**: Coordinate updates across all PostCSS plugins to avoid CSS output changes
 - **browserslist**: Updates affect `postcss-merge-rules` behavior - test thoroughly
-- **lightningcss**: Used optionally via `config.lightningcss` flag, depends on browserslist for targets
+- **lightningcss**: Used optionally via the `config.lightningcss` flag, which auto-injects
+  `@bamboocss/plugin-lightningcss` (that package owns the `lightningcss` dependency, not core); depends on browserslist
+  for targets
 - **Node.js packages**: Core packages (`@bamboocss/core`, `@bamboocss/node`, etc.) must stay in sync
 
 ## Common Workflows
@@ -265,9 +307,9 @@ Brief description of the change and its impact.
 
 1. Style objects → `packages/core/src/rule-processor.ts`
 2. CSS generation → `packages/core/src/stylesheet.ts`
-3. Optimization → `packages/core/src/optimize.ts`
-   - PostCSS path: `optimize-postcss.ts`
-   - LightningCSS path: `optimize-lightningcss.ts`
+3. Optimization → `packages/core/src/optimize.ts` (the PostCSS path lives here)
+   - LightningCSS path: `packages/plugin-lightningcss/src/optimize-lightningcss.ts`, auto-injected by
+     `packages/node/src/config.ts` when `config.lightningcss` is set
 
 ### Test Fixtures
 
@@ -326,9 +368,12 @@ Brief description of the change and its impact.
 
 @bamboocss/core
   ├─ postcss (CSS processing)
-  ├─ lightningcss (optional, faster CSS processing)
   ├─ browserslist (browser targets)
   └─ postcss-* plugins (optimization)
+
+@bamboocss/plugin-lightningcss     # not a core dependency — auto-injected by
+  ├─ lightningcss                  # packages/node/src/config.ts when
+  └─ browserslist                  # `config.lightningcss` is set
 ```
 
 ## Useful References
@@ -349,14 +394,22 @@ Brief description of the change and its impact.
 
 ## Emergency Rollback
 
-If a change breaks things:
+If a dependency update breaks things:
 
 ```bash
-git checkout packages/          # Revert package.json changes
-pnpm install --ignore-scripts   # Restore dependencies
-pnpm test packages/core         # Verify tests pass
+git restore --source=HEAD -- ':(glob)packages/*/package.json'   # only the 25 manifests
+pnpm install --ignore-scripts                                   # restore dependencies
+pnpm test packages/core                                         # verify tests pass
 ```
+
+The `:(glob)` magic is load-bearing: in a plain git pathspec `*` crosses `/`, so `packages/*/package.json` also matches
+the fixture manifests under `packages/config/__tests__/samples/`. With it, `*` stops at one level.
+
+🚨 Scope the path. This used to say `git checkout packages/`, which reverts **every** uncommitted source change under
+`packages/` — not just the manifests — with no reflog entry to recover them. See the warning under "Verify Before
+Reporting": copy anything uncommitted to a scratch directory first.
 
 ---
 
-**Last Updated**: 2025-01-17 **Project Version**: 1.4.2
+**Last Updated**: 2026-08-07 **Published version**: see `packages/core/package.json` (the root `package.json` is private
+and its `0.0.1` is not the project version)
