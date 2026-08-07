@@ -1,5 +1,17 @@
 # @bamboocss/reporter
 
+## 1.17.1
+
+### Patch Changes
+
+- Updated dependencies [a1c3990]
+- Updated dependencies [fc381ca]
+  - @bamboocss/core@1.17.1
+  - @bamboocss/shared@1.17.1
+  - @bamboocss/generator@1.17.1
+  - @bamboocss/types@1.17.1
+  - @bamboocss/logger@1.17.1
+
 ## 1.17.0
 
 ### Patch Changes
