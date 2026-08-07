@@ -1,5 +1,5 @@
 ---
-'@bamboocss/preset-base': major
+'@bamboocss/preset-base': minor
 ---
 
 Stop a composed custom property inheriting into a descendant that declares its own.
@@ -39,5 +39,6 @@ transform that reads it, so neither can leak.
 
 Costs 10 `@property` rules — about 40 bytes gzipped, emitted once.
 
-Major because a nested element that set `bgGradient` or `transition` and relied on an ancestor's colours or timings will
-now fall back to its own defaults. That was never something to rely on, but it is a visible change.
+Worth checking after upgrading: a nested element that set `bgGradient` or `transition` and happened to render with an
+ancestor's colours or timings now falls back to its own defaults. That was the bug, not a feature — the variables were
+never documented as inheritable and the preset already registered its other composed ones — but it is a visible change.
