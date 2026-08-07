@@ -227,11 +227,66 @@ function checkRecipeNamingAgreement(ctx: NamingContext, mode: 'atomic' | 'groupe
     .filter((className) => wanted.has(className))
     .sort()
 
-  if (build.length === runtime.length && build.every((className, index) => className === runtime[index])) {
-    return
+  if (!(build.length === runtime.length && build.every((className, index) => className === runtime[index]))) {
+    return { mode, kind: 'recipe', build, runtime }
   }
 
-  return { mode, kind: 'recipe', build, runtime }
+  return checkCompoundNamingAgreement(ctx, mode, name, format, decoder)
+}
+
+/**
+ * A compound variant's rule, which selects on classes rather than carrying one.
+ *
+ * `.btn--size_sm.btn--tone_a` applies because the element already has both variant classes,
+ * so the runtime adds nothing for it — and that is exactly why the comparison above cannot
+ * see it. `filterClassNames` reads class names, a compound contributes none, and the build
+ * side is then narrowed to the runtime's set, which removes any trace of one from both
+ * sides. The canary has carried a `compoundVariants` entry all along, with a comment saying
+ * the half it guards would otherwise go unchecked. That half was going unchecked.
+ *
+ * It matters because a compound's selector is assembled from class names instead of being
+ * produced by `createCss`, which is how it came to skip `hash.className` and `prefix` once
+ * already: rules emitted under `.btn--size_sm…` while the runtime asked for `.pfx-btn--size_sm`,
+ * and every compound silently stopped applying.
+ *
+ * The selector is read off the rule's own result rather than from a `selector` field —
+ * `getAtomic` folds it into the style object's key, so a compound is the rule whose key is
+ * something other than its own class.
+ */
+function checkCompoundNamingAgreement(
+  ctx: NamingContext,
+  mode: 'atomic' | 'grouped',
+  name: string,
+  format: (className: string) => string,
+  decoder: NamingContext['decoder'],
+): NamingDisagreement | undefined {
+  // The selection the canary's compound is declared for. Its rule exists whatever a call
+  // site selects; this is what the runtime would put on an element that activates it.
+  const selection = { size: 'sm', tone: 'a' }
+  const runtime = getRecipeClassNames(name, RECIPE_CANARY.variants, selection, ctx.utility.separator, format)
+    .split(' ')
+    .filter(Boolean)
+
+  const unescape = (value: string) => value.replaceAll('\\', '')
+
+  for (const results of decoder.recipes.values()) {
+    for (const result of results) {
+      const [key] = Object.keys(result.result)
+      if (!key) continue
+
+      // Every other rule selects on its own class. A compound is the one that does not.
+      const selector = unescape(key)
+      if (selector === `.${unescape(result.className)}`) continue
+
+      const parts = selector.split('.').filter(Boolean)
+      const build = parts.slice().sort()
+      if (parts.every((className) => runtime.includes(className))) continue
+
+      return { mode, kind: 'recipe', build, runtime: runtime.slice().sort() }
+    }
+  }
+
+  return
 }
 
 /** A message naming what disagreed, for a caller that wants to fail the build. */
