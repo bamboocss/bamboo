@@ -244,3 +244,57 @@ describe('split props', () => {
     expect(calls).toBe(afterFirst + 2) // only `margin` and `id` are new
   })
 })
+
+/**
+ * One array group takes a path of its own — it is what every call site in the project
+ * passes, and the general path pays for several groups and predicates on every call.
+ *
+ * Two implementations of the same rules can drift, so this pins them against each other
+ * rather than restating the rules a third time. The general path is reached by passing a
+ * second, empty group, which is enough to disqualify the fast path while claiming nothing.
+ *
+ * Not by passing the group as a *predicate*: an array bucket is ordered by the group and a
+ * predicate bucket by the props, so those two were never equivalent and comparing them
+ * tests nothing about this change.
+ */
+describe('the single-group path agrees with the general one', () => {
+  const cases: Array<[string, Record<string, unknown>, string[]]> = [
+    ['plain', { a: 1, b: 2, c: 3 }, ['a', 'b']],
+    ['group naming absent keys', { a: 1 }, ['a', 'nope', 'gone']],
+    ['nothing claimed', { a: 1, b: 2 }, ['x']],
+    ['everything claimed', { a: 1, b: 2 }, ['a', 'b']],
+    ['empty group', { a: 1 }, []],
+    ['empty props', {}, ['a']],
+    ['duplicate keys in the group', { a: 1, b: 2 }, ['a', 'a', 'b']],
+    ['prototype names', { constructor: 1, toString: 2, a: 3 }, ['toString']],
+    ['group order differs from props order', { c: 3, a: 1, b: 2 }, ['b', 'a']],
+  ]
+
+  test.each(cases)('%s', (_name, props, group) => {
+    const fast = splitProps(props, group)
+    const [claimed, , rest] = splitProps(props, group, [])
+    const general = [claimed, rest]
+
+    expect(fast).toEqual(general)
+    // Order is not cosmetic — `cva` merges variant props in iteration order and the parser
+    // reads the rest bucket as the style props it encodes.
+    expect(Object.keys(fast[0] as object)).toEqual(Object.keys(general[0] as object))
+    expect(Object.keys(fast[1] as object)).toEqual(Object.keys(general[1] as object))
+  })
+
+  test('an accessor stays lazy on the fast path', () => {
+    let reads = 0
+    const props = {
+      b: 2,
+      get a() {
+        reads++
+        return 1
+      },
+    }
+
+    const [named] = splitProps(props, ['a'])
+    expect(reads).toBe(0)
+    expect((named as { a: number }).a).toBe(1)
+    expect(reads).toBe(1)
+  })
+})

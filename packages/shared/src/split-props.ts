@@ -3,6 +3,66 @@ type PredicateFn = (key: string) => boolean
 type Key = PredicateFn | string[]
 
 /**
+ * Move one key into a bucket, keeping whatever about it is observable.
+ *
+ * Shared by both paths below so there is one implementation of the descriptor rules rather
+ * than two to keep in step. The rules themselves are documented on `splitProps`.
+ */
+const copyKey = (props: Dict, target: Dict, key: string): boolean => {
+  // `own` said this key exists, but a proxy may answer `ownKeys` with a key it then reports
+  // no descriptor for, and a predicate with a side effect can delete one in between.
+  const descriptor = Object.getOwnPropertyDescriptor(props, key)
+  if (!descriptor) return false
+
+  // `'get' in descriptor` rather than a truthiness test: an accessor declared with an
+  // undefined getter is still an accessor, and assigning its value would turn a silent
+  // no-op into a write.
+  if ('get' in descriptor || 'set' in descriptor || !descriptor.enumerable || key === '__proto__') {
+    Object.defineProperty(target, key, descriptor)
+  } else {
+    target[key] = descriptor.value
+  }
+  return true
+}
+
+/**
+ * One array group, which is what every call site in this project passes — a recipe's
+ * `variantKeys`.
+ *
+ * The general path below is built for several groups that may be predicates, and pays for
+ * that shape on every call: a closure per group, a `map` and a `concat` to assemble the
+ * result, and a branch per group to tell an array from a predicate. None of it is reachable
+ * with one array group.
+ *
+ * What it does *not* skip is the part that looks skippable. `own` stays, because membership
+ * has to be answered from `ownKeys` rather than by asking the object: on a proxy — which is
+ * what Solid's `mergeProps` hands over — every question is a trap, and a recipe naming eight
+ * variants would otherwise fire eight traps to learn what one `ownKeys` already said. And
+ * the two passes stay separate, because the group bucket is in *group* order while the rest
+ * bucket is in *props* order, and that ordering reaches the emitted CSS.
+ */
+const splitOneGroup = (props: Dict, allKeys: string[], group: string[]) => {
+  const own = new Set(allKeys)
+  const taken = new Set<string>()
+
+  const picked = {} as Dict
+  for (let i = 0; i < group.length; i++) {
+    const key = group[i] as string
+    if (taken.has(key) || !own.has(key)) continue
+    if (copyKey(props, picked, key)) taken.add(key)
+  }
+
+  const rest = {} as Dict
+  for (let i = 0; i < allKeys.length; i++) {
+    const key = allKeys[i] as string
+    if (taken.has(key)) continue
+    copyKey(props, rest, key)
+  }
+
+  return [picked, rest]
+}
+
+/**
  * Deal a props object into one bucket per key group, plus a final bucket for the rest.
  * A key goes to the first group that claims it.
  *
@@ -33,6 +93,11 @@ type Key = PredicateFn | string[]
 export function splitProps(props: Dict, ...keys: Key[]) {
   // Own keys whether enumerable or not, matching the descriptor map this replaced.
   const allKeys = Object.getOwnPropertyNames(props)
+
+  if (keys.length === 1 && Array.isArray(keys[0])) {
+    return splitOneGroup(props, allKeys, keys[0] as string[])
+  }
+
   // Membership is answered from this rather than by asking the object, so a named group
   // listing keys the props do not have costs nothing. On a proxy — which is what Solid's
   // `mergeProps` hands over — every question is a trap, and a recipe naming eight
@@ -50,22 +115,7 @@ export function splitProps(props: Dict, ...keys: Key[]) {
       // `constructor` was handed one and put `undefined` in its bucket.
       if (taken.has(key) || !own.has(key)) continue
 
-      // `own` comes from `ownKeys`, which a proxy may answer with keys it then reports no
-      // descriptor for, and a predicate with a side effect can delete one in between. The
-      // cast that used to stand here turned that into a crash.
-      const descriptor = Object.getOwnPropertyDescriptor(props, key)
-      if (!descriptor) continue
-
-      // `'get' in descriptor` rather than a truthiness test: an accessor declared with an
-      // undefined getter is still an accessor, and assigning its value would turn a
-      // silent no-op into a write.
-      if ('get' in descriptor || 'set' in descriptor || !descriptor.enumerable || key === '__proto__') {
-        Object.defineProperty(clone, key, descriptor)
-      } else {
-        clone[key] = descriptor.value
-      }
-
-      taken.add(key)
+      if (copyKey(props, clone, key)) taken.add(key)
     }
 
     return clone
