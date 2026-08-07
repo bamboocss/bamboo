@@ -1,5 +1,18 @@
 # @bamboocss/dev
 
+## 1.16.1
+
+### Patch Changes
+
+- @bamboocss/types@1.16.1
+- @bamboocss/node@1.16.1
+- @bamboocss/postcss@1.16.1
+- @bamboocss/logger@1.16.1
+- @bamboocss/preset-bamboo@1.16.1
+- @bamboocss/preset-base@1.16.1
+- @bamboocss/shared@1.16.1
+- @bamboocss/token-dictionary@1.16.1
+
 ## 1.16.0
 
 ### Minor Changes
