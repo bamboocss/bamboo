@@ -13,4 +13,7 @@ It also says there is no polyfill and why: `@scope` picks between two matching r
 whole reason it is there and is not something a build step can compute. The way out is documented instead — slots that
 are not named `root` fall back to a variant class per slot.
 
-The component library guide no longer lists a `./jsx` entry in its `exports` example; that entrypoint is not generated.
+Three stale references are gone with it: the `./jsx` entry in the component library guide's `exports` example, the
+patterns page still describing patterns as usable "as functions or JSX elements", and a link from the slot recipes page
+to Park UI's `create-style-context.tsx` — which is built on `styled(Component, {}, { shouldForwardProp })` and so cannot
+compile against a Bamboo with no JSX factory.
