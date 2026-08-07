@@ -135,3 +135,70 @@ describe('pruneTokenVars', () => {
     expect(removed).toBe(0)
   })
 })
+
+/**
+ * Registrations are derived from the config, so a preset ships its whole set whether or not
+ * the app draws a gradient. One for a name the stylesheet neither declares nor reads has
+ * nothing to contain, so the same reachability that drops a token declaration drops it.
+ */
+describe('pruneTokenVars: @property registrations', () => {
+  const pruneProps = (baseCss: string, options: { uses?: string; registered: string[]; tokenVars?: string[] }) => {
+    const base = parse(baseCss)
+    const tokens = parse('')
+    const result = pruneTokenVars({
+      scan: [base, tokens, parse(options.uses ?? '')],
+      target: tokens,
+      tokenVars: new Set(options.tokenVars ?? []),
+      registeredProperties: new Set(options.registered),
+      propertyTarget: base,
+    })
+    return { css: base.toString(), ...result }
+  }
+
+  test('drops a registration for a property nothing declares or reads', () => {
+    const { css, removedProperties } = pruneProps('@property --blur{syntax:"*";inherits:false}', {
+      registered: ['--blur'],
+    })
+
+    expect(css).toBe('')
+    expect(removedProperties).toBe(1)
+  })
+
+  test('keeps one whose property the stylesheet reads', () => {
+    const { css, removedProperties } = pruneProps('@property --blur{syntax:"*";inherits:false}', {
+      uses: '.blur_4px{--blur:blur(4px);filter:var(--blur, )}',
+      registered: ['--blur'],
+    })
+
+    expect(css).toContain('--blur')
+    expect(removedProperties).toBe(0)
+  })
+
+  /**
+   * Why this is a post-pass over the finished sheet rather than a gate on which utility the
+   * project used. `--gradient-stops` is declared once, on `backgroundGradient`, and composed
+   * by `bgLinear`, `bgRadial`, `bgConic` and `textGradient` — so a project using only
+   * `bgRadial` uses the property without using the utility that registers it. Gating on the
+   * declaring utility would drop it and let a parent's gradient inherit again.
+   */
+  test('keeps one composed by a utility other than the one that registered it', () => {
+    const { css, removedProperties } = pruneProps('@property --gradient-stops{syntax:"*";inherits:false}', {
+      uses: '.bg-radial{--gradient-stops:red,blue;background-image:radial-gradient(var(--gradient-stops))}',
+      registered: ['--gradient-stops'],
+    })
+
+    expect(css).toContain('--gradient-stops')
+    expect(removedProperties).toBe(0)
+  })
+
+  test('never removes a registration the utilities did not declare', () => {
+    // A user's own, written through `globalVars`. Theirs to keep, the same way `tokenVars`
+    // bounds which declarations are eligible above.
+    const { css, removedProperties } = pruneProps('@property --mine{syntax:"*";inherits:false}', {
+      registered: ['--blur'],
+    })
+
+    expect(css).toContain('--mine')
+    expect(removedProperties).toBe(0)
+  })
+})

@@ -53,7 +53,7 @@ export default defineConfig({
     // Files to exclude
     exclude: [],
 
-    // Drop tokens and keyframes nothing in the emitted css reaches. Worth 50-60% of a new
+    // Drop tokens, keyframes and @property rules nothing in the emitted css reaches. Worth 50-60% of a new
     // project's stylesheet. Turn off if you read tokens from somewhere the build cannot
     // see them — \`token.var()\` with a computed path, or a hand-written stylesheet outside
     // \`include\` — or list those under \`staticCss\` to keep them.

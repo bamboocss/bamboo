@@ -286,6 +286,12 @@ interface CssgenOptions {
    * The token layer declares every token in the theme, and an app typically uses a small
    * fraction of them, so this is usually the largest single saving in render-blocking css.
    *
+   * The same walk also drops an `@property` registration for a custom property the finished
+   * stylesheet neither declares nor reads. A preset registers what its utilities compose —
+   * filters, gradients, transforms, transitions — and ships the whole set regardless of what
+   * the app draws, so an app using none of them carries all of it for nothing. Registrations
+   * declared through `globalVars` are yours and are never removed.
+   *
    * It is opt-in because reachability cannot be proven for every reference. `token()` and
    * `token.var()` calls are read out of the source, as is any literal `var(--x)` written
    * by hand. Three things stay invisible: a token named by a path the source does not

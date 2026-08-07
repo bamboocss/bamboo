@@ -27,6 +27,25 @@ interface PruneOptions {
    * files, and tokens whose own value is a var reference.
    */
   keep?: Set<string>
+  /**
+   * Every custom property a configured utility registers with `@property`, and the layer
+   * those registrations are emitted into.
+   *
+   * Registrations are derived from the config rather than from what a project uses, so a
+   * preset's whole set ships whether or not the app draws a gradient — on the projects in
+   * this repo that is 93-100% of them. They are removed by the same reachability the token
+   * declarations use, and for the same reason: a registration exists to stop a value
+   * inheriting, so one for a property nothing declares or reads has nothing to contain.
+   *
+   * Deliberately not gated on which utility a project uses. A var is often registered by
+   * one utility and composed by several others — `--gradient-stops` is declared on
+   * `backgroundGradient` and read by `bgLinear`, `bgRadial`, `bgConic` and `textGradient` —
+   * so usage of the declaring utility is the wrong question. What appears in the finished
+   * stylesheet is the right one.
+   */
+  registeredProperties?: Set<string>
+  /** The layer holding the `@property` rules, the only place registrations are removed from. */
+  propertyTarget?: Container
 }
 
 /**
@@ -37,8 +56,10 @@ interface PruneOptions {
  * every token would look unused.
  */
 export function pruneTokenVars(options: PruneOptions) {
-  const { scan, target, tokenVars, keep } = options
-  if (!tokenVars.size) return { removed: 0, kept: 0 }
+  const { scan, target, tokenVars, keep, registeredProperties, propertyTarget } = options
+  // Registrations are pruned by the same walk, so a theme declaring no tokens at all still
+  // gets them considered rather than falling out here.
+  if (!tokenVars.size && !registeredProperties?.size) return { removed: 0, kept: 0 }
 
   // References found in a normal declaration reach their token directly. References found
   // in the value of a custom property only reach it if that property is itself reachable,
@@ -108,6 +129,7 @@ export function pruneTokenVars(options: PruneOptions) {
   }
 
   let removed = 0
+  let removedProperties = 0
 
   target.walkDecls((decl) => {
     if (!tokenVars.has(decl.prop) || reachable.has(decl.prop)) return
@@ -118,6 +140,20 @@ export function pruneTokenVars(options: PruneOptions) {
     decl.remove()
     removed++
   })
+
+  // An `@property` for a name the sheet neither declares nor reads. Its params are not a
+  // declaration, so a registration never roots itself — which is what makes this decidable
+  // at all. Only the ones a utility registered are eligible: a user's own, declared through
+  // `globalVars`, is theirs to keep, exactly as `tokenVars` bounds the removals above.
+  if (registeredProperties?.size) {
+    propertyTarget?.walkAtRules('property', (rule) => {
+      const name = rule.params.trim()
+      if (!registeredProperties.has(name) || reachable.has(name)) return
+
+      rule.remove()
+      removedProperties++
+    })
+  }
 
   // Rules and conditional at-rules left holding nothing after the removals. Keyframes are
   // exempt: an empty one is still a valid, referenceable animation.
@@ -130,7 +166,7 @@ export function pruneTokenVars(options: PruneOptions) {
     if (!rule.nodes?.length) rule.remove()
   })
 
-  return { removed, kept: reachable.size }
+  return { removed, removedProperties, kept: reachable.size }
 }
 
 function isInsideKeyframes(node: { parent?: unknown } | undefined): boolean {

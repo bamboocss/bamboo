@@ -113,9 +113,16 @@ export class Generator extends Context {
       target: layers.tokens,
       tokenVars: this.getTokenVarNames(),
       keep: new Set([...this.getAlwaysKeptTokenVars(), ...this.getThemeTokenVars(), ...(keep ?? [])]),
+      // `@property` rules land in `base`, alongside `globalCss`. Only the ones a utility
+      // registered are offered — a user's own, written through `globalVars`, are not.
+      registeredProperties: new Set(this.utility.customProperties.keys()),
+      propertyTarget: layers.base,
     })
 
-    logger.debug('prune:tokens', `Removed ${result.removed} unused token css variable(s)`)
+    logger.debug(
+      'prune:tokens',
+      `Removed ${result.removed} unused token css variable(s) and ${result.removedProperties} unused @property rule(s)`,
+    )
 
     return result
   }
