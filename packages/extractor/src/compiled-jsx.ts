@@ -348,6 +348,38 @@ const runtimeProfiles: RuntimeProfile[] = [
   },
 ]
 
+/**
+ * The declaration `identifier` binds to, found by walking its enclosing scopes outward.
+ *
+ * Deliberately not `identifier.getDefinitions()`. That is a language-service query, and
+ * the first one forces `synchronizeHostData` -> `createProgram`, which resolves, parses
+ * and binds the whole transitive `.d.ts` closure of the project — in a 5-file sandbox
+ * that is 161 files and 5.1MB, most of it `node_modules`, and it grows with the
+ * dependency graph rather than with the user's source. The extractor is built to avoid
+ * exactly that: `createTsProject` sets `skipAddingFilesFromTsConfig`,
+ * `skipFileDependencyResolution` and `skipLoadingLibFiles`, and `getModuleSpecifierSourceFile`
+ * carries the same note. Inside a bundler the program is built alongside the module graph
+ * in one heap, so the cost lands as a slow build and then an OOM.
+ *
+ * A lexical walk is enough because this only ever runs for a callee that is declared in
+ * this file: `resolveCallee` matches against the import map first, and `collectImports`
+ * covers every import form. Innermost scope wins, which is how the binding resolves
+ * anyway, and a scope can hold only one declaration of a given name.
+ */
+const findLocalDeclaration = (identifier: Identifier) => {
+  const name = identifier.getText()
+
+  for (let scope: Node | undefined = identifier.getParent(); scope; scope = scope.getParent()) {
+    if (!MorphNode.isStatemented(scope)) continue
+
+    const variable = scope.getVariableDeclaration(name)
+    if (variable) return variable
+
+    const fn = scope.getFunction(name)
+    if (fn) return fn
+  }
+}
+
 export const createCompiledJsxContext = (sourceFile: SourceFile): CompiledJsxContext => {
   const imports = collectImports(sourceFile)
 
@@ -397,31 +429,27 @@ export const createCompiledJsxContext = (sourceFile: SourceFile): CompiledJsxCon
       }
     }
 
-    for (const definition of identifier.getDefinitions()) {
-      const declaration = definition.getDeclarationNode()
-      if (!declaration) continue
+    const declaration = findLocalDeclaration(identifier)
+    if (!declaration) return
 
-      if (MorphNode.isFunctionDeclaration(declaration)) {
-        const imported = resolveBundledHelperImport(declaration.getName() ?? name, declaration)
-        if (!imported) continue
+    if (MorphNode.isFunctionDeclaration(declaration)) {
+      const imported = resolveBundledHelperImport(declaration.getName() ?? name, declaration)
+      if (!imported) return
 
-        const resolved = { mod: imported.mod, importedName: imported.importedName }
-        localDefinitionCache.set(name, resolved)
-        return resolved
-      }
-
-      if (MorphNode.isVariableDeclaration(declaration)) {
-        const directImport = resolveBundledHelperImport(declaration.getName(), declaration.getInitializer())
-        const aliasImport = directImport
-          ? { mod: directImport.mod, importedName: directImport.importedName }
-          : resolveLocalAlias(declaration.getInitializer())
-
-        if (!aliasImport) continue
-
-        localDefinitionCache.set(name, aliasImport)
-        return aliasImport
-      }
+      const resolved = { mod: imported.mod, importedName: imported.importedName }
+      localDefinitionCache.set(name, resolved)
+      return resolved
     }
+
+    const directImport = resolveBundledHelperImport(declaration.getName(), declaration.getInitializer())
+    const aliasImport = directImport
+      ? { mod: directImport.mod, importedName: directImport.importedName }
+      : resolveLocalAlias(declaration.getInitializer())
+
+    if (!aliasImport) return
+
+    localDefinitionCache.set(name, aliasImport)
+    return aliasImport
   }
 
   const resolveCallee = (node: Node) => {
