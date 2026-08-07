@@ -110,10 +110,19 @@ export const effects: UtilityConfig = {
   dropShadow: {
     className: 'drop-shadow',
     group: 'Effect',
-    values: 'dropShadows',
+    // Wrapped like every other filter here — `blur(…)`, `brightness(…)`, `sepia(…)`. It used
+    // to pass the value straight through, which put a bare shadow into a filter list:
+    // `filter: blur(4px) 0 1px 2px black`. A filter list is invalid as a whole if any function
+    // in it is, so that did not merely drop the shadow — it dropped every filter on the
+    // element, including ones set by a different utility.
+    //
+    // No `values` either. It named `dropShadows`, which is not a token category — it is absent
+    // from `TokenDataTypes` and from the map in `@bamboocss/token-dictionary` — so nothing
+    // resolved through it and the raw value was emitted. The siblings that have no token
+    // category declare none, which is what this is now.
     transform(value) {
       return {
-        '--drop-shadow': value,
+        '--drop-shadow': `drop-shadow(${value})`,
       }
     },
   },
