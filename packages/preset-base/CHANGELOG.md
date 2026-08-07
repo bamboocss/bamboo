@@ -1,5 +1,65 @@
 # @bamboocss/preset-base
 
+## 1.17.2
+
+### Patch Changes
+
+- 7c81ec9: Emit `dropShadow` as a filter function, so it stops invalidating the whole `filter`.
+
+  `dropShadow` passed its value straight through, unlike every other filter utility — `blur` writes `blur(…)`, `sepia`
+  writes `sepia(…)`, and so on. So `dropShadow: '0 1px 2px black'` set `--drop-shadow: 0 1px 2px black`, and `filter`,
+  which composes nine variables into one declaration, resolved to:
+
+  ```css
+  filter: blur(4px) 0 1px 2px black;
+  ```
+
+  A filter list is invalid **as a whole** if any function in it is, so this did not merely fail to draw a shadow — it
+  dropped every filter on the element, including ones set by a different utility. An element with `blur` and
+  `dropShadow` lost its blur too.
+
+  The value is now wrapped: `--drop-shadow: drop-shadow(0 1px 2px black)`. A value that was already written as
+  `drop-shadow(…)` — the only form that happened to work before — should now be given without the wrapper.
+
+  Also removed `values: 'dropShadows'` from the utility. `dropShadows` is not a token category: it appears in neither
+  `TokenDataTypes` nor the category map in `@bamboocss/token-dictionary`, so nothing ever resolved through it and the
+  raw value was emitted. Every filter utility without a token category declares none, which is now true of this one as
+  well. The utilities table in the docs listed `dropShadows` as its category and has been corrected.
+
+  Nothing caught either of these because nothing ran the code: `effects.ts` sat at 10% statement coverage, with every
+  `transform` body in the untested part, and no test in the repo used `dropShadow`. `filter-utilities.test.ts` now
+  asserts that each of the nine filter and nine backdrop-filter utilities contributes something shaped like a filter
+  function — with `backdropOpacity`, which takes a bare number, stated as the exception rather than folded in.
+
+- bf2d9c5: Fix `outline: 'none'`, which referenced a token instead of resetting the outline.
+
+  The utility special-cases `none`:
+
+  ```ts
+  transform(value) {
+    if (value === 'none') return { outline: '2px solid transparent', outlineOffset: '2px' }
+    return { outline: value }
+  }
+  ```
+
+  That branch never ran. `outline` declares `values: 'borders'`, and a utility whose `values` is a token category has
+  its value resolved **before** the transform is called — so `value` arrived as `var(--borders-none)` and the comparison
+  against `'none'` could not match. No preset defines a `borders.none` token, so the emitted declaration referenced a
+  variable that does not exist, which is invalid at computed-value time and dropped. `outline: 'none'` therefore left
+  the outline exactly as it was: the opposite of what was asked for, silently.
+
+  The check now reads `raw`, the value as written, and `outline: 'none'` emits `2px solid transparent` with a `2px`
+  offset — transparent rather than `none` so the ring survives forced-colors mode, where there is nothing to repaint
+  otherwise.
+
+  Three snapshots had recorded the broken output as expected, which is the reason the new tests assert the shape a
+  transform is responsible for rather than snapshotting a whole rule.
+
+  The same mistake is not present elsewhere: `float` and `scrollbar` compare against their values too, but their
+  `values` is a plain array — an enum of keywords rather than a token category — so nothing is resolved before they see
+  it, and `lineClamp` declares no `values` at all. Tests now cover all three alongside the fix.
+  - @bamboocss/types@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes
