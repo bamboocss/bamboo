@@ -77,6 +77,21 @@ const CASES: Record<string, Config> = {
     },
     staticCss: { css: [{ properties: { color: ['fg'] } }] },
   },
+  // Exporting a token for something outside the stylesheet to read. Nothing in the sheet
+  // references `--brand`, which is the point of declaring it — so the colour behind it has
+  // to be kept by the declaration itself rather than by a reference to it.
+  'globalCss custom property': {
+    globalCss: { ':root': { '--brand': '{colors.blue.500}' } },
+  },
+  'globalVars custom property': {
+    globalVars: { '--accent': 'var(--colors-orange-500)' },
+  },
+  // A palette declared but never read. The rule survives — its properties are virtual, so
+  // pruning does not own them — and its targets are held by the blanket keeps rather than
+  // by any reference. Passes without the fix above; here so that stays true.
+  'unread color palette': {
+    staticCss: { css: [{ properties: { colorPalette: ['red'] } }] },
+  },
 }
 
 /**

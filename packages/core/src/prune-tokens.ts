@@ -46,10 +46,31 @@ export function pruneTokenVars(options: PruneOptions) {
   // chained token look used.
   const direct = new Set<string>()
   const byDeclaration = new Map<string, Set<string>>()
+  /**
+   * Custom properties this pass will never remove, because they are not the token system's
+   * to remove — so whatever they reference has to survive alongside them.
+   *
+   * The rule is simply that a declaration which ships must not be left pointing at a
+   * definition that does not. `globalCss`/`globalVars` declaring `--brand: {colors.blue.500}`
+   * is the shape that stranded one: nothing inside the stylesheet references `--brand` —
+   * exporting a value for something outside it to read is the whole point of declaring it —
+   * so the colour behind it looked unreachable and was removed.
+   *
+   * That left a `var()` with no declaration behind it, which resolves to the
+   * guaranteed-invalid value, so a colour falls back to *inherited* rather than to nothing.
+   * Silently wrong, which is worse than visibly missing.
+   *
+   * A `colorPalette` rule is the other shape that reaches here — its properties are virtual
+   * and so absent from `tokenVars` — but it was already safe, because the palette's targets
+   * are pinned by `getAlwaysKeptTokenVars`. Rooting it here is the same guarantee arrived at
+   * without depending on that.
+   */
+  const surviving = new Set<string>()
 
   for (const container of scan) {
     container.walkDecls((decl) => {
       const isCustomProperty = decl.prop.startsWith('--')
+      if (isCustomProperty && !tokenVars.has(decl.prop)) surviving.add(decl.prop)
 
       for (const name of cssVarRefs(decl.value)) {
         if (!isCustomProperty) {
@@ -80,6 +101,7 @@ export function pruneTokenVars(options: PruneOptions) {
 
   direct.forEach(visit)
   keep?.forEach(visit)
+  surviving.forEach(visit)
 
   while (queue.length) {
     byDeclaration.get(queue.pop()!)?.forEach(visit)

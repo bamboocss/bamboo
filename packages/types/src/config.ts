@@ -289,9 +289,18 @@ interface CssgenOptions {
    * It is opt-in because reachability cannot be proven for every reference. `token()` and
    * `token.var()` calls are read out of the source, as is any literal `var(--x)` written
    * by hand. Three things stay invisible: a token named by a path the source does not
-   * spell out as a string literal — `token.var(key)` — one referenced only from a
-   * stylesheet outside `include`, and one used by a separate package consuming the output
-   * as design tokens. Use `staticCss` to keep those.
+   * spell out as a string literal, one referenced only from a stylesheet outside
+   * `include`, and one used by a separate package consuming the output as design tokens.
+   * Use `staticCss` to keep those.
+   *
+   * Only the *second* form of the first case is a risk. `token(key)` is safe for any path,
+   * because javascript receives a literal for a plain token rather than a reference. It is
+   * `token.var(key)` — the form that hands back `var(--x)` — that needs the declaration to
+   * still be there, so that is the one to hold with `staticCss`.
+   *
+   * A custom property declared by `globalCss` or `globalVars` is not one of these cases:
+   * the declaration ships whether or not anything in the stylesheet reads it, so whatever
+   * it references is kept alongside it.
    *
    * Tokens that javascript receives as a `var()` rather than a literal are always kept, so
    * that `token()` answers correctly for any path at runtime. That covers virtual tokens
