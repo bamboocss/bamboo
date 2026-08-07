@@ -1,6 +1,6 @@
 {
   "name": "@bamboocss/fixture",
-  "version": "1.16.0",
+  "version": "1.16.1",
   "private": true,
   "description": "Test fixtures for Bamboo CSS",
   "license": "MIT",
@@ -17,6 +17,6 @@
     "@bamboocss/shared": "workspace:^",
     "@bamboocss/token-dictionary": "workspace:^",
     "@bamboocss/types": "workspace:*",
-    "postcss": "8.5.14"
+    "postcss": "8.5.25"
   }
 }

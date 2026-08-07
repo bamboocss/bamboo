@@ -1,6 +1,6 @@
 {
   "name": "@bamboocss/postcss",
-  "version": "1.16.0",
+  "version": "1.16.1",
   "description": "PostCSS integration for Bamboo CSS",
   "homepage": "https://bamboocss.com",
   "license": "MIT",
@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@bamboocss/node": "workspace:*",
-    "postcss": "8.5.14"
+    "postcss": "8.5.25"
   },
   "devDependencies": {
     "@bamboocss/logger": "workspace:*"
