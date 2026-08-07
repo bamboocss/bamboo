@@ -226,12 +226,24 @@ export function createMergeCss(context: CreateCssContext) {
     return Object.assign({}, ...resolve(styles))
   }
 
-  // Memoized for the internal callers that dominate this path — the JSX factories
-  // merge style props with the `css` prop on every render, and `cva` merges while
-  // resolving variants. Those callers treat the result as read-only.
+  // `mergeCss` is memoized for callers that reach it directly and repeatedly with the same
+  // arguments: `cva` merges once per active variant while resolving, and `css.raw` is called
+  // straight from user code. Those callers treat the result as read-only.
   //
-  // The result is a shared instance, so anything that hands it to user code must
-  // copy first: `css.raw()` does, since a caller mutating what it received would
-  // otherwise poison this cache for everyone.
-  return { mergeCss: memo(mergeCss), assignCss }
+  // The result is a shared instance, so anything that hands it to user code must copy first:
+  // `css.raw()` does, since a caller mutating what it received would otherwise poison this
+  // cache for everyone.
+  //
+  // `mergeCssUncached` is the same function without that cache, for callers already sitting
+  // behind a memo keyed on the same arguments. `css` is the one that matters:
+  //
+  //     css = memo((...styles) => cssFn(mergeCss(...styles)))
+  //
+  // reaches the merge only when its own cache missed, and a miss there means these exact
+  // arguments have not been seen — so the inner lookup is *guaranteed* to miss as well. The
+  // redundancy is structural rather than a matter of hit rate. Measured over 25k calls across
+  // four distinct styles, the inner memo served zero hits while paying a hash, a bucket scan,
+  // a snapshot and an insert for each miss. Driven directly the same function hit 24,996
+  // times, which is why the memoized export stays.
+  return { mergeCss: memo(mergeCss), assignCss, mergeCssUncached: mergeCss }
 }

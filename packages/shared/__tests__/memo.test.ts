@@ -18,11 +18,33 @@ const makeContext = () => ({
 const buildCss = () => {
   const ctx = makeContext()
   const cssFn = createCss(ctx)
-  const { mergeCss } = createMergeCss(ctx)
-  // Mirrors the shape `generateCssFn` emits, including the copy on `.raw`.
-  const css: any = memo((...styles: any[]) => cssFn(mergeCss(...styles)))
+  const { mergeCss, mergeCssUncached } = createMergeCss(ctx)
+  // Mirrors the shape `generateCssFn` emits: the uncached merge under `css`'s own memo,
+  // the cached one under `.raw`, which user code calls with no memo above it.
+  const css: any = memo((...styles: any[]) => cssFn(mergeCssUncached(...styles)))
   css.raw = (...styles: any[]) => cloneStyles(mergeCss(...styles))
   return css
+}
+
+/**
+ * A style object whose single property counts how often it is read.
+ *
+ * Every pass over the arguments reads it exactly once — hashing, snapshotting, the equality
+ * check and the merge alike — which turns work that is otherwise internal to `memo` into
+ * something a test can assert on.
+ */
+const countingStyle = () => {
+  let reads = 0
+  const style: Record<string, unknown> = {}
+  Object.defineProperty(style, 'color', {
+    configurable: true,
+    enumerable: true,
+    get: () => {
+      reads++
+      return 'red'
+    },
+  })
+  return { reads: () => reads, style }
 }
 
 describe('memo', () => {
@@ -225,6 +247,60 @@ describe('css runtime caching', () => {
 
     // one per declared property, for the whole 10k renders
     expect(transforms).toBe(2)
+  })
+
+  /**
+   * `css` is already memoized on its argument list, so the merge underneath it must not be
+   * keyed on that list as well. Reaching the merge at all means the outer cache missed, and a
+   * miss means these arguments have not been seen — so an inner cache keyed on the same
+   * arguments can only miss too, after paying a hash and a snapshot to discover it. The
+   * redundancy is structural, not a matter of hit rate.
+   *
+   * Counted rather than timed, so it holds on any machine, per the note in CLAUDE.md. Reads
+   * of the argument break down as:
+   *
+   *     miss   hash(1) + snapshot(1) + the merge itself(2)      = 4
+   *     hit    hash(1) + the equality check confirming it(1)    = 2
+   *
+   * With the inner memo in place a miss cost 6: its own hash and snapshot on top.
+   */
+  test('a css() miss does not pay for a second cache keyed on the same arguments', () => {
+    const css = buildCss()
+    const probe = countingStyle()
+
+    expect(css(probe.style)).toBe('color_red')
+    expect(probe.reads()).toBe(4)
+  })
+
+  test('a css() hit reads its argument only to find and confirm the entry', () => {
+    const css = buildCss()
+    const first = countingStyle()
+    css(first.style)
+
+    const second = countingStyle()
+    expect(css(second.style)).toBe('color_red')
+    expect(second.reads()).toBe(2)
+  })
+
+  test('the merge stays memoized for callers that reach it directly', () => {
+    const ctx = makeContext()
+    let merges = 0
+    const { mergeCss } = createMergeCss({
+      ...ctx,
+      // `resolve` normalizes each operand, so this runs once per merge that is not served
+      // from the cache.
+      utility: {
+        ...ctx.utility,
+        resolveShorthand: (p: string) => {
+          merges++
+          return p
+        },
+      },
+    })
+
+    // `cva` merges once per active variant on every resolve, with no memo above it.
+    for (let i = 0; i < 100; i++) mergeCss({ color: 'red' }, { padding: '4px' })
+    expect(merges).toBeLessThan(100)
   })
 
   test('css.raw does not hand the same mutable object to different callers', () => {

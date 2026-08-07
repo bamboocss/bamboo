@@ -107,8 +107,12 @@ describe('generate css-fn', () => {
       }
 
       const cssFn = createCss(context)
-      export const css = /* @__PURE__ */ memo((...styles) => cssFn(mergeCss(...styles)))
-      // The merged result is cached and shared, so a caller mutating a nested
+      // \`mergeCssUncached\` rather than \`mergeCss\`: this callback runs only when the memo
+      // above it missed, and a miss means these arguments have not been seen — so a second
+      // cache keyed on the same arguments can only miss too, after paying for the lookup.
+      export const css = /* @__PURE__ */ memo((...styles) => cssFn(mergeCssUncached(...styles)))
+      // The cached merge here, since \`raw\` is called straight from user code with no memo
+      // above it. The merged result is cached and shared, so a caller mutating a nested
       // condition object would otherwise poison it for everyone after them.
       css.raw = (...styles) => cloneStyles(mergeCss(...styles))
 
@@ -132,7 +136,7 @@ describe('generate css-fn', () => {
       // still returns a class, exactly as \`css()\` does for a value it never saw.
       export const viewTransition = (options) => viewTransitionClassName(options, "")
 
-      export const { mergeCss, assignCss } = createMergeCss(context)",
+      export const { mergeCss, assignCss, mergeCssUncached } = createMergeCss(context)",
       }
     `)
   })
@@ -263,8 +267,12 @@ describe('generate css-fn', () => {
       }
 
       const cssFn = createCss(context)
-      export const css = /* @__PURE__ */ memo((...styles) => cssFn(mergeCss(...styles)))
-      // The merged result is cached and shared, so a caller mutating a nested
+      // \`mergeCssUncached\` rather than \`mergeCss\`: this callback runs only when the memo
+      // above it missed, and a miss means these arguments have not been seen — so a second
+      // cache keyed on the same arguments can only miss too, after paying for the lookup.
+      export const css = /* @__PURE__ */ memo((...styles) => cssFn(mergeCssUncached(...styles)))
+      // The cached merge here, since \`raw\` is called straight from user code with no memo
+      // above it. The merged result is cached and shared, so a caller mutating a nested
       // condition object would otherwise poison it for everyone after them.
       css.raw = (...styles) => cloneStyles(mergeCss(...styles))
 
@@ -288,7 +296,7 @@ describe('generate css-fn', () => {
       // still returns a class, exactly as \`css()\` does for a value it never saw.
       export const viewTransition = (options) => viewTransitionClassName(options, "")
 
-      export const { mergeCss, assignCss } = createMergeCss(context)",
+      export const { mergeCss, assignCss, mergeCssUncached } = createMergeCss(context)",
       }
     `)
   })

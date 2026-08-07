@@ -29,8 +29,10 @@ const makeContext = () => ({
 const build = () => {
   const ctx = makeContext()
   const cssFn = createCss(ctx)
-  const { mergeCss } = createMergeCss(ctx)
-  const css = memo((...styles: any[]) => cssFn(mergeCss(...styles)))
+  // The uncached merge, mirroring what `generateCssFn` emits: `css` is already memoized on
+  // this argument list, so a second cache keyed on it could only ever miss.
+  const { mergeCssUncached } = createMergeCss(ctx)
+  const css = memo((...styles: any[]) => cssFn(mergeCssUncached(...styles)))
 
   const stackConfig = {
     transform: (props: any) => {
@@ -98,8 +100,8 @@ describe('css() runtime', () => {
 const groupedCss = (() => {
   const ctx = { ...makeContext(), grouped: true }
   const cssFn = createCss(ctx)
-  const { mergeCss } = createMergeCss(ctx)
-  return memo((...styles: any[]) => cssFn(mergeCss(...styles)))
+  const { mergeCssUncached } = createMergeCss(ctx)
+  return memo((...styles: any[]) => cssFn(mergeCssUncached(...styles)))
 })()
 
 describe('grouped css() runtime', () => {
