@@ -110,3 +110,66 @@ describe('slot recipe topology is part of the identity', () => {
     )
   })
 })
+
+/**
+ * The identity has to survive the one transformation the build applies before it ever sees a
+ * config: `maybe-box-node` reads every string literal through `trimWhitespace`, so a value
+ * written `'calc(100vh -  16px)'` reaches the encoder as `'calc(100vh - 16px)'`.
+ *
+ * The browser holds the config as authored. When the two hashed different objects they
+ * derived different names, the element asked for a class the stylesheet did not carry, and it
+ * rendered with none of the recipe's styles — silently, and invisibly to a dead-rule check,
+ * because the collapsed config is byte-identical to one already emitted so no unused rule is
+ * left behind.
+ */
+describe('whitespace in a declaration value', () => {
+  const collapsed = (value: string) => value.replaceAll(/\s+/g, ' ')
+
+  test.each([
+    { name: 'a calc expression', value: 'calc(100vh -  16px)' },
+    { name: 'a spaced function argument list', value: 'rgba(0,  0, 0, 0.5)' },
+    { name: 'a shorthand', value: '12px  16px' },
+    { name: 'a newline', value: 'calc(100vh\n- 16px)' },
+    { name: 'a tab', value: 'calc(100vh\t- 16px)' },
+    { name: 'leading and trailing space', value: '  12px 16px  ' },
+  ])('$name hashes as the build sees it', ({ value }) => {
+    // The build's side, which has already been through `trimWhitespace`.
+    const build = getRecipeIdentity({ base: { padding: collapsed(value) } })
+    // The browser's side, holding the value as authored.
+    const runtime = getRecipeIdentity({ base: { padding: value } })
+
+    expect(runtime).toBe(build)
+  })
+
+  test('it reaches values nested in variants and compound variants', () => {
+    const authored = {
+      base: { padding: '12px  16px' },
+      compoundVariants: [{ css: { margin: '4px  8px' }, size: 'sm' }],
+      variants: { size: { sm: { minHeight: 'calc(100vh -  16px)' } } },
+    }
+    const build = {
+      base: { padding: '12px 16px' },
+      compoundVariants: [{ css: { margin: '4px 8px' }, size: 'sm' }],
+      variants: { size: { sm: { minHeight: 'calc(100vh - 16px)' } } },
+    }
+
+    expect(getRecipeIdentity(authored)).toBe(getRecipeIdentity(build))
+  })
+
+  test('a value that differs by more than whitespace still gets its own name', () => {
+    // The collapse must not make genuinely different configs collide.
+    expect(getRecipeIdentity({ base: { padding: '12px 16px' } })).not.toBe(
+      getRecipeIdentity({ base: { padding: '12px 17px' } }),
+    )
+    // Case is not whitespace, and is not normalized.
+    expect(getRecipeIdentity({ base: { color: '#AABBCC' } })).not.toBe(
+      getRecipeIdentity({ base: { color: '#aabbcc' } }),
+    )
+  })
+
+  test('a slot recipe is covered too', () => {
+    expect(getRecipeIdentity({ base: { root: { padding: '12px  16px' } }, slots: ['root'] }, 'sva')).toBe(
+      getRecipeIdentity({ base: { root: { padding: '12px 16px' } }, slots: ['root'] }, 'sva'),
+    )
+  })
+})

@@ -26,7 +26,27 @@ const STYLE_FIELDS = ['base', 'variants', 'compoundVariants', 'defaultVariants',
  * the same build-dependent divergence that `cx` was changed to avoid. Nothing that survives
  * static extraction is a function, so there is no real config this loses information about.
  */
+/**
+ * Runs of whitespace inside a declaration value, collapsed to one space.
+ *
+ * The build never sees the value as written. `maybe-box-node` reads every string literal
+ * through `trimWhitespace`, so `'calc(100vh -  16px)'` is `'calc(100vh - 16px)'` by the time
+ * a recipe config reaches the encoder — the two produce identical CSS, and the stylesheet
+ * emits one rule for both.
+ *
+ * The browser holds the config as authored. Without this, the two sides hashed different
+ * objects and derived different names, so the element asked for a class the stylesheet did
+ * not carry and rendered with *none* of the recipe's styles. Silent, and invisible to a
+ * dead-rule check: the extra name leaves no unused rule behind, because the collapsed config
+ * is byte-identical to one that was already emitted.
+ *
+ * The regex is `trimWhitespace`'s, deliberately. A second spelling of "the same value" is a
+ * second thing to keep in agreement, which is the defect this is fixing.
+ */
+const collapseWhitespace = (value: string) => value.replaceAll(/\s+/g, ' ')
+
 const stable = (value: unknown): string => {
+  if (typeof value === 'string') return JSON.stringify(collapseWhitespace(value))
   if (value === null || typeof value !== 'object') return JSON.stringify(value) ?? 'null'
   if (Array.isArray(value)) return `[${value.map(stable).join(',')}]`
   const source = value as Record<string, unknown>
