@@ -1,5 +1,17 @@
 # @bamboocss/vite
 
+## 1.17.2
+
+### Patch Changes
+
+- @bamboocss/config@1.17.2
+- @bamboocss/node@1.17.2
+- @bamboocss/core@1.17.2
+- @bamboocss/extractor@1.17.2
+- @bamboocss/logger@1.17.2
+- @bamboocss/shared@1.17.2
+- @bamboocss/types@1.17.2
+
 ## 1.17.1
 
 ### Patch Changes
