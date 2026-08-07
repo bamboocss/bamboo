@@ -9,11 +9,13 @@ export interface UnresolvedStyle {
    * - `grouped` — a `css()` call under `cssMode: 'grouped'`. It degrades: the runtime falls
    *   back to naming each declaration, and the build emits atomic rules alongside the group
    *   so the ones it resolved still apply.
+   * - `atomic` — a `css()` call under `cssMode: 'atomic'`. The declarations the build saw
+   *   still apply; the ones it did not have no rule behind them, so they are simply absent.
    * - `recipe` — a `cva`/`sva` config. There is no degrading. A recipe's classes are named
    *   from a hash of its config, so a declaration the build cannot see gives the two sides
    *   different names and *every* rule misses.
    */
-  kind: 'grouped' | 'recipe'
+  kind: 'grouped' | 'atomic' | 'recipe'
   /** The property the build could not resolve, or `undefined` when only the count differs. */
   prop?: string
   filePath: string
@@ -285,7 +287,7 @@ export const findUnresolvedRecipeStyles = (item: ResultItem): UnresolvedStyle[] 
   return losses.map((loss) => ({ column, filePath: sourceFile.getFilePath(), kind: 'recipe' as const, line, ...loss }))
 }
 
-export const findUnresolvedStyles = (item: ResultItem): UnresolvedStyle[] => {
+export const findUnresolvedStyles = (item: ResultItem, kind: 'grouped' | 'atomic'): UnresolvedStyle[] => {
   const boxNode = item.box
   if (!boxNode) return []
 
@@ -336,7 +338,7 @@ export const findUnresolvedStyles = (item: ResultItem): UnresolvedStyle[] => {
   const { line, column } = sourceFile.getLineAndColumnAtPos(node.getStart())
   const at = { filePath: sourceFile.getFilePath(), line, column }
 
-  return losses.map((loss) => ({ ...at, kind: 'grouped' as const, ...loss }))
+  return losses.map((loss) => ({ ...at, kind, ...loss }))
 }
 
 const hasKeyOutside = (resolved: Set<string>, names: string[]) => {

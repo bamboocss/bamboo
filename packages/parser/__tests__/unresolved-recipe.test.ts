@@ -101,3 +101,32 @@ describe('a recipe config the build cannot fully read', () => {
     expect(reasons(`cva({ base: { ...{ margin: '2' }, color: 'red' } })`)).toEqual([])
   })
 })
+
+/**
+ * The same detection for a bare `css()` call, which was gated on `cssMode: 'grouped'`.
+ *
+ * That gate was about severity, not about whether anything was lost: grouping makes a loss
+ * fatal to the whole call, so it had to be reported. Under `atomic` the loss is partial —
+ * what the build saw still applies — but it is no less silent.
+ */
+describe('a css() call the build cannot fully read', () => {
+  const atomic = (src: string) =>
+    parseAndExtract(
+      `import { css } from 'styled-system/css'\nimport { shared } from './shared'\n${src}`,
+    ).parserResult.unresolved.map((entry) => `${entry.kind}/${entry.reason}`)
+
+  test('an unreadable spread is reported under atomic', () => {
+    expect(atomic(`export const a = css({ ...shared, color: 'red' })`)).toEqual(['atomic/unenumerable-keys'])
+  })
+
+  test('a dynamic value is not, because that is a different conversation', () => {
+    // `staticCss` is the answer for it and `no-dynamic-styling` already lints it. Warning
+    // on every one would bury the spread case, which is the one that looks static and is
+    // not.
+    expect(atomic(`export const a = css({ color: getColor() })`)).toEqual([])
+  })
+
+  test('a fully static call is silent', () => {
+    expect(atomic(`export const a = css({ color: 'red' })`)).toEqual([])
+  })
+})

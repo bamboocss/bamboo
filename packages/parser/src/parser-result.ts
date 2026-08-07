@@ -102,11 +102,23 @@ export class ParserResult implements ParserResultInterface {
       result.data.some(Array.isArray) ? result.data.flatMap((obj) => (Array.isArray(obj) ? obj : [obj])) : result.data
     ) as Record<string, any>[]
 
-    if (grouped) {
-      const unresolved = findUnresolvedStyles(result)
-      if (unresolved.length) {
-        this.unresolved.push(...unresolved)
+    // Detection runs in both modes. It was gated on `grouped` because that is where a loss
+    // is *fatal* to the call — one class names the whole thing. Under `atomic` the loss is
+    // partial rather than total, but it is no less silent: the declarations the build could
+    // not see have no rule, and the element renders without them.
+    const unresolved = findUnresolvedStyles(result, grouped ? 'grouped' : 'atomic').filter(
+      // Under `atomic`, only the surprising half. A spread the build could not read looks
+      // static and is not — that is worth interrupting for. A value it could not evaluate
+      // is the documented dynamic-styling shape, answered by `staticCss` and already linted
+      // by `no-dynamic-styling`; warning on every one of those would bury the first.
+      //
+      // Grouped keeps both, because there a loss of either kind costs the whole call.
+      (entry) => grouped || entry.reason === 'unenumerable-keys',
+    )
+    if (unresolved.length) {
+      this.unresolved.push(...unresolved)
 
+      if (grouped) {
         // Emit atomic rules for this call as well as its group.
         //
         // The runtime cannot name the group for a call the build could not fully see, so it
@@ -312,7 +324,7 @@ export class ParserResult implements ParserResultInterface {
    */
   private groupIsExact(result: ResultItem) {
     if (result.data.length !== 1) return false
-    return findUnresolvedStyles(result).length === 0
+    return findUnresolvedStyles(result, 'grouped').length === 0
   }
 
   setRecipe(recipeName: string, result: ResultItem) {

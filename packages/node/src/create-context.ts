@@ -131,6 +131,19 @@ export class BambooContext extends Generator {
         continue
       }
 
+      if (entry.kind === 'atomic') {
+        // Not the shared `fix` clause: it ends "to group it", which means nothing outside
+        // grouped mode. The loss here is partial rather than total — what the build saw
+        // still applies — so the wording says which half is missing rather than implying
+        // the element is unstyled.
+        const at = entry.prop ? ` at \`${entry.prop}\`` : ''
+        logger.warn(
+          'css',
+          `${where} — ${what}${at}. The build emits a rule per declaration it can see, and the runtime names a class for every declaration the object actually has — so the ones it could not see have no rule behind them and are simply absent. Write the value out, or generate it with \`staticCss\` if it is genuinely dynamic. See https://bamboocss.com/docs/guides/dynamic-styling`,
+        )
+        continue
+      }
+
       logger.warn(
         'grouped',
         `${where} — ${what}. Under \`cssMode: 'grouped'\` one class names the whole \`css()\` call, so this call cannot use one: it falls back to naming each declaration separately and keeps only the ones the build could resolve. ${fix} See https://bamboocss.com/docs/references/config#cssmode`,
