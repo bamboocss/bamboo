@@ -764,7 +764,8 @@ describe('rule processor', () => {
     expect(result.toCss()).toMatchInlineSnapshot(`
       "@layer recipes {
         .btn {
-          outline: var(--borders-none);
+          outline: 2px solid transparent;
+          outline-offset: 2px;
           line-height: 1.2;
           display: inline-flex;
       }
@@ -841,7 +842,8 @@ describe('rule processor', () => {
     expect(processor.toCss()).toMatchInlineSnapshot(`
       "@layer recipes {
         .btn {
-          outline: var(--borders-none);
+          outline: 2px solid transparent;
+          outline-offset: 2px;
           line-height: 1.2;
           display: inline-flex;
       }
