@@ -1,5 +1,11 @@
 # @bamboocss/preset-base
 
+## 1.19.0
+
+### Patch Changes
+
+- @bamboocss/types@1.19.0
+
 ## 1.18.0
 
 ### Minor Changes
