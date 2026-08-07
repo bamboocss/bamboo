@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { createCss, createMergeCss } from '../src/classname'
+import { createCssUncached, createMergeCss } from '../src/classname'
 import { memo } from '../src/memo'
 import { cloneStyles } from '../src/clone-styles'
 
@@ -17,10 +17,10 @@ const makeContext = () => ({
 
 const buildCss = () => {
   const ctx = makeContext()
-  const cssFn = createCss(ctx)
+  const cssFn = createCssUncached(ctx)
   const { mergeCss, mergeCssUncached } = createMergeCss(ctx)
-  // Mirrors the shape `generateCssFn` emits: the uncached merge under `css`'s own memo,
-  // the cached one under `.raw`, which user code calls with no memo above it.
+  // Mirrors the shape `generateCssFn` emits: both uncached forms under `css`'s own memo,
+  // and the cached merge under `.raw`, which user code calls with no memo above it.
   const css: any = memo((...styles: any[]) => cssFn(mergeCssUncached(...styles)))
   css.raw = (...styles: any[]) => cloneStyles(mergeCss(...styles))
   return css
@@ -45,6 +45,29 @@ const countingStyle = () => {
     },
   })
   return { reads: () => reads, style }
+}
+
+/**
+ * The same probe one level down, inside a condition.
+ *
+ * The flat probe above cannot see the class-name cache: that one keys on the *merged*
+ * object, and `mergeProps` builds a fresh outer object, so a flat property is copied out
+ * before the inner cache ever reaches it. Nested objects are aliased rather than copied,
+ * so a leaf under a condition is read straight through — which is what makes a second
+ * cache on the merge observable.
+ */
+const countingNestedStyle = () => {
+  let reads = 0
+  const hover: Record<string, unknown> = {}
+  Object.defineProperty(hover, 'color', {
+    configurable: true,
+    enumerable: true,
+    get: () => {
+      reads++
+      return 'blue'
+    },
+  })
+  return { reads: () => reads, style: { padding: '4px', _hover: hover } }
 }
 
 describe('memo', () => {
@@ -239,9 +262,9 @@ describe('css runtime caching', () => {
       transforms++
       return { className: `${prop}_${value}` }
     }
-    const cssFn = createCss(ctx)
-    const { mergeCss } = createMergeCss(ctx)
-    const css = memo((...styles: any[]) => cssFn(mergeCss(...styles)))
+    const cssFn = createCssUncached(ctx)
+    const { mergeCssUncached } = createMergeCss(ctx)
+    const css = memo((...styles: any[]) => cssFn(mergeCssUncached(...styles)))
 
     for (let i = 0; i < 10_000; i++) css({ color: 'red', padding: '4px' })
 
@@ -270,6 +293,36 @@ describe('css runtime caching', () => {
 
     expect(css(probe.style)).toBe('color_red')
     expect(probe.reads()).toBe(4)
+  })
+
+  /**
+   * The same argument, one level down, where the class-name cache is visible.
+   *
+   * `createCss` used to return `memo(...)`, giving `css` a third cache — on the merged
+   * object, which is a deterministic function of the arguments the outer memo just missed
+   * on, so it could not hit either. Instrumented over 25k calls it served zero hits under
+   * `css()`, including working sets past `MAX_ENTRIES`, where both caches rotate together
+   * rather than one rescuing the other.
+   *
+   * Reads of the nested leaf break down as:
+   *
+   *     miss   the outer memo's hash(1) + the walk that names it(1)   = 2
+   *     hit    the equality check confirming the entry(1)             = 1
+   *
+   * With the class-name cache in place a miss cost 3: its own `JSON.stringify` on top.
+   *
+   * `createCss` itself keeps the cache — the vite fold reaches it with no memo above, and
+   * the merge feeding it is many-to-one there, so it hits. That is what this guards
+   * against: the uncached form silently reverting to the cached one.
+   */
+  test('a css() miss does not pay for a second cache keyed on the merged object', () => {
+    const css = buildCss()
+    const probe = countingNestedStyle()
+
+    // `makeContext` stubs `shift` as identity, so the condition lands after the property
+    // rather than before it. Irrelevant here — what is being counted is the reads.
+    expect(css(probe.style)).toBe('padding_4px color:_hover_blue')
+    expect(probe.reads()).toBe(2)
   })
 
   test('a css() hit reads its argument only to find and confirm the entry', () => {

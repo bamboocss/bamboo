@@ -24,7 +24,7 @@ export function generateCreateRecipe(ctx: Context) {
    ${ctx.file.import('finalizeConditions, sortConditions', '../css/conditions')}
    ${ctx.file.import('assertCompoundVariant, getCompoundVariantCss', '../css/cva')}
    ${ctx.file.import('cx', '../css/cx')}
-   ${ctx.file.import('compact, createCss, splitProps, toHash, uniq, withoutSpace', '../helpers')}
+   ${ctx.file.import('compact, createCssUncached, splitProps, toHash, uniq, withoutSpace', '../helpers')}
 
    /**
     * What \`createCss\` does to a class name: prefix it, and hash it when \`hash.className\`
@@ -65,7 +65,9 @@ export function generateCreateRecipe(ctx: Context) {
          return { className: \`\${name}--\${prop}${utility.separator}\${value}\` }
       }
 
-      const recipeCss = createCss({
+      // Uncached: this runs *inside* \`recipeFn\`, which is itself memoized, so the cache a
+      // cached \`createCss\` would build here is constructed fresh per call and used once.
+      const recipeCss = createCssUncached({
         ${hash.className ? 'hash: true,' : ''}
         conditions: {
           shift: sortConditions,

@@ -71,7 +71,7 @@ export function generateCssFn(ctx: Context) {
     `,
     js: outdent`
     ${ctx.file.import(
-      'cloneStyles, createCss, createMergeCss, hypenateProperty, leafClass, memo, viewTransitionClassName, withoutSpace',
+      'cloneStyles, createCssUncached, createMergeCss, hypenateProperty, leafClass, memo, viewTransitionClassName, withoutSpace',
       '../helpers',
     )}
     ${[
@@ -178,10 +178,11 @@ export function generateCssFn(ctx: Context) {
       }
     }
 
-    const cssFn = createCss(context)
-    // \`mergeCssUncached\` rather than \`mergeCss\`: this callback runs only when the memo
-    // above it missed, and a miss means these arguments have not been seen — so a second
-    // cache keyed on the same arguments can only miss too, after paying for the lookup.
+    const cssFn = createCssUncached(context)
+    // \`createCssUncached\` and \`mergeCssUncached\` rather than their cached forms: this
+    // callback runs only when the memo above it missed, and a miss means these arguments
+    // have not been seen — so a second cache keyed on the same arguments, or on the merge
+    // derived from them, can only miss too, after paying for the lookup.
     export const css = /* @__PURE__ */ memo((...styles) => cssFn(mergeCssUncached(...styles)))
     // The cached merge here, since \`raw\` is called straight from user code with no memo
     // above it. The merged result is cached and shared, so a caller mutating a nested

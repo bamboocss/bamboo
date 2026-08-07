@@ -22,7 +22,7 @@ describe('generate recipes', () => {
         "js": "import { finalizeConditions, sortConditions } from '../css/conditions.mjs';
       import { assertCompoundVariant, getCompoundVariantCss } from '../css/cva.mjs';
       import { cx } from '../css/cx.mjs';
-      import { compact, createCss, splitProps, toHash, uniq, withoutSpace } from '../helpers.mjs';
+      import { compact, createCssUncached, splitProps, toHash, uniq, withoutSpace } from '../helpers.mjs';
 
       /**
        * What \`createCss\` does to a class name: prefix it, and hash it when \`hash.className\`
@@ -57,7 +57,9 @@ describe('generate recipes', () => {
             return { className: \`\${name}--\${prop}_\${value}\` }
          }
 
-         const recipeCss = createCss({
+         // Uncached: this runs *inside* \`recipeFn\`, which is itself memoized, so the cache a
+         // cached \`createCss\` would build here is constructed fresh per call and used once.
+         const recipeCss = createCssUncached({
            
            conditions: {
              shift: sortConditions,

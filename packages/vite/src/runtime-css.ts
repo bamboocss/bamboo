@@ -1,5 +1,12 @@
 import { Recipes, type Context } from '@bamboocss/core'
-import { compact, createCss, createMergeCss, getSlotCompoundVariant, withoutSpace } from '@bamboocss/shared'
+import {
+  compact,
+  createCssUncached,
+  createMergeCss,
+  getSlotCompoundVariant,
+  memo,
+  withoutSpace,
+} from '@bamboocss/shared'
 import type { Dict, SlotRecipeConfig } from '@bamboocss/types'
 
 /**
@@ -16,8 +23,10 @@ import type { Dict, SlotRecipeConfig } from '@bamboocss/types'
  * construction. What still needs asserting — and is asserted in `__tests__` — is that
  * these class names correspond to rules the build actually emits.
  *
- * Mirrors `generateCssFn` in `@bamboocss/generator`: `css = (...styles) =>
- * cssFn(mergeCss(...styles))`.
+ * Mirrors `generateCssFn` in `@bamboocss/generator`: `css = memo((...styles) =>
+ * cssFn(mergeCssUncached(...styles)))`, with the memo on the argument list and neither
+ * inner cache. Unlike the generated runtime this one is built once per build and shared
+ * across every module, so the outer cache is what carries the repeats.
  */
 export interface RuntimeCss {
   (...styles: Dict[]): string
@@ -44,10 +53,10 @@ export const createCssContext = (ctx: Context) => ({
 export const createRuntimeCss = (ctx: Context): RuntimeCss => {
   const cssContext = createCssContext(ctx)
 
-  const cssFn = createCss(cssContext)
-  const { mergeCss } = createMergeCss(cssContext)
+  const cssFn = createCssUncached(cssContext)
+  const { mergeCssUncached } = createMergeCss(cssContext)
 
-  return (...styles: Dict[]) => cssFn(mergeCss(...styles))
+  return memo((...styles: Dict[]) => cssFn(mergeCssUncached(...styles)))
 }
 
 /**
@@ -168,7 +177,9 @@ export const createRuntimeRecipe = (ctx: Context): RuntimeRecipe => {
       ? getSlotCompoundVariant((config.compoundVariants ?? []) as Array<{ css: any }>, slot)
       : ((config.compoundVariants ?? []) as Dict[])
 
-    const recipeCss = createCss({
+    // Uncached, like the generated recipe runtime: this is constructed inside the call, so
+    // a cache built here would be used once and dropped.
+    const recipeCss = createCssUncached({
       hash: Boolean(ctx.hash.className),
       conditions: {
         shift: ctx.conditions.shift,

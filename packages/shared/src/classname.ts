@@ -80,7 +80,25 @@ export function groupClassName(
   return formatClassName(toHashFn(['grouped', groupId], toHash))
 }
 
-export function createCss(context: CreateCssContext) {
+/**
+ * Name a style object, without caching the answer.
+ *
+ * For callers already sitting behind a memo keyed on the same call. `css` is the one that
+ * matters:
+ *
+ *     css = memo((...styles) => cssFn(mergeCssUncached(...styles)))
+ *
+ * reaches `cssFn` only when its own cache missed, and the merged object it passes is a
+ * deterministic function of those same arguments — so a second cache on it cannot hit.
+ * Measured over 25k calls it served zero hits across every workload, including working sets
+ * larger than `MAX_ENTRIES`, where both caches rotate in lockstep rather than one rescuing
+ * the other. The same applies wherever `createCss` is called *inside* the memoized function,
+ * as the generated recipe runtime does: a fresh cache built per call is used once.
+ *
+ * Use `createCss` instead when there is no such memo above — the vite fold reaches it
+ * directly, once per folded call site, and the merge is many-to-one there, so it hits.
+ */
+export function createCssUncached(context: CreateCssContext) {
   const { utility, hash, grouped, conditions: conds = fallbackCondition } = context
 
   // Both of these run once per style leaf per cache miss, so the prefix is resolved here
@@ -117,7 +135,7 @@ export function createCss(context: CreateCssContext) {
   if (grouped) {
     const { knownGroups } = context
 
-    return memo(({ base, ...styles }: Record<string, any> = {}) => {
+    return ({ base, ...styles }: Record<string, any> = {}) => {
       const styleObject = Object.assign(styles, base)
       const normalizedObject = normalizeStyleObject(styleObject, context)
       const hashes: string[] = []
@@ -164,10 +182,10 @@ export function createCss(context: CreateCssContext) {
         classNames.add(atomicName(prop, value, conditions))
       }
       return Array.from(classNames).join(' ')
-    })
+    }
   }
 
-  return memo(({ base, ...styles }: Record<string, any> = {}) => {
+  return ({ base, ...styles }: Record<string, any> = {}) => {
     const styleObject = Object.assign(styles, base)
     const normalizedObject = normalizeStyleObject(styleObject, context)
     const classNames = new Set<string>()
@@ -183,7 +201,20 @@ export function createCss(context: CreateCssContext) {
     })
 
     return Array.from(classNames).join(' ')
-  })
+  }
+}
+
+/**
+ * `createCssUncached`, cached.
+ *
+ * For callers that reach it directly and repeatedly with no memo of their own — the vite
+ * fold builds one per build and shares it across every module. There the cache earns its
+ * keep twice over: call sites repeat across a codebase, and the merge feeding it is
+ * many-to-one, so `css({a}, {b})` and `css({a, b})` land on the same entry. Measured 2-35%
+ * hits across the projects in this repo, and dropping it cost +187% on the fold.
+ */
+export function createCss(context: CreateCssContext) {
+  return memo(createCssUncached(context))
 }
 
 interface StyleObject {
