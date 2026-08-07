@@ -1389,27 +1389,27 @@ describe('staticCss', () => {
       }
 
         .\\--bleed-x_token\\(spacing\\.0\\.5\\,_0\\.5\\) {
-          --bleed-x: var(--spacing-0\\.5, \\30\\.5);
+          --bleed-x: var(--spacing-0\\.5, \\30 \\.5);
       }
 
         .\\--bleed-x_token\\(spacing\\.1\\.5\\,_1\\.5\\) {
-          --bleed-x: var(--spacing-1\\.5, \\31\\.5);
+          --bleed-x: var(--spacing-1\\.5, \\31 \\.5);
       }
 
         .\\--bleed-x_token\\(spacing\\.2\\.5\\,_2\\.5\\) {
-          --bleed-x: var(--spacing-2\\.5, \\32\\.5);
+          --bleed-x: var(--spacing-2\\.5, \\32 \\.5);
       }
 
         .\\--bleed-x_token\\(spacing\\.3\\.5\\,_3\\.5\\) {
-          --bleed-x: var(--spacing-3\\.5, \\33\\.5);
+          --bleed-x: var(--spacing-3\\.5, \\33 \\.5);
       }
 
         .\\--bleed-x_token\\(spacing\\.4\\.5\\,_4\\.5\\) {
-          --bleed-x: var(--spacing-4\\.5, \\34\\.5);
+          --bleed-x: var(--spacing-4\\.5, \\34 \\.5);
       }
 
         .\\--bleed-x_token\\(spacing\\.5\\.5\\,_5\\.5\\) {
-          --bleed-x: var(--spacing-5\\.5, \\35\\.5);
+          --bleed-x: var(--spacing-5\\.5, \\35 \\.5);
       }
 
         .\\--bleed-x_token\\(spacing\\.gutter\\,_gutter\\) {
@@ -1533,27 +1533,27 @@ describe('staticCss', () => {
       }
 
         .\\--bleed-x_token\\(spacing\\.-0\\.5\\,_-0\\.5\\) {
-          --bleed-x: calc(var(--spacing-0\\.5) * -1, -\\30\\.5);
+          --bleed-x: calc(var(--spacing-0\\.5) * -1, -\\30 \\.5);
       }
 
         .\\--bleed-x_token\\(spacing\\.-1\\.5\\,_-1\\.5\\) {
-          --bleed-x: calc(var(--spacing-1\\.5) * -1, -\\31\\.5);
+          --bleed-x: calc(var(--spacing-1\\.5) * -1, -\\31 \\.5);
       }
 
         .\\--bleed-x_token\\(spacing\\.-2\\.5\\,_-2\\.5\\) {
-          --bleed-x: calc(var(--spacing-2\\.5) * -1, -\\32\\.5);
+          --bleed-x: calc(var(--spacing-2\\.5) * -1, -\\32 \\.5);
       }
 
         .\\--bleed-x_token\\(spacing\\.-3\\.5\\,_-3\\.5\\) {
-          --bleed-x: calc(var(--spacing-3\\.5) * -1, -\\33\\.5);
+          --bleed-x: calc(var(--spacing-3\\.5) * -1, -\\33 \\.5);
       }
 
         .\\--bleed-x_token\\(spacing\\.-4\\.5\\,_-4\\.5\\) {
-          --bleed-x: calc(var(--spacing-4\\.5) * -1, -\\34\\.5);
+          --bleed-x: calc(var(--spacing-4\\.5) * -1, -\\34 \\.5);
       }
 
         .\\--bleed-x_token\\(spacing\\.-5\\.5\\,_-5\\.5\\) {
-          --bleed-x: calc(var(--spacing-5\\.5) * -1, -\\35\\.5);
+          --bleed-x: calc(var(--spacing-5\\.5) * -1, -\\35 \\.5);
       }
 
         .\\--bleed-x_token\\(spacing\\.-gutter\\,_-gutter\\) {
