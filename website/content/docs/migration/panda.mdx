@@ -219,6 +219,10 @@ that a component written with `cva` is reliably overridable: its styles are in a
 so the consumer wins by cascade rather than by stylesheet order. In Panda an inline `cva` is atomic and sits in the same
 layer as its consumer.
 
+Compound variants change shape with it. Panda joins atomic classes for them at runtime; Bamboo emits a compound selector
+— `.button--size_sm.button--tone_a` — so the whole recipe sits in one layer and the runtime computes nothing. No class
+is added for a compound variant, because the rule matches on the variant classes the element already has.
+
 ## Things that are easy to miss
 
 - **`PANDA_DEBUG`** is now `BAMBOO_DEBUG`. See [Debugging](/docs/guides/debugging).
@@ -239,6 +243,38 @@ layer as its consumer.
   ```
 
   `jsxFramework`, `jsxFactory` and `jsxStyleProps` are gone from the config with it — delete them.
+
+- **There are no JSX pattern components.** `<Stack>`, `<Box>`, `<HStack>` and the rest are not generated, and
+  `styled-system/jsx` does not exist to import them from. The pattern **functions** are unchanged and are what those
+  components wrapped, so the rewrite is mechanical:
+
+  ```tsx
+  // panda
+  import { Stack } from '../styled-system/jsx'
+  ;<Stack gap="4" align="center">
+    {children}
+  </Stack>
+
+  // bamboo
+  import { stack } from '../styled-system/patterns'
+  ;<div className={stack({ gap: '4', align: 'center' })}>{children}</div>
+  ```
+
+- **There is no template literal syntax.** ``css`color: red` ``, and the template form of `cva`, `sva` and the patterns,
+  are not supported. Write the object form:
+
+  ```tsx
+  // panda
+  const heading = css`
+    font-size: 24px;
+    font-weight: bold;
+  `
+
+  // bamboo
+  const heading = css({ fontSize: '24px', fontWeight: 'bold' })
+  ```
+
+  The `syntax` config key is gone with it — both values — so delete it if you set it either way.
 
 - **The ESLint plugin** is `@bamboocss/eslint-plugin`.
 - **Editor and CI caches.** The TypeScript server holds on to the old `styled-system` types; restart it after
