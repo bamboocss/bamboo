@@ -50,7 +50,11 @@ export const Row = ({ on }) => (
 )
 `
 
-/** The control: `cva` is extracted atomically whatever `cssMode` says. */
+/**
+ * The control: a recipe's classes are named from its config — `button--size_sm` — rather
+ * than per property, so `cssMode` has no per-property naming to group and does not reach
+ * this path at all.
+ */
 const cvaSource = `
 import { cva } from "styled-system/css"
 
