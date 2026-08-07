@@ -72,3 +72,40 @@ describe('Atomic recipe', () => {
     `)
   })
 })
+
+/**
+ * A recipe's variant value is a key of the `variants` object, so it is a string by
+ * construction — and the propKey it is stored under keeps it as written.
+ *
+ * The decoder used to reinterpret it with `parseValue`, which coerces anything `Number()`
+ * accepts. `'1.0'`, `'1e3'` and `'0x10'` came back as `1`, `1000` and `16`, the lookup
+ * missed, and the rule was dropped while the runtime went on asking for `--size_1.0`.
+ * Canonical numerics round-tripped, which is why it held together at all.
+ */
+describe('variant values that Number() would reinterpret', () => {
+  const emitted = (values: string[]) =>
+    createRuleProcessor()
+      .cva({
+        className: 'rt',
+        variants: { size: Object.fromEntries(values.map((value, index) => [value, { padding: String(index + 1) }])) },
+      } as never)
+      .getClassNames()
+
+  test.each([['1.0'], ['1e3'], ['0x10'], ['+1'], ['.5'], ['1_000'], ['Infinity']])(
+    'a variant valued %s still emits a rule',
+    (value) => {
+      // Escaped for the selector; the class attribute keeps the raw value.
+      expect(emitted([value]).map((className) => className.replaceAll('\\', ''))).toContain(`rt--size_${value}`)
+    },
+  )
+
+  test('canonical numerics and booleans are unaffected', () => {
+    expect(emitted(['0', '1', '01', 'true', 'false'])).toEqual([
+      'rt--size_0',
+      'rt--size_1',
+      'rt--size_01',
+      'rt--size_true',
+      'rt--size_false',
+    ])
+  })
+})

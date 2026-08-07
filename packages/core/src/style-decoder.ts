@@ -97,7 +97,15 @@ export class StyleDecoder {
     const recipeName = this.getRecipeName(hash)
 
     const transform = recipeName ? this.context.recipes.getTransform(recipeName) : this.context.utility.transform
-    const transformed = transform(entry.prop, withoutImportant(entry.value) as string)
+
+    // A recipe's variant value is a *key* of the `variants` object, so it is a string by
+    // construction — and `Recipes.getPropKey` stored it as written. `parseValue` coerces
+    // anything `Number()` accepts, so `'1.0'`, `'1e3'` and `'0x10'` came back as `1`, `1000`
+    // and `16`, the propKey lookup missed, and the rule was dropped while the runtime went
+    // on asking for `--size_1.0`. Canonical numerics round-tripped, which is why this held
+    // together at all.
+    const value = recipeName ? getRawValueFromHash(hash) : (entry.value as string)
+    const transformed = transform(entry.prop, withoutImportant(value) as string)
 
     if (!transformed.className) {
       return
@@ -622,6 +630,9 @@ const stripSlotSegment = (hash: string) => {
 }
 
 const entryKeys = ['cond', 'recipe', 'layer', 'slot'] as const
+
+/** The value segment exactly as the encoder wrote it, before `parseValue` reinterprets it. */
+const getRawValueFromHash = (hash: string) => hash.split(StyleEncoder.separator)[1].replace('value:', '')
 
 const getEntryFromHash = (hash: string) => {
   const parts = hash.split(StyleEncoder.separator)
