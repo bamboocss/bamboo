@@ -1,5 +1,159 @@
 # @bamboocss/extractor
 
+## 1.16.0
+
+### Minor Changes
+
+- f798d1c: Fold a spread the extractor could account for, instead of declining every spread.
+
+  The rule was "an inline object literal, or nothing". Not caution for its own sake — the extractor records what a
+  spread _contributed_, so one it flattened and one it silently skipped were indistinguishable in the result. Both
+  simply add keys, or fail to. Folding the second would have dropped styles with no error.
+
+  `BoxNodeMap` now carries `resolvedSpreads`: the spreads the extractor walked structurally, recorded as their own
+  expression nodes. That makes the two cases separable, so only the second declines:
+
+  ```tsx
+  const known = { padding: '4' }
+  css({ color: 'red.300', ...known }) // → "c_red.300 p_4"
+
+  // styles.ts
+  export const shared = { padding: '4' }
+  // use.tsx
+  css({ color: 'red.300', ...shared }) // → "c_red.300 p_4", with styles.ts registered as a watch dependency
+  ```
+
+  Source order is preserved, so a spread still overrides what it lands on.
+
+  Three decisions worth stating, because each is the difference between this being safe and not:
+
+  **The list is of successes, not failures.** A consumer asks "may I trust this spread", and a list of what went wrong
+  answers that only while it is exhaustive — an omission there is a wrong fold. A list of what went right is safe to be
+  incomplete, because an omission costs a fold that does not happen.
+
+  **Being walked is not being complete.** The extractor builds a map whenever it walked the object literal, however many
+  of that object's properties it dropped along the way, and once they are flattened the loss is unrecoverable. So the
+  record carries the map itself and the spread object gets the same audit the call does. Without that, these fold while
+  silently losing styles:
+
+  ```tsx
+  const partial = { padding: '4', ...rest } // rest is unknown
+  css({ color: 'red.300', ...partial }) // would have folded to "c_red.300 p_4"
+
+  const computed = { padding: '4', [key]: '2' } // key is unknown
+  const branching = {
+    padding: '4',
+    get mm() {
+      return x ? '1' : '2'
+    },
+  }
+  ```
+
+  All of them now decline.
+
+  **An _evaluated_ spread is not recorded, only a _walked_ one.** When the extractor runs an expression and gets a plain
+  value back, the keys are re-boxed against the spread site and the file they came from is no longer recoverable from
+  the tree. Folding that would produce a literal depending on a module the build cannot name — and so cannot watch. That
+  is why an imported `css.raw()` value spread inside a nested selector still declines, while an imported plain object
+  folds and reports its module.
+
+  `resolvedSpreads` is kept off the map's `value` and is therefore invisible to `unbox`, so nothing that generates CSS
+  sees it. No CSS output changes.
+
+- f2d5df2: **Breaking:** remove the JSX factory. Bamboo no longer generates components, and is now framework-agnostic.
+
+  `styled-system/jsx` is not emitted at all. `styled` / `bamboo`, style props, the `css` prop, `as`, `unstyled`,
+  `createStyleContext`, `splitCssProps` and `isCssProperty` are gone, along with `jsxFramework`, `jsxFactory` and
+  `jsxStyleProps`. There is no React, Vue, Solid, Preact or Qwik codegen left anywhere.
+
+  ```tsx
+  // before
+  <styled.div color="red.300" padding="4">hi</styled.div>
+  const Button = styled('button', buttonRecipe)
+
+  // after
+  <div className={css({ color: 'red.300', padding: '4' })}>hi</div>
+  const Button = (props: ButtonProps) => {
+    const [variantProps, rest] = buttonRecipe.splitVariantProps(props)
+    return <button {...rest} className={cx(buttonRecipe(variantProps), props.className)} />
+  }
+  ```
+
+  For an override to be deterministic the component's styles have to sit in a lower cascade layer, which means declaring
+  them as a config recipe — an inline `cva()` is atomic and lands in `utilities` alongside the consumer. A component
+  that instead accepts a style object and merges it with `css(base, props.css)` needs no layer at all.
+
+  **Recipe JSX tracking is kept**, and no longer depends on `jsxFramework`. A recipe's `jsx: ['Button']` hint is how the
+  build reads `<Button variant="danger">` on a component you wrote and emits `--variant_danger`; without it those
+  variants would silently stop being generated. It costs no codegen — it is extraction only.
+
+  **`createStyleContext` has no replacement in the box.** Compound components that need one slot to see the variant
+  chosen at the root now write their own context; `docs/concepts/slot-recipes` documents the ~20-line version.
+
+  What this removes beyond the API: the whole per-framework generator tree, `is-valid-prop` (a large module that shipped
+  to the browser only to decide whether a prop was a style prop), `normalize-html`, the vite fold's JSX element path —
+  which has nothing left to fold — and the per-framework test matrix.
+
+  `@bamboocss/plugin-vue` and `@bamboocss/plugin-svelte` are unaffected: they transform source so the extractor can read
+  it, which has nothing to do with the factory.
+
+- d7226f0: **Breaking:** remove template literal syntax.
+
+  The `syntax` config option is gone, along with the `--syntax` CLI flag and the syntax question `bamboo init -i` asked.
+  Styles are written as objects.
+
+  A project that set `syntax: 'template-literal'` now gets a TypeScript error on the option, and its tagged templates
+  are no longer read by the extractor — `` css`color: red;` `` and `` styled.div`color: red;` `` produce no CSS. Convert
+  them to object literals:
+
+  ```tsx
+  // before
+  const One = styled.div`
+    display: flex;
+    width: 300px;
+  `
+
+  // after
+  const One = styled('div', {
+    base: {
+      display: 'flex',
+      width: '300px',
+    },
+  })
+  ```
+
+  Everything the option gated goes with it: the string-literal `css`/`conditions` runtimes and the string-literal JSX
+  factories and types for all five frameworks, the parser's tagged-template branch, the extractor's `taggedTemplates`
+  matcher, the vite fold's tagged-template path, and `astish` from `@bamboocss/shared`. Under the object syntax `cva`,
+  `sva`, patterns, `is-valid-prop`, style props and `viewTransition()` were already the only paths taken, so their
+  generated output is unchanged — the codegen artifacts are byte-identical.
+
+### Patch Changes
+
+- 6fb235d: Fix three smaller defects found while investigating recipe cascade ordering.
+
+  **`inferSlots` collected variant values as slot names.** `variants` nests one level deeper than `base` does —
+  `{ size: { sm: { root: {…} } } }` — and the inference read the keys of `{ sm: … }`. A slot recipe with a `size.sm`
+  variant grew a phantom `sm` slot, and rules were emitted for it.
+
+  **`processAtomicSlotRecipe` mutated the config it was given.** It assigned the inferred slot list back onto
+  `recipe.slots`, and that object is the extractor's own `ResultItem.data`, so the config stayed changed for everything
+  downstream. It now works on a copy. Snapshots that recorded a `slots` key the source never declared have been updated.
+
+  **A non-static string concatenation produced a wrong value rather than no value.** `css({ padding: '2' + n })` with an
+  unresolved `n` extracted as the literal `'2undefined'` — not an unresolvable box and not a dropped key — and reached
+  the stylesheet as `.p_2undefined { padding: 2undefined }`. The evaluator's fallback stringifies an operand it could
+  not resolve; that result is now treated as unresolved. A concatenation the build _can_ resolve is unaffected.
+
+- Updated dependencies [645bb09]
+- Updated dependencies [645bb09]
+- Updated dependencies [645bb09]
+- Updated dependencies [645bb09]
+- Updated dependencies [091f2e1]
+- Updated dependencies [f2d5df2]
+- Updated dependencies [d7226f0]
+  - @bamboocss/shared@1.16.0
+
 ## 1.15.0
 
 ### Patch Changes

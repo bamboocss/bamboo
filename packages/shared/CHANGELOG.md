@@ -1,5 +1,244 @@
 # @bamboocss/shared
 
+## 1.16.0
+
+### Minor Changes
+
+- 091f2e1: **Breaking:** an inline `cva()`/`sva()` now emits the same kind of CSS as a recipe declared in
+  `theme.recipes` — one class per variant, in the `recipes` cascade layer — instead of atomic classes in `utilities`.
+
+  An inline recipe and a config recipe were the same declaration, evaluated by the same code, that produced different
+  naming, a different layer and different override behaviour. Nothing about the two justified that: a config recipe is
+  an inline one that happens to be declared somewhere with a name.
+
+  ```js
+  cva({
+    base: { padding: '4' },
+    variants: { size: { sm: { fontSize: 'sm' } } },
+  })
+  // before: 'p_4'                    in @layer utilities
+  // now:    'cva_a1b2c3'             in @layer recipes
+  //         'cva_a1b2c3--size_sm'    when size="sm"
+  ```
+
+  Three things follow.
+
+  **A component written with `cva` is now reliably overridable.** Its classes are in `recipes`, so a consumer's `css()`
+  in `utilities` wins by cascade layer in every build, without the consumer knowing how the component was declared. That
+  was previously true only if you hoisted the styles into `theme.recipes`.
+
+  **`cssMode: 'grouped'` no longer has an exception.** Recipes were extracted atomically whatever `cssMode` said,
+  because a group class names a whole call and which variant combination a caller selects is not knowable at build time.
+  That forced a second `css` instance — the internal `__atomicCss` — purely so their runtime could name classes the way
+  the stylesheet did. Naming from the config is knowable in every mode, so `__atomicCss` is gone and `cva` no longer
+  sprays atomic classes into grouped markup.
+
+  **Compound variants are a compound selector.** `.btn--size_sm.btn--tone_a` rather than atomic classes joined at
+  runtime, which puts them in the same layer as the rest of the recipe and leaves the runtime nothing to compute — the
+  rule matches because both variant classes are already on the element.
+
+  ### Naming
+
+  The class prefix is derived from the config: `className` when you set one, otherwise a hash of the recipe's styles.
+
+  ```js
+  cva({ className: 'button', base: { padding: '4' } }) // .button, .button--size_sm
+  cva({ base: { padding: '4' } }) //                      .cva_a1b2c3, .cva_a1b2c3--size_sm
+  ```
+
+  It has to come from the config because the build and the browser each derive it independently and never meet. Deriving
+  it from the binding — `const button = cva(...)` — would need the build to rewrite the call, and a pipeline without
+  that transform would then name classes differently from one with it.
+
+  ### Faster at runtime
+
+  Naming from the config means the runtime no longer resolves a style object to produce a class string. `cva()` used to
+  run `mergeCss` per active variant and then name a class per property; it now walks the variant keys and concatenates.
+
+  Measured with both shapes in one process, so the comparison cannot drift
+  (`packages/generator/__tests__/cva.bench.ts`):
+
+  ```
+  cva() all-miss x10000   173.72 hz ±2.23%   (semantic)
+                           33.38 hz ±0.91%   (the atomic shape this replaced)   → 5.2x
+  cva() warm x10000      1,678    hz ±0.60%  (semantic)
+                         1,720    hz ±0.51%  (atomic)                           → within noise
+  ```
+
+  All-miss is every call selecting a distinct variant combination, so nothing is reusable. Warm, both return from the
+  memo without doing the work that distinguishes them, which is why they match. `raw()` is unchanged — it still resolves
+  styles, because that is what it returns.
+
+  ### The trade
+
+  CSS grows. Two recipes that both set `padding: 4` no longer share one atomic rule, and a variant that repeats a
+  declaration repeats it in each rule. In exchange the markup shrinks — a component carrying a recipe goes from a class
+  per property to its base class plus one per active variant, which in this repo's own fixtures is 23 classes down to 2.
+
+  ### Also fixed
+
+  Two naming bugs that predate this change and affected config recipes too, both found by extending
+  `checkNamingAgreement` to cover recipes:
+  - A variant value containing a space named `--size-x\ large` in the stylesheet and `--size-x_large` in the browser.
+    The build now applies `withoutSpace`, as the runtime always has.
+  - Under `hash: true` the build reported a recipe's **base** class unhashed while emitting the rule under the hashed
+    name, so `@bamboocss/vite` could fold a class literal no rule existed for.
+
+  ### Upgrading
+
+  Class names change for every `cva`/`sva` call site, so DOM snapshots and any CSS that targeted the generated atomic
+  classes will need updating. Styles themselves are unchanged. If you were relying on a `cva` losing to a `css()` by
+  stylesheet order, it now wins or loses by layer instead — which is the point, but it is a change in behaviour.
+
+- f2d5df2: **Breaking:** remove the JSX factory. Bamboo no longer generates components, and is now framework-agnostic.
+
+  `styled-system/jsx` is not emitted at all. `styled` / `bamboo`, style props, the `css` prop, `as`, `unstyled`,
+  `createStyleContext`, `splitCssProps` and `isCssProperty` are gone, along with `jsxFramework`, `jsxFactory` and
+  `jsxStyleProps`. There is no React, Vue, Solid, Preact or Qwik codegen left anywhere.
+
+  ```tsx
+  // before
+  <styled.div color="red.300" padding="4">hi</styled.div>
+  const Button = styled('button', buttonRecipe)
+
+  // after
+  <div className={css({ color: 'red.300', padding: '4' })}>hi</div>
+  const Button = (props: ButtonProps) => {
+    const [variantProps, rest] = buttonRecipe.splitVariantProps(props)
+    return <button {...rest} className={cx(buttonRecipe(variantProps), props.className)} />
+  }
+  ```
+
+  For an override to be deterministic the component's styles have to sit in a lower cascade layer, which means declaring
+  them as a config recipe — an inline `cva()` is atomic and lands in `utilities` alongside the consumer. A component
+  that instead accepts a style object and merges it with `css(base, props.css)` needs no layer at all.
+
+  **Recipe JSX tracking is kept**, and no longer depends on `jsxFramework`. A recipe's `jsx: ['Button']` hint is how the
+  build reads `<Button variant="danger">` on a component you wrote and emits `--variant_danger`; without it those
+  variants would silently stop being generated. It costs no codegen — it is extraction only.
+
+  **`createStyleContext` has no replacement in the box.** Compound components that need one slot to see the variant
+  chosen at the root now write their own context; `docs/concepts/slot-recipes` documents the ~20-line version.
+
+  What this removes beyond the API: the whole per-framework generator tree, `is-valid-prop` (a large module that shipped
+  to the browser only to decide whether a prop was a style prop), `normalize-html`, the vite fold's JSX element path —
+  which has nothing left to fold — and the per-framework test matrix.
+
+  `@bamboocss/plugin-vue` and `@bamboocss/plugin-svelte` are unaffected: they transform source so the extractor can read
+  it, which has nothing to do with the factory.
+
+- d7226f0: **Breaking:** remove template literal syntax.
+
+  The `syntax` config option is gone, along with the `--syntax` CLI flag and the syntax question `bamboo init -i` asked.
+  Styles are written as objects.
+
+  A project that set `syntax: 'template-literal'` now gets a TypeScript error on the option, and its tagged templates
+  are no longer read by the extractor — `` css`color: red;` `` and `` styled.div`color: red;` `` produce no CSS. Convert
+  them to object literals:
+
+  ```tsx
+  // before
+  const One = styled.div`
+    display: flex;
+    width: 300px;
+  `
+
+  // after
+  const One = styled('div', {
+    base: {
+      display: 'flex',
+      width: '300px',
+    },
+  })
+  ```
+
+  Everything the option gated goes with it: the string-literal `css`/`conditions` runtimes and the string-literal JSX
+  factories and types for all five frameworks, the parser's tagged-template branch, the extractor's `taggedTemplates`
+  matcher, the vite fold's tagged-template path, and `astish` from `@bamboocss/shared`. Under the object syntax `cva`,
+  `sva`, patterns, `is-valid-prop`, style props and `viewTransition()` were already the only paths taken, so their
+  generated output is unchanged — the codegen artifacts are byte-identical.
+
+### Patch Changes
+
+- 645bb09: Stop `cssMode: 'grouped'` rendering an element with no styles when the build could not see the whole `css()`
+  call.
+
+  A grouped class names a whole call, so the build has to have seen that exact call to emit its rule. When it had not —
+  an unresolvable value, a combination it declined to enumerate — the runtime returned a class with nothing behind it
+  and the element rendered blank. Not a degraded version of the styles: none of them.
+
+  Three pieces, and the feature needs all three:
+  - The build writes the set of grouped classes it emitted to `styled-system/css/groups.mjs`, refreshed after every
+    extraction — including `--watch`, which reaches CSS emission through a path of its own. `codegen` seeds an empty one
+    when the file is missing, so the import resolves on a fresh project, and leaves a populated one alone rather than
+    blanking it.
+  - The generated `css()` consults it. A class in the set is returned alone, as before. A class that is not keeps the
+    group class and **adds** atomic names for each declaration.
+  - A call the build flagged as unresolvable now contributes atomic rules as well as its group, so those names have
+    somewhere to land. Gated on the call actually being at risk, so the duplication is bounded by unresolvable call
+    sites rather than by stylesheet size.
+
+  Adding to the group class rather than replacing it is what makes a stale registry harmless: it lags the stylesheet as
+  a matter of when files land, and replacing would turn every lag into an element stripped of styles it really had. A
+  wrong miss now costs one class that matches nothing. Only a false _hit_ can hurt, which is why the registry is an
+  exact set and not a probabilistic one.
+
+  A value the build never saw still has no rule under any mode — the same limit `atomic` has. What changes is that the
+  declarations it _did_ resolve now apply.
+
+- 645bb09: Fix `cssMode: 'grouped'` combined with `hash: true` rendering every element unstyled.
+
+  A grouped class names a whole `css()` call, so the build and the runtime each derive it from the same group id. They
+  derived it independently, and only the build routed the result through `formatSelector` — which hashes again when
+  `hash.className` is set. The build emitted `.cYeKWS` while the runtime asked for `bKFMNe`, so every rule in the
+  stylesheet missed and no element carrying a grouped class had any styles at all.
+
+  A group id already digests every declaration in the call, so it is now hashed exactly once. `hash.className` shortens
+  _utility_ class names, which a grouped class is not.
+
+  The derivation moved into a single `groupClassName` helper in `@bamboocss/shared` that both sides call, so the two
+  cannot name the class differently again — the next naming-relevant option cannot reintroduce this on one side only.
+
+  Only `grouped` + `hash` changes. Grouped without hashing, with or without a `prefix`, emits byte-identical CSS:
+  `formatSelector` reduced to `formatClassName` for an empty condition list, which is exactly what the helper does.
+
+- 645bb09: Add `knownGroups` to `createCss`, so a grouped call the build never saw can fall back to atomic class names
+  instead of returning a class with no rule behind it.
+
+  Grouping names a class after a whole `css()` call, which means the build has to have seen that exact call to emit its
+  rule. When it has not — a value it could not resolve, a combination it declined to enumerate — the element renders
+  with **no** styles rather than losing a single declaration.
+
+  Given the set of group classes the build actually emitted, the runtime now notices the miss and names each declaration
+  atomically instead. That is not a complete recovery: an atomic class only helps where a rule for it exists. But it
+  degrades to the partial styling `cssMode: 'atomic'` would have produced, rather than to nothing.
+
+  The fallback shares its naming with the atomic branch, so a group that misses is named exactly as `cssMode: 'atomic'`
+  would have named the same object — two spellings could drift, and the fallback would then reach for rules the
+  stylesheet does not carry. Declarations are collected during the existing walk but not transformed until a miss
+  actually happens, so a hit costs a set lookup rather than the naming work it avoids.
+
+  Omitting `knownGroups` leaves the runtime exactly as it was, at no cost. Membership must be exact: a probabilistic
+  structure trades a false positive for size, and a false positive here returns a class with no rule — the failure this
+  exists to remove.
+
+- 645bb09: Fail the build when the stylesheet and the runtime would disagree on class names.
+
+  A class name is derived twice — once by `StyleDecoder` on the way into the stylesheet, and once by `css()` in the
+  browser — and the two only ever meet in the DOM. When they disagree there is no error and no warning: the rule is
+  emitted, the class is returned, and every element carrying it renders with no styles at all. That is how
+  `cssMode: 'grouped'` combined with `hash: true` shipped broken.
+
+  `checkNamingAgreement` now runs once per build, against the config actually being built. It sends a canary style
+  object through both paths and compares the class names, raising `ERR_BAMBOO_NAMING_DISAGREEMENT` with both sets when
+  they differ.
+
+  Running it against the real config matters because the naming inputs are open-ended: the `utility:created` hook can
+  replace `toHash` outright, and `separator`, `prefix` and custom utilities all feed the same derivation. A test can
+  only pin the combinations it enumerates.
+
+  The check runs on cloned encoder and decoder, so the canary never reaches the stylesheet being emitted.
+
 ## 1.15.0
 
 ### Minor Changes

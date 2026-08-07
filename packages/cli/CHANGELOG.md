@@ -1,5 +1,139 @@
 # @bamboocss/dev
 
+## 1.16.0
+
+### Minor Changes
+
+- f2d5df2: **Breaking:** remove the JSX factory. Bamboo no longer generates components, and is now framework-agnostic.
+
+  `styled-system/jsx` is not emitted at all. `styled` / `bamboo`, style props, the `css` prop, `as`, `unstyled`,
+  `createStyleContext`, `splitCssProps` and `isCssProperty` are gone, along with `jsxFramework`, `jsxFactory` and
+  `jsxStyleProps`. There is no React, Vue, Solid, Preact or Qwik codegen left anywhere.
+
+  ```tsx
+  // before
+  <styled.div color="red.300" padding="4">hi</styled.div>
+  const Button = styled('button', buttonRecipe)
+
+  // after
+  <div className={css({ color: 'red.300', padding: '4' })}>hi</div>
+  const Button = (props: ButtonProps) => {
+    const [variantProps, rest] = buttonRecipe.splitVariantProps(props)
+    return <button {...rest} className={cx(buttonRecipe(variantProps), props.className)} />
+  }
+  ```
+
+  For an override to be deterministic the component's styles have to sit in a lower cascade layer, which means declaring
+  them as a config recipe — an inline `cva()` is atomic and lands in `utilities` alongside the consumer. A component
+  that instead accepts a style object and merges it with `css(base, props.css)` needs no layer at all.
+
+  **Recipe JSX tracking is kept**, and no longer depends on `jsxFramework`. A recipe's `jsx: ['Button']` hint is how the
+  build reads `<Button variant="danger">` on a component you wrote and emits `--variant_danger`; without it those
+  variants would silently stop being generated. It costs no codegen — it is extraction only.
+
+  **`createStyleContext` has no replacement in the box.** Compound components that need one slot to see the variant
+  chosen at the root now write their own context; `docs/concepts/slot-recipes` documents the ~20-line version.
+
+  What this removes beyond the API: the whole per-framework generator tree, `is-valid-prop` (a large module that shipped
+  to the browser only to decide whether a prop was a style prop), `normalize-html`, the vite fold's JSX element path —
+  which has nothing left to fold — and the per-framework test matrix.
+
+  `@bamboocss/plugin-vue` and `@bamboocss/plugin-svelte` are unaffected: they transform source so the extractor can read
+  it, which has nothing to do with the factory.
+
+- d7226f0: **Breaking:** remove template literal syntax.
+
+  The `syntax` config option is gone, along with the `--syntax` CLI flag and the syntax question `bamboo init -i` asked.
+  Styles are written as objects.
+
+  A project that set `syntax: 'template-literal'` now gets a TypeScript error on the option, and its tagged templates
+  are no longer read by the extractor — `` css`color: red;` `` and `` styled.div`color: red;` `` produce no CSS. Convert
+  them to object literals:
+
+  ```tsx
+  // before
+  const One = styled.div`
+    display: flex;
+    width: 300px;
+  `
+
+  // after
+  const One = styled('div', {
+    base: {
+      display: 'flex',
+      width: '300px',
+    },
+  })
+  ```
+
+  Everything the option gated goes with it: the string-literal `css`/`conditions` runtimes and the string-literal JSX
+  factories and types for all five frameworks, the parser's tagged-template branch, the extractor's `taggedTemplates`
+  matcher, the vite fold's tagged-template path, and `astish` from `@bamboocss/shared`. Under the object syntax `cva`,
+  `sva`, patterns, `is-valid-prop`, style props and `viewTransition()` were already the only paths taken, so their
+  generated output is unchanged — the codegen artifacts are byte-identical.
+
+### Patch Changes
+
+- 3d665c4: Keep the render-parity test artifact out of the sandbox's extraction glob.
+
+  `sandbox/runtime-perf/__tests__/render-parity.test.ts` writes `tree.folded.tsx` beside its source — deliberately, so
+  the relative imports resolve identically — and deletes it when the file finishes. Any Bamboo context built while it
+  exists globs it, and the glob reads every matched path with no guard. So a context created in one test file and the
+  cleanup running in another race each other, and the loser fails with `ENOENT` pointing at a file no one was asking
+  about:
+
+  ```
+  FAIL sandbox/runtime-perf/__tests__/bundle-size.test.ts
+  Error: [bamboocss] ENOENT: no such file or directory, open '…/src/parity/tree.folded.tsx'
+  ```
+
+  Roughly one full-suite run in five. Excluding `**/*.folded.tsx` closes it: the folded file already carries literal
+  class strings, so nothing needs to extract from it — its classes come from the `tree.tsx` it was folded from, which
+  stays included.
+
+  Test-only; no user-facing behaviour changes.
+
+- 73f309e: Document the browser floor `@scope` introduces, and drop the last `styled-system/jsx` reference from the
+  docs.
+
+  Scoping a slot recipe's variants to its root emits `@scope`, which is newer than everything else Bamboo relies on. The
+  browser support page now says so, with the raised floor (Chrome/Edge 118, Firefox 128, Safari/iOS 17.4, Opera 104)
+  kept separate from the baseline — a project with no slot recipes, or none declaring a `root` slot, never emits one and
+  is unaffected.
+
+  It also says there is no polyfill and why: `@scope` picks between two matching rules by DOM proximity, which is the
+  whole reason it is there and is not something a build step can compute. The way out is documented instead — slots that
+  are not named `root` fall back to a variant class per slot.
+
+  Three stale references are gone with it: the `./jsx` entry in the component library guide's `exports` example, the
+  patterns page still describing patterns as usable "as functions or JSX elements", and a link from the slot recipes
+  page to Park UI's `create-style-context.tsx` — which is built on `styled(Component, {}, { shouldForwardProp })` and so
+  cannot compile against a Bamboo with no JSX factory.
+
+- Updated dependencies [bb6d999]
+- Updated dependencies [4877a67]
+- Updated dependencies [645bb09]
+- Updated dependencies [645bb09]
+- Updated dependencies [645bb09]
+- Updated dependencies [645bb09]
+- Updated dependencies [645bb09]
+- Updated dependencies [091f2e1]
+- Updated dependencies [f2d5df2]
+- Updated dependencies [1dbeb84]
+- Updated dependencies [d7226f0]
+- Updated dependencies [31d8577]
+- Updated dependencies [2ab7f19]
+- Updated dependencies [ca558fb]
+- Updated dependencies [645bb09]
+  - @bamboocss/node@1.16.0
+  - @bamboocss/shared@1.16.0
+  - @bamboocss/types@1.16.0
+  - @bamboocss/preset-base@1.16.0
+  - @bamboocss/postcss@1.16.0
+  - @bamboocss/token-dictionary@1.16.0
+  - @bamboocss/logger@1.16.0
+  - @bamboocss/preset-bamboo@1.16.0
+
 ## 1.15.0
 
 ### Patch Changes
