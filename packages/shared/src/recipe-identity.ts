@@ -52,6 +52,13 @@ const stable = (value: unknown): string => {
   const source = value as Record<string, unknown>
   return `{${Object.keys(source)
     .sort()
+    // A declaration with no value is not a declaration. Extraction drops it before the
+    // config reaches the encoder — `{ color: undefined, padding: '4' }` is recorded as
+    // `{ padding: '4' }` — so keeping it here made the browser hash an object the build
+    // never had, and the element asked for a class the stylesheet did not carry. Same
+    // divergence as the whitespace above, reached by writing a placeholder or spreading an
+    // object that happens to hold one.
+    .filter((key) => source[key] !== undefined && source[key] !== null)
     .map((key) => `${JSON.stringify(key)}:${stable(source[key])}`)
     .join(',')}}`
 }
