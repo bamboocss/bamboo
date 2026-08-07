@@ -539,7 +539,11 @@ export class StyleEncoder {
       slots: uniq([...(recipe.slots ?? []), ...inferredSlots].filter(Boolean)),
     })
 
-    const name = getRecipeIdentity(withSlots, 'sva')
+    // Hashed from the config as written, not from `withSlots`. The runtime derives the same
+    // identity from the same object, and it does not infer slots — so hashing the inferred
+    // set here gave the two sides different names, and an `sva` that omits `slots` rendered
+    // with no styles at all.
+    const name = getRecipeIdentity(recipe, 'sva')
     this.context.recipes.registerInline(name, withSlots as never)
 
     // Base is per slot, so each gets its own `name__slot` rule. Variants are hashed against

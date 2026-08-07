@@ -131,7 +131,7 @@ describe('extract namespace', () => {
       }
 
       @layer recipes.slots {
-        .sva_iyezHj__root {
+        .sva_hAcRla__root {
           color: green;
       }
       }

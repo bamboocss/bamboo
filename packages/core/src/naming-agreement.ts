@@ -54,6 +54,18 @@ const SLOT_RECIPE_CANARY = {
   variants: { size: { sm: { control: { paddingTop: '2' } } } },
 }
 
+/**
+ * The same recipe with `slots` left out, so the build has to infer them.
+ *
+ * The identity is hashed from the config, and only the build infers — so hashing anything
+ * but the config as written gives the two sides different names and every slot renders
+ * unstyled. This canary is the difference between that being caught and being shipped.
+ */
+const INFERRED_SLOT_CANARY = {
+  base: { root: { color: 'red' }, control: { paddingTop: '1' } },
+  variants: { size: { sm: { control: { paddingTop: '2' } } } },
+}
+
 export interface NamingDisagreement {
   mode: 'atomic' | 'grouped'
   /** Which derivation disagreed. */
@@ -128,7 +140,11 @@ export function checkNamingAgreement(ctx: NamingContext): NamingDisagreement | u
     return { mode, kind: 'css', build, runtime }
   }
 
-  return checkRecipeNamingAgreement(ctx, mode) ?? checkSlotRecipeNamingAgreement(ctx, mode)
+  return (
+    checkRecipeNamingAgreement(ctx, mode) ??
+    checkSlotRecipeNamingAgreement(ctx, mode, SLOT_RECIPE_CANARY) ??
+    checkSlotRecipeNamingAgreement(ctx, mode, INFERRED_SLOT_CANARY)
+  )
 }
 
 /**
@@ -138,8 +154,9 @@ export function checkNamingAgreement(ctx: NamingContext): NamingDisagreement | u
 function checkSlotRecipeNamingAgreement(
   ctx: NamingContext,
   mode: 'atomic' | 'grouped',
+  canary: Record<string, unknown>,
 ): NamingDisagreement | undefined {
-  const name = getRecipeIdentity(SLOT_RECIPE_CANARY, 'sva')
+  const name = getRecipeIdentity(canary, 'sva')
   const format = classFormatter(ctx)
 
   // What the generated `sva` returns for a non-anchor slot: the constant class, formatted.
@@ -147,7 +164,7 @@ function checkSlotRecipeNamingAgreement(
 
   const encoder = ctx.encoder.clone()
   const decoder = ctx.decoder.clone()
-  const scope = encoder.withScope(() => encoder.processAtomicSlotRecipe(SLOT_RECIPE_CANARY as never))
+  const scope = encoder.withScope(() => encoder.processAtomicSlotRecipe(canary as never))
   decoder.collect(encoder)
 
   const wanted = new Set(runtime)
