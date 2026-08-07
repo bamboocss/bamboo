@@ -6,12 +6,20 @@
 
 ## Why Bamboo?
 
-Bamboo CSS is a fork of [Panda CSS](https://panda-css.com/) v1. The styling API is identical and
-[migrating](https://bamboocss.com/docs/migration/panda) is mostly a rename; what changed is what reaches the browser and
-what it costs.
+Bamboo CSS is a fork of [Panda CSS](https://panda-css.com/) with a smaller API and leaner output. `css`, `cva`, `sva`,
+`cx`, patterns and recipes carry over, so [migrating](https://bamboocss.com/docs/migration/panda) is mostly a rename.
 
-- [Why we forked Panda CSS](https://bamboocss.com/docs/overview/why-bamboo#why-we-forked-panda-css)
-- [How is Bamboo different from Panda CSS?](https://bamboocss.com/docs/overview/faq#how-is-bamboo-css-different-from-panda-css)
+No JSX factory, no template literals, no style props: every class name comes from a call the compiler can see, so a
+production build can
+[fold it into the string it would have returned](https://bamboocss.com/docs/guides/source-transformation):
+
+```tsx
+// you write
+<div className={css({ fontSize: 'lg', fontWeight: 'bold' })}>Title</div>
+
+// the bundle gets
+<div className="fs_lg fw_bold">Title</div>
+```
 
 ## Features
 
