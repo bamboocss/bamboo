@@ -1,5 +1,88 @@
 # @bamboocss/preset-base
 
+## 1.16.0
+
+### Minor Changes
+
+- f2d5df2: **Breaking:** remove the JSX factory. Bamboo no longer generates components, and is now framework-agnostic.
+
+  `styled-system/jsx` is not emitted at all. `styled` / `bamboo`, style props, the `css` prop, `as`, `unstyled`,
+  `createStyleContext`, `splitCssProps` and `isCssProperty` are gone, along with `jsxFramework`, `jsxFactory` and
+  `jsxStyleProps`. There is no React, Vue, Solid, Preact or Qwik codegen left anywhere.
+
+  ```tsx
+  // before
+  <styled.div color="red.300" padding="4">hi</styled.div>
+  const Button = styled('button', buttonRecipe)
+
+  // after
+  <div className={css({ color: 'red.300', padding: '4' })}>hi</div>
+  const Button = (props: ButtonProps) => {
+    const [variantProps, rest] = buttonRecipe.splitVariantProps(props)
+    return <button {...rest} className={cx(buttonRecipe(variantProps), props.className)} />
+  }
+  ```
+
+  For an override to be deterministic the component's styles have to sit in a lower cascade layer, which means declaring
+  them as a config recipe — an inline `cva()` is atomic and lands in `utilities` alongside the consumer. A component
+  that instead accepts a style object and merges it with `css(base, props.css)` needs no layer at all.
+
+  **Recipe JSX tracking is kept**, and no longer depends on `jsxFramework`. A recipe's `jsx: ['Button']` hint is how the
+  build reads `<Button variant="danger">` on a component you wrote and emits `--variant_danger`; without it those
+  variants would silently stop being generated. It costs no codegen — it is extraction only.
+
+  **`createStyleContext` has no replacement in the box.** Compound components that need one slot to see the variant
+  chosen at the root now write their own context; `docs/concepts/slot-recipes` documents the ~20-line version.
+
+  What this removes beyond the API: the whole per-framework generator tree, `is-valid-prop` (a large module that shipped
+  to the browser only to decide whether a prop was a style prop), `normalize-html`, the vite fold's JSX element path —
+  which has nothing left to fold — and the per-framework test matrix.
+
+  `@bamboocss/plugin-vue` and `@bamboocss/plugin-svelte` are unaffected: they transform source so the extractor can read
+  it, which has nothing to do with the factory.
+
+- 1dbeb84: **Breaking:** remove JSX pattern components.
+
+  `styled-system/jsx` no longer emits a component per pattern — `<Stack>`, `<Box>`, `<HStack>` and the rest are gone,
+  and `styled-system/jsx` now exports only the factory, `isCssProperty` and `createStyleContext`.
+
+  Pattern **functions** are unchanged. Every pattern still ships from `styled-system/patterns`, and a pattern function
+  passes arbitrary style props through, so the rewrite is mechanical and behaviour-preserving:
+
+  ```tsx
+  // before
+  <Stack gap="4" mt="8">{children}</Stack>
+  <Box p="4">{children}</Box>
+
+  // after
+  <div className={stack({ gap: '4', mt: '8' })}>{children}</div>
+  <div className={css({ p: '4' })}>{children}</div>
+  ```
+
+  The `jsx`, `jsxName` and `jsxElement` fields on a pattern config are removed along with them — they only ever
+  described a component bamboo generated. `jsx` on a **recipe** is untouched.
+
+  Everything that existed to serve the component layer goes with it: the five per-framework pattern generators, the
+  `jsx-patterns` artifact, the parser's `jsx-pattern` result type and `JsxEngine`'s pattern matcher, and the vite fold's
+  pattern-element path. `Patterns.find`/`Patterns.filter` (both keyed by JSX name) are gone, and
+  `StyleEncoder.processPattern` takes `(name, props, grouped)`.
+
+  Two consequences worth knowing:
+  - A component of your own named `Box` or `Stack` is no longer misread as bamboo's pattern. It extracts as an ordinary
+    component, which is what it always was.
+  - The `jsx-patterns-index` artifact is now `jsx-index`, since it no longer indexes patterns.
+
+### Patch Changes
+
+- Updated dependencies [091f2e1]
+- Updated dependencies [f2d5df2]
+- Updated dependencies [1dbeb84]
+- Updated dependencies [d7226f0]
+- Updated dependencies [31d8577]
+- Updated dependencies [2ab7f19]
+- Updated dependencies [ca558fb]
+  - @bamboocss/types@1.16.0
+
 ## 1.15.0
 
 ### Patch Changes

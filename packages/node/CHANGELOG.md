@@ -1,5 +1,256 @@
 # @bamboocss/node
 
+## 1.16.0
+
+### Minor Changes
+
+- f2d5df2: **Breaking:** remove the JSX factory. Bamboo no longer generates components, and is now framework-agnostic.
+
+  `styled-system/jsx` is not emitted at all. `styled` / `bamboo`, style props, the `css` prop, `as`, `unstyled`,
+  `createStyleContext`, `splitCssProps` and `isCssProperty` are gone, along with `jsxFramework`, `jsxFactory` and
+  `jsxStyleProps`. There is no React, Vue, Solid, Preact or Qwik codegen left anywhere.
+
+  ```tsx
+  // before
+  <styled.div color="red.300" padding="4">hi</styled.div>
+  const Button = styled('button', buttonRecipe)
+
+  // after
+  <div className={css({ color: 'red.300', padding: '4' })}>hi</div>
+  const Button = (props: ButtonProps) => {
+    const [variantProps, rest] = buttonRecipe.splitVariantProps(props)
+    return <button {...rest} className={cx(buttonRecipe(variantProps), props.className)} />
+  }
+  ```
+
+  For an override to be deterministic the component's styles have to sit in a lower cascade layer, which means declaring
+  them as a config recipe — an inline `cva()` is atomic and lands in `utilities` alongside the consumer. A component
+  that instead accepts a style object and merges it with `css(base, props.css)` needs no layer at all.
+
+  **Recipe JSX tracking is kept**, and no longer depends on `jsxFramework`. A recipe's `jsx: ['Button']` hint is how the
+  build reads `<Button variant="danger">` on a component you wrote and emits `--variant_danger`; without it those
+  variants would silently stop being generated. It costs no codegen — it is extraction only.
+
+  **`createStyleContext` has no replacement in the box.** Compound components that need one slot to see the variant
+  chosen at the root now write their own context; `docs/concepts/slot-recipes` documents the ~20-line version.
+
+  What this removes beyond the API: the whole per-framework generator tree, `is-valid-prop` (a large module that shipped
+  to the browser only to decide whether a prop was a style prop), `normalize-html`, the vite fold's JSX element path —
+  which has nothing left to fold — and the per-framework test matrix.
+
+  `@bamboocss/plugin-vue` and `@bamboocss/plugin-svelte` are unaffected: they transform source so the extractor can read
+  it, which has nothing to do with the factory.
+
+- 1dbeb84: **Breaking:** remove JSX pattern components.
+
+  `styled-system/jsx` no longer emits a component per pattern — `<Stack>`, `<Box>`, `<HStack>` and the rest are gone,
+  and `styled-system/jsx` now exports only the factory, `isCssProperty` and `createStyleContext`.
+
+  Pattern **functions** are unchanged. Every pattern still ships from `styled-system/patterns`, and a pattern function
+  passes arbitrary style props through, so the rewrite is mechanical and behaviour-preserving:
+
+  ```tsx
+  // before
+  <Stack gap="4" mt="8">{children}</Stack>
+  <Box p="4">{children}</Box>
+
+  // after
+  <div className={stack({ gap: '4', mt: '8' })}>{children}</div>
+  <div className={css({ p: '4' })}>{children}</div>
+  ```
+
+  The `jsx`, `jsxName` and `jsxElement` fields on a pattern config are removed along with them — they only ever
+  described a component bamboo generated. `jsx` on a **recipe** is untouched.
+
+  Everything that existed to serve the component layer goes with it: the five per-framework pattern generators, the
+  `jsx-patterns` artifact, the parser's `jsx-pattern` result type and `JsxEngine`'s pattern matcher, and the vite fold's
+  pattern-element path. `Patterns.find`/`Patterns.filter` (both keyed by JSX name) are gone, and
+  `StyleEncoder.processPattern` takes `(name, props, grouped)`.
+
+  Two consequences worth knowing:
+  - A component of your own named `Box` or `Stack` is no longer misread as bamboo's pattern. It extracts as an ordinary
+    component, which is what it always was.
+  - The `jsx-patterns-index` artifact is now `jsx-index`, since it no longer indexes patterns.
+
+- d7226f0: **Breaking:** remove template literal syntax.
+
+  The `syntax` config option is gone, along with the `--syntax` CLI flag and the syntax question `bamboo init -i` asked.
+  Styles are written as objects.
+
+  A project that set `syntax: 'template-literal'` now gets a TypeScript error on the option, and its tagged templates
+  are no longer read by the extractor — `` css`color: red;` `` and `` styled.div`color: red;` `` produce no CSS. Convert
+  them to object literals:
+
+  ```tsx
+  // before
+  const One = styled.div`
+    display: flex;
+    width: 300px;
+  `
+
+  // after
+  const One = styled('div', {
+    base: {
+      display: 'flex',
+      width: '300px',
+    },
+  })
+  ```
+
+  Everything the option gated goes with it: the string-literal `css`/`conditions` runtimes and the string-literal JSX
+  factories and types for all five frameworks, the parser's tagged-template branch, the extractor's `taggedTemplates`
+  matcher, the vite fold's tagged-template path, and `astish` from `@bamboocss/shared`. Under the object syntax `cva`,
+  `sva`, patterns, `is-valid-prop`, style props and `viewTransition()` were already the only paths taken, so their
+  generated output is unchanged — the codegen artifacts are byte-identical.
+
+### Patch Changes
+
+- bb6d999: Stop `cssMode: 'grouped'` rendering elements with no styles at all, in the shapes that were left.
+
+  A grouped class names a whole `css()` call, so the build has to have encoded that exact call to emit its rule. The
+  runtime already falls back to atomic class names when it has not — but a fallback only helps if atomic rules for those
+  names exist, and the build emitted them for a `css()` call it knew it had lost and nowhere else. Every other way of
+  losing a call landed on nothing, and the element rendered unstyled with no warning:
+  - A conditional value beside any other prop on a JSX element or in a pattern —
+    `<styled.div color={on ? 'red' : 'blue'} padding="2" />`. Only `css()` reconstructs a ternary's branches; a JSX
+    element or a pattern encoded each extracted object on its own, and the runtime asked for the merge of them.
+  - A value the build could not evaluate beside another prop on either —
+    `<styled.div color={props.tone} padding="2" />`.
+  - A property lost to a spread — `css({ ...props.styles, color: 'red' })`.
+  - Two arguments setting one property, which the build read as a pair of ternary branches rather than as a merge —
+    `css({ color: { base: 'red' } }, { color: { _hover: 'blue' } })`.
+
+  Those now emit their atomic rules alongside their group, so the element keeps every declaration the build resolved —
+  the same styling `cssMode: 'atomic'` gives for the same source. The `css()` cases warn, with a file, a line, and what
+  to change; a conditional style prop is ordinary code and does not.
+
+  Two shapes group properly now instead of degrading:
+  - A ternary inside a condition block, beside another property —
+    `css({ _hover: { color: on ? 'red' : 'blue' }, padding: '2' })`. Reconstructing the branches combined them with
+    `Object.assign`, so the empty `_hover` carried by the entry holding `padding` replaced the branch's condition
+    instead of merging into it. They are merged the way `mergeCss` merges now.
+  - An array argument — `css([{ color: 'red' }, { padding: '2' }])`.
+
+  A call site that emits atomic rules alongside its group costs some CSS. It is bounded by how many call sites the build
+  cannot fully see, and buys back the styles they were dropping.
+
+- 4877a67: Correct the `cssMode: 'grouped'` unresolved-value warning, which described the behaviour it had before the
+  atomic fallback landed.
+
+  It said the element "renders with no styles at all". It no longer does — the call falls back to naming each
+  declaration separately and keeps the ones the build could resolve. The warning now says that, and says what to do
+  about it.
+
+- 645bb09: Stop `cssMode: 'grouped'` rendering an element with no styles when the build could not see the whole `css()`
+  call.
+
+  A grouped class names a whole call, so the build has to have seen that exact call to emit its rule. When it had not —
+  an unresolvable value, a combination it declined to enumerate — the runtime returned a class with nothing behind it
+  and the element rendered blank. Not a degraded version of the styles: none of them.
+
+  Three pieces, and the feature needs all three:
+  - The build writes the set of grouped classes it emitted to `styled-system/css/groups.mjs`, refreshed after every
+    extraction — including `--watch`, which reaches CSS emission through a path of its own. `codegen` seeds an empty one
+    when the file is missing, so the import resolves on a fresh project, and leaves a populated one alone rather than
+    blanking it.
+  - The generated `css()` consults it. A class in the set is returned alone, as before. A class that is not keeps the
+    group class and **adds** atomic names for each declaration.
+  - A call the build flagged as unresolvable now contributes atomic rules as well as its group, so those names have
+    somewhere to land. Gated on the call actually being at risk, so the duplication is bounded by unresolvable call
+    sites rather than by stylesheet size.
+
+  Adding to the group class rather than replacing it is what makes a stale registry harmless: it lags the stylesheet as
+  a matter of when files land, and replacing would turn every lag into an element stripped of styles it really had. A
+  wrong miss now costs one class that matches nothing. Only a false _hit_ can hurt, which is why the registry is an
+  exact set and not a probabilistic one.
+
+  A value the build never saw still has no rule under any mode — the same limit `atomic` has. What changes is that the
+  declarations it _did_ resolve now apply.
+
+- 645bb09: Warn, with a file and line, when a `css()` call under `cssMode: 'grouped'` contains a value the build cannot
+  resolve.
+
+  Under `grouped` one class names the whole call, so a property the build cannot see does not merely go missing — it
+  changes the class, and the element renders with **no** styles at all. Until now that happened silently: the build
+  emitted a rule, the runtime returned a different class, and nothing said so.
+
+  Two shapes are detected, because one of them leaves no trace in the extracted styles:
+  - a value boxed as unresolvable, or a template literal with an interpolation
+  - a property whose value could not be evaluated at all — `css({ color: getColor() })`. The extractor records no pair
+    for it, so the key vanishes from the box entirely; it is recovered by reading the call's object literal back and
+    comparing.
+
+  Shapes that cannot be read confidently — a spread, a computed key, a multi-argument call — are declined rather than
+  guessed at, so the warning does not fire on styles that are fine.
+
+  A warning, not an error: the build is not wrong and the same call is perfectly valid under `cssMode: 'atomic'`, which
+  loses one declaration and keeps the rest. Nothing is reported under `atomic` for that reason.
+
+- 645bb09: Fail the build when the stylesheet and the runtime would disagree on class names.
+
+  A class name is derived twice — once by `StyleDecoder` on the way into the stylesheet, and once by `css()` in the
+  browser — and the two only ever meet in the DOM. When they disagree there is no error and no warning: the rule is
+  emitted, the class is returned, and every element carrying it renders with no styles at all. That is how
+  `cssMode: 'grouped'` combined with `hash: true` shipped broken.
+
+  `checkNamingAgreement` now runs once per build, against the config actually being built. It sends a canary style
+  object through both paths and compares the class names, raising `ERR_BAMBOO_NAMING_DISAGREEMENT` with both sets when
+  they differ.
+
+  Running it against the real config matters because the naming inputs are open-ended: the `utility:created` hook can
+  replace `toHash` outright, and `separator`, `prefix` and custom utilities all feed the same derivation. A test can
+  only pin the combinations it enumerates.
+
+  The check runs on cloned encoder and decoder, so the canary never reaches the stylesheet being emitted.
+
+- 645bb09: Warn when `staticCss.css` is configured alongside `cssMode: 'grouped'`.
+
+  `staticCss` is documented as the escape hatch for values the build cannot see — pre-generate `color: ['red.300']` and
+  a runtime `color` prop holding `red.300` finds a rule waiting. That does not hold under `grouped`, and cannot be made
+  to: `staticCss` enumerates atoms, one rule per property, value and condition, while a grouped class names a whole
+  `css()` call. Backing an arbitrary call site would mean pre-generating every combination of properties it might
+  contain rather than every value it might hold.
+
+  The rules are still emitted and are still valid classes to write by hand, so nothing is removed. But no class a
+  grouped runtime returns will match one, and the pairing previously produced CSS that looked like a working escape
+  hatch and silently was not.
+
+  Documented in the `cssMode` limitations and in the dynamic styling guide.
+
+- Updated dependencies [bb6d999]
+- Updated dependencies [1be9171]
+- Updated dependencies [ca558fb]
+- Updated dependencies [bb6d999]
+- Updated dependencies [645bb09]
+- Updated dependencies [645bb09]
+- Updated dependencies [645bb09]
+- Updated dependencies [41ea189]
+- Updated dependencies [d652ed9]
+- Updated dependencies [645bb09]
+- Updated dependencies [645bb09]
+- Updated dependencies [6fb235d]
+- Updated dependencies [091f2e1]
+- Updated dependencies [f2d5df2]
+- Updated dependencies [1dbeb84]
+- Updated dependencies [d7226f0]
+- Updated dependencies [31d8577]
+- Updated dependencies [99ab42f]
+- Updated dependencies [2ab7f19]
+- Updated dependencies [6fb235d]
+- Updated dependencies [ca558fb]
+  - @bamboocss/parser@1.16.0
+  - @bamboocss/generator@1.16.0
+  - @bamboocss/core@1.16.0
+  - @bamboocss/shared@1.16.0
+  - @bamboocss/types@1.16.0
+  - @bamboocss/config@1.16.0
+  - @bamboocss/reporter@1.16.0
+  - @bamboocss/token-dictionary@1.16.0
+  - @bamboocss/logger@1.16.0
+  - @bamboocss/plugin-lightningcss@1.16.0
+  - @bamboocss/plugin-svelte@1.16.0
+  - @bamboocss/plugin-vue@1.16.0
+
 ## 1.15.0
 
 ### Patch Changes
