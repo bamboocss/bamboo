@@ -1682,7 +1682,7 @@ describe('style decoder', () => {
             "result": {
               ".bg-grad_to-b": {
                 "--gradient-position": "to bottom",
-                "--gradient-stops": "var(--gradient-via-stops, var(--gradient-position), var(--gradient-from) var(--gradient-from-position), var(--gradient-to) var(--gradient-to-position))",
+                "--gradient-stops": "var(--gradient-via-stops, var(--gradient-position), var(--gradient-from) var(--gradient-from-position, ), var(--gradient-to) var(--gradient-to-position, ))",
                 "backgroundImage": "linear-gradient(var(--gradient-stops))",
               },
             },

@@ -3,6 +3,7 @@ import merge from 'lodash.merge'
 import { logger } from '@bamboocss/logger'
 import type { CascadeLayer, Dict, SystemStyleObject, ViewTransitionResult } from '@bamboocss/types'
 import postcss, { CssSyntaxError } from 'postcss'
+import { stringifyCustomProperties } from './global-vars'
 import { optimizeCss } from './optimize'
 import sortMediaQueries from './plugins/sort-mq'
 import { serializeStyles } from './serialize'
@@ -63,6 +64,10 @@ export class Stylesheet {
     const result = this.serialize(styles)
 
     let css = stringify(result)
+    // Registered before the user's own global vars: a utility's registration is part of the
+    // framework's own plumbing, and a user naming the same variable should be the one whose
+    // declaration reads last.
+    css += stringifyCustomProperties(this.context.utility.customProperties)
     css += this.context.globalVars.toString()
     css += this.context.globalFontface.toString()
     css += this.context.globalPositionTry.toString()

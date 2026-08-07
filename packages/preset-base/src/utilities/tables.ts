@@ -14,6 +14,10 @@ export const tables: UtilityConfig = {
         auto: 'var(--border-spacing-x) var(--border-spacing-y)',
       }
     },
+    customProperties: {
+      '--border-spacing-x': { inherits: false, initialValue: '0', syntax: '*' },
+      '--border-spacing-y': { inherits: false, initialValue: '0', syntax: '*' },
+    },
   },
   borderSpacingX: {
     className: 'bd-sx',

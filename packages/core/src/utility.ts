@@ -17,6 +17,7 @@ import type { TokenDictionary } from '@bamboocss/token-dictionary'
 import type {
   AnyFunction,
   CssKeyframes,
+  CssPropertyDefinition,
   Dict,
   PropertyConfig,
   PropertyTransform,
@@ -88,6 +89,15 @@ export class Utility {
    * The map of deprecated properties
    */
   private deprecated = new Set<string>()
+
+  /**
+   * The custom properties the configured utilities compose, registered with `@property`.
+   *
+   * Insertion-ordered, so the emitted rules follow the order the utilities declared them
+   * rather than an object's key order — the CSS is stable across builds either way, but a
+   * diff that tracks the source reads far better.
+   */
+  customProperties = new Map<string, CssPropertyDefinition>()
 
   separator = '_'
 
@@ -295,6 +305,25 @@ export class Utility {
 
     if (!config) return
     this.configs.set(property, config)
+    this.assignCustomProperties(config)
+  }
+
+  /**
+   * Collect the `@property` registrations a utility declares for the variables it composes.
+   *
+   * Merged across every configured utility rather than kept per utility, because more than
+   * one legitimately names the same variable: `filter` reads `--blur` and `blur` writes it,
+   * and both are entitled to say it exists. First declaration wins, so a preset extending
+   * another cannot silently retype a variable the base preset already registered — that
+   * would change how an existing value computes, at a distance.
+   */
+  private assignCustomProperties = (config: PropertyConfig) => {
+    if (!config.customProperties) return
+
+    for (const [name, definition] of Object.entries(config.customProperties)) {
+      if (this.customProperties.has(name)) continue
+      this.customProperties.set(name, definition)
+    }
   }
 
   private assignProperties = () => {

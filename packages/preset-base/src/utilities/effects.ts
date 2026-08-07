@@ -30,6 +30,19 @@ export const effects: UtilityConfig = {
     values: {
       auto: 'var(--blur, ) var(--brightness, ) var(--contrast, ) var(--grayscale, ) var(--hue-rotate, ) var(--invert, ) var(--saturate, ) var(--sepia, ) var(--drop-shadow, )',
     },
+    // No `initialValue`: each is read with an empty fallback, so the guaranteed-invalid value
+    // composes to nothing and a filter names only the functions actually set.
+    customProperties: {
+      '--blur': { inherits: false, syntax: '*' },
+      '--brightness': { inherits: false, syntax: '*' },
+      '--contrast': { inherits: false, syntax: '*' },
+      '--drop-shadow': { inherits: false, syntax: '*' },
+      '--grayscale': { inherits: false, syntax: '*' },
+      '--hue-rotate': { inherits: false, syntax: '*' },
+      '--invert': { inherits: false, syntax: '*' },
+      '--saturate': { inherits: false, syntax: '*' },
+      '--sepia': { inherits: false, syntax: '*' },
+    },
   },
   brightness: {
     className: 'brightness',
@@ -126,6 +139,17 @@ export const effects: UtilityConfig = {
         backdropFilter: value,
         WebkitBackdropFilter: value,
       }
+    },
+    customProperties: {
+      '--backdrop-blur': { inherits: false, syntax: '*' },
+      '--backdrop-brightness': { inherits: false, syntax: '*' },
+      '--backdrop-contrast': { inherits: false, syntax: '*' },
+      '--backdrop-grayscale': { inherits: false, syntax: '*' },
+      '--backdrop-hue-rotate': { inherits: false, syntax: '*' },
+      '--backdrop-invert': { inherits: false, syntax: '*' },
+      '--backdrop-opacity': { inherits: false, syntax: '*' },
+      '--backdrop-saturate': { inherits: false, syntax: '*' },
+      '--backdrop-sepia': { inherits: false, syntax: '*' },
     },
   },
   backdropBlur: {

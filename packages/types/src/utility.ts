@@ -1,3 +1,4 @@
+import type { CssPropertyDefinition } from './config'
 import type { LiteralUnion } from './shared'
 import type { CssProperty, NestedCssProperties } from './system-types'
 import type { Token, TokenCategory } from './tokens'
@@ -68,6 +69,40 @@ export interface PropertyConfig {
    * Whether this utility is deprecated or not.
    */
   deprecated?: boolean
+  /**
+   * Custom properties this utility composes its value from, registered with `@property`.
+   *
+   * Several utilities build one declaration out of many variables — `filter` out of nine,
+   * `translate` out of its axes — while a sibling utility sets each variable on its own. The
+   * ones nobody set still have to resolve to something harmless, and they must not be
+   * inherited: a parent's `--blur` reaching its children is a leak, not a default.
+   *
+   * Declaring them here is what registers them, so the utility that reads a variable is the
+   * thing that guarantees it exists. Keeping the two together is deliberate — a default kept
+   * in a separate list drifts from the composition it serves, in both directions: it outlives
+   * the utility that needed it, and it is forgotten for the utility added later.
+   *
+   * Registration is merged across every configured utility, so more than one may name the
+   * same variable — the utility that writes it and the one that reads it will often both
+   * want to.
+   *
+   * ```ts
+   * filter: {
+   *   className: 'filter',
+   *   values: { auto: 'var(--blur, ) var(--brightness, )' },
+   *   customProperties: {
+   *     '--blur': { syntax: '*', inherits: false },
+   *     '--brightness': { syntax: '*', inherits: false },
+   *   },
+   * }
+   * ```
+   *
+   * Omitting `initialValue` gives the property the guaranteed-invalid value, which is what a
+   * `var(--x, )` reference expects — it falls back to its own empty value and composes to
+   * nothing. A variable read *without* a fallback needs one declared here instead, or the
+   * whole declaration is invalid at computed-value time.
+   */
+  customProperties?: Record<string, CssPropertyDefinition>
 }
 
 export type CssSemanticGroup =

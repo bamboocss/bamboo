@@ -23,11 +23,21 @@ const linearGradientValues: PropertyValues = (theme) => {
   }
 }
 
+/**
+ * The position vars carry an empty fallback because a colour stop's position is optional:
+ * `red 20%` and `red` are both valid, and the unset case has to compose to the second.
+ *
+ * They are registered with no `initial-value` (see `globalVars`), which gives them the
+ * guaranteed-invalid value — so a reference without a fallback would take the whole
+ * `--gradient-stops` declaration invalid at computed-value time and drop the gradient
+ * entirely. Writing the fallback here keeps that decision next to the composition that
+ * depends on it, rather than resting on a default declared in another package.
+ */
 const gradientStops =
-  'var(--gradient-via-stops, var(--gradient-position), var(--gradient-from) var(--gradient-from-position), var(--gradient-to) var(--gradient-to-position))'
+  'var(--gradient-via-stops, var(--gradient-position), var(--gradient-from) var(--gradient-from-position, ), var(--gradient-to) var(--gradient-to-position, ))'
 
 const gradientViaStops =
-  'var(--gradient-position), var(--gradient-from) var(--gradient-from-position), var(--gradient-via) var(--gradient-via-position), var(--gradient-to) var(--gradient-to-position)'
+  'var(--gradient-position), var(--gradient-from) var(--gradient-from-position, ), var(--gradient-via) var(--gradient-via-position, ), var(--gradient-to) var(--gradient-to-position, )'
 
 export const backgroundGradients: UtilityConfig = {
   backgroundGradient: {
@@ -148,6 +158,12 @@ export const backgroundGradients: UtilityConfig = {
         '--gradient-from-position': value,
       }
     },
+    // Declared by the utility that writes it rather than by each of the five that compose a
+    // gradient from it. No `initialValue`: a stop's position is optional, and the reads in
+    // `gradientStops` carry the empty fallback that makes an unset one compose to nothing.
+    customProperties: {
+      '--gradient-from-position': { inherits: false, syntax: '*' },
+    },
   },
   gradientToPosition: {
     className: 'grad-to-pos',
@@ -156,6 +172,9 @@ export const backgroundGradients: UtilityConfig = {
       return {
         '--gradient-to-position': value,
       }
+    },
+    customProperties: {
+      '--gradient-to-position': { inherits: false, syntax: '*' },
     },
   },
   gradientFrom: {
@@ -190,6 +209,9 @@ export const backgroundGradients: UtilityConfig = {
       return {
         '--gradient-via-position': value,
       }
+    },
+    customProperties: {
+      '--gradient-via-position': { inherits: false, syntax: '*' },
     },
   },
 }

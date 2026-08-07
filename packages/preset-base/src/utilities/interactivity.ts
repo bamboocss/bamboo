@@ -198,6 +198,11 @@ export const interactivity: UtilityConfig = {
       y: 'y var(--scroll-snap-strictness)',
       both: 'both var(--scroll-snap-strictness)',
     },
+    // The CSS initial for the strictness half of `scroll-snap-type`, so an axis set without
+    // a strictness behaves as the property's own default does.
+    customProperties: {
+      '--scroll-snap-strictness': { inherits: false, initialValue: 'proximity', syntax: '*' },
+    },
   },
   scrollSnapStrictness: {
     className: 'scrs-strt',

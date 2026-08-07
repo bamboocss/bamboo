@@ -103,7 +103,9 @@ formats, and an unformatted changeset is enough to fail the build. Run `pnpm fmt
 
 🚨 **`pnpm test` skips the browser-parity suite.** The root `vitest.config.ts` excludes `**/browser-parity.test.ts`
 unless `BROWSER_PARITY` is set, because it runs two full Vite builds and drives Chromium. CI gives it its own job that
-installs Chromium first. To run it locally: `pnpm --filter sandbox-runtime-perf test:browser`.
+installs Chromium first. To run it locally use the **root** script — `pnpm test:browser` — which sets the
+`BROWSER_PARITY` flag the config gates the file on. The filtered form (`pnpm --filter sandbox-runtime-perf …`) fails:
+that package has no such script.
 
 **Where the framework-runtime guarantees actually live.** Per-framework _test suites_ no longer exist — they were
 removed with the JSX factory in `f2d5df251`, and the `sandbox/*` framework apps that remain are integration examples,

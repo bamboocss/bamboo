@@ -1018,7 +1018,7 @@ describe('rule processor', () => {
       }
 
         .bg-grad_to-b {
-          --gradient-stops: var(--gradient-via-stops, var(--gradient-position), var(--gradient-from) var(--gradient-from-position), var(--gradient-to) var(--gradient-to-position));
+          --gradient-stops: var(--gradient-via-stops, var(--gradient-position), var(--gradient-from) var(--gradient-from-position, ), var(--gradient-to) var(--gradient-to-position, ));
           --gradient-position: to bottom;
           background-image: linear-gradient(var(--gradient-stops));
       }

@@ -39,6 +39,13 @@ export const transforms: UtilityConfig = {
       auto: 'var(--rotate-x) var(--rotate-y)',
       'auto-3d': 'var(--rotate-x) var(--rotate-y) var(--rotate-z)',
     },
+    // Read without a fallback, so each needs an initial value of its own: an unset axis has
+    // to compose to no rotation rather than take the whole declaration down with it.
+    customProperties: {
+      '--rotate-x': { inherits: false, initialValue: '0', syntax: '*' },
+      '--rotate-y': { inherits: false, initialValue: '0', syntax: '*' },
+      '--rotate-z': { inherits: false, initialValue: '0', syntax: '*' },
+    },
   },
   rotateX: {
     className: 'rotate-x',
@@ -77,6 +84,11 @@ export const transforms: UtilityConfig = {
     values: {
       auto: 'var(--scale-x) var(--scale-y)',
     },
+    // `1`, not `0`: an unset axis has to compose to the identity scale.
+    customProperties: {
+      '--scale-x': { inherits: false, initialValue: '1', syntax: '*' },
+      '--scale-y': { inherits: false, initialValue: '1', syntax: '*' },
+    },
   },
   scaleX: {
     className: 'scale-x',
@@ -103,6 +115,11 @@ export const transforms: UtilityConfig = {
     values: {
       auto: 'var(--translate-x) var(--translate-y)',
       'auto-3d': 'var(--translate-x) var(--translate-y) var(--translate-z)',
+    },
+    customProperties: {
+      '--translate-x': { inherits: false, initialValue: '0', syntax: '*' },
+      '--translate-y': { inherits: false, initialValue: '0', syntax: '*' },
+      '--translate-z': { inherits: false, initialValue: '0', syntax: '*' },
     },
   },
   translateX: {

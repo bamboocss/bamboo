@@ -43,7 +43,7 @@ describe('gradient utilities', () => {
         ],
         "css": "@layer utilities {
         .bg-grad_to-r {
-          --gradient-stops: var(--gradient-via-stops, var(--gradient-position), var(--gradient-from) var(--gradient-from-position), var(--gradient-to) var(--gradient-to-position));
+          --gradient-stops: var(--gradient-via-stops, var(--gradient-position), var(--gradient-from) var(--gradient-from-position, ), var(--gradient-to) var(--gradient-to-position, ));
           --gradient-position: to right;
           background-image: linear-gradient(var(--gradient-stops));
       }
