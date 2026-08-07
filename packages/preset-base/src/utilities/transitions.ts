@@ -40,6 +40,13 @@ export const transitions: UtilityConfig = {
         transitionTimingFunction: value,
       }
     },
+    // Registered so it stops inheriting. The `transition` shorthand reads these three with
+    // its own fallbacks, so a descendant using it inside an element that set a duration or
+    // an easing used to silently inherit that element's timing instead of the defaults.
+    // No `initialValue`: the reads already carry one, and an unset var must take it.
+    customProperties: {
+      '--transition-easing': { inherits: false, syntax: '*' },
+    },
   },
   transitionDelay: {
     className: 'trs-dly',
@@ -56,6 +63,9 @@ export const transitions: UtilityConfig = {
         transitionDuration: value,
       }
     },
+    customProperties: {
+      '--transition-duration': { inherits: false, syntax: '*' },
+    },
   },
   transitionProperty: {
     className: 'trs-prop',
@@ -66,6 +76,9 @@ export const transitions: UtilityConfig = {
         '--transition-prop': value,
         transitionProperty: value,
       }
+    },
+    customProperties: {
+      '--transition-prop': { inherits: false, syntax: '*' },
     },
   },
   transition: {

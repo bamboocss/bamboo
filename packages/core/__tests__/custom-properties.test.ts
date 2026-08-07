@@ -110,4 +110,38 @@ describe('utility custom properties', () => {
     expect(blockFor(css, '--skew-x').count).toBe(0)
     expect(blockFor(css, '--rotate').count).toBe(0)
   })
+
+  test('a composed var a descendant can re-declare does not inherit into it', () => {
+    const css = cssFor({})
+
+    // A child setting only `bgGradient` used to compose its gradient from whichever colours
+    // an ancestor declared, because these inherited. Read bare rather than with a fallback,
+    // so an unset one must stay guaranteed-invalid and drop the gradient — which is what
+    // registering without an `initialValue` gives.
+    for (const name of ['--gradient-from', '--gradient-to', '--gradient-via', '--gradient-via-stops']) {
+      expect(blockFor(css, name).count).toBe(1)
+    }
+    // Written by every utility that reads them, so registering only stops the inheritance.
+    expect(blockFor(css, '--gradient-stops').count).toBe(1)
+    expect(blockFor(css, '--gradient-position').count).toBe(1)
+
+    // Same shape for the `transition` shorthand: a descendant using it inside an element
+    // that set a duration or an easing used to inherit that element's timing.
+    for (const name of ['--transition-prop', '--transition-duration', '--transition-easing']) {
+      expect(blockFor(css, name).count).toBe(1)
+    }
+
+    expect(blockFor(css, '--focus-ring-color').count).toBe(1)
+  })
+
+  test('a focus ring var whose only effect is on a subtree keeps inheriting', () => {
+    const css = cssFor({})
+
+    // `focusRingColor` and friends emit *only* a variable — no declaration of their own — so
+    // theming a subtree's rings from an ancestor is the sole thing they do. Registering them
+    // would turn that into silent dead CSS, which is why they are deliberately absent.
+    for (const name of ['--focus-ring-color-prop', '--focus-ring-width', '--focus-ring-style', '--focus-ring-offset']) {
+      expect(blockFor(css, name).count).toBe(0)
+    }
+  })
 })

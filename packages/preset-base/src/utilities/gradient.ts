@@ -62,6 +62,14 @@ export const backgroundGradients: UtilityConfig = {
         backgroundImage: `linear-gradient(var(--gradient-stops))`,
       }
     },
+    // Declared here rather than on each of the five utilities that compose a gradient, the
+    // same way the position vars are declared by the one that writes them. Every one of the
+    // five writes both in the rule that reads them, so registering changes nothing except
+    // that they stop inheriting into a descendant that sets a gradient of its own.
+    customProperties: {
+      '--gradient-stops': { inherits: false, syntax: '*' },
+      '--gradient-position': { inherits: false, syntax: '*' },
+    },
   },
 
   backgroundLinear: {
@@ -182,12 +190,25 @@ export const backgroundGradients: UtilityConfig = {
     values: 'colors',
     group: 'Background Gradient',
     transform: createColorMixTransform('--gradient-from'),
+    // Unlike the position vars above, the colour is read *bare* — `var(--gradient-from)`
+    // with no fallback — so an unset one has to stay guaranteed-invalid, which is what
+    // registering without an `initialValue` gives. That invalidates `--gradient-stops` at
+    // computed-value time and drops the gradient, rather than rendering half of one.
+    //
+    // Registered so it stops inheriting: a child setting only `bgGradient` used to compose
+    // its gradient from whatever colours an ancestor happened to declare.
+    customProperties: {
+      '--gradient-from': { inherits: false, syntax: '*' },
+    },
   },
   gradientTo: {
     className: 'grad-to',
     values: 'colors',
     group: 'Background Gradient',
     transform: createColorMixTransform('--gradient-to'),
+    customProperties: {
+      '--gradient-to': { inherits: false, syntax: '*' },
+    },
   },
   gradientVia: {
     className: 'grad-via',
@@ -200,6 +221,10 @@ export const backgroundGradients: UtilityConfig = {
         '--gradient-stops': 'var(--gradient-via-stops)',
         '--gradient-via-stops': gradientViaStops,
       }
+    },
+    customProperties: {
+      '--gradient-via': { inherits: false, syntax: '*' },
+      '--gradient-via-stops': { inherits: false, syntax: '*' },
     },
   },
   gradientViaPosition: {

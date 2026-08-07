@@ -55,6 +55,17 @@ function createFocusRing(selector: any, className: string): PropertyConfig {
           return {}
       }
     },
+    // Every branch above writes `--focus-ring-color` on the same element that reads it, so
+    // registering it changes nothing except that it stops inheriting.
+    //
+    // Deliberately only this one. `--focus-ring-color-prop`, `--focus-ring-width`,
+    // `--focus-ring-style` and `--focus-ring-offset` keep inheriting: the utilities that
+    // set them emit *only* a variable and no declaration of their own, so theming a
+    // subtree's rings from an ancestor is the sole effect they have. Registering those
+    // would turn `css({ focusRingColor: … })` on an app shell into silent dead CSS.
+    customProperties: {
+      '--focus-ring-color': { inherits: false, syntax: '*' },
+    },
   }
 }
 

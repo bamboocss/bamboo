@@ -317,6 +317,24 @@ describe('fallback values', () => {
           height: 100dvh;
       }
 
+        @property --focus-ring-color {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-stops {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-position {
+          syntax: '*';
+
+          inherits: false;
+        }
+
         @property --gradient-from-position {
           syntax: '*';
 
@@ -324,6 +342,30 @@ describe('fallback values', () => {
         }
 
         @property --gradient-to-position {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-from {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-to {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-via {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-via-stops {
           syntax: '*';
 
           inherits: false;
@@ -457,6 +499,24 @@ describe('fallback values', () => {
           inherits: false;
 
           initial-value: 0;
+        }
+
+        @property --transition-easing {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --transition-duration {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --transition-prop {
+          syntax: '*';
+
+          inherits: false;
         }
 
         @property --rotate-x {

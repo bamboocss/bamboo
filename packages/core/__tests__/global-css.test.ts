@@ -97,6 +97,24 @@ describe('Global css', () => {
           color: pink;
       }
 
+        @property --focus-ring-color {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-stops {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-position {
+          syntax: '*';
+
+          inherits: false;
+        }
+
         @property --gradient-from-position {
           syntax: '*';
 
@@ -104,6 +122,30 @@ describe('Global css', () => {
         }
 
         @property --gradient-to-position {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-from {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-to {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-via {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-via-stops {
           syntax: '*';
 
           inherits: false;
@@ -237,6 +279,24 @@ describe('Global css', () => {
           inherits: false;
 
           initial-value: 0;
+        }
+
+        @property --transition-easing {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --transition-duration {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --transition-prop {
+          syntax: '*';
+
+          inherits: false;
         }
 
         @property --rotate-x {
@@ -394,6 +454,24 @@ describe('Global css', () => {
           width: 100%;
       }
 
+        @property --focus-ring-color {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-stops {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-position {
+          syntax: '*';
+
+          inherits: false;
+        }
+
         @property --gradient-from-position {
           syntax: '*';
 
@@ -401,6 +479,30 @@ describe('Global css', () => {
         }
 
         @property --gradient-to-position {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-from {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-to {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-via {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-via-stops {
           syntax: '*';
 
           inherits: false;
@@ -534,6 +636,24 @@ describe('Global css', () => {
           inherits: false;
 
           initial-value: 0;
+        }
+
+        @property --transition-easing {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --transition-duration {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --transition-prop {
+          syntax: '*';
+
+          inherits: false;
         }
 
         @property --rotate-x {
@@ -624,6 +744,24 @@ describe('Global css', () => {
           tab-size: none;
       }
 
+        @property --focus-ring-color {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-stops {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-position {
+          syntax: '*';
+
+          inherits: false;
+        }
+
         @property --gradient-from-position {
           syntax: '*';
 
@@ -631,6 +769,30 @@ describe('Global css', () => {
         }
 
         @property --gradient-to-position {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-from {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-to {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-via {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-via-stops {
           syntax: '*';
 
           inherits: false;
@@ -764,6 +926,24 @@ describe('Global css', () => {
           inherits: false;
 
           initial-value: 0;
+        }
+
+        @property --transition-easing {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --transition-duration {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --transition-prop {
+          syntax: '*';
+
+          inherits: false;
         }
 
         @property --rotate-x {
@@ -856,6 +1036,24 @@ describe('Global css', () => {
           text-decoration: none;
       }
 
+        @property --focus-ring-color {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-stops {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-position {
+          syntax: '*';
+
+          inherits: false;
+        }
+
         @property --gradient-from-position {
           syntax: '*';
 
@@ -863,6 +1061,30 @@ describe('Global css', () => {
         }
 
         @property --gradient-to-position {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-from {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-to {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-via {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-via-stops {
           syntax: '*';
 
           inherits: false;
@@ -996,6 +1218,24 @@ describe('Global css', () => {
           inherits: false;
 
           initial-value: 0;
+        }
+
+        @property --transition-easing {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --transition-duration {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --transition-prop {
+          syntax: '*';
+
+          inherits: false;
         }
 
         @property --rotate-x {
@@ -1093,6 +1333,24 @@ describe('Global css', () => {
           margin-top: var(--spacing-0);
       }
 
+        @property --focus-ring-color {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-stops {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-position {
+          syntax: '*';
+
+          inherits: false;
+        }
+
         @property --gradient-from-position {
           syntax: '*';
 
@@ -1100,6 +1358,30 @@ describe('Global css', () => {
         }
 
         @property --gradient-to-position {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-from {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-to {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-via {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-via-stops {
           syntax: '*';
 
           inherits: false;
@@ -1233,6 +1515,24 @@ describe('Global css', () => {
           inherits: false;
 
           initial-value: 0;
+        }
+
+        @property --transition-easing {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --transition-duration {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --transition-prop {
+          syntax: '*';
+
+          inherits: false;
         }
 
         @property --rotate-x {
@@ -1330,6 +1630,24 @@ describe('Global css', () => {
           margin-top: var(--spacing-10);
       }
 
+        @property --focus-ring-color {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-stops {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-position {
+          syntax: '*';
+
+          inherits: false;
+        }
+
         @property --gradient-from-position {
           syntax: '*';
 
@@ -1337,6 +1655,30 @@ describe('Global css', () => {
         }
 
         @property --gradient-to-position {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-from {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-to {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-via {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-via-stops {
           syntax: '*';
 
           inherits: false;
@@ -1470,6 +1812,24 @@ describe('Global css', () => {
           inherits: false;
 
           initial-value: 0;
+        }
+
+        @property --transition-easing {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --transition-duration {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --transition-prop {
+          syntax: '*';
+
+          inherits: false;
         }
 
         @property --rotate-x {
@@ -1557,6 +1917,24 @@ describe('Global css', () => {
     })
     expect(sheet).toMatchInlineSnapshot(`
       "@layer base {
+        @property --focus-ring-color {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-stops {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-position {
+          syntax: '*';
+
+          inherits: false;
+        }
+
         @property --gradient-from-position {
           syntax: '*';
 
@@ -1564,6 +1942,30 @@ describe('Global css', () => {
         }
 
         @property --gradient-to-position {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-from {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-to {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-via {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-via-stops {
           syntax: '*';
 
           inherits: false;
@@ -1697,6 +2099,24 @@ describe('Global css', () => {
           inherits: false;
 
           initial-value: 0;
+        }
+
+        @property --transition-easing {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --transition-duration {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --transition-prop {
+          syntax: '*';
+
+          inherits: false;
         }
 
         @property --rotate-x {
@@ -1796,6 +2216,24 @@ describe('Global css', () => {
 
     expect(sheet).toMatchInlineSnapshot(`
       "@layer base {
+        @property --focus-ring-color {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-stops {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-position {
+          syntax: '*';
+
+          inherits: false;
+        }
+
         @property --gradient-from-position {
           syntax: '*';
 
@@ -1803,6 +2241,30 @@ describe('Global css', () => {
         }
 
         @property --gradient-to-position {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-from {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-to {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-via {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --gradient-via-stops {
           syntax: '*';
 
           inherits: false;
@@ -1936,6 +2398,24 @@ describe('Global css', () => {
           inherits: false;
 
           initial-value: 0;
+        }
+
+        @property --transition-easing {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --transition-duration {
+          syntax: '*';
+
+          inherits: false;
+        }
+
+        @property --transition-prop {
+          syntax: '*';
+
+          inherits: false;
         }
 
         @property --rotate-x {
