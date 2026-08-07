@@ -58,48 +58,6 @@ export function generateCvaFn(ctx: Context) {
         return mergeCss(variantCss, compoundVariantCss)
       }
 
-      /**
-       * Compose two recipes.
-       *
-       * The class names come from both parents joined, not from a merged config. A recipe's
-       * classes are named from the config the *build* saw, and the build only ever sees the
-       * two \`cva(...)\` literals — a config synthesised here at runtime has no rules behind
-       * it, so naming classes off it returned classes that styled nothing. This is the shape
-       * \`mergeRecipes\` already uses for config recipes.
-       *
-       * \`raw\` still deep-merges, so per-property override survives where it can be
-       * expressed: \`css(a.merge(b).raw(props))\` resolves before any class name exists.
-       * Through the class path both parents land in the \`recipes\` layer, so a collision is
-       * decided by stylesheet order rather than by which parent came second.
-       */
-      function merge(__cva) {
-        const override = defaults(__cva.config)
-        const mergedVariantKeys = uniq(Object.keys(variants), __cva.variantKeys)
-        const mergedConfig = {
-          base: mergeCss(base, override.base),
-          variants: Object.fromEntries(
-            mergedVariantKeys.map((key) => [key, mergeCss(variants[key], override.variants[key])]),
-          ),
-          defaultVariants: mergeProps(defaultVariants, override.defaultVariants),
-          compoundVariants: [...compoundVariants, ...override.compoundVariants],
-        }
-
-        const mergedFn = (props) => cx(cvaFn(props), __cva(props))
-
-        return Object.assign(memo(mergedFn), {
-          __cva__: true,
-          variantMap: Object.fromEntries(
-            mergedVariantKeys.map((key) => [key, Object.keys(mergedConfig.variants[key] ?? {})]),
-          ),
-          variantKeys: mergedVariantKeys,
-          raw: (props) => cloneStyles(mergeCss(resolveVariants(props), __cva.raw(props))),
-          config: mergedConfig,
-          merge,
-          splitVariantProps: (props) => splitProps(props, mergedVariantKeys),
-          getVariantProps: (props) => ({ ...mergedConfig.defaultVariants, ...compact(props) }),
-        })
-      }
-
       // \`raw\` runs per element per render — the JSX factory calls it to build the styles it
       // merges with style props — and \`resolve\` is not cheap: a \`mergeCss\` per active variant
       // plus a scan of every compound variant. Memoizing it keys that work on the variant
@@ -136,16 +94,79 @@ export function generateCvaFn(ctx: Context) {
 
       const variantMap = Object.fromEntries(Object.entries(variants).map(([key, value]) => [key, Object.keys(value)]))
 
-      return Object.assign(memo(cvaFn), {
+      const self = Object.assign(memo(cvaFn), {
         __cva__: true,
         variantMap,
         variantKeys,
         raw: (...args) => cloneStyles(resolveVariants(...args)),
         config,
-        merge,
+        // Composed against \`self\`, not against this closure, so \`a.merge(b).merge(c)\`
+        // composes the *result* with \`c\` rather than recomposing \`a\` with \`c\` and
+        // dropping \`b\`.
+        merge: (other) => composeRecipes(self, other),
         splitVariantProps,
         getVariantProps
       })
+
+      return self
+    }
+
+    /**
+     * Compose two recipes into one.
+     *
+     * The class names come from both parents joined, not from a merged config. A recipe's
+     * classes are named from the config the *build* saw, and the build only ever sees the
+     * literal \`cva(...)\` call sites — a config synthesised here at runtime has no rules
+     * behind it, so naming classes off it returned classes that styled nothing. This is the
+     * shape \`mergeRecipes\` already uses for config recipes.
+     *
+     * The selection is resolved once and handed to both parents. Passing the raw props
+     * instead let each parent apply *its own* defaults, so \`m()\` and
+     * \`m(m.getVariantProps())\` disagreed and \`raw()\` contradicted the \`config\` the same
+     * object publishes.
+     *
+     * \`raw\` still deep-merges, so per-property override survives where it can be expressed:
+     * \`css(a.merge(b).raw(props))\` resolves before any class name exists. Through the class
+     * path both parents land in the \`recipes\` layer, so a collision there is decided by
+     * stylesheet order rather than by which parent came second.
+     */
+    function composeRecipes(left, right) {
+      const leftConfig = defaults(left.config)
+      const rightConfig = defaults(right.config)
+      const variantKeys = uniq(left.variantKeys, right.variantKeys)
+
+      const config = {
+        base: mergeCss(leftConfig.base, rightConfig.base),
+        variants: Object.fromEntries(
+          variantKeys.map((key) => [key, mergeCss(leftConfig.variants[key], rightConfig.variants[key])]),
+        ),
+        defaultVariants: mergeProps(leftConfig.defaultVariants, rightConfig.defaultVariants),
+        compoundVariants: [...leftConfig.compoundVariants, ...rightConfig.compoundVariants],
+      }
+
+      const select = (props) => ({ ...config.defaultVariants, ...compact(props) })
+
+      const composed = Object.assign(
+        memo((props) => {
+          const selection = select(props)
+          return cx(left(selection), right(selection))
+        }),
+        {
+          __cva__: true,
+          variantMap: Object.fromEntries(variantKeys.map((key) => [key, Object.keys(config.variants[key] ?? {})])),
+          variantKeys,
+          raw: (props) => {
+            const selection = select(props)
+            return cloneStyles(mergeCss(left.raw(selection), right.raw(selection)))
+          },
+          config,
+          merge: (other) => composeRecipes(composed, other),
+          splitVariantProps: (props) => splitProps(props, variantKeys),
+          getVariantProps: select,
+        },
+      )
+
+      return composed
     }
 
     export function getCompoundVariantCss(compoundVariants, variantMap) {

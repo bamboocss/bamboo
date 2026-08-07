@@ -408,6 +408,16 @@ export class Recipes {
     }
 
     compoundVariants.forEach((compoundVariant, index) => {
+      // Both maps cleared before anything can return. They are module-global and outlive a
+      // context, and a compound can move between the scoped and unscoped branches — a watch
+      // rebuild that removes `scopeRoots`, say — or lose its `css` entirely. Without this
+      // the stale branch's entry survives, `getAtomic` prefers a scope over a selector, and
+      // the recipe emits a rule naming an anchor nothing renders while losing its own
+      // compound. The variant loop above clears its entry for the same reason.
+      const propKey = this.getPropKey(name, COMPOUND_VARIANT, index)
+      sharedState.slotScopes.delete(propKey)
+      sharedState.compoundSelectors.delete(propKey)
+
       if (!compoundVariant?.css) return
 
       // Raw class names, one list per combination. `hash.className` and `prefix` are applied
@@ -421,8 +431,6 @@ export class Recipes {
         .filter((combination) => combination.length > 0)
 
       if (!selectors.length) return
-
-      const propKey = this.getPropKey(name, COMPOUND_VARIANT, index)
 
       // A scoped slot carries only its constant class, so a compound selecting on that
       // slot's variant classes matches nothing — the variants reach it through an anchor's

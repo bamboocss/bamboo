@@ -169,7 +169,53 @@ const isInertExpression = (node: Node): boolean => {
   // slot: `checkbox({ size: dyn }).control` resolves the same whatever `dyn` holds. A
   // property access is excluded on purpose, since reading one can run a getter — Solid
   // compiles props to accessors, so `props.size` is exactly that case.
+  //
+  // Not strictly true of a binding in its temporal dead zone, which throws on read. Folding
+  // past `checkbox({ size: later }).control` before `const later` turns a ReferenceError
+  // into a class — but the code is broken either way, and proving initialisation order
+  // costs far more than that is worth.
   if (Node.isIdentifier(node)) return true
+
+  // Type-only wrappers are erased before anything runs, so they cannot add an effect. These
+  // are how a variant prop is normally written in TypeScript — `dyn as 'sm'`, `dyn!`,
+  // `dyn satisfies Size` — and rejecting them lost folds that used to land.
+  if (
+    Node.isAsExpression(node) ||
+    Node.isSatisfiesExpression(node) ||
+    Node.isNonNullExpression(node) ||
+    Node.isTypeAssertion(node) ||
+    Node.isParenthesizedExpression(node)
+  ) {
+    return isInertExpression(node.getExpression())
+  }
+
+  // A function is inert to *define*; only calling one runs anything, and nothing here does.
+  if (Node.isArrowFunction(node) || Node.isFunctionExpression(node)) return true
+  if (Node.isRegularExpressionLiteral(node) || Node.isBigIntLiteral(node)) return true
+
+  if (Node.isPrefixUnaryExpression(node)) {
+    const operator = node.getOperatorToken()
+    return (
+      (operator === SyntaxKind.MinusToken ||
+        operator === SyntaxKind.PlusToken ||
+        operator === SyntaxKind.ExclamationToken ||
+        operator === SyntaxKind.TildeToken) &&
+      isInertExpression(node.getOperand())
+    )
+  }
+
+  // `??`, `||` and `&&` only ever evaluate their operands. Arithmetic and comparison are
+  // excluded because they coerce, which can reach `valueOf`/`Symbol.toPrimitive`.
+  if (Node.isBinaryExpression(node)) {
+    const operator = node.getOperatorToken().getKind()
+    return (
+      (operator === SyntaxKind.QuestionQuestionToken ||
+        operator === SyntaxKind.BarBarToken ||
+        operator === SyntaxKind.AmpersandAmpersandToken) &&
+      isInertExpression(node.getLeft()) &&
+      isInertExpression(node.getRight())
+    )
+  }
 
   if (Node.isObjectLiteralExpression(node)) {
     return node.getProperties().every((property) => {

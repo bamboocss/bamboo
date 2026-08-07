@@ -204,17 +204,26 @@ export const createRuntimeRecipe = (ctx: Context): RuntimeRecipe => {
       return undefined
     }
 
-    // A slot recipe evaluates *every* anchor's `recipeFn`, so the throw can come from an
-    // anchor's compound variants rather than from this slot's. A constant slot is not
-    // exempt: its class does not depend on the props, but the call it replaces still runs
-    // the anchor's assert.
+    // A slot recipe call evaluates a `recipeFn` per slot, and each one runs
+    // `assertCompoundVariant` — which throws for a conditional variant value on a recipe
+    // with compound variants. So the throw can come from a slot other than the one being
+    // folded, and a constant slot is not exempt: its class does not depend on the props,
+    // but the call it replaces still runs the assert.
+    //
+    // Which slots get a `recipeFn` depends on scoping: with anchors only they do, without
+    // them every slot does. Reading `anchors` alone missed the unscoped case entirely,
+    // since `[].some()` is false — and an unscoped recipe with compounds is exactly the
+    // shape the fixture's `badge` has.
     if (isSlotRecipe) {
-      const anchorThrows = anchors.some(
-        (anchor) =>
-          getSlotCompoundVariant((config.compoundVariants ?? []) as Array<{ css: any }>, anchor).length > 0 &&
-          Object.values(variants).some((value) => typeof value === 'object' && value !== null),
-      )
-      if (anchorThrows) return undefined
+      const evaluated = anchors.length > 0 ? anchors : ((config as SlotRecipeConfig).slots as string[])
+      const conditional = Object.values(variants).some((value) => typeof value === 'object' && value !== null)
+      const throws =
+        conditional &&
+        evaluated.some(
+          (slotName) =>
+            getSlotCompoundVariant((config.compoundVariants ?? []) as Array<{ css: any }>, slotName).length > 0,
+        )
+      if (throws) return undefined
     }
 
     // No class for the compound variants. Their rule selects on the variant classes

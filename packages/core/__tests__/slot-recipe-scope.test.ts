@@ -231,3 +231,54 @@ describe('compound variants on a scoped slot recipe', () => {
     expect(css).toContain('.cmp__root--size_lg.cmp__root--tone_a')
   })
 })
+
+describe('a scoped compound keeps its precedence and its context', () => {
+  const scoped = (className: string, scopeRoots: string[]) => ({
+    theme: {
+      extend: {
+        slotRecipes: {
+          widget: {
+            base: { item: { color: 'blue' }, root: { color: 'red' } },
+            className,
+            compoundVariants: [{ css: { item: { padding: '8' } }, size: 'sm', tone: 'a' }],
+            scopeRoots,
+            slots: ['root', 'item'],
+            variants: {
+              size: { sm: { item: { padding: '2' } } },
+              tone: { a: { item: { padding: '3' } } },
+              weight: { bold: { item: { padding: '5' } } },
+            },
+          },
+        },
+      },
+    },
+  })
+
+  test('the compound outranks the variants it refines, by specificity', () => {
+    // Every scoped rule selects one class inside a scope on the same element, so without
+    // `:scope` the winner is stylesheet order — and compounds are hashed on whichever call
+    // site the build reached first, so that order is not even stable.
+    const css = createRuleProcessor(scoped('ord', ['root']) as never)
+      .recipe('widget', { size: 'sm', tone: 'a', weight: 'bold' })!
+      .toCss()
+
+    expect(css).toContain('@scope (.ord__root--size_sm.ord__root--tone_a) to (.ord__root)')
+    expect(css).toMatch(/@scope \(\.ord__root--size_sm\.ord__root--tone_a\)[^{]*\{\s*:scope \.ord__item/)
+    // A single-variant scope stays at one class, so it does not need the extra weight.
+    expect(css).toMatch(/@scope \(\.ord__root--weight_bold\)[^{]*\{\s*\.ord__item/)
+  })
+
+  test('a recipe that stops being scoped does not keep the old scope', () => {
+    // `slotScopes` is module-global and outlives a context; a watch rebuild that removes
+    // `scopeRoots` used to leave the previous build's rule behind and drop the new one.
+    createRuleProcessor(scoped('old', ['root']) as never)
+      .recipe('widget', { size: 'sm', tone: 'a' })!
+      .toCss()
+    const css = createRuleProcessor(scoped('new', []) as never)
+      .recipe('widget', { size: 'sm', tone: 'a' })!
+      .toCss()
+
+    expect(css).not.toContain('old__')
+    expect(css).toContain('.new__item--size_sm.new__item--tone_a')
+  })
+})

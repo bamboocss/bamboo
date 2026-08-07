@@ -143,7 +143,18 @@ export class StyleDecoder {
         prelude: `@scope (${scope.anchorVariantClasses
           .map((className) => `.${this.formatSelector([], className)}`)
           .join('')}) to (.${this.formatSelector([], scope.anchorClass)})`,
-        selector: `.${this.formatSelector([], scope.slotClass)}`,
+        // `:scope ` on a compound, so it keeps outranking the single variants it refines.
+        //
+        // Every scoped rule selects one class inside a scope opened at the same element, so
+        // specificity and proximity both tie and the winner falls to stylesheet order —
+        // which for compounds is decided by whichever call site the build walked first.
+        // `:scope` is a pseudo-class, taking the compound to (0,2,0) against a variant's
+        // (0,1,0), and it cannot change what matches: a scoped slot is never the anchor, so
+        // it is always a strict descendant.
+        selector:
+          scope.anchorVariantClasses.length > 1
+            ? `:scope .${this.formatSelector([], scope.slotClass)}`
+            : `.${this.formatSelector([], scope.slotClass)}`,
       })),
       // A compound variant. It selects on the variant classes the element already carries
       // — `.btn--size_sm.btn--tone_a` — so it needs a selector that is not a single class,

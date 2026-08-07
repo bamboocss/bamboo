@@ -130,3 +130,62 @@ describe('a constant slot only folds past inert arguments', () => {
     expect(r.code).toContain('props.size')
   })
 })
+
+/**
+ * A TypeScript type wrapper is erased before anything runs, so it cannot add an effect —
+ * and `dyn as Size`, `dyn!` and `dyn ?? 'sm'` are how a variant prop is normally written.
+ * Rejecting them lost folds that landed before the inertness check existed.
+ */
+describe('inertness sees through erased wrappers', () => {
+  const foldWith = (expression: string) =>
+    createFoldFixture().fold(
+      `import { checkbox } from '../styled-system/recipes'\ndeclare const dyn: any\ndeclare const log: () => any\nexport const a = ${expression}`,
+    ).code
+
+  test.each([
+    ["checkbox({ size: dyn as 'sm' }).control"],
+    ['checkbox({ size: dyn! }).control'],
+    ['checkbox({ size: (dyn) }).control'],
+    ["checkbox({ size: dyn ?? 'sm' }).control"],
+    ['checkbox({ size: -1 as any }).control'],
+  ])('%s folds', (expression) => {
+    expect(foldWith(expression)).toContain('"checkbox__control"')
+  })
+
+  test.each([
+    ['checkbox({ size: log() }).control'],
+    ['checkbox({ size: `x${dyn}` as any }).control'],
+    ['checkbox({ size: dyn + 1 }).control'],
+  ])('%s does not fold', (expression) => {
+    // A template substitution runs `ToString`, and `+` coerces — both can reach a getter.
+    expect(foldWith(expression)).not.toContain('"checkbox__control"')
+  })
+})
+
+/**
+ * A slot recipe call runs a `recipeFn` per slot, and each calls `assertCompoundVariant`.
+ * Which slots get one depends on scoping — with anchors only they do, without them every
+ * slot does — so reading the anchors alone missed the unscoped case entirely.
+ */
+describe('the fold declines where the call would throw', () => {
+  test('an unscoped recipe with compound variants', () => {
+    const r = createFoldFixture().fold(
+      `import { badge } from '../styled-system/recipes'\nexport const a = badge({ size: { base: 'sm' } as any }).body`,
+    )
+    expect(r.code).toContain("badge({ size: { base: 'sm' } as any }).body")
+  })
+
+  test('a static selection on the same recipe still folds', () => {
+    const r = createFoldFixture().fold(
+      `import { badge } from '../styled-system/recipes'\nexport const a = badge({ size: 'sm' }).body`,
+    )
+    expect(r.code).toContain('"badge__body badge__body--size_sm"')
+  })
+
+  test('a null selection folds, because the assert never runs for one', () => {
+    const r = createFoldFixture().fold(
+      `import { badge } from '../styled-system/recipes'\nexport const a = badge({ size: null as any }).body`,
+    )
+    expect(r.code).toContain('"badge__body"')
+  })
+})
