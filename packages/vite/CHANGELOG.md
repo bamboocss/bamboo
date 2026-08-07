@@ -1,5 +1,407 @@
 # @bamboocss/vite
 
+## 1.16.0
+
+### Minor Changes
+
+- f798d1c: Fold a spread the extractor could account for, instead of declining every spread.
+
+  The rule was "an inline object literal, or nothing". Not caution for its own sake — the extractor records what a
+  spread _contributed_, so one it flattened and one it silently skipped were indistinguishable in the result. Both
+  simply add keys, or fail to. Folding the second would have dropped styles with no error.
+
+  `BoxNodeMap` now carries `resolvedSpreads`: the spreads the extractor walked structurally, recorded as their own
+  expression nodes. That makes the two cases separable, so only the second declines:
+
+  ```tsx
+  const known = { padding: '4' }
+  css({ color: 'red.300', ...known }) // → "c_red.300 p_4"
+
+  // styles.ts
+  export const shared = { padding: '4' }
+  // use.tsx
+  css({ color: 'red.300', ...shared }) // → "c_red.300 p_4", with styles.ts registered as a watch dependency
+  ```
+
+  Source order is preserved, so a spread still overrides what it lands on.
+
+  Three decisions worth stating, because each is the difference between this being safe and not:
+
+  **The list is of successes, not failures.** A consumer asks "may I trust this spread", and a list of what went wrong
+  answers that only while it is exhaustive — an omission there is a wrong fold. A list of what went right is safe to be
+  incomplete, because an omission costs a fold that does not happen.
+
+  **Being walked is not being complete.** The extractor builds a map whenever it walked the object literal, however many
+  of that object's properties it dropped along the way, and once they are flattened the loss is unrecoverable. So the
+  record carries the map itself and the spread object gets the same audit the call does. Without that, these fold while
+  silently losing styles:
+
+  ```tsx
+  const partial = { padding: '4', ...rest } // rest is unknown
+  css({ color: 'red.300', ...partial }) // would have folded to "c_red.300 p_4"
+
+  const computed = { padding: '4', [key]: '2' } // key is unknown
+  const branching = {
+    padding: '4',
+    get mm() {
+      return x ? '1' : '2'
+    },
+  }
+  ```
+
+  All of them now decline.
+
+  **An _evaluated_ spread is not recorded, only a _walked_ one.** When the extractor runs an expression and gets a plain
+  value back, the keys are re-boxed against the spread site and the file they came from is no longer recoverable from
+  the tree. Folding that would produce a literal depending on a module the build cannot name — and so cannot watch. That
+  is why an imported `css.raw()` value spread inside a nested selector still declines, while an imported plain object
+  folds and reports its module.
+
+  `resolvedSpreads` is kept off the map's `value` and is therefore invisible to `unbox`, so nothing that generates CSS
+  sees it. No CSS output changes.
+
+- 8fa12a2: Fold static `token()` calls into their values during the source transform.
+
+  `token()` is what you reach for when a design token is needed somewhere Bamboo emits no CSS — an inline style, a
+  canvas, a chart config. It was previously declined outright as `not-foldable`, on the grounds that it resolves to no
+  class. It resolves to a literal, though, and that is enough to inline:
+
+  ```tsx
+  // you write
+  const chart = { grid: token('colors.red.300') }
+
+  // the bundle gets
+  const chart = { grid: '#fca5a5' }
+  ```
+
+  What it folds to is exactly what the runtime would have returned, which for a conditional or semantic token is the
+  variable reference rather than either branch:
+
+  ```tsx
+  token('colors.primary') // → 'var(--colors-primary)', still themeable
+  ```
+
+  That split is the one mistake here no class-name check would catch — inlining a base colour where the runtime emits a
+  variable produces source that looks right and stops responding to themes — so the resolver mirrors `generateTokenJs`
+  rather than reimplementing the choice.
+
+  When every `token()` call in a module folds, its import of the generated token map — every token in the project — is
+  left unused and the bundler drops it.
+
+  Aliased and namespaced imports fold. What declines, all of it to preserve behaviour rather than out of caution:
+  - A path that is not **one resolved string literal**, as `dynamic`. A conditional is not one even when every branch is
+    a real token: `token(dark ? 'colors.a' : 'colors.b')` boxes both branches, so folding either would pick a value and
+    delete the condition that chose it.
+  - A path resolving to no usable string, as the new `unresolved-token` — the path names no token, the value is empty,
+    or the value is not a string (a numeric `fontWeights` token stays a number, and no string literal stands in for
+    that). For the first two the runtime's `tokens[path]?.value || fallback` hands the result to the fallback, which is
+    what declining preserves.
+  - A second argument that could _run_ something (`token('colors.red.300', compute())`), as `dynamic`. Both arguments
+    evaluate before the call, so folding it away would delete the call too. An inert fallback — a string, number,
+    boolean, `null`, `undefined` — is provably dead and gets dropped.
+
+  `token.var()` is left alone; it returns the variable reference where `token()` returns the resolved value.
+
+  `FoldedCall` gains a `kind` field (`'class' | 'value'`) and an optional `value`. A token fold reports no class, so a
+  consumer checking folded classes against the emitted stylesheet does not go looking for a rule behind a `var()`
+  reference.
+
+  The lookup table is built once per context and shared across the build, so a module that calls `token()` zero times
+  pays nothing for this — asserted by counting table construction rather than by timing it.
+
+  No CSS output changes.
+
+- 091f2e1: **Breaking:** an inline `cva()`/`sva()` now emits the same kind of CSS as a recipe declared in
+  `theme.recipes` — one class per variant, in the `recipes` cascade layer — instead of atomic classes in `utilities`.
+
+  An inline recipe and a config recipe were the same declaration, evaluated by the same code, that produced different
+  naming, a different layer and different override behaviour. Nothing about the two justified that: a config recipe is
+  an inline one that happens to be declared somewhere with a name.
+
+  ```js
+  cva({
+    base: { padding: '4' },
+    variants: { size: { sm: { fontSize: 'sm' } } },
+  })
+  // before: 'p_4'                    in @layer utilities
+  // now:    'cva_a1b2c3'             in @layer recipes
+  //         'cva_a1b2c3--size_sm'    when size="sm"
+  ```
+
+  Three things follow.
+
+  **A component written with `cva` is now reliably overridable.** Its classes are in `recipes`, so a consumer's `css()`
+  in `utilities` wins by cascade layer in every build, without the consumer knowing how the component was declared. That
+  was previously true only if you hoisted the styles into `theme.recipes`.
+
+  **`cssMode: 'grouped'` no longer has an exception.** Recipes were extracted atomically whatever `cssMode` said,
+  because a group class names a whole call and which variant combination a caller selects is not knowable at build time.
+  That forced a second `css` instance — the internal `__atomicCss` — purely so their runtime could name classes the way
+  the stylesheet did. Naming from the config is knowable in every mode, so `__atomicCss` is gone and `cva` no longer
+  sprays atomic classes into grouped markup.
+
+  **Compound variants are a compound selector.** `.btn--size_sm.btn--tone_a` rather than atomic classes joined at
+  runtime, which puts them in the same layer as the rest of the recipe and leaves the runtime nothing to compute — the
+  rule matches because both variant classes are already on the element.
+
+  ### Naming
+
+  The class prefix is derived from the config: `className` when you set one, otherwise a hash of the recipe's styles.
+
+  ```js
+  cva({ className: 'button', base: { padding: '4' } }) // .button, .button--size_sm
+  cva({ base: { padding: '4' } }) //                      .cva_a1b2c3, .cva_a1b2c3--size_sm
+  ```
+
+  It has to come from the config because the build and the browser each derive it independently and never meet. Deriving
+  it from the binding — `const button = cva(...)` — would need the build to rewrite the call, and a pipeline without
+  that transform would then name classes differently from one with it.
+
+  ### Faster at runtime
+
+  Naming from the config means the runtime no longer resolves a style object to produce a class string. `cva()` used to
+  run `mergeCss` per active variant and then name a class per property; it now walks the variant keys and concatenates.
+
+  Measured with both shapes in one process, so the comparison cannot drift
+  (`packages/generator/__tests__/cva.bench.ts`):
+
+  ```
+  cva() all-miss x10000   173.72 hz ±2.23%   (semantic)
+                           33.38 hz ±0.91%   (the atomic shape this replaced)   → 5.2x
+  cva() warm x10000      1,678    hz ±0.60%  (semantic)
+                         1,720    hz ±0.51%  (atomic)                           → within noise
+  ```
+
+  All-miss is every call selecting a distinct variant combination, so nothing is reusable. Warm, both return from the
+  memo without doing the work that distinguishes them, which is why they match. `raw()` is unchanged — it still resolves
+  styles, because that is what it returns.
+
+  ### The trade
+
+  CSS grows. Two recipes that both set `padding: 4` no longer share one atomic rule, and a variant that repeats a
+  declaration repeats it in each rule. In exchange the markup shrinks — a component carrying a recipe goes from a class
+  per property to its base class plus one per active variant, which in this repo's own fixtures is 23 classes down to 2.
+
+  ### Also fixed
+
+  Two naming bugs that predate this change and affected config recipes too, both found by extending
+  `checkNamingAgreement` to cover recipes:
+  - A variant value containing a space named `--size-x\ large` in the stylesheet and `--size-x_large` in the browser.
+    The build now applies `withoutSpace`, as the runtime always has.
+  - Under `hash: true` the build reported a recipe's **base** class unhashed while emitting the rule under the hashed
+    name, so `@bamboocss/vite` could fold a class literal no rule existed for.
+
+  ### Upgrading
+
+  Class names change for every `cva`/`sva` call site, so DOM snapshots and any CSS that targeted the generated atomic
+  classes will need updating. Styles themselves are unchanged. If you were relying on a `cva` losing to a `css()` by
+  stylesheet order, it now wins or loses by layer instead — which is the point, but it is a change in behaviour.
+
+- f2d5df2: **Breaking:** remove the JSX factory. Bamboo no longer generates components, and is now framework-agnostic.
+
+  `styled-system/jsx` is not emitted at all. `styled` / `bamboo`, style props, the `css` prop, `as`, `unstyled`,
+  `createStyleContext`, `splitCssProps` and `isCssProperty` are gone, along with `jsxFramework`, `jsxFactory` and
+  `jsxStyleProps`. There is no React, Vue, Solid, Preact or Qwik codegen left anywhere.
+
+  ```tsx
+  // before
+  <styled.div color="red.300" padding="4">hi</styled.div>
+  const Button = styled('button', buttonRecipe)
+
+  // after
+  <div className={css({ color: 'red.300', padding: '4' })}>hi</div>
+  const Button = (props: ButtonProps) => {
+    const [variantProps, rest] = buttonRecipe.splitVariantProps(props)
+    return <button {...rest} className={cx(buttonRecipe(variantProps), props.className)} />
+  }
+  ```
+
+  For an override to be deterministic the component's styles have to sit in a lower cascade layer, which means declaring
+  them as a config recipe — an inline `cva()` is atomic and lands in `utilities` alongside the consumer. A component
+  that instead accepts a style object and merges it with `css(base, props.css)` needs no layer at all.
+
+  **Recipe JSX tracking is kept**, and no longer depends on `jsxFramework`. A recipe's `jsx: ['Button']` hint is how the
+  build reads `<Button variant="danger">` on a component you wrote and emits `--variant_danger`; without it those
+  variants would silently stop being generated. It costs no codegen — it is extraction only.
+
+  **`createStyleContext` has no replacement in the box.** Compound components that need one slot to see the variant
+  chosen at the root now write their own context; `docs/concepts/slot-recipes` documents the ~20-line version.
+
+  What this removes beyond the API: the whole per-framework generator tree, `is-valid-prop` (a large module that shipped
+  to the browser only to decide whether a prop was a style prop), `normalize-html`, the vite fold's JSX element path —
+  which has nothing left to fold — and the per-framework test matrix.
+
+  `@bamboocss/plugin-vue` and `@bamboocss/plugin-svelte` are unaffected: they transform source so the extractor can read
+  it, which has nothing to do with the factory.
+
+- 1dbeb84: **Breaking:** remove JSX pattern components.
+
+  `styled-system/jsx` no longer emits a component per pattern — `<Stack>`, `<Box>`, `<HStack>` and the rest are gone,
+  and `styled-system/jsx` now exports only the factory, `isCssProperty` and `createStyleContext`.
+
+  Pattern **functions** are unchanged. Every pattern still ships from `styled-system/patterns`, and a pattern function
+  passes arbitrary style props through, so the rewrite is mechanical and behaviour-preserving:
+
+  ```tsx
+  // before
+  <Stack gap="4" mt="8">{children}</Stack>
+  <Box p="4">{children}</Box>
+
+  // after
+  <div className={stack({ gap: '4', mt: '8' })}>{children}</div>
+  <div className={css({ p: '4' })}>{children}</div>
+  ```
+
+  The `jsx`, `jsxName` and `jsxElement` fields on a pattern config are removed along with them — they only ever
+  described a component bamboo generated. `jsx` on a **recipe** is untouched.
+
+  Everything that existed to serve the component layer goes with it: the five per-framework pattern generators, the
+  `jsx-patterns` artifact, the parser's `jsx-pattern` result type and `JsxEngine`'s pattern matcher, and the vite fold's
+  pattern-element path. `Patterns.find`/`Patterns.filter` (both keyed by JSX name) are gone, and
+  `StyleEncoder.processPattern` takes `(name, props, grouped)`.
+
+  Two consequences worth knowing:
+  - A component of your own named `Box` or `Stack` is no longer misread as bamboo's pattern. It extracts as an ordinary
+    component, which is what it always was.
+  - The `jsx-patterns-index` artifact is now `jsx-index`, since it no longer indexes patterns.
+
+- d7226f0: **Breaking:** remove template literal syntax.
+
+  The `syntax` config option is gone, along with the `--syntax` CLI flag and the syntax question `bamboo init -i` asked.
+  Styles are written as objects.
+
+  A project that set `syntax: 'template-literal'` now gets a TypeScript error on the option, and its tagged templates
+  are no longer read by the extractor — `` css`color: red;` `` and `` styled.div`color: red;` `` produce no CSS. Convert
+  them to object literals:
+
+  ```tsx
+  // before
+  const One = styled.div`
+    display: flex;
+    width: 300px;
+  `
+
+  // after
+  const One = styled('div', {
+    base: {
+      display: 'flex',
+      width: '300px',
+    },
+  })
+  ```
+
+  Everything the option gated goes with it: the string-literal `css`/`conditions` runtimes and the string-literal JSX
+  factories and types for all five frameworks, the parser's tagged-template branch, the extractor's `taggedTemplates`
+  matcher, the vite fold's tagged-template path, and `astish` from `@bamboocss/shared`. Under the object syntax `cva`,
+  `sva`, patterns, `is-valid-prop`, style props and `viewTransition()` were already the only paths taken, so their
+  generated output is unchanged — the codegen artifacts are byte-identical.
+
+### Patch Changes
+
+- c31e5f7: Fix a stale folded class after a cross-file edit under `vite build --watch`.
+
+  The fold reports the modules it resolved through and the plugin registers them as watch files, so editing one
+  re-transforms its consumers. That was only half the mechanism. A consumer is transformed _before_ the module it
+  imports — that is how a bundler discovers imports — so the re-transform ran while the parser still held the previous
+  contents, and folded the same stale class again:
+
+  ```tsx
+  // styles.ts — edited from red.300 to blue.500
+  export const shared = { color: 'blue.500' }
+
+  // consumer.tsx — rebuilt, and still folded to the old value
+  export const cls = 'c_red.300'
+  ```
+
+  The class was correct for source the user no longer had, and nothing in the build said so. `addWatchFile` was doing
+  its job; the rebuild was simply reading a cache nothing had invalidated.
+
+  Two things made it worse than a single stale rebuild. The staleness was **permanent for the life of the watch
+  session** — touching the consumer did not clear it, so the only recovery was restarting the build. And _deleting_ a
+  folded dependency left the build **succeeding**: the fold had removed the last use of the import, so the bundler never
+  saw an unresolved module and never reported one.
+
+  The plugin now implements `watchChange`, which the bundler calls before the rebuild — the only point early enough. An
+  edited module is re-read from disk and a deleted one is dropped, both of which also clear the resolutions memoized
+  against the old contents. A deleted dependency now fails the build the way it should, and a recreated one recovers.
+
+  A created file takes the same path as an edit. That matters for an editor's atomic save, which arrives as a delete
+  followed by a create while the parser still holds the file.
+
+  The hook is inert when `transform` is off, so a project using the plugin for nothing else does not pay for it. It is
+  also purely additive — the bundler only registers it when a watcher exists, so a plain `vite build` never calls it,
+  and nothing on the fold's own path changed.
+
+  This does not reach `vite dev`: the plugin is `apply: 'build'`, so the fold never runs there and there is nothing to
+  keep fresh. Editing `bamboo.config.ts` during a watch session is still not picked up, which is a separate gap.
+
+- 645bb09: Stop the fold splitting one `css()` call, or one styled element, across several class names under
+  `cssMode: 'grouped'`.
+
+  A grouped class names a whole call, so a split hashes a fragment on each side, and the build emitted no rule for the
+  fragment — leaving the element with **no** styles at all:
+  - `css({ margin: '2', color: c ? 'red.300' : 'green.300' })` folded to three class names with a rule behind none.
+  - Two ternaries in one call folded to four, while the build emits the four _combinations_ — a different set entirely.
+  - `<styled.div margin="2" _hover={{ color: 'red.300', background: tone }} />` hoisted a `margin`-only literal, where
+    the build hashes `margin` together with the resolved part of `_hover`.
+
+  The fold now declines a split under `grouped` unless a single piece carries the whole object. A fully static call or
+  element still folds, and so does a lone ternary, whose two arms the build emits as two complete groups. Everything
+  else keeps its runtime call.
+
+  `cssMode: 'atomic'`, the default, is unaffected.
+
+- 41ea189: Fix four of the ways `cssMode: 'grouped'` returned class names the build emitted no rule for.
+
+  A grouped class names a whole `css()` call, so the build and the runtime have to agree on which object that call
+  resolves to. Where they disagreed the failure was silent and total — the element rendered with no styles at all, not
+  merely the wrong ones. Now fixed:
+  - **Patterns** (`stack({ gap: '4' })`) and their JSX form were extracted one class per property while the runtime
+    hashed the transformed object as a group. They now group, matching `css(stackStyleFn(styles))`.
+  - **The `css` prop on a `styled` element** was hashed apart from the style props beside it, though the factory merges
+    both into a single `css(propStyles, cssStyles)` call. It now merges the way `mergeCss` does — normalizing each
+    operand and then deep-merging, so a shorthand and its longhand collide as they will at runtime and a shared key
+    holding a condition object keeps every branch. A `*Css` prop belongs to another slot and still gets its own call.
+  - **`cva()` and `sva()` called directly**, and **config recipe compound variants**, asked for a group while the build
+    hashed each variant's styles on its own — the only thing possible while their classes were named by property.
+    Recipes are now named from their config instead, in the `recipes` layer, which `cssMode` does not reach at all.
+
+  `@bamboocss/vite` folds the recipe half the same way, so a folded call agrees with both.
+
+  What is still broken under `grouped` is now documented in the `cssMode` reference: JSX factories that merge several
+  extracted objects into one grouped call, conditional values outside `css()`, and style objects the build cannot fully
+  resolve.
+
+  `cssMode: 'atomic'`, the default, is unchanged.
+
+- Updated dependencies [f798d1c]
+- Updated dependencies [bb6d999]
+- Updated dependencies [4877a67]
+- Updated dependencies [645bb09]
+- Updated dependencies [645bb09]
+- Updated dependencies [645bb09]
+- Updated dependencies [41ea189]
+- Updated dependencies [645bb09]
+- Updated dependencies [645bb09]
+- Updated dependencies [6fb235d]
+- Updated dependencies [091f2e1]
+- Updated dependencies [f2d5df2]
+- Updated dependencies [1dbeb84]
+- Updated dependencies [d7226f0]
+- Updated dependencies [31d8577]
+- Updated dependencies [99ab42f]
+- Updated dependencies [2ab7f19]
+- Updated dependencies [6fb235d]
+- Updated dependencies [ca558fb]
+- Updated dependencies [645bb09]
+  - @bamboocss/extractor@1.16.0
+  - @bamboocss/core@1.16.0
+  - @bamboocss/node@1.16.0
+  - @bamboocss/shared@1.16.0
+  - @bamboocss/types@1.16.0
+  - @bamboocss/config@1.16.0
+  - @bamboocss/logger@1.16.0
+
 ## 1.15.0
 
 ### Patch Changes

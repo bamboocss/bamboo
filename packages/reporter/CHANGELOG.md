@@ -1,5 +1,33 @@
 # @bamboocss/reporter
 
+## 1.16.0
+
+### Patch Changes
+
+- Updated dependencies [1be9171]
+- Updated dependencies [ca558fb]
+- Updated dependencies [bb6d999]
+- Updated dependencies [645bb09]
+- Updated dependencies [645bb09]
+- Updated dependencies [645bb09]
+- Updated dependencies [41ea189]
+- Updated dependencies [645bb09]
+- Updated dependencies [6fb235d]
+- Updated dependencies [091f2e1]
+- Updated dependencies [f2d5df2]
+- Updated dependencies [1dbeb84]
+- Updated dependencies [d7226f0]
+- Updated dependencies [31d8577]
+- Updated dependencies [99ab42f]
+- Updated dependencies [2ab7f19]
+- Updated dependencies [6fb235d]
+- Updated dependencies [ca558fb]
+  - @bamboocss/generator@1.16.0
+  - @bamboocss/core@1.16.0
+  - @bamboocss/shared@1.16.0
+  - @bamboocss/types@1.16.0
+  - @bamboocss/logger@1.16.0
+
 ## 1.15.0
 
 ### Patch Changes
