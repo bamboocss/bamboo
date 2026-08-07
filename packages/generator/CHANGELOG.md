@@ -1,5 +1,182 @@
 # @bamboocss/generator
 
+## 1.17.0
+
+### Patch Changes
+
+- 3cdd0d1: Stop `css()` paying for a second cache keyed on the arguments it just hashed.
+
+  The generated runtime was `css = memo((...styles) => cssFn(mergeCss(...styles)))`, and `mergeCss` is itself memoized
+  on its argument list. So a `css()` call consulted two caches keyed on the same thing — and the second one could never
+  answer. Reaching the merge at all means the outer cache missed, and a miss means those exact arguments have not been
+  seen, so the inner lookup is _guaranteed_ to miss too. The redundancy is structural, not a matter of hit rate.
+
+  Measured over 25,000 `css()` calls across four distinct styles, the inner memo served **zero** hits while paying a
+  hash, a bucket scan, a snapshot and an insert on each of the four misses. Driven directly with no memo above it, the
+  same function hit 24,996 times — which is why it stays memoized for the callers that reach it that way.
+
+  `createMergeCss` now also returns `mergeCssUncached`, the same merge without the cache, and the generated `css` calls
+  that instead. `css.raw`, `cva` and the Vite fold's runtime keep the memoized one: none of them sits behind a memo
+  keyed on the same arguments, so for them the cache is doing real work.
+
+  The win is on the miss path, which is where dynamic styles and SSR live. Cached calls are unchanged:
+
+  | bench                            | before  | after   |              |
+  | -------------------------------- | ------- | ------- | ------------ |
+  | high-cardinality `css()`         | 26.48ms | 19.73ms | −25.5%       |
+  | high-cardinality grouped `css()` | 28.23ms | 21.53ms | −23.7%       |
+  | inline `css()` (cached)          | 0.724ms | 0.689ms | −4.8%, noise |
+  | multi-arg `css(a, b)` (cached)   | 0.758ms | 0.767ms | +1.2%, noise |
+  | `stack()` pattern (cached)       | 4.223ms | 4.246ms | +0.5%, noise |
+
+  Per 10k iterations, interleaved new/old/new, controls read in every run.
+
+  Locked down by counting rather than timing, per the note in `CLAUDE.md`: an enumerable getter on the style object is
+  read once per pass over the arguments, so `packages/shared/__tests__/memo.test.ts` now asserts a miss costs four reads
+  (hash, snapshot, and the merge itself) rather than six. Reintroducing the inner memo fails that test with
+  `expected 6 to be 4`.
+
+- 29f9bbe: Fix conditional token values being silently dropped on postcss `>= 8.5.25`.
+
+  A semantic token declared with a conditional value emitted only its `base` half — no error, no warning — so a themed
+  app kept its light values in dark mode:
+
+  ```ts
+  semanticTokens: {
+    colors: {
+      panel: { value: { base: '#ffffff', _osDark: '#131211' } },
+    },
+  }
+  ```
+
+  ```css
+  /* before — the `_osDark` half never reached the tokens layer */
+  @layer tokens {
+    :where(:root, :host) {
+      --colors-panel: #ffffff;
+    }
+  }
+  ```
+
+  `getDeepestRule` seeded its nesting chain with an empty-selector rule and relied on postcss-nested erasing `&` against
+  it. postcss 8.5.25 ("Fixed 8.5.17 visitor regression") changed that edge case to collapse the whole selector, so every
+  conditional token was emitted as a selectorless — and therefore discarded — rule. The chain is now built on a `Root`,
+  and the top-level `&` is resolved directly instead of through postcss-nested.
+
+- 28463ce: Five fixes from an adversarial review of the previous batch. Four are in code that batch introduced.
+
+  **The fold declined where the runtime throws — but only for scoped recipes.** A slot recipe call runs a `recipeFn` per
+  slot, each calling `assertCompoundVariant`. Which slots get one depends on scoping: with anchors only they do, without
+  them every slot does. The guard read the anchors alone, and `[].some()` is false — so an _unscoped_ recipe with
+  compound variants folded a class where the call throws.
+
+  **`cva().merge()` was not associative.** `a.merge(b).merge(c)` dropped `b` entirely, because the merged object
+  re-exposed the left parent's `merge` closure and recomposed `a` with `c`. It now composes the _result_, so `merge` is
+  associative and `variantKeys` keeps every parent's.
+
+  **A merged recipe applied each parent's own defaults** while publishing merged ones, so `m()` and
+  `m(m.getVariantProps())` disagreed. The selection is now resolved once and handed to both parents.
+
+  **The fold rejected ordinary TypeScript.** `dyn as Size`, `dyn!`, `(dyn)` and `dyn ?? 'sm'` are erased before anything
+  runs, so they cannot add an effect — but the new inertness check rejected them, losing folds that landed before it
+  existed. It now sees through the erased wrappers, while still declining template substitutions and arithmetic, which
+  coerce and can reach a getter.
+
+  **A scoped compound variant lost its precedence, and a stale one could survive a rebuild.** Moving a compound into an
+  `@scope` rule made its inner selector one class — the same specificity and the same scoping root as every
+  single-variant scope — so the winner fell to stylesheet order, which for compounds is decided by whichever call site
+  the build walked first. The compound's inner selector is now `:scope .slot`, restoring `(0,2,0)` against a variant's
+  `(0,1,0)` without changing what it matches.
+
+  Separately, `slotScopes` was cleared for variants but not for compounds, both being module-global. A recipe that
+  stopped being scoped kept emitting the previous build's rule — naming an anchor nothing renders — and lost its own
+  compound entirely. Both maps are now cleared before either is written.
+
+- 6577023: **Fix:** a scoped slot recipe rendered every non-anchor slot unstyled under `hash: true` or `prefix`.
+
+  A scoped slot's class is a constant — that is the point of scoping, since the slot takes no variant props. Constants
+  never pass through `createCss`, which is where `hash.className` and `prefix` are applied, so the runtime handed back a
+  raw `checkbox__control` while the stylesheet emitted its rule as `.hEeOkj`. The `@scope` prelude had the same problem:
+
+  ```css
+  /* before, with `hash: true` */
+  .dHwbLC { … }                                          /* base rules hashed */
+  @scope (.checkbox__root--size_sm) to (.checkbox__root) /* prelude not hashed */
+    { .checkbox__control { … } }                         /* selector not hashed */
+  ```
+
+  Neither the anchor class nor the slot class existed in the DOM under those names, so the slot lost its base styles
+  _and_ its variant styles. Nothing was reported — it simply rendered unstyled. Both defaults (no `hash`, no `prefix`)
+  were unaffected, which is why it went unnoticed.
+
+  Fixed on both sides: the build stores the scope's class names raw and formats them through `formatSelector`, and the
+  generated runtime formats a constant slot class through the same prefix-and-hash the rest of a recipe's classes go
+  through. Inline `sva` had the identical bug and is fixed with it.
+
+  `checkNamingAgreement` now covers slot recipes, so this derivation cannot drift again — it already covered `css()` and
+  inline `cva`, and a slot recipe's constant half was exactly the gap.
+
+  To be precise about what that guard does and does not do: it runs a **canary config** through both derivations, so it
+  checks that hashing, prefixing and separators agree. It never looks at your code, so it cannot see a class name that
+  diverges because the build read a _different config_ than the browser holds — see the separate fix for a recipe config
+  the build cannot fully read.
+
+- d5347ab: Four fixes found by auditing the recipe work for edge cases. Three are silent failures of the same shape: a
+  class name derived one way for the stylesheet and another way for the browser.
+
+  **The fold emitted broken JavaScript for a property access on `css()` or a pattern.** Folding a slot access widened
+  the replaced range to cover the member expression — but the widening applied to every foldable call, so the property
+  read was deleted:
+
+  ```js
+  css({ color: 'red' }).trim() // → "c_red"()          TypeError
+  flex({ direction: 'row' }).split(' ') // → "d_flex flex-d_row"(' ')
+  ```
+
+  It now fires only for a recipe whose accessed property names a slot the recipe declares.
+
+  **Every compound variant was dead under `hash: true` or `prefix`.** A compound's selector is assembled from class
+  names, and it was assembled from raw ones while the element carried prefixed or hashed ones — so
+  `.btn--size_sm.btn--tone_a` selected nothing while the element carried `bam-btn--size_sm bam-btn--tone_a`. The
+  selector is now built through the same `formatSelector` as every other class.
+
+  **A compound variant on a scoped slot recipe matched nothing at all.** A scoped slot carries only its constant class,
+  so a compound selecting on that slot's variant classes can never apply. It is now scoped by the anchor, like the
+  variants it refines:
+
+  ```css
+  @scope (.cmp__root--size_lg.cmp__root--tone_a) to (.cmp__root) { .cmp__item { … } }
+  ```
+
+  **Two slot recipes differing only in `slots` or `scopeRoots` collided.** `getRecipeIdentity` hashed only the style
+  fields, so "same styles, different DOM topology" — exactly what `scopeRoots` exists for — produced one name. An inline
+  recipe is registered once, so whichever was extracted first decided the emission for both and the other rendered
+  unstyled. Both fields now count toward the identity, which changes the generated name of every anonymous `sva`.
+
+  **An `sva` that omits `slots` rendered unstyled.** The build infers slots and the runtime does not, so once `slots`
+  counted toward the identity the two sides derived different names. The identity is now hashed from the config as
+  written — what both sides actually see — and `checkNamingAgreement` gained a canary that leaves `slots` out, so it
+  cannot recur.
+
+  **`auditSlotScopes` was a no-op under `hash` or `prefix`.** It builds its selectors from `classNameMap`, and an inline
+  `sva` populated that map with raw names while returning formatted ones — so the diagnostic went silent in precisely
+  the configs where a naming bug is likeliest. Config slot recipes were already correct; the two now agree.
+
+- Updated dependencies [3cdd0d1]
+- Updated dependencies [29f9bbe]
+- Updated dependencies [66cb96c]
+- Updated dependencies [28463ce]
+- Updated dependencies [6577023]
+- Updated dependencies [d5347ab]
+- Updated dependencies [c6154dc]
+- Updated dependencies [355e573]
+  - @bamboocss/shared@1.17.0
+  - @bamboocss/core@1.17.0
+  - @bamboocss/types@1.17.0
+  - @bamboocss/token-dictionary@1.17.0
+  - @bamboocss/logger@1.17.0
+  - @bamboocss/is-valid-prop@1.17.0
+
 ## 1.16.1
 
 ### Patch Changes

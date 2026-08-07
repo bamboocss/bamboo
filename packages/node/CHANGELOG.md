@@ -1,5 +1,128 @@
 # @bamboocss/node
 
+## 1.17.0
+
+### Minor Changes
+
+- 049a382: Report a `css()` call the build could not fully read under `cssMode: 'atomic'`, not only under `grouped`.
+
+  ```jsx
+  css({ ...getFocusRingStyles(), color: 'red' })
+  // `.c_red` is emitted; the focus ring's declarations are not, and nothing said so
+  ```
+
+  The detection was gated on `grouped` because that is where a loss is _fatal_ — one class names the whole call, so
+  missing part of it costs all of it. Under `atomic` the loss is partial: what the build saw still applies. But it is no
+  less silent, and a component quietly missing its focus ring is exactly the shape that gets reported as a mystery
+  rather than as a bug.
+
+  Only the surprising half is reported. A spread the build could not read **looks** static and is not, so it interrupts.
+  A value it could not evaluate — `css({ color: getColor() })` — is the documented dynamic-styling shape, answered by
+  `staticCss` and already covered by the `no-dynamic-styling` lint rule; warning on every one of those would bury the
+  first. Grouped mode keeps reporting both, because there either kind costs the whole call.
+
+  The message is written for the mode it fires in rather than reusing grouped's, which ended "to group it".
+
+- 7251bf8: Report a recipe config the build could not fully read, instead of emitting a stylesheet nothing will ask for.
+
+  A `cva`/`sva` config with a spread the extractor cannot resolve loses those declarations — and since 1.16 that is not
+  a partial loss. A recipe's classes are named from a hash of its config, so a dropped declaration changes the hash: the
+  build emits rules under one name and the browser asks for another, and the element renders with **no styles at all**.
+
+  ```jsx
+  cva({ base: { ...getFocusRing(), color: 'red' } })
+  // build emits  .cva_iPlRDu, .cva_iPlRDu--size_sm
+  // browser asks cva_gLgUZR…      — nothing matches
+  ```
+
+  Before 1.16 atomic class names were content-addressed per declaration, so the spread's properties were missing but
+  everything the build _did_ resolve still applied. Semantic recipe naming turned that benign limit into total loss.
+
+  The detection already existed — `findUnresolvedStyles`, added for `cssMode: 'grouped'`, where one class names a whole
+  `css()` call. That gate was right for what it was written for and was never extended when recipes gained the same
+  property, in every mode. Recipes are now checked regardless of `cssMode`, and the message says what to do:
+
+  ```
+  🎋 warn [recipe] app/Button.tsx:4:18 — an object spread or computed key leaves the build unable to tell
+  which properties this call sets. A recipe's classes are named from a hash of its config, so a declaration
+  the build cannot see gives the build and the browser different names and the element renders with no
+  styles at all. Set `className` on the recipe, so its name does not depend on what the build could resolve.
+  ```
+
+  `className` is the fix as well as the workaround: the identity short-circuits on it and never hashes the styles, so
+  extraction fidelity stops deciding the name and the loss degrades to the missing declarations alone. A recipe that
+  sets one is not reported.
+
+  Reported per level with its path — `base`, `variants.size.sm`, `compoundVariants.0.css`, `base.root` for a slot. Three
+  ways a level can lose something are covered:
+  - a **spread or computed key** that contributed no keys beyond those written beside it;
+  - a **value the build could not evaluate** (`{ color: getColor() }`), which leaves no trace in the box tree at all
+    because the pair is never recorded — this one needs the written source compared against the resolved data;
+  - the config **not being an object literal**, as in `cva(someConfig)`, which is the quietest total loss of the lot.
+
+  Every level is unwrapped first, so `as const` and `satisfies` — idiomatic on a recipe config — do not hide the loss. A
+  spread of a literal is not reported, since its keys are written right there and nothing can have gone missing.
+
+  **Cost.** The check walks the config, so it roughly doubles the walking a recipe already costs: on a file of eight
+  variant-heavy recipes, parse goes from 1.087 ms to 1.390 ms (+28%). It is skipped entirely for a recipe that sets
+  `className` — so the state this warning asks for is also the one that does not pay for it. Folding the comparison into
+  extraction, rather than walking a second time, is the way to remove the cost outright.
+
+  This does not change what CSS is emitted. `css()` in atomic mode still drops an unresolvable spread silently; that is
+  unchanged and pre-existing.
+
+### Patch Changes
+
+- 29f9bbe: Fix conditional token values being silently dropped on postcss `>= 8.5.25`.
+
+  A semantic token declared with a conditional value emitted only its `base` half — no error, no warning — so a themed
+  app kept its light values in dark mode:
+
+  ```ts
+  semanticTokens: {
+    colors: {
+      panel: { value: { base: '#ffffff', _osDark: '#131211' } },
+    },
+  }
+  ```
+
+  ```css
+  /* before — the `_osDark` half never reached the tokens layer */
+  @layer tokens {
+    :where(:root, :host) {
+      --colors-panel: #ffffff;
+    }
+  }
+  ```
+
+  `getDeepestRule` seeded its nesting chain with an empty-selector rule and relied on postcss-nested erasing `&` against
+  it. postcss 8.5.25 ("Fixed 8.5.17 visitor regression") changed that edge case to collapse the whole selector, so every
+  conditional token was emitted as a selectorless — and therefore discarded — rule. The chain is now built on a `Root`,
+  and the top-level `&` is resolved directly instead of through postcss-nested.
+
+- Updated dependencies [049a382]
+- Updated dependencies [3cdd0d1]
+- Updated dependencies [29f9bbe]
+- Updated dependencies [66cb96c]
+- Updated dependencies [28463ce]
+- Updated dependencies [6577023]
+- Updated dependencies [d5347ab]
+- Updated dependencies [c6154dc]
+- Updated dependencies [7251bf8]
+- Updated dependencies [355e573]
+  - @bamboocss/parser@1.17.0
+  - @bamboocss/generator@1.17.0
+  - @bamboocss/shared@1.17.0
+  - @bamboocss/core@1.17.0
+  - @bamboocss/types@1.17.0
+  - @bamboocss/reporter@1.17.0
+  - @bamboocss/config@1.17.0
+  - @bamboocss/token-dictionary@1.17.0
+  - @bamboocss/logger@1.17.0
+  - @bamboocss/plugin-lightningcss@1.17.0
+  - @bamboocss/plugin-svelte@1.17.0
+  - @bamboocss/plugin-vue@1.17.0
+
 ## 1.16.1
 
 ### Patch Changes
