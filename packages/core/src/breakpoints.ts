@@ -1,4 +1,4 @@
-import { capitalize, toPx, toRem } from '@bamboocss/shared'
+import { capitalize, getUnit, toPx, toRem } from '@bamboocss/shared'
 import type { AtRuleCondition, ConditionDetails } from '@bamboocss/types'
 import type { Root } from 'postcss'
 
@@ -88,8 +88,22 @@ export class Breakpoints {
 type BreakpointEntry = { name: string; min?: string | null; max?: string | null }
 type Entries = [string, BreakpointEntry][]
 
+/**
+ * One step below a breakpoint, for the `max-width` half of a range.
+ *
+ * Only a value in a unit that converts to pixels can be stepped down. Anything else — `vw`,
+ * `ch`, a `calc()` — is returned as written rather than reinterpreted, because the arithmetic
+ * that follows cannot tell a unit it does not know from no unit at all: `parseFloat('50vw')`
+ * is `50`, and treating that as pixels turned a `50vw` breakpoint into `3.1225rem`. Passing
+ * it through costs an overlap of one unit between adjacent ranges; the alternative was a
+ * range that matched nothing, or `NaNrem`, which is not a media query.
+ */
 function adjust(value: string | null | undefined) {
+  if (!getUnit(value ?? '')) return value as string
+
   const computedMax = parseFloat(toPx(value!) ?? '') - 0.04
+  if (!Number.isFinite(computedMax)) return value as string
+
   return toRem(`${computedMax}px`) as string
 }
 

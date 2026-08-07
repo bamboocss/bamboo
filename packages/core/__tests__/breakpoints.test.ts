@@ -160,3 +160,43 @@ describe('Breakpoints', () => {
     `)
   })
 })
+
+/**
+ * A breakpoint whose unit the arithmetic cannot read.
+ *
+ * `adjust` steps a breakpoint down by 0.04px to build the `max-width` half of a range, and it
+ * used to do that by running `parseFloat` over whatever `toPx` handed back. `parseFloat`
+ * returns a number for plenty of strings that are not pixel values — `50vw` is `50`, `40EM`
+ * is `40` — so a unit it did not recognise was silently read as pixels and the range came out
+ * sixteen times too small. A `calc()` gave `NaN`, which is not a media query at all.
+ *
+ * Both are still valid CSS, so nothing downstream would have complained. The styles simply
+ * never applied.
+ */
+describe('breakpoints in units the arithmetic cannot convert', () => {
+  const rangeFor = (values: Record<string, string>) => {
+    const root = postcss.parse(`@breakpoint mdOnly{ .foo{ color: red } }`)
+    new Breakpoints(values).expandScreenAtRule(root)
+    return root
+      .toString()
+      .match(/@media[^{]*/)?.[0]
+      ?.trim()
+  }
+
+  test('an uppercase unit converts the same as a lowercase one', () => {
+    expect(rangeFor({ sm: '30EM', md: '40EM', lg: '50EM' })).toBe(rangeFor({ sm: '30em', md: '40em', lg: '50em' }))
+  })
+
+  test('a unit that does not convert is left as written', () => {
+    // An overlap of one unit between adjacent ranges is the cost of not reinterpreting it.
+    expect(rangeFor({ sm: '30vw', md: '40vw', lg: '50vw' })).toBe(
+      '@media screen and (min-width: 40vw) and (max-width: 50vw)',
+    )
+  })
+
+  test('an expression is left as written rather than becoming NaN', () => {
+    const range = rangeFor({ sm: '30em', md: 'calc(40em + 0px)', lg: '50em' })
+    expect(range).not.toContain('NaN')
+    expect(range).toContain('calc(40em + 0px)')
+  })
+})
