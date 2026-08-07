@@ -76,7 +76,7 @@ describe('viewTransition', () => {
           background: var(--colors-red-300);
       }
 
-        @media screen and (min-width: 48rem) {
+        @media (width >= 48rem) {
           ::view-transition-group(.vt_cAQlRA) {
             color: var(--colors-green-300);
       }
@@ -104,7 +104,7 @@ describe('viewTransition', () => {
 
     const { css } = parseAndExtract(code)
     expect(css).toContain('animation-duration: 0.2s')
-    expect(css).toMatch(/@media screen and \(min-width: 40rem\)/)
+    expect(css).toMatch(/@media \(width >= 40rem\)/)
     expect(css).not.toMatch(/\b0:\s/)
   })
 

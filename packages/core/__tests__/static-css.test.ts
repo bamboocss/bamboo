@@ -114,7 +114,7 @@ describe('static-css', () => {
           min-width: 2.5rem;
       }
 
-        @media screen and (min-width: 40rem) {
+        @media (width >= 40rem) {
           .sm\\:buttonStyle--size_sm {
             padding: 0 0.5rem;
             height: 2.5rem;
@@ -127,7 +127,7 @@ describe('static-css', () => {
       }
       }
 
-        @media screen and (min-width: 48rem) {
+        @media (width >= 48rem) {
           .md\\:buttonStyle--size_sm {
             padding: 0 0.5rem;
             height: 2.5rem;
@@ -194,7 +194,7 @@ describe('static-css', () => {
           color: var(--colors-color-palette-200);
       }
 
-        @media screen and (min-width: 40rem) {
+        @media (width >= 40rem) {
           .sm\\:m_20px {
             margin: 20px;
       }
@@ -212,7 +212,7 @@ describe('static-css', () => {
       }
       }
 
-        @media screen and (min-width: 48rem) {
+        @media (width >= 48rem) {
           .md\\:m_20px {
             margin: 20px;
       }
@@ -702,7 +702,7 @@ describe('static-css', () => {
           background-color: darkblue;
       }
 
-        @media screen and (min-width: 48rem) {
+        @media (width >= 48rem) {
           .md\\:buttonStyle--size_md {
             padding: 0 0.75rem;
             height: 3rem;
@@ -779,7 +779,7 @@ describe('static-css', () => {
             font-size: var(--font-sizes-lg);
       }
 
-          @media screen and (min-width: 64rem) {
+          @media (width >= 64rem) {
             .checkbox__control {
               width: var(--sizes-12);
               height: var(--sizes-12);
@@ -1165,7 +1165,7 @@ describe('static-css', () => {
           height: 100%;
       }
 
-        @media screen and (min-width: 48rem) {
+        @media (width >= 48rem) {
           .md\\:pos_relative {
             position: relative;
       }
@@ -2246,7 +2246,7 @@ describe('static-css', () => {
           font-weight: var(--font-weights-black);
       }
 
-        @container pb (min-width: 24rem) {
+        @container pb (inline-size >= 24rem) {
           .\\@pb\\/sm\\:fs_7xl {
             font-size: var(--font-sizes-7xl);
       }
@@ -2282,7 +2282,7 @@ describe('static-css', () => {
       }
       }
 
-        @container pb (min-width: 28rem) {
+        @container pb (inline-size >= 28rem) {
           .\\@pb\\/md\\:fs_7xl {
             font-size: var(--font-sizes-7xl);
       }

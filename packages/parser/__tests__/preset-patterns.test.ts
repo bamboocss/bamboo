@@ -636,13 +636,13 @@ describe('preset patterns', () => {
           max-width: var(--sizes-8xl);
       }
 
-        @media screen and (min-width: 48rem) {
+        @media (width >= 48rem) {
           .md\\:px_6 {
             padding-inline: var(--spacing-6);
       }
       }
 
-        @media screen and (min-width: 64rem) {
+        @media (width >= 64rem) {
           .lg\\:px_8 {
             padding-inline: var(--spacing-8);
       }
@@ -843,7 +843,7 @@ describe('preset patterns', () => {
           font-size: var(--font-sizes-lg);
       }
 
-        @container sidebar (min-width: 24rem) {
+        @container sidebar (inline-size >= 24rem) {
           .\\@sidebar\\/sm\\:fs_md {
             font-size: var(--font-sizes-md);
       }
@@ -916,7 +916,7 @@ describe('preset patterns', () => {
           grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
-        @media screen and (min-width: 40rem) {
+        @media (width >= 40rem) {
           .sm\\:grid-c_span_2 {
             grid-column: span 2;
       }
@@ -925,7 +925,7 @@ describe('preset patterns', () => {
       }
       }
 
-        @media screen and (min-width: 48rem) {
+        @media (width >= 48rem) {
           .md\\:grid-c_span_3 {
             grid-column: span 3;
       }
@@ -1094,7 +1094,7 @@ describe('staticCss', () => {
           height: 100%;
       }
 
-        @media screen and (min-width: 48rem) {
+        @media (width >= 48rem) {
           .md\\:pos_relative {
             position: relative;
       }

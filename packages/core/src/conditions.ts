@@ -8,6 +8,7 @@ import type {
 } from '@bamboocss/types'
 import { Breakpoints } from './breakpoints'
 import { parseCondition } from './parse-condition'
+import { expandRange, rangeQuery, sortScale } from './range-query'
 import { compareAtRuleOrMixed } from './sort-style-rules'
 
 /**
@@ -74,21 +75,41 @@ export class Conditions {
     }
   }
 
+  /**
+   * Container sizes, as the same range set breakpoints get.
+   *
+   * These used to be the `min` half only — one `@/md` per size, written as `(min-width: …)`.
+   * Two things came of sharing the construction with breakpoints instead. Containers gain the
+   * `@/mdOnly`, `@/mdDown` and `@/mdToXl` keys they never had, and the feature becomes
+   * `inline-size`, which is what a container query is actually asking about: `width` and
+   * `inline-size` diverge the moment a container is in a vertical writing mode.
+   *
+   * `params` now carries the query rather than the bare size. It fed the at-rule sorter, which
+   * reads a bound out of it, and ` 40rem` has no bound to read — so container queries sorted by
+   * length alone. A `Down` range would have inherited that and sorted among the `min` bounds.
+   */
   private setupContainers = () => {
     const { containerNames = [], containerSizes = {} } = this.options
 
     const containers: Record<string, ConditionDetails> = {}
     containerNames.unshift('') // add empty container name for @/sm, @/md, etc.
 
+    const sizes = new Map(sortScale(containerSizes).map(([size, value]) => [size, toRem(value) ?? value]))
+    const ranges = expandRange([...sizes.keys()])
+
     containerNames.forEach((name) => {
-      Object.entries(containerSizes).forEach(([size, value]) => {
-        const _value = toRem(value) ?? value
-        containers[`@${name}/${size}`] = {
+      ranges.forEach(({ key, min, max }) => {
+        const query = rangeQuery('inline-size', min && sizes.get(min), max && sizes.get(max))
+        if (!query) return
+
+        const params = `${name} ${query}`.trim()
+
+        containers[`@${name}/${key}`] = {
           type: 'at-rule',
           name: 'container',
-          value: _value,
-          raw: `@container ${name} (min-width: ${_value})`,
-          params: `${name} ${value}`,
+          value: query,
+          raw: `@container ${params}`,
+          params,
         }
       })
     })

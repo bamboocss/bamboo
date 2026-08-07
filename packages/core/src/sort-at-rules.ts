@@ -91,6 +91,70 @@ function _testQuery(doubleTestTrue: RegExp, doubleTestFalse: RegExp, singleTest:
   }
 }
 
+// ----------------------------------------
+// Range syntax
+// ----------------------------------------
+
+/**
+ * Media Queries Level 4 range syntax, rewritten to the `min-`/`max-` form everything above
+ * reads.
+ *
+ * The classification is a pile of regexes asking which bound a query carries and which one
+ * comes first, and every one of them looks for a literal `min-width` or `max-width`.
+ * `(width >= 40rem)` carries a lower bound and matches none of them, so it would classify as
+ * neither — and that split is precisely what orders a range against its neighbours: it is the
+ * reason `mdDown` sorts after `md` instead of the two being ranked by length, and the reason
+ * every `max` bound sorts descending. Emitting range syntax without teaching the sorter to
+ * read it does not drop rules; it emits them in an order where an override lands before the
+ * rule it overrides, which is the kind of thing that shows up as one wrong colour at one
+ * viewport.
+ *
+ * Rewriting once, rather than duplicating six regexes in a second dialect, keeps a single
+ * definition of "which bound comes first". The result is fed only to the tests and the length
+ * parse — nothing emits it.
+ *
+ * `inline-size` and `block-size` fold into `width` and `height` so container queries keep
+ * classifying the way they did when they were written as `(min-width: …)`.
+ */
+const rangeFeature = 'width|height|inline-size|block-size'
+/** Anything but a paren or a comparison operator, plus `calc()`-style groups one level deep. */
+const rangeValue = '(?:[^()<>=]|\\([^()]*\\))+?'
+
+const doubleEndedRange = new RegExp(
+  `\\(\\s*(${rangeValue})\\s*([<>]=?)\\s*(${rangeFeature})\\s*[<>]=?\\s*(${rangeValue})\\s*\\)`,
+  'gi',
+)
+const featureFirstRange = new RegExp(`\\(\\s*(${rangeFeature})\\s*([<>]=?)\\s*(${rangeValue})\\s*\\)`, 'gi')
+const valueFirstRange = new RegExp(`\\(\\s*(${rangeValue})\\s*([<>]=?)\\s*(${rangeFeature})\\s*\\)`, 'gi')
+
+const legacyFeature = (feature: string) => {
+  const name = feature.toLowerCase()
+  if (name === 'inline-size') return 'width'
+  if (name === 'block-size') return 'height'
+  return name
+}
+
+const bound = (feature: string, side: 'min' | 'max', value: string) =>
+  `(${side}-${legacyFeature(feature)}: ${value.trim()})`
+
+function toLegacyRanges(query: string) {
+  if (!query.includes('<') && !query.includes('>')) return query
+
+  return query
+    .replace(doubleEndedRange, (_match, first: string, op: string, feature: string, second: string) => {
+      // A double-ended range is a min-bounded range whichever way it is written, so the lower
+      // bound is emitted first either way — `(a <= width < b)` and `(b > width >= a)` are one range.
+      const [lower, upper] = op.startsWith('<') ? [first, second] : [second, first]
+      return `${bound(feature, 'min', lower)} and ${bound(feature, 'max', upper)}`
+    })
+    .replace(featureFirstRange, (_match, feature: string, op: string, value: string) =>
+      bound(feature, op.startsWith('>') ? 'min' : 'max', value),
+    )
+    .replace(valueFirstRange, (_match, value: string, op: string, feature: string) =>
+      bound(feature, op.startsWith('<') ? 'min' : 'max', value),
+    )
+}
+
 interface QueryFacts {
   isPrint: boolean
   isPrintOnly: boolean
@@ -121,12 +185,13 @@ const factsCache = new Map<string, QueryFacts>()
 const factsOf = (query: string): QueryFacts => {
   let facts = factsCache.get(query)
   if (facts === undefined) {
+    const legacy = toLegacyRanges(query)
     facts = {
-      isPrint: isPrint.test(query),
-      isPrintOnly: isPrintOnly.test(query),
-      min: isMinWidth(query) || isMinHeight(query),
-      max: isMaxWidth(query) || isMaxHeight(query),
-      length: getQueryLength(query),
+      isPrint: isPrint.test(legacy),
+      isPrintOnly: isPrintOnly.test(legacy),
+      min: isMinWidth(legacy) || isMinHeight(legacy),
+      max: isMaxWidth(legacy) || isMaxHeight(legacy),
+      length: getQueryLength(legacy),
     }
     if (factsCache.size > 4096) factsCache.clear()
     factsCache.set(query, facts)

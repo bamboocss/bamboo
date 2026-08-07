@@ -1,6 +1,7 @@
-import { capitalize, getUnit, toPx, toRem } from '@bamboocss/shared'
+import { toRem } from '@bamboocss/shared'
 import type { AtRuleCondition, ConditionDetails } from '@bamboocss/types'
 import type { Root } from 'postcss'
+import { expandRange, rangeQuery, sortScale } from './range-query'
 
 export class Breakpoints {
   sorted: ReturnType<typeof sortBreakpoints>
@@ -22,8 +23,7 @@ export class Breakpoints {
   }
 
   build = ({ min, max }: { min?: string | null; max?: string | null }) => {
-    if (min == null && max == null) return ''
-    return ['screen', min && `(min-width: ${min})`, max && `(max-width: ${max})`].filter(Boolean).join(' and ')
+    return rangeQuery('width', min, max)
   }
 
   only = (name: string) => {
@@ -32,27 +32,12 @@ export class Breakpoints {
   }
 
   private getRanges = () => {
-    const breakpoints: string[] = Object.keys(this.values)
-    const permuations = getPermutations(breakpoints)
-
-    const values = breakpoints
-      .flatMap((name) => {
-        const value = this.get(name)
-
-        const down: [string, string] = [`${name}Down`, this.build({ max: adjust(value.min) })]
-        const up: [string, string] = [name, this.build({ min: value.min })]
-        const only: [string, string] = [`${name}Only`, this.only(name)]
-
-        return [up, only, down]
-      })
-      .filter(([_, value]) => value !== '')
-      .concat(
-        permuations.map(([min, max]) => {
-          const minValue = this.get(min)
-          const maxValue = this.get(max)
-          return [`${min}To${capitalize(max)}`, this.build({ min: minValue.min, max: adjust(maxValue.min) })]
-        }),
-      )
+    const values = expandRange(Object.keys(this.values))
+      .map(({ key, min, max }): [string, string] => [
+        key,
+        this.build({ min: min && this.get(min).min, max: max && this.get(max).min }),
+      ])
+      .filter(([, value]) => value !== '')
 
     return Object.fromEntries(values)
   }
@@ -89,42 +74,18 @@ type BreakpointEntry = { name: string; min?: string | null; max?: string | null 
 type Entries = [string, BreakpointEntry][]
 
 /**
- * One step below a breakpoint, for the `max-width` half of a range.
+ * `max` is the neighbouring breakpoint as written, and is exclusive.
  *
- * Only a value in a unit that converts to pixels can be stepped down. Anything else — `vw`,
- * `ch`, a `calc()` — is returned as written rather than reinterpreted, because the arithmetic
- * that follows cannot tell a unit it does not know from no unit at all: `parseFloat('50vw')`
- * is `50`, and treating that as pixels turned a `50vw` breakpoint into `3.1225rem`. Passing
- * it through costs an overlap of one unit between adjacent ranges; the alternative was a
- * range that matched nothing, or `NaNrem`, which is not a media query.
+ * It used to be that value stepped down by 0.04px, so that the inclusive `max-width` it fed
+ * stopped just short of the next range. Nothing steps down any more — `(width < max)` excludes
+ * the bound itself — so the two halves of a range meet exactly, and a breakpoint in a unit the
+ * old arithmetic could not convert (`vw`, `ch`, a `calc()`) is no longer a special case.
  */
-function adjust(value: string | null | undefined) {
-  if (!getUnit(value ?? '')) return value as string
-
-  const computedMax = parseFloat(toPx(value!) ?? '') - 0.04
-  if (!Number.isFinite(computedMax)) return value as string
-
-  return toRem(`${computedMax}px`) as string
-}
-
 function sortBreakpoints(breakpoints: Record<string, string>): Entries {
-  return Object.entries(breakpoints)
-    .sort(([, minA], [, minB]) => {
-      return parseInt(minA, 10) < parseInt(minB, 10) ? -1 : 1
-    })
-    .map(([name, min], index, entries) => {
-      let max: string | null = null
-
-      if (index <= entries.length - 1) {
-        max = entries[index + 1]?.[1]
-      }
-
-      if (max != null) {
-        max = adjust(max)
-      }
-
-      return [name, { name, min: toRem(min), max }]
-    })
+  return sortScale(breakpoints).map(([name, min], index, entries) => {
+    const max = entries[index + 1]?.[1]
+    return [name, { name, min: toRem(min), max: max == null ? max : toRem(max) }]
+  })
 }
 
 const toCondition = (key: string, value: string): AtRuleCondition => ({
@@ -134,21 +95,3 @@ const toCondition = (key: string, value: string): AtRuleCondition => ({
   raw: `@media ${value}`,
   params: value,
 })
-
-function getPermutations(values: string[]) {
-  const result: [string, string][] = []
-
-  values.forEach((current, index) => {
-    let idx = index
-    idx++
-    let next = values[idx]
-
-    while (next) {
-      result.push([current, next])
-      idx++
-      next = values[idx]
-    }
-  })
-
-  return result
-}

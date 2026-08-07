@@ -380,7 +380,7 @@ describe('rule processor', () => {
           color: orange;
       }
 
-        @media screen and (min-width: 40rem) {
+        @media (width >= 40rem) {
           .sm\\:fs_sm {
             font-size: var(--font-sizes-sm);
       }
@@ -398,13 +398,13 @@ describe('rule processor', () => {
       }
       }
 
-        @media screen and (min-width: 48rem) {
+        @media (width >= 48rem) {
           .hover\\:md\\:fs_lg:is(:hover, [data-hover]) {
             font-size: var(--font-sizes-lg);
       }
       }
 
-        @media screen and (min-width: 80rem) {
+        @media (width >= 80rem) {
           .xl\\:w_3 {
             width: var(--sizes-3);
       }
@@ -462,7 +462,7 @@ describe('rule processor', () => {
           background-color: darkblue;
       }
 
-        @media screen and (min-width: 48rem) {
+        @media (width >= 48rem) {
           .md\\:buttonStyle--size_md {
             padding: 0 0.75rem;
             height: 3rem;
@@ -637,7 +637,7 @@ describe('rule processor', () => {
       }
 
         @scope (.checkbox__root--size_md) to (.checkbox__root) {
-          @media screen and (min-width: 48rem) {
+          @media (width >= 48rem) {
             .checkbox__control {
               width: var(--sizes-10);
               height: var(--sizes-10);
@@ -1400,7 +1400,7 @@ describe('js to css', () => {
           background-color: blue;
       }
 
-        @media screen and (min-width: 48rem) {
+        @media (width >= 48rem) {
           .md\\:bg_red {
             background: red;
       }
@@ -1529,7 +1529,7 @@ describe('js to css', () => {
 
     expect(result.css).toMatchInlineSnapshot(`
       "@layer utilities {
-        @media screen and (min-width: 40rem) {
+        @media (width >= 40rem) {
           .sm\\:custom\\:w_33px[data-attr="custom"] {
             width: 33px;
       }
@@ -1593,7 +1593,7 @@ describe('js to css', () => {
           width: 2px;
       }
 
-        @media screen and (min-width: 48rem) {
+        @media (width >= 48rem) {
           .md\\:w_3px {
             width: 3px;
       }
@@ -1637,8 +1637,8 @@ describe('js to css', () => {
       [
         "hover\\:mixed\\:c_green",
         "hover\\:custom\\:c_blue",
-        "hover\\:mixedMd\\:c_6px",
         "hover\\:md\\:w_5px",
+        "hover\\:mixedMd\\:c_6px",
       ]
     `,
     )
@@ -1653,15 +1653,15 @@ describe('js to css', () => {
           color: blue;
       }
 
-        @media screen and (min-width: 48em) {
-          .hover\\:mixedMd\\:c_6px:is(:hover, [data-hover])[data-attr="custom"] {
-            color: 6px;
+        @media (width >= 48rem) {
+          .hover\\:md\\:w_5px:is(:hover, [data-hover]) {
+            width: 5px;
       }
       }
 
-        @media screen and (min-width: 48rem) {
-          .hover\\:md\\:w_5px:is(:hover, [data-hover]) {
-            width: 5px;
+        @media screen and (min-width: 48em) {
+          .hover\\:mixedMd\\:c_6px:is(:hover, [data-hover])[data-attr="custom"] {
+            color: 6px;
       }
       }
       }"
@@ -1697,25 +1697,25 @@ describe('js to css', () => {
 
     expect(result.css).toMatchInlineSnapshot(`
       "@layer utilities {
-        @media screen and (min-width: 40rem) {
+        @media (width >= 40rem) {
           .sm\\:w_1px {
             width: 1px;
       }
       }
 
-        @media screen and (min-width: 48rem) {
+        @media (width >= 48rem) {
           .md\\:c_3px {
             color: 3px;
       }
       }
 
-        @media screen and (min-width: 64rem) {
+        @media (width >= 64rem) {
           .lg\\:c_2px {
             color: 2px;
       }
       }
 
-        @media screen and (min-width: 80rem) {
+        @media (width >= 80rem) {
           .xl\\:w_4px {
             width: 4px;
       }
@@ -1765,12 +1765,12 @@ describe('js to css', () => {
     expect(result.className).toMatchInlineSnapshot(
       `
       [
+        "sm\\:w_1px",
         "mixedSm\\:c_red",
         "mixedSupportSm\\:c_green",
-        "sm\\:w_1px",
+        "md\\:c_3px",
         "mixedMd\\:c_blue",
         "mixedSupportMd\\:c_yellow",
-        "md\\:c_3px",
         "lg\\:c_2px",
         "xl\\:w_4px",
       ]
@@ -1779,6 +1779,12 @@ describe('js to css', () => {
 
     expect(result.css).toMatchInlineSnapshot(`
       "@layer utilities {
+        @media (width >= 40rem) {
+          .sm\\:w_1px {
+            width: 1px;
+      }
+      }
+
         @media screen and (min-width: 40em) {
           .mixedSm\\:c_red[data-attr="custom"] {
             color: red;
@@ -1793,9 +1799,9 @@ describe('js to css', () => {
       }
       }
 
-        @media screen and (min-width: 40rem) {
-          .sm\\:w_1px {
-            width: 1px;
+        @media (width >= 48rem) {
+          .md\\:c_3px {
+            color: 3px;
       }
       }
 
@@ -1813,19 +1819,13 @@ describe('js to css', () => {
       }
       }
 
-        @media screen and (min-width: 48rem) {
-          .md\\:c_3px {
-            color: 3px;
-      }
-      }
-
-        @media screen and (min-width: 64rem) {
+        @media (width >= 64rem) {
           .lg\\:c_2px {
             color: 2px;
       }
       }
 
-        @media screen and (min-width: 80rem) {
+        @media (width >= 80rem) {
           .xl\\:w_4px {
             width: 4px;
       }
@@ -1855,29 +1855,29 @@ describe('js to css', () => {
     expect(result.className).toMatchInlineSnapshot(
       `
       [
-        "mdHover\\:w_6px",
         "md\\:w_4\\.5px",
         "hover\\:md\\:w_5px",
+        "mdHover\\:w_6px",
       ]
     `,
     )
 
     expect(result.css).toMatchInlineSnapshot(`
       "@layer utilities {
-        @media screen and (min-width: 48em) {
-          @supports (display: flex) {
-            .mdHover\\:w_6px:hover {
-              width: 6px;
-      }
-      }
-      }
-
-        @media screen and (min-width: 48rem) {
+        @media (width >= 48rem) {
           .md\\:w_4\\.5px {
             width: 4.5px;
       }
           .hover\\:md\\:w_5px:is(:hover, [data-hover]) {
             width: 5px;
+      }
+      }
+
+        @media screen and (min-width: 48em) {
+          @supports (display: flex) {
+            .mdHover\\:w_6px:hover {
+              width: 6px;
+      }
       }
       }
       }"
@@ -1931,11 +1931,11 @@ describe('js to css', () => {
         "hover\\:w_2px",
         "hover\\:custom\\:c_blue",
         "hover\\:focus\\:w_3px",
-        "smHover\\:w_7px",
         "sm\\:w_4px",
-        "mdHover\\:w_8px",
+        "smHover\\:w_7px",
         "md\\:w_4\\.5px",
         "hover\\:md\\:w_5px",
+        "mdHover\\:w_8px",
         "supportHover\\:w_6px",
       ]
     `,
@@ -1967,6 +1967,12 @@ describe('js to css', () => {
           width: 3px;
       }
 
+        @media (width >= 40rem) {
+          .sm\\:w_4px {
+            width: 4px;
+      }
+      }
+
         @media screen and (min-width: 40em) {
           @supports (display: grid) {
             .smHover\\:w_7px:hover {
@@ -1975,9 +1981,12 @@ describe('js to css', () => {
       }
       }
 
-        @media screen and (min-width: 40rem) {
-          .sm\\:w_4px {
-            width: 4px;
+        @media (width >= 48rem) {
+          .md\\:w_4\\.5px {
+            width: 4.5px;
+      }
+          .hover\\:md\\:w_5px:is(:hover, [data-hover]) {
+            width: 5px;
       }
       }
 
@@ -1986,15 +1995,6 @@ describe('js to css', () => {
             .mdHover\\:w_8px:hover {
               width: 8px;
       }
-      }
-      }
-
-        @media screen and (min-width: 48rem) {
-          .md\\:w_4\\.5px {
-            width: 4.5px;
-      }
-          .hover\\:md\\:w_5px:is(:hover, [data-hover]) {
-            width: 5px;
       }
       }
 

@@ -35,7 +35,7 @@ describe('compositions', () => {
         "className": "textStyle_headline.h2",
         "layer": "compositions",
         "styles": {
-          "@media screen and (min-width: 64rem)": {
+          "@media (width >= 64rem)": {
             "fontSize": "2rem",
           },
           "fontSize": "1.5rem",
@@ -73,7 +73,7 @@ describe('compositions', () => {
             font-weight: var(--font-weights-bold);
       }
 
-          @media screen and (min-width: 64rem) {
+          @media (width >= 64rem) {
             .textStyle_headline\\.h2 {
               font-size: 2rem;
       }

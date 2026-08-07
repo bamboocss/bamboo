@@ -15,12 +15,19 @@ import { sortStyleRules } from '../src/sort-style-rules'
  * by about 4x, which is exactly how the cost hid.
  */
 
+/**
+ * The dialect breakpoints are emitted in — range syntax, which the comparator has to rewrite to
+ * the `min-`/`max-` form before it can classify. These were the `screen and (min-width: …)`
+ * spelling, which is no longer generated: the rewrite is the part of the comparator that only
+ * range syntax reaches, so measuring the old spelling measured the one path a real build no
+ * longer takes.
+ */
 const QUERIES = [
-  'screen and (min-width: 24rem)',
-  'screen and (min-width: 28rem)',
-  'screen and (min-width: 32rem)',
-  'screen and (min-width: 36rem)',
-  'screen and (max-width: 48rem)',
+  '(width >= 24rem)',
+  '(width >= 28rem)',
+  '(width >= 32rem)',
+  '(width >= 36rem)',
+  '(width < 48rem)',
   'print',
 ]
 

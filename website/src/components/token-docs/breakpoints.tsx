@@ -23,7 +23,7 @@ export const Breakpoints = () => {
             <div className={css({ minWidth: '80px' })}>
               <div className={css({ py: '2', fontWeight: 'medium' })}>{key}</div>
             </div>
-            <div className={css({ py: '2', opacity: '0.6' })}>{`@media screen (min-width >= ${value})`}</div>
+            <div className={css({ py: '2', opacity: '0.6' })}>{`@media (width >= ${value})`}</div>
           </div>
         )
       })}

@@ -133,19 +133,19 @@ describe('config.importMap', () => {
           height: 600px;
       }
 
-        @media screen and (min-width: 40rem) {
+        @media (width >= 40rem) {
           .sm\\:flex-d_row {
             flex-direction: row;
       }
       }
 
-        @media screen and (min-width: 48rem) {
+        @media (width >= 48rem) {
           .md\\:px_6 {
             padding-inline: var(--spacing-6);
       }
       }
 
-        @media screen and (min-width: 64rem) {
+        @media (width >= 64rem) {
           .lg\\:px_8 {
             padding-inline: var(--spacing-8);
       }

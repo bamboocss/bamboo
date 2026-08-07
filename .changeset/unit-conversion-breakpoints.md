@@ -30,7 +30,8 @@ Now:
   number and a unit is passed through untouched instead of becoming `NaN`.
 - Breakpoint arithmetic only steps a value down when it is in a unit that converts to pixels. Anything else — `vw`,
   `ch`, a `calc()` — is emitted as written. That costs an overlap of one unit between adjacent ranges, against a range
-  that previously matched nothing.
+  that previously matched nothing. (Superseded in the same release: range syntax removed the step entirely, so these
+  units no longer overlap either.)
 - `validateBreakpoints` reads the unit generically, so it can tell `em` from `EM` from `vw` and its same-unit check
   works for units bamboo does not convert.
 

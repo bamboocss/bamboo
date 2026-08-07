@@ -19,8 +19,8 @@ describe('Conditions', () => {
     expect(css.getRaw('sm')).toMatchInlineSnapshot(`
       {
         "name": "breakpoint",
-        "params": "screen and (min-width: 40rem)",
-        "raw": "@media screen and (min-width: 40rem)",
+        "params": "(width >= 40rem)",
+        "raw": "@media (width >= 40rem)",
         "type": "at-rule",
         "value": "sm",
       }
@@ -80,9 +80,9 @@ describe('Conditions', () => {
     const conditions = ['sm', 'md', 'lg', '_hover', '_focus', '_focus-visible', '_focus-within', '_active']
     expect(css.sort(conditions).map((c) => c.raw)).toMatchInlineSnapshot(`
       [
-        "@media screen and (min-width: 40rem)",
-        "@media screen and (min-width: 48rem)",
-        "@media screen and (min-width: 64rem)",
+        "@media (width >= 40rem)",
+        "@media (width >= 48rem)",
+        "@media (width >= 64rem)",
         "&:is(:hover, [data-hover])",
         "&:is(:focus, [data-focus])",
         "&:is(:active, [data-active])",

@@ -22,8 +22,19 @@ Let's say you want to change the font weight of a text on large screens, you can
 </span>
 ```
 
-> Bamboo uses a mobile-first breakpoint system and leverages min-width media queries `@media(min-width)` when you write
-> responsive styles.
+> Bamboo uses a mobile-first breakpoint system, and writes responsive styles as lower-bounded range queries —
+> `@media (width >= 40rem)`. Ranges that also have an upper bound close it exclusively,
+> `@media (width >= 40rem) and (width < 48rem)`, so a range stops exactly where the next one starts.
+
+> Range syntax needs Chrome 104+, Safari 16.4+ or Firefox 102+. The
+> [`lightningcss`](/docs/references/config#lightningcss) option lowers these queries against your browserslist targets,
+> which recovers most of that: a plain breakpoint becomes `(min-width: …)` again, but an exclusive upper bound has no
+> older spelling and lowers to `not (min-width: …)`, so `smDown`, `mdOnly` and `hideBelow` still need roughly Chrome 88
+> / Safari 14 / Firefox 64.
+
+> These queries carry no media type, so unlike the `@media screen and …` Bamboo emitted previously, responsive styles
+> now also apply when printing — against the page width. Wrap rules you want to keep off the printed page in an explicit
+> `@media screen`.
 
 Bamboo provides five breakpoints by default:
 
@@ -93,7 +104,8 @@ Let's say we want to apply styles between the `md` and `xl` breakpoints, we use 
 </span>
 ```
 
-> This text will only be bold in `md`, `lg` and `xl` breakpoints.
+> This text will only be bold in the `md` and `lg` breakpoints. The upper bound is exclusive: `mdToXl` stops where `xl`
+> starts, so it emits `(width >= 48rem) and (width < 80rem)`.
 
 ### Targeting a single breakpoint
 

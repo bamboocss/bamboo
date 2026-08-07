@@ -130,7 +130,7 @@ describe('extract to css output pipeline', () => {
           color: blue;
       }
 
-        @media screen and (min-width: 48rem) {
+        @media (width >= 48rem) {
           .md\\:c_red {
             color: red;
       }
@@ -277,7 +277,7 @@ describe('extract to css output pipeline', () => {
           background-color: var(--some-bg);
       }
 
-        @media screen and (min-width: 48rem) {
+        @media (width >= 48rem) {
           .md\\:m_1px {
             margin: 1px;
       }
@@ -289,8 +289,8 @@ describe('extract to css output pipeline', () => {
       }
       }
 
-        @media screen and (min-width: 48rem) {
-          @media screen and (min-width: 40rem) {
+        @media (width >= 48rem) {
+          @media (width >= 40rem) {
             .md\\:sm\\:m_4px {
               margin: 4px;
       }
@@ -1844,7 +1844,7 @@ describe('extract to css output pipeline', () => {
           border-radius: var(--radii-sm);
       }
 
-        @media screen and (min-width: 40rem) {
+        @media (width >= 40rem) {
           .card {
             color: red;
       }
@@ -1856,7 +1856,7 @@ describe('extract to css output pipeline', () => {
           font-size: 2px;
       }
 
-        @media screen and (min-width: 40rem) {
+        @media (width >= 40rem) {
           .sm\\:fs_5 {
             font-size: 5px;
       }
@@ -2625,7 +2625,7 @@ describe('extract to css output pipeline', () => {
           margin-bottom: 20px;
       }
 
-        @media screen and (min-width: 30rem) {
+        @media (width >= 30rem) {
           .cta__heading--level_1 {
             font-size: 40px;
             color: red;
@@ -2642,7 +2642,7 @@ describe('extract to css output pipeline', () => {
             text-transform: uppercase;
       }
 
-          @media screen and (min-width: 30rem) {
+          @media (width >= 30rem) {
             .textStyle_heading-1 {
               font-size: 40px;
       }

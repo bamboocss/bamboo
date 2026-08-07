@@ -90,7 +90,7 @@ describe('sort style rules', () => {
           font-size: 4px;
       }
 
-        @media screen and (min-width: 40rem) {
+        @media (width >= 40rem) {
           .sm\\:fs_5 {
             font-size: 5px;
       }
@@ -148,7 +148,7 @@ describe('sort style rules', () => {
           font-size: 4px;
       }
 
-        @media screen and (min-width: 40rem) {
+        @media (width >= 40rem) {
           .sm\\:fs_5 {
             font-size: 5px;
       }
@@ -213,7 +213,7 @@ describe('sort style rules', () => {
           font-size: 2px;
       }
 
-        @media screen and (min-width: 40rem) {
+        @media (width >= 40rem) {
           .btn--size_sm {
             font-size: 3px;
       }
@@ -268,7 +268,7 @@ describe('sort style rules', () => {
           font-size: 2.2px;
       }
 
-        @media screen and (min-width: 40rem) {
+        @media (width >= 40rem) {
           .btn--size_sm {
             font-size: 3px;
       }

@@ -505,12 +505,23 @@ This will generate the following CSS:
   container-type: inline-size;
 }
 
-@container (min-width: 60em) {
+@container (inline-size >= 60em) {
   .\@\/sm:fs_md {
     container-type: inline-size;
   }
 }
 ```
+
+Container sizes carry the same range set as breakpoints. Alongside `@/sm`, which is open-ended upwards, you get
+`@/smOnly` for that size alone, `@/smDown` for everything below it, and `@/smToLg` for a span:
+
+```css
+@container (inline-size >= 30em) { … }                            /* @/sm     */
+@container (inline-size >= 30em) and (inline-size < 40em) { … }   /* @/smOnly */
+@container (inline-size < 30em) { … }                             /* @/smDown */
+```
+
+As with breakpoints, the upper bound is exclusive, so `@/smOnly` stops exactly where `@/md` starts.
 
 You can also named container queries:
 

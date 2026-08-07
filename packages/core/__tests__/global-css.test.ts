@@ -371,13 +371,13 @@ describe('Global css', () => {
           initial-value: proximity;
         }
 
-        @media screen and (min-width: 40rem) {
+        @media (width >= 40rem) {
           .btn {
             font-size: 12px;
       }
       }
 
-        @media screen and (min-width: 64rem) {
+        @media (width >= 64rem) {
           .btn {
             width: 90px;
       }

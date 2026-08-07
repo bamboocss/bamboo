@@ -71,7 +71,7 @@ describe('atomic / with basic style object', () => {
           width: 50px;
       }
 
-        @media screen and (min-width: 40rem) {
+        @media (width >= 40rem) {
           .sm\\:w_60px {
             width: 60px;
       }
@@ -87,7 +87,7 @@ describe('atomic / with basic style object', () => {
           width: 50px;
       }
 
-        @media screen and (min-width: 48rem) {
+        @media (width >= 48rem) {
           .md\\:w_60px {
             width: 60px;
       }
@@ -107,7 +107,7 @@ describe('atomic / with basic style object', () => {
           margin-left: calc(var(--spacing-4) * -1);
       }
 
-        @media screen and (min-width: 40rem) {
+        @media (width >= 40rem) {
           :where([dir=ltr], :dir(ltr)) .ltr\\:sm\\:ml_4 {
             margin-left: var(--spacing-4);
       }
@@ -146,7 +146,7 @@ describe('atomic / with basic style object', () => {
       }),
     ).toMatchInlineSnapshot(`
       "@layer utilities {
-        @media screen and (min-width: 40rem) {
+        @media (width >= 40rem) {
           :where([dir=rtl], :dir(rtl)) .sm\\:rtl\\:top_20px {
             top: 20px;
       }
@@ -155,7 +155,7 @@ describe('atomic / with basic style object', () => {
       }
       }
 
-        @media screen and (min-width: 64rem) {
+        @media (width >= 64rem) {
           .lg\\:top_120px {
             top: 120px;
       }
@@ -175,7 +175,7 @@ describe('atomic / with basic style object', () => {
           left: 20px;
       }
 
-        @media screen and (min-width: 48rem) {
+        @media (width >= 48rem) {
           .md\\:left_40px {
             left: 40px;
       }
@@ -213,13 +213,13 @@ describe('atomic / with nesting scope', () => {
           font: sans;
       }
 
-        @media screen and (min-width: 40rem) {
+        @media (width >= 40rem) {
           [data-theme=dark] :where([dir=ltr], :dir(ltr)) .\\[\\&_\\>_p\\]\\:ltr\\:dark\\:sm\\:hover\\:font_serif > p:is(:hover, [data-hover]),.dark :where([dir=ltr], :dir(ltr)) .\\[\\&_\\>_p\\]\\:ltr\\:dark\\:sm\\:hover\\:font_serif > p:is(:hover, [data-hover]),:where([dir=ltr], :dir(ltr)) .\\[\\&_\\>_p\\]\\:ltr\\:dark\\:sm\\:hover\\:font_serif > p.dark:is(:hover, [data-hover]),:where([dir=ltr], :dir(ltr)) .\\[\\&_\\>_p\\]\\:ltr\\:dark\\:sm\\:hover\\:font_serif > p[data-theme=dark]:is(:hover, [data-hover]) {
             font: serif;
       }
       }
 
-        @media screen and (min-width: 48rem) {
+        @media (width >= 48rem) {
           .\\[\\&_\\>_p\\]\\:md\\:left_40px > p {
             left: 40px;
       }
@@ -242,13 +242,13 @@ describe('atomic / with nesting scope', () => {
           background: red400;
       }
 
-        @media screen and (min-width: 40rem) {
+        @media (width >= 40rem) {
           input:hover .\\[input\\:hover_\\&\\]\\:sm\\:fs_14px {
             font-size: 14px;
       }
       }
 
-        @media screen and (min-width: 64rem) {
+        @media (width >= 64rem) {
           input:hover .\\[input\\:hover_\\&\\]\\:lg\\:fs_18px {
             font-size: 18px;
       }
@@ -276,7 +276,7 @@ describe('atomic / with nesting scope', () => {
           left: 40px;
       }
 
-        @media screen and (min-width: 40rem) {
+        @media (width >= 40rem) {
           .\\[\\&\\:\\:placeholder\\]\\:sm\\:ta_left::placeholder {
             text-align: left;
       }
@@ -302,7 +302,7 @@ describe('atomic / with nesting scope', () => {
       }
 
         @media base {
-          @media screen and (min-width: 40rem) {
+          @media (width >= 40rem) {
             .\\[\\@media_base\\]\\:sm\\:ta_left {
               text-align: left;
       }
@@ -339,7 +339,7 @@ describe('atomic / with grouped conditions styles', () => {
           color: var(--colors-pink-400);
       }
 
-        @media screen and (min-width: 40rem) {
+        @media (width >= 40rem) {
           [data-theme=dark] .hover\\:sm\\:dark\\:bg_red\\.300:is(:hover, [data-hover]),.dark .hover\\:sm\\:dark\\:bg_red\\.300:is(:hover, [data-hover]),.hover\\:sm\\:dark\\:bg_red\\.300:is(:hover, [data-hover]).dark,.hover\\:sm\\:dark\\:bg_red\\.300:is(:hover, [data-hover])[data-theme=dark] {
             background: var(--colors-red-300);
       }
@@ -355,7 +355,7 @@ describe('atomic / with grouped conditions styles', () => {
       }),
     ).toMatchInlineSnapshot(`
       "@layer utilities {
-        @media screen and (min-width: 40rem) {
+        @media (width >= 40rem) {
           .hover\\:disabled\\:sm\\:bg_red\\.300:is(:hover, [data-hover]):is(:disabled, [disabled], [data-disabled], [aria-disabled=true]) {
             background: var(--colors-red-300);
       }
@@ -383,7 +383,7 @@ describe('atomic / with grouped conditions styles', () => {
       }
 
         @media base {
-          @media screen and (min-width: 40rem) {
+          @media (width >= 40rem) {
             .\\[\\@media_base\\]\\:\\[\\&\\:hover\\]\\:sm\\:ta_left:hover {
               text-align: left;
       }
@@ -675,7 +675,7 @@ describe('atomic / with direct nesting', () => {
       }),
     ).toMatchInlineSnapshot(`
       "@layer utilities {
-        @media screen and (min-width: 40rem) {
+        @media (width >= 40rem) {
           .hide_sm {
             display: none;
       }
@@ -685,7 +685,7 @@ describe('atomic / with direct nesting', () => {
 
     expect(css({ hideBelow: 'lg' })).toMatchInlineSnapshot(`
       "@layer utilities {
-        @media screen and (max-width: 63.9975rem) {
+        @media (width < 64rem) {
           .show_lg {
             display: none;
       }

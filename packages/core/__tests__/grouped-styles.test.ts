@@ -82,7 +82,7 @@ describe('grouped styles', () => {
           font-size: var(--font-sizes-sm);
       }
 
-        @media screen and (min-width: 48rem) {
+        @media (width >= 48rem) {
           .jzrzyw {
             font-size: var(--font-sizes-md);
       }
@@ -188,7 +188,7 @@ describe('grouped styles', () => {
           gap: var(--spacing-8);
       }
 
-        @media screen and (min-width: 48rem) {
+        @media (width >= 48rem) {
           .cZxNai {
             gap: var(--spacing-6);
       }

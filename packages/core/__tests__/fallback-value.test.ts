@@ -140,7 +140,7 @@ describe('fallback values', () => {
   test('works inside at-rules', () => {
     expect(css({ md: { height: 'fallback(100dvh, 100vh)' } })).toMatchInlineSnapshot(`
       "@layer utilities {
-        @media screen and (min-width: 48rem) {
+        @media (width >= 48rem) {
           .md\\:h_fallback\\(100dvh\\,_100vh\\) {
             height: 100vh;
             height: 100dvh;

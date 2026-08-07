@@ -551,13 +551,13 @@ describe('generator', () => {
           --colors-surface: #p-b
       }
 
-        @media screen and (min-width: 48rem) {
+        @media (width >= 48rem) {
           [data-color=pastel]:where([data-theme=dark], .dark) {
             --colors-surface: #p-d
                   }
               }
 
-        @media screen and (min-width: 64rem) {
+        @media (width >= 64rem) {
           :where(html) {
             --spacing-gutter: var(--spacing-5)
           }
