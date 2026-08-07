@@ -200,12 +200,21 @@ export const createRuntimeRecipe = (ctx: Context): RuntimeRecipe => {
     // on its runtime path and the crash where the user put it; folding would quietly
     // repair a bug rather than preserve behaviour. Spelled the way the assert spells it,
     // `typeof` against the variants as passed, so the two agree on the edge cases.
-    if (
-      !isConstantSlot &&
-      compoundVariants.length > 0 &&
-      Object.keys(recipeStyles).some((prop) => typeof variants[prop] === 'object')
-    ) {
+    if (compoundVariants.length > 0 && Object.keys(recipeStyles).some((prop) => typeof variants[prop] === 'object')) {
       return undefined
+    }
+
+    // A slot recipe evaluates *every* anchor's `recipeFn`, so the throw can come from an
+    // anchor's compound variants rather than from this slot's. A constant slot is not
+    // exempt: its class does not depend on the props, but the call it replaces still runs
+    // the anchor's assert.
+    if (isSlotRecipe) {
+      const anchorThrows = anchors.some(
+        (anchor) =>
+          getSlotCompoundVariant((config.compoundVariants ?? []) as Array<{ css: any }>, anchor).length > 0 &&
+          Object.values(variants).some((value) => typeof value === 'object' && value !== null),
+      )
+      if (anchorThrows) return undefined
     }
 
     // No class for the compound variants. Their rule selects on the variant classes

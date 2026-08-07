@@ -12,6 +12,7 @@ export function generateCvaFn(ctx: Context) {
     js: outdent`
     ${ctx.file.import('cloneStyles, compact, getRecipeClassNames, getRecipeIdentity, mergeProps, memo, splitProps, toHash, uniq', '../helpers')}
     ${ctx.file.import('mergeCss', './css')}
+    ${ctx.file.import('cx', './cx')}
 
     // What \`createCss\` does to a class name, for the recipe path: prefix it, and hash it
     // when \`hash.className\` is set. The build applies the same two steps to the rules it
@@ -57,16 +58,45 @@ export function generateCvaFn(ctx: Context) {
         return mergeCss(variantCss, compoundVariantCss)
       }
 
+      /**
+       * Compose two recipes.
+       *
+       * The class names come from both parents joined, not from a merged config. A recipe's
+       * classes are named from the config the *build* saw, and the build only ever sees the
+       * two \`cva(...)\` literals — a config synthesised here at runtime has no rules behind
+       * it, so naming classes off it returned classes that styled nothing. This is the shape
+       * \`mergeRecipes\` already uses for config recipes.
+       *
+       * \`raw\` still deep-merges, so per-property override survives where it can be
+       * expressed: \`css(a.merge(b).raw(props))\` resolves before any class name exists.
+       * Through the class path both parents land in the \`recipes\` layer, so a collision is
+       * decided by stylesheet order rather than by which parent came second.
+       */
       function merge(__cva) {
         const override = defaults(__cva.config)
-        const variantKeys = uniq(__cva.variantKeys, Object.keys(variants))
-        return cva({
+        const mergedVariantKeys = uniq(Object.keys(variants), __cva.variantKeys)
+        const mergedConfig = {
           base: mergeCss(base, override.base),
           variants: Object.fromEntries(
-            variantKeys.map((key) => [key, mergeCss(variants[key], override.variants[key])]),
+            mergedVariantKeys.map((key) => [key, mergeCss(variants[key], override.variants[key])]),
           ),
           defaultVariants: mergeProps(defaultVariants, override.defaultVariants),
           compoundVariants: [...compoundVariants, ...override.compoundVariants],
+        }
+
+        const mergedFn = (props) => cx(cvaFn(props), __cva(props))
+
+        return Object.assign(memo(mergedFn), {
+          __cva__: true,
+          variantMap: Object.fromEntries(
+            mergedVariantKeys.map((key) => [key, Object.keys(mergedConfig.variants[key] ?? {})]),
+          ),
+          variantKeys: mergedVariantKeys,
+          raw: (props) => cloneStyles(mergeCss(resolveVariants(props), __cva.raw(props))),
+          config: mergedConfig,
+          merge,
+          splitVariantProps: (props) => splitProps(props, mergedVariantKeys),
+          getVariantProps: (props) => ({ ...mergedConfig.defaultVariants, ...compact(props) }),
         })
       }
 

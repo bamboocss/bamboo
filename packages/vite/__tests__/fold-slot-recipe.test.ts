@@ -97,3 +97,36 @@ export const a = checkbox({ size: 'sm' }).raw`)
     expect(r.code).not.toContain('"checkbox__raw"')
   })
 })
+
+/**
+ * A constant slot folds past its arguments without evaluating them, so deleting them has to
+ * delete nothing observable. The same doctrine `token()`'s fallback argument follows.
+ */
+describe('a constant slot only folds past inert arguments', () => {
+  const foldWith = (source: string) =>
+    createFoldFixture().fold(`import { checkbox } from '../styled-system/recipes'\n${source}`)
+
+  test('a binding read folds — that is the point of a constant slot', () => {
+    const r = foldWith(`declare const dyn: 'sm' | 'md'\nexport const a = checkbox({ size: dyn }).control`)
+    expect(r.code).toContain('"checkbox__control"')
+  })
+
+  test('a call in the props is not deleted', () => {
+    const r = foldWith(
+      `declare const log: (s: string) => any\nexport const a = checkbox({ size: log('boom') }).control`,
+    )
+    expect(r.code).toContain("log('boom')")
+  })
+
+  test('a spread is not deleted', () => {
+    // Spreading runs the source's getters.
+    const r = foldWith(`declare const getProps: () => any\nexport const a = checkbox({ ...getProps() }).control`)
+    expect(r.code).toContain('getProps()')
+  })
+
+  test('a property read is not deleted', () => {
+    // Solid compiles props to accessors, so reading one can run a getter.
+    const r = foldWith(`declare const props: any\nexport const a = checkbox({ size: props.size }).control`)
+    expect(r.code).toContain('props.size')
+  })
+})

@@ -399,9 +399,31 @@ export class StyleDecoder {
     })
   }
 
+  /**
+   * `name` and `slot` from a `name{separator}slot` key, preferring the split that names a
+   * recipe the context knows. Both halves can contain the separator, so position alone
+   * cannot decide it.
+   */
+  private splitRecipeKey = (recipeKey: string): [string, string | undefined] => {
+    const separator = this.context.recipes.slotSeparator
+
+    let index = recipeKey.lastIndexOf(separator)
+    while (index > 0) {
+      const name = recipeKey.slice(0, index)
+      if (this.context.recipes.getConfig(name)) return [name, recipeKey.slice(index + separator.length)]
+      index = recipeKey.lastIndexOf(separator, index - 1)
+    }
+
+    return [recipeKey, undefined]
+  }
+
   collectRecipeBase = (encoder: StyleEncoder) => {
     encoder.recipes_base.forEach((hashSet, recipeKey) => {
-      const [recipeName, slot] = recipeKey.split(this.context.recipes.slotSeparator)
+      // Split at the separator that actually divides a known recipe from one of its slots.
+      // An unbounded `split` dropped everything past the first `__`, so a `className` like
+      // `card__body` — or a slot name containing the separator — lost every base rule,
+      // because `getConfig('card')` misses and the whole entry is skipped.
+      const [recipeName, slot] = this.splitRecipeKey(recipeKey)
 
       const recipeConfig = this.context.recipes.getConfig(recipeName)
       if (!recipeConfig) return

@@ -24,5 +24,8 @@ export const getSlotRecipes = (recipe: Record<string, any> = {}): Record<string,
 
 export const getSlotCompoundVariant = <T extends { css: any }>(compoundVariants: T[], slotName: string) =>
   compoundVariants
-    .filter((compoundVariant) => compoundVariant.css[slotName])
+    // `css` is optional in practice: `cva` tolerates a compound without one — its two call
+    // sites both guard — and a slot recipe accepts the same config, so reading through it
+    // unguarded turned a survivable config into a build crash.
+    .filter((compoundVariant) => compoundVariant?.css?.[slotName])
     .map((compoundVariant) => ({ ...compoundVariant, css: compoundVariant.css[slotName] }))

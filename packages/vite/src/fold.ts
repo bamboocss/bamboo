@@ -153,6 +153,42 @@ const isInertArgument = (node: Node): boolean =>
   (Node.isIdentifier(node) && node.getText() === 'undefined')
 
 /**
+ * An expression whose evaluation cannot do anything observable, so deleting it preserves
+ * behaviour.
+ *
+ * `isInertArgument` covers the leaves; this walks the object and array literals a recipe
+ * call is actually written with. A spread runs the source's getters, a computed key runs an
+ * expression, a getter or method definition is a function — none of those are safe to
+ * delete, so they are declined rather than enumerated.
+ */
+const isInertExpression = (node: Node): boolean => {
+  if (isInertArgument(node)) return true
+
+  // A bare identifier is a binding read, which cannot run anything — and this check is
+  // about *inertness*, not about knowing the value. That is the whole point for a constant
+  // slot: `checkbox({ size: dyn }).control` resolves the same whatever `dyn` holds. A
+  // property access is excluded on purpose, since reading one can run a getter — Solid
+  // compiles props to accessors, so `props.size` is exactly that case.
+  if (Node.isIdentifier(node)) return true
+
+  if (Node.isObjectLiteralExpression(node)) {
+    return node.getProperties().every((property) => {
+      // A shorthand `{ size }` is a variable read, which is inert.
+      if (Node.isShorthandPropertyAssignment(property)) return true
+      if (!Node.isPropertyAssignment(property)) return false
+      if (Node.isComputedPropertyName(property.getNameNode())) return false
+
+      const initializer = property.getInitializer()
+      return initializer !== undefined && isInertExpression(initializer)
+    })
+  }
+
+  if (Node.isArrayLiteralExpression(node)) return node.getElements().every(isInertExpression)
+
+  return false
+}
+
+/**
  * Source files a box tree reaches, other than the one being folded.
  *
  * When the extractor resolves an imported identifier it boxes the *declaration's*
@@ -779,8 +815,16 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     }
 
     // A constant slot resolves the same whatever the props are, so it folds before the
-    // static-argument check the rest of the class path depends on.
-    if (slot && isConstantSlot(name, slot)) {
+    // static-argument check the rest of the class path depends on — but only when deleting
+    // the arguments deletes nothing observable. `checkbox({ size: log() }).control` has a
+    // constant class and a call in its props; folding past it drops the call. Same doctrine
+    // as `token()`'s fallback argument above.
+    if (
+      slot &&
+      isConstantSlot(name, slot) &&
+      Node.isCallExpression(call) &&
+      call.getArguments().every(isInertExpression)
+    ) {
       candidates.push({ item, call, node: call, start, end: foldEnd, slot, constantSlot: true })
       continue
     }
