@@ -1,5 +1,136 @@
 # @bamboocss/vite
 
+## 1.17.0
+
+### Minor Changes
+
+- a30a279: Fold `recipe(props).slot` for slot recipes, including when the variant props are dynamic.
+
+  A slot recipe call returns one class per slot rather than a string, so the fold declined it outright. What resolves to
+  a string is the property access, and that is now what gets replaced:
+
+  ```tsx
+  // you write
+  <div className={checkbox({ size: 'sm' }).root} />
+
+  // the bundle gets
+  <div className="checkbox__root checkbox__root--size_sm" />
+  ```
+
+  The case worth the machinery is a **scoped recipe's non-anchor slot**. Its variant styles arrive through an `@scope`
+  rule anchored on an enclosing slot, so its own class is a constant — the same string whatever the props are — and it
+  folds even when the variant is fully dynamic:
+
+  ```tsx
+  checkbox({ size: runtimeValue }).control // → "checkbox__control"
+  ```
+
+  That is new. Before variant scoping every slot carried a variant class, so nothing about a slot recipe was resolvable
+  without static props. It matters most where it fires: the parts of a compound component, which are the hot render
+  paths.
+
+  Three cases are deliberately left alone, because their classes are not constant:
+  - an anchor slot with a dynamic variant — its class _is_ the variant
+  - any slot of an unscoped recipe (`scopeRoots: []`, or sibling slots with no anchor), where every slot takes variants
+  - the whole `recipe(props)` call, which resolves to an object rather than a string
+
+  The folded class is built through the same `createCss` the runtime uses rather than by concatenating the slot name, so
+  `hash.className` and `prefix` reach it — reconstructing that string is exactly how the runtime and the stylesheet
+  drifted apart once already.
+
+  Measured on `fold.bench.ts`: every case within the control's own drift, so no measurable cost to the fold itself.
+
+### Patch Changes
+
+- 28463ce: Five fixes from an adversarial review of the previous batch. Four are in code that batch introduced.
+
+  **The fold declined where the runtime throws — but only for scoped recipes.** A slot recipe call runs a `recipeFn` per
+  slot, each calling `assertCompoundVariant`. Which slots get one depends on scoping: with anchors only they do, without
+  them every slot does. The guard read the anchors alone, and `[].some()` is false — so an _unscoped_ recipe with
+  compound variants folded a class where the call throws.
+
+  **`cva().merge()` was not associative.** `a.merge(b).merge(c)` dropped `b` entirely, because the merged object
+  re-exposed the left parent's `merge` closure and recomposed `a` with `c`. It now composes the _result_, so `merge` is
+  associative and `variantKeys` keeps every parent's.
+
+  **A merged recipe applied each parent's own defaults** while publishing merged ones, so `m()` and
+  `m(m.getVariantProps())` disagreed. The selection is now resolved once and handed to both parents.
+
+  **The fold rejected ordinary TypeScript.** `dyn as Size`, `dyn!`, `(dyn)` and `dyn ?? 'sm'` are erased before anything
+  runs, so they cannot add an effect — but the new inertness check rejected them, losing folds that landed before it
+  existed. It now sees through the erased wrappers, while still declining template substitutions and arithmetic, which
+  coerce and can reach a getter.
+
+  **A scoped compound variant lost its precedence, and a stale one could survive a rebuild.** Moving a compound into an
+  `@scope` rule made its inner selector one class — the same specificity and the same scoping root as every
+  single-variant scope — so the winner fell to stylesheet order, which for compounds is decided by whichever call site
+  the build walked first. The compound's inner selector is now `:scope .slot`, restoring `(0,2,0)` against a variant's
+  `(0,1,0)` without changing what it matches.
+
+  Separately, `slotScopes` was cleared for variants but not for compounds, both being module-global. A recipe that
+  stopped being scoped kept emitting the previous build's rule — naming an anchor nothing renders — and lost its own
+  compound entirely. Both maps are now cleared before either is written.
+
+- d5347ab: Four fixes found by auditing the recipe work for edge cases. Three are silent failures of the same shape: a
+  class name derived one way for the stylesheet and another way for the browser.
+
+  **The fold emitted broken JavaScript for a property access on `css()` or a pattern.** Folding a slot access widened
+  the replaced range to cover the member expression — but the widening applied to every foldable call, so the property
+  read was deleted:
+
+  ```js
+  css({ color: 'red' }).trim() // → "c_red"()          TypeError
+  flex({ direction: 'row' }).split(' ') // → "d_flex flex-d_row"(' ')
+  ```
+
+  It now fires only for a recipe whose accessed property names a slot the recipe declares.
+
+  **Every compound variant was dead under `hash: true` or `prefix`.** A compound's selector is assembled from class
+  names, and it was assembled from raw ones while the element carried prefixed or hashed ones — so
+  `.btn--size_sm.btn--tone_a` selected nothing while the element carried `bam-btn--size_sm bam-btn--tone_a`. The
+  selector is now built through the same `formatSelector` as every other class.
+
+  **A compound variant on a scoped slot recipe matched nothing at all.** A scoped slot carries only its constant class,
+  so a compound selecting on that slot's variant classes can never apply. It is now scoped by the anchor, like the
+  variants it refines:
+
+  ```css
+  @scope (.cmp__root--size_lg.cmp__root--tone_a) to (.cmp__root) { .cmp__item { … } }
+  ```
+
+  **Two slot recipes differing only in `slots` or `scopeRoots` collided.** `getRecipeIdentity` hashed only the style
+  fields, so "same styles, different DOM topology" — exactly what `scopeRoots` exists for — produced one name. An inline
+  recipe is registered once, so whichever was extracted first decided the emission for both and the other rendered
+  unstyled. Both fields now count toward the identity, which changes the generated name of every anonymous `sva`.
+
+  **An `sva` that omits `slots` rendered unstyled.** The build infers slots and the runtime does not, so once `slots`
+  counted toward the identity the two sides derived different names. The identity is now hashed from the config as
+  written — what both sides actually see — and `checkNamingAgreement` gained a canary that leaves `slots` out, so it
+  cannot recur.
+
+  **`auditSlotScopes` was a no-op under `hash` or `prefix`.** It builds its selectors from `classNameMap`, and an inline
+  `sva` populated that map with raw names while returning formatted ones — so the diagnostic went silent in precisely
+  the configs where a naming bug is likeliest. Config slot recipes were already correct; the two now agree.
+
+- Updated dependencies [049a382]
+- Updated dependencies [57b2e66]
+- Updated dependencies [3cdd0d1]
+- Updated dependencies [29f9bbe]
+- Updated dependencies [66cb96c]
+- Updated dependencies [28463ce]
+- Updated dependencies [6577023]
+- Updated dependencies [d5347ab]
+- Updated dependencies [c6154dc]
+- Updated dependencies [7251bf8]
+- Updated dependencies [355e573]
+  - @bamboocss/node@1.17.0
+  - @bamboocss/extractor@1.17.0
+  - @bamboocss/shared@1.17.0
+  - @bamboocss/core@1.17.0
+  - @bamboocss/types@1.17.0
+  - @bamboocss/config@1.17.0
+  - @bamboocss/logger@1.17.0
+
 ## 1.16.1
 
 ### Patch Changes
