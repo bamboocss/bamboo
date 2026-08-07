@@ -455,77 +455,22 @@ delivered:
 A component with no portal has a single anchor — the element already receiving the props — so it needs no context at
 all.
 
-> **Note:** This is an advanced topic and you don't need to understand it to use slot recipes. If you use React, be
-> aware that context require adding 'use client' to the top of the file.
+> **Note:** This is an advanced topic and you don't need to understand it to use slot recipes.
 
-Let's say you want to design a Checkbox component that can be used like this:
+The one shape that still needs a context is a component that spans a portal, and it needs it for its _second anchor_
+rather than for its slots. `createStyleContext`-style helpers — a provider per slot, wrapping every part — were the
+answer when each slot carried its own variant class. Scoping removes that need: a slot's class is a constant, so it can
+be read directly.
 
 ```jsx
-<Checkbox size="sm|md" isChecked>
-  <Checkbox.Control />
-  <Checkbox.Label>Checkbox Label</Checkbox.Label>
-</Checkbox>
+// no provider, no context, no wrapper per part
+const Checkbox = ({ size, children }) => <label className={checkbox.root({ size })}>{children}</label>
+Checkbox.Control = () => <div className={checkbox.control} />
+Checkbox.Label = ({ children }) => <span className={checkbox.label}>{children}</span>
 ```
 
-First, create a shared context for ths styles
-
-```jsx filename="style-context.tsx"
-'use client'
-import { createContext, forwardRef, useContext } from 'react'
-
-export const createStyleContext = (recipe) => {
-  const StyleContext = createContext(null)
-
-  const withProvider = (Component, part) => {
-    const Comp = forwardRef((props, ref) => {
-      const [variantProps, rest] = recipe.splitVariantProps(props)
-      const styles = recipe(variantProps)
-      return (
-        <StyleContext.Provider value={styles}>
-          <Component ref={ref} className={styles?.[part ?? '']} {...rest} />
-        </StyleContext.Provider>
-      )
-    })
-    Comp.displayName = Component.displayName || Component.name
-    return Comp
-  }
-
-  const withContext = (Component, part) => {
-    if (!part) return Component
-
-    const Comp = forwardRef((props, ref) => {
-      const styles = useContext(StyleContext)
-      return <Component ref={ref} className={styles?.[part ?? '']} {...props} />
-    })
-    Comp.displayName = Component.displayName || Component.name
-    return Comp
-  }
-
-  return { withProvider, withContext }
-}
-```
-
-> Note: Typing this is project-specific — `part` is a union of the recipe's slot names, and the element type depends on
-> what you pass as `Component`. `recipe.slotsAffectedBy` tells you which slots a variant actually reaches, so you only
-> need to wrap those rather than every part.
-
-Then, use the context to create compound components connected to the recipe
-
-```jsx filename="Checkbox.tsx"
-import { createStyleContext } from './style-context'
-import { checkbox } from './checkbox.recipe'
-
-const { withProvider, withContext } = createStyleContext(checkbox)
-
-//                                  👇🏻 points to the root slot
-const Root = withProvider('label', 'root')
-//                                    👇🏻 points to the control slot
-const Control = withContext('div', 'control')
-//                                  👇🏻 points to the label slot
-const Label = withContext('span', 'label')
-
-const Checkbox = { Root, Control, Label }
-```
+If you use React and do need a context for a portaled anchor, remember it makes the file a client component — add
+`'use client'` at the top.
 
 ## Config Slot Recipe
 

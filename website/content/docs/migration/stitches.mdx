@@ -127,24 +127,29 @@ const Button = styled('button', {})
 // => <button class="c-coNKBW c-coNKBW-dnSdJM-variant-primary">Button</button>
 ```
 
-In Bamboo, you can decide if you want unique classNames for the recipe or you want atomic classNames.
+In Bamboo, both kinds of recipe emit a named class per variant, into the `recipes` cascade layer. What you choose is
+where the recipe lives, and what that costs.
 
-- **Atomic classes** using the `cva` function
+- **Colocated** with the component, using the `cva` function. Every variant it declares is generated, because the build
+  cannot cheaply find which ones your code uses.
 
 ```tsx
 import { cva } from '../styled-system/css'
 
 const button = cva({
+  className: 'button',
   base: {
     backgroundColor: 'gainsboro',
     borderRadius: '9999px',
   },
 })
-// => <button class="bg_gainsboro rounded_999px">Button</button>
+// => <button class="button">Button</button>
 ```
 
-- **Selector classes** by defining the recipe in the `bamboo.config.ts` file. This approach only generates the classes
-  and css for the variants that are used in the project.
+`className` is optional — without it the class is derived by hashing the config, which is stable but not readable.
+
+- **In the config**, by defining the recipe in `bamboo.config.ts`. This approach only generates the classes and css for
+  the variants that are used in the project.
 
 ```ts
 import { defineConfig, defineRecipe } from '@bamboocss/dev'

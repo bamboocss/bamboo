@@ -62,8 +62,7 @@ This file contains an array of raw design tokens grouped by category
         }
       ],
       "tokenFunctionExamples": ["token('colors.purple.800')", "token.var('colors.purple.800')"],
-      "functionExamples": ["css({ color: 'purple.800' })"],
-      "jsxExamples": ["<Box color='purple.800' />"]
+      "functionExamples": ["css({ color: 'purple.800' })"]
     }
   ]
 }
@@ -76,7 +75,6 @@ Each token in the `values` array includes:
 - **cssVar**: the generated CSS custom property
 - **tokenFunctionExamples**: examples of how to use the token in the `token` function
 - **functionExamples**: examples of how to use the token in the `css` function
-- **jsxExamples**: examples of how to use the token in JSX
 
 #### Usage
 
@@ -137,8 +135,7 @@ modes (e.g., light/dark).
         }
       ],
       "tokenFunctionExamples": ["token('colors.bg')", "token.var('colors.bg')"],
-      "functionExamples": ["css({ color: 'bg' })"],
-      "jsxExamples": ["<Box color='bg' />"]
+      "functionExamples": ["css({ color: 'bg' })"]
     }
   ]
 }
@@ -153,7 +150,6 @@ Each semantic token in the `values` array includes:
 - **cssVar**: the generated CSS custom property
 - **tokenFunctionExamples**: examples of how to use the token in the `token` function
 - **functionExamples**: examples of how to use the token in the `css` function
-- **jsxExamples**: examples of how to use the token in JSX
 
 #### Usage
 
@@ -208,8 +204,7 @@ This file contains an array of recipe definitions for styling components with va
         "color": "main",
         "size": "md"
       },
-      "functionExamples": ["button({ shape: 'square' })", "button({ color: 'main' })", "button({ size: 'sm' })"],
-      "jsxExamples": ["<Button shape='square' />", "<Button color='main' />", "<Button size='sm' />"]
+      "functionExamples": ["button({ shape: 'square' })", "button({ color: 'main' })", "button({ size: 'sm' })"]
     }
   ]
 }
@@ -222,7 +217,6 @@ Each recipe in the `data` array includes:
 - **variants**: an object where each key is a variant name and each value is an array of allowed options
 - **defaultVariants**: an object defining the default option for each variant
 - **functionExamples**: examples of how to use the recipe function
-- **jsxExamples**: examples of how to use the recipe in JSX
 
 #### Usage
 
@@ -276,7 +270,7 @@ Contains a list of all color names defined in your palette.
 
 - `values` – an array of color keys (e.g., `"blue"`, `"teal"`, `"pink"` and more).
 - Does not contain the color scales (e.g., 500, 600); it only lists the available palette names.
-- Optional examples: `functionExamples` and `jsxExamples`
+- Optional examples: `functionExamples`
 
 ### `text-styles.json`
 
@@ -290,8 +284,7 @@ This file contains an array of text style definitions for typography presets.
   "data": [
     {
       "name": "xl",
-      "functionExamples": ["css({ textStyle: 'xl' })"],
-      "jsxExamples": ["<Box textStyle='xl' />"]
+      "functionExamples": ["css({ textStyle: 'xl' })"]
     }
   ]
 }
@@ -301,7 +294,6 @@ Each text style in the `data` array includes:
 
 - **name**: the text style name (e.g., `xs`, `sm`, `md`, `lg`, `xl`, `2xl`)
 - **functionExamples**: examples of how to use the text style in the `css` function
-- **jsxExamples**: examples of how to use the text style in JSX
 
 #### Usage
 
@@ -336,8 +328,7 @@ This file contains an array of layer style definitions for visual presets (backg
   "data": [
     {
       "name": "offShadow",
-      "functionExamples": ["css({ layerStyle: 'offShadow' })"],
-      "jsxExamples": ["<Box layerStyle='offShadow' />"]
+      "functionExamples": ["css({ layerStyle: 'offShadow' })"]
     }
   ]
 }
@@ -347,7 +338,6 @@ Each layer style in the `data` array includes:
 
 - **name**: the layer style name (e.g., `card`, `overlay`, `offShadow`)
 - **functionExamples**: examples of how to use the layer style in the `css` function
-- **jsxExamples**: examples of how to use the layer style in JSX
 
 #### Usage
 
@@ -376,7 +366,7 @@ Contains an array of animation style entries. Each entry includes:
 
 - `name` – the animation preset name
 - Animation properties such as `duration`, `timingFunction`, etc.
-- Optional examples: `functionExamples` and `jsxExamples`
+- Optional examples: `functionExamples`
 
 If no animation styles are configured in your `bamboo.config.ts` file , this file will contain an empty data array.
 
@@ -392,8 +382,7 @@ This file contains an array of keyframe definitions for CSS animations.
   "data": [
     {
       "name": "spin",
-      "functionExamples": ["css({ animationName: 'spin' })", "css({ animation: 'spin 1s ease-in-out infinite' })"],
-      "jsxExamples": ["<Box animationName='spin' />", "<Box animation='spin 1s ease-in-out infinite' />"]
+      "functionExamples": ["css({ animationName: 'spin' })", "css({ animation: 'spin 1s ease-in-out infinite' })"]
     }
   ]
 }
@@ -403,7 +392,6 @@ Each keyframe in the `data` array includes:
 
 - **name**: the keyframe name (e.g., `spin`, `ping`, `pulse`, `bounce`, `fade-in`)
 - **functionExamples**: examples of how to use the keyframe in the `css` function
-- **jsxExamples**: examples of how to use the keyframe in JSX
 
 #### Usage
 
@@ -445,8 +433,7 @@ This file contains an array of pattern definitions for layout utilities.
         { "name": "direction", "type": "SystemProperties['flexDirection']" },
         { "name": "wrap", "type": "SystemProperties['flexWrap']" }
       ],
-      "functionExamples": ["flex({ align: 'center' })", "flex({ justify: 'space-between' })"],
-      "jsxExamples": ["<Flex align='center' />", "<Flex justify='space-between' />"]
+      "functionExamples": ["flex({ align: 'center' })", "flex({ justify: 'space-between' })"]
     }
   ]
 }
@@ -461,7 +448,6 @@ Each pattern in the `data` array includes:
   - **type**: the TypeScript type for the prop
   - **defaultValue**: optional default value for the prop
 - **functionExamples**: examples of how to use the pattern function
-- **jsxExamples**: examples of how to use the pattern in JSX
 
 #### Usage
 
@@ -514,7 +500,7 @@ Contains an array of condition entries. Each entry includes:
 
 - `name` – the condition key used in style objects (e.g.,`_hover`, `_focus`, `_focusWithin`)
 - `value` – the CSS selector or media query that the condition maps to
-- Optional examples: `functionExamples` and `jsxExamples`
+- Optional examples: `functionExamples`
 
 ## FAQs
 
