@@ -32,8 +32,9 @@ const Button = (props: ButtonProps) => {
 }
 ```
 
-A consumer's `className` still beats the component's own styles, because `css()` output sits in the `utilities` layer
-and a recipe's in `recipes` — so overrides stay deterministic without a factory to merge them.
+For an override to be deterministic the component's styles have to sit in a lower cascade layer, which means declaring
+them as a config recipe — an inline `cva()` is atomic and lands in `utilities` alongside the consumer. A component that
+instead accepts a style object and merges it with `css(base, props.css)` needs no layer at all.
 
 **Recipe JSX tracking is kept**, and no longer depends on `jsxFramework`. A recipe's `jsx: ['Button']` hint is how the
 build reads `<Button variant="danger">` on a component you wrote and emits `--variant_danger`; without it those variants

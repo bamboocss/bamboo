@@ -21,10 +21,12 @@ cx(css({ paddingX: '4' }), css({ paddingX: '2' }))
 
 Precedence is decided where every build can decide it the same way — by cascade layer:
 
-- **A component a consumer will override** belongs in `recipes`. Write it with `cva`/`sva` rather than bare `css()`, and
-  the consumer's `css()` in `utilities` wins by layer.
-- **Two `css()` calls you own** are in the same layer, so merge the objects instead: `css(a, b)` resolves per property
-  before any class name exists.
+- **A component you want reliably overridable** needs a lower layer than its consumer, and only a **config recipe** —
+  declared in `theme.recipes` or `theme.slotRecipes` — lands in `recipes`. An inline `cva()` is atomic like `css()` and
+  sits in `utilities` alongside the consumer.
+- **Or accept a style object rather than a class name.** `css(base, props.css)` merges per property before any class
+  name exists, so it resolves the same way in every build and needs no layer.
+- **Two `css()` calls you own** are in the same layer, so merge the objects instead: `css(a, b)`.
 
 The case to check when upgrading is a component that styles itself with bare `css()` _and_ accepts a `className`. Both
 classes are in `utilities`, so the winner is now stylesheet order rather than argument order. Moving those styles to

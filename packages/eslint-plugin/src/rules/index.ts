@@ -11,6 +11,7 @@ import noInvalidTokenPaths, { RULE_NAME as NoInvalidTokenPaths } from './no-inva
 import noMarginProperties, { RULE_NAME as NoMarginProperties } from './no-margin-properties'
 import noPhysicalProperties, { RULE_NAME as NoPhysicalProperties } from './no-physical-properties'
 import noPropertyRenaming, { RULE_NAME as NoPropertyRenaming } from './no-property-renaming'
+import noUnlayeredOverride, { RULE_NAME as NoUnlayeredOverride } from './no-unlayered-override'
 import noUnsafeTokenUsage, { RULE_NAME as NoUnsafeTokenUsage } from './no-unsafe-token-fn-usage'
 import preferAtomicProperties, { RULE_NAME as PreferAtomicProperties } from './prefer-atomic-properties'
 import preferCompositeProperties, { RULE_NAME as PreferCompositeProperties } from './prefer-composite-properties'
@@ -32,6 +33,7 @@ export const rules = {
   [NoMarginProperties]: noMarginProperties,
   [NoPhysicalProperties]: noPhysicalProperties,
   [NoPropertyRenaming]: noPropertyRenaming,
+  [NoUnlayeredOverride]: noUnlayeredOverride,
   [NoUnsafeTokenUsage]: noUnsafeTokenUsage,
   [PreferAtomicProperties]: preferAtomicProperties,
   [PreferCompositeProperties]: preferCompositeProperties,

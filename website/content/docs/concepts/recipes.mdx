@@ -313,8 +313,11 @@ Then you can use the component in JSX
 <Button size="large">Click me</Button>
 ```
 
-A consumer's `className` wins over the recipe's own styles, because `css()` output sits in the `utilities` layer and a
-recipe's in `recipes`. See [Cascade Layers](/docs/concepts/cascade-layers).
+A consumer's `className` only reliably beats the component's own styles when those styles are in a lower cascade layer,
+and that means a [config recipe](#config-recipe). An inline `cva()` like the one above is atomic — its output is in
+`utilities`, the same layer as the consumer's `css()` — so which one applies is decided by stylesheet order. Either
+hoist the recipe into the config, or accept a style object and merge it:
+`css(buttonStyle.raw(variantProps), props.css)`.
 
 ## Config Recipe
 

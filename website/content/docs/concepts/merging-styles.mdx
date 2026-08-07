@@ -199,10 +199,17 @@ either way. It does the same thing everywhere instead.
 
 So when you need one style to beat another, decide it by origin:
 
-- **A component a consumer will override** belongs in the `recipes` layer. Write it with `cva`/`sva`, not bare `css()`,
-  and the consumer's `css()` in `utilities` wins by layer — deterministically, in every build.
-- **Two `css()` calls you own** are in the same layer. Merge the objects rather than the classes: `css(base, override)`
-  resolves per property before any class name exists.
+- **A component you want reliably overridable** needs its styles in a lower cascade layer than the consumer's. Only a
+  **config recipe** — one declared in `theme.recipes` or `theme.slotRecipes` — lands in `recipes`. An inline `cva()` is
+  atomic, exactly like `css()`, and sits in `utilities` alongside the consumer.
+- **Or take a style object instead of a class name.** `css(base, props.css)` merges per property before any class name
+  exists, so it resolves the same way in every build and needs no layer at all:
+
+  ```jsx
+  const Card = ({ css: cssProp, ...rest }) => <div className={css({ p: '4' }, cssProp)} {...rest} />
+  ```
+
+- **Two `css()` calls you own** are in the same layer, so merge the objects rather than the classes: `css(a, b)`.
 
 ## Merging within JSX component
 

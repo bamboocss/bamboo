@@ -12,6 +12,7 @@ export default {
     'bamboo/no-invalid-nesting': 'error',
     'bamboo/no-invalid-token-paths': 'error',
     'bamboo/no-property-renaming': 'warn',
+    'bamboo/no-unlayered-override': 'warn',
     'bamboo/no-unsafe-token-fn-usage': 'warn',
   },
 }

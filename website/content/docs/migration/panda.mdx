@@ -137,10 +137,10 @@ pnpm bamboo codegen
 Panda's `cx` joins classnames and so does Bamboo's, so this needs no migration. Two atomic classes for the same property
 both end up on the element and the browser picks by stylesheet order.
 
-What differs is the advice about what to do instead. Bamboo puts `cva`/`sva` output in the `recipes` layer and `css()`
-in `utilities`, so a component written with a recipe is overridden by a consumer's `css()` deterministically — see
-[Merging styles](/docs/concepts/merging-styles). A component that styles itself with bare `css()` has no such guarantee
-in either tool.
+What differs is the advice about what to do instead. A **config recipe** — one declared in `theme.recipes` — lands in
+the `recipes` layer, so a consumer's `css()` in `utilities` overrides it deterministically. An inline `cva()` does not:
+its output is atomic, exactly like `css()`, and sits in the same layer as the consumer. See
+[Merging styles](/docs/concepts/merging-styles).
 
 ## Things that are easy to miss
 

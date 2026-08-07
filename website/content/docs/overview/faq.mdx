@@ -38,12 +38,15 @@ The styles generated at build time will look like this:
 `cx` joins class names; it does not resolve conflicts between them. If a component styles itself with `css()` and joins
 your `className`, both classes are in the `utilities` layer and the browser picks by stylesheet order.
 
-The fix is to give the two styles different origins. A component meant to be overridden should use `cva`/`sva`, which
-puts its styles in the `recipes` layer — a consumer's `css()` in `utilities` then wins by
-[cascade layer](/docs/concepts/cascade-layers), in every build.
+The fix is to give the two styles different origins, or to stop overriding through a class name at all.
 
-If you own both call sites, merge the style objects instead: `css(base, override)` resolves per property before any
-class name exists.
+Declaring the component's styles as a **config recipe** — in `theme.recipes` or `theme.slotRecipes` — puts them in the
+`recipes` layer, so a consumer's `css()` in `utilities` wins by [cascade layer](/docs/concepts/cascade-layers) in every
+build. An inline `cva()` does **not** do this: its output is atomic, exactly like `css()`, and lands in `utilities`
+alongside the consumer.
+
+The alternative needs no layer at all — accept a style object rather than a class name. `css(base, props.css)` merges
+per property before any class name exists, so it resolves the same way in every build.
 
 ---
 
