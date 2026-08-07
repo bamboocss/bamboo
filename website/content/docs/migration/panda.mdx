@@ -197,7 +197,9 @@ provider, no wrapper. See [Slot recipes](/docs/concepts/slot-recipes#only-the-ro
   scopeRoots: ['root', 'positioner']
   ```
 
-  See [Components that span a portal](/docs/concepts/slot-recipes#components-that-span-a-portal).
+  An anchor is callable, so the variant still has to reach the positioner — that is one context per portaled component,
+  against one per slot in Panda. See
+  [Components that span a portal](/docs/concepts/slot-recipes#components-that-span-a-portal).
 
 If you would rather migrate without any of this and revisit it later, `scopeRoots: []` on each slot recipe reproduces
 Panda's output exactly.

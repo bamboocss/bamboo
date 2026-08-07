@@ -30,8 +30,10 @@ defineSlotRecipe({
 })
 ```
 
-Each named slot takes variant props; every other slot stays a constant. The author threads the variant to 2 elements
-instead of 8, and that count does not grow with the recipe.
+Each named slot takes variant props; every other slot stays a constant. Anchors are callable, so the variant still has
+to be delivered to each of them — in a compound component the consumer authors `Select.Positioner` as a sibling of
+`Select.Root`, so it needs one context to reach it. That is one delivery per _subtree the component occupies_, not per
+slot: 2 instead of 8, and the count does not grow as the recipe gains slots.
 
 ### No structural declaration
 

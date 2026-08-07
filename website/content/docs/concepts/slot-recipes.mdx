@@ -302,15 +302,57 @@ defineSlotRecipe({
 Each named slot takes variant props; every other slot stays a constant:
 
 ```jsx
-<div className={select.root({ size })}>             {/* anchor */}
-  <button className={select.trigger} />             {/* constant */}
+<div className={select.root({ size })}>             {/* anchor    — takes the variant */}
+  <button className={select.trigger} />             {/* constant  — reached by the scope */}
 </div>
 <Portal>
-  <div className={select.positioner({ size })}>     {/* anchor */}
-    <div className={select.item} />                 {/* constant */}
+  <div className={select.positioner({ size })}>     {/* anchor    — takes the variant */}
+    <div className={select.item} />                 {/* constant  — reached by the scope */}
   </div>
 </Portal>
 ```
+
+### The second anchor still needs the variant
+
+An anchor is callable, and that is not a detail you can ignore: **the variant has to reach every anchor.** Written flat,
+as above, `size` is in scope at both. In a real compound component it is not — the consumer authors `Select.Positioner`
+as a sibling of `Select.Root`, so it never sees the props the root was given:
+
+```jsx
+const Select = ({ size, children }) => <div className={select.root({ size })}>{children}</div>
+
+Select.Positioner = ({ children }) => (
+  <Portal>
+    <div className={select.positioner({ size })}>{children}</div> {/* ✗ `size` is not in scope here */}
+  </Portal>
+)
+```
+
+So a portaled component keeps **one** context — for its anchors, not for its slots:
+
+```jsx
+const SizeContext = createContext('md')
+
+const Select = ({ size = 'md', children }) => (
+  <SizeContext.Provider value={size}>
+    <div className={select.root({ size })}>{children}</div>
+  </SizeContext.Provider>
+)
+
+Select.Positioner = ({ children }) => (
+  <Portal>
+    <div className={select.positioner({ size: useContext(SizeContext) })}>{children}</div>
+  </Portal>
+)
+
+// every other slot needs nothing
+Select.Trigger = (props) => <button className={select.trigger} {...props} />
+Select.Item = (props) => <div className={select.item} {...props} />
+```
+
+That is the whole cost: one delivery per anchor, and the count is the number of subtrees the component occupies — two —
+rather than the number of slots, which for a real `select` is fifteen. A component with no portal has one anchor, which
+is the element receiving the props already, so it needs no context at all.
 
 You never describe the DOM. The build emits each non-anchor slot's variant rules under **every** anchor, and only the
 anchor that is genuinely an ancestor matches at runtime:
@@ -392,16 +434,26 @@ Checkbox.Control = () => <div className={checkbox.control} />
 Checkbox.Label = ({ children }) => <span className={checkbox.label}>{children}</span>
 ```
 
-A **portal** needs one more thing: the portaled subtree is its own anchor, so name it in
-[`scopeRoots`](#components-that-span-a-portal) alongside the root. Only then is a slot left over that no anchor reaches,
-and `slotsAffectedBy` says which slots a variant actually writes styles for, so only those need threading:
+A **portal** keeps one context, and it is worth being exact about what for. Two different things can need the variant
+delivered:
 
-```js
-checkbox.variantKeys //          ['size']
-checkbox.slotsAffectedBy.size // ['control', 'label']
-```
+1. **A second anchor.** The portaled subtree is its own anchor, so name it in
+   [`scopeRoots`](#components-that-span-a-portal) alongside the root — and then _deliver the variant to it_, because an
+   anchor is callable and the consumer authors it as a sibling of the root. This is the one context a portaled component
+   keeps; see [The second anchor still needs the variant](#the-second-anchor-still-needs-the-variant).
+2. **A slot no anchor reaches.** Once both anchors are named this is usually empty. When it is not, `slotsAffectedBy`
+   says which slots a variant actually writes styles for, so only those need threading:
 
-For that remainder, a context provider is still the answer.
+   ```js
+   checkbox.variantKeys //          ['size']
+   checkbox.slotsAffectedBy.size // ['control', 'label']
+   ```
+
+   [`auditSlotScopes`](#catching-an-unreachable-slot-in-development) reports this case at runtime in development, since
+   no build step can detect it.
+
+A component with no portal has a single anchor — the element already receiving the props — so it needs no context at
+all.
 
 > **Note:** This is an advanced topic and you don't need to understand it to use slot recipes. If you use React, be
 > aware that context require adding 'use client' to the top of the file.
