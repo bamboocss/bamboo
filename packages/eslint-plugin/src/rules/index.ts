@@ -12,6 +12,7 @@ import noMarginProperties, { RULE_NAME as NoMarginProperties } from './no-margin
 import noPhysicalProperties, { RULE_NAME as NoPhysicalProperties } from './no-physical-properties'
 import noPropertyRenaming, { RULE_NAME as NoPropertyRenaming } from './no-property-renaming'
 import noUnlayeredOverride, { RULE_NAME as NoUnlayeredOverride } from './no-unlayered-override'
+import requireRecipeClassName, { RULE_NAME as RequireRecipeClassName } from './require-recipe-class-name'
 import noUnsafeTokenUsage, { RULE_NAME as NoUnsafeTokenUsage } from './no-unsafe-token-fn-usage'
 import preferAtomicProperties, { RULE_NAME as PreferAtomicProperties } from './prefer-atomic-properties'
 import preferCompositeProperties, { RULE_NAME as PreferCompositeProperties } from './prefer-composite-properties'
@@ -34,6 +35,7 @@ export const rules = {
   [NoPhysicalProperties]: noPhysicalProperties,
   [NoPropertyRenaming]: noPropertyRenaming,
   [NoUnlayeredOverride]: noUnlayeredOverride,
+  [RequireRecipeClassName]: requireRecipeClassName,
   [NoUnsafeTokenUsage]: noUnsafeTokenUsage,
   [PreferAtomicProperties]: preferAtomicProperties,
   [PreferCompositeProperties]: preferCompositeProperties,
