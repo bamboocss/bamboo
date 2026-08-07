@@ -22,7 +22,19 @@ describe('generate recipes', () => {
         "js": "import { finalizeConditions, sortConditions } from '../css/conditions.mjs';
       import { assertCompoundVariant, getCompoundVariantCss } from '../css/cva.mjs';
       import { cx } from '../css/cx.mjs';
-      import { compact, createCss, splitProps, uniq, withoutSpace } from '../helpers.mjs';
+      import { compact, createCss, splitProps, toHash, uniq, withoutSpace } from '../helpers.mjs';
+
+      /**
+       * What \`createCss\` does to a class name: prefix it, and hash it when \`hash.className\`
+       * is set.
+       *
+       * A slot that takes variants gets this for free, because its classes come from
+       * \`createCss\`. A *scoped* slot's class never goes through it — it is a constant — so it
+       * has to be formatted here or the runtime hands back a raw name while the stylesheet
+       * emits the rule under a hashed one, and the slot renders unstyled.
+       */
+      const withPrefix = (className) => className
+      export const formatRecipeClass = withPrefix
 
       export const createRecipe = (name, defaultVariants, compoundVariants) => {
        const getVariantProps = (variants) => {
@@ -411,13 +423,16 @@ describe('generate recipes', () => {
 
       export declare const checkbox: CheckboxRecipe",
           "js": "import { compact, getSlotCompoundVariant, memo, splitProps } from '../helpers.mjs';
-      import { createRecipe } from './create-recipe.mjs';
+      import { createRecipe, formatRecipeClass } from './create-recipe.mjs';
 
       const checkboxDefaultVariants = {
         "size": "sm"
       }
       const checkboxCompoundVariants = []
 
+      // Formatted, not raw. A scoped slot's class is a constant that never passes through
+      // \`createCss\`, so \`hash.className\` and \`prefix\` have to be applied here to match
+      // the rule the stylesheet emits.
       const checkboxSlotNames = [
         [
           "root",
@@ -431,7 +446,9 @@ describe('generate recipes', () => {
           "label",
           "checkbox__label"
         ]
-      ]
+      ].map(
+        ([slotName, className]) => [slotName, formatRecipeClass(className)],
+      )
       /**
        * Only the anchors take variants: \`checkbox.root\`.
        * Every other slot's variant styles are emitted as rules scoped by a class an anchor
@@ -521,7 +538,7 @@ describe('generate recipes', () => {
 
       export declare const badge: BadgeRecipe",
           "js": "import { compact, getSlotCompoundVariant, memo, splitProps } from '../helpers.mjs';
-      import { createRecipe } from './create-recipe.mjs';
+      import { createRecipe, formatRecipeClass } from './create-recipe.mjs';
 
       const badgeDefaultVariants = {}
       const badgeCompoundVariants = [
@@ -536,6 +553,9 @@ describe('generate recipes', () => {
         }
       ]
 
+      // Formatted, not raw. A scoped slot's class is a constant that never passes through
+      // \`createCss\`, so \`hash.className\` and \`prefix\` have to be applied here to match
+      // the rule the stylesheet emits.
       const badgeSlotNames = [
         [
           "title",
@@ -545,7 +565,9 @@ describe('generate recipes', () => {
           "body",
           "badge__body"
         ]
-      ]
+      ].map(
+        ([slotName, className]) => [slotName, formatRecipeClass(className)],
+      )
       const badgeSlotFns = /* @__PURE__ */ badgeSlotNames.map(([slotName, slotKey]) => [slotName, createRecipe(slotKey, badgeDefaultVariants, getSlotCompoundVariant(badgeCompoundVariants, slotName))])
 
       const badgeFn = memo((props = {}) => {

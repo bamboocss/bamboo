@@ -105,7 +105,7 @@ const sharedState = {
    * outer `<Tabs size="lg">` would style the triggers of an inner `<Tabs size="sm">`, and
    * at equal specificity the winner would be stylesheet order rather than proximity.
    */
-  slotScopes: new Map<string, Array<{ prelude: string; selector: string }>>(),
+  slotScopes: new Map<string, Array<{ anchorVariantClass: string; anchorClass: string; slotClass: string }>>(),
 }
 
 export class Recipes {
@@ -381,11 +381,17 @@ export class Recipes {
         sharedState.classNames.set(propKey, className)
 
         if (scopedByAnchorClasses?.length) {
+          // Stored raw. `hash.className` and `prefix` are applied by the decoder's
+          // `formatSelector`, and building the selector here skipped both — so under either
+          // option the prelude named an anchor class no element carried and the rule
+          // selected a slot class the runtime never returned. Every non-anchor slot then
+          // rendered unstyled, silently.
           sharedState.slotScopes.set(
             propKey,
             scopedByAnchorClasses.map((anchorClass) => ({
-              prelude: `@scope (.${esc(this.getClassName(anchorClass, key, variantKey))}) to (.${esc(anchorClass)})`,
-              selector: `.${esc(recipe.className)}`,
+              anchorVariantClass: this.getClassName(anchorClass, key, variantKey),
+              anchorClass,
+              slotClass: recipe.className,
             })),
           )
         } else {

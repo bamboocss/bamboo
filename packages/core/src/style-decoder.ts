@@ -124,7 +124,14 @@ export class StyleDecoder {
       // One entry per anchor. A component that spans a portal has more than one enclosing
       // element, and only the anchor that is genuinely an ancestor of this slot matches at
       // runtime — which is what lets the build stay ignorant of the DOM shape.
-      scopes: (transformed as { scope?: Array<{ prelude: string; selector: string }> }).scope,
+      scopes: (
+        transformed as { scope?: Array<{ anchorVariantClass: string; anchorClass: string; slotClass: string }> }
+      ).scope?.map((scope) => ({
+        // Formatted here rather than where they are recorded, so `hash.className` and
+        // `prefix` reach them. `formatSelector` is the one place that applies both.
+        prelude: `@scope (.${this.formatSelector([], scope.anchorVariantClass)}) to (.${this.formatSelector([], scope.anchorClass)})`,
+        selector: `.${this.formatSelector([], scope.slotClass)}`,
+      })),
       // A compound variant. It selects on the variant classes the element already carries
       // — `.btn--size_sm.btn--tone_a` — so it needs a selector that is not a single class,
       // and it contributes no class of its own. `className` still identifies the rule for

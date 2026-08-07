@@ -33,17 +33,31 @@ const RECIPE_CANARY = {
   variants: { size: { 'x large': { paddingTop: '2' }, sm: { paddingTop: '1' } } },
 }
 
+/**
+ * A slot recipe with an anchor and a slot that is *not* the anchor.
+ *
+ * The non-anchor slot is the case that matters: its class is a constant the runtime returns
+ * without ever passing it through `createCss`, while the stylesheet emits its rule through
+ * `formatSelector`. Under `hash.className` or `prefix` those two disagreed, and every such
+ * slot rendered unstyled with nothing reported.
+ */
+const SLOT_RECIPE_CANARY = {
+  slots: ['root', 'control'],
+  base: { root: { color: 'red' }, control: { paddingTop: '1' } },
+  variants: { size: { sm: { control: { paddingTop: '2' } } } },
+}
+
 export interface NamingDisagreement {
   mode: 'atomic' | 'grouped'
   /** Which derivation disagreed. */
-  kind: 'css' | 'recipe'
+  kind: 'css' | 'recipe' | 'slot-recipe'
   /** What the stylesheet emitted a rule for. */
   build: string[]
   /** What `css()` returns in the browser. */
   runtime: string[]
 }
 
-type NamingContext = Pick<Context, 'config' | 'conditions' | 'utility' | 'hash' | 'encoder' | 'decoder'>
+type NamingContext = Pick<Context, 'config' | 'conditions' | 'utility' | 'hash' | 'encoder' | 'decoder' | 'recipes'>
 
 /**
  * Whether the stylesheet names a class the runtime will actually ask for.
@@ -107,7 +121,51 @@ export function checkNamingAgreement(ctx: NamingContext): NamingDisagreement | u
     return { mode, kind: 'css', build, runtime }
   }
 
-  return checkRecipeNamingAgreement(ctx, mode)
+  return checkRecipeNamingAgreement(ctx, mode) ?? checkSlotRecipeNamingAgreement(ctx, mode)
+}
+
+/**
+ * The same check for an inline `sva`, whose non-anchor slots are constants rather than
+ * `createCss` output — so they are the half most easily left unformatted.
+ */
+function checkSlotRecipeNamingAgreement(
+  ctx: NamingContext,
+  mode: 'atomic' | 'grouped',
+): NamingDisagreement | undefined {
+  const name = getRecipeIdentity(SLOT_RECIPE_CANARY, 'sva')
+  const format = classFormatter(ctx)
+
+  // What the generated `sva` returns for a non-anchor slot: the constant class, formatted.
+  const runtime = [format(`${name}${ctx.recipes.slotSeparator}control`)].sort()
+
+  const encoder = ctx.encoder.clone()
+  const decoder = ctx.decoder.clone()
+  const scope = encoder.withScope(() => encoder.processAtomicSlotRecipe(SLOT_RECIPE_CANARY as never))
+  decoder.collect(encoder)
+
+  const wanted = new Set(runtime)
+  const build = decoder
+    .filterClassNames(scope)
+    .map((className) => className.replaceAll('\\', ''))
+    .filter((className) => wanted.has(className))
+    .sort()
+
+  if (build.length === runtime.length && build.every((className, index) => className === runtime[index])) {
+    return
+  }
+
+  return { mode, kind: 'slot-recipe', build, runtime }
+}
+
+/**
+ * What `createCss` does to a recipe's class: prefix it, and hash it when `hash.className`
+ * is set. Recipe selections carry no conditions — `assertCompoundVariant` rejects them —
+ * so the condition half of `hashFn` is not in play.
+ */
+const classFormatter = (ctx: NamingContext) => {
+  const prefix = ctx.utility.prefix
+  const withPrefix = (className: string) => (prefix ? (className ? `${prefix}-${className}` : prefix) : className)
+  return ctx.hash.className ? (className: string) => withPrefix(ctx.utility.toHash([className], toHash)) : withPrefix
 }
 
 /**
@@ -122,14 +180,7 @@ function checkRecipeNamingAgreement(ctx: NamingContext, mode: 'atomic' | 'groupe
   const name = getRecipeIdentity(RECIPE_CANARY)
   const selection = { size: 'x large' }
 
-  // What `createCss` does to a recipe's class: prefix it, and hash it when `hash.className`
-  // is set. Recipe selections carry no conditions — `assertCompoundVariant` rejects them —
-  // so the condition half of `hashFn` is not in play.
-  const prefix = ctx.utility.prefix
-  const withPrefix = (className: string) => (prefix ? (className ? `${prefix}-${className}` : prefix) : className)
-  const format = ctx.hash.className
-    ? (className: string) => withPrefix(ctx.utility.toHash([className], toHash))
-    : withPrefix
+  const format = classFormatter(ctx)
 
   const runtime = getRecipeClassNames(name, RECIPE_CANARY.variants, selection, ctx.utility.separator, format)
     .split(' ')

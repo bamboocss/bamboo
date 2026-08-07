@@ -5,7 +5,7 @@ export function generateSvaFn(ctx: Context) {
   return {
     js: outdent`
     ${ctx.file.import('compact, getRecipeIdentity, getSlotRecipes, memo, splitProps', '../helpers')}
-    ${ctx.file.import('cva', './cva')}
+    ${ctx.file.import('cva, formatRecipeClass', './cva')}
     ${ctx.file.import('cx', './cx')}
 
     export function sva(config) {
@@ -45,7 +45,7 @@ export function generateSvaFn(ctx: Context) {
       function svaFn(props) {
         const result = slots.map(([slot, cvaFn]) => [
           slot,
-          anchors.length && !anchors.includes(slot) ? cvaFn.config.className : cvaFn(props),
+          anchors.length && !anchors.includes(slot) ? formatRecipeClass(cvaFn.config.className) : cvaFn(props),
         ])
         return Object.fromEntries(result)
       }

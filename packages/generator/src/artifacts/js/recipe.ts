@@ -24,7 +24,25 @@ export function generateCreateRecipe(ctx: Context) {
    ${ctx.file.import('finalizeConditions, sortConditions', '../css/conditions')}
    ${ctx.file.import('assertCompoundVariant, getCompoundVariantCss', '../css/cva')}
    ${ctx.file.import('cx', '../css/cx')}
-   ${ctx.file.import('compact, createCss, splitProps, uniq, withoutSpace', '../helpers')}
+   ${ctx.file.import('compact, createCss, splitProps, toHash, uniq, withoutSpace', '../helpers')}
+
+   /**
+    * What \`createCss\` does to a class name: prefix it, and hash it when \`hash.className\`
+    * is set.
+    *
+    * A slot that takes variants gets this for free, because its classes come from
+    * \`createCss\`. A *scoped* slot's class never goes through it — it is a constant — so it
+    * has to be formatted here or the runtime hands back a raw name while the stylesheet
+    * emits the rule under a hashed one, and the slot renders unstyled.
+    */
+   const withPrefix = ${
+     prefix.className
+       ? `(className) => className ? ${JSON.stringify(prefix.className)} + '-' + className : ${JSON.stringify(prefix.className)}`
+       : `(className) => className`
+   }
+   export const formatRecipeClass = ${
+     hash.className ? `(className) => withPrefix((${utility.toHash})([className], toHash))` : `withPrefix`
+   }
 
    export const createRecipe = (name, defaultVariants, compoundVariants) => {
     const getVariantProps = (variants) => {
@@ -154,12 +172,17 @@ export function generateRecipes(ctx: Context, filters?: ArtifactFilters) {
 
         return outdent`
         ${ctx.file.import('compact, getSlotCompoundVariant, memo, splitProps', '../helpers')}
-        ${ctx.file.import('createRecipe', './create-recipe')}
+        ${ctx.file.import('createRecipe, formatRecipeClass', './create-recipe')}
 
         const ${baseName}DefaultVariants = ${stringify(defaultVariants ?? {})}
         const ${baseName}CompoundVariants = ${stringify(compoundVariants ?? [])}
 
-        const ${baseName}SlotNames = ${stringify(config.slots.map((slot) => [slot, `${config.className}__${slot}`]))}
+        // Formatted, not raw. A scoped slot's class is a constant that never passes through
+        // \`createCss\`, so \`hash.className\` and \`prefix\` have to be applied here to match
+        // the rule the stylesheet emits.
+        const ${baseName}SlotNames = ${stringify(config.slots.map((slot) => [slot, `${config.className}__${slot}`]))}.map(
+          ([slotName, className]) => [slotName, formatRecipeClass(className)],
+        )
         ${
           anchors.length
             ? outdent`

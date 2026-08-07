@@ -17,7 +17,7 @@ export function generateCvaFn(ctx: Context) {
     // when \`hash.className\` is set. The build applies the same two steps to the rules it
     // emits — see \`checkNamingAgreement\`, which compares the results.
     const withPrefix = ${withPrefix}
-    const formatRecipeClass = ${
+    export const formatRecipeClass = ${
       hash.className ? `(className) => withPrefix((${utility.toHash})([className], toHash))` : `withPrefix`
     }
 
