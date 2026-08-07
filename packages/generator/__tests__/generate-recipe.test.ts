@@ -457,7 +457,10 @@ describe('generate recipes', () => {
         __recipe__: false,
         __name__: 'checkbox',
         raw: (props) => props,
-        classNameMap: {},
+        /** Each slot's constant class, for targeting a slot in the DOM. */
+        classNameMap: /* @__PURE__ */ Object.fromEntries(checkboxSlotNames),
+        /** The slots that enclose other slots, and so anchor their variant rules. */
+        scopeRoots: ["root"],
         variantKeys: checkboxVariantKeys,
         variantMap: {
         "size": [
@@ -559,7 +562,10 @@ describe('generate recipes', () => {
         __recipe__: false,
         __name__: 'badge',
         raw: (props) => props,
-        classNameMap: {},
+        /** Each slot's constant class, for targeting a slot in the DOM. */
+        classNameMap: /* @__PURE__ */ Object.fromEntries(badgeSlotNames),
+        /** The slots that enclose other slots, and so anchor their variant rules. */
+        scopeRoots: [],
         variantKeys: badgeVariantKeys,
         variantMap: {
         "size": [

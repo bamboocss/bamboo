@@ -345,6 +345,33 @@ If one anchor is nested inside another and both match a slot, `@scope` picks by 
 A slot under _no_ anchor is still unreachable, and nothing at build time can detect that; reachability is a fact about
 the DOM. `slotsAffectedBy` says which slots a variant writes to, for whatever still needs threading by hand.
 
+### Catching an unreachable slot in development
+
+That last failure is quiet — the slot keeps its base styles, so it renders _nearly_ right. `auditSlotScopes` turns it
+into a console warning naming the slot:
+
+```js
+import { auditSlotScopes, select } from '../styled-system/css'
+
+if (process.env.NODE_ENV !== 'production') {
+  auditSlotScopes([select], { observe: true })
+}
+```
+
+It looks for elements carrying a scoped slot's class that have no anchor above them, and warns:
+
+```
+[bamboo] select: the `item` slot is rendered outside every anchor (root), so its variant
+styles cannot reach it. Add the enclosing slot to `scopeRoots`, or deliver the variant to
+this slot by hand.
+```
+
+`observe: true` re-checks as the DOM changes, which matters because portaled content mounts after the first sweep — and
+that is the case this exists to catch. It returns a function that stops observing.
+
+Keep the call behind a `NODE_ENV` check so your bundler drops both it and the function from production. A recipe with
+`scopeRoots: []` is never reported: nothing is scoped, so no slot depends on where it is rendered.
+
 ### Turning scoping off
 
 A recipe whose slots are all siblings has no ancestor to scope by, and gets a variant class per slot automatically. Ask

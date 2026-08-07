@@ -193,7 +193,10 @@ export function generateRecipes(ctx: Context, filters?: ArtifactFilters) {
           __recipe__: false,
           __name__: '${baseName}',
           raw: (props) => props,
-          classNameMap: {},
+          /** Each slot's constant class, for targeting a slot in the DOM. */
+          classNameMap: /* @__PURE__ */ Object.fromEntries(${baseName}SlotNames),
+          /** The slots that enclose other slots, and so anchor their variant rules. */
+          scopeRoots: ${JSON.stringify(anchors)},
           variantKeys: ${baseName}VariantKeys,
           variantMap: ${stringify(variantKeyMap)},
           /** Which slots each variant actually reaches, for a slot a scope cannot get to. */
