@@ -1,4 +1,4 @@
-import { cloneStyles, compact, createCss, createMergeCss, memo } from '@bamboocss/shared'
+import { cloneStyles, compact, createCss, createMergeCss, getRecipeClassNames, memo } from '@bamboocss/shared'
 import { bench, describe } from 'vitest'
 
 /**
@@ -85,14 +85,22 @@ const build = (source: typeof config, shortCircuit = true) => {
   const resolveVariants = memo(resolve)
   return {
     raw: (...args: any[]) => cloneStyles((resolveVariants as any)(...args)),
-    cvaFn: memo((props: any) => css(resolve(props))),
+    /** What ships: names the classes from the config, without resolving any styles. */
+    cvaFn: memo((props: any) => getRecipeClassNames('btn', variants, getVariantProps(props ?? {}), '_')),
+    /**
+     * What shipped before class names became semantic: resolve the whole style object,
+     * then name a class per property. Kept so the two can be read against each other in
+     * one run — they share a process, a warm-up and a machine, so the difference between
+     * them is the change and nothing else.
+     */
+    cvaFnAtomic: memo((props: any) => css(resolve(props))),
   }
 }
 
 /** The same recipe with its compound variant removed — the shape most recipes have. */
 const plainConfig = { ...config, compoundVariants: [] as any[] }
 
-const { raw, cvaFn } = build(config)
+const { raw, cvaFn, cvaFnAtomic } = build(config)
 const plain = build(plainConfig)
 const plainUnconditional = build(plainConfig, false)
 const ITERATIONS = 10_000
@@ -109,6 +117,28 @@ describe('cva() runtime', () => {
   bench(`cva() warm x${ITERATIONS}`, () => {
     for (let i = 0; i < ITERATIONS; i++) cvaFn(i % 2 ? A : B)
   })
+
+  bench(`cva() atomic-naming warm x${ITERATIONS} — the shape this replaced`, () => {
+    for (let i = 0; i < ITERATIONS; i++) cvaFnAtomic(i % 2 ? A : B)
+  })
+
+  // Where the difference has to show. Warm, both return from the memo without doing any
+  // of the work that distinguishes them.
+  bench(
+    `cva() all-miss x${ITERATIONS}`,
+    () => {
+      for (let i = 0; i < ITERATIONS; i++) cvaFn({ size: 'md', tone: 'primary', ghost: i })
+    },
+    { time: 2000 },
+  )
+
+  bench(
+    `cva() atomic-naming all-miss x${ITERATIONS} — the shape this replaced`,
+    () => {
+      for (let i = 0; i < ITERATIONS; i++) cvaFnAtomic({ size: 'md', tone: 'primary', ghost: i })
+    },
+    { time: 2000 },
+  )
 
   // Worst case for the memo: every call a distinct variant combination, so nothing is
   // reusable and the cache can only cost. Tracked so a change that trades cold for warm
