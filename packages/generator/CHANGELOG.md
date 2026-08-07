@@ -1,5 +1,521 @@
 # @bamboocss/generator
 
+## 1.16.0
+
+### Minor Changes
+
+- ca558fb: **Breaking:** `cx` joins class names in every build. It no longer resolves conflicts between them.
+
+  It used to, when the class names happened to carry a property to compare — atomic mode with `hash.className` off. In
+  any other build it silently concatenated instead. `hash` is commonly wired to a minification flag, so the same source
+  resolved overrides while you developed and stopped when you shipped, with nothing raised at build time either way.
+
+  The two could not be reconciled by teaching the matcher to read hashed names. `cssMode: 'grouped'` names a _whole_
+  `css()` call with one class, so there is no single property behind it to compare, whatever the naming scheme. While
+  grouped exists, some builds can never merge — and a `cx` that merges in the rest is a behavioural difference keyed on
+  a config flag.
+
+  ```js
+  cx(css({ paddingX: '4' }), css({ paddingX: '2' }))
+  // before, in some builds: 'px_2'
+  // now, in every build:    'px_4 px_2'
+  ```
+
+  Precedence is decided where every build can decide it the same way — by cascade layer:
+  - **A component you want reliably overridable** needs a lower layer than its consumer, and a **recipe** puts it there.
+    `cva()` and `sva()` name their classes from the config and emit them into `recipes`, whether declared inline or in
+    `theme.recipes`.
+  - **Or accept a style object rather than a class name.** `css(base, props.css)` merges per property before any class
+    name exists, so it resolves the same way in every build and needs no layer.
+  - **Two `css()` calls you own** are in the same layer, so merge the objects instead: `css(a, b)`.
+
+  The case to check when upgrading is a component that styles itself with bare `css()` _and_ accepts a `className`. Both
+  classes are in `utilities`, so the winner is now stylesheet order rather than argument order. Moving those styles to
+  `cva` makes the override deterministic again.
+
+  Two things this also fixes. A hand-written class shaped like a utility — `top_bar`, or anything
+  `<utility><separator><value>` — is no longer dropped, since nothing is matching on shape any more. And the merge
+  matcher is gone from the runtime, which shipped a list of every registered utility to the browser to do its work.
+
+- 091f2e1: **Breaking:** an inline `cva()`/`sva()` now emits the same kind of CSS as a recipe declared in
+  `theme.recipes` — one class per variant, in the `recipes` cascade layer — instead of atomic classes in `utilities`.
+
+  An inline recipe and a config recipe were the same declaration, evaluated by the same code, that produced different
+  naming, a different layer and different override behaviour. Nothing about the two justified that: a config recipe is
+  an inline one that happens to be declared somewhere with a name.
+
+  ```js
+  cva({
+    base: { padding: '4' },
+    variants: { size: { sm: { fontSize: 'sm' } } },
+  })
+  // before: 'p_4'                    in @layer utilities
+  // now:    'cva_a1b2c3'             in @layer recipes
+  //         'cva_a1b2c3--size_sm'    when size="sm"
+  ```
+
+  Three things follow.
+
+  **A component written with `cva` is now reliably overridable.** Its classes are in `recipes`, so a consumer's `css()`
+  in `utilities` wins by cascade layer in every build, without the consumer knowing how the component was declared. That
+  was previously true only if you hoisted the styles into `theme.recipes`.
+
+  **`cssMode: 'grouped'` no longer has an exception.** Recipes were extracted atomically whatever `cssMode` said,
+  because a group class names a whole call and which variant combination a caller selects is not knowable at build time.
+  That forced a second `css` instance — the internal `__atomicCss` — purely so their runtime could name classes the way
+  the stylesheet did. Naming from the config is knowable in every mode, so `__atomicCss` is gone and `cva` no longer
+  sprays atomic classes into grouped markup.
+
+  **Compound variants are a compound selector.** `.btn--size_sm.btn--tone_a` rather than atomic classes joined at
+  runtime, which puts them in the same layer as the rest of the recipe and leaves the runtime nothing to compute — the
+  rule matches because both variant classes are already on the element.
+
+  ### Naming
+
+  The class prefix is derived from the config: `className` when you set one, otherwise a hash of the recipe's styles.
+
+  ```js
+  cva({ className: 'button', base: { padding: '4' } }) // .button, .button--size_sm
+  cva({ base: { padding: '4' } }) //                      .cva_a1b2c3, .cva_a1b2c3--size_sm
+  ```
+
+  It has to come from the config because the build and the browser each derive it independently and never meet. Deriving
+  it from the binding — `const button = cva(...)` — would need the build to rewrite the call, and a pipeline without
+  that transform would then name classes differently from one with it.
+
+  ### Faster at runtime
+
+  Naming from the config means the runtime no longer resolves a style object to produce a class string. `cva()` used to
+  run `mergeCss` per active variant and then name a class per property; it now walks the variant keys and concatenates.
+
+  Measured with both shapes in one process, so the comparison cannot drift
+  (`packages/generator/__tests__/cva.bench.ts`):
+
+  ```
+  cva() all-miss x10000   173.72 hz ±2.23%   (semantic)
+                           33.38 hz ±0.91%   (the atomic shape this replaced)   → 5.2x
+  cva() warm x10000      1,678    hz ±0.60%  (semantic)
+                         1,720    hz ±0.51%  (atomic)                           → within noise
+  ```
+
+  All-miss is every call selecting a distinct variant combination, so nothing is reusable. Warm, both return from the
+  memo without doing the work that distinguishes them, which is why they match. `raw()` is unchanged — it still resolves
+  styles, because that is what it returns.
+
+  ### The trade
+
+  CSS grows. Two recipes that both set `padding: 4` no longer share one atomic rule, and a variant that repeats a
+  declaration repeats it in each rule. In exchange the markup shrinks — a component carrying a recipe goes from a class
+  per property to its base class plus one per active variant, which in this repo's own fixtures is 23 classes down to 2.
+
+  ### Also fixed
+
+  Two naming bugs that predate this change and affected config recipes too, both found by extending
+  `checkNamingAgreement` to cover recipes:
+  - A variant value containing a space named `--size-x\ large` in the stylesheet and `--size-x_large` in the browser.
+    The build now applies `withoutSpace`, as the runtime always has.
+  - Under `hash: true` the build reported a recipe's **base** class unhashed while emitting the rule under the hashed
+    name, so `@bamboocss/vite` could fold a class literal no rule existed for.
+
+  ### Upgrading
+
+  Class names change for every `cva`/`sva` call site, so DOM snapshots and any CSS that targeted the generated atomic
+  classes will need updating. Styles themselves are unchanged. If you were relying on a `cva` losing to a `css()` by
+  stylesheet order, it now wins or loses by layer instead — which is the point, but it is a change in behaviour.
+
+- f2d5df2: **Breaking:** remove the JSX factory. Bamboo no longer generates components, and is now framework-agnostic.
+
+  `styled-system/jsx` is not emitted at all. `styled` / `bamboo`, style props, the `css` prop, `as`, `unstyled`,
+  `createStyleContext`, `splitCssProps` and `isCssProperty` are gone, along with `jsxFramework`, `jsxFactory` and
+  `jsxStyleProps`. There is no React, Vue, Solid, Preact or Qwik codegen left anywhere.
+
+  ```tsx
+  // before
+  <styled.div color="red.300" padding="4">hi</styled.div>
+  const Button = styled('button', buttonRecipe)
+
+  // after
+  <div className={css({ color: 'red.300', padding: '4' })}>hi</div>
+  const Button = (props: ButtonProps) => {
+    const [variantProps, rest] = buttonRecipe.splitVariantProps(props)
+    return <button {...rest} className={cx(buttonRecipe(variantProps), props.className)} />
+  }
+  ```
+
+  For an override to be deterministic the component's styles have to sit in a lower cascade layer, which means declaring
+  them as a config recipe — an inline `cva()` is atomic and lands in `utilities` alongside the consumer. A component
+  that instead accepts a style object and merges it with `css(base, props.css)` needs no layer at all.
+
+  **Recipe JSX tracking is kept**, and no longer depends on `jsxFramework`. A recipe's `jsx: ['Button']` hint is how the
+  build reads `<Button variant="danger">` on a component you wrote and emits `--variant_danger`; without it those
+  variants would silently stop being generated. It costs no codegen — it is extraction only.
+
+  **`createStyleContext` has no replacement in the box.** Compound components that need one slot to see the variant
+  chosen at the root now write their own context; `docs/concepts/slot-recipes` documents the ~20-line version.
+
+  What this removes beyond the API: the whole per-framework generator tree, `is-valid-prop` (a large module that shipped
+  to the browser only to decide whether a prop was a style prop), `normalize-html`, the vite fold's JSX element path —
+  which has nothing left to fold — and the per-framework test matrix.
+
+  `@bamboocss/plugin-vue` and `@bamboocss/plugin-svelte` are unaffected: they transform source so the extractor can read
+  it, which has nothing to do with the factory.
+
+- 1dbeb84: **Breaking:** remove JSX pattern components.
+
+  `styled-system/jsx` no longer emits a component per pattern — `<Stack>`, `<Box>`, `<HStack>` and the rest are gone,
+  and `styled-system/jsx` now exports only the factory, `isCssProperty` and `createStyleContext`.
+
+  Pattern **functions** are unchanged. Every pattern still ships from `styled-system/patterns`, and a pattern function
+  passes arbitrary style props through, so the rewrite is mechanical and behaviour-preserving:
+
+  ```tsx
+  // before
+  <Stack gap="4" mt="8">{children}</Stack>
+  <Box p="4">{children}</Box>
+
+  // after
+  <div className={stack({ gap: '4', mt: '8' })}>{children}</div>
+  <div className={css({ p: '4' })}>{children}</div>
+  ```
+
+  The `jsx`, `jsxName` and `jsxElement` fields on a pattern config are removed along with them — they only ever
+  described a component bamboo generated. `jsx` on a **recipe** is untouched.
+
+  Everything that existed to serve the component layer goes with it: the five per-framework pattern generators, the
+  `jsx-patterns` artifact, the parser's `jsx-pattern` result type and `JsxEngine`'s pattern matcher, and the vite fold's
+  pattern-element path. `Patterns.find`/`Patterns.filter` (both keyed by JSX name) are gone, and
+  `StyleEncoder.processPattern` takes `(name, props, grouped)`.
+
+  Two consequences worth knowing:
+  - A component of your own named `Box` or `Stack` is no longer misread as bamboo's pattern. It extracts as an ordinary
+    component, which is what it always was.
+  - The `jsx-patterns-index` artifact is now `jsx-index`, since it no longer indexes patterns.
+
+- d7226f0: **Breaking:** remove template literal syntax.
+
+  The `syntax` config option is gone, along with the `--syntax` CLI flag and the syntax question `bamboo init -i` asked.
+  Styles are written as objects.
+
+  A project that set `syntax: 'template-literal'` now gets a TypeScript error on the option, and its tagged templates
+  are no longer read by the extractor — `` css`color: red;` `` and `` styled.div`color: red;` `` produce no CSS. Convert
+  them to object literals:
+
+  ```tsx
+  // before
+  const One = styled.div`
+    display: flex;
+    width: 300px;
+  `
+
+  // after
+  const One = styled('div', {
+    base: {
+      display: 'flex',
+      width: '300px',
+    },
+  })
+  ```
+
+  Everything the option gated goes with it: the string-literal `css`/`conditions` runtimes and the string-literal JSX
+  factories and types for all five frameworks, the parser's tagged-template branch, the extractor's `taggedTemplates`
+  matcher, the vite fold's tagged-template path, and `astish` from `@bamboocss/shared`. Under the object syntax `cva`,
+  `sva`, patterns, `is-valid-prop`, style props and `viewTransition()` were already the only paths taken, so their
+  generated output is unchanged — the codegen artifacts are byte-identical.
+
+- 31d8577: **Breaking:** `scopeRoot: 'x'` becomes `scopeRoots: ['x']`, and a slot recipe can now name more than one
+  anchor.
+
+  A portal is a real break in the DOM tree, and no CSS mechanism crosses one — not inheritance, not
+  `@container style()`, not `:has()`. A `<Select>` occupies two disjoint subtrees: the trigger side under `root`, the
+  listbox side under a portaled `positioner`. A variant writes styles into both. One anchor can only ever reach one of
+  them.
+
+  That was not a limitation you could work around by choosing the right anchor — it only picked which half worked:
+
+  ```ts
+  scopeRoot: 'root' // 7 slots scoped, the 8 portaled ones get rules that never match
+  scopeRoot: 'positioner' // 8 slots scoped, the 7 in-tree ones get rules that never match
+  ```
+
+  And the failure was quiet. Base slot styles are emitted outside the scope, so they still applied and the component
+  rendered _nearly_ right — a partial failure, harder to notice than a total one.
+
+  ```ts
+  defineSlotRecipe({
+    className: 'select',
+    slots: ['root', 'trigger', 'positioner', 'content', 'item'],
+    scopeRoots: ['root', 'positioner'],
+    variants: { size: { lg: { trigger: { h: '11' }, item: { px: '3' } } } },
+  })
+  ```
+
+  Each named slot takes variant props; every other slot stays a constant. The author threads the variant to 2 elements
+  instead of 8, and that count does not grow with the recipe.
+
+  ### No structural declaration
+
+  You never describe the DOM. Each non-anchor slot's variant rules are emitted under **every** anchor, and only the
+  anchor that is genuinely an ancestor matches at runtime. Nested anchors resolve by `@scope` proximity — the nearer one
+  wins.
+
+  Read `scopeRoots` as a cost control rather than a description of the tree: emitting every slot under every slot would
+  be correct with nothing declared at all, it is just quadratic in slot count. Naming the enclosing slots prunes it to
+  one copy per anchor.
+
+  ### Cost, measured
+
+  A 15-slot recipe shaped like Park UI's `select`, two variants over five values:
+
+  ```
+  1 anchor    raw 2,315 B   gzip 310 B    5 @scope blocks
+  2 anchors   raw 4,248 B   gzip 383 B   10 @scope blocks
+  ```
+
+  +84% raw, **+24% gzipped**. The alternative — per-slot variant classes for the portaled half — gzips to 502 B,
+  _larger_ than two anchors, and still needs a runtime channel to deliver those classes.
+
+  Getting there needed a fix in the stylesheet: scoped rules are keyed by their `@scope` prelude, and identical at-rules
+  only collapse when adjacent. Interleaving two anchors broke that, giving 130 blocks where 10 would do. Scoped results
+  are now merged per layer before processing, so the prelude deduplicates as an object key. Unscoped output is untouched
+  — merging those would also collapse a variant's declarations into one rule and reorder the layer.
+
+  ### Other changes
+  - `scopeRoots: []` explicitly turns scoping off, giving every slot its own variant class. Previously reachable only by
+    _not_ having a slot named `root`.
+  - A slot recipe's generated type now declares every anchor as callable, not just one.
+  - Fixed: `slotScopes` was only ever written, never cleared, so a recipe that _stopped_ being scoped in a watch rebuild
+    kept emitting rules under an anchor nothing rendered any more.
+
+  ### What this does not fix
+
+  A slot under _no_ anchor is still unreachable, and nothing at build time can detect it — reachability is a fact about
+  the DOM, and there is no component layer left to check it at runtime. `scopeRoots` makes the correct thing
+  expressible; it does not make it verifiable. `recipe.slotsAffectedBy` remains the tool for whatever still needs
+  threading by hand.
+
+- 99ab42f: **Breaking:** scope a slot recipe's variants to its root, so every other slot is static.
+
+  A slot recipe that declares a slot named `root` now emits its non-root slots' variant styles as rules scoped by the
+  class the root already carries, instead of as classes each slot has to be given:
+
+  ```css
+  /* before — the control had to be told which size it is */
+  .checkbox__control--size_md {
+    width: 10;
+  }
+
+  /* after — the root already says so */
+  @scope (.checkbox__root--size_md) to (.checkbox__root) {
+    .checkbox__control {
+      width: 10;
+    }
+  }
+  ```
+
+  Nothing has to reach a slot at runtime, so a compound component needs no context, no provider and no wrapper per slot
+  — which is what made `createStyleContext` necessary and is the reason it could be removed.
+
+  ```js
+  checkbox.root({ size: 'md' }) // 'checkbox__root checkbox__root--size_md'  — only the root takes variants
+  checkbox.control //              'checkbox__control'                       — a property, not a call
+
+  checkbox({ size: 'md' }) // still returns the whole record
+  ```
+
+  `to (.checkbox__root)` bounds the scope at the next nested instance, so an outer `size="md"` does not style the
+  control of a checkbox nested inside it. Without it both rules would match at equal specificity and the winner would be
+  stylesheet order rather than proximity.
+
+  Two things this relies on, both now under test:
+  - The root carries a class for **every** variant any slot references, including one that writes no root styles at all
+    — it is the selector the scope opens on. A test asserts the prelude the build emits is exactly the class the runtime
+    puts on the root, because the two are derived independently and only meet in the browser.
+  - Precedence is unchanged. The scoped selector is more specific, but specificity never crosses a cascade layer: a
+    consumer's `css()` output is in `utilities` and still beats anything in `recipes`.
+
+  Also new: `recipe.slotsAffectedBy` — which slots each variant writes styles for. A **portal** renders outside the
+  root's subtree, so DOM ancestry breaks and CSS cannot reach it; that case still needs the variant delivered by hand,
+  and this says which slots it has to reach rather than leaving the component layer to guess.
+
+  A recipe whose slots are siblings, with no slot named `root`, has no ancestor to scope by. Those are unchanged: a
+  variant class per slot, every slot callable.
+
+- 2ab7f19: Give an inline `sva()` the same surface a config slot recipe has, and add a development-time check for the
+  one scoping failure nothing can catch at build time.
+
+  ### `auditSlotScopes`
+
+  A scoped slot is styled through an `@scope` rule opened at an anchor, so it has to be rendered inside one. A slot
+  moved out of every anchor's subtree — through a portal, with no second anchor named in `scopeRoots` — keeps its base
+  styles and silently loses its variant styles. It renders _nearly_ right, which is harder to notice than a total
+  failure, and no build step can catch it: whether one element is inside another is a fact about the DOM.
+
+  ```js
+  import { auditSlotScopes, select } from '../styled-system/css'
+
+  if (process.env.NODE_ENV !== 'production') {
+    auditSlotScopes([select], { observe: true })
+  }
+  ```
+
+  ```
+  [bamboo] select: the `item` slot is rendered outside every anchor (root), so its variant
+  styles cannot reach it. Add the enclosing slot to `scopeRoots`, or deliver the variant to
+  this slot by hand.
+  ```
+
+  Two details that decide whether it is useful or noisy. It matches the anchor's **base** class rather than its variant
+  class — an anchor always carries the base one, while the variant class is absent whenever no variant is selected, so
+  matching on that would report slots that are correctly placed and simply unstyled. And `observe: true` re-checks on
+  DOM mutation, because portaled content mounts after a one-shot sweep would have run, which is exactly the case this
+  exists to catch.
+
+  Keep the call behind a `NODE_ENV` check and your bundler drops it, and the function, from production.
+
+  ### Inline `sva` was missing documented members
+
+  The scoping docs describe `slotsAffectedBy` as the way to find which slots a variant reaches, but only config slot
+  recipes exposed it — an inline `sva` had no way to answer the question:
+  - **`slotsAffectedBy`** is now on both.
+  - **`scopeRoots`** is now on both, reporting the resolved anchors.
+  - **`classNameMap`** is populated for an inline `sva` whether or not the config sets a `className`. Every slot recipe
+    is given a name before the split, so the old guard left an anonymous `sva` reporting no slot classes despite
+    emitting them. Config slot recipes returned a literal `{}`; they now return the real map.
+  - **`SlotRecipeRuntimeFn`** declared none of `config`, `classNameMap`, `slotsAffectedBy` or `scopeRoots`, several of
+    which the runtime already returned.
+
+- ca558fb: Let a slot recipe name the slot its variants scope by, with `scopeRoot`.
+
+  Scoping a slot recipe's variants to its root needs an enclosing slot to anchor on, and until now that had to be a slot
+  literally named `root`. A component library's wrapper is not always called that — and sometimes the slot called `root`
+  renders no DOM element at all, which is the case that makes this necessary rather than convenient. A menu whose only
+  real ancestor is `positioner` had no way in.
+
+  ```ts
+  defineSlotRecipe({
+    className: 'menu',
+    slots: ['trigger', 'positioner', 'item'],
+    scopeRoot: 'positioner',
+    variants: { size: { sm: { item: { padding: '2' } } } },
+  })
+  ```
+
+  `item` is inside `positioner`, so its variant styles are emitted as rules scoped by the class `positioner` carries,
+  and its own class stays constant. Unset, the default is still a slot named `root`, so nothing changes for recipes that
+  have one.
+
+  Only slots rendered _inside_ the named one are reached. A slot a portal moves out of that subtree is not — `trigger`
+  above is a sibling — and needs its variant delivered by hand. `recipe.slotsAffectedBy` says which slots each variant
+  actually writes styles for, so only those need threading.
+
+  A `scopeRoot` naming a slot the recipe does not declare is now a config error rather than a silent fallback to
+  per-slot variant classes, which would have looked correct while quietly reinstating the runtime distribution the
+  recipe was written to avoid.
+
+### Patch Changes
+
+- 1be9171: Stop `cva` merging against an empty compound-variant result.
+
+  `resolve` ended in `mergeCss(variantCss, compoundVariantCss)` unconditionally. `mergeCss` is memoized on its
+  arguments, so that call hashes the whole accumulated style object before discovering the second operand is empty —
+  which it is for every recipe that declares no compound variants, and most declare none. Slot recipes get it too, since
+  `sva` builds one `cva` per slot.
+
+  Measured on the `cva` bench, both forms built in the same process so the pair shares a warm-up and a machine:
+
+  | `raw()`, no compound variants | hz        | mean    | rme    |
+  | ----------------------------- | --------- | ------- | ------ |
+  | all-miss, short-circuited     | **59.19** | 16.89ms | ±1.25% |
+  | all-miss, merging against {}  | 42.31     | 23.64ms | ±1.03% |
+  | warm, short-circuited         | 380.69    | 2.63ms  | ±0.48% |
+  | warm, merging against {}      | 384.54    | 2.60ms  | ±0.37% |
+
+  **+40% on the miss path, neutral warm** — warm returns from the memo without reaching `resolve` at all, which is also
+  why this shows up as a cold-start and first-render cost rather than a steady-state one. The untouched `raw() all-miss`
+  control moved 0.7% between the two runs.
+
+  The bench previously mirrored the artifact with a compound variant present, so it never exercised this path; it now
+  carries the compound-free recipe in both forms. `cva-resolve-work.test.ts` counts `mergeCss` calls rather than timing
+  them, so the saving is pinned in CI where a wall-clock threshold could not be.
+
+  No CSS output changes. `resolve` returns what the merge returned in every shape asserted against it, with one
+  exception worth naming: a recipe whose `base` defines _nothing_ (every value `undefined`) and has no active variant
+  now resolves to `{ color: undefined }` rather than `{}`, because `compactStyles` used to drop a style object with no
+  defined value in it. Both produce no class, so nothing downstream can tell; the difference is only reachable by
+  spreading `raw()` over another object, where the `undefined` key would shadow what it lands on.
+
+- 645bb09: Stop `cssMode: 'grouped'` rendering an element with no styles when the build could not see the whole `css()`
+  call.
+
+  A grouped class names a whole call, so the build has to have seen that exact call to emit its rule. When it had not —
+  an unresolvable value, a combination it declined to enumerate — the runtime returned a class with nothing behind it
+  and the element rendered blank. Not a degraded version of the styles: none of them.
+
+  Three pieces, and the feature needs all three:
+  - The build writes the set of grouped classes it emitted to `styled-system/css/groups.mjs`, refreshed after every
+    extraction — including `--watch`, which reaches CSS emission through a path of its own. `codegen` seeds an empty one
+    when the file is missing, so the import resolves on a fresh project, and leaves a populated one alone rather than
+    blanking it.
+  - The generated `css()` consults it. A class in the set is returned alone, as before. A class that is not keeps the
+    group class and **adds** atomic names for each declaration.
+  - A call the build flagged as unresolvable now contributes atomic rules as well as its group, so those names have
+    somewhere to land. Gated on the call actually being at risk, so the duplication is bounded by unresolvable call
+    sites rather than by stylesheet size.
+
+  Adding to the group class rather than replacing it is what makes a stale registry harmless: it lags the stylesheet as
+  a matter of when files land, and replacing would turn every lag into an element stripped of styles it really had. A
+  wrong miss now costs one class that matches nothing. Only a false _hit_ can hurt, which is why the registry is an
+  exact set and not a probabilistic one.
+
+  A value the build never saw still has no rule under any mode — the same limit `atomic` has. What changes is that the
+  declarations it _did_ resolve now apply.
+
+- 41ea189: Fix four of the ways `cssMode: 'grouped'` returned class names the build emitted no rule for.
+
+  A grouped class names a whole `css()` call, so the build and the runtime have to agree on which object that call
+  resolves to. Where they disagreed the failure was silent and total — the element rendered with no styles at all, not
+  merely the wrong ones. Now fixed:
+  - **Patterns** (`stack({ gap: '4' })`) and their JSX form were extracted one class per property while the runtime
+    hashed the transformed object as a group. They now group, matching `css(stackStyleFn(styles))`.
+  - **The `css` prop on a `styled` element** was hashed apart from the style props beside it, though the factory merges
+    both into a single `css(propStyles, cssStyles)` call. It now merges the way `mergeCss` does — normalizing each
+    operand and then deep-merging, so a shorthand and its longhand collide as they will at runtime and a shared key
+    holding a condition object keeps every branch. A `*Css` prop belongs to another slot and still gets its own call.
+  - **`cva()` and `sva()` called directly**, and **config recipe compound variants**, asked for a group while the build
+    hashed each variant's styles on its own — the only thing possible while their classes were named by property.
+    Recipes are now named from their config instead, in the `recipes` layer, which `cssMode` does not reach at all.
+
+  `@bamboocss/vite` folds the recipe half the same way, so a folded call agrees with both.
+
+  What is still broken under `grouped` is now documented in the `cssMode` reference: JSX factories that merge several
+  extracted objects into one grouped call, conditional values outside `css()`, and style objects the build cannot fully
+  resolve.
+
+  `cssMode: 'atomic'`, the default, is unchanged.
+
+- Updated dependencies [bb6d999]
+- Updated dependencies [645bb09]
+- Updated dependencies [645bb09]
+- Updated dependencies [645bb09]
+- Updated dependencies [41ea189]
+- Updated dependencies [645bb09]
+- Updated dependencies [6fb235d]
+- Updated dependencies [091f2e1]
+- Updated dependencies [f2d5df2]
+- Updated dependencies [1dbeb84]
+- Updated dependencies [d7226f0]
+- Updated dependencies [31d8577]
+- Updated dependencies [99ab42f]
+- Updated dependencies [2ab7f19]
+- Updated dependencies [6fb235d]
+- Updated dependencies [ca558fb]
+  - @bamboocss/core@1.16.0
+  - @bamboocss/shared@1.16.0
+  - @bamboocss/types@1.16.0
+  - @bamboocss/token-dictionary@1.16.0
+  - @bamboocss/logger@1.16.0
+  - @bamboocss/is-valid-prop@1.16.0
+
 ## 1.15.0
 
 ### Minor Changes
