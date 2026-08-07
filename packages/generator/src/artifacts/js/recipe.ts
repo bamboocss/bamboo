@@ -131,19 +131,19 @@ export function generateRecipes(ctx: Context, filters?: ArtifactFilters) {
     }
 
     const slotNames = Recipes.isSlotRecipeConfig(config) ? config.slots : []
-    const rootSlotName = Recipes.isSlotRecipeConfig(config) ? Recipes.getRootSlot(config) : undefined
+    const anchorSlotNames = Recipes.isSlotRecipeConfig(config) ? Recipes.getScopeRoots(config) : []
 
     const jsCode = match(config)
       .when(Recipes.isSlotRecipeConfig, (config) => {
-        const rootSlot = Recipes.getRootSlot(config)
+        const anchors = Recipes.getScopeRoots(config)
 
         /**
          * Which slots each variant writes styles for.
          *
-         * A scope reaches every slot inside the root's subtree, which is all of them
-         * until a portal moves one out. That case needs the variant delivered by hand,
-         * and this is what says which slots it has to reach — the build already knows,
-         * and discarding it would leave the component layer guessing.
+         * A scope reaches every slot inside an anchor's subtree. A slot under no anchor at
+         * all is not reached, and nothing here can detect that — reachability is a fact
+         * about the DOM. This is what says which slots a variant has to get to, so the
+         * component layer can thread the ones a scope cannot.
          */
         const slotsAffectedBy = Object.fromEntries(
           Object.entries(config.variants ?? {}).map(([variant, values]) => [
@@ -161,21 +161,22 @@ export function generateRecipes(ctx: Context, filters?: ArtifactFilters) {
 
         const ${baseName}SlotNames = ${stringify(config.slots.map((slot) => [slot, `${config.className}__${slot}`]))}
         ${
-          rootSlot
+          anchors.length
             ? outdent`
         /**
-         * Only the root takes variants. Every other slot's variant styles are emitted as
-         * rules scoped by the class the root carries, so the slot's class is constant and
-         * nothing has to reach it at runtime — see \`${baseName}.${rootSlot}\`.
+         * Only the anchors take variants: ${anchors.map((slot) => `\`${baseName}.${slot}\``).join(', ')}.
+         * Every other slot's variant styles are emitted as rules scoped by a class an anchor
+         * carries, so that slot's class is a constant and nothing has to reach it at runtime.
          */
-        const ${baseName}RootFn = /* @__PURE__ */ createRecipe('${config.className}__${rootSlot}', ${baseName}DefaultVariants, getSlotCompoundVariant(${baseName}CompoundVariants, '${rootSlot}'))
+        const ${baseName}Anchors = ${JSON.stringify(anchors)}
+        const ${baseName}AnchorFns = /* @__PURE__ */ ${baseName}Anchors.map((slotName) => [slotName, createRecipe(\`${config.className}__\${slotName}\`, ${baseName}DefaultVariants, getSlotCompoundVariant(${baseName}CompoundVariants, slotName))])
         const ${baseName}StaticSlots = /* @__PURE__ */ Object.fromEntries(
-          ${baseName}SlotNames.filter(([slotName]) => slotName !== '${rootSlot}'),
+          ${baseName}SlotNames.filter(([slotName]) => !${baseName}Anchors.includes(slotName)),
         )
 
         const ${baseName}Fn = memo((props = {}) => ({
           ...${baseName}StaticSlots,
-          ${rootSlot}: ${baseName}RootFn.recipeFn(props),
+          ...Object.fromEntries(${baseName}AnchorFns.map(([slotName, anchorFn]) => [slotName, anchorFn.recipeFn(props)])),
         }))`
             : outdent`
         const ${baseName}SlotFns = /* @__PURE__ */ ${baseName}SlotNames.map(([slotName, slotKey]) => [slotName, createRecipe(slotKey, ${baseName}DefaultVariants, getSlotCompoundVariant(${baseName}CompoundVariants, slotName))])
@@ -202,9 +203,9 @@ export function generateRecipes(ctx: Context, filters?: ArtifactFilters) {
           },
           getVariantProps,
           ${
-            rootSlot
+            anchors.length
               ? outdent`
-          ${rootSlot}: ${baseName}RootFn.recipeFn,
+          ...Object.fromEntries(${baseName}AnchorFns.map(([slotName, anchorFn]) => [slotName, anchorFn.recipeFn])),
           ...${baseName}StaticSlots,
           `
               : ''
@@ -293,12 +294,12 @@ export function generateRecipes(ctx: Context, filters?: ArtifactFilters) {
               : ''
           }
           ${
-            rootSlotName
+            anchorSlotNames.length
               ? outdent`
-          /** The only slot that takes variants — every other one is scoped by its class. */
-          ${rootSlotName}: (props?: ${upperName}VariantProps) => string
+          /** The slots that take variants — every other one is scoped by a class an anchor carries. */
+          ${anchorSlotNames.map((slot) => `${slot}: (props?: ${upperName}VariantProps) => string`).join('\n')}
           ${slotNames
-            .filter((slot) => slot !== rootSlotName)
+            .filter((slot) => !anchorSlotNames.includes(slot))
             .map((slot) => `${slot}: string`)
             .join('\n')}`
               : ''

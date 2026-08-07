@@ -258,22 +258,89 @@ of a checkbox nested inside it.
 Precedence is unaffected. The scoped selector is more specific than the slot's base rule, but specificity never crosses
 a [cascade layer](/docs/concepts/cascade-layers) — a consumer's `css()` output sits in `utilities` and still wins.
 
-If the enclosing slot is called something else, name it with `scopeRoot`:
+If the enclosing slot is called something else, name it with `scopeRoots`:
 
 ```ts
 defineSlotRecipe({
   className: 'menu',
   slots: ['trigger', 'positioner', 'item'],
-  scopeRoot: 'positioner',
+  scopeRoots: ['positioner'],
   variants: { size: { sm: { item: { padding: '2' } } } },
 })
 ```
 
-Only slots rendered _inside_ the named one are reached — `trigger` above is a sibling of `positioner`, so a portal or a
-sibling slot still needs its variant delivered by hand.
+### Components that span a portal
 
-A recipe whose slots are all siblings has no ancestor to scope by. Those keep a variant class per slot, and every slot
-stays callable.
+A portal is a real break in the tree, and no CSS mechanism crosses one. A `<Select>` occupies **two** disjoint subtrees
+— the trigger side under `root`, the listbox side under a portaled `positioner` — and a variant writes styles into both.
+One anchor can only ever reach one of them, and the half it misses gets variant rules that can never match. The base
+styles still apply, so the component renders _nearly_ right, which is harder to notice than a total failure.
+
+Name both:
+
+```ts
+defineSlotRecipe({
+  className: 'select',
+  slots: ['root', 'trigger', 'positioner', 'content', 'item'],
+  scopeRoots: ['root', 'positioner'],
+  variants: { size: { lg: { trigger: { h: '11' }, item: { px: '3' } } } },
+})
+```
+
+Each named slot takes variant props; every other slot stays a constant:
+
+```jsx
+<div className={select.root({ size })}>             {/* anchor */}
+  <button className={select.trigger} />             {/* constant */}
+</div>
+<Portal>
+  <div className={select.positioner({ size })}>     {/* anchor */}
+    <div className={select.item} />                 {/* constant */}
+  </div>
+</Portal>
+```
+
+You never describe the DOM. The build emits each non-anchor slot's variant rules under **every** anchor, and only the
+anchor that is genuinely an ancestor matches at runtime:
+
+```css
+@scope (.select__root--size_lg) to (.select__root) {
+  .select__trigger {
+    height: 11;
+  } /* matches */
+  .select__item {
+    padding-inline: 3;
+  } /* never matches — item is not under root */
+}
+@scope (.select__positioner--size_lg) to (.select__positioner) {
+  .select__trigger {
+    height: 11;
+  } /* never matches */
+  .select__item {
+    padding-inline: 3;
+  } /* matches */
+}
+```
+
+Read `scopeRoots` as a **cost control**, not a description of the tree. Emitting every slot's variant rules under every
+slot would be correct with nothing declared at all — it is just quadratic in slot count. Naming the enclosing slots
+prunes that to one copy per anchor. On a 15-slot recipe with two anchors that is +84% raw CSS and +24% gzipped against a
+single anchor, and it needs no runtime channel: the alternative, giving those eight slots their own variant classes,
+gzips **larger** and still has to deliver them.
+
+If one anchor is nested inside another and both match a slot, `@scope` picks by proximity — the nearer anchor wins.
+
+A slot under _no_ anchor is still unreachable, and nothing at build time can detect that; reachability is a fact about
+the DOM. `slotsAffectedBy` says which slots a variant writes to, for whatever still needs threading by hand.
+
+### Turning scoping off
+
+A recipe whose slots are all siblings has no ancestor to scope by, and gets a variant class per slot automatically. Ask
+for that explicitly with an empty list:
+
+```ts
+scopeRoots: [] // every slot keeps its own variant class, and stays callable
+```
 
 ### Styling JSX Compound Components
 
@@ -286,16 +353,16 @@ Checkbox.Control = () => <div className={checkbox.control} />
 Checkbox.Label = ({ children }) => <span className={checkbox.label}>{children}</span>
 ```
 
-The exception is a **portal**. A positioner rendered outside the root's subtree breaks DOM ancestry, so CSS cannot reach
-it and the variant has to be delivered by hand. `slotsAffectedBy` says which slots a variant actually writes styles for,
-so only those need threading:
+A **portal** needs one more thing: the portaled subtree is its own anchor, so name it in
+[`scopeRoots`](#components-that-span-a-portal) alongside the root. Only then is a slot left over that no anchor reaches,
+and `slotsAffectedBy` says which slots a variant actually writes styles for, so only those need threading:
 
 ```js
 checkbox.variantKeys //          ['size']
 checkbox.slotsAffectedBy.size // ['control', 'label']
 ```
 
-For that case, a context provider is still the answer.
+For that remainder, a context provider is still the answer.
 
 > **Note:** This is an advanced topic and you don't need to understand it to use slot recipes. If you use React, be
 > aware that context require adding 'use client' to the top of the file.

@@ -74,7 +74,7 @@ describe('slot recipe variants are scoped by the root', () => {
    * sometimes the slot called `root` renders no element at all, which is the case that
    * makes this necessary rather than convenient.
    */
-  test('scopeRoot anchors a recipe whose enclosing slot has another name', () => {
+  test('scopeRoots anchors a recipe whose enclosing slot has another name', () => {
     const ctx = createContext({
       theme: {
         extend: {
@@ -82,7 +82,7 @@ describe('slot recipe variants are scoped by the root', () => {
             menu: {
               className: 'menu',
               slots: ['trigger', 'positioner', 'item'],
-              scopeRoot: 'positioner',
+              scopeRoots: ['positioner'],
               base: { positioner: { position: 'absolute' } },
               variants: { size: { sm: { item: { padding: '2' } } } },
             },
@@ -91,11 +91,21 @@ describe('slot recipe variants are scoped by the root', () => {
       },
     } as never)
 
-    expect(Recipes.getRootSlot(ctx.recipes.getConfig('menu') as never)).toBe('positioner')
+    expect(Recipes.getScopeRoots(ctx.recipes.getConfig('menu') as never)).toEqual(['positioner'])
   })
 
-  test('a scopeRoot naming no declared slot is not trusted', () => {
-    expect(Recipes.getRootSlot({ slots: ['trigger', 'item'], scopeRoot: 'nope' } as never)).toBeUndefined()
+  test('an anchor naming no declared slot is dropped', () => {
+    expect(Recipes.getScopeRoots({ slots: ['trigger', 'item'], scopeRoots: ['nope'] } as never)).toEqual([])
+  })
+
+  test('a slot named root is the default anchor', () => {
+    expect(Recipes.getScopeRoots({ slots: ['root', 'item'] } as never)).toEqual(['root'])
+  })
+
+  test('an empty list turns scoping off, even with a slot named root', () => {
+    // The explicit form of what a sibling-slot recipe gets by default: every slot keeps a
+    // variant class of its own.
+    expect(Recipes.getScopeRoots({ slots: ['root', 'item'], scopeRoots: [] } as never)).toEqual([])
   })
 
   /**
@@ -107,5 +117,67 @@ describe('slot recipe variants are scoped by the root', () => {
 
     expect(result).not.toContain('@scope')
     expect(result).toContain('.badge__title--size_sm')
+  })
+})
+
+/**
+ * A portal is a real discontinuity in the tree, and no CSS mechanism crosses one. A
+ * `<Select>` occupies two disjoint subtrees — the trigger side under `root`, the listbox
+ * side under a portaled `positioner` — and a variant writes styles into both.
+ *
+ * With one anchor, whichever half is not under it gets variant rules that can never match.
+ * The base styles still apply, so the component renders nearly right: a partial failure,
+ * harder to notice than a total one.
+ */
+describe('slot recipes spanning a portal', () => {
+  const select = () =>
+    createRuleProcessor()
+      .sva({
+        className: 'select',
+        slots: ['root', 'trigger', 'positioner', 'content', 'item'],
+        scopeRoots: ['root', 'positioner'],
+        base: { root: { display: 'flex' } },
+        variants: {
+          size: { lg: { trigger: { height: '11' }, item: { paddingInline: '3' } } },
+        },
+      })
+      .toCss()
+
+  test('each anchor opens its own scope', () => {
+    const css = select()
+    expect(css).toContain('@scope (.select__root--size_lg) to (.select__root)')
+    expect(css).toContain('@scope (.select__positioner--size_lg) to (.select__positioner)')
+  })
+
+  test('every non-anchor slot is emitted under every anchor', () => {
+    // Nothing declares which subtree a slot lives in. Emitting under both and letting
+    // `@scope` decide is what makes that unnecessary: only the anchor that is genuinely an
+    // ancestor matches at runtime.
+    const css = select()
+    const underRoot = css.slice(css.indexOf('@scope (.select__root--size_lg)'))
+    const underPositioner = css.slice(css.indexOf('@scope (.select__positioner--size_lg)'))
+
+    expect(underRoot).toContain('.select__item')
+    expect(underPositioner).toContain('.select__trigger')
+  })
+
+  test('an anchor keeps a variant class of its own rather than being scoped', () => {
+    // It is what opens the scope, so it cannot be inside one.
+    const css = select()
+    expect(css).not.toContain('@scope (.select__root--size_lg) to (.select__root) {\n    .select__root')
+  })
+
+  test('a single anchor emits exactly what it did before', () => {
+    const one = createRuleProcessor()
+      .sva({
+        className: 'menu',
+        slots: ['root', 'item'],
+        scopeRoots: ['root'],
+        variants: { size: { lg: { item: { paddingInline: '3' } } } },
+      })
+      .toCss()
+
+    expect(one).toContain('@scope (.menu__root--size_lg) to (.menu__root)')
+    expect(one.match(/@scope/g)).toHaveLength(1)
   })
 })

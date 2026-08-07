@@ -28,6 +28,7 @@ describe('slot recipe ruleset', () => {
             width: var(--sizes-8);
             height: var(--sizes-8);
       }
+
           .checkbox__label {
             font-size: var(--font-sizes-sm);
       }

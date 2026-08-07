@@ -402,7 +402,7 @@ describe('generate recipes', () => {
         getVariantProps: (props?: CheckboxVariantProps) => CheckboxVariantProps
         /** Which slots each variant writes styles for. */
       slotsAffectedBy: Record<keyof CheckboxVariant, CheckboxSlot[]>
-        /** The only slot that takes variants — every other one is scoped by its class. */
+        /** The slots that take variants — every other one is scoped by a class an anchor carries. */
       root: (props?: CheckboxVariantProps) => string
       control: string
       label: string
@@ -433,18 +433,19 @@ describe('generate recipes', () => {
         ]
       ]
       /**
-       * Only the root takes variants. Every other slot's variant styles are emitted as
-       * rules scoped by the class the root carries, so the slot's class is constant and
-       * nothing has to reach it at runtime — see \`checkbox.root\`.
+       * Only the anchors take variants: \`checkbox.root\`.
+       * Every other slot's variant styles are emitted as rules scoped by a class an anchor
+       * carries, so that slot's class is a constant and nothing has to reach it at runtime.
        */
-      const checkboxRootFn = /* @__PURE__ */ createRecipe('checkbox__root', checkboxDefaultVariants, getSlotCompoundVariant(checkboxCompoundVariants, 'root'))
+      const checkboxAnchors = ["root"]
+      const checkboxAnchorFns = /* @__PURE__ */ checkboxAnchors.map((slotName) => [slotName, createRecipe(\`checkbox__\${slotName}\`, checkboxDefaultVariants, getSlotCompoundVariant(checkboxCompoundVariants, slotName))])
       const checkboxStaticSlots = /* @__PURE__ */ Object.fromEntries(
-        checkboxSlotNames.filter(([slotName]) => slotName !== 'root'),
+        checkboxSlotNames.filter(([slotName]) => !checkboxAnchors.includes(slotName)),
       )
 
       const checkboxFn = memo((props = {}) => ({
         ...checkboxStaticSlots,
-        root: checkboxRootFn.recipeFn(props),
+        ...Object.fromEntries(checkboxAnchorFns.map(([slotName, anchorFn]) => [slotName, anchorFn.recipeFn(props)])),
       }))
 
       const checkboxVariantKeys = [
@@ -476,7 +477,7 @@ describe('generate recipes', () => {
           return splitProps(props, checkboxVariantKeys)
         },
         getVariantProps,
-        root: checkboxRootFn.recipeFn,
+        ...Object.fromEntries(checkboxAnchorFns.map(([slotName, anchorFn]) => [slotName, anchorFn.recipeFn])),
       ...checkboxStaticSlots,
       })",
           "name": "checkbox",

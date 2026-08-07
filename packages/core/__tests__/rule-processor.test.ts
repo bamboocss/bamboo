@@ -630,6 +630,7 @@ describe('rule processor', () => {
             width: var(--sizes-8);
             height: var(--sizes-8);
       }
+
           .checkbox__label {
             font-size: var(--font-sizes-sm);
       }
@@ -712,6 +713,7 @@ describe('rule processor', () => {
             width: var(--sizes-8);
             height: var(--sizes-8);
       }
+
           .sva_cURWwc__label {
             font-size: var(--font-sizes-sm);
       }
@@ -722,6 +724,7 @@ describe('rule processor', () => {
             width: var(--sizes-10);
             height: var(--sizes-10);
       }
+
           .sva_cURWwc__label {
             font-size: var(--font-sizes-md);
       }
@@ -732,6 +735,7 @@ describe('rule processor', () => {
             width: var(--sizes-12);
             height: var(--sizes-12);
       }
+
           .sva_cURWwc__label {
             font-size: var(--font-sizes-lg);
       }
@@ -989,6 +993,7 @@ describe('rule processor', () => {
             width: var(--sizes-10);
             height: var(--sizes-10);
       }
+
           .checkbox__label {
             font-size: var(--font-sizes-md);
       }

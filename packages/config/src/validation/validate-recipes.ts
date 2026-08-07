@@ -27,16 +27,21 @@ export const validateRecipes = (options: Options) => {
     Object.entries(theme.slotRecipes).forEach(([recipeName, recipe]) => {
       artifacts.slotRecipes.add(recipeName)
 
-      // A `scopeRoot` naming a slot the recipe does not declare would silently fall back
-      // to per-slot variant classes: the styles still apply, so nothing looks wrong, and
-      // the runtime distribution the recipe was written to avoid is quietly back.
-      const scopeRoot = (recipe as { scopeRoot?: string }).scopeRoot
-      if (scopeRoot && !recipe.slots?.includes(scopeRoot)) {
+      // An anchor naming a slot the recipe does not declare is dropped, and the slots it
+      // was meant to reach silently fall back to per-slot variant classes: the styles still
+      // apply, so nothing looks wrong, and the runtime distribution the recipe was written
+      // to avoid is quietly back.
+      //
+      // Only membership is checkable here. Whether the anchors *cover* every slot is a fact
+      // about the DOM, and a slot under none of them is the one failure this cannot catch.
+      const scopeRoots = (recipe as { scopeRoots?: readonly string[] }).scopeRoots
+      scopeRoots?.forEach((scopeRoot) => {
+        if (recipe.slots?.includes(scopeRoot)) return
         addError(
           'slot-recipes',
-          `\`scopeRoot: '${scopeRoot}'\` in \`${recipeName}\` names no slot it declares. Expected one of: ${recipe.slots?.join(', ')}`,
+          `\`scopeRoots\` in \`${recipeName}\` names \`${scopeRoot}\`, which is not a slot it declares. Expected one of: ${recipe.slots?.join(', ')}`,
         )
-      }
+      })
     })
   }
 

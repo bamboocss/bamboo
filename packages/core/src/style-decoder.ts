@@ -116,11 +116,15 @@ export class StyleDecoder {
       styles,
       transformed,
       parts,
-      // A non-root slot's variant rule. The selector is the slot's *constant* class, put
-      // inside a scope the root's variant class opens — so nothing has to reach the slot
+      // A non-anchor slot's variant rules. The selector is the slot's *constant* class, put
+      // inside a scope an anchor's variant class opens — so nothing has to reach the slot
       // to style it. `className` is left alone: it still identifies the rule for
       // bookkeeping, it is just not what the rule selects on.
-      scope: (transformed as { scope?: { prelude: string; selector: string } }).scope,
+      //
+      // One entry per anchor. A component that spans a portal has more than one enclosing
+      // element, and only the anchor that is genuinely an ancestor of this slot matches at
+      // runtime — which is what lets the build stay ignorant of the DOM shape.
+      scopes: (transformed as { scope?: Array<{ prelude: string; selector: string }> }).scope,
       // A compound variant. It selects on the variant classes the element already carries
       // — `.btn--size_sm.btn--tone_a` — so it needs a selector that is not a single class,
       // and it contributes no class of its own. `className` still identifies the rule for
@@ -184,9 +188,14 @@ export class StyleDecoder {
     const transformResult = this.getTransformResult(hash)
     if (!transformResult) return
 
-    const { className, classSelector, styles, transformed, parts, scope, selector } = transformResult
+    const { className, classSelector, styles, transformed, parts, scopes, selector } = transformResult
 
-    const basePath = scope ? [scope.prelude, scope.selector] : [selector ?? classSelector]
+    // One base path per anchor when the rule is scoped, otherwise the single class it
+    // selects on. Each anchor's prelude is a distinct key, so the paths never collide and
+    // the result carries one `@scope` block per anchor.
+    const basePaths = scopes?.length
+      ? scopes.map((scope) => [scope.prelude, scope.selector])
+      : [[selector ?? classSelector]]
 
     const obj: StyleResultObject = {}
 
@@ -198,16 +207,22 @@ export class StyleDecoder {
       // Expand multi-block conditions into separate CSS blocks
       const expanded = this.expandMultiBlock(conditions)
       if (expanded) {
-        for (const blockConditions of expanded) {
-          const path = basePath.concat(blockConditions.flatMap((c) => this.resolveCondition(c)))
-          deepSet(obj, path, styles)
+        for (const basePath of basePaths) {
+          for (const blockConditions of expanded) {
+            const path = basePath.concat(blockConditions.flatMap((c) => this.resolveCondition(c)))
+            deepSet(obj, path, styles)
+          }
         }
       } else {
-        const path = basePath.concat(conditions.flatMap((c) => this.resolveCondition(c)))
-        deepSet(obj, path, styles)
+        const resolved = conditions.flatMap((c) => this.resolveCondition(c))
+        for (const basePath of basePaths) {
+          deepSet(obj, basePath.concat(resolved), styles)
+        }
       }
     } else {
-      deepSet(obj, basePath, styles)
+      for (const basePath of basePaths) {
+        deepSet(obj, basePath, styles)
+      }
     }
 
     const styleResult: AtomicStyleResult = {
@@ -217,7 +232,7 @@ export class StyleDecoder {
       conditions,
       className,
       layer: transformed.layer,
-      scoped: Boolean(scope),
+      scoped: Boolean(scopes?.length),
     }
 
     this.atomic_cache.set(hash, styleResult)

@@ -176,24 +176,36 @@ export interface SlotRecipeDefinition<
    */
   slots: S[] | Readonly<S[]>
   /**
-   * The slot every other slot is rendered inside, used to scope their variant styles.
+   * The slots that enclose other slots, used to scope their variant styles.
    *
    * A slot recipe's variants are chosen once, at the top, but the slots that react to them
-   * are authored by the consumer somewhere below. Naming the enclosing slot lets the build
-   * emit their variant styles as rules scoped by the class that slot already carries, so
+   * are authored by the consumer somewhere below. Naming the enclosing slots lets the build
+   * emit their variant styles as rules scoped by a class those slots already carry, so
    * nothing has to be delivered to a slot at runtime and every other slot's class is a
    * constant.
    *
-   * Defaults to a slot named `root` when one exists. Set it when the enclosing element is
-   * a slot by another name — a wrapper a component library calls `positioner`, say. A
-   * recipe whose slots are siblings has no enclosing slot at all; leave it unset and each
-   * slot keeps a variant class of its own.
+   * A list, because a portal is a real discontinuity in the tree and no CSS mechanism
+   * crosses one. A `<Select>` occupies two disjoint subtrees — the trigger side under
+   * `root`, the listbox side under a portaled `positioner` — and a variant writes styles
+   * into both. One anchor can only ever reach one of them.
    *
-   * Only slots rendered *inside* the named one are reached. A slot moved out of the
-   * subtree by a portal is not, and needs its variant delivered by hand — see
-   * `recipe.slotsAffectedBy`.
+   * ```ts
+   * scopeRoots: ['root', 'positioner']
+   * ```
+   *
+   * Each named slot takes variant props; every other slot's class is a constant. The build
+   * emits each non-anchor slot's variant rules under *every* anchor, and only the anchor
+   * that is genuinely an ancestor matches — so the DOM shape never has to be declared.
+   *
+   * Defaults to `['root']` when a slot by that name exists. Set `[]` to turn scoping off
+   * and give every slot a variant class of its own, which is what a recipe whose slots are
+   * siblings wants.
+   *
+   * A slot under *no* anchor is still unreachable, and nothing at build time can detect
+   * that — reachability is a fact about the DOM. `recipe.slotsAffectedBy` says which slots
+   * a variant writes to, for whatever still needs threading by hand.
    */
-  scopeRoot?: S
+  scopeRoots?: S[] | Readonly<S[]>
   /**
    * The base styles of the recipe.
    */

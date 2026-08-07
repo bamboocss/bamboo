@@ -88,19 +88,24 @@ const sharedState = {
    */
   compoundSelectors: new Map<string, string>(),
   /**
-   * Where a non-root slot's variant rule is emitted, keyed the same way as `styles`.
+   * Where a non-anchor slot's variant rules are emitted, keyed the same way as `styles`.
    *
-   * A slot recipe's variants are chosen at the root, but the slots that react to them are
+   * A slot recipe's variants are chosen at an anchor, but the slots that react to them are
    * authored by the consumer somewhere below it — in a compound component, arbitrarily
    * deep and out of reach of any prop. Rather than deliver the variant to each slot at
-   * runtime, the rule is scoped by the class the root already carries, so the slot's own
+   * runtime, the rule is scoped by a class the anchor already carries, so the slot's own
    * class stays constant.
    *
-   * `to (.recipe__root)` bounds the scope at the next nested instance. Without it an outer
-   * `<Tabs size="lg">` would style the triggers of an inner `<Tabs size="sm">`, and at
-   * equal specificity the winner would be stylesheet order rather than proximity.
+   * A list, one entry per anchor, because a component can occupy more than one subtree: a
+   * `<Select>` puts its listbox behind a portal, where no scope opened at `root` can reach
+   * it. The rule is emitted under every anchor and only the one that is genuinely an
+   * ancestor matches, so nothing has to describe the DOM.
+   *
+   * `to (.recipe__anchor)` bounds each scope at the next nested instance. Without it an
+   * outer `<Tabs size="lg">` would style the triggers of an inner `<Tabs size="sm">`, and
+   * at equal specificity the winner would be stylesheet order rather than proximity.
    */
-  slotScopes: new Map<string, { prelude: string; selector: string }>(),
+  slotScopes: new Map<string, Array<{ prelude: string; selector: string }>>(),
 }
 
 export class Recipes {
@@ -161,21 +166,26 @@ export class Recipes {
   }
 
   /**
-   * The slot every other slot is nested inside, if the recipe has one.
+   * The slots that enclose other slots, and therefore anchor their variant rules.
    *
-   * `scopeRoot` when it is set, otherwise a slot named `root`. By name rather than by
+   * `scopeRoots` when it is set, otherwise a slot named `root`. By name rather than by
    * position: a recipe whose slots are siblings — `['title', 'body']` — has no ancestor to
    * scope by, and scoping one to another would emit rules that match nothing. Those keep a
-   * variant class per slot.
+   * variant class per slot, which `scopeRoots: []` also asks for explicitly.
    *
-   * A `scopeRoot` naming a slot the recipe does not declare is ignored rather than
-   * trusted; validation reports it.
+   * Read the list as a *cost* control rather than a description of the tree. Emitting every
+   * slot's variant rules under every slot would be correct with nothing declared at all —
+   * only the anchor that is really an ancestor ever matches — but it is quadratic in slot
+   * count. Naming the enclosing slots prunes that to one copy per anchor.
+   *
+   * An anchor naming a slot the recipe does not declare is dropped rather than trusted;
+   * validation reports it.
    */
-  static getRootSlot = (recipe: SlotRecipeConfig): string | undefined => {
-    const declared = (recipe as { scopeRoot?: string }).scopeRoot
-    if (declared) return recipe.slots.includes(declared) ? declared : undefined
+  static getScopeRoots = (recipe: SlotRecipeConfig): string[] => {
+    const declared = (recipe as { scopeRoots?: readonly string[] }).scopeRoots
+    if (declared) return declared.filter((slot) => recipe.slots.includes(slot))
 
-    return recipe.slots.includes(ROOT_SLOT) ? ROOT_SLOT : undefined
+    return recipe.slots.includes(ROOT_SLOT) ? [ROOT_SLOT] : []
   }
 
   saveOne = (name: string, recipe: RecipeConfig | SlotRecipeConfig) => {
@@ -184,13 +194,13 @@ export class Recipes {
       const slots = getSlotRecipes(recipe)
 
       const slotsMap = new Map()
-      const rootSlot = Recipes.getRootSlot(recipe)
-      const rootClassName = rootSlot ? this.getSlotKey(recipe.className ?? name, rootSlot) : undefined
+      const anchors = Recipes.getScopeRoots(recipe)
+      const anchorClassNames = anchors.map((slot) => this.getSlotKey(recipe.className ?? name, slot))
 
       // normalize each recipe
       Object.entries(slots).forEach(([slot, slotRecipe]) => {
         const slotName = this.getSlotKey(name, slot)
-        this.normalize(slotName, slotRecipe, rootSlot && slot !== rootSlot ? rootClassName : undefined)
+        this.normalize(slotName, slotRecipe, anchors.includes(slot) ? [] : anchorClassNames)
         slotsMap.set(slotName, slotRecipe)
       })
 
@@ -330,7 +340,7 @@ export class Recipes {
     return 'slots' in config && Array.isArray(config.slots) && config.slots.length > 0
   }
 
-  normalize = (name: string, config: RecipeConfig, scopedByRootClass?: string) => {
+  normalize = (name: string, config: RecipeConfig, scopedByAnchorClasses?: string[]) => {
     const {
       jsx = [capitalize(name)],
       base = {},
@@ -370,11 +380,20 @@ export class Recipes {
         sharedState.styles.set(propKey, styleObject)
         sharedState.classNames.set(propKey, className)
 
-        if (scopedByRootClass) {
-          sharedState.slotScopes.set(propKey, {
-            prelude: `@scope (.${esc(this.getClassName(scopedByRootClass, key, variantKey))}) to (.${esc(scopedByRootClass)})`,
-            selector: `.${esc(recipe.className)}`,
-          })
+        if (scopedByAnchorClasses?.length) {
+          sharedState.slotScopes.set(
+            propKey,
+            scopedByAnchorClasses.map((anchorClass) => ({
+              prelude: `@scope (.${esc(this.getClassName(anchorClass, key, variantKey))}) to (.${esc(anchorClass)})`,
+              selector: `.${esc(recipe.className)}`,
+            })),
+          )
+        } else {
+          // Cleared rather than left alone. This map is module-global and outlives a
+          // context, so a recipe that *stops* being scoped — `scopeRoots` removed in a
+          // watch rebuild — would otherwise keep emitting rules under an anchor nothing
+          // renders any more.
+          sharedState.slotScopes.delete(propKey)
         }
 
         merge(recipe.variants, {
@@ -433,8 +452,8 @@ export class Recipes {
     sharedState.inlineConfigs.set(name, config)
 
     if (Recipes.isSlotRecipeConfig(config)) {
-      const rootSlot = Recipes.getRootSlot(config)
-      const rootClassName = rootSlot ? this.getSlotKey(config.className ?? name, rootSlot) : undefined
+      const anchors = Recipes.getScopeRoots(config)
+      const anchorClassNames = anchors.map((slot) => this.getSlotKey(config.className ?? name, slot))
       const slotsMap = new Map<string, RecipeConfig>()
 
       // The identity has to be the className before the split. `getSlotRecipes` builds each
@@ -446,7 +465,7 @@ export class Recipes {
 
       Object.entries(getSlotRecipes(withName)).forEach(([slot, slotRecipe]) => {
         const slotName = this.getSlotKey(name, slot)
-        this.normalize(slotName, slotRecipe, rootSlot && slot !== rootSlot ? rootClassName : undefined)
+        this.normalize(slotName, slotRecipe, anchors.includes(slot) ? [] : anchorClassNames)
         slotsMap.set(slotName, slotRecipe)
       })
 

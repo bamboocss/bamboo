@@ -763,6 +763,7 @@ describe('static-css', () => {
             width: var(--sizes-8);
             height: var(--sizes-8);
       }
+
           .checkbox__label {
             font-size: var(--font-sizes-sm);
       }
@@ -773,12 +774,11 @@ describe('static-css', () => {
             width: var(--sizes-12);
             height: var(--sizes-12);
       }
+
           .checkbox__label {
             font-size: var(--font-sizes-lg);
       }
-      }
 
-        @scope (.checkbox__root--size_lg) to (.checkbox__root) {
           @media screen and (min-width: 64rem) {
             .checkbox__control {
               width: var(--sizes-12);
@@ -1912,6 +1912,7 @@ describe('static-css', () => {
             width: var(--sizes-8);
             height: var(--sizes-8);
       }
+
           .checkbox__label {
             font-size: var(--font-sizes-sm);
       }
@@ -1922,6 +1923,7 @@ describe('static-css', () => {
             width: var(--sizes-10);
             height: var(--sizes-10);
       }
+
           .checkbox__label {
             font-size: var(--font-sizes-md);
       }
@@ -1932,6 +1934,7 @@ describe('static-css', () => {
             width: var(--sizes-12);
             height: var(--sizes-12);
       }
+
           .checkbox__label {
             font-size: var(--font-sizes-lg);
       }

@@ -1,4 +1,5 @@
 import layersPolyfill from '@csstools/postcss-cascade-layers'
+import merge from 'lodash.merge'
 import { logger } from '@bamboocss/logger'
 import type { CascadeLayer, Dict, SystemStyleObject, ViewTransitionResult } from '@bamboocss/types'
 import postcss, { CssSyntaxError } from 'postcss'
@@ -88,9 +89,40 @@ export class Stylesheet {
     })
 
     decoder.recipes.forEach((recipeSet) => {
+      // Merged per layer before processing, rather than one `processCss` per result.
+      //
+      // A scoped slot rule is keyed by its `@scope` prelude, and a recipe with more than
+      // one anchor emits every non-anchor slot under each of them — so the same prelude
+      // recurs across results with a different anchor's block in between, and identical
+      // at-rules only collapse when they are adjacent. Merging first makes the prelude an
+      // object key, which deduplicates it by construction. On a 15-slot two-anchor recipe
+      // that is 130 `@scope` blocks against 10.
+      //
+      // Order is preserved: `merge` keeps the target's existing keys in place and appends
+      // new ones, so results still emit in the order they were collected.
+      const scopedByLayer = new Map<LayerName, Dict>()
+
       recipeSet.forEach((recipe) => {
-        this.processCss(recipe.result, recipe.entry.slot ? 'recipes_slots' : 'recipes')
+        const layer: LayerName = recipe.entry.slot ? 'recipes_slots' : 'recipes'
+
+        // Only the scoped ones are merged. Merging everything also collapses a variant's
+        // declarations — which arrive as one result per declaration — into a single rule,
+        // and that moves later declarations up to where the variant first appeared,
+        // reordering the layer. Unscoped results keep emitting exactly as they did.
+        if (!recipe.scoped) {
+          this.processCss(recipe.result, layer)
+          return
+        }
+
+        const target = scopedByLayer.get(layer) ?? {}
+        merge(target, recipe.result)
+        scopedByLayer.set(layer, target)
       })
+
+      // After the unscoped rules. The two never select the same thing — an anchor's own
+      // variant class against a slot's constant class inside a scope — so nothing collides
+      // on the way past.
+      scopedByLayer.forEach((result, layer) => this.processCss(result, layer))
     })
 
     decoder.recipes_base.forEach((recipeSet) => {
