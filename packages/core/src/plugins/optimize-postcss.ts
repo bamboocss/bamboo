@@ -1,9 +1,9 @@
 import postcss, { Container } from 'postcss'
-import dedupe from 'postcss-discard-duplicates'
 import discardEmpty from 'postcss-discard-empty'
 import minifySelectors from 'postcss-minify-selectors'
 import nested from 'postcss-nested'
 import normalizeWhiteSpace from 'postcss-normalize-whitespace'
+import { dedupeNodes } from './dedupe-nodes'
 import { mergeRules } from './merge-rules'
 import prettify from './prettify'
 
@@ -32,7 +32,7 @@ export function optimizePostCss(code: string | Container, options: OptimizeOptio
   // prettier-ignore
   const plugins = [
     nested(),
-    dedupe(),
+    dedupeNodes(),
     mergeRules(),
     discardEmpty(),
   ]
