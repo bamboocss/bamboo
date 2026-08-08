@@ -1,5 +1,238 @@
 # @bamboocss/node
 
+## 1.22.0
+
+### Minor Changes
+
+- 41d9052: Add `prunePreflight`, which drops the parts of the reset that style elements your source never renders.
+
+  Off by default. Measured on the example apps here:
+
+  | app     |    raw |   gzip | brotli |
+  | ------- | -----: | -----: | -----: |
+  | vite-ts | -13.2% | -14.8% | -14.2% |
+  | svelte  | -33.9% | -29.1% | -29.3% |
+
+  Two thirds of the reset is bound to specific elements — 41 of them, covering `table`, `pre`, `kbd`, `optgroup` and the
+  rest of the long tail. Being a fixed size, it dominates a small stylesheet rather than amortising the way the
+  utilities layer does: a third of `vite-ts`'s css and four fifths of `svelte`'s, of which those projects render a
+  fraction.
+
+  This is the one saving of its kind that survives compression. Deduplicating or re-encoding what is already emitted
+  loses to gzip, which has flattened the repetition before you get there — measured repeatedly on this codebase, from
+  atomising recipes to native nesting. Emitting less does not.
+
+  A selector list loses only the parts naming unrendered elements, so a rule shared between `button` and
+  `::file-selector-button` keeps the half that still applies. `html` and `body` are never removed, and a selector naming
+  no element — `*`, `::backdrop`, `[hidden]`, a class — is always kept.
+
+  **Why it stays opt-in**
+
+  `pruneUnusedTokens` and `pruneUnusedKeyframes` default to `true` because reachability can be established from the
+  stylesheet and the source together. This has a textual scan of your own source and nothing else. An element rendered
+  by a dependency's component, by `dangerouslySetInnerHTML`, or by markdown is invisible to it, and what you get wrong
+  is an element quietly losing its reset — no error, no warning. It cannot be made safe by default, and should not be.
+
+  The blind spot to check first is nearer than a dependency. The scan reads what `include` covers, and `include`
+  conventionally covers components rather than markup — `./src/**/*.tsx` does not match `index.html`, which is where
+  `<noscript>`, a static `<table>` and the rest of a page's hand-written markup usually live. Add the template to
+  `include` to cover it; the scan reads any file listed, not only ones the parser understands.
+
+  **What the scan reads**
+
+  The file on disk, not the project's parsed copy of it. That distinction only shows up for single-file components, and
+  it decides whether they work at all: `parseSourceFile` replaces an SFC's text with the TSX a framework plugin
+  transformed it into, and every transform here is lossy in the same direction. `svelteToTsx` and `vueToTsx` both
+  swallow a throw and return an empty string, a Vue SFC with a render function and no `<template>` becomes the literal
+  `<template>undefined</template>`, and Svelte strips `<script>` before the scan can see it. Each of those silently
+  reports no elements for the file and takes every one of its reset rules with it. Markup is what this wants, so it
+  reads the markup.
+
+  It also works with a scoped reset. `preflight: { scope: '.app' }` writes the scope onto every selector — `.app table`,
+  or `table.app` under `level: 'element'` — and neither shape names an element until the scope is stripped, so the two
+  options together used to produce byte-identical output with the flag doing nothing at all.
+
+  `bamboo cssgen preflight` prunes too. It writes one artifact rather than the whole sheet, so the token and keyframe
+  passes cannot run there — both read the finished stylesheet to decide reachability, and on a partial one everything
+  looks unreachable. This pass reads your source instead, so it is correct either way, and without it the `reset.css`
+  from `cssgen preflight` disagreed with the one `cssgen --splitting` wrote for the same project.
+
+- a1062c9: Remove `cssMode: 'grouped'`.
+
+  **This is a breaking change released as a minor.** Bamboo is still pre-1.0 in practice, so the version does not carry
+  the signal — read the migration below before upgrading. A config setting `cssMode` will fail to typecheck, and
+  `bamboocss()` from `@bamboocss/vite` now returns an array of plugins rather than one.
+
+  Use `cva({ base: { ... } })` where you want one class per element instead of one per property. It already does exactly
+  that, and it does it better.
+
+  **Why**
+
+  Measured on a production build of a real app — the same source built both ways:
+
+  |           |   CSS raw | CSS gzip |
+  | --------- | --------: | -------: |
+  | `atomic`  | 1,411,989 |  209,489 |
+  | `grouped` | 2,913,254 |  390,428 |
+
+  **+86% gzipped**, entirely in the `utilities` layer, which goes from 673 kB to 2.17 MB. Grouping pays only where a
+  style set lands on many elements; it groups every `css()` call, and most of them are one-offs where a group is one
+  rule serving one element with nothing to amortise it against.
+
+  The markup saving cannot repay that. Across eight routes of the same app, grouping saved 1.9 bytes of gzipped markup
+  per element rendered — so roughly **95,000 elements** have to render before the stylesheet's extra 181 kB is earned
+  back, about 112 page views with a warm cache. The documentation claimed the trade favoured SSR and SSG; the app
+  measured here is server-rendered and never comes close.
+
+  **What to use instead**
+
+  A variant-less `cva` emits a single class carrying every declaration:
+
+  ```ts
+  const row = cva({
+    base: { display: 'flex', alignItems: 'center', gap: '4' },
+  })
+  // .cva_gphwnw { display: flex; align-items: center; gap: var(--spacing-4) }
+  ```
+
+  It lands in the `recipes` layer rather than `utilities`, which is the part `cssMode` got wrong. Because
+  `@layer reset, base, tokens, recipes, utilities` puts `utilities` last, a consumer's `css()` override beats it
+  deterministically in every build — where a grouped `css()` class sat in `utilities` alongside the atoms it competed
+  with, leaving conflicts to source order.
+
+  The rule of thumb is the useful part: **if a style set is worth grouping, it is worth naming.** Grouping pays when a
+  set is reused, and a reused set is a component.
+
+  **Also removed**
+  - `RuleProcessor.grouped()` and the `GroupedRule` type.
+  - `groupClassName` from `@bamboocss/shared`, and the `grouped` / `knownGroups` fields on `CreateCssContext`.
+  - The generated `groups` artifact (`styled-system/css/groups.mjs`) — delete it if a stale copy is left in your output
+    directory.
+  - The `'ambiguous-merge'` and `'too-many-combinations'` unresolved-style reasons, which only ever applied to grouping,
+    and the `'grouped'` value of `UnresolvedStyle['kind']`.
+
+  `css()` calls the build cannot fully read are still reported, unchanged: a spread or computed key warns with a file
+  and line, because it looks static and is not.
+
+- 43ae8a7: Stop keeping token declarations for `token()` when nothing calls it.
+
+  Some declarations survive pruning purely so JavaScript can ask for them: virtual tokens, conditional ones, and the
+  positive counterpart of every negative token. That last case is the expensive one — a negative is never declared
+  itself, so it pins its positive and keeps the entire spacing scale alive whether or not anything uses it. The config
+  documentation put that at "roughly a third of what survives pruning", and said there was no opt-out.
+
+  There is now, and it needs no flag. The tokens artifact is generated into your project rather than installed, so the
+  import is written in your own source and a scan of `include` finds it. When no file reaches for a token from
+  JavaScript, the exemption has no caller to serve and is skipped.
+
+  This changes emitted CSS by default, which is why it is a minor rather than the patch it started as.
+
+  **What the scan looks for**
+
+  A call — `token(`, `token.var(`, with whatever whitespace a formatter left around the dot — or a `from` / `import` /
+  `require` of any module specifier carrying a `/tokens` path segment. Both tests over-match on purpose: keeping a
+  declaration nothing reads costs bytes, and dropping one that is read returns a `var()` nothing declares.
+
+  The import test is loose because the literal `styled-system/tokens` was too tight in three ways at once. `outdir` is
+  configurable, so the artifact is only at `styled-system/` by default; a tsconfig path alias spells it something else
+  again; and the artifact is a **directory**, so under NodeNext the only legal specifier is
+  `styled-system/tokens/index.mjs` — which the literal did not match either. It is still anchored to an import keyword,
+  because otherwise a URL or a route (`fetch('/api/tokens')`, an `href` of `/docs/theming/tokens`) reads as an import
+  and switches the whole optimisation off without saying so.
+
+  Measured on the sandboxes here:
+
+  | app          |    raw |   gzip | brotli |
+  | ------------ | -----: | -----: | -----: |
+  | svelte       | -20.2% | -12.9% | -12.2% |
+  | gatsby-ts    | -19.0% | -11.8% | -11.3% |
+  | next-js-app  | -18.6% | -11.7% | -10.8% |
+  | vite-ts      |  -6.9% |  -4.9% |  -4.1% |
+  | runtime-perf |  -2.0% |  -1.9% |  -1.9% |
+  | preact-ts    |     0% |     0% |     0% |
+
+  `preact-ts` is the control, and it is the shape you want to check yourself against: it calls `token()`, so the
+  exemption has a caller, nothing is skipped, and its stylesheet is byte-for-byte what it was. Every other app here
+  reaches for no token from JavaScript, and the spread between them is how much of their theme the CSS alone could not
+  account for.
+
+  Across all sixteen example apps: 0% wherever a project reaches for a token, and -2.0% to -20.2% raw wherever none
+  does, most of them between -11% and -19%.
+
+  A project that calls `token()`, `token.var()`, or imports the tokens artifact anywhere under `include` is unaffected —
+  and a hand-written `var(--x)` in source was already covered by the existing reference scan.
+
+  Two shapes the scan does not see, both rare and neither loud. `include` scopes style extraction rather than everything
+  that may import, so a build script, a config file, or a sibling workspace package calling `token()` is not covered;
+  nor is a binding renamed away from `token`, as in `const t = token`. In both the declaration is pruned and the call
+  returns a `var()` nothing declares. `pruneUnusedTokens: false` keeps every declaration if you are in that position.
+
+- 0e6a4ee: `@bamboocss/vite` now emits the stylesheet itself, so a Vite project needs no PostCSS setup.
+
+  Import the virtual module wherever you used to import the file carrying the `@layer` statement:
+
+  ```ts
+  // vite.config.ts
+  import bamboocss from '@bamboocss/vite'
+
+  export default defineConfig({
+    plugins: [bamboocss(), react()],
+  })
+  ```
+
+  ```ts
+  // src/main.tsx
+  import 'virtual:bamboo.css'
+  ```
+
+  ```ts
+  // src/vite-env.d.ts
+  /// <reference types="@bamboocss/vite/client" />
+  ```
+
+  `bamboocss()` now returns **two** plugins rather than one: the CSS emitter, which runs in dev and build alike, and the
+  build-only fold. If you were reaching into the returned object — `bamboocss().transform`, say — it is now an array.
+
+  **Why a virtual module rather than a written file**
+
+  Vite already owns both things a file would have to reimplement. In dev it injects CSS over the websocket and replaces
+  it in place, so a style edit repaints without reloading and without losing component state. In build it hashes the
+  content into the asset graph and decides where it lands. Writing `styles.css` and asking the project to import it
+  means the build reads a file the same process just wrote, which is a race on every watch rebuild.
+
+  The stylesheet carries its own `@layer reset, base, tokens, recipes, utilities;` statement, which the PostCSS path
+  takes from the file it injects into. That statement is what fixes layer _order_ — without it, layers are ordered by
+  first appearance.
+
+  **PostCSS still works.** This is an addition, not a replacement; nothing about the existing setup changes. Use one or
+  the other, though — configuring both puts two copies of the sheet in the bundle.
+
+  Also adds `Builder.toCss()` for anything that wants the finished stylesheet as a string rather than injected into a
+  PostCSS root.
+
+### Patch Changes
+
+- edb97e2: Correct what the scaffolded config says pruning is worth: 53–78% of a new project's stylesheet, measured
+  across the example apps here, not the 50–60% it claimed.
+- Updated dependencies [39c699f]
+- Updated dependencies [fe62614]
+- Updated dependencies [1036258]
+- Updated dependencies [41d9052]
+- Updated dependencies [a1062c9]
+- Updated dependencies [43ae8a7]
+  - @bamboocss/generator@1.22.0
+  - @bamboocss/core@1.22.0
+  - @bamboocss/types@1.22.0
+  - @bamboocss/parser@1.22.0
+  - @bamboocss/shared@1.22.0
+  - @bamboocss/reporter@1.22.0
+  - @bamboocss/config@1.22.0
+  - @bamboocss/logger@1.22.0
+  - @bamboocss/plugin-lightningcss@1.22.0
+  - @bamboocss/plugin-svelte@1.22.0
+  - @bamboocss/plugin-vue@1.22.0
+  - @bamboocss/token-dictionary@1.22.0
+
 ## 1.21.0
 
 ### Patch Changes
