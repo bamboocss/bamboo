@@ -3,7 +3,6 @@ import {
   deepSet,
   esc,
   getOrCreateSet,
-  groupClassName,
   isImportant,
   markImportant,
   viewTransitionPseudo,
@@ -38,7 +37,6 @@ export class StyleDecoder {
   recipe_base_cache = new Map<string, RecipeBaseResult>()
   //
   atomic = new Set<AtomicStyleResult>()
-  grouped = new Set<GroupedResult>()
   //
   recipes = new Map<string, Set<AtomicStyleResult>>()
   recipes_base = new Map<string, Set<RecipeBaseResult>>()
@@ -50,19 +48,12 @@ export class StyleDecoder {
   }
 
   isEmpty = () => {
-    return (
-      !this.atomic.size &&
-      !this.grouped.size &&
-      !this.recipes.size &&
-      !this.recipes_base.size &&
-      !this.view_transitions.size
-    )
+    return !this.atomic.size && !this.recipes.size && !this.recipes_base.size && !this.view_transitions.size
   }
 
   get results() {
     return {
       atomic: this.atomic,
-      grouped: this.grouped,
       recipes: this.recipes,
       recipes_base: this.recipes_base,
       view_transitions: this.view_transitions,
@@ -457,26 +448,6 @@ export class StyleDecoder {
     })
   }
 
-  collectGrouped = (encoder: StyleEncoder) => {
-    encoder.grouped.forEach((hashSet, groupId) => {
-      const groupKey = 'grouped:' + groupId
-      const style = this.getGroup(hashSet, groupKey)
-
-      // Not `formatSelector`: that hashes again under `hash.className`, and a group id is
-      // already a digest. Shared with the runtime so the two cannot name it differently.
-      const className = esc(groupClassName(groupId, this.context.utility.toHash, this.context.utility.formatClassName))
-
-      const result: GroupedResult = {
-        ...style,
-        className,
-        result: { ['.' + className]: style.result },
-      }
-
-      this.grouped.add(result)
-      this.classNames.set(className, result)
-    })
-  }
-
   collectViewTransitions = (encoder: StyleEncoder) => {
     encoder.view_transitions.forEach((slots, className) => {
       const styles: StyleResultObject = {
@@ -505,7 +476,6 @@ export class StyleDecoder {
    */
   collect = (encoder: StyleEncoder) => {
     this.collectAtomic(encoder)
-    this.collectGrouped(encoder)
     this.collectRecipe(encoder)
     this.collectRecipeBase(encoder)
     this.collectViewTransitions(encoder)
@@ -527,13 +497,12 @@ export class StyleDecoder {
    *
    * Within that, ordering matches what a single-call processor produces today:
    * atomic styles go through the same `sortStyleRules` pass `collectAtomic` applies,
-   * and the remaining categories follow the order `collect` inserts them (grouped,
-   * recipe variants, recipe base). Class order on an element has no cascade meaning
+   * and the remaining categories follow the order `collect` inserts them (recipe
+   * variants, recipe base). Class order on an element has no cascade meaning
    * — the stylesheet decides that — so this is about determinism, not correctness.
    */
   filterClassNames = (scope: EncoderScope): string[] => {
     const resultsByHash = new Map<string, AtomicStyleResult[]>()
-    const byGroupId = new Map<string, string>()
     const byRecipeKey = new Map<string, string>()
 
     for (const [className, entry] of this.classNames) {
@@ -553,8 +522,6 @@ export class StyleDecoder {
         byRecipeKey.set(key, className)
         continue
       }
-
-      byGroupId.set(Array.from(entry.hashSet).sort().join('|'), className)
     }
 
     const out: string[] = []
@@ -577,8 +544,6 @@ export class StyleDecoder {
 
     // Atomic styles are sorted, matching `collectAtomic`.
     sortStyleRules(collectResults(scope.atomic)).forEach((result) => push(result.className))
-
-    scope.grouped.forEach((groupId) => push(byGroupId.get(groupId)))
 
     // Recipe variants are not sorted — each is already scoped by its recipe class. A
     // `@scope`-selected slot is skipped: the root's variant class is what opens the scope,

@@ -7,9 +7,8 @@ import { parseAndExtract } from './fixture'
  * and the element renders with no styles at all.
  *
  * That is worse than the `css()` case this detection was originally written for. Grouping
- * degrades: the runtime falls back to naming each declaration and the build emits atomic
- * rules alongside the group, so what it *did* resolve still applies. A diverged hash has no
- * such fallback, which is why this check is not gated on `cssMode`.
+ * loses only the declarations it could not see, so what it *did* resolve still applies. A
+ * diverged hash has no such partial recovery, which is why this check reports in full.
  */
 const reasons = (call: string) =>
   parseAndExtract(
@@ -103,11 +102,8 @@ describe('a recipe config the build cannot fully read', () => {
 })
 
 /**
- * The same detection for a bare `css()` call, which was gated on `cssMode: 'grouped'`.
- *
- * That gate was about severity, not about whether anything was lost: grouping makes a loss
- * fatal to the whole call, so it had to be reported. Under `atomic` the loss is partial —
- * what the build saw still applies — but it is no less silent.
+ * The same detection for a bare `css()` call. The loss is partial there — what the build
+ * saw still applies — but it is no less silent.
  */
 describe('a css() call the build cannot fully read', () => {
   const atomic = (src: string) =>

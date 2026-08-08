@@ -794,19 +794,6 @@ export const planPartialFold = (
   // empty class is only a failure when there are no branches to carry either.
   if (!className && !partition.finite.length) return undefined
 
-  // Under `cssMode: 'grouped'` a class names the whole call, so a split is only sound when
-  // one piece carries the whole object. `css({ margin: '2', color: c ? 'a' : 'b' })` folded
-  // to three class names with a rule behind none of them.
-  //
-  // Each ternary counts separately, because the build emits the *cartesian product* of the
-  // branches (`ParserResult.setCss`): two ternaries are four complete groups, where a fold
-  // would write four per-property fragments instead. One piece is still fine — a lone
-  // ternary's two arms are each a complete object, and so is a lone runtime remainder.
-  if (deps.ctx.config.cssMode === 'grouped') {
-    const pieces = (className ? 1 : 0) + partition.finite.length + (partition.dynamicText.length ? 1 : 0)
-    if (pieces > 1) return undefined
-  }
-
   return {
     className,
     dynamicText: partition.dynamicText.length ? `{ ${partition.dynamicText.join(', ')} }` : undefined,

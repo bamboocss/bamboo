@@ -381,7 +381,6 @@ describe('style encoder', () => {
     expect(processor.encoder?.results).toMatchInlineSnapshot(`
       {
         "atomic": Set {},
-        "grouped": Map {},
         "recipes": Map {
           "button" => Set {},
         },
@@ -503,7 +502,6 @@ describe('style encoder', () => {
     expect(processor.encoder?.results).toMatchInlineSnapshot(`
       {
         "atomic": Set {},
-        "grouped": Map {},
         "recipes": Map {
           "button" => Set {},
         },
@@ -622,7 +620,6 @@ describe('style encoder', () => {
           "backgroundGradient]___[value:to-b",
           "gradientFrom]___[value:rgb(200 200 200 / .4)",
         },
-        "grouped": Map {},
         "recipes": Map {
           "checkbox" => Set {
             "size]___[value:md]___[recipe:checkbox]___[slot:container",

@@ -191,9 +191,8 @@ cx(css({ paddingX: '4' }), css({ paddingX: '2' })) // => 'px_4 px_2', not 'px_2'
 Both land on the element, in the same layer, and the browser picks by their order in the stylesheet rather than by the
 order you passed them.
 
-This is deliberate. `cx` cannot resolve conflicts in every build — under [`hash`](/docs/references/config#hash) or
-[`cssMode: 'grouped'`](/docs/references/config#cssmode) a class name carries no property to compare, and a grouped class
-names a whole `css()` call rather than one declaration. A `cx` that merged where it could and joined where it could not
+This is deliberate. `cx` cannot resolve conflicts in every build — under [`hash`](/docs/references/config#hash) a class
+name is an opaque digest with no property to compare. A `cx` that merged where it could and joined where it could not
 would behave differently in development and in a minified production build, from the same source, with nothing raised
 either way. It does the same thing everywhere instead.
 

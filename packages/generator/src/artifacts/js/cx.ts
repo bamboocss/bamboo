@@ -8,11 +8,8 @@ import outdent from 'outdent'
  * join in a hashed production build, from the same source, with no error either way. An
  * override that worked locally silently stopped working when it shipped.
  *
- * The two could not be reconciled by teaching the matcher to read hashed names.
- * `cssMode: 'grouped'` names a *whole call* with one class — `toHash(['grouped', groupId])`
- * — so there is no single property behind it to compare, whatever the naming scheme. As
- * long as grouped exists, some builds can never merge, and a `cx` that merges in the rest
- * is a behavioural difference keyed on a config flag.
+ * The two could not be reconciled by teaching the matcher to read hashed names: under
+ * `hash: true` a class is an opaque digest with no property to compare.
  *
  * So precedence is decided where it can be decided the same way everywhere: by
  * {@link https://bamboocss.com/docs/concepts/cascade-layers cascade layers}. A component

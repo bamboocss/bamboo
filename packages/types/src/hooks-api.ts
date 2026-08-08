@@ -12,10 +12,6 @@ export interface AtomicRule extends BaseRule {
   styles: SystemStyleObject
 }
 
-export interface GroupedRule extends BaseRule {
-  styles: SystemStyleObject
-}
-
 export interface AtomicRecipeRule extends BaseRule {
   config: RecipeDefinition<any> | SlotRecipeDefinition<string, any>
 }
@@ -26,7 +22,6 @@ export interface RecipeVariantsRule extends BaseRule {
 
 export interface ProcessorInterface {
   css(styles: SystemStyleObject): AtomicRule
-  grouped(styles: SystemStyleObject): GroupedRule
   cva(recipeConfig: RecipeDefinition<RecipeVariantRecord>): AtomicRecipeRule
   sva(recipeConfig: SlotRecipeDefinition<string, SlotRecipeVariantRecord<string>>): AtomicRecipeRule
   recipe(name: string, variants?: RecipeVariantRecord): RecipeVariantsRule | undefined

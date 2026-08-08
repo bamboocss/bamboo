@@ -6,16 +6,13 @@ export interface UnresolvedStyle {
   /**
    * What the loss costs, which decides how it is explained.
    *
-   * - `grouped` — a `css()` call under `cssMode: 'grouped'`. It degrades: the runtime falls
-   *   back to naming each declaration, and the build emits atomic rules alongside the group
-   *   so the ones it resolved still apply.
-   * - `atomic` — a `css()` call under `cssMode: 'atomic'`. The declarations the build saw
-   *   still apply; the ones it did not have no rule behind them, so they are simply absent.
+   * - `atomic` — a `css()` call. The declarations the build saw still apply; the ones it
+   *   did not have no rule behind them, so they are simply absent.
    * - `recipe` — a `cva`/`sva` config. There is no degrading. A recipe's classes are named
    *   from a hash of its config, so a declaration the build cannot see gives the two sides
    *   different names and *every* rule misses.
    */
-  kind: 'grouped' | 'atomic' | 'recipe'
+  kind: 'atomic' | 'recipe'
   /** The property the build could not resolve, or `undefined` when only the count differs. */
   prop?: string
   filePath: string
@@ -27,11 +24,10 @@ export interface UnresolvedStyle {
    * - `unresolvable-value` — a value it could not evaluate.
    * - `missing-property` — a key that never arrived in the box tree at all.
    * - `unenumerable-keys` — a spread or computed key, so it cannot say what the call sets.
-   * - `ambiguous-merge` — two arguments setting one property, which it cannot tell from a
    *   pair of alternatives.
    * - `too-many-combinations` — more ternary branches than it will enumerate.
    */
-  reason: 'unresolvable-value' | 'missing-property' | 'unenumerable-keys' | 'ambiguous-merge' | 'too-many-combinations'
+  reason: 'unresolvable-value' | 'missing-property' | 'unenumerable-keys'
 }
 
 /**
@@ -140,14 +136,7 @@ const writtenProps = (node: Node | undefined): WrittenProps | undefined => {
   return { names, uncertain }
 }
 
-/**
- * Every property of a `css()` call that will not reach the stylesheet.
- *
- * Only meaningful under `cssMode: 'grouped'`, where one class names the whole call: a
- * property the build cannot resolve does not merely go missing, it changes the class, and
- * the element renders with no styles at all. Under `atomic` the same call loses one
- * declaration and keeps the rest, which is why this is not reported there.
- */
+/** Every property of a `css()` call that will not reach the stylesheet. */
 /**
  * A recipe config the build could not fully read, level by level.
  *
@@ -287,7 +276,7 @@ export const findUnresolvedRecipeStyles = (item: ResultItem): UnresolvedStyle[] 
   return losses.map((loss) => ({ column, filePath: sourceFile.getFilePath(), kind: 'recipe' as const, line, ...loss }))
 }
 
-export const findUnresolvedStyles = (item: ResultItem, kind: 'grouped' | 'atomic'): UnresolvedStyle[] => {
+export const findUnresolvedStyles = (item: ResultItem, kind: 'atomic'): UnresolvedStyle[] => {
   const boxNode = item.box
   if (!boxNode) return []
 

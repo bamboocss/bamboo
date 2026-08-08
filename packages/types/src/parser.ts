@@ -36,9 +36,6 @@ export interface EncoderJson {
     recipes?: {
       [name: string]: string[]
     }
-    grouped?: {
-      [groupId: string]: string[]
-    }
     /** Bag class -> the `::view-transition-*` slot styles behind it. */
     viewTransitions?: {
       [className: string]: Record<string, any>

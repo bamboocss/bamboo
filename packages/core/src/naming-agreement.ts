@@ -67,7 +67,6 @@ const INFERRED_SLOT_CANARY = {
 }
 
 export interface NamingDisagreement {
-  mode: 'atomic' | 'grouped'
   /** Which derivation disagreed. */
   kind: 'css' | 'recipe' | 'slot-recipe'
   /** What the stylesheet emitted a rule for. */
@@ -85,7 +84,7 @@ type NamingContext = Pick<Context, 'config' | 'conditions' | 'utility' | 'hash' 
  * once by `createCss` in the browser — and the two only ever meet in the DOM. When they
  * disagree there is no error and no warning: the rule is emitted, the class is returned,
  * and every element carrying it renders with no styles at all. That is how
- * `cssMode: 'grouped'` combined with `hash: true` shipped broken.
+ * a `hash: true` build once shipped broken.
  *
  * Tests can only pin the config matrix they enumerate, and the naming inputs are
  * open-ended — `utility:created` lets a config replace `toHash` outright, and `separator`,
@@ -96,10 +95,7 @@ type NamingContext = Pick<Context, 'config' | 'conditions' | 'utility' | 'hash' 
  * is about to emit.
  */
 export function checkNamingAgreement(ctx: NamingContext): NamingDisagreement | undefined {
-  const grouped = ctx.config.cssMode === 'grouped'
-
   const cssContext = {
-    grouped,
     hash: Boolean(ctx.hash.className),
     conditions: {
       shift: ctx.conditions.shift,
@@ -123,7 +119,7 @@ export function checkNamingAgreement(ctx: NamingContext): NamingDisagreement | u
 
   const encoder = ctx.encoder.clone()
   const decoder = ctx.decoder.clone()
-  const scope = encoder.withScope(() => (grouped ? encoder.processGrouped(canary) : encoder.processAtomic(canary)))
+  const scope = encoder.withScope(() => encoder.processAtomic(canary))
   decoder.collect(encoder)
 
   // The decoder escapes for a CSS selector (`hover\:c_blue`); the runtime emits what
@@ -134,16 +130,14 @@ export function checkNamingAgreement(ctx: NamingContext): NamingDisagreement | u
     .map((className) => className.replaceAll('\\', ''))
     .sort()
 
-  const mode = grouped ? 'grouped' : 'atomic'
-
   if (!(build.length === runtime.length && build.every((name, index) => name === runtime[index]))) {
-    return { mode, kind: 'css', build, runtime }
+    return { kind: 'css', build, runtime }
   }
 
   return (
-    checkRecipeNamingAgreement(ctx, mode) ??
-    checkSlotRecipeNamingAgreement(ctx, mode, SLOT_RECIPE_CANARY) ??
-    checkSlotRecipeNamingAgreement(ctx, mode, INFERRED_SLOT_CANARY)
+    checkRecipeNamingAgreement(ctx) ??
+    checkSlotRecipeNamingAgreement(ctx, SLOT_RECIPE_CANARY) ??
+    checkSlotRecipeNamingAgreement(ctx, INFERRED_SLOT_CANARY)
   )
 }
 
@@ -153,7 +147,6 @@ export function checkNamingAgreement(ctx: NamingContext): NamingDisagreement | u
  */
 function checkSlotRecipeNamingAgreement(
   ctx: NamingContext,
-  mode: 'atomic' | 'grouped',
   canary: Record<string, unknown>,
 ): NamingDisagreement | undefined {
   const name = getRecipeIdentity(canary, 'sva')
@@ -178,7 +171,7 @@ function checkSlotRecipeNamingAgreement(
     return
   }
 
-  return { mode, kind: 'slot-recipe', build, runtime }
+  return { kind: 'slot-recipe', build, runtime }
 }
 
 /**
@@ -200,7 +193,7 @@ const classFormatter = (ctx: NamingContext) => {
  * in the DOM. The failure mode is identical: rules emitted under one name, a class asked for
  * under another, and every element carrying it rendered unstyled with nothing reported.
  */
-function checkRecipeNamingAgreement(ctx: NamingContext, mode: 'atomic' | 'grouped'): NamingDisagreement | undefined {
+function checkRecipeNamingAgreement(ctx: NamingContext): NamingDisagreement | undefined {
   const name = getRecipeIdentity(RECIPE_CANARY)
   const selection = { size: 'x large' }
 
@@ -228,10 +221,10 @@ function checkRecipeNamingAgreement(ctx: NamingContext, mode: 'atomic' | 'groupe
     .sort()
 
   if (!(build.length === runtime.length && build.every((className, index) => className === runtime[index]))) {
-    return { mode, kind: 'recipe', build, runtime }
+    return { kind: 'recipe', build, runtime }
   }
 
-  return checkCompoundNamingAgreement(ctx, mode, name, format, decoder)
+  return checkCompoundNamingAgreement(ctx, name, format, decoder)
 }
 
 /**
@@ -255,7 +248,6 @@ function checkRecipeNamingAgreement(ctx: NamingContext, mode: 'atomic' | 'groupe
  */
 function checkCompoundNamingAgreement(
   ctx: NamingContext,
-  mode: 'atomic' | 'grouped',
   name: string,
   format: (className: string) => string,
   decoder: NamingContext['decoder'],
@@ -282,7 +274,7 @@ function checkCompoundNamingAgreement(
       const build = parts.slice().sort()
       if (parts.every((className) => runtime.includes(className))) continue
 
-      return { mode, kind: 'recipe', build, runtime: runtime.slice().sort() }
+      return { kind: 'recipe', build, runtime: runtime.slice().sort() }
     }
   }
 
@@ -294,13 +286,13 @@ export function formatNamingDisagreement(result: NamingDisagreement) {
   const asks = result.kind === 'recipe' ? 'cva() returns:  ' : 'css() returns:  '
 
   return [
-    `The stylesheet and the runtime disagree on ${result.kind === 'recipe' ? 'recipe ' : ''}class names under \`cssMode: '${result.mode}'\`.`,
+    `The stylesheet and the runtime disagree on ${result.kind === 'recipe' ? 'recipe ' : ''}class names.`,
     `Every element styled this way would render with no styles at all.`,
     ``,
     `  stylesheet emits: ${result.build.join(' ') || '(none)'}`,
     `  ${asks}${result.runtime.join(' ') || '(none)'}`,
     ``,
     `This is a bug in bamboo, not in your config. Please report it with the`,
-    `\`cssMode\`, \`hash\`, \`prefix\`, \`separator\` and \`utility:created\` values you use.`,
+    `\`hash\`, \`prefix\`, \`separator\` and \`utility:created\` values you use.`,
   ].join('\n')
 }

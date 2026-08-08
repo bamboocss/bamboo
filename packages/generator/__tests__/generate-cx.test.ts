@@ -60,9 +60,9 @@ describe('generated cx', () => {
  * The reason merging was removed.
  *
  * `hash` is commonly wired to a minification flag — off while developing, on when
- * shipping — and `cssMode` is a build-wide choice. A `cx` that resolved conflicts under
- * one and concatenated under another turned an override bug into something that only
- * appeared in production, with nothing raised at build time to say so.
+ * shipping. A `cx` that resolved conflicts under one and concatenated under another turned
+ * an override bug into something that only appeared in production, with nothing raised at
+ * build time to say so.
  *
  * One implementation, byte for byte, whatever the config says.
  */
@@ -70,7 +70,6 @@ describe('generated cx is identical in every build', () => {
   const configs: Array<[string, Config | undefined]> = [
     ['default', undefined],
     ['hash.className', { hash: true } as Config],
-    ['cssMode: grouped', { cssMode: 'grouped' } as Config],
     ['prefix', { prefix: 'bam' } as Config],
     ['separator', { separator: '-' } as Config],
   ]

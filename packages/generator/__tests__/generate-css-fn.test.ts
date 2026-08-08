@@ -308,20 +308,17 @@ describe('generate css-fn — the recipe seam', () => {
   /**
    * There is no longer a seam to keep.
    *
-   * Recipes used to be extracted atomically whatever `cssMode` said, because which variant
-   * combination a caller selects is not knowable at build time and grouping would have
-   * needed a rule per combination. That forced a second `createCss` under `grouped`,
-   * exported as `__atomicCss`, purely so the recipe runtimes could name classes the way the
-   * stylesheet did.
+   * Recipes used to be extracted atomically while `css()` calls were grouped, because which
+   * variant combination a caller selects is not knowable at build time and grouping would
+   * have needed a rule per combination. That forced a second `createCss`, exported as
+   * `__atomicCss`, purely so the recipe runtimes could name classes the way the stylesheet
+   * did.
    *
-   * A recipe now names its classes semantically — `btn--size_sm`, from the config — which
-   * is knowable at build time in every mode. So no second instance, in either mode.
+   * A recipe now names its classes semantically — `btn--size_sm`, from the config — which is
+   * knowable at build time. So no second instance.
    */
-  test.each([
-    ['atomic', {}],
-    ['grouped', { cssMode: 'grouped' as const }],
-  ])('no second css instance under %s', (_mode, config) => {
-    const js = generateCssFn(createGeneratorContext(config) as any).js
+  test('no second css instance', () => {
+    const js = generateCssFn(createGeneratorContext({}) as any).js
     expect(js).not.toContain('__atomicCss')
     expect(js).not.toContain('grouped: false')
   })

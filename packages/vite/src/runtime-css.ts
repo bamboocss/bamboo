@@ -34,7 +34,6 @@ export interface RuntimeCss {
 
 /** The shape `createCss` and `createMergeCss` both take, derived from a resolved context. */
 export const createCssContext = (ctx: Context) => ({
-  grouped: ctx.config.cssMode === 'grouped',
   hash: Boolean(ctx.hash.className),
   conditions: {
     shift: ctx.conditions.shift,

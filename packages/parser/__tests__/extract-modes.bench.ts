@@ -3,13 +3,10 @@ import type { Config } from '@bamboocss/types'
 import { bench, describe } from 'vitest'
 
 /**
- * What extraction costs per `cssMode`.
+ * What extraction costs.
  *
  * `ts-eval` beside this measures the extractor's evaluation of a hard source; this measures
- * the encoding that follows it, which is where the two modes differ. Grouped does strictly
- * more work than atomic — it reconstructs the call the runtime will make, and asks whether
- * the group it encoded is exact — and that gap is the thing worth watching, since it is
- * paid on every file of every grouped build.
+ * the encoding that follows it.
  *
  * `cva only` is the control. Nothing about grouping touches `setCva`, so the two modes have
  * to report the same number for it. If they do not, the machine moved between the readings
@@ -52,8 +49,7 @@ export const Row = ({ on }) => (
 
 /**
  * The control: a recipe's classes are named from its config — `button--size_sm` — rather
- * than per property, so `cssMode` has no per-property naming to group and does not reach
- * this path at all.
+ * than per property, so it does not reach the per-property naming path at all.
  */
 const cvaSource = `
 import { cva } from "styled-system/css"
@@ -68,20 +64,17 @@ export const button = cva({
 })
 `
 
-const prepare = (code: string, cssMode: 'atomic' | 'grouped') => {
-  const ctx = createContext({ cssMode } as Config)
+const prepare = (code: string) => {
+  const ctx = createContext({} as Config)
   ctx.project.addSourceFile(filePath, code)
   return () => ctx.project.parseSourceFile(filePath, ctx.encoder.clone())
 }
 
 describe('extract', () => {
-  const atomic = prepare(source, 'atomic')
-  const grouped = prepare(source, 'grouped')
-  const atomicCva = prepare(cvaSource, 'atomic')
-  const groupedCva = prepare(cvaSource, 'grouped')
+  const css = prepare(source)
+  const cva = prepare(cvaSource)
 
-  bench('atomic', () => void atomic(), { time: 1000 })
-  bench('grouped', () => void grouped(), { time: 1000 })
-  bench('cva only, atomic (control)', () => void atomicCva(), { time: 1000 })
-  bench('cva only, grouped (control)', () => void groupedCva(), { time: 1000 })
+  bench('css() calls', () => void css(), { time: 1000 })
+  // The control: recipes do not reach the per-property naming path.
+  bench('cva only (control)', () => void cva(), { time: 1000 })
 })

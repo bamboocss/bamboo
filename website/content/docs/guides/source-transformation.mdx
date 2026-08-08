@@ -271,8 +271,8 @@ cx('m_2', cssLeaf('c_', 'color', tone))
 
 This changes nothing about which classes have CSS behind them: `css()` already built the class from the value alone, so
 a value the extractor never saw already produced a class with no rule. A responsive array, a condition object and any
-non-scalar fall back to `css()` at runtime, and `null` produces no class. It applies to a top-level property; `hash` and
-`cssMode: 'grouped'` decline it, since neither appends the value to a prefix.
+non-scalar fall back to `css()` at runtime, and `null` produces no class. It applies to a top-level property; `hash`
+declines it, since it does not append the value to a prefix.
 
 Splitting is refused when two halves could produce a class for the same property: a shorthand facing its longhand, a
 top-level `base` block, and multi-argument `css()`. `cx` does resolve conflicts, but by argument order, and splitting

@@ -55,9 +55,6 @@ const CONFIGS: Array<{ label: string; config: Config | undefined }> = [
   { label: 'separator -', config: { separator: '-' } },
   { label: 'hash + prefix', config: { hash: true, prefix: 'pfx' } },
   { label: 'prefix + separator', config: { prefix: 'pfx', separator: '=' } },
-  { label: 'grouped', config: { cssMode: 'grouped' } },
-  { label: 'grouped + hash', config: { cssMode: 'grouped', hash: true } },
-  { label: 'grouped + prefix', config: { cssMode: 'grouped', prefix: 'pfx' } },
 ]
 
 const sourceFor = (styles: Record<string, unknown>) =>
@@ -154,7 +151,6 @@ describe('naming options actually change the names', () => {
     { label: 'hash', config: { hash: true } as Config },
     { label: 'prefix', config: { prefix: 'pfx' } as Config },
     { label: 'separator =', config: { separator: '=' } as Config },
-    { label: 'grouped', config: { cssMode: 'grouped' } as Config },
   ])('$label names classes differently from the default', ({ config }) => {
     const base = createFoldFixture().fold(sourceFor(styles))
     const varied = createFoldFixture(config as never).fold(sourceFor(styles))

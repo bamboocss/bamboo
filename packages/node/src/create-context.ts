@@ -1,7 +1,6 @@
 import type { StyleEncoder, Stylesheet } from '@bamboocss/core'
 import { checkNamingAgreement, formatNamingDisagreement } from '@bamboocss/core'
 import { Generator } from '@bamboocss/generator'
-import { generateGroupRegistry, GROUP_REGISTRY_FILE } from '@bamboocss/generator'
 import { logger } from '@bamboocss/logger'
 import { ParserResult, Project } from '@bamboocss/parser'
 import { BambooError, uniq } from '@bamboocss/shared'
@@ -32,14 +31,6 @@ const unresolvedReasons: Record<ParserResult['unresolved'][number]['reason'], (p
   'unenumerable-keys': () => [
     'an object spread or computed key leaves the build unable to tell which properties this call sets',
     'Write the properties out, or spread a value the build can resolve, to group it.',
-  ],
-  'ambiguous-merge': () => [
-    'two of these arguments set the same property, and the build cannot tell a merge from a pair of alternatives',
-    'Merge them into a single object to group it.',
-  ],
-  'too-many-combinations': () => [
-    'this call has more conditional branches than the build will enumerate',
-    'Split it into fewer conditional properties to group it.',
   ],
 }
 
@@ -84,26 +75,14 @@ export class BambooContext extends Generator {
     if (disagreement) {
       throw new BambooError('NAMING_DISAGREEMENT', formatNamingDisagreement(disagreement))
     }
-
-    // `staticCss` enumerates atoms; `grouped` names whole `css()` calls. The rules are
-    // emitted either way and remain valid to write by hand, but no class a grouped runtime
-    // returns can match one — so a config pairing them is almost always reaching for the
-    // dynamic-value escape hatch that `dynamic-styling.mdx` documents, and not getting it.
-    if (config.cssMode === 'grouped' && config.staticCss?.css?.length) {
-      logger.warn(
-        'config',
-        "`staticCss.css` does not back runtime `css()` calls under `cssMode: 'grouped'`. It pre-generates one rule per property and value, while a grouped class names a whole call. The rules are still emitted, but nothing the runtime returns will match them — see https://bamboocss.com/docs/references/config#cssmode",
-      )
-    }
   }
 
   /**
    * Report `css()` calls whose styles the build could not fully see.
    *
-   * Only under `cssMode: 'grouped'`, and only as a warning: the build is not wrong, the
-   * call site is unresolvable, and erroring would reject code that an `atomic` build
-   * accepts. But under `grouped` that call renders the element with *no* styles rather
-   * than merely losing a declaration, so it must not be silent.
+   * A warning rather than an error: the build is not wrong, the call site is unresolvable,
+   * and the declarations it did resolve still apply. But the ones it could not have no rule
+   * behind them and are simply absent, so it must not be silent.
    */
   reportUnresolvedStyles = (result: { unresolved?: ParserResult['unresolved'] }) => {
     const unresolved = result.unresolved
@@ -112,17 +91,15 @@ export class BambooContext extends Generator {
     for (const entry of unresolved) {
       const where = `${entry.filePath}:${entry.line}:${entry.column}`
       const prop = entry.prop ? `\`${entry.prop}\`` : 'a property'
-      const [what, fix] = unresolvedReasons[entry.reason](prop)
+      const [what] = unresolvedReasons[entry.reason](prop)
 
-      // A recipe does not degrade the way a grouped `css()` call does, so it does not get
-      // the same explanation. Its classes are named from a hash of its config: a
+      // A recipe does not degrade the way a `css()` call does, so it does not get the same
+      // explanation. Its classes are named from a hash of its config: a
       // declaration the build cannot see changes that hash, the browser asks for a name no
       // rule was emitted under, and *every* style is lost rather than the unresolved one.
       if (entry.kind === 'recipe') {
-        // `at` rather than the shared `fix`: that one ends "to group it", which is
-        // grouped-mode language, and this warning fires in every mode. The path is what
-        // makes several losses in one config distinguishable — without it they render as
-        // identical lines at the same position.
+        // The path is what makes several losses in one config distinguishable — without
+        // it they render as identical lines at the same position.
         const at = entry.prop ? ` at \`${entry.prop}\`` : ''
         logger.warn(
           'recipe',
@@ -131,23 +108,15 @@ export class BambooContext extends Generator {
         continue
       }
 
-      if (entry.kind === 'atomic') {
-        // Not the shared `fix` clause: it ends "to group it", which means nothing outside
-        // grouped mode. The loss here is partial rather than total — what the build saw
-        // still applies — so the wording says which half is missing rather than implying
-        // the element is unstyled.
+      {
+        // The loss is partial rather than total — what the build saw still applies — so the
+        // wording says which half is missing rather than implying the element is unstyled.
         const at = entry.prop ? ` at \`${entry.prop}\`` : ''
         logger.warn(
           'css',
           `${where} — ${what}${at}. The build emits a rule per declaration it can see, and the runtime names a class for every declaration the object actually has — so the ones it could not see have no rule behind them and are simply absent. Write the value out, or generate it with \`staticCss\` if it is genuinely dynamic. See https://bamboocss.com/docs/guides/dynamic-styling`,
         )
-        continue
       }
-
-      logger.warn(
-        'grouped',
-        `${where} — ${what}. Under \`cssMode: 'grouped'\` one class names the whole \`css()\` call, so this call cannot use one: it falls back to naming each declaration separately and keeps only the ones the build could resolve. ${fix} See https://bamboocss.com/docs/references/config#cssmode`,
-      )
     }
   }
 
@@ -211,56 +180,11 @@ export class BambooContext extends Generator {
       results.push(result)
     })
 
-    // The batch path — `cssgen` and `generate` reach extraction through here rather than
-    // through `Builder.extract`, which walks files one at a time for the PostCSS plugin.
-    // Both finish extraction, so both refresh the registry; neither covers the other.
-    this.writeGroupRegistry()
-
     return {
       filesWithCss,
       files,
       results,
     }
-  }
-
-  /**
-   * Refresh the group registry the generated `css()` consults.
-   *
-   * `codegen` emits it empty — it runs on config change, before anything is extracted — so
-   * this is the pass that fills it in. Called after extraction rather than alongside the
-   * CSS, because the PostCSS plugin never writes a stylesheet to disk at all and would
-   * otherwise never get one.
-   *
-   * Safe to run late or not at all: the runtime *adds* atomic names to the group class
-   * rather than replacing it, so a stale registry costs a class that matches nothing.
-   */
-  writeGroupRegistry = () => {
-    if (this.config.cssMode !== 'grouped') return
-
-    const names = this.getGroupRegistry()
-
-    // An empty set means this pass extracted nothing — `codegen` on a config change, say.
-    // Writing it would discard the set the last CSS build produced and leave every call
-    // site degrading to group-plus-atomic names until the next one. Seed the file when it
-    // is missing, so `css.mjs`'s import resolves on a fresh project, and otherwise leave a
-    // populated one alone.
-    if (!names.length) {
-      // Joined exactly the way `OutputEngine.write` joins it — `paths.css` is already a
-      // complete path, so prefixing `cwd` here would look for a file that never exists and
-      // silently blank the registry anyway.
-      const existing = this.runtime.path.join(...this.paths.css, this.file.ext(GROUP_REGISTRY_FILE))
-      if (this.runtime.fs.existsSync(existing)) return
-    }
-
-    const registry = generateGroupRegistry(this, names)
-    return this.output.write({
-      id: 'css-fn',
-      dir: this.paths.css,
-      files: [
-        { file: this.file.ext(GROUP_REGISTRY_FILE), code: registry.js },
-        { file: this.file.extDts(GROUP_REGISTRY_FILE), code: registry.dts },
-      ],
-    })
   }
 
   writeCss = (sheet?: Stylesheet) => {

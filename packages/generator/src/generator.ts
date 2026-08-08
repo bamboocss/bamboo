@@ -12,7 +12,6 @@ import type { ArtifactId, CssArtifactType, LoadConfigResult, SpecFile, SpecType,
 import { match } from 'ts-pattern'
 import { generateArtifacts } from './artifacts'
 import { generateGlobalCss } from './artifacts/css/global-css'
-import { collectGroupClassNames } from './artifacts/js/group-registry'
 import { generateKeyframeCss } from './artifacts/css/keyframe-css'
 import { generateParserCss } from './artifacts/css/parser-css'
 import { generateResetCss } from './artifacts/css/reset-css'
@@ -315,21 +314,6 @@ export class Generator extends Context {
   getParserCss = (decoder: StyleDecoder) => {
     return generateParserCss(this, decoder)
   }
-
-  /**
-   * The grouped class names this build emitted a rule for.
-   *
-   * Derived from the encoder rather than the decoder, so it is available as soon as
-   * extraction finishes and before a stylesheet exists. Both sides go through
-   * `groupClassName`, which is the same function the browser runtime calls — a registry
-   * built any other way would be a third spelling of a name that already has two.
-   *
-   * Unescaped, unlike `StyleDecoder`'s class names: this is compared against what `css()`
-   * returns into a `class` attribute, not against a selector. A grouped class is an opaque
-   * hash, so the two only differ in principle, but the principle is the one that matters
-   * here — the registry is only useful if it holds exactly what the runtime will ask about.
-   */
-  getGroupRegistry = (): string[] => collectGroupClassNames(this)
 
   getCss = (stylesheet?: Stylesheet) => {
     const sheet = stylesheet ?? this.createSheet()

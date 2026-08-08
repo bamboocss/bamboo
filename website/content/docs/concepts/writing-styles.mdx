@@ -506,10 +506,9 @@ cx(css({ paddingX: '4' }), css({ paddingX: '2' }))
 ```
 
 This is deliberate, and it is the same in every build. `cx` could only ever compare classes whose property is still
-visible in the name — with [`hash`](#hashing) it is not, and with
-[`cssMode: 'grouped'`](/docs/references/config#cssmode) a single class names a whole `css()` call rather than one
-declaration. Resolving where it could and joining where it could not would mean the same source behaving one way in
-development and another in a minified production build, with no error either way.
+visible in the name — with [`hash`](#hashing) it is not. Resolving where it could and joining where it could not would
+mean the same source behaving one way in development and another in a minified production build, with no error either
+way.
 
 Precedence is decided by origin instead:
 

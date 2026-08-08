@@ -3,7 +3,6 @@ import { BambooError } from '@bamboocss/shared'
 import type {
   AtomicRecipeRule,
   AtomicRule,
-  GroupedRule,
   RecipeDefinition,
   RecipeVariantsRule,
   SlotRecipeDefinition,
@@ -56,19 +55,6 @@ export class RuleProcessor {
     const { encoder, decoder } = this.getParamsOrThrow()
 
     const scope = encoder.withScope(() => encoder.processAtomic(styles))
-    decoder.collect(encoder)
-
-    return {
-      styles,
-      getClassNames: () => decoder.filterClassNames(scope),
-      toCss: this.toCss.bind(this),
-    }
-  }
-
-  grouped(styles: SystemStyleObject): GroupedRule {
-    const { encoder, decoder } = this.getParamsOrThrow()
-
-    const scope = encoder.withScope(() => encoder.processGrouped(styles))
     decoder.collect(encoder)
 
     return {

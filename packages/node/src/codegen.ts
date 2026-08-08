@@ -16,11 +16,6 @@ export async function codegen(ctx: BambooContext, ids?: ArtifactId[]) {
   const promises = artifacts.map((artifact) => limit(() => ctx.output.write(artifact)))
   await Promise.allSettled(promises)
 
-  // After the artifacts, because `css.mjs` imports it and a fresh project needs the file to
-  // exist for that import to resolve. Preserves a populated one rather than blanking it —
-  // nothing has been extracted in this pass. See `writeGroupRegistry`.
-  await ctx.writeGroupRegistry()
-
   await ctx.hooks['codegen:done']?.({ changed: ids })
 
   return {

@@ -4,7 +4,6 @@ import {
   getRecipeIdentity,
   getSlotCompoundVariant,
   isObjectOrArray,
-  mergeProps,
   normalizeStyleObject,
   toResponsiveObject,
   traverse,
@@ -43,7 +42,6 @@ const urlRegex = /^https?:\/\//
  */
 export interface EncoderScope {
   atomic: Set<string>
-  grouped: Set<string>
   /** recipe name -> variant hashes contributed by this call */
   recipes: Map<string, Set<string>>
   /** recipe keys (`name` or `name{slotSeparator}slot`) whose base belongs to this call */
@@ -52,14 +50,12 @@ export interface EncoderScope {
 
 const createScope = (): EncoderScope => ({
   atomic: new Set(),
-  grouped: new Set(),
   recipes: new Map(),
   recipes_base: new Set(),
 })
 
 const mergeScope = (target: EncoderScope, source: EncoderScope) => {
   source.atomic.forEach((hash) => target.atomic.add(hash))
-  source.grouped.forEach((id) => target.grouped.add(id))
   source.recipes_base.forEach((key) => target.recipes_base.add(key))
   source.recipes.forEach((hashes, name) => {
     const set = getOrCreateSet(target.recipes, name)
@@ -76,7 +72,6 @@ export class StyleEncoder {
   //
   recipes = new Map<string, Set<string>>()
   recipes_base = new Map<string, Set<string>>()
-  grouped = new Map<string, Set<string>>()
 
   /**
    * Bag class -> the slot styles behind it.
@@ -129,7 +124,6 @@ export class StyleEncoder {
       !this.recipes.size &&
       !this.compound_variants.size &&
       !this.recipes_base.size &&
-      !this.grouped.size &&
       !this.view_transitions.size
     )
   }
@@ -139,7 +133,6 @@ export class StyleEncoder {
       atomic: this.atomic,
       recipes: this.recipes,
       recipes_base: this.recipes_base,
-      grouped: this.grouped,
       view_transitions: this.view_transitions,
     }
   }
@@ -233,41 +226,6 @@ export class StyleEncoder {
   }
 
   /**
-   * Group several style objects as the one call the runtime will make of them.
-   *
-   * `css(a, b)` and a reconstructed ternary branch are both several objects that become a
-   * single class, and the runtime names that class off `mergeCss(a, b)` — which normalizes
-   * each operand and *then* deep-merges. Combining them any other way names a different
-   * class: `Object.assign` keeps only the last of two condition objects under a shared key,
-   * and merging before normalizing lets `p` and `padding` survive as two properties when
-   * the runtime has already collapsed them into one.
-   *
-   * Shared with `processStyleProps`, which folds a `css` prop into an element's style props
-   * for exactly the same reason.
-   */
-  processGroupedMerge = (styles: StyleResultObject[]) => {
-    if (styles.length === 1) return this.processGrouped(styles[0] as StyleResultObject)
-    this.processGrouped(mergeProps(...styles.map((style) => normalizeStyleObject(style, this.context))))
-  }
-
-  processGrouped = (styles: StyleResultObject) => {
-    const groupSet = new Set<string>()
-    this.hashStyleObject(groupSet, styles)
-
-    if (groupSet.size === 0) return
-
-    const sortedHashes = Array.from(groupSet).sort()
-    const groupId = sortedHashes.join('|')
-
-    this.activeScope?.grouped.add(groupId)
-
-    const existing = this.grouped.get(groupId)
-    if (existing) return
-
-    this.grouped.set(groupId, groupSet)
-  }
-
-  /**
    * Record a `viewTransition({ ... })` bag.
    *
    * The class is derived from the options alone, by the same function the generated
@@ -294,40 +252,25 @@ export class StyleEncoder {
     this.view_transitions.set(viewTransitionClassName(options, this.context.utility.prefix), slots)
   }
 
-  processStyleProps = (styleProps: StyleProps, grouped = false) => {
-    const processFn = grouped ? this.processGrouped : this.processAtomic
+  processStyleProps = (styleProps: StyleProps) => {
+    const processFn = this.processAtomic
     const styles = this.filterStyleProps(styleProps)
     const rest = {} as Dict
-
-    // Grouped mode names a class after a whole `css()` call, and the JSX factory makes one:
-    // `css(propStyles, cssStyles)`. Hashing the `css` prop apart from the rest would name a
-    // class the runtime never asks for, leaving the element with no styles at all. A `*Css`
-    // prop is a different slot's element and keeps its own call.
-    const ownCss: Dict[] = []
 
     for (const [key, value] of Object.entries(styles)) {
       // css and *Css props (e.g. inputCss, wrapperCss) are style objects
       if (key === 'css' || key.endsWith('Css')) {
-        const mergesWithRest = grouped && key === 'css'
         if (Array.isArray(value)) {
-          value.forEach((style) => (mergesWithRest ? ownCss.push(style) : processFn(style)))
+          value.forEach((style) => processFn(style))
         } else if (value) {
-          mergesWithRest ? ownCss.push(value) : processFn(value)
+          processFn(value)
         }
       } else {
         rest[key] = value
       }
     }
 
-    // Mirror `mergeCss` exactly: normalize each operand, *then* deep-merge. Merging raw and
-    // normalizing once afterwards is not the same function — `p` and `padding` only collide
-    // after normalization, and `walkObject` assigns rather than merges when it renames, so
-    // one of the two would be dropped from the stylesheet entirely. `Object.assign` is wrong
-    // for the same reason one level up: a shared key holding a condition object would keep
-    // only whichever came last.
-    processFn(
-      ownCss.length ? mergeProps(...[rest, ...ownCss].map((style) => normalizeStyleObject(style, this.context))) : rest,
-    )
+    processFn(rest)
   }
 
   processConfigSlotRecipeBase = (recipeName: string, config: SlotRecipeDefinition) => {
@@ -477,11 +420,9 @@ export class StyleEncoder {
     }
   }
 
-  processPattern = (name: string, patternProps: StyleResultObject, grouped = false) => {
-    const styleProps = this.context.patterns.transform(name, patternProps)
-    // A pattern is a `css()` call with the transform already applied — `css(stackStyles(props))` —
-    // so grouped mode names it the same way it names any other one.
-    this.processStyleProps(styleProps, grouped)
+  processPattern = (name: string, patternProps: StyleResultObject) => {
+    // A pattern is a `css()` call with the transform already applied — `css(stackStyles(props))`.
+    this.processStyleProps(this.context.patterns.transform(name, patternProps))
   }
 
   /**
@@ -604,10 +545,6 @@ export class StyleEncoder {
       recipes: Object.fromEntries(Array.from(this.recipes.entries()).map(([name, set]) => [name, Array.from(set)])),
     }
 
-    if (this.grouped.size) {
-      styles.grouped = Object.fromEntries(Array.from(this.grouped.entries()).map(([id, set]) => [id, Array.from(set)]))
-    }
-
     // The slot styles, not a hash: the class is already the key, and rebuilding the rule
     // bodies from hashed declarations is not something the decoder can do for a pseudo
     // element it never atomized.
@@ -632,11 +569,6 @@ export class StyleEncoder {
       this.processRecipeBase(recipeName)
       // process variants hashes
       const set = getOrCreateSet(this.recipes, recipeName)
-      hashes.forEach((hash) => set.add(hash))
-    })
-
-    Object.entries(styles.grouped ?? {}).forEach(([groupId, hashes]) => {
-      const set = getOrCreateSet(this.grouped, groupId)
       hashes.forEach((hash) => set.add(hash))
     })
 

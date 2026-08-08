@@ -81,17 +81,6 @@ describe('rule processor scoping', () => {
     )
   })
 
-  test('grouped() does not leak between calls', () => {
-    const processor = createRuleProcessor()
-
-    const first = processor.grouped({ color: 'red.300' })
-    const second = processor.grouped({ display: 'flex' })
-
-    expect(first.getClassNames()).toHaveLength(1)
-    expect(second.getClassNames()).toHaveLength(1)
-    expect(first.getClassNames()).not.toEqual(second.getClassNames())
-  })
-
   test('cva() does not leak between calls', () => {
     const processor = createRuleProcessor()
 

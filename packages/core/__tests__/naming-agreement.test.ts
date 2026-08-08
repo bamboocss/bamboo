@@ -13,19 +13,17 @@ import { checkNamingAgreement } from '../src/naming-agreement'
 const check = (config: Config) => checkNamingAgreement(createContext(config) as never)
 
 describe('checkNamingAgreement', () => {
-  // Every combination of the options that feed a class name. `grouped` x `hash` is the one
-  // that was broken, and it was broken because nothing enumerated the pair.
+  // Every combination of the options that feed a class name. The pairs are what matter —
+  // the defect this guards against was a combination nothing enumerated.
   const configs: Array<[string, Config]> = [
-    ['atomic', {}],
-    ['atomic + hash', { hash: true }],
-    ['atomic + prefix', { prefix: 'bam' }],
-    ['atomic + hash + prefix', { hash: true, prefix: 'bam' }],
-    ['grouped', { cssMode: 'grouped' }],
-    ['grouped + hash', { cssMode: 'grouped', hash: true }],
-    ['grouped + prefix', { cssMode: 'grouped', prefix: 'bam' }],
-    ['grouped + hash + prefix', { cssMode: 'grouped', hash: true, prefix: 'bam' }],
+    ['default', {}],
+    ['hash', { hash: true }],
+    ['prefix', { prefix: 'bam' }],
+    ['hash + prefix', { hash: true, prefix: 'bam' }],
     ['separator', { separator: '-' }],
-    ['grouped + separator', { cssMode: 'grouped', separator: '-' }],
+    ['hash + separator', { hash: true, separator: '-' }],
+    ['prefix + separator', { prefix: 'bam', separator: '-' }],
+    ['hash + prefix + separator', { hash: true, prefix: 'bam', separator: '-' }],
   ]
 
   test.each(configs)('agrees: %s', (_name, config) => {
@@ -37,8 +35,8 @@ describe('checkNamingAgreement', () => {
   // has one. Reverting the real defect is not expressible from a test, but this exercises
   // the same shape — the stylesheet naming one class and the runtime asking for another.
   test('catches a build and runtime that were configured differently', () => {
-    const plain = createContext({ cssMode: 'grouped' })
-    const prefixed = createContext({ cssMode: 'grouped', prefix: 'bam' })
+    const plain = createContext({})
+    const prefixed = createContext({ prefix: 'bam' })
 
     // Spelled out rather than spread: `Context` exposes `config` through a getter, and a
     // spread would drop it.
@@ -54,9 +52,10 @@ describe('checkNamingAgreement', () => {
     } as never)
 
     expect(result).toBeDefined()
-    expect(result!.mode).toBe('grouped')
-    expect(result!.runtime.every((name) => name.startsWith('bam-'))).toBe(true)
-    expect(result!.build.some((name) => name.startsWith('bam-'))).toBe(false)
+    // A conditional class carries its condition first (`hover:bam-c_blue`), so the prefix is
+    // looked for anywhere in the name rather than at the start of it.
+    expect(result!.runtime.every((name) => name.includes('bam-'))).toBe(true)
+    expect(result!.build.some((name) => name.includes('bam-'))).toBe(false)
   })
 
   /**
@@ -109,7 +108,7 @@ describe('checkNamingAgreement', () => {
   })
 
   test('the canary never reaches the caller stylesheet', () => {
-    const ctx = createContext({ cssMode: 'grouped' })
+    const ctx = createContext({})
     checkNamingAgreement(ctx as never)
 
     // `check` runs on clones, so the context's own encoder is still untouched.

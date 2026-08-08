@@ -12,9 +12,8 @@ import { buildCss, ITERATIONS } from './css-fn-harness'
  * memo well past its rotation point. Measured, that is benign for the cached benches *as
  * long as it runs after them* — moving it back into `css-fn.bench.ts` at the bottom left
  * every reading there unchanged. That is the whole problem: it is a property of the order,
- * which nobody maintains — and an ordering bug is exactly what made this file report
- * `cssMode: 'grouped'` as 9.4x slower than atomic when the two are at parity (see the
- * grouped note in `css-fn.bench.ts`).
+ * which nobody maintains — and an ordering bug once made this file report one bench as
+ * 9.4x slower than another when the two were at parity.
  *
  * Vitest isolates per *file* — the default forks pool runs each in its own process — so a
  * separate file is the only version of this guarantee that survives someone appending a

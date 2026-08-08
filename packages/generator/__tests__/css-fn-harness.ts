@@ -51,9 +51,8 @@ export const buildCss = (grouped = false) => {
  *
  * What it buys is that a reintroduced deopt shows up as every bench in the file slowing down
  * together, instead of only the ones declared after whichever bench first passes an array.
- * That asymmetry is what made this file report `cssMode: 'grouped'` as 9.4x slower than
- * atomic when the two are at parity — `grouped inline` simply ran after `composed css([a,
- * [b, c]])`.
+ * That asymmetry once made this file report one bench as 9.4x slower than another when the
+ * two were at parity — it simply ran after `composed css([a, [b, c]])`.
  */
 const warmArgumentShapes = () => {
   const throwaway = buildCss()

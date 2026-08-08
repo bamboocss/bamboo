@@ -89,10 +89,6 @@ export class Stylesheet {
       this.processCss(css.result, (css.layer as LayerName) ?? 'utilities')
     })
 
-    decoder.grouped.forEach((grouped) => {
-      this.processCss(grouped.result, 'utilities')
-    })
-
     decoder.recipes.forEach((recipeSet) => {
       // Merged per layer before processing, rather than one `processCss` per result.
       //

@@ -201,11 +201,6 @@ export class Builder {
 
     files.map((file) => this.extractFile(ctx, file))
 
-    // Every path reaches here — the PostCSS plugin, `cssgen`, `generate` — and the groups
-    // are known as soon as extraction is. Writing it alongside the CSS instead would miss
-    // the PostCSS plugin, which never writes a stylesheet to disk.
-    ctx.writeGroupRegistry()
-
     done()
   }
 

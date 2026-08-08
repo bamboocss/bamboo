@@ -291,8 +291,8 @@ The result is that a class name in Bamboo always comes from a function call you 
 These compile unchanged and do something else, so they are worth checking on migration.
 
 - **`cx` joins, it does not merge.** Panda's `cx` resolves conflicts between atomic classes. Bamboo's concatenates, in
-  every build — because `cssMode: 'grouped'` names a whole call with one class, so there is no property to compare and a
-  merging `cx` could not behave the same way in every configuration. Precedence is decided by
+  every build — under [`hash`](/docs/references/config#hash) a class is an opaque digest with no property to compare, so
+  a `cx` that merged only when it could would behave differently in development and production. Precedence is decided by
   [cascade layer](/docs/concepts/cascade-layers) instead. See
   [`cx` joins, in both tools](/docs/migration/panda#cx-joins-in-both-tools).
 - **Recipes are named, not atomic.** An inline `cva()`/`sva()` emits one class per variant into the `recipes` layer
@@ -363,25 +363,6 @@ export const title = 'fs_lg fw_bold'
 
 It also folds pattern and config recipe calls, and follows named imports across files. CSS output is unchanged – only
 the JavaScript changes. It is off by default, build-only, and reports how much of your source it managed to fold.
-
-### Less HTML
-
-[`cssMode: 'grouped'`](/docs/references/config#cssmode) emits one class per `css()` call rather than one per property,
-so an element carrying a dozen atomic classes carries one instead.
-
-Atomic CSS is a good default, but at scale it puts long class sequences into the markup and multiplies the declarations
-the browser walks during style recalculation – a cost `hash` does not address, since it shortens class names rather than
-reducing their count. Grouped trades some CSS duplication for the other side of that: a shared declaration is repeated
-in every group instead of deduping into one class. Which way that goes depends on whether your bottleneck is the CSS
-bundle or the HTML payload, so it is opt-in and atomic stays the default. It matters most under SSR and SSG, where the
-HTML is rarely cached and lands on every initial render. The
-[upstream proposal](https://github.com/chakra-ui/panda/pull/3531) has the benchmarks behind that.
-
-`css()` is the surface that always groups: the build reconstructs the call it will make, including a ternary's branches
-and the properties written beside them. A pattern groups when the build can see the whole call and falls back to atomic
-classes when it cannot, so the element keeps every declaration either way. A recipe is unaffected — its classes are
-named from its config rather than per property, so there is nothing for `cssMode` to group. The
-[cases that fall back](/docs/references/config#cssmode) are worth reading before you enable it.
 
 ### Faster builds
 
