@@ -14,6 +14,7 @@ import {
   collectRenderedElements,
   collectTokenReferences,
   keyframeNames,
+  tokensReachableFromJs,
 } from './token-references'
 
 const fileModifiedMap = new Map<string, number>()
@@ -254,7 +255,7 @@ export class Builder {
     // the source scan alone; re-parsing here would encode every style a second time.
     // Opting out still prunes the `@property` registrations; see `generate.ts`.
     if (ctx.config.pruneUnusedTokens) {
-      ctx.pruneTokens(sheet, collectTokenReferences(ctx, []))
+      ctx.pruneTokens(sheet, collectTokenReferences(ctx, []), tokensReachableFromJs(ctx))
     } else {
       ctx.pruneTokens(sheet)
     }

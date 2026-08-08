@@ -161,3 +161,32 @@ export function collectRenderedElements(ctx: BambooContext) {
 
   return found
 }
+
+/**
+ * Whether any source file reaches for a token from javascript.
+ *
+ * `styled-system/tokens` is generated into the project, so nothing outside it can import
+ * the artifact — which makes a scan of `include` a complete answer rather than a guess, and
+ * is why this can gate a default rather than needing an opt-in. When it comes back false,
+ * the declarations kept purely so `token()` can answer have no caller to answer.
+ */
+export function tokensReachableFromJs(ctx: BambooContext) {
+  const pattern = /\btoken(\.var)?\s*\(|styled-system\/tokens|['"]\.\.?\/[\w./-]*tokens['"]/
+
+  for (const file of ctx.getFiles()) {
+    const filePath = ctx.runtime.path.abs(ctx.config.cwd, file)
+
+    let content = ctx.project.getSourceFile(filePath)?.getFullText()
+    if (content == null) {
+      try {
+        content = ctx.runtime.fs.readFileSync(filePath)
+      } catch {
+        continue
+      }
+    }
+
+    if (pattern.test(content)) return true
+  }
+
+  return false
+}

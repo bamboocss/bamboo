@@ -314,7 +314,13 @@ interface CssgenOptions {
    * negative token resolves to `calc(var(--spacing-4) * -1)`, so every token with a
    * negative counterpart pins its own declaration. Spacing scales generate one per entry,
    * which keeps the whole scale whether or not the app uses it — on the default preset
-   * that is roughly a third of what survives pruning. There is no opt-out.
+   * that is roughly a third of what survives pruning.
+   *
+   * That exemption is now skipped entirely for a project that never reaches for a token from
+   * javascript. `styled-system/tokens` is generated into the project, so nothing outside it
+   * can import the artifact and a scan of `include` is a complete answer rather than a guess.
+   * Worth 13% of the stylesheet on one sandbox here, and nothing at all on another whose
+   * tokens the css genuinely reads.
    *
    * Setting this to `false` keeps every token declaration, but still drops the `@property`
    * registrations. Those are not tokens — nothing hands one to javascript and none appear

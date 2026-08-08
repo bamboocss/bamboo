@@ -757,8 +757,12 @@ One cost is worth knowing about. Tokens that javascript receives as a `var()` ra
 that `token()` answers correctly for any path at runtime – that covers virtual tokens, any token carrying a condition,
 and negative tokens. A negative token resolves to `calc(var(--spacing-4) * -1)`, so every token with a negative
 counterpart pins its own declaration. Spacing scales generate one negative per entry, which keeps the whole scale
-whether or not your app uses it. On the default preset that is roughly a third of what survives pruning, and there is no
-opt-out.
+whether or not your app uses it. On the default preset that is roughly a third of what survives pruning.
+
+That exemption is skipped entirely when no file under [`include`](#include) reaches for a token from JavaScript – no
+`token()`, no `token.var()`, no import of the tokens artifact. `styled-system/tokens` is generated into your project, so
+nothing outside it can import them, which makes the scan a complete answer rather than a guess. On the sandboxes here it
+is worth 13% of one stylesheet and nothing at all on another, whose tokens the CSS genuinely reads.
 
 ### prunePreflight
 

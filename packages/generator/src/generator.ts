@@ -100,7 +100,7 @@ export class Generator extends Context {
    *
    * `keep` carries references this cannot see for itself; see `collectTokenReferences`.
    */
-  pruneTokens = (sheet: Stylesheet, keep?: Set<string>) => {
+  pruneTokens = (sheet: Stylesheet, keep?: Set<string>, tokensReachableFromJs = true) => {
     // `pruneUnusedTokens` governs the token declarations only. The `@property` rules a
     // utility registers are pruned either way: the reason that flag exists is that a token
     // can be reached by a name this pass never sees -- `token.var()` with a path assembled
@@ -129,7 +129,11 @@ export class Generator extends Context {
       // alone. `pruneTokenVars` already handles this — it is the shape a theme declaring
       // no tokens at all arrives in.
       tokenVars: pruneVars ? this.getTokenVarNames() : new Set<string>(),
-      keep: new Set([...this.getAlwaysKeptTokenVars(), ...this.getThemeTokenVars(), ...(keep ?? [])]),
+      keep: new Set([
+        ...this.getAlwaysKeptTokenVars(tokensReachableFromJs),
+        ...this.getThemeTokenVars(),
+        ...(keep ?? []),
+      ]),
       // `@property` rules land in `base`, alongside `globalCss`. Only the ones a utility
       // registered are offered — a user's own, written through `globalVars`, are not.
       registeredProperties: new Set(this.utility.customProperties.keys()),
@@ -274,8 +278,16 @@ export class Generator extends Context {
    *   the *positive* token's declaration. Its own var is never declared, so the name has
    *   to come out of the value.
    */
-  private getAlwaysKeptTokenVars = () => {
+  private getAlwaysKeptTokenVars = (tokensReachableFromJs: boolean) => {
     const names = new Set<string>()
+
+    // The whole exemption exists to serve `token()`. `styled-system/tokens` is generated
+    // into the project, so nothing outside it can import them -- if no file under `include`
+    // reaches for a token from javascript, no caller exists to serve and the declarations
+    // are as prunable as any other. That matters most for the spacing scale: negatives are
+    // never declared themselves, so each one pins its positive counterpart and keeps the
+    // whole scale alive, which is about a third of what otherwise survives.
+    if (!tokensReachableFromJs) return names
 
     this.tokens.allTokens.forEach((token) => {
       const { isVirtual, isNegative, condition, var: varName } = token.extensions

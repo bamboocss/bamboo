@@ -8,6 +8,7 @@ import {
   collectRenderedElements,
   collectTokenReferences,
   keyframeNames,
+  tokensReachableFromJs,
 } from './token-references'
 
 async function build(ctx: BambooContext, artifactIds?: ArtifactId[]) {
@@ -29,7 +30,7 @@ async function build(ctx: BambooContext, artifactIds?: ArtifactId[]) {
   // Opting out still prunes the `@property` registrations, which need no reference scan —
   // nothing outside the stylesheet can reach one.
   if (ctx.config.pruneUnusedTokens) {
-    ctx.pruneTokens(sheet, collectTokenReferences(ctx, parsed.results))
+    ctx.pruneTokens(sheet, collectTokenReferences(ctx, parsed.results), tokensReachableFromJs(ctx))
   } else {
     ctx.pruneTokens(sheet)
   }
@@ -95,7 +96,7 @@ export async function generate(config: Config, configPath?: string) {
       // here: `parseFiles` would encode every style into the running encoder a second
       // time on each change.
       if (ctx.config.pruneUnusedTokens) {
-        ctx.pruneTokens(sheet, collectTokenReferences(ctx, []))
+        ctx.pruneTokens(sheet, collectTokenReferences(ctx, []), tokensReachableFromJs(ctx))
       }
 
       if (ctx.config.prunePreflight) {

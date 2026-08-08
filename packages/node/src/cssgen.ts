@@ -6,6 +6,7 @@ import {
   collectRenderedElements,
   collectTokenReferences,
   keyframeNames,
+  tokensReachableFromJs,
 } from './token-references'
 
 export interface CssGenOptions {
@@ -51,7 +52,7 @@ export const cssgen = async (ctx: BambooContext, options: CssGenOptions) => {
     // references reads every source file, so each stays behind its own flag.
     // Opting out still prunes the `@property` registrations; see `generate.ts`.
     if (!minimal && ctx.config.pruneUnusedTokens) {
-      ctx.pruneTokens(sheet, collectTokenReferences(ctx, results))
+      ctx.pruneTokens(sheet, collectTokenReferences(ctx, results), tokensReachableFromJs(ctx))
     } else if (!minimal) {
       ctx.pruneTokens(sheet)
     }
