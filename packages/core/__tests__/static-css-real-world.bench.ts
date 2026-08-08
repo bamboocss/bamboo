@@ -214,7 +214,31 @@ describe('static-css real-world performance', () => {
     },
   } as typeof fixtureDefaults
 
+  /**
+   * Shared by the benches that clone, and safe for them: `process` on a *cloned* instance
+   * rebuilds from `context.encoder.clone()` and never writes back.
+   *
+   * The warm bench below cannot use it. See `warmed`.
+   */
   const ctx = new Context(conf)
+
+  /**
+   * A context of its own for the warm bench, for the reason spelled out at length in
+   * `static-css-perf.bench.ts`: `process` run on the context's own instance accumulates into
+   * `context.encoder` permanently, and every `clone()` here copies that encoder — so a warm
+   * bench sharing `ctx` charges each of the six benches declared after it for state it
+   * accumulated, on top of reading its own cost wrong.
+   *
+   * It showed up here as noise rather than as an obviously wrong number: the warm bench read
+   * ±39.7% rme, well past the ±15% at which a bench can no longer show the 10% regression it
+   * exists to catch.
+   */
+  const warmed = (options: StaticCssOptions) => {
+    const own = new Context(conf)
+    // Primed outside the timed body: "subsequent processing" is the second call onward.
+    own.staticCss.process(options)
+    return own.staticCss
+  }
 
   // Real-world staticCss config from user
   const realWorldConfig: StaticCssOptions = {
@@ -356,11 +380,14 @@ describe('static-css real-world performance', () => {
     { warmupIterations: 5, iterations: 20 },
   )
 
+  const warmRealWorld = warmed(realWorldConfig)
+
   bench(
     'real-world config: subsequent processing (warm cache)',
     () => {
-      // Reuse same instance to test wildcard memoization benefit
-      ctx.staticCss.process(realWorldConfig)
+      // Its own already-primed instance, so this measures the wildcard memoization rather
+      // than the state left behind by whatever ran before it. See `warmed`.
+      warmRealWorld.process(realWorldConfig)
     },
     { warmupIterations: 5, iterations: 20 },
   )
