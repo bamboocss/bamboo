@@ -277,6 +277,15 @@ interface CssgenOptions {
   separator?: '_' | '=' | '-'
   /**
    * Whether to minify the generated css.
+   *
+   * Worth about 21% of the raw stylesheet and 5–7% gzipped on the example apps here. The
+   * gzip figure is the smaller one because compression has already collapsed the indentation
+   * before you get there — but unlike renaming what is emitted, it never comes out negative.
+   *
+   * Off by default so the generated stylesheet stays readable, and because most projects
+   * hand it to a bundler that minifies css in production anyway. Worth turning on if you
+   * ship `styled-system/styles.css` directly, or pass `--minify` to the CLI for one build.
+   *
    * @default false
    */
   minify?: boolean

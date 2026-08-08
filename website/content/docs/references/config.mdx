@@ -231,13 +231,32 @@ would result in:
 
 **Default**: `false`
 
-Whether to minify the generated css. This can be set to `true` to reduce the size of the generated css.
+Whether to minify the generated css.
 
 ```json
 {
-  "minify": false
+  "minify": true
 }
 ```
+
+Measured on the example apps in this repository:
+
+| app     |    raw |  gzip | brotli |
+| ------- | -----: | ----: | -----: |
+| vite-ts | -21.6% | -5.6% |  -4.8% |
+| svelte  | -20.4% | -6.6% |  -7.3% |
+
+The gzip column is much smaller than the raw one because compression has already collapsed the indentation before you
+get there. It is still worth taking where it applies: unlike renaming what is emitted, removing whitespace never comes
+out negative, so there is nothing to weigh it against.
+
+**Whether you need it.** If you import the stylesheet through a bundler, you probably do not – Vite, Next.js and any
+PostCSS setup with `cssnano` already minify CSS in their production build, and running it twice changes nothing. It
+matters when you ship `styled-system/styles.css` as-is: linked straight from an HTML file, served from a CDN, or
+published inside a component library. Nothing turns it on for you, so that case ships the indented output today.
+
+Pass `--minify` to [`bamboo cssgen`](/docs/references/cli#cssgen) to enable it for a single build without changing the
+config. [`bamboo debug`](/docs/references/cli#debug) always writes unminified css, whatever this is set to.
 
 ### hash
 
