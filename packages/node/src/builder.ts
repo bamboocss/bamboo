@@ -4,7 +4,7 @@ import { BambooError, uniq } from '@bamboocss/shared'
 import type { DiffConfigResult } from '@bamboocss/types'
 import { existsSync, statSync } from 'fs'
 import { normalize, resolve } from 'path'
-import type { Message, Root } from 'postcss'
+import postcss, { type Message, type Root } from 'postcss'
 import { codegen } from './codegen'
 import { loadConfigAndCreateContext } from './config'
 import { BambooContext } from './create-context'
@@ -12,6 +12,34 @@ import { parseDependency } from './parse-dependency'
 import { collectKeyframeReferences, collectTokenReferences, keyframeNames } from './token-references'
 
 const fileModifiedMap = new Map<string, number>()
+
+/**
+ * Bracket the css `write` injects, so a second pass replaces it instead of adding to it.
+ *
+ * Comments rather than a node flag: the root can be stringified and re-parsed between two
+ * plugins in the same chain, and nothing on the node itself survives that round trip.
+ */
+const INJECTED_START = 'bamboocss:start'
+const INJECTED_END = 'bamboocss:end'
+
+/**
+ * Remove a previously injected block, markers included.
+ *
+ * Bounded by the end marker rather than running to the end of the root, so anything a later
+ * plugin appended after the injection is left where it is. A start marker with no end -- the
+ * shape a minifier that strips comments unevenly could leave behind -- removes nothing,
+ * which is the safe direction: a duplicate is a size problem, dropping a user's css is not.
+ */
+function dropPreviousInjection(root: Root) {
+  const nodes = root.nodes ?? []
+  const start = nodes.findIndex((n) => n.type === 'comment' && n.text === INJECTED_START)
+  if (start < 0) return
+
+  const end = nodes.findIndex((n, i) => i > start && n.type === 'comment' && n.text === INJECTED_END)
+  if (end < 0) return
+
+  for (const node of nodes.slice(start, end + 1)) node.remove()
+}
 
 interface FileChanges {
   changes: Map<string, FileMeta>
@@ -217,7 +245,18 @@ export class Builder {
 
     const css = ctx.getCss(sheet)
 
+    // Replace a previous injection rather than adding to it. `write` appends, and what it
+    // appends contains the `@layer` declaration that `isValidRoot` looks for -- so the guard
+    // deciding whether to inject is satisfied by the result of injecting. A root that
+    // reaches this twice, which a duplicated plugin registration or a chain that re-processes
+    // the emitted css both do, otherwise accumulates a full copy each time: 101 rules become
+    // 201, and nothing downstream takes them apart again, because each copy is internally
+    // consistent and only duplicated against the other.
+    dropPreviousInjection(root)
+
+    root.append(postcss.comment({ text: INJECTED_START }))
     root.append(css)
+    root.append(postcss.comment({ text: INJECTED_END }))
   }
 
   registerDependency = (fn: (dep: Message) => void) => {
