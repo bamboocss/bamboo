@@ -24,19 +24,27 @@ The cssnano majors raise their engine floor to `^22.11.0 || ^24.11.0 || >=26.0`.
 is not enforced at install time, but a build on Node 24.10 or older 24.x runs these plugins outside their supported
 range.
 
-**Minified CSS changes**
+**Minified `globalCss` changes**
 
 `postcss-minify-selectors` 8 adds `convertToIs`, which factors a shared prefix or suffix in a selector list into
-`:is(...)`. It is on:
+`:is(...)` where that shortens it. It is on, and it reaches `globalCss` — a selector list nested under a parent is the
+common case:
 
 ```diff
-- .checkbox__root--size_lg .checkbox__control,.checkbox__root--size_md .checkbox__control { width: 10px }
-+ :is(.checkbox__root--size_lg,.checkbox__root--size_md) .checkbox__control { width: 10px }
+  '.card': { '& h1, & h2': { fontWeight: 'bold' } }
+
+- .card h1,.card h2 { font-weight: … }
++ .card :is(h1,h2) { font-weight: … }
 ```
 
-This reaches slot recipe variants and any condition-prefixed rules that `merge-rules` combined, which is where repeated
-selector structure accumulates. Class names and hashes are unchanged, and `:is()` takes the highest specificity of its
-arguments, so the folded rule matches and ranks exactly as the list did. Unminified output is untouched.
+Class names and hashes are unchanged, `:is()` takes the highest specificity of its arguments so the folded rule matches
+and ranks exactly as the list did, and unminified output is untouched.
+
+Atomic and recipe output is unaffected, and not incidentally: each atomic class carries a unique declaration, so
+`merge-rules` never combines two into a list with shared structure, and a scoped slot variant is a plain selector inside
+an `@scope` block rather than a list. Measured over every stylesheet this repo generates — 59 selector lists, none
+foldable, zero bytes moved. The fold is worth having for authored CSS; it is not a size win on generated CSS, and
+nothing here should be read as claiming one.
 
 **The browser baseline is now fixed, and `@scope` sets it**
 
