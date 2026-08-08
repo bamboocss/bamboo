@@ -4,7 +4,7 @@ import { BambooError, uniq } from '@bamboocss/shared'
 import type { DiffConfigResult } from '@bamboocss/types'
 import { existsSync, statSync } from 'fs'
 import { normalize, resolve } from 'path'
-import postcss, { type Message, type Root } from 'postcss'
+import type { Message, Root } from 'postcss'
 import { codegen } from './codegen'
 import { loadConfigAndCreateContext } from './config'
 import { BambooContext } from './create-context'
@@ -14,31 +14,23 @@ import { collectKeyframeReferences, collectTokenReferences, keyframeNames } from
 const fileModifiedMap = new Map<string, number>()
 
 /**
- * Bracket the css `write` injects, so a second pass replaces it instead of adding to it.
+ * The declaration that says generated css is already present in a root.
  *
- * Comments rather than a node flag: the root can be stringified and re-parsed between two
- * plugins in the same chain, and nothing on the node itself survives that round trip.
- */
-const INJECTED_START = 'bamboocss:start'
-const INJECTED_END = 'bamboocss:end'
-
-/**
- * Remove a previously injected block, markers included.
+ * `generateGlobalCss` emits it unconditionally and `appendBaselineCss` always reaches that
+ * artifact, so anything carrying it holds a copy of the sheet however it got there — written
+ * by `write` on an earlier pass, or inlined from `styles.css` by `postcss-import`.
  *
- * Bounded by the end marker rather than running to the end of the root, so anything a later
- * plugin appended after the injection is left where it is. A start marker with no end -- the
- * shape a minifier that strips comments unevenly could leave behind -- removes nothing,
- * which is the safe direction: a duplicate is a size problem, dropping a user's css is not.
+ * A declaration rather than a comment because it has to survive the css being minified
+ * between the copy landing and this check running, which a comment does not.
  */
-function dropPreviousInjection(root: Root) {
-  const nodes = root.nodes ?? []
-  const start = nodes.findIndex((n) => n.type === 'comment' && n.text === INJECTED_START)
-  if (start < 0) return
+const GENERATED_SENTINEL = '--made-with-bamboo'
 
-  const end = nodes.findIndex((n, i) => i > start && n.type === 'comment' && n.text === INJECTED_END)
-  if (end < 0) return
-
-  for (const node of nodes.slice(start, end + 1)) node.remove()
+function hasGeneratedCss(root: Root) {
+  let found = false
+  root.walkDecls(GENERATED_SENTINEL, () => {
+    found = true
+  })
+  return found
 }
 
 interface FileChanges {
@@ -225,6 +217,29 @@ export class Builder {
   }
 
   write = (root: Root) => {
+    // A root that already holds generated css gets nothing further. `isValidRoot` only reads
+    // the `@layer` statement, and that statement is ordinary css -- listing every layer in
+    // order is what a project has to write once it has layers of its own beside bamboo's. So
+    // a file that both imports `styles.css` and declares the order satisfies the guard while
+    // already holding the sheet, and appending gives it a second copy on every build:
+    //
+    //     @import '#app/styled-system/styles.css';                    <- copy 1, inlined by
+    //     @layer reset, base, tokens, recipes, utilities, overrides;     postcss-import first
+    //
+    // Vite puts `postcss-import` at the front of the chain, so the artifact is already inlined
+    // by the time this runs. The duplication then hides: a minifier merges the two `@layer X{}`
+    // blocks and dedupes most of the collision, leaving a fraction of it behind -- 11% of one
+    // production stylesheet, which reads as a rounding error rather than as the whole sheet
+    // twice. Nothing else catches it either, since each copy is internally consistent and only
+    // duplicated against the other.
+    if (hasGeneratedCss(root)) {
+      logger.warn(
+        'postcss',
+        'Generated css is already present in this file, so nothing was injected. It is imported and generated here at once — keep the `@import` of `styles.css` or the `@layer` statement that the postcss plugin injects at, not both.',
+      )
+      return
+    }
+
     const ctx = this.getContextOrThrow()
     const sheet = ctx.createSheet()
     ctx.appendBaselineCss(sheet)
@@ -245,18 +260,9 @@ export class Builder {
 
     const css = ctx.getCss(sheet)
 
-    // Replace a previous injection rather than adding to it. `write` appends, and what it
-    // appends contains the `@layer` declaration that `isValidRoot` looks for -- so the guard
-    // deciding whether to inject is satisfied by the result of injecting. A root that
-    // reaches this twice, which a duplicated plugin registration or a chain that re-processes
-    // the emitted css both do, otherwise accumulates a full copy each time: 101 rules become
-    // 201, and nothing downstream takes them apart again, because each copy is internally
-    // consistent and only duplicated against the other.
-    dropPreviousInjection(root)
-
-    root.append(postcss.comment({ text: INJECTED_START }))
+    // What this appends carries the sentinel, so a second pass over the same root takes the
+    // branch above rather than adding to it.
     root.append(css)
-    root.append(postcss.comment({ text: INJECTED_END }))
   }
 
   registerDependency = (fn: (dep: Message) => void) => {

@@ -3,30 +3,39 @@ import { describe, expect, test } from 'vitest'
 import { Builder } from '../src/builder'
 
 /**
- * `write` appends, and what it appends carries the `@layer` declaration that `isValidRoot`
- * looks for — so the guard deciding whether to inject is satisfied by the result of
- * injecting. A root that reaches `write` twice, which a duplicated plugin registration or a
- * chain that re-processes the emitted css both do, used to accumulate a full copy each time.
- * Nothing downstream took them apart: each copy is internally consistent and only duplicated
- * against the other, which is how a production stylesheet came to carry 402 identical rules.
+ * `isValidRoot` reads only the `@layer` statement, and that statement is ordinary css —
+ * listing every layer in order is what a project has to write once it has layers of its own
+ * beside bamboo's. So a file that both imports `styles.css` and declares the order satisfies
+ * the guard while already holding the sheet, and `write` appending gave it a second copy on
+ * every build.
+ *
+ * It hid well. Vite puts `postcss-import` at the front of the chain, so the artifact is
+ * inlined before any plugin runs; then a minifier merges the two `@layer X{}` blocks and
+ * dedupes most of the collision, leaving a fraction behind — 11% of one production
+ * stylesheet, which reads as a rounding error rather than as the whole sheet twice.
  */
 
-const ENTRY = `@layer reset, base, tokens, recipes, utilities;\n.app{color:red}`
+const LAYER_STATEMENT = '@layer reset, base, tokens, recipes, utilities, overrides, syntaxHighlighter;'
+
+/** Whatever `write` emits carries the sentinel, so a generated copy is recognisable. */
+const GENERATED = `@layer base{:root{--made-with-bamboo:'🎋'}}@layer utilities{.fromArtifact{color:red}}`
 
 let generation = 0
 
 /** Stand in for a resolved context, so this exercises `write` rather than a whole build. */
-const stubContext = () => {
-  return {
-    createSheet: () => ({}),
-    appendBaselineCss: () => {},
-    pruneTokens: () => {},
-    pruneKeyframes: () => {},
-    config: {},
-    // Distinguishable per call, so an accumulated copy is visible rather than merely doubled.
-    getCss: () => `@layer utilities{.gen${generation++}{color:blue}}`,
-  }
-}
+const stubContext = () => ({
+  createSheet: () => ({}),
+  appendBaselineCss: () => {},
+  pruneTokens: () => {},
+  pruneKeyframes: () => {},
+  config: {},
+  isValidLayerParams: (params: string) => {
+    const names = new Set(params.split(',').map((n) => n.trim()))
+    return names.size >= 5 && ['reset', 'base', 'tokens', 'recipes', 'utilities'].every((n) => names.has(n))
+  },
+  // Distinguishable per call, so a second copy is visible rather than merely doubling a count.
+  getCss: () => `@layer base{:root{--made-with-bamboo:'🎋'}}@layer utilities{.gen${generation++}{color:blue}}`,
+})
 
 const write = (root: Root) => {
   const builder = new Builder()
@@ -34,63 +43,51 @@ const write = (root: Root) => {
   builder.write(root)
 }
 
-const countRules = (css: string) => (css.match(/\{/g) ?? []).length
+const sentinels = (css: string) => (css.match(/--made-with-bamboo/g) ?? []).length
 
 describe('builder.write', () => {
-  test('replaces its previous injection rather than adding to it', () => {
-    const root = postcss.parse(ENTRY)
+  /** The reported shape: `postcss-import` inlined the artifact, then the order is declared. */
+  test('injects nothing when the artifact is already imported', () => {
+    const root = postcss.parse(`${GENERATED}\n${LAYER_STATEMENT}`)
+
+    write(root)
+
+    expect(sentinels(root.toString())).toBe(1)
+    expect(root.toString()).not.toContain('.gen')
+    expect(root.toString()).toContain('.fromArtifact')
+  })
+
+  test('still injects into a file that only declares the layers', () => {
+    const root = postcss.parse(`${LAYER_STATEMENT}\n.app{color:red}`)
+
+    write(root)
+
+    expect(sentinels(root.toString())).toBe(1)
+    expect(root.toString()).toContain('.gen')
+    expect(root.toString()).toContain('.app{color:red}')
+  })
+
+  /**
+   * The sentinel is a declaration rather than a comment for this reason: the copy already in
+   * the root may have been minified before this runs, and comments do not survive that.
+   */
+  test('recognises a generated copy that has been minified', () => {
+    const root = postcss.parse(`${GENERATED.replace(/\s+/g, '')}${LAYER_STATEMENT}`)
+
+    write(root)
+
+    expect(root.toString()).not.toContain('.gen')
+  })
+
+  /** A second pass over one root — a plugin registered twice — is the same problem. */
+  test('does not accumulate when the same root is written twice', () => {
+    const root = postcss.parse(`${LAYER_STATEMENT}\n.app{color:red}`)
 
     write(root)
     const once = root.toString()
-
-    write(root)
-    const twice = root.toString()
-
-    expect(countRules(twice)).toBe(countRules(once))
-    // The second pass's css is what survives; the first pass's is gone.
-    expect(twice).toContain('.gen1')
-    expect(twice).not.toContain('.gen0')
-  })
-
-  test('keeps the user css that was there before', () => {
-    const root = postcss.parse(ENTRY)
-
-    write(root)
     write(root)
 
-    expect(root.toString()).toContain('.app{color:red}')
-    expect(root.toString()).toContain('@layer reset, base, tokens, recipes, utilities;')
-  })
-
-  /**
-   * The markers bound the removal, so a plugin that appended after the injection keeps its
-   * nodes. Running to the end of the root instead would eat them.
-   */
-  test('leaves anything appended after the injection alone', () => {
-    const root = postcss.parse(ENTRY)
-
-    write(root)
-    root.append('.appended{color:green}')
-    write(root)
-
-    expect(root.toString()).toContain('.appended{color:green}')
-  })
-
-  /**
-   * A start marker with no end is the shape an uneven comment strip leaves behind. Removing
-   * nothing is the safe direction: a duplicate costs bytes, dropping a user's css does not
-   * fail loudly.
-   */
-  test('removes nothing when the end marker is missing', () => {
-    const root = postcss.parse(ENTRY)
-    write(root)
-    root.walkComments((c) => {
-      if (c.text === 'bamboocss:end') c.remove()
-    })
-    const before = root.toString()
-
-    write(root)
-
-    expect(root.toString()).toContain(before.replace(/\s+$/, ''))
+    expect(root.toString()).toBe(once)
+    expect(sentinels(root.toString())).toBe(1)
   })
 })
