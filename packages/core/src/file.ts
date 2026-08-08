@@ -37,6 +37,11 @@ export class FileEngine {
     return `export type { ${mod} } from '${this.__extDts(file)}';`
   }
 
+  /** Re-export named bindings without binding them locally. */
+  reExport(mod: string, file: string): string {
+    return `export { ${mod} } from '${this.ext(file)}';`
+  }
+
   exportStar(file: string): string {
     return `export * from '${this.ext(file)}';`
   }

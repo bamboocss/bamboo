@@ -3,6 +3,8 @@ import type { AffectedArtifacts, Artifact, ArtifactFilters, ArtifactId } from '@
 import outdent from 'outdent'
 import { generateConditions } from './js/conditions'
 import { generateCssFn } from './js/css-fn'
+import { generateMergeCssFn } from './js/merge-css'
+import { generateUtilitiesTable } from './js/utilities-table'
 import { generateCvaFn } from './js/cva'
 import { generateCx } from './js/cx'
 import { generateHelpers } from './js/helpers'
@@ -112,9 +114,16 @@ function setupGeneratedSystemTypes(ctx: Context): Artifact {
 function setupCss(ctx: Context): Artifact {
   const code = generateCssFn(ctx)
   const conditions = generateConditions(ctx)
+  // `mergeCss` lives apart from the css engine so `cva` can take the merge without the
+  // property→className table it has no use for. See `generateMergeCssFn`.
+  const mergeCss = generateMergeCssFn(ctx)
+  const utilities = generateUtilitiesTable(ctx)
 
   const files = [
     { file: ctx.file.ext('conditions'), code: conditions.js },
+    { file: ctx.file.ext('utilities'), code: utilities.js },
+    { file: ctx.file.ext('merge-css'), code: mergeCss.js },
+    { file: ctx.file.extDts('merge-css'), code: mergeCss.dts },
     { file: ctx.file.ext('css'), code: code.js },
     { file: ctx.file.extDts('css'), code: code.dts },
   ]

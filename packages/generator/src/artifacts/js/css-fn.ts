@@ -4,7 +4,7 @@ import { outdent } from 'outdent'
 export function generateCssFn(ctx: Context) {
   const { utility, hash, prefix, conditions } = ctx
 
-  const { separator, getPropShorthands } = utility
+  const { separator } = utility
 
   return {
     dts: outdent`
@@ -71,72 +71,13 @@ export function generateCssFn(ctx: Context) {
     `,
     js: outdent`
     ${ctx.file.import(
-      'cloneStyles, createCssUncached, createMergeCss, hypenateProperty, leafClass, memo, viewTransitionClassName, withoutSpace',
+      'cloneStyles, createCssUncached, hypenateProperty, leafClass, memo, viewTransitionClassName, withoutSpace',
       '../helpers',
     )}
     ${ctx.file.import('sortConditions, finalizeConditions', './conditions')}
-
-    const utilities = "${utility
-      .entries()
-      .map(([prop, className]) => {
-        const shorthandList = getPropShorthands(prop)
-
-        // encode utility as:
-        // prop:className/shorthand1/shorthand2/shorthand3
-
-        // ex without shorthand
-        // { prop: 'aspectRatio', className: 'aspect', result: 'aspectRatio:aspect' }
-
-        // ex: with 1 shorthand
-        // { prop: 'flexDirection', className: 'flex', result: 'flexDirection:flex/flexDir }
-
-        // ex: with 1 shorthand with same shorthand as className
-        // { prop: 'position', className: 'pos', result: 'position:pos/1' }
-
-        // ex: with more than 1 shorthand
-        // { prop: 'marginInlineStart', className: 'ms', result: 'marginInlineStart:ms/1/marginStart' }
-        const result = [
-          prop,
-          [
-            className,
-            shorthandList.length
-              ? // mark shorthand equal to className as 1 to save a few bytes
-                shorthandList.map((shorthand) => (shorthand === className ? 1 : shorthand)).join('/')
-              : null,
-          ]
-            .filter(Boolean)
-            .join('/'),
-        ].join(':')
-
-        return result
-      })
-      .join(',')}"
-
-    const classNameByProp = new Map()
-    ${
-      utility.hasShorthand
-        ? outdent`
-    const shorthands = new Map()
-    utilities.split(',').forEach((utility) => {
-      const [prop, meta] = utility.split(':')
-      const [className, ...shorthandList] = meta.split('/')
-      classNameByProp.set(prop, className)
-      if (shorthandList.length) {
-        shorthandList.forEach((shorthand) => {
-          shorthands.set(shorthand === '1' ? className : shorthand, prop)
-        })
-      }
-    })
-
-    const resolveShorthand = (prop) => shorthands.get(prop) || prop
-    `
-        : outdent`
-    utilities.split(',').forEach((utility) => {
-      const [prop, className] = utility.split(':')
-      classNameByProp.set(prop, className)
-    })
-    `
-    }
+    ${ctx.file.import('classNameByProp, resolveShorthand', './utilities')}
+    ${ctx.file.reExport('mergeCss, assignCss, mergeCssUncached', './merge-css')}
+    ${ctx.file.import('mergeCss, mergeCssUncached', './merge-css')}
 
     const context = {
       ${hash.className ? 'hash: true,' : ''}
@@ -193,7 +134,6 @@ export function generateCssFn(ctx: Context) {
     // still returns a class, exactly as \`css()\` does for a value it never saw.
     export const viewTransition = (options) => viewTransitionClassName(options, ${JSON.stringify(prefix.className ?? '')})
 
-    export const { mergeCss, assignCss, mergeCssUncached } = createMergeCss(context)
-    `,
+`,
   }
 }

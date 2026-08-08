@@ -23,6 +23,9 @@ describe('setup-artifacts', () => {
       [
         [
           "css/conditions.mjs",
+          "css/utilities.mjs",
+          "css/merge-css.mjs",
+          "css/merge-css.d.ts",
           "css/css.mjs",
           "css/css.d.ts",
         ],
@@ -166,6 +169,9 @@ describe('setup-artifacts', () => {
         ],
         [
           "css/conditions.mjs",
+          "css/utilities.mjs",
+          "css/merge-css.mjs",
+          "css/merge-css.d.ts",
           "css/css.mjs",
           "css/css.d.ts",
         ],
