@@ -1,5 +1,17 @@
 # @bamboocss/generator
 
+## 1.20.3
+
+### Patch Changes
+
+- Updated dependencies [fa63a80]
+  - @bamboocss/core@1.20.3
+  - @bamboocss/is-valid-prop@1.20.3
+  - @bamboocss/logger@1.20.3
+  - @bamboocss/shared@1.20.3
+  - @bamboocss/token-dictionary@1.20.3
+  - @bamboocss/types@1.20.3
+
 ## 1.20.2
 
 ### Patch Changes
