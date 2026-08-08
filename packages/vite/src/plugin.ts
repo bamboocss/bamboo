@@ -11,9 +11,18 @@ export interface BambooVitePluginOptions {
    * Rewrite statically-resolvable `css()` and pattern calls into literal class
    * strings, so they cost nothing at runtime.
    *
-   * Off by default, and build-only — see the "Source transformation" guide for why.
+   * On by default, and build-only — it never runs in `vite dev`, where the parse would land
+   * on every hot update and a dev bundle gains nothing from pre-resolved calls.
    *
-   * @default false
+   * What it buys is per-call CPU, not bytes: the runtime still ships, because dropping it
+   * needs *every* call site in the graph to fold. Bundle size moves slightly against you —
+   * measured at -0.8% raw and +1.0% gzipped on `sandbox/runtime-perf`, since distinct class
+   * literals compress worse than the repeated `css({ … })` calls they replace. Set it to
+   * `false` if that trade is the wrong way round for you, or to keep builds faster: folding
+   * re-parses each module with `ts-morph`, roughly 0.3ms for a small component and 3ms for a
+   * 147-line file with 24 call sites.
+   *
+   * @default true
    */
   transform?: boolean
   /**
@@ -111,7 +120,7 @@ const formatSkipped = (id: string, skipped: SkippedCall[]) => {
 export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin => {
   // `partial` is forwarded undefined rather than defaulted here, so `foldSource` stays the
   // one place its default is written down.
-  const { transform = false, partial, configPath, cwd, reportSkipped = false, reportSummary = true } = options
+  const { transform = true, partial, configPath, cwd, reportSkipped = false, reportSummary = true } = options
 
   /** Totals across the build, for the summary. */
   const totals = { folded: 0, files: 0, filesWithFolds: 0, skipped: new Map<string, number>() }

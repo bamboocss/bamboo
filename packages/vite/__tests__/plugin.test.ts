@@ -7,11 +7,11 @@ import { bamboocss, isGeneratedOutput } from '../src/plugin'
 /**
  * The plugin wrapper, separate from the fold itself.
  *
- * These assert the contract a user relies on before any config is even loaded: that
- * the transform is opt-in, that it is build-only, and that it does not reach for a
- * bamboo config when it has nothing to do. A regression in any of those would either
- * silently rewrite code nobody asked to rewrite, or make every Vite project pay for
- * config resolution it does not need.
+ * These assert the contract a user relies on before any config is even loaded: that the
+ * transform is build-only, and that turning it off costs nothing — no rewriting, and no
+ * reaching for a bamboo config. The fold is on by default now, so the opt-*out* is what
+ * has to keep working: a project that sets `transform: false` must not pay for config
+ * resolution it does not need.
  */
 const callTransform = async (plugin: ReturnType<typeof bamboocss>, code: string, id: string) => {
   const hook = plugin.transform
@@ -37,21 +37,32 @@ describe('plugin contract', () => {
     expect(bamboocss({ transform: true }).apply).toBe('build')
   })
 
-  test('transform is off by default', async () => {
-    const plugin = bamboocss()
+  test('transform: false rewrites nothing', async () => {
+    const plugin = bamboocss({ transform: false })
 
-    // No config is loaded and nothing is rewritten. If this ever returned a result it
-    // would mean opting in was no longer required.
+    // No config is loaded and nothing is rewritten. If this ever returned a result the
+    // opt-out would have stopped working.
     await expect(callTransform(plugin, SOURCE, '/app/src/a.tsx')).resolves.toBeNull()
   })
 
   test('buildStart does not load config when the transform is off', async () => {
-    const plugin = bamboocss()
+    const plugin = bamboocss({ transform: false })
     const hook = plugin.buildStart
     const handler = typeof hook === 'function' ? hook : hook?.handler
 
     // Would throw trying to resolve a bamboo config if it did any work.
     await expect(handler?.call({} as never, {} as never)).resolves.toBeUndefined()
+  })
+
+  /** The default itself, so flipping it back is a deliberate edit rather than a silent one. */
+  test('transform is on by default', async () => {
+    const plugin = bamboocss()
+    const hook = plugin.buildStart
+    const handler = typeof hook === 'function' ? hook : hook?.handler
+
+    // With the transform on, `buildStart` resolves a config — and there is none at this
+    // cwd, so it rejects. Reaching for one at all is the observation.
+    await expect(handler?.call({} as never, {} as never)).rejects.toBeTruthy()
   })
 })
 

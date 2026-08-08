@@ -44,7 +44,8 @@ describe('vite plugin, real build', () => {
   }, 60_000)
 
   test('leaves the bundle alone when the transform is off', async () => {
-    const code = await bundle({})
+    // Explicit, now that the fold is on by default: this is the opt-out being exercised.
+    const code = await bundle({ transform: false })
 
     // Still the factory call, so nothing folded.
     expect(code).toContain('styled')
