@@ -29,6 +29,13 @@ import type { TransformResult } from './types'
 import { colorMix } from './color-mix'
 import { withCssUnit } from './stringify'
 
+/**
+ * A value shaped like a token path: dot-separated segments, the first starting with a letter
+ * and the rest with a letter or digit. `red.300` matches, `0.5` and `1.5rem` do not, which is
+ * the distinction that keeps numeric values out of `warnUnresolvedToken`.
+ */
+const TOKEN_PATH = /^[a-zA-Z][\w-]*(?:\.[a-zA-Z0-9][\w-]*)+$/
+
 export interface UtilityOptions {
   config?: UtilityConfig
   tokens: TokenDictionary
@@ -622,6 +629,74 @@ export class Utility {
     return { [prop]: seen.length > 1 ? seen.join(FALLBACK_SEPARATOR) : seen[0] }
   }
 
+  /**
+   * The value keys a property accepts, or `undefined` where it accepts anything.
+   *
+   * Built through `getPropertyValues`, which normalises all four shapes of `values` — a
+   * category name, an array, a function, an object — to one map. Going through it rather
+   * than reading `valuesByCategory` directly is what makes the check cover `margin` and
+   * `width`, whose values are functions, and the compositions, whose values are arrays.
+   * Reading the category directly covered `padding` and not `margin`, which is a worse
+   * failure than covering neither: it teaches you the warning can be trusted.
+   *
+   * Memoised because `getPropertyValues` is not, and this sits on the hottest build path.
+   */
+  private knownValues = new Map<string, Set<string> | undefined>()
+
+  private getKnownValues = (key: string): Set<string> | undefined => {
+    const cached = this.knownValues.get(key)
+    if (cached !== undefined || this.knownValues.has(key)) return cached
+
+    const config = this.configs.get(key)
+    const values = config?.values
+    // `{ type: … }` declares a value space rather than enumerating one, so nothing is unknown.
+    const enumerated = !!values && !(!isString(values) && !Array.isArray(values) && !isFunction(values) && values.type)
+
+    const result = enumerated ? new Set(Object.keys(this.getPropertyValues(config!) ?? {})) : undefined
+    this.knownValues.set(key, result)
+    return result
+  }
+
+  private warnedTokens = new Set<string>()
+
+  /**
+   * Report a value shaped like a token path that resolved to nothing.
+   *
+   * Every branch of `getPropertyRawValue` ends in `|| value`, so an unknown path is handed
+   * straight through and `background: 'accent.default'` ships as `background: accent.default`.
+   * That parses, so nothing downstream objects; the browser drops the declaration at compute
+   * time and the style is simply absent. It surfaces as "this colour never applied", a long
+   * way from the typo that caused it.
+   *
+   * Membership rather than "did the resolver hand it back unchanged": for an array of
+   * values the resolver returns the value either way, so identity would report every valid
+   * composition — `textStyle: 'headline.h9'` — as a mistake.
+   *
+   * A property with an empty set is left alone. Nothing is enumerated, so every value is a
+   * literal and none of them can be wrong.
+   */
+  private warnUnresolvedToken = (key: string, value: string) => {
+    // Cheapest test first: this runs for every value the build transforms, and most of them
+    // have no dot at all.
+    if (!value.includes('.') || !TOKEN_PATH.test(value)) return
+
+    const known = this.getKnownValues(key)
+    if (!known || known.size === 0 || known.has(value)) return
+
+    // One report per mistake. `transform` runs once per condition, so a single bad token
+    // under `base`, `_hover` and two breakpoints is one typo and four identical warnings.
+    const id = `${key}:${value}`
+    if (this.warnedTokens.has(id)) return
+    this.warnedTokens.add(id)
+
+    const category = this.configs.get(key)?.values
+    const where = isString(category) ? ` Check the path against your \`${category}\` tokens.` : ''
+    logger.warn(
+      'utility',
+      `Unknown token \`${value}\` in \`${key}: ${value}\`. It is emitted as written, which the browser will drop.${where} Write \`[${value}]\` if it is meant as a literal.`,
+    )
+  }
+
   transform = (prop: string, value: string | undefined): TransformResult => {
     if (value == null) {
       return { className: '', styles: {} }
@@ -647,6 +722,14 @@ export class Utility {
     if (!fallbackValues && isFallbackCall(value)) {
       logger.warn('utility', `Malformed \`fallback(...)\` in \`${key}: ${value}\`. Check for an unbalanced ( or [.`)
       return { className: this.getOrCreateClassName(key, withoutSpace(value)), styles: {} }
+    }
+
+    // Each candidate separately, or `fallback(accent.default, red.300)` reports nothing: the
+    // whole string has parentheses so it is not path-shaped, and the working candidate hides
+    // the broken one for good. That is the same silent failure as the bare case, wearing a
+    // fallback that makes it look deliberate.
+    for (const candidate of fallbackValues ?? [value]) {
+      if (isString(candidate)) this.warnUnresolvedToken(key, candidate)
     }
 
     return compact({
