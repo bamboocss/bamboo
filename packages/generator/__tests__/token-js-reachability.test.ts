@@ -7,9 +7,15 @@ import { describe, expect, test } from 'vitest'
  * That last case is the expensive one — a negative is never declared itself, so it pins its
  * positive and keeps the whole spacing scale alive whether or not anything uses it.
  *
- * The exemption only has a point if some caller exists. `styled-system/tokens` is generated
- * into the project, so nothing outside it can import the artifact, which makes a scan of
- * `include` a complete answer rather than a guess — and is why this can gate a default.
+ * The exemption only has a point if some caller exists. The tokens artifact is generated into
+ * the project rather than installed, so the import is written in the project's own source and
+ * a scan of `include` sees it — which is what makes a scan a usable answer here.
+ *
+ * Not a complete one, and this file is the wrong place to look for that. `include` scopes
+ * style extraction rather than everything that may import, so a build script or a sibling
+ * package calling `token()` is outside it, as is a binding renamed away from `token`. Those
+ * gaps and the shapes the scan does cover live in `node/__tests__/token-references.test.ts`;
+ * what is asserted here is only what the gate does to the emitted declarations once decided.
  */
 const build = (tokensReachableFromJs: boolean) => {
   const ctx: any = createGeneratorContext({

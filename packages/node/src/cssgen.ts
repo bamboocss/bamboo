@@ -27,6 +27,18 @@ export const cssgen = async (ctx: BambooContext, options: CssGenOptions) => {
 
     ctx.appendCssOfType(type, sheet)
 
+    // The token and keyframe passes cannot run here: both decide reachability by reading
+    // the finished stylesheet, and this branch emits one artifact, so everything would look
+    // unreachable. `prunePreflight` reads the source instead of the sheet, so a partial one
+    // costs it nothing -- and without this the `reset.css` from `cssgen preflight` differs
+    // from the one `cssgen --splitting` writes for the same project.
+    //
+    // Note this branch never calls `parseFiles`, which `collectRenderedElements` does not
+    // need: it reads the files itself rather than anything parsing leaves behind.
+    if (type === 'preflight' && ctx.config.prunePreflight) {
+      ctx.prunePreflight(sheet, collectRenderedElements(ctx))
+    }
+
     if (outfile) {
       const css = ctx.getCss(sheet)
       logger.info('css', ctx.runtime.path.resolve(outfile))

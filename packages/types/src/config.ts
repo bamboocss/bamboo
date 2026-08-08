@@ -326,10 +326,18 @@ interface CssgenOptions {
    * that is roughly a third of what survives pruning.
    *
    * That exemption is now skipped entirely for a project that never reaches for a token from
-   * javascript. `styled-system/tokens` is generated into the project, so nothing outside it
-   * can import the artifact and a scan of `include` is a complete answer rather than a guess.
-   * Worth 13% of the stylesheet on one sandbox here, and nothing at all on another whose
-   * tokens the css genuinely reads.
+   * javascript. The tokens artifact is generated into the project rather than installed, so
+   * the import is written in your own source and a scan of `include` finds it — a call, or an
+   * import of any module the artifact could be. On the example apps here that is worth up to
+   * 20% of the stylesheet raw and 13% gzipped, and nothing at all on the two whose tokens the
+   * css genuinely reads.
+   *
+   * The scan reads `include`, which scopes style extraction rather than everything that may
+   * import — so a script, a config, or a sibling workspace package that calls `token()` is
+   * not covered, nor is a binding renamed away from `token`, as in `const t = token`. Both
+   * are rare and neither reports itself: the declaration goes and the call returns a `var()`
+   * nothing declares. Setting this to `false` keeps every declaration if you are in that
+   * position.
    *
    * Setting this to `false` keeps every token declaration, but still drops the `@property`
    * registrations. Those are not tokens — nothing hands one to javascript and none appear
@@ -361,8 +369,8 @@ interface CssgenOptions {
    *
    * Two thirds of the reset is bound to specific elements — 41 of them, covering `table`,
    * `pre`, `kbd`, `optgroup` and the rest of the long tail. The reset is a fixed size, so it
-   * dominates a small stylesheet: a third of one sandbox's css here and nearly half of
-   * another's, of which 11% and 30% respectively is for elements those projects never render.
+   * dominates a small stylesheet: a third of one sandbox's css here and four fifths of
+   * another's, of which 13% and 34% respectively is for elements those projects never render.
    *
    * A selector list loses only the parts naming unrendered elements, so a rule shared between
    * `button` and `::file-selector-button` keeps the half that still applies. `html` and `body`
@@ -373,6 +381,16 @@ interface CssgenOptions {
    * component, by `dangerouslySetInnerHTML`, or by markdown is invisible to a scan of your own
    * source. What you get wrong is an element quietly losing its reset — no error, no warning.
    * Reach for it when you control the markup and have measured that it pays.
+   *
+   * The blind spot to check first is your own entry template. The scan reads `include`, and
+   * `include` conventionally covers components rather than markup — a glob rooted at `./src`
+   * does not match `index.html`, so an element appearing only there is dropped. Add the
+   * template to `include` to cover it — the scan reads any file listed, not only ones the
+   * parser understands, and reads it from disk rather than from the build's parsed copy, so
+   * a single-file component's markup survives the transform to tsx.
+   *
+   * A scoped reset is handled: `preflight: { scope: '.app' }` writes `.app table`, and the
+   * scope is stripped before an element is read out. `bamboo cssgen preflight` prunes too.
    *
    * @default false
    */

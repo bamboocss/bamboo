@@ -779,9 +779,16 @@ counterpart pins its own declaration. Spacing scales generate one negative per e
 whether or not your app uses it. On the default preset that is roughly a third of what survives pruning.
 
 That exemption is skipped entirely when no file under [`include`](#include) reaches for a token from JavaScript – no
-`token()`, no `token.var()`, no import of the tokens artifact. `styled-system/tokens` is generated into your project, so
-nothing outside it can import them, which makes the scan a complete answer rather than a guess. On the sandboxes here it
-is worth 13% of one stylesheet and nothing at all on another, whose tokens the CSS genuinely reads.
+`token()`, no `token.var()`, no import of the tokens artifact. The artifact is generated into your project rather than
+installed, so the import is written in your own source and the scan finds it. The import test is deliberately loose: any
+specifier ending in `/tokens` counts, so a custom [`outdir`](#outdir), a path alias, and the `.js` extension NodeNext
+requires are all covered. On the example apps here it is worth up to 20% of a stylesheet raw and 13% gzipped, and
+nothing at all on the two whose tokens the CSS genuinely reads.
+
+Two shapes it does not see. `include` scopes style extraction rather than everything that may import, so a build script,
+a config file, or a sibling workspace package calling `token()` is not covered; nor is a binding renamed away from
+`token`, as in `const t = token`. Both are rare, and neither announces itself – the declaration is pruned and the call
+returns a `var()` that nothing declares. Set `pruneUnusedTokens: false` if you are in that position.
 
 ### prunePreflight
 
@@ -806,7 +813,7 @@ Measured on the example apps in this repository:
 | app     |    raw |   gzip | brotli |
 | ------- | -----: | -----: | -----: |
 | vite-ts | -13.2% | -14.8% | -14.2% |
-| svelte  | -27.0% | -25.4% | -25.0% |
+| svelte  | -33.9% | -29.1% | -29.3% |
 
 Unlike most CSS size work, this holds up under compression, because it emits less rather than spelling the same thing
 differently.
@@ -823,6 +830,31 @@ nothing about it says which element it reaches.
   you get wrong is an element quietly losing its reset – no error, no warning, just a `<table>` that has its browser
   default border spacing back. Reach for it when you control the markup, and check the result.
 </Callout>
+
+**Check your entry template first.** The scan reads the files [`include`](#include) covers, and `include` conventionally
+covers components rather than markup: `./src/**/*.tsx` does not match `index.html`. That is where `<noscript>`, a static
+`<table>`, and the rest of a page's hand-written markup usually live, so those elements are dropped even though the page
+renders them – the most likely way to get bitten, and the easiest to miss, since the build succeeds either way.
+
+Listing the template alongside your components covers it. The scan reads any file `include` names, not only ones the
+parser understands:
+
+```ts
+export default defineConfig({
+  prunePreflight: true,
+  include: ['./src/**/*.{ts,tsx}', './index.html'],
+})
+```
+
+The same applies to any other markup outside `include` – an email template, a server-rendered layout, a static partial.
+
+The scan reads each file from disk rather than the parsed copy the build holds, which matters for single-file
+components: a `.svelte` or `.vue` file is transformed to TSX before the build sees it, and that transform drops markup
+in several ways. Reading the file keeps `<table>` visible wherever you wrote it.
+
+A [scoped reset](#preflight) is handled – `preflight: { scope: '.app' }` writes `.app table`, and the scope is stripped
+before the element is read out. `bamboo cssgen preflight` prunes as well, so the `reset.css` it writes matches the one a
+full build produces.
 
 ### pruneUnusedKeyframes
 

@@ -159,7 +159,12 @@ export class Generator extends Context {
   prunePreflight = (sheet: Stylesheet, rendered: Set<string>) => {
     if (!this.config.prunePreflight) return
 
-    const result = prunePreflight({ target: sheet.layers.reset, rendered })
+    // A scoped reset writes the scope onto every selector, so the pass has to be told what
+    // to strip. Without it nothing reports an element and the whole pass is a silent no-op.
+    const { preflight } = this.config
+    const scope = typeof preflight === 'object' && preflight ? preflight.scope : undefined
+
+    const result = prunePreflight({ target: sheet.layers.reset, rendered, scope })
 
     logger.debug(
       'prune:preflight',

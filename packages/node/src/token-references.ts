@@ -12,6 +12,45 @@ import type { BambooContext } from './create-context'
 const TOKEN_CALL = /\btoken(?:\s*\.\s*var)?\s*\(\s*['"`]([^'"`]+)['"`]/g
 
 /**
+ * The text of every file `include` covers — as written on disk, and, when they differ, as the
+ * parser understands it.
+ *
+ * Both, because neither alone is complete and every scan below is safe when over-fed. A file
+ * the parser transformed is stored rewritten (`parseSourceFile` calls `replaceWithText`), and
+ * those transforms lose things the scans want: `svelteToTsx` and `vueToTsx` each swallow a
+ * throw and return an empty string, and a Vue SFC with a render function and no `<template>`
+ * becomes the literal `<template>undefined</template>`. Read only the parsed copy and a file
+ * like that reports no tokens and no elements at all.
+ *
+ * The parsed copy still has to be read as well, because `parser:before` is the documented way
+ * to teach bamboo a format it does not know. A template compiled to jsx by such a hook holds
+ * nothing a scan of the raw file would recognise, and that is the hook working as intended.
+ *
+ * So the cost is one extra read per file, and a second regex pass over the files a transform
+ * actually changed. Measured at ~14ms for 806 files, against a build where css emission alone
+ * is an order of magnitude more.
+ */
+function* sourceTexts(ctx: BambooContext): Generator<string> {
+  for (const file of ctx.getFiles()) {
+    const filePath = ctx.runtime.path.abs(ctx.config.cwd, file)
+
+    let onDisk: string | undefined
+    try {
+      onDisk = ctx.runtime.fs.readFileSync(filePath)
+    } catch {
+      // Removed between the glob and this read, or never on disk at all. Not worth failing
+      // a build over -- whatever the project holds still gets scanned below.
+      onDisk = undefined
+    }
+
+    const parsed = ctx.project.getSourceFile(filePath)?.getFullText()
+
+    if (onDisk != null) yield onDisk
+    if (parsed != null && parsed !== onDisk) yield parsed
+  }
+}
+
+/**
  * Collect token references that reading the generated css cannot reveal.
  *
  * This is deliberately textual and therefore over-inclusive: a match inside a comment or
@@ -24,9 +63,24 @@ const TOKEN_CALL = /\btoken(?:\s*\.\s*var)?\s*\(\s*['"`]([^'"`]+)['"`]/g
  * encode every style a second time — pass none, and stay correct only because a path the
  * scan misses can lose nothing: `token()` hands javascript a literal for exactly the
  * tokens this cannot see, and hands it a `var()` only for virtual, conditional and
- * negative tokens, which `getAlwaysKeptTokenVars` keeps whatever the source says. Narrow
- * those blanket keeps and this argument stops being redundant, so those two callers would
- * have to find another way to supply it.
+ * negative tokens, which `getAlwaysKeptTokenVars` keeps.
+ *
+ * Those blanket keeps are no longer unconditional — `tokensReachableFromJs` gates them — and
+ * this comment used to warn that narrowing them would break the argument above. It does not,
+ * for a reason worth stating rather than rediscovering: the gate matches `token(` regardless
+ * of what follows, where `TOKEN_CALL` below needs a string literal. So the one shape this
+ * scan cannot resolve, a path built from a constant, is exactly the shape that turns the
+ * gate on and restores every blanket keep. The two failures line up, which is what makes the
+ * redundancy hold.
+ *
+ * That alignment is a real coupling, not an observation: the gate's call pattern has to stay
+ * a superset of this one, matching wherever `TOKEN_CALL` matches and also wherever it gives
+ * up. It briefly was not — this allowed whitespace around the `.` of `token.var` and the gate
+ * did not, so a formatter wrapping `token\n  .var(SOME_CONST)` slipped past both. Change one
+ * of the two and change the other; `token-references.test.ts` pins the property directly.
+ *
+ * Where it stops holding is a binding renamed away from `token` — `const t = token`, then
+ * `t('spacing.4')` — which matches neither. `token-references.test.ts` pins both halves.
  */
 export function collectTokenReferences(ctx: BambooContext, results: ParserResult[]) {
   const paths = new Set<string>()
@@ -41,24 +95,7 @@ export function collectTokenReferences(ctx: BambooContext, results: ParserResult
     }
   }
 
-  for (const file of ctx.getFiles()) {
-    const filePath = ctx.runtime.path.abs(ctx.config.cwd, file)
-
-    // The project already holds the text of every file it parsed, and every caller syncs
-    // it before getting here, so reading from disk again would repeat the io on each
-    // watch rebuild. Files the project does not track — css under `include`, say — still
-    // have to be read.
-    let content = ctx.project.getSourceFile(filePath)?.getFullText()
-
-    if (content == null) {
-      try {
-        content = ctx.runtime.fs.readFileSync(filePath)
-      } catch {
-        // A file removed between the glob and this read is not worth failing a build over.
-        continue
-      }
-    }
-
+  for (const content of sourceTexts(ctx)) {
     for (const match of content.matchAll(TOKEN_CALL)) paths.add(match[1])
     for (const name of cssVarRefs(content)) vars.add(name)
   }
@@ -99,26 +136,14 @@ export function collectKeyframeReferences(ctx: BambooContext, names: Iterable<st
   // alive by the word `spinner`.
   const patterns = declared.map((name) => [name, new RegExp(`\\b${escapeRegExp(name)}\\b`)] as const)
 
-  for (const file of ctx.getFiles()) {
-    if (found.size === declared.length) break
-
-    const filePath = ctx.runtime.path.abs(ctx.config.cwd, file)
-
-    // Same reasoning as `collectTokenReferences`: the project already holds the text of
-    // everything it parsed, so re-reading from disk would repeat the io per rebuild.
-    let content = ctx.project.getSourceFile(filePath)?.getFullText()
-
-    if (content == null) {
-      try {
-        content = ctx.runtime.fs.readFileSync(filePath)
-      } catch {
-        continue
-      }
-    }
-
+  for (const content of sourceTexts(ctx)) {
     for (const [name, pattern] of patterns) {
       if (!found.has(name) && pattern.test(content)) found.add(name)
     }
+
+    // After the body, not before it: `sourceTexts` reads the next file when the loop pulls
+    // it, so breaking at the top would still have paid for one file more than it needed.
+    if (found.size === declared.length) break
   }
 
   return found
@@ -140,23 +165,27 @@ export const keyframeNames = (ctx: BambooContext) => Object.keys(ctx.config.them
  * Lowercase-initial only, so a JSX component (`<Button />`) is not mistaken for an element.
  * That cuts the other way too — a component rendering `<button>` inside a dependency is
  * invisible here, which is why `prunePreflight` is opt-in.
+ *
+ * The commoner blind spot is nearer than a dependency: this reads `include`, and `include`
+ * conventionally covers components rather than markup. An entry template — `index.html`,
+ * `app.html` — is where `<table>`, `<noscript>` and a page's static markup usually live, and a
+ * glob rooted at `./src` does not match it, so every element appearing only there loses its
+ * reset. Nothing here can detect that; the file simply is not in the list. Listing it in
+ * `include` fixes it, because this reads whatever `include` covers rather than only what the
+ * parser understands — `token-references.test.ts` pins both halves.
+ *
+ * Reading the raw file as well as the parsed copy is what makes an SFC work here; see
+ * `sourceTexts`. On a healthy `.svelte` file the two agree on everything but `<script>`, so
+ * the raw read earns its place only when a transform fails -- and there it is the difference
+ * between the file's elements and none of them.
  */
 export function collectRenderedElements(ctx: BambooContext) {
   const found = new Set<string>()
 
-  for (const file of ctx.getFiles()) {
-    const filePath = ctx.runtime.path.abs(ctx.config.cwd, file)
-
-    let content = ctx.project.getSourceFile(filePath)?.getFullText()
-    if (content == null) {
-      try {
-        content = ctx.runtime.fs.readFileSync(filePath)
-      } catch {
-        continue
-      }
-    }
-
-    for (const match of content.matchAll(/<\s*([a-z][\w-]*)[\s/>]/g)) found.add(match[1]!)
+  for (const content of sourceTexts(ctx)) {
+    // `(?=…|$)` rather than consuming the delimiter, so an element written at the very end
+    // of a file still counts. Lowercased to meet `elementOf`, which lowercases too.
+    for (const match of content.matchAll(/<\s*([a-z][\w-]*)(?=[\s/>]|$)/g)) found.add(match[1]!.toLowerCase())
   }
 
   return found
@@ -165,26 +194,38 @@ export function collectRenderedElements(ctx: BambooContext) {
 /**
  * Whether any source file reaches for a token from javascript.
  *
- * `styled-system/tokens` is generated into the project, so nothing outside it can import
- * the artifact — which makes a scan of `include` a complete answer rather than a guess, and
- * is why this can gate a default rather than needing an opt-in. When it comes back false,
- * the declarations kept purely so `token()` can answer have no caller to answer.
+ * The tokens artifact is generated into the project rather than installed, so the import is
+ * written in the project's own source and a scan of `include` sees it. When this comes back
+ * false, the declarations kept purely so `token()` can answer have no caller to answer.
+ *
+ * Deliberately loose, and loose in a specific direction: a false positive keeps a declaration
+ * nothing reads, a false negative returns a `var()` nothing declares.
+ *
+ * So the import test is any module specifier with a `/tokens` path segment, rather than the
+ * literal `styled-system/tokens` it used to be. `outdir` is configurable, so the artifact is
+ * only at `styled-system/` by default, and the literal missed `outdir: 'design-system'`, a
+ * tsconfig path alias, and `styled-system/tokens/index.mjs` -- which is the only spelling
+ * NodeNext accepts, the artifact being a directory. It is still anchored to `from`, `import`
+ * or `require`, because without that anchor a route or a url (`fetch('/api/tokens')`) reads
+ * as an import and quietly switches the whole optimisation off.
+ *
+ * The call test allows whitespace around the dot for the same reason `TOKEN_CALL` does. It
+ * did not, which broke the alignment the note on `collectTokenReferences` rests on: a
+ * formatter wrapping `token\n  .var(SOME_CONST)` was invisible to that scan *and* to this
+ * gate *and* to the parser, whose callee is a property access. A comment in the same position
+ * -- `token/*x*\/.var(` -- is still invisible to all three.
+ *
+ * One shape it still does not see, pinned in `token-references.test.ts`: a binding renamed
+ * away from `token`, as in `const t = token`. Also unseen is a caller outside `include`,
+ * which scopes style extraction rather than everything that may import — a script, a config,
+ * or a sibling workspace package. Both prune declarations the running app then asks for, and
+ * neither reports itself; `pruneUnusedTokens: false` is the way out.
  */
 export function tokensReachableFromJs(ctx: BambooContext) {
-  const pattern = /\btoken(\.var)?\s*\(|styled-system\/tokens|['"]\.\.?\/[\w./-]*tokens['"]/
+  const pattern =
+    /\btoken(\s*\.\s*var)?\s*\(|\b(?:from|import|require)\s*\(?\s*['"][^'"]*\/tokens(\/[^'"]*|\.[cm]?[jt]sx?)?['"]/
 
-  for (const file of ctx.getFiles()) {
-    const filePath = ctx.runtime.path.abs(ctx.config.cwd, file)
-
-    let content = ctx.project.getSourceFile(filePath)?.getFullText()
-    if (content == null) {
-      try {
-        content = ctx.runtime.fs.readFileSync(filePath)
-      } catch {
-        continue
-      }
-    }
-
+  for (const content of sourceTexts(ctx)) {
     if (pattern.test(content)) return true
   }
 
