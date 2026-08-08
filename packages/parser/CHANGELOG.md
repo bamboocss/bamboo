@@ -1,5 +1,19 @@
 # @bamboocss/parser
 
+## 1.22.0
+
+### Patch Changes
+
+- Updated dependencies [fe62614]
+- Updated dependencies [1036258]
+- Updated dependencies [41d9052]
+  - @bamboocss/types@1.22.0
+  - @bamboocss/core@1.22.0
+  - @bamboocss/config@1.22.0
+  - @bamboocss/logger@1.22.0
+  - @bamboocss/extractor@1.22.0
+  - @bamboocss/shared@1.22.0
+
 ## 1.21.0
 
 ### Patch Changes

@@ -1,5 +1,22 @@
 # @bamboocss/dev
 
+## 1.22.0
+
+### Patch Changes
+
+- Updated dependencies [edb97e2]
+- Updated dependencies [fe62614]
+- Updated dependencies [41d9052]
+- Updated dependencies [43ae8a7]
+  - @bamboocss/node@1.22.0
+  - @bamboocss/types@1.22.0
+  - @bamboocss/postcss@1.22.0
+  - @bamboocss/logger@1.22.0
+  - @bamboocss/preset-bamboo@1.22.0
+  - @bamboocss/preset-base@1.22.0
+  - @bamboocss/token-dictionary@1.22.0
+  - @bamboocss/shared@1.22.0
+
 ## 1.21.0
 
 ### Patch Changes
