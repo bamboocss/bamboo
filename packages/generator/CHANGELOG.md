@@ -1,5 +1,196 @@
 # @bamboocss/generator
 
+## 1.20.0
+
+### Minor Changes
+
+- 15e2d53: Emit semantic tokens with an `_osDark` value as `light-dark()`, and raise the browser baseline to match.
+
+  A token whose only conditional value is `_osDark` cost two declarations and a media block. It now costs one line:
+
+  ```diff
+    :where(:root, :host) {
+  +   color-scheme: light dark;
+  -   --colors-text: var(--colors-gray-600);
+  +   --colors-text: light-dark(var(--colors-gray-600), var(--colors-gray-400));
+    }
+  -
+  - @media (prefers-color-scheme: dark) {
+  -   :where(:root, :host) {
+  -     --colors-text: var(--colors-gray-400)
+  -   }
+  - }
+  ```
+
+  The saving is one media block per stylesheet plus one declaration per token, so it scales with how many `_osDark`
+  semantic tokens a design system carries. Class names and hashes are unchanged.
+
+  **An explicit toggle stops meaning "restate every token"**
+
+  This is the more useful half. `_osDark` is a media query and `[data-theme=dark]` is a selector, so the two are
+  separate mechanisms that resolve against each other by source order — supporting both meant emitting every token
+  twice. `light-dark()` reads `color-scheme`, which is an ordinary inherited property, so a toggle is one declaration on
+  a subtree:
+
+  ```css
+  [data-theme='dark'] {
+    color-scheme: dark;
+  }
+  ```
+
+  **`color-scheme: light dark` ships with the tokens**
+
+  `light-dark()` returns its light value whenever `color-scheme` does not name both, so a sheet that folds without
+  declaring it is a sheet where dark mode silently never engages. It is emitted in the tokens layer rather than the
+  reset for that reason — the reset can be turned off with `preflight: false`, and this is a prerequisite of the
+  declarations above it, not a nicety. It sits at zero specificity and only appears when something actually folded.
+
+  **Three shapes are left alone**
+  - A token carrying `_osLight` as well keeps both media blocks. Folding it would put the light arm and an
+    `@media (prefers-color-scheme: light)` block in play for one variable, where the block wins on order and the arm is
+    dead.
+  - `_dark` is a class selector, not a media query, so it stays a rule of its own.
+  - A redefined `osDark` condition — pointed at `[data-os=dark] &`, say — does not fold at all. It is a configurable
+    condition rather than a keyword, and `light-dark()` cannot express a selector, so folding on the name alone would
+    silently rewrite the mechanism the user picked.
+
+  **The baseline moves**
+
+  ```diff
+  - Chrome >= 118      + Chrome >= 123
+  - Edge >= 118        + Edge >= 123
+  - iOS >= 17.4        + iOS >= 17.5
+  - Safari >= 17.4     + Safari >= 17.5
+  - Android >= 118     + Android >= 123
+  - Opera >= 106       + Opera >= 109
+    Firefox >= 146
+  ```
+
+  `light-dark()` is Baseline 2024 and lands later than `@scope` everywhere except Firefox, which got it at 120 against
+  `@scope` at 146 — so the two features now set the baseline between them. This is not optional the way a minifier
+  setting is: an unsupported browser does not fall back to the light value, it fails substitution and the declaration
+  using the token becomes invalid at computed-value time.
+
+- 5d2c91c: Prune unreachable tokens, keyframes and `@property` rules by default.
+
+  `pruneUnusedTokens` and `pruneUnusedKeyframes` both default to `true` now. On the example apps in this repository:
+
+  | app          |             raw |          gzip |
+  | ------------ | --------------: | ------------: |
+  | svelte       |  22,047 → 5,188 | 5,442 → 1,802 |
+  | runtime-perf |   9,107 → 3,462 |   1,941 → 989 |
+  | vite-ts      | 13,845 → 10,463 | 3,390 → 3,053 |
+
+  That is 10–67% of the gzipped, render-blocking stylesheet, and it scales with the size of the design system rather
+  than the size of the app — so the larger the theme, the more of it was being shipped for nothing. `bamboo init`
+  already turned both on, so newly scaffolded projects had this and everyone else did not.
+
+  Set either to `false` to restore the previous behaviour.
+
+  **`@property` registrations no longer depend on the flag**
+
+  A preset registers every custom property its utilities compose — filters, gradients, transforms, transitions — from
+  the config rather than from what the app draws. That is 42 rules and 3.2 kB, byte-identical in every project here, of
+  which **41 to 42 were referenced by nothing at all**.
+
+  Those are now dropped whether or not `pruneUnusedTokens` is set. The flag exists because a token can be reached by a
+  name the pass never sees — `token.var()` with a path assembled at runtime, a stylesheet outside `include`, a package
+  consuming the output as design tokens. A registration has no such surface: nothing hands one to JavaScript and none
+  are part of the `token()` api, verified as zero overlap with declared tokens. Whether the finished stylesheet mentions
+  one is the whole question, so opting out of the half that cannot be proven should not mean carrying the half that can.
+
+  Turning `pruneUnusedTokens` off is still exact for token declarations — every one is kept.
+
+  **Upgrading**
+
+  The three cases the reachability pass cannot see are unchanged and are the ones to check if a value goes missing:
+  - a token named by a path the source does not spell out as a string literal, such as `token.var(key)`
+  - a token referenced only from a stylesheet outside `include`
+  - a token consumed by a separate package treating the output as design tokens
+
+  List those under `staticCss`, or set `pruneUnusedTokens: false`. The equivalent for an animation name assembled at
+  runtime is already covered — the keyframe pass falls back to a deliberately over-inclusive textual scan of `include`.
+
+### Patch Changes
+
+- 6512d6b: Update the PostCSS toolchain, and fold shared selector prefixes into `:is()` when minifying.
+
+  | package                            |   from |     to |
+  | ---------------------------------- | -----: | -----: |
+  | `postcss`                          | 8.5.25 | 8.5.26 |
+  | `postcss-selector-parser`          |  7.1.1 |  7.1.5 |
+  | `postcss-discard-duplicates`       |  7.0.2 |  8.0.2 |
+  | `postcss-discard-empty`            |  7.0.1 |  8.0.2 |
+  | `postcss-minify-selectors`         |  7.0.5 |  8.0.3 |
+  | `postcss-nested`                   |  7.0.2 |  8.0.1 |
+  | `postcss-normalize-whitespace`     |  7.0.1 |  8.0.2 |
+  | `@csstools/postcss-cascade-layers` |  5.0.2 |  6.0.0 |
+  | `browserslist`                     | 4.28.1 | 4.28.7 |
+
+  The cssnano majors raise their engine floor to `^22.11.0 || ^24.11.0 || >=26.0`. Nothing here declares `engines`, so
+  it is not enforced at install time, but a build on Node 24.10 or older 24.x runs these plugins outside their supported
+  range.
+
+  **Minified `globalCss` changes**
+
+  `postcss-minify-selectors` 8 adds `convertToIs`, which factors a shared prefix or suffix in a selector list into
+  `:is(...)` where that shortens it. It is on, and it reaches `globalCss` — a selector list nested under a parent is the
+  common case:
+
+  ```diff
+    '.card': { '& h1, & h2': { fontWeight: 'bold' } }
+
+  - .card h1,.card h2 { font-weight: … }
+  + .card :is(h1,h2) { font-weight: … }
+  ```
+
+  Class names and hashes are unchanged, `:is()` takes the highest specificity of its arguments so the folded rule
+  matches and ranks exactly as the list did, and unminified output is untouched.
+
+  Atomic and recipe output is unaffected, and not incidentally: each atomic class carries a unique declaration, so
+  `merge-rules` never combines two into a list with shared structure, and a scoped slot variant is a plain selector
+  inside an `@scope` block rather than a list. Measured over every stylesheet this repo generates — 59 selector lists,
+  none foldable, zero bytes moved. The fold is worth having for authored CSS; it is not a size win on generated CSS, and
+  nothing here should be read as claiming one.
+
+  **The browser baseline is now fixed, and `@scope` sets it**
+
+  Upstream gates the fold on `caniuse-api`, and resolves the target it asks about from `process.cwd()` — the consuming
+  project, not `config.browserslist`. Two things follow, and both break the guarantee that a given input compiles to one
+  stylesheet: output would depend on where the build ran, and it would flip on its own as `caniuse-lite` refreshed. So
+  the baseline is passed explicitly and no longer consults the ambient config.
+
+  Documenting that baseline turned up errors in it. `@scope` was described as a raised floor that only projects with
+  `root`-slot recipes reach, with a lower general baseline beneath it — which made the supported set depend on how a
+  project's recipes happen to be written. `@scope` is the documented baseline now, one floor, and `scopeRoots: []` is no
+  longer offered as a way under it: it controls scoping, not what Bamboo supports.
+
+  The numbers behind it were wrong in two places. Firefox is **146**, not 128 — caniuse records 128 through 145 as no
+  support, not partial — and Opera is **106**, not 104. Anyone on Firefox 128–145 had been told slot recipes would work.
+  The retired lower tier had its own version of this: it claimed `:is()` as a baseline feature while listing
+  `Opera >= 73`, which predates it by two majors.
+
+  **Coverage**
+
+  The minified branch had no tests, which is how a plugin swapping "sort and dedupe a selector list" for "fold it into
+  `:is()`" changed emitted CSS without a snapshot moving. `packages/core/__tests__/optimize-minify.test.ts` now locks
+  the minified output, and asserts it is unchanged under a hostile ambient `BROWSERSLIST`.
+
+- Updated dependencies [15e2d53]
+- Updated dependencies [045ab1e]
+- Updated dependencies [6512d6b]
+- Updated dependencies [5d2c91c]
+- Updated dependencies [10d7c9b]
+- Updated dependencies [aa0f641]
+- Updated dependencies [0441724]
+- Updated dependencies [0e2cb31]
+  - @bamboocss/core@1.20.0
+  - @bamboocss/types@1.20.0
+  - @bamboocss/shared@1.20.0
+  - @bamboocss/token-dictionary@1.20.0
+  - @bamboocss/logger@1.20.0
+  - @bamboocss/is-valid-prop@1.20.0
+
 ## 1.19.0
 
 ### Minor Changes
