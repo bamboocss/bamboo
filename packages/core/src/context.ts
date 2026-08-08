@@ -39,6 +39,8 @@ const defaults = (config: UserConfig): UserConfig => ({
   cssVarRoot: ':where(:root, :host)',
   outExtension: 'mjs',
   shorthands: true,
+  pruneUnusedTokens: true,
+  pruneUnusedKeyframes: true,
   ...config,
   layers: {
     reset: 'reset',

@@ -7,22 +7,28 @@ import { cssgen } from '../src/cssgen'
  *
  * Both prune passes gather their reference set by reading every source file, so both sit
  * behind a flag. Sharing one gate is the easy mistake, and it fails silently in the
- * direction users notice least: setting `pruneUnusedKeyframes: true` produces no error,
- * no warning, and no pruning. The generator-level tests cannot catch it — they call
- * `ctx.pruneKeyframes` directly, below this wiring.
+ * direction users notice least: setting `pruneUnusedKeyframes: false` produces no error,
+ * no warning, and keyframes vanish anyway. The generator-level tests cannot catch it —
+ * they call `ctx.pruneKeyframes` directly, below this wiring.
+ *
+ * This context is hand-built rather than a real one, so it does not pick up the defaults
+ * `Context` applies. Each case states both flags for that reason; `defaults` in
+ * `packages/core/src/context.ts` is what makes them `true` in a real build.
  */
 const createContext = (config: Config) => {
   const calls: string[] = []
 
   const ctx = {
-    config: { cwd: '/app', ...config },
+    config: { cwd: '/app', pruneUnusedTokens: true, pruneUnusedKeyframes: true, ...config },
     createSheet: () => ({}),
     parseFiles: () => ({ files: [], results: [] }),
     messages: { buildComplete: () => '', cssArtifactComplete: () => '' },
     appendLayerParams: () => {},
     appendBaselineCss: () => {},
     appendParserCss: () => {},
-    pruneTokens: () => calls.push('tokens'),
+    // Called either way — with a reference set for the full pass, without one when only the
+    // `@property` registrations are being dropped.
+    pruneTokens: (_sheet: unknown, keep?: unknown) => calls.push(keep ? 'tokens' : 'properties'),
     pruneKeyframes: () => calls.push('keyframes'),
     getFiles: () => [],
     project: { getSourceFile: () => undefined },
@@ -44,20 +50,20 @@ const run = async (config: Config, options: Record<string, unknown> = {}) => {
 }
 
 describe('cssgen prune flags', () => {
-  test('neither flag prunes nothing', async () => {
-    expect(await run({})).toEqual([])
+  test('both passes run by default', async () => {
+    expect(await run({})).toEqual(['tokens', 'keyframes'])
+  })
+
+  test('disabling both still drops the @property registrations', async () => {
+    expect(await run({ pruneUnusedTokens: false, pruneUnusedKeyframes: false })).toEqual(['properties'])
   })
 
   test('pruneUnusedKeyframes alone still prunes keyframes', async () => {
-    expect(await run({ pruneUnusedKeyframes: true })).toEqual(['keyframes'])
+    expect(await run({ pruneUnusedTokens: false, pruneUnusedKeyframes: true })).toEqual(['properties', 'keyframes'])
   })
 
   test('pruneUnusedTokens alone does not prune keyframes', async () => {
-    expect(await run({ pruneUnusedTokens: true })).toEqual(['tokens'])
-  })
-
-  test('both flags run both passes', async () => {
-    expect(await run({ pruneUnusedTokens: true, pruneUnusedKeyframes: true })).toEqual(['tokens', 'keyframes'])
+    expect(await run({ pruneUnusedTokens: true, pruneUnusedKeyframes: false })).toEqual(['tokens'])
   })
 
   test('minimal skips both, since it omits the token layer entirely', async () => {

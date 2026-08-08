@@ -316,7 +316,13 @@ interface CssgenOptions {
    * which keeps the whole scale whether or not the app uses it — on the default preset
    * that is roughly a third of what survives pruning. There is no opt-out.
    *
-   * @default false
+   * Setting this to `false` keeps every token declaration, but still drops the `@property`
+   * registrations. Those are not tokens — nothing hands one to javascript and none appear
+   * in the `token()` surface — so the reachability problem above does not apply to them,
+   * and opting out of token pruning should not mean shipping a preset's whole filter and
+   * gradient set for nothing.
+   *
+   * @default true
    */
   pruneUnusedTokens?: boolean
   /**
@@ -332,7 +338,7 @@ interface CssgenOptions {
    * is deliberately over-inclusive: keeping an unused keyframe costs bytes, dropping a
    * used one breaks the animation.
    *
-   * @default false
+   * @default true
    */
   pruneUnusedKeyframes?: boolean
   /**

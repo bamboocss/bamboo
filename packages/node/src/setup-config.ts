@@ -53,12 +53,11 @@ export default defineConfig({
     // Files to exclude
     exclude: [],
 
-    // Drop tokens, keyframes and @property rules nothing in the emitted css reaches. Worth 50-60% of a new
-    // project's stylesheet. Turn off if you read tokens from somewhere the build cannot
-    // see them — \`token.var()\` with a computed path, or a hand-written stylesheet outside
-    // \`include\` — or list those under \`staticCss\` to keep them.
-    pruneUnusedTokens: true,
-    pruneUnusedKeyframes: true,
+    // Tokens, keyframes and @property rules nothing in the emitted css reaches are dropped
+    // by default — worth 50-60% of a new project's stylesheet. Set \`pruneUnusedTokens: false\`
+    // if you read tokens from somewhere the build cannot see them — \`token.var()\` with a
+    // computed path, or a hand-written stylesheet outside \`include\` — or list those under
+    // \`staticCss\` to keep them.
 
     // Useful for theme customization
     theme: {

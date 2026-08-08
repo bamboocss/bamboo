@@ -21,8 +21,12 @@ async function build(ctx: BambooContext, artifactIds?: ArtifactId[]) {
   ctx.appendParserCss(sheet)
 
   // Gathering the references reads every source file, so each stays behind its own flag.
+  // Opting out still prunes the `@property` registrations, which need no reference scan —
+  // nothing outside the stylesheet can reach one.
   if (ctx.config.pruneUnusedTokens) {
     ctx.pruneTokens(sheet, collectTokenReferences(ctx, parsed.results))
+  } else {
+    ctx.pruneTokens(sheet)
   }
 
   if (ctx.config.pruneUnusedKeyframes) {

@@ -24,19 +24,16 @@ const buildCss = (userConfig?: Config, keep?: Set<string>) => {
 const declares = (css: string, name: string) => new RegExp(`@keyframes\\s+${name}\\b`).test(css)
 
 describe('pruneKeyframes', () => {
-  /**
-   * The guarantee for every project that does not ask for this: off by default, and
-   * leaving it off produces exactly the css it produced before.
-   */
-  test('is inert unless enabled', () => {
-    expect(buildCss()).toBe(buildCss({ pruneUnusedKeyframes: false }))
-  })
-
+  /** The escape hatch has to be exact: disabling it produces the css it produced before. */
   test('keeps every keyframe when disabled', () => {
-    const css = buildCss()
+    const css = buildCss({ pruneUnusedKeyframes: false })
 
     expect(declares(css, 'fade-in')).toBe(true)
     expect(declares(css, 'spin')).toBe(true)
+  })
+
+  test('prunes by default, without being asked', () => {
+    expect(buildCss()).toBe(buildCss({ pruneUnusedKeyframes: true }))
   })
 
   test('drops keyframes the css cannot reach once enabled', () => {

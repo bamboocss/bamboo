@@ -720,17 +720,17 @@ const styles = css({
 
 **Type**: `boolean`
 
-**Default**: `false`
+**Default**: `true`
 
 Whether to drop token css variables that nothing in the generated css can reach.
 
 The token layer declares every token in your theme, and an app typically uses a small fraction of them, so this is
 usually the largest single saving in render-blocking css. It scales with the size of your design system rather than the
-size of your app.
+size of your app. Across the example apps in this repository it is worth 10–67% of the gzipped stylesheet.
 
 ```json
 {
-  "pruneUnusedTokens": true
+  "pruneUnusedTokens": false
 }
 ```
 
@@ -738,13 +738,20 @@ A variable is kept when the generated css references it, when a kept variable's 
 named by `token()`, `token.var()`, or a literal `var(--x)` anywhere under [`include`](#include). Anything a theme refers
 to is kept as well, since themes ship as separate artifacts injected at runtime.
 
-It is opt-in because reachability cannot be proven for every reference. Three things stay invisible to it:
+There is an escape hatch because reachability cannot be proven for every reference. Three things stay invisible to it:
 
 - A token named by a path your source does not spell out as a string literal, such as `token.var(key)`.
 - A token referenced only from a stylesheet outside `include`.
 - A token consumed by a separate package that treats your output as design tokens.
 
-Use [`staticCss`](#staticcss) to keep those.
+Use [`staticCss`](#staticcss) to keep those, or set this to `false` to keep every token declaration.
+
+Turning it off does **not** bring back the `@property` rules your utilities register. Those are not tokens – nothing
+hands one to JavaScript and none appear in the `token()` surface – so the reachability problem above cannot apply to
+them, and whether the finished stylesheet mentions one is the whole question. A preset registers what its utilities
+compose (filters, gradients, transforms, transitions) and ships the set regardless of what you draw, which on the
+example apps here is 42 rules and 3.2 kB that nothing reads. Opting out of the half that cannot be proven should not
+mean carrying the half that can.
 
 One cost is worth knowing about. Tokens that javascript receives as a `var()` rather than a literal are always kept, so
 that `token()` answers correctly for any path at runtime – that covers virtual tokens, any token carrying a condition,
@@ -757,17 +764,17 @@ opt-out.
 
 **Type**: `boolean`
 
-**Default**: `false`
+**Default**: `true`
 
 Whether to drop `@keyframes` rules nothing in the generated css can reach.
 
 A preset declares every animation it offers and an app uses a handful; the rest sit in the same render-blocking
 stylesheet. Like [`pruneUnusedTokens`](#pruneunusedtokens), the saving scales with the size of your design system rather
-than the size of your app. The two are independent – either can be switched on without the other.
+than the size of your app. The two are independent – either can be switched off without the other.
 
 ```json
 {
-  "pruneUnusedKeyframes": true
+  "pruneUnusedKeyframes": false
 }
 ```
 

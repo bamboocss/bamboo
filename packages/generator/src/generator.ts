@@ -94,7 +94,14 @@ export class Generator extends Context {
    * `keep` carries references this cannot see for itself; see `collectTokenReferences`.
    */
   pruneTokens = (sheet: Stylesheet, keep?: Set<string>) => {
-    if (!this.config.pruneUnusedTokens) return
+    // `pruneUnusedTokens` governs the token declarations only. The `@property` rules a
+    // utility registers are pruned either way: the reason that flag exists is that a token
+    // can be reached by a name this pass never sees -- `token.var()` with a path assembled
+    // at runtime -- and a registration has no such surface. Nothing hands one to javascript,
+    // and it is not part of the token api, so "does the finished stylesheet mention it"
+    // is the whole question. Opting out of token pruning should not mean carrying a
+    // preset's entire filter and gradient set for nothing.
+    const pruneVars = this.config.pruneUnusedTokens ?? true
 
     const layers = sheet.layers
 
@@ -111,7 +118,10 @@ export class Generator extends Context {
         layers.compositions,
       ],
       target: layers.tokens,
-      tokenVars: this.getTokenVarNames(),
+      // An empty set offers nothing for removal, so the same walk prunes registrations
+      // alone. `pruneTokenVars` already handles this — it is the shape a theme declaring
+      // no tokens at all arrives in.
+      tokenVars: pruneVars ? this.getTokenVarNames() : new Set<string>(),
       keep: new Set([...this.getAlwaysKeptTokenVars(), ...this.getThemeTokenVars(), ...(keep ?? [])]),
       // `@property` rules land in `base`, alongside `globalCss`. Only the ones a utility
       // registered are offered — a user's own, written through `globalVars`, are not.

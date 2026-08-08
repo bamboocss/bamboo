@@ -20,30 +20,36 @@ const buildCss = (userConfig?: Config, keep?: Set<string>) => {
 const declares = (css: string, name: string) => new RegExp(`\\${name}\\s*:`).test(css)
 
 describe('pruneTokens', () => {
-  /**
-   * The guarantee for every project that does not ask for this: the option is off by
-   * default, and leaving it off has to produce exactly the css it produced before.
-   */
-  test('is inert unless enabled', () => {
-    expect(buildCss()).toBe(buildCss({ pruneUnusedTokens: false }))
-  })
-
-  test('leaves the token layer untouched when disabled', () => {
+  test('drops tokens the css cannot reach, by default', () => {
     const css = buildCss()
-
-    expect(declares(css, '--colors-red-300')).toBe(true)
-    expect(declares(css, '--colors-pink-500')).toBe(true)
-  })
-
-  test('drops tokens the css cannot reach once enabled', () => {
-    const css = buildCss({ pruneUnusedTokens: true })
 
     expect(declares(css, '--colors-red-300')).toBe(true)
     expect(declares(css, '--colors-pink-500')).toBe(false)
   })
 
-  test('enabling it only ever removes declarations', () => {
-    const before = buildCss()
+  test('keeps every token declaration when disabled', () => {
+    const css = buildCss({ pruneUnusedTokens: false })
+
+    expect(declares(css, '--colors-red-300')).toBe(true)
+    expect(declares(css, '--colors-pink-500')).toBe(true)
+  })
+
+  /**
+   * The flag exists because a token can be reached by a name this pass never sees —
+   * `token.var()` with a path built at runtime. A registration has no such surface: nothing
+   * hands one to javascript and none are part of the token api, so whether the finished
+   * stylesheet mentions it is the whole question. Opting out of the half that cannot be
+   * proven should not mean carrying the half that can.
+   */
+  test('still drops unreachable @property registrations when disabled', () => {
+    const registered = (css: string) => [...css.matchAll(/@property\s+(--[\w-]+)/g)].map((m) => m[1])
+
+    expect(registered(buildCss({ pruneUnusedTokens: false }))).toEqual([])
+    expect(registered(buildCss())).toEqual([])
+  })
+
+  test('only ever removes declarations', () => {
+    const before = buildCss({ pruneUnusedTokens: false })
     const after = buildCss({ pruneUnusedTokens: true })
 
     const names = (css: string) => new Set([...css.matchAll(/(--[a-z0-9-]+)\s*:/g)].map((m) => m[1]))
