@@ -11,26 +11,64 @@ Bamboo supports the latest, stable releases of major browsers that support the f
 - Modern selectors, such as [`:where()`](https://caniuse.com/mdn-css_selectors_where) and
   [`:is()`](https://caniuse.com/css-matches-pseudo)
 - [`@scope`](https://caniuse.com/css-cascade-scope)
+- [`light-dark()`](https://caniuse.com/mdn-css_types_color_light-dark)
 
 ## Browserlist
 
 Based on the above criteria, the following browsers are supported:
 
 ```txt
-Chrome >= 118
-Edge >= 118
+Chrome >= 123
+Edge >= 123
 Firefox >= 146
-iOS >= 17.4
-Safari >= 17.4
-Android >= 118
-Opera >= 106
+iOS >= 17.5
+Safari >= 17.5
+Android >= 123
+Opera >= 109
 ```
 
-[`@scope`](#slot-recipes-and-scope) sets every number here; the rest of the list is supported comfortably below it.
+Two features set these numbers and nothing else comes close. [`light-dark()`](#semantic-tokens-and-light-dark) fixes
+every one of them except Firefox, where [`@scope`](#slot-recipes-and-scope) lands much later — 146 against 120 — and
+sets the floor instead.
 
 Bamboo reads this baseline when it minifies, so it is what decides whether a selector list may be folded into `:is()`.
 It is deliberately fixed rather than taken from your `browserslist` config, so that the same source always compiles to
 the same CSS.
+
+## Semantic tokens and `light-dark()`
+
+A semantic token with a `_osDark` value and nothing else conditional is emitted as one declaration rather than a
+declaration plus a media block:
+
+```css
+:where(:root, :host) {
+  color-scheme: light dark;
+  --colors-bg: light-dark(var(--colors-white), var(--colors-black));
+}
+```
+
+`color-scheme` is emitted with the tokens, not in the reset, because it is a prerequisite rather than a nicety —
+`light-dark()` returns its light value whenever `color-scheme` does not name both, so a sheet without it is one where
+dark mode silently never engages. Putting it in the reset would lose it to `preflight: false`. It sits at zero
+specificity, so anything you set wins.
+
+That is what makes an explicit theme toggle cheap. `_osDark` is a media query and a `[data-theme=dark]` selector is not,
+so the two are separate mechanisms that resolve against each other by source order. `color-scheme` is an ordinary
+inherited property, so a toggle is one declaration on a subtree rather than a second copy of every token:
+
+```css
+[data-theme='dark'] {
+  color-scheme: dark;
+}
+```
+
+Two shapes are deliberately left alone. A token that also carries `_osLight` keeps both media blocks — folding it would
+put the light arm of `light-dark()` and an `@media (prefers-color-scheme: light)` block in play for the same variable,
+where the block wins on order and the arm is dead. And `_dark` is a class selector rather than a media query, so it
+stays a rule of its own; reach for `color-scheme` on that subtree instead of restating each token.
+
+If you redefine the `osDark` condition to something that is not `@media (prefers-color-scheme: dark)` — a selector, say
+— nothing folds, because `light-dark()` cannot express it.
 
 ## Slot recipes and `@scope`
 

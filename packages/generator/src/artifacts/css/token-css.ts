@@ -4,6 +4,67 @@ import { logger } from '@bamboocss/logger'
 import type { ConditionQuery } from '@bamboocss/types'
 import postcss, { Container, CssSyntaxError } from 'postcss'
 
+const BASE = 'base'
+const OS_DARK = '_osDark'
+const OS_LIGHT = '_osLight'
+const OS_DARK_QUERY = '@media (prefers-color-scheme: dark)'
+
+/** Compare a condition against a known query without tripping over spacing. */
+const normalize = (condition: ConditionQuery | undefined) =>
+  typeof condition === 'string' ? condition.replace(/\s+/g, ' ').trim() : undefined
+
+/**
+ * Collapse a token's `base`/`_osDark` pair into a single `light-dark()` declaration.
+ *
+ * Two declarations and a whole `@media (prefers-color-scheme: dark)` block become one line,
+ * which for a design system carrying a few hundred `_osDark` semantic tokens is the largest
+ * reduction available in this layer.
+ *
+ * It also makes an explicit theme toggle tractable. `_osDark` is a media query and a
+ * `[data-theme=dark]` selector is not, so the two are independent mechanisms that resolve
+ * against each other by source order. `light-dark()` reads `color-scheme`, which is an
+ * ordinary inherited property — so a toggle is `color-scheme: dark` on a subtree rather than
+ * a second copy of every token.
+ *
+ * A var carrying `_osLight` as well is left alone. Folding it would put the light arm of
+ * `light-dark()` and an `@media (prefers-color-scheme: light)` block in play for the same
+ * var, where the block wins on order and the arm is simply dead. Three-way tokens keep the
+ * mechanism they already had.
+ *
+ * `view.vars` is shared with the JS theme artifacts, so this copies rather than mutates.
+ */
+function foldLightDark(vars: Map<string, Map<string, string>>, conditions: Conditions) {
+  const base = vars.get(BASE)
+  const osDark = vars.get(OS_DARK)
+  if (!base || !osDark) return { vars, folded: false }
+
+  // `_osDark` is a configurable condition, not a keyword. Someone can point it at a selector
+  // -- `[data-os=dark] &` -- and `light-dark()` cannot express that, so it is only safe to
+  // fold once the condition is confirmed to be the media query it is named after. Under
+  // `eject` it resolves to nothing at all.
+  if (normalize(conditions.get(OS_DARK)) !== OS_DARK_QUERY) return { vars, folded: false }
+
+  const osLight = vars.get(OS_LIGHT)
+  const nextBase = new Map(base)
+  const nextDark = new Map(osDark)
+
+  for (const [name, darkValue] of osDark) {
+    const lightValue = base.get(name)
+    if (lightValue === undefined || osLight?.has(name)) continue
+    nextBase.set(name, `light-dark(${lightValue}, ${darkValue})`)
+    nextDark.delete(name)
+  }
+
+  if (nextDark.size === osDark.size) return { vars, folded: false }
+
+  const next = new Map(vars)
+  next.set(BASE, nextBase)
+  if (nextDark.size) next.set(OS_DARK, nextDark)
+  else next.delete(OS_DARK)
+
+  return { vars: next, folded: true }
+}
+
 export function generateTokenCss(ctx: Context, sheet: Stylesheet) {
   const { config, conditions, tokens } = ctx
   const { cssVarRoot, staticCss } = config
@@ -11,6 +72,19 @@ export function generateTokenCss(ctx: Context, sheet: Stylesheet) {
   const root = cssVarRoot!
 
   const results: string[] = []
+
+  const { vars: tokenVars, folded } = foldLightDark(tokens.view.vars, conditions)
+
+  /**
+   * `light-dark()` returns the light value unless `color-scheme` names both, and a stylesheet
+   * that never sets it looks exactly like one where dark mode is broken. This rides with the
+   * tokens rather than the reset because it is a prerequisite of the declarations above it,
+   * and the reset can be turned off with `preflight: false`. `:where()` keeps it at zero
+   * specificity, so `color-scheme: dark` on any subtree still wins.
+   */
+  if (folded) {
+    results.push(stringify({ [root]: { colorScheme: 'light dark' } }))
+  }
 
   const allowed = staticCss?.themes
   let themeVariants: string[] = []
@@ -24,7 +98,7 @@ export function generateTokenCss(ctx: Context, sheet: Stylesheet) {
   const themeConds = themeVariants.map((key) => conditions.getThemeName(key))
   const themePrefix = ctx.conditions.getThemeName('')
 
-  for (const [key, values] of tokens.view.vars.entries()) {
+  for (const [key, values] of tokenVars.entries()) {
     const isThemeSkipped =
       key.startsWith(themePrefix) && !themeConds.some((condName) => key === condName || key.startsWith(condName + ':'))
     if (isThemeSkipped) {

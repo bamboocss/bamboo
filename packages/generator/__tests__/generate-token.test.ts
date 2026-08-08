@@ -968,14 +968,9 @@ describe('generator', () => {
     expect(css).toMatchInlineSnapshot(`
       "@layer tokens {
         :where(html) {
+          color-scheme: light dark;
           --colors-text: blue;
-          --colors-body: var(--colors-blue-600);
-      }
-
-        @media (prefers-color-scheme: dark) {
-          :where(html) {
-            --colors-body: var(--colors-blue-400)
-          }
+          --colors-body: light-dark(var(--colors-blue-600), var(--colors-blue-400));
       }
       }"
     `)
@@ -1036,8 +1031,9 @@ describe('generator', () => {
     expect(css).toMatchInlineSnapshot(`
       "@layer tokens {
         :where(html) {
+          color-scheme: light dark;
           --colors-text: blue;
-          --colors-body: var(--colors-blue-600);
+          --colors-body: light-dark(var(--colors-blue-600), var(--colors-blue-400));
       }
 
         [data-bamboo-theme=primary] {
@@ -1047,13 +1043,10 @@ describe('generator', () => {
       }
 
         @media (prefers-color-scheme: dark) {
-          :where(html) {
-            --colors-body: var(--colors-blue-400)
-          }
           [data-bamboo-theme=primary] {
             --colors-body: var(--colors-red-400)
               }
-      }
+          }
       }"
     `)
   })
@@ -1131,8 +1124,9 @@ describe('generator', () => {
     expect(css).toMatchInlineSnapshot(`
       "@layer tokens {
         :where(html) {
+          color-scheme: light dark;
           --colors-text: blue;
-          --colors-body: var(--colors-blue-600);
+          --colors-body: light-dark(var(--colors-blue-600), var(--colors-blue-400));
       }
 
         [data-bamboo-theme=primary] {
@@ -1142,13 +1136,10 @@ describe('generator', () => {
       }
 
         @media (prefers-color-scheme: dark) {
-          :where(html) {
-            --colors-body: var(--colors-blue-400)
-          }
           [data-bamboo-theme=primary] {
             --colors-body: var(--colors-red-400)
               }
-      }
+          }
       }"
     `)
   })
@@ -1208,8 +1199,9 @@ describe('generator', () => {
     expect(css).toMatchInlineSnapshot(`
       "@layer tokens {
         :where(html) {
+          color-scheme: light dark;
           --colors-text: blue;
-          --colors-body: var(--colors-blue-600);
+          --colors-body: light-dark(var(--colors-blue-600), var(--colors-blue-400));
       }
 
         [data-bamboo-theme=primary] {
@@ -1219,13 +1211,10 @@ describe('generator', () => {
       }
 
         @media (prefers-color-scheme: dark) {
-          :where(html) {
-            --colors-body: var(--colors-blue-400)
-          }
           [data-bamboo-theme=primary] {
             --colors-body: var(--colors-red-400)
               }
-      }
+          }
       }"
     `)
   })
@@ -1526,18 +1515,13 @@ describe('generator', () => {
     expect(css).toMatchInlineSnapshot(`
       "@layer tokens {
         :where(html) {
-          --colors-panel: #ffffff;
+          color-scheme: light dark;
+          --colors-panel: light-dark(#ffffff, #131211);
           --colors-ink: #131211;
       }
 
         .dark {
           --colors-ink: #ffffff
-      }
-
-        @media (prefers-color-scheme: dark) {
-          :where(html) {
-            --colors-panel: #131211
-          }
       }
       }"
     `)

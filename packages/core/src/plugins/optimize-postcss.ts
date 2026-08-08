@@ -24,7 +24,7 @@ interface OptimizeOptions {
  *
  * Keep in sync with `website/content/docs/overview/browser-support.mdx`.
  */
-const BASELINE = ['chrome 118', 'edge 118', 'firefox 146', 'ios_saf 17.4', 'safari 17.4', 'opera 106']
+const BASELINE = ['chrome 123', 'edge 123', 'firefox 146', 'ios_saf 17.5', 'safari 17.5', 'opera 109']
 
 export function optimizePostCss(code: string | Container, options: OptimizeOptions = {}) {
   const { minify = false } = options
