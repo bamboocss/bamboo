@@ -93,6 +93,55 @@ describe.each(CONFIGS)('fold parity under $label', ({ config }) => {
   })
 })
 
+/**
+ * The same parity, for recipes.
+ *
+ * `SHAPES` above is `css()` only, so nothing here folded a recipe under a naming option — the
+ * fold names a recipe class through `getSlotKey` rather than the utility path, and that
+ * derivation had no coverage across `hash`, `prefix` or `separator` at all.
+ *
+ * What this does *not* cover, so it is not mistaken for that: the generated runtime. `createRecipe`
+ * is a third derivation, and when it shipped every slot class of an anchorless recipe formatted
+ * twice, the fold stayed correct — `runtime-css.ts` builds from the raw name, so a folded call
+ * site rendered while an unfolded one did not. Executing the artifact is the only oracle for
+ * that; `packages/generator/__tests__/slot-recipe-class-parity.test.ts` is where it lives.
+ *
+ * Each of these folds under every config in the matrix; a decline is a coverage change to read
+ * rather than absorb, exactly as above.
+ */
+const RECIPE_SHAPES: Array<{ name: string; expr: string }> = [
+  { name: 'anchor slot, static variant', expr: `checkbox({ size: 'sm' }).root` },
+  { name: 'constant slot of an anchored recipe', expr: `checkbox({ size: 'sm' }).control` },
+  // The shape that broke: sibling slots, no `root`, so nothing anchors and every slot class
+  // is built by the branch that used to format twice.
+  { name: 'slot of an anchorless recipe', expr: `badge({ size: 'sm' }).title` },
+  { name: 'plain recipe', expr: `buttonStyle({ size: 'sm' })` },
+]
+
+const recipeSourceFor = (expr: string) =>
+  `import { checkbox, badge, buttonStyle } from '../styled-system/recipes'\nexport const x = ${expr}\n`
+
+describe.each(CONFIGS)('recipe fold parity under $label', ({ config }) => {
+  test.each(RECIPE_SHAPES)('$name folds to a class the stylesheet carries', ({ expr }) => {
+    const { fold, getCss } = createFoldFixture(config as never)
+    const result = fold(recipeSourceFor(expr))
+
+    expect(result.folded, `declined: ${result.skipped.map((s) => s.reason).join(', ') || 'none'}`).toHaveLength(1)
+
+    const className = result.folded[0]!.className
+    const css = getCss()
+    for (const selector of selectorsFor(className)) {
+      // Bounded, unlike the `css()` block above: a slot's base and variant classes share a
+      // prefix, so a plain substring test lets `.badge__title` pass on `.badge__title--size_sm`
+      // and reports nothing when only the variant rule exists.
+      const hasRule = new RegExp(`${selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\w-])`).test(css)
+      expect(hasRule, `${selector} has no rule (class="${className}")`).toBe(true)
+    }
+
+    expect(result.code).toContain(JSON.stringify(className))
+  })
+})
+
 describe('naming options actually change the names', () => {
   /**
    * The matrix above compares each option against the stylesheet built under that same option,
