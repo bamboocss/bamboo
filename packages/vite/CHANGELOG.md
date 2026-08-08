@@ -1,5 +1,162 @@
 # @bamboocss/vite
 
+## 1.22.0
+
+### Minor Changes
+
+- a1062c9: Remove `cssMode: 'grouped'`.
+
+  **This is a breaking change released as a minor.** Bamboo is still pre-1.0 in practice, so the version does not carry
+  the signal — read the migration below before upgrading. A config setting `cssMode` will fail to typecheck, and
+  `bamboocss()` from `@bamboocss/vite` now returns an array of plugins rather than one.
+
+  Use `cva({ base: { ... } })` where you want one class per element instead of one per property. It already does exactly
+  that, and it does it better.
+
+  **Why**
+
+  Measured on a production build of a real app — the same source built both ways:
+
+  |           |   CSS raw | CSS gzip |
+  | --------- | --------: | -------: |
+  | `atomic`  | 1,411,989 |  209,489 |
+  | `grouped` | 2,913,254 |  390,428 |
+
+  **+86% gzipped**, entirely in the `utilities` layer, which goes from 673 kB to 2.17 MB. Grouping pays only where a
+  style set lands on many elements; it groups every `css()` call, and most of them are one-offs where a group is one
+  rule serving one element with nothing to amortise it against.
+
+  The markup saving cannot repay that. Across eight routes of the same app, grouping saved 1.9 bytes of gzipped markup
+  per element rendered — so roughly **95,000 elements** have to render before the stylesheet's extra 181 kB is earned
+  back, about 112 page views with a warm cache. The documentation claimed the trade favoured SSR and SSG; the app
+  measured here is server-rendered and never comes close.
+
+  **What to use instead**
+
+  A variant-less `cva` emits a single class carrying every declaration:
+
+  ```ts
+  const row = cva({
+    base: { display: 'flex', alignItems: 'center', gap: '4' },
+  })
+  // .cva_gphwnw { display: flex; align-items: center; gap: var(--spacing-4) }
+  ```
+
+  It lands in the `recipes` layer rather than `utilities`, which is the part `cssMode` got wrong. Because
+  `@layer reset, base, tokens, recipes, utilities` puts `utilities` last, a consumer's `css()` override beats it
+  deterministically in every build — where a grouped `css()` class sat in `utilities` alongside the atoms it competed
+  with, leaving conflicts to source order.
+
+  The rule of thumb is the useful part: **if a style set is worth grouping, it is worth naming.** Grouping pays when a
+  set is reused, and a reused set is a component.
+
+  **Also removed**
+  - `RuleProcessor.grouped()` and the `GroupedRule` type.
+  - `groupClassName` from `@bamboocss/shared`, and the `grouped` / `knownGroups` fields on `CreateCssContext`.
+  - The generated `groups` artifact (`styled-system/css/groups.mjs`) — delete it if a stale copy is left in your output
+    directory.
+  - The `'ambiguous-merge'` and `'too-many-combinations'` unresolved-style reasons, which only ever applied to grouping,
+    and the `'grouped'` value of `UnresolvedStyle['kind']`.
+
+  `css()` calls the build cannot fully read are still reported, unchanged: a spread or computed key warns with a file
+  and line, because it looks static and is not.
+
+- 0e6a4ee: `@bamboocss/vite` now emits the stylesheet itself, so a Vite project needs no PostCSS setup.
+
+  Import the virtual module wherever you used to import the file carrying the `@layer` statement:
+
+  ```ts
+  // vite.config.ts
+  import bamboocss from '@bamboocss/vite'
+
+  export default defineConfig({
+    plugins: [bamboocss(), react()],
+  })
+  ```
+
+  ```ts
+  // src/main.tsx
+  import 'virtual:bamboo.css'
+  ```
+
+  ```ts
+  // src/vite-env.d.ts
+  /// <reference types="@bamboocss/vite/client" />
+  ```
+
+  `bamboocss()` now returns **two** plugins rather than one: the CSS emitter, which runs in dev and build alike, and the
+  build-only fold. If you were reaching into the returned object — `bamboocss().transform`, say — it is now an array.
+
+  **Why a virtual module rather than a written file**
+
+  Vite already owns both things a file would have to reimplement. In dev it injects CSS over the websocket and replaces
+  it in place, so a style edit repaints without reloading and without losing component state. In build it hashes the
+  content into the asset graph and decides where it lands. Writing `styles.css` and asking the project to import it
+  means the build reads a file the same process just wrote, which is a race on every watch rebuild.
+
+  The stylesheet carries its own `@layer reset, base, tokens, recipes, utilities;` statement, which the PostCSS path
+  takes from the file it injects into. That statement is what fixes layer _order_ — without it, layers are ordered by
+  first appearance.
+
+  **PostCSS still works.** This is an addition, not a replacement; nothing about the existing setup changes. Use one or
+  the other, though — configuring both puts two copies of the sheet in the bundle.
+
+  Also adds `Builder.toCss()` for anything that wants the finished stylesheet as a string rather than injected into a
+  PostCSS root.
+
+- 2b896a2: Add `strict` to `@bamboocss/vite`: fail the build when a `css()` call is left for the runtime.
+
+  ```ts
+  plugins: [bamboocss({ strict: true })]
+  ```
+
+  The fold's payoff was never the per-call CPU it saves. It is that a bundle where _every_ `css()` call folded stops
+  importing `styled-system/css`, and the engine behind it drops out — on the `vite-ts` example that is 1.3 kB gzipped of
+  `css.mjs`, plus whatever of `helpers` goes with it. One survivor keeps all of it, so 99% folded and 0% folded cost the
+  same, and a coverage percentage cannot tell you which you have. This can.
+
+  The error names every survivor with its file, line and reason:
+
+  ```
+  bamboocss: 2 call(s) could not be folded, and `strict` is on.
+
+    /app/src/Card.tsx
+      14: css() — dynamic
+      31: cssLeaf — lowered-leaf
+  ```
+
+  **`cssLeaf` counts, and it is the one that matters.** `css({ color: tone })` _folds_ — to
+  `cssLeaf("c_", "color", tone)` — so it reports no skip at all. But `cssLeaf` falls back to `css({ [prop]: value })`
+  for a value that is not a scalar, which the build cannot rule out, so the module still imports the engine. Without
+  counting it, `strict` would pass on the most common dynamic shape while the thing it exists to guarantee quietly
+  failed.
+
+  **`cva`/`sva` do not count.** A `cva(...)` definition returns a function and can never collapse to a class string, so
+  failing on it would make the option unusable for anyone writing recipes. Recipes keep their own runtime, which is a
+  different and much smaller module than the css engine.
+
+  Worth knowing before turning it on: a component that takes a style-bearing prop will trip it, because that is exactly
+  the shape `cssLeaf` exists for. Reaching zero is realistic for an app whose variation lives in `cva` variants, and
+  hard for a library whose components accept arbitrary values.
+
+### Patch Changes
+
+- Updated dependencies [39c699f]
+- Updated dependencies [edb97e2]
+- Updated dependencies [fe62614]
+- Updated dependencies [1036258]
+- Updated dependencies [41d9052]
+- Updated dependencies [a1062c9]
+- Updated dependencies [43ae8a7]
+- Updated dependencies [0e6a4ee]
+  - @bamboocss/core@1.22.0
+  - @bamboocss/node@1.22.0
+  - @bamboocss/types@1.22.0
+  - @bamboocss/shared@1.22.0
+  - @bamboocss/config@1.22.0
+  - @bamboocss/logger@1.22.0
+  - @bamboocss/extractor@1.22.0
+
 ## 1.21.0
 
 ### Minor Changes
