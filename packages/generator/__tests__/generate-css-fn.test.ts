@@ -68,9 +68,9 @@ describe('generate css-fn', () => {
       export declare const cssLeaf: (prefix: string, prop: string, value: unknown) => string;",
         "js": "import { cloneStyles, createCssUncached, hypenateProperty, leafClass, memo, viewTransitionClassName, withoutSpace } from '../helpers.mjs';
       import { sortConditions, finalizeConditions } from './conditions.mjs';
-      import { classNameByProp, resolveShorthand } from './utilities.mjs';
+      import { classNameByProp } from './utilities.mjs';
       export { mergeCss, assignCss, mergeCssUncached } from './merge-css.mjs';
-      import { mergeCss, mergeCssUncached } from './merge-css.mjs';
+      import { mergeCss, mergeCssUncached, resolveShorthand } from './merge-css.mjs';
 
       const context = {
         
@@ -209,9 +209,9 @@ describe('generate css-fn', () => {
       export declare const cssLeaf: (prefix: string, prop: string, value: unknown) => string;",
         "js": "import { cloneStyles, createCssUncached, hypenateProperty, leafClass, memo, viewTransitionClassName, withoutSpace } from '../helpers.mjs';
       import { sortConditions, finalizeConditions } from './conditions.mjs';
-      import { classNameByProp, resolveShorthand } from './utilities.mjs';
+      import { classNameByProp } from './utilities.mjs';
       export { mergeCss, assignCss, mergeCssUncached } from './merge-css.mjs';
-      import { mergeCss, mergeCssUncached } from './merge-css.mjs';
+      import { mergeCss, mergeCssUncached, resolveShorthand } from './merge-css.mjs';
 
       const context = {
         

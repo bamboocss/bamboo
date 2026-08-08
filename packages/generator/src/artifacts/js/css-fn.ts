@@ -75,9 +75,9 @@ export function generateCssFn(ctx: Context) {
       '../helpers',
     )}
     ${ctx.file.import('sortConditions, finalizeConditions', './conditions')}
-    ${ctx.file.import('classNameByProp, resolveShorthand', './utilities')}
+    ${ctx.file.import('classNameByProp', './utilities')}
     ${ctx.file.reExport('mergeCss, assignCss, mergeCssUncached', './merge-css')}
-    ${ctx.file.import('mergeCss, mergeCssUncached', './merge-css')}
+    ${ctx.file.import('mergeCss, mergeCssUncached, resolveShorthand', './merge-css')}
 
     const context = {
       ${hash.className ? 'hash: true,' : ''}
