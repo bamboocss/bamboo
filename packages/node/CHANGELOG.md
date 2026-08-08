@@ -1,5 +1,23 @@
 # @bamboocss/node
 
+## 1.20.3
+
+### Patch Changes
+
+- Updated dependencies [fa63a80]
+  - @bamboocss/core@1.20.3
+  - @bamboocss/generator@1.20.3
+  - @bamboocss/reporter@1.20.3
+  - @bamboocss/parser@1.20.3
+  - @bamboocss/config@1.20.3
+  - @bamboocss/logger@1.20.3
+  - @bamboocss/plugin-lightningcss@1.20.3
+  - @bamboocss/plugin-svelte@1.20.3
+  - @bamboocss/plugin-vue@1.20.3
+  - @bamboocss/shared@1.20.3
+  - @bamboocss/token-dictionary@1.20.3
+  - @bamboocss/types@1.20.3
+
 ## 1.20.2
 
 ### Patch Changes
