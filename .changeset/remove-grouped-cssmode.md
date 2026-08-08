@@ -1,14 +1,18 @@
 ---
-'@bamboocss/core': major
-'@bamboocss/generator': major
-'@bamboocss/node': major
-'@bamboocss/parser': major
-'@bamboocss/shared': major
-'@bamboocss/types': major
-'@bamboocss/vite': major
+'@bamboocss/core': minor
+'@bamboocss/generator': minor
+'@bamboocss/node': minor
+'@bamboocss/parser': minor
+'@bamboocss/shared': minor
+'@bamboocss/types': minor
+'@bamboocss/vite': minor
 ---
 
 Remove `cssMode: 'grouped'`.
+
+**This is a breaking change released as a minor.** Bamboo is still pre-1.0 in practice, so the version does not carry
+the signal — read the migration below before upgrading. A config setting `cssMode` will fail to typecheck, and
+`bamboocss()` from `@bamboocss/vite` now returns an array of plugins rather than one.
 
 Use `cva({ base: { ... } })` where you want one class per element instead of one per property. It already does exactly
 that, and it does it better.
