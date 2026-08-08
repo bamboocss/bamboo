@@ -1,5 +1,102 @@
 # @bamboocss/shared
 
+## 1.20.0
+
+### Patch Changes
+
+- 10d7c9b: Fix an inline `cva`/`sva` losing every style when a declaration has no value.
+
+  The same divergence as the whitespace fix, reached a second way. Extraction drops a nullish declaration, so
+
+  ```ts
+  cva({ base: { color: undefined, padding: '4' } })
+  ```
+
+  is recorded as `{ base: { padding: '4' } }` and the stylesheet emits a rule under that name. The browser hashes the
+  config as authored, keeps the `color` key, and derives a different name — so the element carries a class no rule
+  matches and renders with **none** of the recipe's styles. `null` behaves the same way.
+
+  Reaching it does not take anything exotic: a placeholder left in place, or spreading an object that happens to hold an
+  undefined value.
+
+  The identity now omits nullish declarations before hashing, matching what the build records. Build-side names are
+  unchanged, so no emitted CSS moves; only the browser's derivation moves onto them. A config whose `base` is entirely
+  nullish now hashes as an empty one, which is what the build already emitted for it.
+
+  Found by comparing the two derivations directly across a spread of value shapes, which is now a test —
+  `recipe-identity-agreement.test.ts` parses each shape as a real file and checks the extracted config and the authored
+  one hash alike. It covers numbers, floats, negatives, template literals, escape sequences, empty strings, booleans,
+  responsive arrays including one with a hole, deeply nested conditions, numeric variant keys, and nullish declarations
+  nested inside variants and compound variants.
+
+  That file exists because `checkNamingAgreement` structurally cannot cover this: it compares the two derivations for
+  one fixed canary, so it sees divergence in the shared naming logic and nothing about how a particular call site was
+  written. Both bugs of this shape were invisible to it.
+
+- aa0f641: Fix an inline `cva`/`sva` losing every style when a declaration value contains repeated whitespace.
+
+  An inline recipe's classes are named from a hash of its config, derived independently by the build and by the browser.
+  The build never sees the config as written: `maybe-box-node` reads every string literal through `trimWhitespace`, so
+  `'calc(100vh -  16px)'` is `'calc(100vh - 16px)'` by the time it reaches the encoder. The browser holds it as
+  authored.
+
+  The two therefore hashed different objects and derived different names, so the element carried a class the stylesheet
+  had no rule for and rendered with **none** of the recipe's styles. Nothing warned.
+
+  ```ts
+  cva({ base: { minHeight: 'calc(100vh -  16px)' } }) // build: cva_fepkUe, browser: cva_kOwuny
+  cva({ base: { color: 'rgba(0,  0, 0, 0.5)' } }) // build: cva_idlHhr, browser: cva_gCkUyn
+  cva({ base: { padding: '12px  16px' } }) // build: cva_jkWnrH, browser: cva_cINWCv
+  ```
+
+  The identity now collapses whitespace in string values before hashing, with `trimWhitespace`'s own regex rather than a
+  second spelling of it. Two configs differing only in repeated whitespace produce identical CSS and now share a name,
+  which is what the stylesheet already assumed — the build emits one rule for both.
+
+  **No emitted CSS changes.** Every build-side name is what it was; only the browser's derivation moves onto it.
+
+  Worth knowing about the failure mode, because it defeats the obvious checks: the orphaned name leaves no unused rule
+  behind. A config that collapses onto an existing one is byte-identical to it, so the stylesheet has exactly the rules
+  it should and only the _runtime_ asks for something absent. Diffing the stylesheet, or looking for dead rules, finds
+  nothing.
+
+  `checkNamingAgreement` did not catch it either, and still would not: it compares the two derivations for a fixed
+  canary, which cannot see a divergence introduced by how a particular call site was written. Setting `className` on the
+  recipe remains an effective workaround for any such divergence, since the identity then short-circuits on the name and
+  never hashes the config at all.
+
+- 0e2cb31: Stop breakpoints in an unrecognised unit being read as pixels.
+
+  `getUnit` matched anywhere in a string and only in lower case, and the conversions ran `parseFloat` over the raw
+  value. `parseFloat` returns a number for plenty of strings that are not a pixel count, so a unit the conversion did
+  not recognise was silently treated as one. Two ways to reach it, both producing valid CSS that matches the wrong
+  viewports or none:
+
+  | breakpoints        | `mdOnly` emitted                               | should be                                        |
+  | ------------------ | ---------------------------------------------- | ------------------------------------------------ |
+  | `50EM`             | `(min-width: 40EM) and (max-width: 3.1225rem)` | `(min-width: 40rem) and (max-width: 49.9975rem)` |
+  | `calc(40em + 0px)` | `(min-width: NaNrem)`                          | the value, unchanged                             |
+  | `50vw`             | `(max-width: 3.1225rem)`                       | `(max-width: 50vw)`                              |
+
+  `40EM` is as valid as `40em`; CSS units are case-insensitive. Reading it as `40px` made the range sixteen times too
+  small, so `min-width: 640px` and `max-width: 50px` matched nothing at all. `validateBreakpoints` did not catch any of
+  it, because it asked the same function and fell back to `px` for whatever came back empty — a theme written entirely
+  in `EM`, or mixing `em` with `vw`, passed the same-unit check.
+
+  Now:
+  - Unit matching is anchored and case-insensitive, so a unit inside a larger expression is not mistaken for the value's
+    own, and `40EM` converts exactly as `40em` does. The number accepts what CSS accepts, including `.5rem` and `1e3px`.
+  - The numeric half is read from the match rather than by `parseFloat` over the raw string, so a value that is not a
+    number and a unit is passed through untouched instead of becoming `NaN`.
+  - Breakpoint arithmetic only steps a value down when it is in a unit that converts to pixels. Anything else — `vw`,
+    `ch`, a `calc()` — is emitted as written. That costs an overlap of one unit between adjacent ranges, against a range
+    that previously matched nothing. (Superseded in the same release: range syntax removed the step entirely, so these
+    units no longer overlap either.)
+  - `validateBreakpoints` reads the unit generically, so it can tell `em` from `EM` from `vw` and its same-unit check
+    works for units bamboo does not convert.
+
+  `unit-conversion.ts` had no test file. It has one now, along with breakpoint cases for each shape above.
+
 ## 1.19.0
 
 ## 1.18.0

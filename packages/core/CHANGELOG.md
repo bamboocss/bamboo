@@ -1,5 +1,293 @@
 # @bamboocss/core
 
+## 1.20.0
+
+### Minor Changes
+
+- 15e2d53: Emit semantic tokens with an `_osDark` value as `light-dark()`, and raise the browser baseline to match.
+
+  A token whose only conditional value is `_osDark` cost two declarations and a media block. It now costs one line:
+
+  ```diff
+    :where(:root, :host) {
+  +   color-scheme: light dark;
+  -   --colors-text: var(--colors-gray-600);
+  +   --colors-text: light-dark(var(--colors-gray-600), var(--colors-gray-400));
+    }
+  -
+  - @media (prefers-color-scheme: dark) {
+  -   :where(:root, :host) {
+  -     --colors-text: var(--colors-gray-400)
+  -   }
+  - }
+  ```
+
+  The saving is one media block per stylesheet plus one declaration per token, so it scales with how many `_osDark`
+  semantic tokens a design system carries. Class names and hashes are unchanged.
+
+  **An explicit toggle stops meaning "restate every token"**
+
+  This is the more useful half. `_osDark` is a media query and `[data-theme=dark]` is a selector, so the two are
+  separate mechanisms that resolve against each other by source order — supporting both meant emitting every token
+  twice. `light-dark()` reads `color-scheme`, which is an ordinary inherited property, so a toggle is one declaration on
+  a subtree:
+
+  ```css
+  [data-theme='dark'] {
+    color-scheme: dark;
+  }
+  ```
+
+  **`color-scheme: light dark` ships with the tokens**
+
+  `light-dark()` returns its light value whenever `color-scheme` does not name both, so a sheet that folds without
+  declaring it is a sheet where dark mode silently never engages. It is emitted in the tokens layer rather than the
+  reset for that reason — the reset can be turned off with `preflight: false`, and this is a prerequisite of the
+  declarations above it, not a nicety. It sits at zero specificity and only appears when something actually folded.
+
+  **Three shapes are left alone**
+  - A token carrying `_osLight` as well keeps both media blocks. Folding it would put the light arm and an
+    `@media (prefers-color-scheme: light)` block in play for one variable, where the block wins on order and the arm is
+    dead.
+  - `_dark` is a class selector, not a media query, so it stays a rule of its own.
+  - A redefined `osDark` condition — pointed at `[data-os=dark] &`, say — does not fold at all. It is a configurable
+    condition rather than a keyword, and `light-dark()` cannot express a selector, so folding on the name alone would
+    silently rewrite the mechanism the user picked.
+
+  **The baseline moves**
+
+  ```diff
+  - Chrome >= 118      + Chrome >= 123
+  - Edge >= 118        + Edge >= 123
+  - iOS >= 17.4        + iOS >= 17.5
+  - Safari >= 17.4     + Safari >= 17.5
+  - Android >= 118     + Android >= 123
+  - Opera >= 106       + Opera >= 109
+    Firefox >= 146
+  ```
+
+  `light-dark()` is Baseline 2024 and lands later than `@scope` everywhere except Firefox, which got it at 120 against
+  `@scope` at 146 — so the two features now set the baseline between them. This is not optional the way a minifier
+  setting is: an unsupported browser does not fall back to the light value, it fails substitution and the declaration
+  using the token becomes invalid at computed-value time.
+
+- 045ab1e: Emit breakpoints and container queries in CSS Media Queries Level 4 range syntax.
+
+  ```diff
+  - @media screen and (min-width: 48rem) { … }                              /* md */
+  + @media (width >= 48rem) { … }
+  - @media screen and (min-width: 48rem) and (max-width: 63.9975rem) { … }  /* mdOnly */
+  + @media (width >= 48rem) and (width < 64rem) { … }
+  - @media screen and (max-width: 47.9975rem) { … }                         /* mdDown */
+  + @media (width < 48rem) { … }
+  ```
+
+  The `63.9975rem` was the next breakpoint stepped down by 0.04px, because `max-width` is inclusive and the old syntax
+  has no inclusive/exclusive pair. That step cost two things. Viewports inside the 0.04px gap matched neither range —
+  small enough to never show up on a device anyone tests on, and real. And stepping down needs arithmetic, so a
+  breakpoint in a unit that does not convert to pixels (`vw`, `ch`, a `calc()`) had to be emitted unstepped and
+  overlapped its neighbour by a whole unit. An exclusive `<` says the same thing exactly, in any unit, with no
+  arithmetic — so both are gone, and the overlap noted in the preceding changeset no longer applies.
+
+  Container queries move to the same construction:
+
+  ```diff
+  - @container card (min-width: 40rem) { … }
+  + @container card (inline-size >= 40rem) { … }
+  ```
+
+  `inline-size` is what a container query is actually asking about — it and `width` diverge the moment a container is in
+  a vertical writing mode.
+
+  **What changes for you**
+  - **Emitted CSS changes** for every responsive and container style. Class names and hashes are unchanged.
+  - **Responsive styles now apply when printing.** `@media screen and (min-width: 48rem)` never matched print;
+    `@media (width >= 48rem)` matches it against the page width. Every breakpoint-conditioned declaration now
+    participates in print output. If you relied on breakpoints being screen-only, scope those rules with an explicit
+    `@media screen` or a `_print` condition.
+  - **Browser baseline rises to Chrome 104+, Safari 16.4+, Firefox 102+.** Enabling
+    [`lightningcss`](https://bamboocss.com/docs/references/config#lightningcss) lowers these queries against your
+    browserslist targets, but only partly recovers the old baseline: the `min` half round-trips to `(min-width: X)`,
+    while an exclusive upper bound has no MQ3 spelling and lowers to `not (min-width: Y)` — itself MQ4. So `smDown`,
+    `mdOnly`, `mdToXl` and `hideBelow` need roughly Chrome 88 / Safari 14 / Firefox 64 even with lowering on.
+  - **`hideBelow` with an arbitrary value is now exclusive.** `hideBelow="800px"` emitted `(max-width: 800px)` and now
+    emits `(width < 800px)`, which is what the token form (`hideBelow="md"`) always meant. The two disagreed at exactly
+    the bound.
+  - **Container rules now sort ahead of every `Down` breakpoint rule, at any width.** Container queries carried no
+    readable bound before — their sort key was a bare size like ` 40rem` — so they ranked below anything the sorter
+    could classify. They now carry `inline-size >= …` and join the `min` group, which sorts ahead of every `max`-bounded
+    rule. Where a container rule and a `Down` breakpoint rule set the same property on the same element, the `Down` rule
+    now wins where the container rule used to.
+  - **Rules whose media queries tie on computed width may reorder.** Two queries that resolve to the same pixel width
+    but are spelled differently — `48rem` against `48em`, or the `md` breakpoint against the `3xl` container size, both
+    768px — have no bound to separate them, so the sorter compares the strings. The strings changed, so those ties
+    resolve differently.
+
+  **New**
+
+  Container sizes gain the range set breakpoints already had: `@/mdOnly`, `@/mdDown` and `@/mdToXl` alongside `@/md`.
+  With the 12 sizes in `preset-bamboo` and one named container this takes the generated container conditions from 24 to
+  204, since the `To` spans are quadratic in the size count. That count reaches shipped output: every condition key is
+  joined into `css/conditions.mjs` and becomes a member of the generated `Conditions` interface, which
+  `ConditionalValue` and `Nested` map over. Trim `theme.containerSizes` if the type surface matters more to you than the
+  range keys.
+
+  **Fixed**
+
+  Scale entries are ordered by their converted pixel value rather than their leading digits, so `30rem` no longer sorts
+  below `400px`. Ordering only affected the `min` bound before, which is monotonic either way; it decides the upper
+  bound of every `Only` and `To` range now, and getting it wrong inverts the range so it matches nothing.
+  `validateBreakpoints` rejects a mixed-unit theme, but `theme.containerSizes` has no equivalent check and reaches the
+  same code.
+
+- 6512d6b: Update the PostCSS toolchain, and fold shared selector prefixes into `:is()` when minifying.
+
+  | package                            |   from |     to |
+  | ---------------------------------- | -----: | -----: |
+  | `postcss`                          | 8.5.25 | 8.5.26 |
+  | `postcss-selector-parser`          |  7.1.1 |  7.1.5 |
+  | `postcss-discard-duplicates`       |  7.0.2 |  8.0.2 |
+  | `postcss-discard-empty`            |  7.0.1 |  8.0.2 |
+  | `postcss-minify-selectors`         |  7.0.5 |  8.0.3 |
+  | `postcss-nested`                   |  7.0.2 |  8.0.1 |
+  | `postcss-normalize-whitespace`     |  7.0.1 |  8.0.2 |
+  | `@csstools/postcss-cascade-layers` |  5.0.2 |  6.0.0 |
+  | `browserslist`                     | 4.28.1 | 4.28.7 |
+
+  The cssnano majors raise their engine floor to `^22.11.0 || ^24.11.0 || >=26.0`. Nothing here declares `engines`, so
+  it is not enforced at install time, but a build on Node 24.10 or older 24.x runs these plugins outside their supported
+  range.
+
+  **Minified `globalCss` changes**
+
+  `postcss-minify-selectors` 8 adds `convertToIs`, which factors a shared prefix or suffix in a selector list into
+  `:is(...)` where that shortens it. It is on, and it reaches `globalCss` — a selector list nested under a parent is the
+  common case:
+
+  ```diff
+    '.card': { '& h1, & h2': { fontWeight: 'bold' } }
+
+  - .card h1,.card h2 { font-weight: … }
+  + .card :is(h1,h2) { font-weight: … }
+  ```
+
+  Class names and hashes are unchanged, `:is()` takes the highest specificity of its arguments so the folded rule
+  matches and ranks exactly as the list did, and unminified output is untouched.
+
+  Atomic and recipe output is unaffected, and not incidentally: each atomic class carries a unique declaration, so
+  `merge-rules` never combines two into a list with shared structure, and a scoped slot variant is a plain selector
+  inside an `@scope` block rather than a list. Measured over every stylesheet this repo generates — 59 selector lists,
+  none foldable, zero bytes moved. The fold is worth having for authored CSS; it is not a size win on generated CSS, and
+  nothing here should be read as claiming one.
+
+  **The browser baseline is now fixed, and `@scope` sets it**
+
+  Upstream gates the fold on `caniuse-api`, and resolves the target it asks about from `process.cwd()` — the consuming
+  project, not `config.browserslist`. Two things follow, and both break the guarantee that a given input compiles to one
+  stylesheet: output would depend on where the build ran, and it would flip on its own as `caniuse-lite` refreshed. So
+  the baseline is passed explicitly and no longer consults the ambient config.
+
+  Documenting that baseline turned up errors in it. `@scope` was described as a raised floor that only projects with
+  `root`-slot recipes reach, with a lower general baseline beneath it — which made the supported set depend on how a
+  project's recipes happen to be written. `@scope` is the documented baseline now, one floor, and `scopeRoots: []` is no
+  longer offered as a way under it: it controls scoping, not what Bamboo supports.
+
+  The numbers behind it were wrong in two places. Firefox is **146**, not 128 — caniuse records 128 through 145 as no
+  support, not partial — and Opera is **106**, not 104. Anyone on Firefox 128–145 had been told slot recipes would work.
+  The retired lower tier had its own version of this: it claimed `:is()` as a baseline feature while listing
+  `Opera >= 73`, which predates it by two majors.
+
+  **Coverage**
+
+  The minified branch had no tests, which is how a plugin swapping "sort and dedupe a selector list" for "fold it into
+  `:is()`" changed emitted CSS without a snapshot moving. `packages/core/__tests__/optimize-minify.test.ts` now locks
+  the minified output, and asserts it is unchanged under a hostile ambient `BROWSERSLIST`.
+
+- 5d2c91c: Prune unreachable tokens, keyframes and `@property` rules by default.
+
+  `pruneUnusedTokens` and `pruneUnusedKeyframes` both default to `true` now. On the example apps in this repository:
+
+  | app          |             raw |          gzip |
+  | ------------ | --------------: | ------------: |
+  | svelte       |  22,047 → 5,188 | 5,442 → 1,802 |
+  | runtime-perf |   9,107 → 3,462 |   1,941 → 989 |
+  | vite-ts      | 13,845 → 10,463 | 3,390 → 3,053 |
+
+  That is 10–67% of the gzipped, render-blocking stylesheet, and it scales with the size of the design system rather
+  than the size of the app — so the larger the theme, the more of it was being shipped for nothing. `bamboo init`
+  already turned both on, so newly scaffolded projects had this and everyone else did not.
+
+  Set either to `false` to restore the previous behaviour.
+
+  **`@property` registrations no longer depend on the flag**
+
+  A preset registers every custom property its utilities compose — filters, gradients, transforms, transitions — from
+  the config rather than from what the app draws. That is 42 rules and 3.2 kB, byte-identical in every project here, of
+  which **41 to 42 were referenced by nothing at all**.
+
+  Those are now dropped whether or not `pruneUnusedTokens` is set. The flag exists because a token can be reached by a
+  name the pass never sees — `token.var()` with a path assembled at runtime, a stylesheet outside `include`, a package
+  consuming the output as design tokens. A registration has no such surface: nothing hands one to JavaScript and none
+  are part of the `token()` api, verified as zero overlap with declared tokens. Whether the finished stylesheet mentions
+  one is the whole question, so opting out of the half that cannot be proven should not mean carrying the half that can.
+
+  Turning `pruneUnusedTokens` off is still exact for token declarations — every one is kept.
+
+  **Upgrading**
+
+  The three cases the reachability pass cannot see are unchanged and are the ones to check if a value goes missing:
+  - a token named by a path the source does not spell out as a string literal, such as `token.var(key)`
+  - a token referenced only from a stylesheet outside `include`
+  - a token consumed by a separate package treating the output as design tokens
+
+  List those under `staticCss`, or set `pruneUnusedTokens: false`. The equivalent for an animation name assembled at
+  runtime is already covered — the keyframe pass falls back to a deliberately over-inclusive textual scan of `include`.
+
+### Patch Changes
+
+- 0e2cb31: Stop breakpoints in an unrecognised unit being read as pixels.
+
+  `getUnit` matched anywhere in a string and only in lower case, and the conversions ran `parseFloat` over the raw
+  value. `parseFloat` returns a number for plenty of strings that are not a pixel count, so a unit the conversion did
+  not recognise was silently treated as one. Two ways to reach it, both producing valid CSS that matches the wrong
+  viewports or none:
+
+  | breakpoints        | `mdOnly` emitted                               | should be                                        |
+  | ------------------ | ---------------------------------------------- | ------------------------------------------------ |
+  | `50EM`             | `(min-width: 40EM) and (max-width: 3.1225rem)` | `(min-width: 40rem) and (max-width: 49.9975rem)` |
+  | `calc(40em + 0px)` | `(min-width: NaNrem)`                          | the value, unchanged                             |
+  | `50vw`             | `(max-width: 3.1225rem)`                       | `(max-width: 50vw)`                              |
+
+  `40EM` is as valid as `40em`; CSS units are case-insensitive. Reading it as `40px` made the range sixteen times too
+  small, so `min-width: 640px` and `max-width: 50px` matched nothing at all. `validateBreakpoints` did not catch any of
+  it, because it asked the same function and fell back to `px` for whatever came back empty — a theme written entirely
+  in `EM`, or mixing `em` with `vw`, passed the same-unit check.
+
+  Now:
+  - Unit matching is anchored and case-insensitive, so a unit inside a larger expression is not mistaken for the value's
+    own, and `40EM` converts exactly as `40em` does. The number accepts what CSS accepts, including `.5rem` and `1e3px`.
+  - The numeric half is read from the match rather than by `parseFloat` over the raw string, so a value that is not a
+    number and a unit is passed through untouched instead of becoming `NaN`.
+  - Breakpoint arithmetic only steps a value down when it is in a unit that converts to pixels. Anything else — `vw`,
+    `ch`, a `calc()` — is emitted as written. That costs an overlap of one unit between adjacent ranges, against a range
+    that previously matched nothing. (Superseded in the same release: range syntax removed the step entirely, so these
+    units no longer overlap either.)
+  - `validateBreakpoints` reads the unit generically, so it can tell `em` from `EM` from `vw` and its same-unit check
+    works for units bamboo does not convert.
+
+  `unit-conversion.ts` had no test file. It has one now, along with breakpoint cases for each shape above.
+
+- Updated dependencies [5d2c91c]
+- Updated dependencies [10d7c9b]
+- Updated dependencies [aa0f641]
+- Updated dependencies [0441724]
+- Updated dependencies [0e2cb31]
+  - @bamboocss/types@1.20.0
+  - @bamboocss/shared@1.20.0
+  - @bamboocss/token-dictionary@1.20.0
+  - @bamboocss/logger@1.20.0
+  - @bamboocss/is-valid-prop@1.20.0
+
 ## 1.19.0
 
 ### Minor Changes

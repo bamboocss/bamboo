@@ -1,5 +1,172 @@
 # @bamboocss/node
 
+## 1.20.0
+
+### Minor Changes
+
+- 5d2c91c: Prune unreachable tokens, keyframes and `@property` rules by default.
+
+  `pruneUnusedTokens` and `pruneUnusedKeyframes` both default to `true` now. On the example apps in this repository:
+
+  | app          |             raw |          gzip |
+  | ------------ | --------------: | ------------: |
+  | svelte       |  22,047 → 5,188 | 5,442 → 1,802 |
+  | runtime-perf |   9,107 → 3,462 |   1,941 → 989 |
+  | vite-ts      | 13,845 → 10,463 | 3,390 → 3,053 |
+
+  That is 10–67% of the gzipped, render-blocking stylesheet, and it scales with the size of the design system rather
+  than the size of the app — so the larger the theme, the more of it was being shipped for nothing. `bamboo init`
+  already turned both on, so newly scaffolded projects had this and everyone else did not.
+
+  Set either to `false` to restore the previous behaviour.
+
+  **`@property` registrations no longer depend on the flag**
+
+  A preset registers every custom property its utilities compose — filters, gradients, transforms, transitions — from
+  the config rather than from what the app draws. That is 42 rules and 3.2 kB, byte-identical in every project here, of
+  which **41 to 42 were referenced by nothing at all**.
+
+  Those are now dropped whether or not `pruneUnusedTokens` is set. The flag exists because a token can be reached by a
+  name the pass never sees — `token.var()` with a path assembled at runtime, a stylesheet outside `include`, a package
+  consuming the output as design tokens. A registration has no such surface: nothing hands one to JavaScript and none
+  are part of the `token()` api, verified as zero overlap with declared tokens. Whether the finished stylesheet mentions
+  one is the whole question, so opting out of the half that cannot be proven should not mean carrying the half that can.
+
+  Turning `pruneUnusedTokens` off is still exact for token declarations — every one is kept.
+
+  **Upgrading**
+
+  The three cases the reachability pass cannot see are unchanged and are the ones to check if a value goes missing:
+  - a token named by a path the source does not spell out as a string literal, such as `token.var(key)`
+  - a token referenced only from a stylesheet outside `include`
+  - a token consumed by a separate package treating the output as design tokens
+
+  List those under `staticCss`, or set `pruneUnusedTokens: false`. The equivalent for an animation name assembled at
+  runtime is already covered — the keyframe pass falls back to a deliberately over-inclusive textual scan of `include`.
+
+### Patch Changes
+
+- 6512d6b: Update the PostCSS toolchain, and fold shared selector prefixes into `:is()` when minifying.
+
+  | package                            |   from |     to |
+  | ---------------------------------- | -----: | -----: |
+  | `postcss`                          | 8.5.25 | 8.5.26 |
+  | `postcss-selector-parser`          |  7.1.1 |  7.1.5 |
+  | `postcss-discard-duplicates`       |  7.0.2 |  8.0.2 |
+  | `postcss-discard-empty`            |  7.0.1 |  8.0.2 |
+  | `postcss-minify-selectors`         |  7.0.5 |  8.0.3 |
+  | `postcss-nested`                   |  7.0.2 |  8.0.1 |
+  | `postcss-normalize-whitespace`     |  7.0.1 |  8.0.2 |
+  | `@csstools/postcss-cascade-layers` |  5.0.2 |  6.0.0 |
+  | `browserslist`                     | 4.28.1 | 4.28.7 |
+
+  The cssnano majors raise their engine floor to `^22.11.0 || ^24.11.0 || >=26.0`. Nothing here declares `engines`, so
+  it is not enforced at install time, but a build on Node 24.10 or older 24.x runs these plugins outside their supported
+  range.
+
+  **Minified `globalCss` changes**
+
+  `postcss-minify-selectors` 8 adds `convertToIs`, which factors a shared prefix or suffix in a selector list into
+  `:is(...)` where that shortens it. It is on, and it reaches `globalCss` — a selector list nested under a parent is the
+  common case:
+
+  ```diff
+    '.card': { '& h1, & h2': { fontWeight: 'bold' } }
+
+  - .card h1,.card h2 { font-weight: … }
+  + .card :is(h1,h2) { font-weight: … }
+  ```
+
+  Class names and hashes are unchanged, `:is()` takes the highest specificity of its arguments so the folded rule
+  matches and ranks exactly as the list did, and unminified output is untouched.
+
+  Atomic and recipe output is unaffected, and not incidentally: each atomic class carries a unique declaration, so
+  `merge-rules` never combines two into a list with shared structure, and a scoped slot variant is a plain selector
+  inside an `@scope` block rather than a list. Measured over every stylesheet this repo generates — 59 selector lists,
+  none foldable, zero bytes moved. The fold is worth having for authored CSS; it is not a size win on generated CSS, and
+  nothing here should be read as claiming one.
+
+  **The browser baseline is now fixed, and `@scope` sets it**
+
+  Upstream gates the fold on `caniuse-api`, and resolves the target it asks about from `process.cwd()` — the consuming
+  project, not `config.browserslist`. Two things follow, and both break the guarantee that a given input compiles to one
+  stylesheet: output would depend on where the build ran, and it would flip on its own as `caniuse-lite` refreshed. So
+  the baseline is passed explicitly and no longer consults the ambient config.
+
+  Documenting that baseline turned up errors in it. `@scope` was described as a raised floor that only projects with
+  `root`-slot recipes reach, with a lower general baseline beneath it — which made the supported set depend on how a
+  project's recipes happen to be written. `@scope` is the documented baseline now, one floor, and `scopeRoots: []` is no
+  longer offered as a way under it: it controls scoping, not what Bamboo supports.
+
+  The numbers behind it were wrong in two places. Firefox is **146**, not 128 — caniuse records 128 through 145 as no
+  support, not partial — and Opera is **106**, not 104. Anyone on Firefox 128–145 had been told slot recipes would work.
+  The retired lower tier had its own version of this: it claimed `:is()` as a baseline feature while listing
+  `Opera >= 73`, which predates it by two majors.
+
+  **Coverage**
+
+  The minified branch had no tests, which is how a plugin swapping "sort and dedupe a selector list" for "fold it into
+  `:is()`" changed emitted CSS without a snapshot moving. `packages/core/__tests__/optimize-minify.test.ts` now locks
+  the minified output, and asserts it is unchanged under a hostile ambient `BROWSERSLIST`.
+
+- 0441724: Update the runtime dependencies that decide how the framework behaves. Emitted CSS is unchanged — Lightning
+  CSS 1.33 produces the sandbox stylesheet byte for byte as 1.31 did.
+
+  | package              |   from |     to | reaches                   |
+  | -------------------- | -----: | -----: | ------------------------- |
+  | `lightningcss`       | 1.31.1 | 1.33.0 | CSS output when enabled   |
+  | `ts-evaluator`       |  1.2.0 |  2.0.0 | expression evaluation     |
+  | `chokidar`           |  4.0.3 |  5.0.0 | watch mode                |
+  | `@vue/compiler-sfc`  | 3.5.25 | 3.5.41 | Vue SFC extraction        |
+  | `@vue/compiler-core` | 3.5.25 | 3.5.41 | the types the above emits |
+  | `picomatch`          |  4.0.4 |  4.0.5 | file matching             |
+
+  `@vue/compiler-core` is a dev-only type import in `plugin-vue`, and it was pinned a version behind `compiler-sfc`.
+  That had been invisible while both were 3.5.25; moving only `compiler-sfc` put two copies of the AST types in the tree
+  and `BaseElementNode` stopped matching the nodes `parse` actually returns. Both move together from here.
+
+  **Three were deliberately left alone**
+
+  `magic-string` stays at 0.30.21. 1.x is ESM-only — `"type": "module"`, no `require` export — and `@bamboocss/vite`,
+  `plugin-vue` and `plugin-svelte` all ship a CJS build that emits `require("magic-string")`. It resolves today and
+  would not on 1.x, breaking every CJS consumer. Nothing in the suite would notice, since the tests run ESM.
+
+  `open-props` stays at 1.7.16. 1.7.23 hardcodes the shadow scale:
+
+  ```diff
+  - --shadow-1: 0 1px 2px -1px hsl(var(--shadow-color) / calc(var(--shadow-strength) + 9%))
+  + --shadow-1: 0 1px 2px -1px hsl(220 3% 15% / 10%)
+  ```
+
+  The `--shadow-color` and `--shadow-strength` indirection is gone, and with it `--shadow-color-@media:dark` and
+  `--inner-shadow-highlight`. `preset-open-props` reads these values straight out of `open-props/src`, so taking the
+  bump means shadows stop responding to dark mode. Upstream moved that into separate light and dark files; adopting it
+  is a port, not a version bump.
+
+  `typescript` stays at 6.0.2, which is what `@ts-morph/common@0.29.0` bundles. ts-morph 28 is current, so TypeScript 7
+  would put the compiler the parser runs on out of step with the one the repo type-checks against.
+
+- Updated dependencies [15e2d53]
+- Updated dependencies [045ab1e]
+- Updated dependencies [6512d6b]
+- Updated dependencies [5d2c91c]
+- Updated dependencies [10d7c9b]
+- Updated dependencies [aa0f641]
+- Updated dependencies [0441724]
+- Updated dependencies [0e2cb31]
+  - @bamboocss/generator@1.20.0
+  - @bamboocss/core@1.20.0
+  - @bamboocss/plugin-lightningcss@1.20.0
+  - @bamboocss/types@1.20.0
+  - @bamboocss/shared@1.20.0
+  - @bamboocss/plugin-vue@1.20.0
+  - @bamboocss/token-dictionary@1.20.0
+  - @bamboocss/config@1.20.0
+  - @bamboocss/parser@1.20.0
+  - @bamboocss/reporter@1.20.0
+  - @bamboocss/logger@1.20.0
+  - @bamboocss/plugin-svelte@1.20.0
+
 ## 1.19.0
 
 ### Patch Changes
