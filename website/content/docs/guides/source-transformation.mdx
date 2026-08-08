@@ -314,6 +314,7 @@ The reasons are:
 | `dynamic`            | Some part of the arguments could not be resolved at build time. |
 | `raw-call`           | A `.raw()` call, which must keep returning a style object.      |
 | `not-foldable`       | `cva` or `sva` – returns a function, not a class string.        |
+| `recipe-call`        | An invocation of an inline recipe (see below).                  |
 | `unsupported-kind`   | A slot recipe call, or a shape this phase does not handle.      |
 | `not-imported`       | The callee is not a Bamboo import (see below).                  |
 | `empty`              | Resolved, but produced no class names.                          |
@@ -326,6 +327,94 @@ functions, so there is no class string to fold to. The second is a limitation of
 which resolves to one class per slot rather than to a single string.
 
 You can also just read the output bundle: a folded call is a string literal, an unfolded one still says `css(`.
+
+### `recipe-call`, specifically
+
+An **inline recipe** is one you bind yourself, rather than declaring in the config:
+
+```ts
+const badge = cva({ base: { rounded: 'full' }, variants: { tone: { info: { bg: 'blue.100' } } } })
+
+// ↓ this call
+badge({ tone: 'info' })
+```
+
+The `cva(...)` definition is reported as `not-foldable`, which it always was. The **call** is reported as `recipe-call`,
+which is new – and until it was, it did not appear at all.
+
+That gap was worth closing on its own. Bamboo recognises style calls by the name they were _imported_ as, and `badge` is
+not an import, so nothing looked at these call sites. They were not counted in the coverage summary and they did not
+appear under `reportSkipped`, which meant a call the build could not fold was indistinguishable from a call the build
+had never parsed. The percentage read higher than the project's real coverage.
+
+They are reported, not folded. A config recipe imported from `styled-system/recipes` still folds; an inline one keeps
+its runtime path.
+
+Four shapes are still not counted, so a project using them reads as having fewer sites than it has:
+
+- **`badge.raw(...)`.** Only the bare name is tracked, and `raw-call` is already the reason that fits a `.raw()` call,
+  so these are left out rather than filed under `recipe-call`.
+- **A recipe composed with `.merge(...)`.** `badge.merge(other)` returns another recipe function, so what goes uncounted
+  is the call of _that_ – `const m = badge.merge(other)`, then `m({ … })`.
+- **A recipe bound through a namespace import** – `import * as s from 'styled-system/css'`, then
+  `const badge = s.cva({ … })`. Only an identifier callee is recognised.
+- **A recipe not bound at module scope with `const`.** A `let` can be reassigned to something that is not a recipe. One
+  declared anywhere but the top level – inside a function, a `namespace` block, or a bare block – is skipped
+  deliberately: names are registered per file rather than per binding, so a nested `const css = cva({ … })` would
+  otherwise shadow the `css` import for the whole module and cost its calls their rules. Such a recipe rebuilds itself
+  on every call anyway, and its CSS comes from the `cva(...)` definition either way.
+
+## `strict`
+
+A coverage percentage cannot tell you whether you won anything. The fold's real prize is not the per-call CPU it saves –
+it is that a bundle where _every_ `css()` call folded stops importing `styled-system/css`, and the engine behind it
+drops out. One survivor keeps the whole thing. `strict` fails the build instead:
+
+```ts
+bamboocss({ transform: true, strict: true })
+```
+
+```txt
+bamboocss: 2 call(s) could not be folded, and `strict` is on.
+
+  src/Chart.tsx
+    41: css() — dynamic
+    58: cssLeaf() — lowered-leaf
+
+Each one keeps `styled-system/css` in the bundle, so the engine cannot be dropped however many
+other calls folded. Make the values static, move the variation into a `cva` variant, or generate
+them with `staticCss` — or set `strict: false` to accept the runtime.
+```
+
+`lowered-leaf` is the case that would otherwise slip past you. `css({ color: tone })` _does_ fold, to a
+`cssLeaf("c_", "color", tone)` call, so it reports no skip at all – but `cssLeaf` falls back to the full engine for a
+value that is not a scalar, such as a responsive array, and the build cannot prove your `tone` never is one. So it
+imports the engine, and the bundle keeps it.
+
+### What it does not check
+
+**`strict` is deliberately silent about inline recipes.** A `cva(...)` definition returns a function and can never
+collapse to a class string, and its invocations are not folded by this phase either – so neither fails the build. A
+project full of recipes can pass `strict` while shipping plenty of Bamboo runtime.
+
+Being silent about recipes is the intended trade rather than an oversight, because the two runtimes are not the same
+size. Measured as tree-shaken production bundles of `sandbox/vite-ts`:
+
+| entry point   | gzipped |
+| ------------- | ------- |
+| `cx` only     | 216 B   |
+| `cva` + `cx`  | 4,477 B |
+| `css` + `cva` | 8,546 B |
+
+So what `strict` guarantees is narrower than "no runtime", and it is the half worth guaranteeing: **nothing still calls
+`css()`.** Recipes keep a runtime roughly half the size, and their invocations are not verified at all – which is why
+`recipe-call` exists in the report even though it does not fail the build.
+
+One edge is worth knowing because it does not follow that rule: a **config** slot recipe call is reported as
+`unsupported-kind`, which _does_ fail `strict`, while the equivalent inline `sva(...)` call is reported as
+`recipe-call`, which does not. Neither keeps the `css()` engine, so by the rule above neither should fail.
+`unsupported-kind` is a catch-all that also covers shapes which are genuinely unresolved, and it is treated as a
+survivor on their account.
 
 ### `not-imported`, specifically
 

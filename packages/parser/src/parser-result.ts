@@ -8,6 +8,7 @@ export class ParserResult implements ParserResultInterface {
   all: ResultItem[] = []
   css = new Set<ResultItem>()
   cva = new Set<ResultItem>()
+  cvaCall = new Set<ResultItem>()
   sva = new Set<ResultItem>()
   token = new Set<ResultItem>()
   viewTransition = new Set<ResultItem>()
@@ -93,6 +94,18 @@ export class ParserResult implements ParserResultInterface {
 
     const encoder = this.encoder
     result.data.forEach((data) => encoder.processAtomicRecipe(data))
+  }
+
+  /**
+   * A call of a locally-bound inline recipe -- `const badge = cva(...)`, then `badge({...})`.
+   *
+   * Recorded, not encoded. The rules already exist: `setCva` emitted them from the config,
+   * and a recipe's classes are named semantically from that config rather than from this
+   * call. What this adds is *visibility* -- the call site becomes something the fold can see
+   * and report on, where before it was indistinguishable from code nobody had parsed.
+   */
+  setCvaCall(name: string, result: ResultItem) {
+    this.cvaCall.add(this.append(Object.assign({ type: 'cva-call', name }, result)))
   }
 
   setSva(result: ResultItem) {
@@ -192,6 +205,7 @@ export class ParserResult implements ParserResultInterface {
     result.css.forEach((item) => this.css.add(this.append(item)))
     result.cva.forEach((item) => this.cva.add(this.append(item)))
     result.sva.forEach((item) => this.sva.add(this.append(item)))
+    result.cvaCall.forEach((item) => this.cvaCall.add(this.append(item)))
     result.token.forEach((item) => this.token.add(this.append(item)))
     result.viewTransition.forEach((item) => this.viewTransition.add(this.append(item)))
 
@@ -222,6 +236,7 @@ export class ParserResult implements ParserResultInterface {
       css: Array.from(this.css),
       cva: Array.from(this.cva),
       sva: Array.from(this.sva),
+      cvaCall: Array.from(this.cvaCall),
       token: Array.from(this.token),
       viewTransition: Array.from(this.viewTransition),
       recipe: Object.fromEntries(Array.from(this.recipe.entries()).map(([key, value]) => [key, Array.from(value)])),

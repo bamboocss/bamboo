@@ -126,6 +126,15 @@ export function classifyProject(ctx: ParserOptions, resultMap: ParserResultMap):
       return
     }
 
+    // A recipe invocation is recorded for the transform's coverage report, not for this one:
+    // its argument is a variant selection, and walking it would file `tone: 'a'` as a utility
+    // property with a value. Unreachable in practice — the walk below only visits the css,
+    // cva, pattern and recipe buckets — but stated, so `ReportItemType` need not carry a
+    // member no report can contain.
+    if (item.type === 'cva-call') {
+      return
+    }
+
     const componentReportItem = {
       componentIndex: String(componentIndex++),
       componentName: item.name!,

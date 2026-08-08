@@ -3,7 +3,7 @@ import type { BoxNodeArray, BoxNodeLiteral, BoxNodeMap, Unboxed } from '@bambooc
 export interface ResultItem {
   name?: string
   data: Array<Unboxed['raw']>
-  type?: 'css' | 'cva' | 'sva' | 'token' | 'pattern' | 'recipe' | 'jsx-recipe'
+  type?: 'css' | 'cva' | 'sva' | 'token' | 'pattern' | 'recipe' | 'jsx-recipe' | 'cva-call'
   box?: BoxNodeMap | BoxNodeLiteral | BoxNodeArray
 }
 
@@ -11,6 +11,8 @@ export interface ParserResultInterface {
   all: Array<ResultItem>
   css: Set<ResultItem>
   cva: Set<ResultItem>
+  /** Calls of a locally-bound inline recipe: `const b = cva(...)`, then `b({ ... })`. */
+  cvaCall: Set<ResultItem>
   sva: Set<ResultItem>
   token: Set<ResultItem>
   viewTransition: Set<ResultItem>

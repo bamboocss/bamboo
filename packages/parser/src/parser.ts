@@ -4,7 +4,7 @@ import type { Generator } from '@bamboocss/generator'
 import { logger } from '@bamboocss/logger'
 import type { ParserResultConfigureOptions } from '@bamboocss/types'
 import type { SourceFile } from 'ts-morph'
-import { Node } from 'ts-morph'
+import { Node, ts } from 'ts-morph'
 import { match } from 'ts-pattern'
 import { getImportDeclarations } from './get-import-declarations'
 import { ParserResult } from './parser-result'
@@ -59,6 +59,50 @@ export function createParser(context: ParserOptions) {
 
     if (file.isEmpty() && !jsx.isEnabled) {
       return parserResult
+    }
+
+    // Inline recipes bound to a local name, before `extract` asks about any of them.
+    //
+    // `cva({ ... })` is recognised by its import, but the function it returns is called under
+    // whatever the file called it — `const badge = cva(...)`, then `badge({ tone })`. That
+    // call was invisible: not folded, and not reported either, so a build could not tell an
+    // unfoldable recipe invocation from one nothing had looked at. `file.matchFn` is memoized
+    // per name, so registering these after extraction would be too late.
+    //
+    // Module scope only, and that is load-bearing rather than a simplification. A name here
+    // is registered for the whole file, and the extractor buckets every call of a name under
+    // one key — so a *nested* `const css = cva(...)` shadowing an import would make the
+    // module's real `css()` calls look like recipe calls, and they would emit no rules at all.
+    // A module-scope `const css` cannot collide, because redeclaring an import is an error.
+    // The cost is a recipe declared inside a function, which rebuilds itself on every call and
+    // whose rules come from the `cva(...)` definition regardless.
+    //
+    // Being a statement walk rather than a tree walk is also why this is free: gated on the
+    // import, it touches one node per top-level statement. The recursive version measured ~10%
+    // of extraction.
+    if (file.importsRecipeFactory()) {
+      for (const statement of sourceFile.compilerNode.statements) {
+        // `const` only. A `let` can be reassigned to something that is not a recipe at all,
+        // and a name is registered for the file rather than for a binding.
+        if (!ts.isVariableStatement(statement)) continue
+        if (!(statement.declarationList.flags & ts.NodeFlags.Const)) continue
+
+        for (const declaration of statement.declarationList.declarations) {
+          const initializer = declaration.initializer
+          if (!initializer || !ts.isCallExpression(initializer)) continue
+
+          const callee = initializer.expression
+          if (!ts.isIdentifier(callee) || !ts.isIdentifier(declaration.name)) continue
+
+          // The *imported* name, so a project's own `cva` helper is not mistaken for this one
+          // — and `matchFn`, so a name that merely reads as `cva` is not either.
+          const imported = file.getName(callee.text)
+          if (imported !== 'cva' && imported !== 'sva') continue
+          if (!file.matchFn(callee.text)) continue
+
+          file.addLocalRecipe(declaration.name.text)
+        }
+      }
     }
 
     const extractResultByName = extract({
@@ -148,6 +192,35 @@ export function createParser(context: ParserOptions) {
       logger.debug(`ast:${name}`, name !== alias ? { kind: result.kind, alias } : { kind: result.kind })
 
       if (result.kind === 'function') {
+        // badge({ tone: 'red' }) -- a call of a recipe the file bound itself.
+        //
+        // Decided here rather than as a branch of the chain below, on `alias` rather than
+        // `name`. `name` is the *resolved import* name, so a file that binds `const cva =
+        // make(...)` resolves its own definition call to `cva` too, and a branch keyed on
+        // that claimed the definition and emitted no rules for it. The identifier at the call
+        // site is the only thing that distinguishes the two.
+        //
+        // Ahead of the chain because the first two branches match on a bare name —
+        // `/^(css|cva|sva)$/` and `/^(token)$/`, built in `import-map.ts` and never consulting
+        // the imports. A recipe a file called `sva` was read as a slot recipe, warning
+        // `missing-property` against a recipe that does not exist; one called `token` became a
+        // `dynamic` skip, enough to fail a `strict` build.
+        // `!file.match(alias)` is a second line: an imported name is never a local recipe,
+        // and swallowing one here would cost it its rules rather than merely misreport it.
+        if (file.isLocalRecipe(alias) && !file.match(alias)) {
+          result.queryList.forEach((query) => {
+            if (query.kind === 'call-expression') {
+              parserResult.setCvaCall(alias, {
+                name: alias,
+                box: (query.box.value[0] as BoxNodeMap) ?? box.fallback(query.box),
+                data: combineResult(unbox(query.box.value[0])),
+              })
+            }
+          })
+
+          return
+        }
+
         match(name)
           .when(imports.matchers.css.match, (name: 'css' | 'cva' | 'sva') => {
             // css({ ... }), cva({ ... }), sva({ ... })

@@ -28,6 +28,7 @@ export type SkipReason =
   | 'dynamic' // some part of the arguments could not be resolved at build time
   | 'raw-call' // `css.raw(...)` returns a style object, not a class string
   | 'not-foldable' // the call cannot evaluate to a class string at all (cva/sva)
+  | 'recipe-call' // an invocation of a locally-bound recipe, which this phase does not fold yet
   | 'unsupported-kind' // could fold in principle, but this phase does not (config recipes)
   | 'not-imported' // the callee is not a Bamboo import — a local function of the same name
   | 'no-call-expression' // could not locate the enclosing call to replace
@@ -134,6 +135,20 @@ const literalsIn = (expression: string): string[] =>
  * resolves to one class per slot rather than to a single string.
  */
 const UNFOLDABLE_TYPES = new Set(['cva', 'sva'])
+
+/**
+ * A call of a recipe the file bound itself: `const badge = cva(...)`, then `badge({ tone })`.
+ *
+ * Reported rather than folded. The classes are knowable -- a recipe is named semantically
+ * from its config, so the build can say exactly what any selection produces -- but resolving
+ * them means emitting a literal for a static selection and a lookup over the variant map for
+ * a dynamic one, which is a bigger change than this set.
+ *
+ * Reported at all because it used to be invisible. The parser matched calls by imported
+ * name, so a local binding was never recorded, and an unfoldable invocation looked identical
+ * to code nothing had parsed.
+ */
+const RECIPE_CALL_TYPE = 'cva-call'
 
 /**
  * An argument that cannot run anything when it is evaluated.
@@ -686,6 +701,8 @@ export const foldSource = (options: FoldOptions): FoldResult => {
 
   const candidates: Candidate[] = []
   const seenRanges = new Set<string>()
+  /** Ranges already reported as declined, so one call is never counted twice. */
+  const reportedRanges = new Set<string>()
 
   // One import scan per file, shared by every call site and element in it.
   const importCache = new Map<SourceFile, Set<string>>()
@@ -801,6 +818,24 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       // Only report kinds that are calls at all; JSX entries are a different surface.
       if (call && UNFOLDABLE_TYPES.has(type)) {
         skipped.push({ name, reason: 'not-foldable', start: call.getStart(), end: call.getEnd() })
+      }
+      // Not when a nearer scope binds the name. The parser registers an inline recipe for
+      // the whole file, so `const badge = cva(...)` at module scope makes every `badge(...)`
+      // look like a recipe call — including one inside a function that declared its own. That
+      // is somebody else's function, and reporting it would overstate the declined count as
+      // surely as missing these understated it.
+      //
+      // Deduped on its own range, for the reason the fold path is: the parser can record one
+      // call more than once, and this branch reports above where that check happens.
+      if (call && type === RECIPE_CALL_TYPE && !isShadowed(call, name)) {
+        const start = call.getStart()
+        const end = call.getEnd()
+        const rangeKey = `${start}:${end}`
+
+        if (!reportedRanges.has(rangeKey)) {
+          reportedRanges.add(rangeKey)
+          skipped.push({ name, reason: 'recipe-call', start, end })
+        }
       }
       continue
     }

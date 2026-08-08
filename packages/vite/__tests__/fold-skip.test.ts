@@ -273,3 +273,99 @@ describe('config recipe calls', () => {
     expect(result.code).toContain('export const b = "c_red.300"')
   })
 })
+
+/**
+ * `const badge = cva(...)` then `badge({ tone })`.
+ *
+ * These calls were invisible before the parser tracked local bindings: matching happens on
+ * the *imported* name, and a local binding has no import. So an invocation nothing could
+ * fold looked exactly like an invocation nothing had parsed, and a build had no way to tell
+ * them apart. They are reported here, not folded — resolving one means emitting a literal
+ * for a static selection or a lookup for a dynamic one, which is its own change.
+ */
+describe('calls of an inline recipe', () => {
+  const inline = (body: string) => `
+      import { cva } from 'styled-system/css'
+      const badge = cva({ base: { color: 'red.300' }, variants: { tone: { a: { color: 'blue.300' } } } })
+      ${body}
+    `
+
+  test('a static call is reported, and the source is unchanged', () => {
+    const { fold } = createFoldFixture()
+    const code = inline(`export const cls = badge({ tone: 'a' })`)
+    const result = fold(code)
+
+    expect(result.code).toBe(code)
+    expect(result.folded).toHaveLength(0)
+    expect(result.skipped.map((s) => s.reason)).toContain('recipe-call')
+  })
+
+  test('a dynamic call is reported the same way', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(inline(`export const make = (tone) => badge({ tone })`))
+
+    expect(result.skipped.map((s) => s.reason)).toContain('recipe-call')
+  })
+
+  test('the definition and the call are reported separately', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(inline(`export const cls = badge({ tone: 'a' })`))
+
+    const reasons = result.skipped.map((s) => s.reason)
+    expect(reasons).toContain('not-foldable') // the cva(...) definition
+    expect(reasons).toContain('recipe-call') // the badge(...) invocation
+  })
+
+  /**
+   * The parser registers an inline recipe for the whole file, so these two are the shapes
+   * where the name at the call site is not the recipe at all. Cosmetic while this only
+   * reports — but the report is the entire point of it, and a fold built on top would be
+   * rewriting somebody else's function.
+   */
+  test('a nearer binding of the same name is not reported', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(
+      inline(`
+      export function other() {
+        const badge = (x) => x
+        return badge({ tone: 'a' })
+      }
+    `),
+    )
+
+    expect(result.skipped.map((s) => s.reason)).not.toContain('recipe-call')
+  })
+
+  test('a reassignable binding is not registered at all', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(`
+      import { cva } from 'styled-system/css'
+      let badge = cva({ base: { color: 'red.300' } })
+      badge = (x) => x
+      export const y = badge({ tone: 'a' })
+    `)
+
+    expect(result.skipped.map((s) => s.reason)).not.toContain('recipe-call')
+  })
+
+  test('a call nested in a function still reports, when nothing shadows it', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(inline(`export function ok() { return badge({ tone: 'a' }) }`))
+
+    expect(result.skipped.map((s) => s.reason)).toContain('recipe-call')
+  })
+
+  test('an inline recipe call does not block a css() fold beside it', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(
+      inline(`
+      export const cls = badge({ tone: 'a' })
+      export const b = css({ color: 'red.300' })
+    `).replace(`import { cva }`, `import { css, cva }`),
+    )
+
+    expect(result.folded).toHaveLength(1)
+    expect(result.code).toContain('export const b = "c_red.300"')
+    expect(result.code).toContain(`badge({ tone: 'a' })`)
+  })
+})

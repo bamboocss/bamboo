@@ -83,4 +83,22 @@ describe('strict', () => {
 
     expect(end).not.toThrow()
   }, 60_000)
+
+  /**
+   * The invocation, not just the definition. These are reported as `recipe-call` — which is
+   * the point of reporting them — but they resolve through the recipe runtime rather than
+   * `css()`, so they must not fail a build the way a surviving `css()` call does.
+   */
+  test('does not fail on a call of an inline recipe', async () => {
+    const end = await run(
+      `import { cva } from 'styled-system/css'\n` +
+        `const badge = cva({ base: { color: 'red.300' }, variants: { tone: { a: { color: 'blue.300' } } } })\n` +
+        `export const cls = badge({ tone: 'a' })\n` +
+        `export const make = (tone) => badge({ tone })\n`,
+      'src/strict-cva-call.tsx',
+      true,
+    )
+
+    expect(end).not.toThrow()
+  }, 60_000)
 })

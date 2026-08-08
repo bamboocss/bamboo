@@ -52,6 +52,17 @@ export class FileMatcher {
   private viewTransitionAliases = new Set<string>()
 
   private recipeAliases = new Set<string>()
+
+  /**
+   * Names bound to an inline recipe in this file: `const badge = cva({ ... })`.
+   *
+   * Every other surface is recognised by the name it was *imported* as, which is why a
+   * recipe invocation was invisible — `badge` is not an import, so `matchFn` declined it, the
+   * extractor never recorded the call, and nothing downstream could tell an unfoldable
+   * invocation from one nobody had looked at. Filled by the parser, which is the only place
+   * that sees the file's own declarations.
+   */
+  private localRecipes = new Set<string>()
   private patternAliases = new Set<string>()
 
   private propertiesMap = new Map<string, boolean>()
@@ -190,6 +201,32 @@ export class FileMatcher {
 
   private _patternsMatcher: ReturnType<typeof this.createMatch> | undefined
 
+  /**
+   * Record `const <name> = cva(...)`, so calls of `<name>` are recognised.
+   *
+   * Has to run before extraction starts: `matchFn` is memoized with no way to invalidate an
+   * entry, so a name asked about first and registered second stays declined for the life of
+   * this matcher. The parser does its pre-pass before calling `extract`, which is the only
+   * ordering that works.
+   */
+  addLocalRecipe = (name: string) => {
+    this.localRecipes.add(name)
+  }
+
+  /**
+   * Whether the file imports `cva`/`sva` at all, so the parser can skip its pre-pass.
+   *
+   * Worth a predicate because that pre-pass is a whole extra walk of the AST, and it measured
+   * ~10% of extraction when every file paid it. Most files import neither, and a file that
+   * imports neither cannot bind an inline recipe.
+   *
+   * Matches what the pre-pass can actually see: it reads an identifier callee, so a namespaced
+   * `s.cva({ ... })` is out of scope for both.
+   */
+  importsRecipeFactory = () => this.cvaAliases.size > 0 || this.svaAliases.size > 0
+
+  isLocalRecipe = (id: string) => this.localRecipes.has(id)
+
   isValidPattern = (id: string) => {
     this._patternsMatcher ||= this.createMatch(this.importMap.pattern, this.context.patterns.keys)
     return this._patternsMatcher(id)
@@ -256,6 +293,7 @@ export class FileMatcher {
 
   matchFn = memo((fnName: string) => {
     if (this.recipeAliases.has(fnName) || this.patternAliases.has(fnName)) return true
+    if (this.localRecipes.has(fnName)) return true
     if (this.isAliasFnName(fnName) || this.isRawFn(fnName)) return true
     if (this.functions.has(fnName)) return true
 
