@@ -1,6 +1,6 @@
 {
   "name": "@bamboocss/postcss",
-  "version": "1.20.0",
+  "version": "1.20.1",
   "description": "PostCSS integration for Bamboo CSS",
   "homepage": "https://bamboocss.com",
   "license": "MIT",
