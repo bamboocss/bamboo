@@ -128,3 +128,36 @@ const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\
 
 /** The keyframes the theme declares — the allow-list `pruneKeyframes` works against. */
 export const keyframeNames = (ctx: BambooContext) => Object.keys(ctx.config.theme?.keyframes ?? {})
+
+/**
+ * The HTML element names the source renders.
+ *
+ * A textual scan for an opening tag, over the same files the other collectors read. Matching
+ * `<tag` rather than parsing: a template can spell an element in more ways than a parser of
+ * any one framework's syntax would find, and over-reporting an element only keeps a reset
+ * rule that would otherwise go.
+ *
+ * Lowercase-initial only, so a JSX component (`<Button />`) is not mistaken for an element.
+ * That cuts the other way too — a component rendering `<button>` inside a dependency is
+ * invisible here, which is why `prunePreflight` is opt-in.
+ */
+export function collectRenderedElements(ctx: BambooContext) {
+  const found = new Set<string>()
+
+  for (const file of ctx.getFiles()) {
+    const filePath = ctx.runtime.path.abs(ctx.config.cwd, file)
+
+    let content = ctx.project.getSourceFile(filePath)?.getFullText()
+    if (content == null) {
+      try {
+        content = ctx.runtime.fs.readFileSync(filePath)
+      } catch {
+        continue
+      }
+    }
+
+    for (const match of content.matchAll(/<\s*([a-z][\w-]*)[\s/>]/g)) found.add(match[1]!)
+  }
+
+  return found
+}

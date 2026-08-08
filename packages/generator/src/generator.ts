@@ -1,4 +1,11 @@
-import { Context, pruneKeyframes, pruneTokenVars, type StyleDecoder, type Stylesheet } from '@bamboocss/core'
+import {
+  Context,
+  pruneKeyframes,
+  prunePreflight,
+  pruneTokenVars,
+  type StyleDecoder,
+  type Stylesheet,
+} from '@bamboocss/core'
 import { logger } from '@bamboocss/logger'
 import { cssVarRefs, dashCase, BambooError } from '@bamboocss/shared'
 import type { ArtifactId, CssArtifactType, LoadConfigResult, SpecFile, SpecType, SpecTypeMap } from '@bamboocss/types'
@@ -132,6 +139,27 @@ export class Generator extends Context {
     logger.debug(
       'prune:tokens',
       `Removed ${result.removed} unused token css variable(s) and ${result.removedProperties} unused @property rule(s)`,
+    )
+
+    return result
+  }
+
+  /**
+   * Drop the parts of the reset that style elements the source never renders.
+   *
+   * Off unless asked for. Unlike the token and keyframe passes there is no way to prove this
+   * from the build: an element rendered by a dependency, by `dangerouslySetInnerHTML` or by
+   * markdown is invisible to a scan of your own source, and the failure is an element quietly
+   * losing its reset rather than anything that reports itself.
+   */
+  prunePreflight = (sheet: Stylesheet, rendered: Set<string>) => {
+    if (!this.config.prunePreflight) return
+
+    const result = prunePreflight({ target: sheet.layers.reset, rendered })
+
+    logger.debug(
+      'prune:preflight',
+      `Removed ${result.removedRules} reset rule(s) and ${result.removedParts} selector part(s) for unrendered elements`,
     )
 
     return result

@@ -342,6 +342,27 @@ interface CssgenOptions {
    */
   pruneUnusedKeyframes?: boolean
   /**
+   * Whether to drop the parts of the reset that style elements your source never renders.
+   *
+   * Two thirds of the reset is bound to specific elements — 41 of them, covering `table`,
+   * `pre`, `kbd`, `optgroup` and the rest of the long tail. The reset is a fixed size, so it
+   * dominates a small stylesheet: a third of one sandbox's css here and nearly half of
+   * another's, of which 11% and 30% respectively is for elements those projects never render.
+   *
+   * A selector list loses only the parts naming unrendered elements, so a rule shared between
+   * `button` and `::file-selector-button` keeps the half that still applies. `html` and `body`
+   * are never removed.
+   *
+   * Off by default, and it cannot be made safe by default. Unlike the token and keyframe
+   * passes there is nothing to prove this against: an element rendered by a dependency's
+   * component, by `dangerouslySetInnerHTML`, or by markdown is invisible to a scan of your own
+   * source. What you get wrong is an element quietly losing its reset — no error, no warning.
+   * Reach for it when you control the markup and have measured that it pays.
+   *
+   * @default false
+   */
+  prunePreflight?: boolean
+  /**
    * The root selector for the css variables.
    * @default ':where(:host, :root)'
    */

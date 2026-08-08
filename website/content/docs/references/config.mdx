@@ -760,6 +760,47 @@ counterpart pins its own declaration. Spacing scales generate one negative per e
 whether or not your app uses it. On the default preset that is roughly a third of what survives pruning, and there is no
 opt-out.
 
+### prunePreflight
+
+**Type**: `boolean`
+
+**Default**: `false`
+
+Whether to drop the parts of the reset that style elements your source never renders.
+
+Two thirds of the reset is bound to specific elements – 41 of them, covering `table`, `pre`, `kbd`, `optgroup` and the
+rest of the long tail. The reset is a fixed size, so it dominates a small stylesheet rather than amortising like the
+utilities layer does.
+
+```json
+{
+  "prunePreflight": true
+}
+```
+
+Measured on the example apps in this repository:
+
+| app     |    raw |   gzip | brotli |
+| ------- | -----: | -----: | -----: |
+| vite-ts | -13.2% | -14.8% | -14.2% |
+| svelte  | -27.0% | -25.4% | -25.0% |
+
+Unlike most CSS size work, this holds up under compression, because it emits less rather than spelling the same thing
+differently.
+
+A selector list loses only the parts naming unrendered elements, so a rule shared between `button` and
+`::file-selector-button` keeps the half that still applies. A rule goes only when every part does. `html` and `body` are
+never removed, and a selector naming no element at all – `*`, `::backdrop`, `[hidden]`, a class – is always kept, since
+nothing about it says which element it reaches.
+
+<Callout type="warning">
+  This one cannot be made safe by default, and it is the only pruning option here that cannot. The token and keyframe
+  passes have something to prove reachability against; this has a textual scan of your own source and nothing else. An
+  element rendered by a dependency's component, by `dangerouslySetInnerHTML`, or by markdown is invisible to it. What
+  you get wrong is an element quietly losing its reset – no error, no warning, just a `<table>` that has its browser
+  default border spacing back. Reach for it when you control the markup, and check the result.
+</Callout>
+
 ### pruneUnusedKeyframes
 
 **Type**: `boolean`

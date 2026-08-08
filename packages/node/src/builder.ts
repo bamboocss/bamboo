@@ -9,7 +9,12 @@ import { codegen } from './codegen'
 import { loadConfigAndCreateContext } from './config'
 import { BambooContext } from './create-context'
 import { parseDependency } from './parse-dependency'
-import { collectKeyframeReferences, collectTokenReferences, keyframeNames } from './token-references'
+import {
+  collectKeyframeReferences,
+  collectRenderedElements,
+  collectTokenReferences,
+  keyframeNames,
+} from './token-references'
 
 const fileModifiedMap = new Map<string, number>()
 
@@ -252,6 +257,10 @@ export class Builder {
       ctx.pruneTokens(sheet, collectTokenReferences(ctx, []))
     } else {
       ctx.pruneTokens(sheet)
+    }
+
+    if (ctx.config.prunePreflight) {
+      ctx.prunePreflight(sheet, collectRenderedElements(ctx))
     }
 
     if (ctx.config.pruneUnusedKeyframes) {
