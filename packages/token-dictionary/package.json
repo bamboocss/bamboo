@@ -41,7 +41,7 @@
     "@bamboocss/logger": "workspace:^",
     "@bamboocss/shared": "workspace:*",
     "@bamboocss/types": "workspace:*",
-    "picomatch": "4.0.4",
+    "picomatch": "4.0.5",
     "ts-pattern": "5.9.0"
   },
   "devDependencies": {
