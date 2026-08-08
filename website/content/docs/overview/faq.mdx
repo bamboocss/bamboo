@@ -314,12 +314,21 @@ These compile unchanged and do something else, so they are worth checking on mig
 ### Less CSS
 
 - [`pruneUnusedTokens`](/docs/references/config#pruneunusedtokens) drops token CSS variables nothing can reach. The
-  token layer declares every token in your theme while an app uses a fraction of them. On the `vite-ts` sandbox this
-  takes `styles.css` from 24,433 to 12,293 bytes – 6,398 to 3,504 gzipped.
+  token layer declares every token in your theme while an app uses a fraction of them, so this is usually the largest
+  single saving. On the example apps here it is worth 36% to 78% of `styles.css` – the `next-js-app` sandbox goes from
+  18,032 to 3,959 bytes, 4,828 to 1,525 gzipped.
 - [`pruneUnusedKeyframes`](/docs/references/config#pruneunusedkeyframes) does the same for `@keyframes` rules a preset
   declares and your app never animates.
 
-Both are opt-in and change nothing until switched on.
+Both are on by default; set either to `false` to opt out.
+
+- [`prunePreflight`](/docs/references/config#prunepreflight) drops the parts of the reset that style elements your
+  source never renders. The reset is a fixed size, so it dominates a small stylesheet – a third of one sandbox's CSS
+  here and four fifths of another's. Worth a further 13% to 38%, and unlike most CSS size work it holds up under
+  compression, because it emits less rather than spelling the same thing differently.
+
+This one is off by default and cannot be made safe by default: it has a textual scan of your own source and nothing
+else, so an element rendered by a dependency, by `dangerouslySetInnerHTML`, or by markdown is invisible to it.
 
 ### Less JavaScript
 

@@ -329,8 +329,8 @@ interface CssgenOptions {
    * javascript. The tokens artifact is generated into the project rather than installed, so
    * the import is written in your own source and a scan of `include` finds it — a call, or an
    * import of any module the artifact could be. On the example apps here that is worth up to
-   * 20% of the stylesheet raw and 13% gzipped, and nothing at all on the two whose tokens the
-   * css genuinely reads.
+   * 20% of the stylesheet raw and 13% gzipped, and nothing at all on the one that does call
+   * `token()`, which is the point: a project with a caller keeps every declaration.
    *
    * The scan reads `include`, which scopes style extraction rather than everything that may
    * import — so a script, a config, or a sibling workspace package that calls `token()` is

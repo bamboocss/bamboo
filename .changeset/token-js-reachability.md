@@ -34,15 +34,18 @@ Measured on the sandboxes here:
 | app          |    raw |   gzip | brotli |
 | ------------ | -----: | -----: | -----: |
 | svelte       | -20.2% | -12.9% | -12.2% |
-| runtime-perf |  -2.1% |  -1.9% |  -2.3% |
-| vite-ts      |     0% |     0% |     0% |
+| gatsby-ts    | -19.0% | -11.8% | -11.3% |
+| next-js-app  | -18.6% | -11.7% | -10.8% |
+| vite-ts      |  -6.9% |  -4.9% |  -4.1% |
+| runtime-perf |  -2.0% |  -1.9% |  -1.9% |
+| preact-ts    |     0% |     0% |     0% |
 
-`vite-ts` is the control: it does not call `token()` either, and nothing changes because its CSS genuinely reads the
-tokens it declares. Only declarations nothing can reach go.
+`preact-ts` is the control, and it is the shape you want to check yourself against: it calls `token()`, so the exemption
+has a caller, nothing is skipped, and its stylesheet is byte-for-byte what it was. Every other app here reaches for no
+token from JavaScript, and the spread between them is how much of their theme the CSS alone could not account for.
 
-Those three are the ends of the range rather than the middle of it. Across all sixteen example apps the saving runs from
-0% to 20.2% raw, with most between 11% and 19% — `next-js-app` -18.6%, `storybook` -17.0%, `remix` -15.9%, `qwik-ts`
--15.4%, `astro` -14.8%, `solid-ts` -13.6%, `waku-ts` -11.2%.
+Across all sixteen example apps: 0% wherever a project reaches for a token, and -2.0% to -20.2% raw wherever none does,
+most of them between -11% and -19%.
 
 A project that calls `token()`, `token.var()`, or imports the tokens artifact anywhere under `include` is unaffected —
 and a hand-written `var(--x)` in source was already covered by the existing reference scan.

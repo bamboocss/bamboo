@@ -20,8 +20,8 @@ Here are some examples of what you can do with hooks:
 - create your own styles parser (`parser:before`, `parser:after`) using the file's content so that Bamboo could be used
   with any templating language
 - alter the generated JS and DTS code (`codegen:prepare`)
-- modify the generated CSS (`cssgen:done`), allowing all kinds of customizations like removing the unused CSS variables,
-  etc.
+- modify the generated CSS (`cssgen:done`), for anything the built-in passes do not cover — rewriting asset URLs,
+  prepending a licence banner, running the output through another processor
 - restrict `strictTokens` to a specific set of token categories, ex: only affect `colors` and `spacing` tokens and
   therefore allow any value for `fontSizes` and `lineHeights`
 
@@ -139,36 +139,35 @@ export default defineConfig({
 })
 ```
 
-### Remove unused variables from final css
+### Transforming the generated css
 
-Here's an example of how to transform the generated css in the `cssgen:done` hook.
+`cssgen:done` runs just before the CSS is written to disk or injected by the PostCSS plugin. It receives the artifact
+being written and the CSS as a string, and whatever you return replaces it — return nothing to leave it alone.
+
+Rewriting asset URLs so the stylesheet can be served from a CDN:
 
 ```ts file="bamboo.config.ts"
 import { defineConfig } from '@bamboocss/dev'
-import { removeUnusedCssVars } from './remove-unused-css-vars'
-import { removeUnusedKeyframes } from './remove-unused-keyframes'
 
 export default defineConfig({
   // ...
   hooks: {
     'cssgen:done': ({ artifact, content }) => {
       if (artifact === 'styles.css') {
-        return removeUnusedCssVars(removeUnusedKeyframes(content))
+        return content.replaceAll('url(/assets/', 'url(https://cdn.example.com/assets/')
       }
     },
   },
 })
 ```
 
-Get the snippets for the removal logic from our Github Sandbox in the
-[remove-unused-css-vars](https://github.com/bamboocss/bamboo/blob/main/sandbox/vite-ts/remove-unused-css-vars.ts) and
-[remove-unused-keyframes](https://github.com/bamboocss/bamboo/blob/main/sandbox/vite-ts/remove-unused-keyframes.ts)
-files.
-
-> Note: Using this means you can't use the JS function [`token.var`](/docs/guides/dynamic-styling#using-tokenvar) (or
-> [token(xxx)](/docs/guides/dynamic-styling#using-token) where `xxx` is the path to a
-> [semanticToken](/docs/theming/tokens#semantic-tokens)) from `styled-system/tokens` as the CSS variables will be
-> removed based on the usage found in the generated CSS
+<Callout type="warning">
+  Do not use this to strip unused tokens or keyframes. [`pruneUnusedTokens`](/docs/references/config#pruneunusedtokens)
+  and [`pruneUnusedKeyframes`](/docs/references/config#pruneunusedkeyframes) already do it, are on by default, and are
+  safe in a way a scan of the finished CSS cannot be — they keep the declarations `token()` and `token.var()` resolve to
+  at runtime, which nothing in the stylesheet refers to. [`prunePreflight`](/docs/references/config#prunepreflight)
+  covers the reset.
+</Callout>
 
 ## Sharing hooks
 
