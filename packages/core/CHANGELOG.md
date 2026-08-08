@@ -1,5 +1,141 @@
 # @bamboocss/core
 
+## 1.22.0
+
+### Minor Changes
+
+- 41d9052: Add `prunePreflight`, which drops the parts of the reset that style elements your source never renders.
+
+  Off by default. Measured on the example apps here:
+
+  | app     |    raw |   gzip | brotli |
+  | ------- | -----: | -----: | -----: |
+  | vite-ts | -13.2% | -14.8% | -14.2% |
+  | svelte  | -33.9% | -29.1% | -29.3% |
+
+  Two thirds of the reset is bound to specific elements — 41 of them, covering `table`, `pre`, `kbd`, `optgroup` and the
+  rest of the long tail. Being a fixed size, it dominates a small stylesheet rather than amortising the way the
+  utilities layer does: a third of `vite-ts`'s css and four fifths of `svelte`'s, of which those projects render a
+  fraction.
+
+  This is the one saving of its kind that survives compression. Deduplicating or re-encoding what is already emitted
+  loses to gzip, which has flattened the repetition before you get there — measured repeatedly on this codebase, from
+  atomising recipes to native nesting. Emitting less does not.
+
+  A selector list loses only the parts naming unrendered elements, so a rule shared between `button` and
+  `::file-selector-button` keeps the half that still applies. `html` and `body` are never removed, and a selector naming
+  no element — `*`, `::backdrop`, `[hidden]`, a class — is always kept.
+
+  **Why it stays opt-in**
+
+  `pruneUnusedTokens` and `pruneUnusedKeyframes` default to `true` because reachability can be established from the
+  stylesheet and the source together. This has a textual scan of your own source and nothing else. An element rendered
+  by a dependency's component, by `dangerouslySetInnerHTML`, or by markdown is invisible to it, and what you get wrong
+  is an element quietly losing its reset — no error, no warning. It cannot be made safe by default, and should not be.
+
+  The blind spot to check first is nearer than a dependency. The scan reads what `include` covers, and `include`
+  conventionally covers components rather than markup — `./src/**/*.tsx` does not match `index.html`, which is where
+  `<noscript>`, a static `<table>` and the rest of a page's hand-written markup usually live. Add the template to
+  `include` to cover it; the scan reads any file listed, not only ones the parser understands.
+
+  **What the scan reads**
+
+  The file on disk, not the project's parsed copy of it. That distinction only shows up for single-file components, and
+  it decides whether they work at all: `parseSourceFile` replaces an SFC's text with the TSX a framework plugin
+  transformed it into, and every transform here is lossy in the same direction. `svelteToTsx` and `vueToTsx` both
+  swallow a throw and return an empty string, a Vue SFC with a render function and no `<template>` becomes the literal
+  `<template>undefined</template>`, and Svelte strips `<script>` before the scan can see it. Each of those silently
+  reports no elements for the file and takes every one of its reset rules with it. Markup is what this wants, so it
+  reads the markup.
+
+  It also works with a scoped reset. `preflight: { scope: '.app' }` writes the scope onto every selector — `.app table`,
+  or `table.app` under `level: 'element'` — and neither shape names an element until the scope is stripped, so the two
+  options together used to produce byte-identical output with the flag doing nothing at all.
+
+  `bamboo cssgen preflight` prunes too. It writes one artifact rather than the whole sheet, so the token and keyframe
+  passes cannot run there — both read the finished stylesheet to decide reachability, and on a partial one everything
+  looks unreachable. This pass reads your source instead, so it is correct either way, and without it the `reset.css`
+  from `cssgen preflight` disagreed with the one `cssgen --splitting` wrote for the same project.
+
+### Patch Changes
+
+- 1036258: Replace `postcss-discard-duplicates` with a linear pass, making CSS generation 7x faster on a large
+  stylesheet.
+
+  Emitted CSS is unchanged — byte-identical on every sandbox in this repo, and the new pass is asserted against the
+  plugin it replaces rather than against a snapshot.
+
+  On one shape it removes something the old pass left behind. Upstream interleaves its recursion with its sibling walk,
+  so a later sibling is compared against earlier ones before those have had their own inner duplicates removed; two
+  blocks equal only after that removal both survive a pass, and one goes on the next. This pass recurses over the whole
+  subtree first, so it settles them at once — one pass here is upstream run until it stops changing anything. What it
+  drops is an exact duplicate, and dropping the earlier of two exact duplicates cannot change the cascade, so this is
+  the same transformation applied where upstream's traversal order happened to miss it.
+
+  On one other shape it keeps something the old pass removed, and that direction is worth stating too. Upstream's
+  `equals` compares children only when both nodes have them, so it calls a bodyless at-rule equal to a bodied one
+  sharing its name and params: `@media print;@media print{.a{c:1}}` loses the real block because an empty declaration
+  preceded it. This keys the child count as part of the signature, so the two differ and both survive. Nothing bamboo
+  emits is bodyless, so neither shape arises in generated CSS — both are pinned in `dedupe-nodes.test.ts` so the
+  equivalence claim above is not read as unconditional.
+
+  `postcss-discard-duplicates` moves to a dev dependency, since only the test that asserts agreement with it still
+  imports it. Consumers stop installing it.
+
+  **Where the time went**
+
+  Profiling a build that emits 493 kB of CSS put 925ms of its 1,066ms in `getCss`, and 767ms of that inside
+  `postcss-discard-duplicates`:
+
+  ```
+  383 ms  dedupe
+  218 ms  dedupeNode
+  127 ms  equals
+  ```
+
+  That plugin compares every at-rule and declaration against **all** of its preceding siblings. Rules are fine — they
+  are grouped by selector first — but at-rules are not, and a generated stylesheet is the worst possible shape for it:
+  one `@media` block per condition, all siblings under one layer. The measured config had 5,000 of them side by side,
+  which is ~12.5M `equals()` calls. In normal operation it finds nothing, because the encoder does not emit duplicates;
+  removing the pass entirely produced byte-identical output.
+
+  `dedupeNodes` keys each node instead, so the same work is one pass over the tree:
+
+  |                 |   before |  after |
+  | --------------- | -------: | -----: |
+  | encode + decode |   141 ms | 136 ms |
+  | `getCss`        |   925 ms | 127 ms |
+  | **total**       | 1,066 ms | 263 ms |
+
+  Small stylesheets are unaffected either way — the pass was never the cost there.
+
+  **Why it is asserted against the plugin rather than snapshotted**
+
+  A snapshot would only record what the new one does. `dedupe-nodes.test.ts` runs both over the same input instead:
+  fourteen hand-written cases plus 400 randomised stylesheets drawn from a deliberately tiny alphabet, so duplicates
+  arise constantly rather than by luck.
+
+  That fuzzing earned its place. The first version deduped each same-selector group against its final member only, which
+  is not what upstream does — it walks from the end, so every member in turn strips its declarations out of all earlier
+  ones. `.a{d:2}.a{d:2}.a{c:1}` loses its middle rule upstream and lost nothing here. 65 of 400 random stylesheets
+  caught it; none of the hand-written cases did.
+
+  What that fuzzer cannot catch is the divergence above, because it builds every node independently and two siblings
+  equal only after their own contents are deduped essentially never arise — 2,000 cases produced none. So the divergence
+  has its own generator, which emits a block holding duplicated content beside the same block already clean, and asserts
+  the difference from a single upstream pass rather than papering over it.
+
+  Same-selector handling stays quadratic on purpose. A selector group is a handful of rules, unlike the sibling scan
+  this replaces.
+
+- Updated dependencies [fe62614]
+- Updated dependencies [41d9052]
+  - @bamboocss/types@1.22.0
+  - @bamboocss/logger@1.22.0
+  - @bamboocss/token-dictionary@1.22.0
+  - @bamboocss/is-valid-prop@1.22.0
+  - @bamboocss/shared@1.22.0
+
 ## 1.21.0
 
 ### Patch Changes
