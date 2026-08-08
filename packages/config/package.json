@@ -1,6 +1,6 @@
 {
   "name": "@bamboocss/config",
-  "version": "1.20.2",
+  "version": "1.20.3",
   "description": "Find and load bamboo config",
   "homepage": "https://bamboocss.com",
   "license": "MIT",

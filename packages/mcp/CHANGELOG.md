@@ -1,5 +1,14 @@
 # @bamboocss/mcp
 
+## 1.20.3
+
+### Patch Changes
+
+- @bamboocss/node@1.20.3
+- @bamboocss/logger@1.20.3
+- @bamboocss/token-dictionary@1.20.3
+- @bamboocss/types@1.20.3
+
 ## 1.20.2
 
 ### Patch Changes
