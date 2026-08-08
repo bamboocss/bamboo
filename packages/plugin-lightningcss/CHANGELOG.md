@@ -1,5 +1,12 @@
 # @bamboocss/plugin-lightningcss
 
+## 1.21.0
+
+### Patch Changes
+
+- @bamboocss/types@1.21.0
+- @bamboocss/logger@1.21.0
+
 ## 1.20.4
 
 ### Patch Changes
