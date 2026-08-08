@@ -4,7 +4,7 @@ import { logger } from '@bamboocss/logger'
 import { loadConfigAndCreateContext } from '@bamboocss/node'
 import type { Plugin } from 'vite'
 import { bamboocssCss } from './css'
-import { foldSource, type SkippedCall } from './fold'
+import { foldSource, type SkipReason, type SkippedCall } from './fold'
 import { createRuntimeCss, type RuntimeCss } from './runtime-css'
 
 export interface BambooVitePluginOptions {
@@ -55,6 +55,22 @@ export interface BambooVitePluginOptions {
    * @default true
    */
   reportSummary?: boolean
+  /**
+   * Fail the build when a `css()` or pattern call is left for the runtime.
+   *
+   * The fold's value is not the per-call CPU it saves — it is that a bundle where *every*
+   * such call folded no longer imports `styled-system/css` at all, and the engine behind it
+   * drops out. One survivor keeps the whole thing, so a coverage percentage cannot tell you
+   * whether you got the prize. This can.
+   *
+   * Deliberately silent about `cva`/`sva`. A `cva(...)` definition returns a function and can
+   * never collapse to a class string, so failing on it would make this unusable for anyone
+   * writing recipes — and recipes keep their own much smaller runtime by design. What this
+   * guarantees is narrower and checkable: nothing still calls `css()`.
+   *
+   * @default false
+   */
+  strict?: boolean
 }
 
 const DEFAULT_EXTENSIONS = /\.(?:[cm]?[jt]sx?)$/
@@ -96,6 +112,25 @@ export const isGeneratedOutput = (filePath: string, ctx: { config: { cwd: string
   return file === root || file.startsWith(`${root}/`)
 }
 
+/**
+ * The skip reasons that leave a `css()`-family call in the output.
+ *
+ * `overlapping` is handled by the enclosing fold, and `not-imported` is somebody else's
+ * function of the same name — neither leaves a call of ours. `not-foldable` is a `cva`/`sva`
+ * definition, which keeps the recipe runtime rather than the css engine; see `strict`.
+ */
+const SURVIVES_TO_RUNTIME = new Set<SkipReason>([
+  'dynamic',
+  'raw-call',
+  'unsupported-kind',
+  'no-call-expression',
+  'empty',
+  'unresolved-token',
+])
+
+/** 1-indexed line of a source offset, for an error a user can navigate to. */
+const lineAt = (code: string, offset: number) => code.slice(0, offset).split('\n').length
+
 const formatSkipped = (id: string, skipped: SkippedCall[]) => {
   const counts = new Map<string, number>()
   for (const entry of skipped) {
@@ -122,10 +157,21 @@ const formatSkipped = (id: string, skipped: SkippedCall[]) => {
 export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
   // `partial` is forwarded undefined rather than defaulted here, so `foldSource` stays the
   // one place its default is written down.
-  const { transform = true, partial, configPath, cwd, reportSkipped = false, reportSummary = true } = options
+  const {
+    transform = true,
+    partial,
+    configPath,
+    cwd,
+    reportSkipped = false,
+    reportSummary = true,
+    strict = false,
+  } = options
 
   /** Totals across the build, for the summary. */
   const totals = { folded: 0, files: 0, filesWithFolds: 0, skipped: new Map<string, number>() }
+
+  /** Under `strict`, every call that would still reach the runtime. */
+  const survivors: Array<{ file: string; line: number; name: string; reason: SkipReason }> = []
 
   let ctx: Awaited<ReturnType<typeof loadConfigAndCreateContext>> | undefined
   let runtimeCss: RuntimeCss | undefined
@@ -159,6 +205,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
       totals.files = 0
       totals.filesWithFolds = 0
       totals.skipped.clear()
+      survivors.length = 0
 
       await ensureContext()
     },
@@ -234,6 +281,27 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
         totals.skipped.set(entry.reason, (totals.skipped.get(entry.reason) ?? 0) + 1)
       }
 
+      if (strict) {
+        for (const entry of result.skipped) {
+          if (!SURVIVES_TO_RUNTIME.has(entry.reason)) continue
+          survivors.push({ file: filePath, line: lineAt(code, entry.start), name: entry.name, reason: entry.reason })
+        }
+
+        // A lowered leaf counts too, and this is the shape that would otherwise slip
+        // through: `css({ color: tone })` *folds*, to `cssLeaf("c_", "color", tone)`, so it
+        // reports no skip at all. But `cssLeaf` falls back to `css({ [prop]: value })` for a
+        // value that is not a scalar -- a responsive array, a condition object -- which the
+        // build cannot rule out. So it imports the engine, and the bundle keeps it.
+        if (result.code.includes('cssLeaf(')) {
+          survivors.push({
+            file: filePath,
+            line: lineAt(result.code, result.code.indexOf('cssLeaf(')),
+            name: 'cssLeaf',
+            reason: 'lowered-leaf' as SkipReason,
+          })
+        }
+      }
+
       if (reportSkipped && result.skipped.length) {
         logger.info('vite:transform', formatSkipped(filePath, result.skipped))
       }
@@ -254,6 +322,32 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
     },
 
     buildEnd() {
+      if (strict && survivors.length) {
+        // Grouped by file, because the fix is usually per-module: one component taking a
+        // prop keeps the engine for the whole bundle.
+        const byFile = new Map<string, typeof survivors>()
+        for (const entry of survivors) {
+          const list = byFile.get(entry.file) ?? []
+          list.push(entry)
+          byFile.set(entry.file, list)
+        }
+
+        const detail = Array.from(byFile.entries())
+          .map(([file, entries]) =>
+            [`  ${file}`, ...entries.map((e) => `    ${e.line}: ${e.name}() — ${e.reason}`)].join('\n'),
+          )
+          .join('\n')
+
+        throw new Error(
+          `bamboocss: ${survivors.length} call(s) could not be folded, and \`strict\` is on.\n\n` +
+            `${detail}\n\n` +
+            `Each one keeps \`styled-system/css\` in the bundle, so the engine cannot be dropped ` +
+            `however many other calls folded. Make the values static, move the variation into a ` +
+            `\`cva\` variant, or generate them with \`staticCss\` — or set \`strict: false\` to ` +
+            `accept the runtime.`,
+        )
+      }
+
       if (!transform || !reportSummary) return
 
       const declined = Array.from(totals.skipped.values()).reduce((sum, count) => sum + count, 0)
