@@ -204,7 +204,19 @@ export function generateRecipes(ctx: Context, filters?: ArtifactFilters) {
           ...Object.fromEntries(${baseName}AnchorFns.map(([slotName, anchorFn]) => [slotName, anchorFn.recipeFn(props)])),
         }))`
             : outdent`
-        const ${baseName}SlotFns = /* @__PURE__ */ ${baseName}SlotNames.map(([slotName, slotKey]) => [slotName, createRecipe(slotKey, ${baseName}DefaultVariants, getSlotCompoundVariant(${baseName}CompoundVariants, slotName))])
+        /**
+         * Raw, not the formatted name. \`createRecipe\` routes what it is given through
+         * \`createCss\`, which applies \`hash.className\` and \`prefix.className\` itself — so
+         * passing the already formatted \`slotKey\` applied both a second time. The runtime
+         * asked for \`toHash(toHash(name))\` while the stylesheet emitted \`toHash(name)\`, and
+         * every slot on such a recipe rendered unstyled.
+         *
+         * Invisible only when neither \`hash\` nor \`prefix\` is set, where both applications
+         * are identities. A prefixed build was equally broken — \`bam-bam-menu__trigger\`
+         * against a stylesheet emitting \`.bam-menu__trigger\` — which is easy to miss, since
+         * the obvious reading is that this is a hashing problem.
+         */
+        const ${baseName}SlotFns = /* @__PURE__ */ ${baseName}SlotNames.map(([slotName]) => [slotName, createRecipe(\`${config.className}__\${slotName}\`, ${baseName}DefaultVariants, getSlotCompoundVariant(${baseName}CompoundVariants, slotName))])
 
         const ${baseName}Fn = memo((props = {}) => {
           return Object.fromEntries(${baseName}SlotFns.map(([slotName, slotFn]) => [slotName, slotFn.recipeFn(props)]))

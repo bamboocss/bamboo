@@ -570,7 +570,19 @@ describe('generate recipes', () => {
       ].map(
         ([slotName, className]) => [slotName, formatRecipeClass(className)],
       )
-      const badgeSlotFns = /* @__PURE__ */ badgeSlotNames.map(([slotName, slotKey]) => [slotName, createRecipe(slotKey, badgeDefaultVariants, getSlotCompoundVariant(badgeCompoundVariants, slotName))])
+      /**
+       * Raw, not the formatted name. \`createRecipe\` routes what it is given through
+       * \`createCss\`, which applies \`hash.className\` and \`prefix.className\` itself — so
+       * passing the already formatted \`slotKey\` applied both a second time. The runtime
+       * asked for \`toHash(toHash(name))\` while the stylesheet emitted \`toHash(name)\`, and
+       * every slot on such a recipe rendered unstyled.
+       *
+       * Invisible only when neither \`hash\` nor \`prefix\` is set, where both applications
+       * are identities. A prefixed build was equally broken — \`bam-bam-menu__trigger\`
+       * against a stylesheet emitting \`.bam-menu__trigger\` — which is easy to miss, since
+       * the obvious reading is that this is a hashing problem.
+       */
+      const badgeSlotFns = /* @__PURE__ */ badgeSlotNames.map(([slotName]) => [slotName, createRecipe(\`badge__\${slotName}\`, badgeDefaultVariants, getSlotCompoundVariant(badgeCompoundVariants, slotName))])
 
       const badgeFn = memo((props = {}) => {
         return Object.fromEntries(badgeSlotFns.map(([slotName, slotFn]) => [slotName, slotFn.recipeFn(props)]))
