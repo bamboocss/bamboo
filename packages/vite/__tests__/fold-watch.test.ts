@@ -37,7 +37,7 @@ const hookOf = <T>(hook: T | { handler: T } | undefined): T | undefined =>
   typeof hook === 'function' ? hook : (hook as { handler: T } | undefined)?.handler
 
 const driver = () => {
-  const plugin = bamboocss({ transform: true, cwd, reportSummary: false })
+  const plugin = bamboocss({ transform: true, cwd, reportSummary: false }).find((p) => p.name === 'bamboocss:fold')!
 
   const buildStart = hookOf(plugin.buildStart)
   const transform = hookOf(plugin.transform)
@@ -104,7 +104,7 @@ describe('watch rebuilds', () => {
   }, 60_000)
 
   test('the hook touches no parser when the transform is off', async () => {
-    const plugin = bamboocss()
+    const plugin = bamboocss().find((p) => p.name === 'bamboocss:fold')!
     const watchChange = hookOf(plugin.watchChange)
 
     // Asserting it does not throw would pass with the hook deleted outright, which is the

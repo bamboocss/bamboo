@@ -241,8 +241,30 @@ export class Builder {
       return
     }
 
+    // What this appends carries the sentinel, so a second pass over the same root takes the
+    // branch above rather than adding to it.
+    root.append(this.toCss())
+  }
+
+  /**
+   * The finished stylesheet, as a string.
+   *
+   * The same sheet `write` injects into a postcss root, for callers that want the css
+   * rather than a mutated root -- the vite plugin serves it as a virtual module. Both go
+   * through here so a build cannot depend on which integration asked for it.
+   *
+   * `layerParams` is the one thing that differs between them, and it is not cosmetic: the
+   * `@layer a, b, c;` statement is what fixes layer *order*, and css layers are ordered by
+   * first appearance otherwise. `write` leaves it out because the root it appends to is a
+   * file that already declares it -- that declaration is what `isValidRoot` matches on. A
+   * virtual module is the whole stylesheet and has nothing to inherit it from.
+   *
+   * `extract` has to have run first: this reads the encoder rather than filling it.
+   */
+  toCss = ({ layerParams = false }: { layerParams?: boolean } = {}) => {
     const ctx = this.getContextOrThrow()
     const sheet = ctx.createSheet()
+    if (layerParams) ctx.appendLayerParams(sheet)
     ctx.appendBaselineCss(sheet)
 
     // `extract` has already run, so this sheet carries the utilities and recipes too.
@@ -263,11 +285,7 @@ export class Builder {
       ctx.pruneKeyframes(sheet, collectKeyframeReferences(ctx, keyframeNames(ctx)))
     }
 
-    const css = ctx.getCss(sheet)
-
-    // What this appends carries the sentinel, so a second pass over the same root takes the
-    // branch above rather than adding to it.
-    root.append(css)
+    return ctx.getCss(sheet)
   }
 
   registerDependency = (fn: (dep: Message) => void) => {

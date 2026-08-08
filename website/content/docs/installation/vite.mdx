@@ -183,6 +183,50 @@ export default App
 
 </Steps>
 
+## Alternative: emit CSS from the Vite plugin
+
+The setup above generates CSS through PostCSS. `@bamboocss/vite` can do it instead, which removes the PostCSS config and
+the entry CSS file entirely.
+
+```bash
+pnpm add -D @bamboocss/vite
+```
+
+```ts filename="vite.config.ts"
+import { defineConfig } from 'vite'
+import bamboocss from '@bamboocss/vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [bamboocss(), react()],
+})
+```
+
+Import the virtual stylesheet where you imported the entry CSS:
+
+```ts filename="src/main.tsx"
+import 'virtual:bamboo.css'
+```
+
+And reference the ambient declaration so TypeScript accepts that import:
+
+```ts filename="src/vite-env.d.ts"
+/// <reference types="vite/client" />
+/// <reference types="@bamboocss/vite/client" />
+```
+
+That is the whole setup – no `postcss.config.cjs` entry for Bamboo, and no file carrying the `@layer` statement, since
+the virtual module emits its own. You still need PostCSS for anything else you run through it, autoprefixer included.
+
+In development the stylesheet is served from memory and hot-replaced in place, so editing a style repaints without a
+reload or a loss of component state. In a production build it is hashed into the asset graph like any other CSS.
+
+<Callout type="warning">
+  Use this **or** the PostCSS plugin, not both. Each emits a complete stylesheet, so configuring the two together puts
+  two copies of it in your bundle – and a minifier merges most of the duplication away, which makes it read as a
+  rounding error rather than as the whole sheet twice.
+</Callout>
+
 ## Optional: fold static styles at build time
 
 The setup above resolves styles at runtime – `css({ color: 'red.300' })` runs on every render and returns a class

@@ -11,6 +11,7 @@
     "directory": "packages/vite"
   },
   "files": [
+    "client.d.ts",
     "dist"
   ],
   "sideEffects": false,
@@ -27,7 +28,8 @@
         "default": "./dist/index.mjs"
       }
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./client": "./client.d.ts"
   },
   "publishConfig": {
     "access": "public"

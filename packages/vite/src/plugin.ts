@@ -3,6 +3,7 @@ import { resolve } from 'node:path'
 import { logger } from '@bamboocss/logger'
 import { loadConfigAndCreateContext } from '@bamboocss/node'
 import type { Plugin } from 'vite'
+import { bamboocssCss } from './css'
 import { foldSource, type SkippedCall } from './fold'
 import { createRuntimeCss, type RuntimeCss } from './runtime-css'
 
@@ -109,15 +110,16 @@ const formatSkipped = (id: string, skipped: SkippedCall[]) => {
 /**
  * Vite integration for Bamboo CSS.
  *
- * This plugin does not emit CSS — keep your existing PostCSS setup for that. Its only
- * job is the optional build-time fold.
+ * Two plugins, because they do unrelated jobs on different schedules. The first emits the
+ * stylesheet as a virtual module and runs in dev and build alike — that is the integration,
+ * and nothing styles without it. The second is the optional build-time fold.
  *
- * It runs with `enforce: 'pre'` so it sees module source as close as possible to what
+ * The fold runs with `enforce: 'pre'` so it sees module source as close as possible to what
  * the CSS extractor reads off disk. A plugin that rewrites style calls before bamboo
  * sees them would otherwise make the two disagree, and a folded class could end up
  * with no matching rule.
  */
-export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin => {
+export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
   // `partial` is forwarded undefined rather than defaulted here, so `foldSource` stays the
   // one place its default is written down.
   const { transform = true, partial, configPath, cwd, reportSkipped = false, reportSummary = true } = options
@@ -139,8 +141,8 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin => {
     await setup
   }
 
-  return {
-    name: 'bamboocss',
+  const fold: Plugin = {
+    name: 'bamboocss:fold',
     enforce: 'pre',
 
     // Build only. The fold re-parses each module through ts-morph, which is priced
@@ -271,4 +273,8 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin => {
       )
     },
   }
+
+  // The css plugin first: it owns the extraction the fold's context reads from, and vite
+  // preserves array order within one `enforce` bucket.
+  return [bamboocssCss({ configPath, cwd }), fold]
 }

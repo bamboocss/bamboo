@@ -1,8 +1,6 @@
+// Bamboo emits its css through `@bamboocss/vite` now, so only autoprefixer is left here.
 module.exports = {
   plugins: {
-    '@bamboocss/dev/postcss': {
-      logfile: './some-file.log',
-    },
     autoprefixer: {},
   },
 }

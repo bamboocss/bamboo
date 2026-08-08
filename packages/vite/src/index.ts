@@ -1,3 +1,5 @@
+export { bamboocssCss, VIRTUAL_CSS_ID } from './css'
+export type { BambooCssPluginOptions } from './css'
 export { foldSource } from './fold'
 export type { FoldedCall, FoldOptions, FoldResult, SkippedCall, SkipReason } from './fold'
 export { bamboocss, bamboocss as default } from './plugin'
