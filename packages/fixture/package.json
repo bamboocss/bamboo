@@ -17,6 +17,6 @@
     "@bamboocss/shared": "workspace:^",
     "@bamboocss/token-dictionary": "workspace:^",
     "@bamboocss/types": "workspace:*",
-    "postcss": "8.5.25"
+    "postcss": "8.5.26"
   }
 }

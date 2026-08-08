@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@bamboocss/node": "workspace:*",
-    "postcss": "8.5.25"
+    "postcss": "8.5.26"
   },
   "devDependencies": {
     "@bamboocss/logger": "workspace:*"

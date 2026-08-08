@@ -186,9 +186,9 @@ provider, no wrapper. See [Slot recipes](/docs/concepts/slot-recipes#only-the-ro
 - **Selectors you wrote against a non-root slot's variant class no longer match.** `.checkbox__control--size_md` is not
   emitted any more. Anything targeting one — a test, a Playwright locator, a global stylesheet, a snapshot — needs
   updating.
-- **The browser floor moves.** `@scope` needs Chrome 118, Firefox 128, Safari 17.4. There is no polyfill. If you support
-  older browsers, set `scopeRoots: []` on the recipe to opt out and keep a variant class per slot. See
-  [Browser support](/docs/overview/browser-support).
+- **The browser floor moves.** `@scope` needs Chrome 118, Firefox 146, Safari 17.4, and there is no polyfill. That is
+  Bamboo's [browser baseline](/docs/overview/browser-support), not something a recipe can opt out of — `scopeRoots: []`
+  stops the scoping, but the baseline is what Bamboo supports either way.
 - **A portaled slot needs a second anchor.** A `<Select>` whose listbox renders through a portal is outside the root's
   subtree, so a scope opened at the root cannot reach it — its base styles still apply, so it renders _nearly_ right.
   Name both enclosing slots:

@@ -10,27 +10,27 @@ Bamboo supports the latest, stable releases of major browsers that support the f
 - [CSS Cascade Layers](https://caniuse.com/css-cascade-layers)
 - Modern selectors, such as [`:where()`](https://caniuse.com/mdn-css_selectors_where) and
   [`:is()`](https://caniuse.com/css-matches-pseudo)
-
-One further feature, [`@scope`](https://caniuse.com/css-cascade-scope), is used only by projects that write slot recipes
-a particular way. It raises the floor when it applies — see [Slot recipes and `@scope`](#slot-recipes-and-scope) — and
-is not emitted at all otherwise.
+- [`@scope`](https://caniuse.com/css-cascade-scope)
 
 ## Browserlist
 
 Based on the above criteria, the following browsers are supported:
 
 ```txt
->= 1%
-last 1 major version
-not dead
-Chrome >= 99
-Edge >= 99
-Firefox >= 97
-iOS >= 15.4
-Safari >= 15.4
-Android >= 115
-Opera >= 73
+Chrome >= 118
+Edge >= 118
+Firefox >= 146
+iOS >= 17.4
+Safari >= 17.4
+Android >= 118
+Opera >= 106
 ```
+
+[`@scope`](#slot-recipes-and-scope) sets every number here; the rest of the list is supported comfortably below it.
+
+Bamboo reads this baseline when it minifies, so it is what decides whether a selector list may be folded into `:is()`.
+It is deliberately fixed rather than taken from your `browserslist` config, so that the same source always compiles to
+the same CSS.
 
 ## Slot recipes and `@scope`
 
@@ -45,41 +45,15 @@ inside an `@scope` rule, so that no slot has to be handed the variant at runtime
 }
 ```
 
-That is the only place Bamboo emits `@scope`. A project with no slot recipes, or whose slot recipes declare no `root`
-slot, never produces one and keeps the baseline above.
+That is the only place Bamboo emits `@scope`, and it is what sets the baseline above.
 
-Where it does apply, the floor rises to:
+There is no polyfill, and there will not be one. `@scope` decides between two matching rules by DOM proximity, which a
+build step cannot compute and a stylesheet cannot express — the whole point is that the nearest root wins over an outer
+one. Anything claiming to polyfill it either ignores nesting or needs a runtime.
 
-```txt
-Chrome >= 118
-Edge >= 118
-Firefox >= 128
-iOS >= 17.4
-Safari >= 17.4
-Android >= 118
-Opera >= 104
-```
-
-There is no polyfill. `@scope` decides between two matching rules by DOM proximity, which a build step cannot compute
-and a stylesheet cannot express — the whole point is that the nearest root wins over an outer one. Anything claiming to
-polyfill it either ignores nesting or needs a runtime.
-
-If you need to support browsers below that line, set `scopeRoots: []` on the slot recipe. Bamboo then has no anchor to
-scope by, so it falls back to a variant class per slot and emits no `@scope` — every slot stays callable, and the
-variant is delivered through the class as before.
-
-```ts
-defineSlotRecipe({
-  className: 'checkbox',
-  slots: ['root', 'control', 'label'],
-  scopeRoots: [], // no @scope; every slot carries its own variant class
-  variants: { size: { md: { control: { width: '10' } } } },
-})
-```
-
-Renaming a slot to avoid the scoping default also works, since the anchor defaults to a slot called `root` — but a
-slot's name is part of your component's public API, and changing it to dodge a browser constraint is the worse of the
-two.
+Slot recipes do accept [`scopeRoots`](/docs/concepts/slot-recipes#variant-scoping), and `scopeRoots: []` emits no
+`@scope`. That is a cost and layout control — it is what you reach for when a slot renders through a portal — and not a
+supported way to run Bamboo on an older browser. The baseline above is the baseline whichever way you set it.
 
 ## Polyfills
 
@@ -90,7 +64,7 @@ In event that you need to support older browsers, you can use the following poly
 - [postcss-cascade-layers](https://www.npmjs.com/package/@csstools/postcss-cascade-layers): Adds support for CSS Cascade
   Layers.
 
-There is deliberately none listed for `@scope`; see above for why, and for the way out.
+There is deliberately none listed for `@scope`; see above for why there cannot be one.
 
 Here is an example of a `postcss.config.js` file that uses these polyfills:
 

@@ -40,7 +40,7 @@
   "dependencies": {
     "@bamboocss/logger": "workspace:*",
     "@bamboocss/types": "workspace:*",
-    "browserslist": "4.28.1",
+    "browserslist": "4.28.7",
     "lightningcss": "1.31.1"
   }
 }

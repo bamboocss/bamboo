@@ -18,8 +18,8 @@
   "dependencies": {
     "@bamboocss/dev": "workspace:*",
     "gatsby": "5.15.0",
-    "gatsby-plugin-postcss": "6.15.0",
-    "postcss": "8.5.14",
+    "gatsby-plugin-postcss": "6.16.0",
+    "postcss": "8.5.26",
     "react": "19.2.0",
     "react-dom": "19.2.0"
   },
