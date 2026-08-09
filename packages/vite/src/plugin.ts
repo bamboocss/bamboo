@@ -4,7 +4,7 @@ import { logger } from '@bamboocss/logger'
 import { loadConfigAndCreateContext } from '@bamboocss/node'
 import type { Plugin } from 'vite'
 import { bamboocssCss } from './css'
-import { foldSource, type SkipReason, type SkippedCall } from './fold'
+import { foldSource, type ForeignRecipes, type SkipReason, type SkippedCall } from './fold'
 import { createRuntimeCss, type RuntimeCss } from './runtime-css'
 
 export interface BambooVitePluginOptions {
@@ -173,6 +173,14 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
   /** Under `strict`, every call that would still reach the runtime. */
   const survivors: Array<{ file: string; line: number; name: string; reason: SkipReason }> = []
 
+  /**
+   * Recipe configs read out of modules other than the one being transformed.
+   *
+   * Per build rather than per module: a recipe declared once and imported by fifty components
+   * would otherwise re-parse its module fifty times, which is the transform path.
+   */
+  const recipeConfigCache = new Map<string, ForeignRecipes>()
+
   let ctx: Awaited<ReturnType<typeof loadConfigAndCreateContext>> | undefined
   let runtimeCss: RuntimeCss | undefined
   let setup: Promise<void> | undefined
@@ -206,6 +214,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
       totals.filesWithFolds = 0
       totals.skipped.clear()
       survivors.length = 0
+      recipeConfigCache.clear()
 
       await ensureContext()
     },
@@ -240,6 +249,10 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
       const [filePath] = id.split('?')
       if (!filePath) return
 
+      // Whole-map rather than this file's entry: a config is cached under the module that
+      // *declares* it, and an edit here can change what any other module re-exports.
+      recipeConfigCache.clear()
+
       if (change.event === 'delete') {
         ctx.project.removeSourceFile(filePath)
         return
@@ -268,7 +281,19 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
         const parserResult = ctx.project.parseSourceFile(filePath)
         if (!parserResult || parserResult.isEmpty()) return null
 
-        result = foldSource({ ctx, code, parserResult, filePath, runtimeCss, partial })
+        result = foldSource({
+          ctx,
+          code,
+          parserResult,
+          filePath,
+          runtimeCss,
+          partial,
+          // On demand rather than from a registry built at `buildStart`: a consumer is
+          // transformed before the module it imports, so anything accumulated during the
+          // build would make the fold depend on discovery order.
+          parseModule: (path) => ctx?.project.parseSourceFile(path),
+          recipeConfigCache,
+        })
       } catch (error) {
         logger.caughtError('vite:transform', `Failed to fold ${filePath}`, error)
         return null

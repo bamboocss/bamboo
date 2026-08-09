@@ -16,8 +16,21 @@ import {
 } from 'ts-morph'
 import { clearBoxNodeCache } from '@bamboocss/extractor'
 import { classifyProject } from './classify'
+import { clearImportedRecipeCache } from './imported-recipes'
 import { createParser } from './parser'
 import { ParserResult } from './parser-result'
+
+/**
+ * Everything memoized against another file's contents.
+ *
+ * Both caches answer a question about a *different* module than the one being parsed — what
+ * an identifier resolved to, and which recipes a module exports — so both go stale on exactly
+ * the same events, and clearing one without the other leaves the pair disagreeing.
+ */
+const invalidateResolutions = () => {
+  clearBoxNodeCache()
+  clearImportedRecipeCache()
+}
 
 // TS 6.0 rejects raw JSON compiler options (e.g. `target: "ESNext"`) in createProgram.
 // They must be normalized to numeric enum values via TypeScript's own parser API first.
@@ -126,6 +139,23 @@ export class Project {
    */
   private moduleResolutionCache: ts.ModuleResolutionCache | undefined
 
+  /**
+   * Everything memoized against the shape of the file tree, including the negative half.
+   *
+   * `resolveModuleName` caches failures too, so a specifier that resolved to nothing before
+   * its target existed stays unresolved for the life of the process. That silently dropped a
+   * dependency edge; now it would also leave a recipe permanently invisible to the module
+   * importing it, since resolution is what finds one.
+   */
+  private invalidate = (fileTreeChanged = true) => {
+    invalidateResolutions()
+    // Only when the set of files could have changed. Overwriting a file the project already
+    // holds cannot satisfy a resolution that previously failed, and `addSourceFile` runs once
+    // per module on the transform path — dropping the cache there measured +50% on a module
+    // with eight relative imports, for no correctness gained.
+    if (fileTreeChanged) this.moduleResolutionCache = undefined
+  }
+
   private resolveImport = (decl: { getModuleSpecifierValue(): string | undefined; getSourceFile(): SourceFile }) => {
     const moduleName = decl.getModuleSpecifierValue()
     if (!moduleName) return
@@ -148,6 +178,15 @@ export class Project {
     const name = resolved.resolvedModule?.resolvedFileName
     return name ? this.project.getSourceFile(name) : undefined
   }
+
+  /**
+   * `resolveImport` in the shape a caller can use, for a specifier read off any declaration.
+   *
+   * Shares the module resolution cache above, so a barrel resolved while tracking
+   * dependencies is not resolved again while looking for recipes.
+   */
+  private resolveModule = (specifier: string, from: SourceFile): SourceFile | undefined =>
+    this.resolveImport({ getModuleSpecifierValue: () => specifier, getSourceFile: () => from })
 
   private trackDependencies = (filePath: string, sourceFile: SourceFile) => {
     const importer = this.normalizePath(sourceFile.getFilePath())
@@ -220,7 +259,7 @@ export class Project {
     const { readFile } = this.options
     // A file appearing can satisfy an import that previously resolved to nothing,
     // and this overwrites when the path already exists.
-    clearBoxNodeCache()
+    this.invalidate()
     return this.project.createSourceFile(filePath, readFile(filePath), {
       overwrite: true,
       scriptKind: ScriptKind.TSX,
@@ -236,7 +275,11 @@ export class Project {
 
   addSourceFile = (filePath: string, content: string): SourceFile => {
     // Resolutions memoized against other files' nodes can now be out of date.
-    clearBoxNodeCache()
+    // Path-qualified, because `getSourceFile` falls back to a suffix search for a bare
+    // filename — so `styles.ts` would match an existing `/app/styles.ts`, report the tree
+    // unchanged, and leave a negative resolution cached against the `/styles.ts` this then
+    // creates.
+    this.invalidate(!(filePath.includes('/') && this.project.getSourceFile(filePath)))
     return this.project.createSourceFile(filePath, content, {
       overwrite: true,
       scriptKind: ScriptKind.TSX,
@@ -248,7 +291,7 @@ export class Project {
     if (sourceFile) {
       // Importers memoized the values this file exported; without dropping them
       // they would keep emitting styles from a file that no longer exists.
-      clearBoxNodeCache()
+      this.invalidate()
       return this.project.removeSourceFile(sourceFile)
     }
     return false
@@ -256,8 +299,9 @@ export class Project {
 
   reloadSourceFile = (filePath: string): FileSystemRefreshResult | undefined => {
     // Same reason as `addSourceFile`: this is the watch-mode entry point for an
-    // edit, and importers' memoized resolutions must not survive it.
-    clearBoxNodeCache()
+    // edit, and importers' memoized resolutions must not survive it. The file tree is
+    // unchanged — this path re-reads a file the project already holds.
+    this.invalidate(false)
     return this.getSourceFile(filePath)?.refreshFromFileSystemSync()
   }
 
@@ -266,7 +310,7 @@ export class Project {
 
     // Once for the batch rather than per file: every file is about to be re-read,
     // so any resolution memoized against another file's contents is suspect.
-    clearBoxNodeCache()
+    this.invalidate()
 
     for (const file of files) {
       const source = this.getSourceFile(file)
@@ -331,7 +375,7 @@ export class Project {
       sourceFile.replaceWithText(transformed)
     }
 
-    const result = this.parser(sourceFile, encoder, options)?.setFilePath(filePath)
+    const result = this.parser(sourceFile, encoder, options, this.resolveModule)?.setFilePath(filePath)
 
     hooks['parser:after']?.({ filePath, result })
 

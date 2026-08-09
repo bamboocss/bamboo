@@ -7,6 +7,7 @@ import type { SourceFile } from 'ts-morph'
 import { Node, ts } from 'ts-morph'
 import { match } from 'ts-pattern'
 import { getImportDeclarations } from './get-import-declarations'
+import { importedRecipeBindings, type RecipeOrigin, type ResolveModule } from './imported-recipes'
 import { ParserResult } from './parser-result'
 
 const combineResult = (unboxed: Unboxed) => {
@@ -41,6 +42,14 @@ export function createParser(context: ParserOptions) {
     sourceFile: SourceFile | undefined,
     encoder?: Generator['encoder'],
     options?: ParserResultConfigureOptions,
+    /**
+     * How to place a module specifier inside the project.
+     *
+     * Supplied by the caller because it owns the resolution cache, and because the cheap
+     * implementation is a filesystem lookup rather than a symbol-table walk. Absent, a
+     * recipe declared in another module stays invisible exactly as before.
+     */
+    resolveModule?: ResolveModule,
   ) {
     if (!sourceFile) return
 
@@ -57,8 +66,21 @@ export function createParser(context: ParserOptions) {
 
     const parserResult = new ParserResult(context, encoder)
 
-    if (file.isEmpty() && !jsx.isEnabled) {
+    // Recipes reached through an import, resolved before the early return below rather than
+    // beside the in-file pre-pass. A file whose only bamboo-adjacent import is the recipe
+    // binding itself has no bamboo imports at all — `file.isEmpty()` — and returning on that
+    // would leave exactly the shape this exists for invisible, in any project whose config
+    // declares no recipes.
+    const importedRecipes: Map<string, RecipeOrigin> = resolveModule
+      ? importedRecipeBindings(sourceFile, imports, resolveModule)
+      : new Map()
+
+    if (file.isEmpty() && !jsx.isEnabled && importedRecipes.size === 0) {
       return parserResult
+    }
+
+    for (const binding of importedRecipes.keys()) {
+      file.addLocalRecipe(binding)
     }
 
     // Inline recipes bound to a local name, before `extract` asks about any of them.
@@ -252,6 +274,10 @@ export function createParser(context: ParserOptions) {
                 name: alias,
                 box: (query.box.value[0] as BoxNodeMap) ?? box.fallback(query.box),
                 data: combineResult(unbox(query.box.value[0])),
+                // Where the config lives, when it is not this file. Recorded here because
+                // this is where the binding was resolved; a consumer would otherwise have to
+                // redo that resolution, and the cheap way to do it is not available to one.
+                origin: importedRecipes.get(alias),
               })
             }
           })

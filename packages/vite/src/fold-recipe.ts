@@ -168,7 +168,16 @@ export const ensureRecipeHelperImport = (
   isBambooCssModule: (mod: string) => boolean,
   isGeneratedCssModule: (mod: string) => boolean,
   isShadowed: (call: Node, name: string) => boolean,
-): { name: string; insert?: { pos: number; names: string[] } } | undefined => {
+  /**
+   * The specifier to write a *new* import declaration with, when the file has none to extend.
+   *
+   * Only supplied for a recipe declared in another module, which is the case where the
+   * premise above stops holding: such a file imports the binding, not the factory, so it
+   * need not import the css module at all — and before this it declined for that reason
+   * alone, having resolved everything else.
+   */
+  newImportModule?: string,
+): { name: string; insert?: { pos: number; names: string[]; module?: string } } | undefined => {
   const sourceFile = call.getSourceFile()
   let host: ReturnType<typeof sourceFile.getImportDeclarations>[number] | undefined
 
@@ -190,12 +199,23 @@ export const ensureRecipeHelperImport = (
     if (!host && isGeneratedCssModule(mod) && declaration.getNamedImports().length > 0) host = declaration
   }
 
-  if (!host) return undefined
+  if (!host && !newImportModule) return undefined
 
   // A module-scope binding of this name would collide with the one being added, and one in
   // scope at the call site would be reached instead of it.
   if (declaredAtModuleScope(sourceFile).has(imported)) return undefined
   if (isShadowed(call, imported)) return undefined
+
+  if (!host) {
+    // After the last import rather than at the top of the file. A directive prologue —
+    // `'use client'`, which is exactly what a component file calling a recipe tends to
+    // open with — stops being a directive the moment a statement precedes it.
+    const declarations = sourceFile.getImportDeclarations()
+    const anchor = declarations.at(-1)
+    if (!anchor) return undefined
+
+    return { name: imported, insert: { pos: anchor.getEnd(), names: [imported], module: newImportModule } }
+  }
 
   const last = host.getNamedImports().at(-1)
   if (!last) return undefined

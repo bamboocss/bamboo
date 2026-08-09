@@ -1,7 +1,7 @@
 import { createContext } from '@bamboocss/fixture'
 import { esc } from '@bamboocss/shared'
 import type { Config } from '@bamboocss/types'
-import { foldSource, type FoldResult } from '../src/fold'
+import { foldSource, type FoldResult, type ForeignRecipes } from '../src/fold'
 import { createRuntimeCss } from '../src/runtime-css'
 
 export const FILE_PATH = 'app/src/test.tsx'
@@ -14,7 +14,14 @@ export const createFoldFixture = (userConfig?: Parameters<typeof createContext>[
     ctx.project.addSourceFile(filePath, code)
     const parserResult = ctx.project.parseSourceFile(filePath)
     if (!parserResult) return { code, map: null, folded: [], skipped: [], dependencies: [] }
-    return foldSource({ ctx, code, parserResult, filePath, runtimeCss })
+    return foldSource({
+      ctx,
+      code,
+      parserResult,
+      filePath,
+      runtimeCss,
+      parseModule: (path) => ctx.project.parseSourceFile(path),
+    })
   }
 
   /** Add the modules an entry imports before folding it. */
@@ -32,7 +39,29 @@ export const createFoldFixture = (userConfig?: Parameters<typeof createContext>[
     return ctx.getCss(sheet)
   }
 
-  return { ctx, fold, addFiles, getCss, runtimeCss }
+  /**
+   * A fold sharing one config cache across calls, as the vite plugin does for a build.
+   *
+   * Separate from `fold` because the shared cache has its own failure mode: it outlives the
+   * modules it read, and `addSourceFile` forgets a file's nodes.
+   */
+  const recipeConfigCache = new Map<string, ForeignRecipes>()
+  const foldWithCache = (code: string, filePath = FILE_PATH): FoldResult => {
+    ctx.project.addSourceFile(filePath, code)
+    const parserResult = ctx.project.parseSourceFile(filePath)
+    if (!parserResult) return { code, map: null, folded: [], skipped: [], dependencies: [] }
+    return foldSource({
+      ctx,
+      code,
+      parserResult,
+      filePath,
+      runtimeCss,
+      parseModule: (path) => ctx.project.parseSourceFile(path),
+      recipeConfigCache,
+    })
+  }
+
+  return { ctx, fold, foldWithCache, addFiles, getCss, runtimeCss }
 }
 
 /**

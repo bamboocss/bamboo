@@ -3,6 +3,7 @@ import type { Context } from '@bamboocss/core'
 import { type BoxNode, box, unbox } from '@bamboocss/extractor'
 import type { Dict, ParserResultInterface, ResultItem } from '@bamboocss/types'
 import MagicString from 'magic-string'
+import { dirname, relative, resolve as resolvePath } from 'node:path'
 import { Node, type SourceFile, SyntaxKind } from 'ts-morph'
 import {
   AMBIGUOUS,
@@ -106,6 +107,30 @@ export interface FoldOptions {
    * On by default.
    */
   partial?: boolean
+  /**
+   * Parse another module, for a recipe whose `cva` config lives outside this one.
+   *
+   * Threaded in rather than read off `ctx`, because the project belongs to the node
+   * context and this signature takes the core one. Its absence is a supported state:
+   * without it a cross-module recipe call is still *reported*, which is the half that
+   * used to be missing entirely — it simply cannot be lowered.
+   *
+   * Pulling the module on demand is also what makes the fold order-independent. A
+   * bundler transforms a consumer before the module it imports, so a registry built
+   * from what has been transformed so far would fold or decline the same file
+   * depending on discovery order.
+   */
+  parseModule?: (filePath: string) => ParserResultInterface | undefined
+  /**
+   * Configs of modules other than this one, shared across a build.
+   *
+   * Owned by the caller because it has to outlive one call: the declaring module would
+   * otherwise be re-parsed once per module that imports it, which is `consumers x module
+   * size` on the transform path — measured at 909ms against 8.3ms for fifty consumers of a
+   * hundred-recipe module. The caller clears an entry when the file changes, which is the
+   * only place that knows.
+   */
+  recipeConfigCache?: Map<string, ForeignRecipes>
 }
 
 /**
@@ -148,6 +173,21 @@ const UNFOLDABLE_TYPES = new Set(['cva', 'sva'])
  * nothing had parsed.
  */
 const RECIPE_CALL_TYPE = 'cva-call'
+
+/** Where an imported recipe was declared, as the parser recorded it on the call. */
+type RecipeOrigin = NonNullable<ResultItem['origin']>
+
+/**
+ * What one foreign module contributes, in a form that outlives it.
+ *
+ * Plain data only. Anything holding a ts-morph node would be read after the next
+ * `addSourceFile` forgets that module's tree.
+ */
+export interface ForeignRecipes {
+  configs: Map<string, RecipeEntry>
+  /** How that module spelled the css module, for a helper import written into a consumer. */
+  cssSpecifier?: string
+}
 
 /**
  * The pieces `trim` reduces a module specifier by, hoisted because a regex literal
@@ -510,7 +550,15 @@ const argumentsAccountedFor = (call: Node, boxNode: BoxNode): boolean => {
 }
 
 export const foldSource = (options: FoldOptions): FoldResult => {
-  const { ctx, code, parserResult, partial: partial_ = true, runtimeCss = createRuntimeCss(ctx) } = options
+  const {
+    ctx,
+    code,
+    parserResult,
+    partial: partial_ = true,
+    runtimeCss = createRuntimeCss(ctx),
+    parseModule,
+    recipeConfigCache,
+  } = options
 
   /**
    * Recover the static half of a call the whole-call path gave up on. Only a
@@ -702,6 +750,134 @@ export const foldSource = (options: FoldOptions): FoldResult => {
   const isBambooCssModule = (mod: string) => matchesModule(mod, cssModules)
   const isGeneratedCssModule = (mod: string) => matchesModule(mod, [generatedCssModule])
 
+  /**
+   * How *this* module would have to spell the css module, learnt from one that already does.
+   *
+   * A file calling an imported recipe need not import the css module at all, so when the
+   * lowering needs `cvaPick` there is no spelling in the file to copy. The declaring module
+   * necessarily has one — `cva` came from it — and that is the spelling reused here.
+   *
+   * A bare or aliased specifier resolves identically from any file, so it is taken as
+   * written. A relative one is re-based: resolved against the module that wrote it, then
+   * expressed from the module being folded.
+   */
+  const cssModuleSpecifierFrom = (declaring: SourceFile): string | undefined => {
+    for (const declaration of declaring.getImportDeclarations()) {
+      if (declaration.isTypeOnly()) continue
+
+      const mod = declaration.getModuleSpecifierValue()
+      if (isGeneratedCssModule(mod)) return mod
+    }
+
+    return undefined
+  }
+
+  /**
+   * That spelling, said from the module being folded.
+   *
+   * A bare or aliased specifier resolves identically from any file, so it is taken as
+   * written. A relative one is re-based: resolved against the module that wrote it, then
+   * expressed from the module being folded. Pure path arithmetic, so it holds a string
+   * rather than a node — a cached node does not survive the next `addSourceFile`, which
+   * ts-morph implements by forgetting the file's whole tree.
+   */
+  const rebaseSpecifier = (specifier: string, declaringPath: string, consumingPath: string): string | undefined => {
+    if (!specifier.startsWith('.')) return specifier
+
+    const absolute = resolvePath(dirname(declaringPath), specifier)
+    const rebased = relative(dirname(consumingPath), absolute).replaceAll('\\', '/')
+    if (!rebased) return undefined
+
+    return rebased.startsWith('.') ? rebased : `./${rebased}`
+  }
+
+  /**
+   * Configs of one foreign module, parsed once however many of its recipes are called.
+   *
+   * Falls back to a per-call map when the caller supplies none, so the fold stays correct
+   * standalone — only repeated, which is what the shared cache exists to avoid.
+   */
+  const configsByModule = recipeConfigCache ?? new Map<string, ForeignRecipes>()
+  /** The specifier each imported recipe's module used for the css module, when it needs one. */
+  const helperModules = new Map<string, string | undefined>()
+  /** Declaring modules a fold read, recorded as paths because their nodes do not persist. */
+  const foreignDependencies = new Set<string>()
+  /** Resolutions for this module's own call sites, keyed by the name the call site writes. */
+  const importedRecipes = new Map<string, RecipeEntry | undefined>()
+
+  /**
+   * The config of a recipe this module imports.
+   *
+   * The binding is followed with ts-morph's symbol aliasing rather than by re-reading import
+   * declarations, because that is what already understands the shapes these are reached
+   * through: `export { badge } from './styles'`, `export * from './styles'`, and an alias at
+   * either end. Each hop is an alias symbol, so following them to a non-alias lands on the
+   * declaration wherever it lives.
+   *
+   * The class names do not depend on which module the call is in — `getRecipeIdentity` hashes
+   * the config — so a recipe lowered here produces exactly the string its own module's call
+   * sites produce, and exactly the one the runtime would have.
+   */
+  const resolveImportedRecipe = (call: Node, name: string, origin: RecipeOrigin): RecipeEntry | undefined => {
+    if (importedRecipes.has(name)) return importedRecipes.get(name)
+
+    const resolve = (): RecipeEntry | undefined => {
+      if (!parseModule) return undefined
+
+      // Declared here after all — the local pass owns it, and parsing this module again
+      // from inside its own fold would recurse.
+      const consuming = call.getSourceFile()
+      if (origin.filePath === consuming.getFilePath()) return undefined
+
+      let foreign = configsByModule.get(origin.filePath)
+
+      if (!foreign) {
+        const result = parseModule(origin.filePath)
+        if (!result) return undefined
+
+        const collected = collectRecipeConfigs(result)
+        const declaring = [...collected.values()]
+          .find((entry) => entry.box)
+          ?.box?.getNode?.()
+          ?.getSourceFile()
+
+        // Stripped of `box` on the way in. A `RecipeEntry` carries the definition's node so
+        // the fold can register a watch dependency, and a node does not survive the next
+        // `addSourceFile` — ts-morph implements overwriting by forgetting the file's whole
+        // tree, so a second consumer would read a forgotten node and throw. The dependency
+        // is registered from the path below, which is what it needed the node for.
+        const configs = new Map<string, RecipeEntry>()
+        for (const [key, entry] of collected) {
+          configs.set(key, entry === AMBIGUOUS ? entry : { config: entry.config, name: entry.name, box: undefined })
+        }
+
+        foreign = { configs, cssSpecifier: declaring ? cssModuleSpecifierFrom(declaring) : undefined }
+        configsByModule.set(origin.filePath, foreign)
+      }
+
+      // Under the name the *declaring* module gave it, which an alias at any hop makes
+      // different from the name written here.
+      const entry = foreign.configs.get(origin.name)
+      if (!entry || entry === AMBIGUOUS) return undefined
+
+      // The class is hashed from the config, so editing that module renames the rule and
+      // leaves this literal pointing at one that no longer exists.
+      foreignDependencies.add(origin.filePath)
+
+      helperModules.set(
+        name,
+        foreign.cssSpecifier
+          ? rebaseSpecifier(foreign.cssSpecifier, origin.filePath, consuming.getFilePath())
+          : undefined,
+      )
+      return entry
+    }
+
+    const resolved = resolve()
+    importedRecipes.set(name, resolved)
+    return resolved
+  }
+
   const folded: FoldedCall[] = []
   const skipped: SkippedCall[] = []
 
@@ -725,7 +901,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     /** The resolved value, for a `token()` call. Its presence is what marks one. */
     value?: string
     /** Bindings to add to an existing import, by name so duplicates can be dropped. */
-    insert?: { pos: number; names: string[] }
+    insert?: { pos: number; names: string[]; module?: string }
     node: Node
     start: number
     end: number
@@ -902,6 +1078,12 @@ export const foldSource = (options: FoldOptions): FoldResult => {
           }
 
           recipeConfigs ??= collectRecipeConfigs(parserResult)
+          // Declared elsewhere and imported here. Resolved lazily and only for a name the
+          // local pass did not claim, so a file whose recipes are all its own pays nothing.
+          if (!recipeConfigs.has(name) && item.origin) {
+            const imported = resolveImportedRecipe(call, name, item.origin)
+            if (imported) recipeConfigs.set(name, imported)
+          }
 
           const tally = recipeCalls.get(name) ?? { seen: 0, lowered: 0 }
           tally.seen++
@@ -929,6 +1111,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
               isBambooCssModule,
               isGeneratedCssModule,
               isShadowed,
+              helperModules.get(name),
             )
 
             if (helper) {
@@ -1096,13 +1279,18 @@ export const foldSource = (options: FoldOptions): FoldResult => {
   // Tracked by name rather than as a single flag, because calls in the same file need
   // different sets: one needs `cx` alone, the next also needs the leaf helper.
   const insertedNames = new Set<string>()
-  const applyInsert = (insert: { pos: number; names: string[] } | undefined) => {
+  const applyInsert = (insert: { pos: number; names: string[]; module?: string } | undefined) => {
     if (!insert) return
 
     const missing = insert.names.filter((name) => !insertedNames.has(name))
     if (!missing.length) return
 
-    magic.appendLeft(insert.pos, missing.map((name) => `, ${name}`).join(''))
+    magic.appendLeft(
+      insert.pos,
+      insert.module
+        ? `\nimport { ${missing.join(', ')} } from '${insert.module}'`
+        : missing.map((name) => `, ${name}`).join(''),
+    )
     for (const name of missing) insertedNames.add(name)
   }
 
@@ -1203,12 +1391,13 @@ export const foldSource = (options: FoldOptions): FoldResult => {
   //
   // Not driven by `parserResult`: a property access on a local binding is not a style call, so
   // nothing records it. The source file is the only place it exists.
-  // Any recorded definition gives the module being rewritten; they all share it.
-  const recipeSourceFile =
-    [...(recipeConfigs?.values() ?? [])]
-      .find((entry) => entry.box)
-      ?.box?.getNode?.()
-      ?.getSourceFile() ?? candidates[0]?.node.getSourceFile()
+  //
+  // The module being *rewritten*, taken from a candidate rather than from a config's box.
+  // Those boxes used to share this module, and no longer do: a config resolved across modules
+  // carries the declaring file, so reading one here scanned somebody else's source — leaving
+  // this module's `splitVariantProps` unlowered, and computing offsets against a file the
+  // rewrite does not apply to.
+  const recipeSourceFile = candidates[0]?.node.getSourceFile()
 
   if (recipeSourceFile) {
     for (const access of recipeSourceFile.getDescendantsOfKind(SyntaxKind.PropertyAccessExpression)) {
@@ -1252,6 +1441,10 @@ export const foldSource = (options: FoldOptions): FoldResult => {
         isBambooCssModule,
         isGeneratedCssModule,
         isShadowed,
+        // The same fallback the axis lowering uses. Without it this declined in exactly the
+        // files that lowering now serves — leaving the access, so the binding, so the config
+        // the whole exercise exists to let a bundler drop.
+        helperModules.get(target.getText()),
       )
       if (!helper) continue
 
@@ -1299,6 +1492,6 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     map: magic.generateMap({ source: options.filePath, hires: true, includeContent: true }),
     folded,
     skipped,
-    dependencies: Array.from(dependencyScan.results),
+    dependencies: [...dependencyScan.results, ...foreignDependencies],
   }
 }

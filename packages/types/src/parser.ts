@@ -5,6 +5,13 @@ export interface ResultItem {
   data: Array<Unboxed['raw']>
   type?: 'css' | 'cva' | 'sva' | 'token' | 'pattern' | 'recipe' | 'jsx-recipe' | 'cva-call'
   box?: BoxNodeMap | BoxNodeLiteral | BoxNodeArray
+  /**
+   * For a `cva-call`, the module the recipe was declared in when that is not this one.
+   *
+   * Absent for a recipe the file declares itself, which is the case the name alone already
+   * identifies.
+   */
+  origin?: { filePath: string; name: string }
 }
 
 export interface ParserResultInterface {
