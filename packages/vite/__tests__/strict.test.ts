@@ -101,4 +101,74 @@ describe('strict', () => {
 
     expect(end).not.toThrow()
   }, 60_000)
+
+  /**
+   * The ledger only holds calls something recognised, so a guarantee built on it is worth
+   * what the recogniser is — and these are the shapes nothing recognises. Each folds nothing,
+   * reports nothing, and keeps the module live; before this they passed `strict` outright.
+   */
+  describe('a binding the rewrite left behind', () => {
+    /**
+     * A module whose only bamboo usage is a bare reference. Nothing records it, so the ledger
+     * is empty and so is the parser result — which meant the module was skipped before the
+     * fold ever saw it, and `strict` passed on a file that plainly keeps the engine.
+     */
+    test('a binding passed on rather than called', async () => {
+      const end = await run(
+        `import { css } from 'styled-system/css'
+export const pass = css
+`,
+        'src/strict-reexport.tsx',
+        true,
+      )
+
+      expect(end).toThrow(/could not be folded/)
+      expect(end).toThrow(/runtime-binding/)
+      expect(end).toThrow(/strict-reexport\.tsx/)
+    }, 60_000)
+
+    test('a binding handed to something the build cannot follow', async () => {
+      const end = await run(
+        `import { css } from 'styled-system/css'
+const apply = (fn, v) => fn(v)
+export const f = (p) => apply(css, p)
+`,
+        'src/strict-indirect.tsx',
+        true,
+      )
+
+      expect(end).toThrow(/runtime-binding/)
+    }, 60_000)
+
+    /**
+     * The complement, and the one that matters most: the helpers the fold writes must not
+     * read as survivors, or every partial fold would fail the build its own output enabled.
+     */
+    test('is not reported for the helpers the fold itself adds', async () => {
+      const end = await run(
+        `import { css } from 'styled-system/css'
+export const f = (p) => css({ color: 'red.300' }, p)
+`,
+        'src/strict-helpers.tsx',
+        true,
+      )
+
+      // The call is still `dynamic` — that is the pre-existing report. What must not appear
+      // is a second complaint about the `cx` and leaf helper the split just wrote in.
+      expect(end).toThrow(/dynamic/)
+      expect(end).not.toThrow(/runtime-binding/)
+    }, 60_000)
+
+    test('is off when strict is off', async () => {
+      const end = await run(
+        `import { css } from 'styled-system/css'
+export const pass = css
+`,
+        'src/strict-reexport-off.tsx',
+        false,
+      )
+
+      expect(end).not.toThrow()
+    }, 60_000)
+  })
 })

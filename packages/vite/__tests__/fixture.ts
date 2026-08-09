@@ -10,8 +10,8 @@ export const createFoldFixture = (userConfig?: Parameters<typeof createContext>[
   const ctx = createContext(userConfig)
   const runtimeCss = createRuntimeCss(ctx)
 
-  const fold = (code: string, filePath = FILE_PATH): FoldResult => {
-    ctx.project.addSourceFile(filePath, code)
+  const fold = (code: string, filePath = FILE_PATH, reportSurvivors = false): FoldResult => {
+    const sourceFile = ctx.project.addSourceFile(filePath, code)
     const parserResult = ctx.project.parseSourceFile(filePath)
     if (!parserResult) return { code, map: null, folded: [], skipped: [], dependencies: [] }
     return foldSource({
@@ -21,8 +21,13 @@ export const createFoldFixture = (userConfig?: Parameters<typeof createContext>[
       filePath,
       runtimeCss,
       parseModule: (path) => ctx.project.parseSourceFile(path),
+      reportSurvivors,
+      sourceFile,
     })
   }
+
+  /** What `strict` would see: the fold with its output-based survivor check on. */
+  const foldStrict = (code: string, filePath = FILE_PATH): FoldResult => fold(code, filePath, true)
 
   /** Add the modules an entry imports before folding it. */
   const addFiles = (files: Record<string, string>) => {
@@ -61,7 +66,7 @@ export const createFoldFixture = (userConfig?: Parameters<typeof createContext>[
     })
   }
 
-  return { ctx, fold, foldWithCache, addFiles, getCss, runtimeCss }
+  return { ctx, fold, foldStrict, foldWithCache, addFiles, getCss, runtimeCss }
 }
 
 /**

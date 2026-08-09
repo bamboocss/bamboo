@@ -45,6 +45,7 @@ export type SkipReason =
   | 'overlapping' // nested inside another fold
   | 'empty' // resolved to no class names at all
   | 'unresolved-token' // `token(...)` resolves to no usable string, so its fallback decides
+  | 'runtime-binding' // a bamboo import still referenced after the rewrite, whoever left it
 
 export interface FoldedCall {
   name: string
@@ -131,6 +132,26 @@ export interface FoldOptions {
    * only place that knows.
    */
   recipeConfigCache?: Map<string, ForeignRecipes>
+  /**
+   * Also report bamboo bindings the rewrite left behind, whatever the skip ledger says.
+   *
+   * The ledger holds only calls something recognised, so it answers "of the calls I looked
+   * at, which survived" — and a guarantee built on it is worth exactly what the recogniser
+   * is. A cross-module recipe call used to appear in neither column, so a build could report
+   * a clean sweep while shipping hundreds of them.
+   *
+   * This asks what the guarantee actually claims: after the rewrite, is anything from a
+   * bamboo module still referenced? Off by default because it costs an identifier walk, and
+   * only `strict` needs an answer it can fail a build on.
+   */
+  reportSurvivors?: boolean
+  /**
+   * The module's own AST, when the caller already holds it.
+   *
+   * Only `reportSurvivors` needs it, and only for the case it exists to catch: a module whose
+   * bamboo usage produced no parser result at all has no call to reach the AST through.
+   */
+  sourceFile?: SourceFile
 }
 
 /**
@@ -162,6 +183,26 @@ const literalsIn = (expression: string): string[] =>
 const UNFOLDABLE_TYPES = new Set(['cva', 'sva'])
 
 /**
+ * The skip reasons that leave a `css()`-family call in the output.
+ *
+ * `overlapping` is handled by the enclosing fold, and `not-imported` is somebody else's
+ * function of the same name — neither leaves a call of ours. `not-foldable` is a `cva`/`sva`
+ * definition, which keeps the recipe runtime rather than the css engine; see `strict`.
+ */
+export const SURVIVES_TO_RUNTIME = new Set<SkipReason>([
+  'dynamic',
+  // Not a declined call at all: a binding the rewrite left referenced. It is the one entry
+  // here that does not depend on something having recognised a call, which is what makes the
+  // guarantee independent of the recogniser rather than a restatement of it.
+  'runtime-binding',
+  'raw-call',
+  'unsupported-kind',
+  'no-call-expression',
+  'empty',
+  'unresolved-token',
+])
+
+/**
  * A call of a recipe the file bound itself: `const badge = cva(...)`, then `badge({ tone })`.
  *
  * Folded when the whole selection resolves, reported under this reason when it does not.
@@ -173,6 +214,96 @@ const UNFOLDABLE_TYPES = new Set(['cva', 'sva'])
  * nothing had parsed.
  */
 const RECIPE_CALL_TYPE = 'cva-call'
+
+/**
+ * An identifier that actually reads the binding.
+ *
+ * `getDescendantsOfKind(Identifier)` yields every name in the file, and most of them bind or
+ * label rather than read: a JSX tag (`<button/>` against a recipe called `button`), an object
+ * key, a property name, a declaration. Counting those failed builds on modules that had
+ * folded completely — and `button`, `input`, `label`, `select`, `table`, `dialog` and `form`
+ * are all ordinary recipe names as well as intrinsic elements.
+ *
+ * A type position is excluded for a different reason: it is erased, and with it the import.
+ */
+const isValueReference = (identifier: Node): boolean => {
+  const parent = identifier.getParent()
+  if (!parent) return false
+
+  // The declaration naming it, not a use of it.
+  if (Node.isImportSpecifier(parent) || Node.isExportSpecifier(parent)) return false
+  if (Node.isImportClause(parent) || Node.isNamespaceImport(parent)) return false
+
+  // `o.css` and `a.b.css` name a member. The left of either is a read and reaches here as its
+  // own identifier.
+  if (Node.isPropertyAccessExpression(parent) && parent.getNameNode() === identifier) return false
+  if (Node.isQualifiedName(parent) && parent.getRight() === identifier) return false
+
+  // `{ css: 1 }` is a key. `{ css }` is a ShorthandPropertyAssignment and *is* a read, so it
+  // is deliberately not matched here.
+  if (Node.isPropertyAssignment(parent) && parent.getNameNode() === identifier) return false
+  if (
+    Node.isMethodDeclaration(parent) ||
+    Node.isPropertyDeclaration(parent) ||
+    Node.isGetAccessorDeclaration(parent) ||
+    Node.isSetAccessorDeclaration(parent) ||
+    Node.isMethodSignature(parent) ||
+    Node.isPropertySignature(parent) ||
+    Node.isEnumMember(parent)
+  ) {
+    if (parent.getNameNode() === identifier) return false
+  }
+
+  // `label: for (…) break label` names a target, not a value.
+  if (Node.isLabeledStatement(parent) || Node.isBreakStatement(parent) || Node.isContinueStatement(parent)) {
+    return false
+  }
+
+  // `<button />` is an intrinsic element, named by a string as far as the runtime is
+  // concerned. `<Button />` is not: it reads the binding, so a recipe kept alive only as a
+  // component tag has to count. The case of the first character is the whole distinction JSX
+  // draws, and it is what TypeScript resolves on too.
+  if (Node.isJsxOpeningElement(parent) || Node.isJsxSelfClosingElement(parent) || Node.isJsxClosingElement(parent)) {
+    const tag = parent.getTagNameNode()
+    if (tag === identifier) return identifier.getText()[0] === identifier.getText()[0]?.toUpperCase()
+  }
+  if (Node.isJsxAttribute(parent)) return false
+
+  // `({ css: local }) => …` — the key is the *property* read off the argument, not the
+  // imported binding. Only `getNameNode` is the local one, so both have to be asked.
+  if (Node.isBindingElement(parent) && parent.getPropertyNameNode() === identifier) return false
+
+  // A binding of the name shadows the import rather than reading it.
+  if (
+    (Node.isVariableDeclaration(parent) ||
+      Node.isParameterDeclaration(parent) ||
+      Node.isBindingElement(parent) ||
+      Node.isFunctionDeclaration(parent) ||
+      Node.isClassDeclaration(parent)) &&
+    parent.getNameNode() === identifier
+  ) {
+    return false
+  }
+
+  // `typeof css`, `Foo<typeof css>`, an interface member — all erased with the type.
+  return !identifier.getFirstAncestor(
+    (ancestor) =>
+      Node.isTypeNode(ancestor) || Node.isTypeAliasDeclaration(ancestor) || Node.isInterfaceDeclaration(ancestor),
+  )
+}
+
+/**
+ * Imports a surviving reference to is not a failure.
+ *
+ * The first four are what the fold itself writes; all live in `cx` and pull no engine, so a
+ * reference to one is the fold having worked.
+ *
+ * `cva` and `sva` are there for the reason `SURVIVES_TO_RUNTIME` omits `not-foldable`: a
+ * recipe *definition* cannot fold to a class string and never could, and what it keeps is the
+ * recipe runtime rather than the css engine — which `strict` accepts. Their unfoldable
+ * invocations are reported separately, as `recipe-call`.
+ */
+const PERMITTED_BINDINGS = new Set(['cx', 'cva', 'sva', RECIPE_PICK_HELPER, SPLIT_PROPS_HELPER, LEAF_HELPER])
 
 /** Where an imported recipe was declared, as the parser recorded it on the call. */
 type RecipeOrigin = NonNullable<ResultItem['origin']>
@@ -558,6 +689,8 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     runtimeCss = createRuntimeCss(ctx),
     parseModule,
     recipeConfigCache,
+    reportSurvivors,
+    sourceFile: ownSourceFile,
   } = options
 
   /**
@@ -1256,7 +1389,17 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     candidates.push({ item, call, node: call, start, end: foldEnd, slot })
   }
 
+  /**
+   * Ranges the rewrite actually replaced. Declared before the early return below, because
+   * that return is now also a reporting point: a module with nothing to fold is exactly the
+   * shape `reportSurvivors` exists to catch.
+   */
+  const applied: Array<[number, number]> = []
+
   if (candidates.length === 0) {
+    // Nothing was rewritten, so every reference survives — and a module with no candidate at
+    // all is exactly the shape this exists to catch.
+    if (reportSurvivors) reportRuntimeBindings()
     return { code, map: null, folded, skipped, dependencies: [] }
   }
 
@@ -1298,7 +1441,6 @@ export const foldSource = (options: FoldOptions): FoldResult => {
   // tags, so anything between them — a nested element, a `css()` call in the children —
   // is still free to fold. Gating on the element's whole span would reject those for an
   // overlap that never happens.
-  const applied: Array<[number, number]> = []
   const collides = (edits: Array<[number, number]>) =>
     edits.some(([start, end]) => applied.some(([from, to]) => start < to && from < end))
 
@@ -1482,6 +1624,133 @@ export const foldSource = (options: FoldOptions): FoldResult => {
 
     magic.appendLeft(start, '/*#__PURE__*/')
   }
+
+  /**
+   * Bindings from a bamboo module still referenced once every rewrite is applied.
+   *
+   * Deliberately not driven by `parserResult`: that is the recogniser, and the point here is
+   * to catch what it did not see. A namespace import called as `s.cva(...)`, a default
+   * import, a specifier that resolved to nothing — each leaves a live reference and no ledger
+   * entry at all, which is how `strict` came to pass a build that still shipped the engine.
+   *
+   * The helpers the fold itself writes are excluded: `cx`, `cvaPick`, `splitProps` and the
+   * leaf helper live in `cx` and pull no engine, so a reference to one is the fold working
+   * rather than failing.
+   */
+  function reportRuntimeBindings() {
+    // Not `parserResult`'s boxes: one can carry a node from any module the extractor resolved
+    // through, and this reports offsets against *this* module's text.
+    const sourceFile = ownSourceFile ?? candidates[0]?.node.getSourceFile()
+    if (!sourceFile) return
+
+    const bambooModules = [
+      ...cssModules,
+      ...(ctx.imports.matchers.recipe?.mods ?? []),
+      ...(ctx.imports.matchers.pattern?.mods ?? []),
+      ...(ctx.imports.matchers.tokens?.mods ?? []),
+    ]
+
+    /** Local name -> what to call it in the report. */
+    const watched = new Map<string, string>()
+
+    for (const declaration of sourceFile.getImportDeclarations()) {
+      if (declaration.isTypeOnly()) continue
+      if (!matchesModule(declaration.getModuleSpecifierValue(), bambooModules)) continue
+
+      for (const named of declaration.getNamedImports()) {
+        if (named.isTypeOnly()) continue
+        const imported = named.getNameNode().getText()
+        if (PERMITTED_BINDINGS.has(imported)) continue
+        watched.set((named.getAliasNode() ?? named.getNameNode()).getText(), imported)
+      }
+
+      const namespace = declaration.getNamespaceImport()
+      if (namespace) watched.set(namespace.getText(), `${namespace.getText()}.*`)
+
+      const defaultImport = declaration.getDefaultImport()
+      if (defaultImport) watched.set(defaultImport.getText(), defaultImport.getText())
+    }
+
+    // `export { css } from 'styled-system/css'` re-exports the binding without importing it,
+    // which is exactly how a wrapper module keeps the engine alive.
+    for (const declaration of sourceFile.getExportDeclarations()) {
+      if (declaration.isTypeOnly()) continue
+      if (!matchesModule(declaration.getModuleSpecifierValue() ?? '', bambooModules)) continue
+
+      // `export * from` and `export * as ns from` alike: both keep the module alive, whatever
+      // they bind. (The parser's barrel walk distinguishes them because it asks a different
+      // question — which individual names come through.)
+      if (declaration.isNamespaceExport()) {
+        skipped.push({
+          name: declaration.getNamespaceExport()?.getName() ?? '*',
+          reason: 'runtime-binding',
+          start: declaration.getStart(),
+          end: declaration.getEnd(),
+        })
+        continue
+      }
+
+      for (const named of declaration.getNamedExports()) {
+        if (named.isTypeOnly()) continue
+        const imported = named.getNameNode().getText()
+        if (PERMITTED_BINDINGS.has(imported)) continue
+
+        skipped.push({ name: imported, reason: 'runtime-binding', start: named.getStart(), end: named.getEnd() })
+      }
+    }
+
+    // `import { css } … export { css as style }` — the same wrapper shape in two statements,
+    // and the more common one, since a barrel that also *uses* the binding has to import it.
+    // The identifier walk cannot see it: an export specifier is excluded there to keep the
+    // single-statement form above from being counted twice.
+    for (const declaration of sourceFile.getExportDeclarations()) {
+      if (declaration.isTypeOnly() || declaration.getModuleSpecifier()) continue
+
+      for (const named of declaration.getNamedExports()) {
+        if (named.isTypeOnly()) continue
+
+        const imported = watched.get(named.getNameNode().getText())
+        if (imported === undefined) continue
+
+        skipped.push({ name: imported, reason: 'runtime-binding', start: named.getStart(), end: named.getEnd() })
+      }
+    }
+
+    if (watched.size === 0) return
+
+    // Suppressed by *range* rather than by name. The ledger records the name a binding was
+    // imported under and this walk sees the name the file bound, which `css as c` makes
+    // different — matching on the name reported one call site twice, under two reasons. Only
+    // reasons that fail the build suppress: `not-imported` and `not-foldable` pass, so
+    // treating them as covered would hide the survivor this exists to find.
+    const declined = skipped
+      .filter((entry) => SURVIVES_TO_RUNTIME.has(entry.reason) && entry.end > entry.start)
+      .map((entry) => [entry.start, entry.end] as const)
+    const reported = new Set<string>()
+
+    for (const identifier of sourceFile.getDescendantsOfKind(SyntaxKind.Identifier)) {
+      const local = identifier.getText()
+      const imported = watched.get(local)
+      if (imported === undefined || reported.has(local)) continue
+
+      const start = identifier.getStart()
+      // The import declaration naming it is not a use of it, and neither is anything the
+      // rewrite already replaced.
+      if (identifier.getFirstAncestorByKind(SyntaxKind.ImportDeclaration)) continue
+      if (applied.some(([from, to]) => start >= from && start < to)) continue
+      if (declined.some(([from, to]) => start >= from && start < to)) continue
+      if (!isValueReference(identifier)) continue
+      if (isShadowed(identifier, local)) continue
+
+      reported.add(local)
+      skipped.push({ name: imported, reason: 'runtime-binding', start, end: identifier.getEnd() })
+    }
+  }
+
+  // The other reporting point. Mutually exclusive with the one above — that return exits —
+  // and this one runs only once every rewrite is in `applied`, so a reference the fold
+  // replaced is not counted as one it left behind.
+  if (reportSurvivors) reportRuntimeBindings()
 
   if (folded.length === 0) {
     return { code, map: null, folded, skipped, dependencies: [] }

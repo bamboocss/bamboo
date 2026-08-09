@@ -4,7 +4,7 @@ import { logger } from '@bamboocss/logger'
 import { loadConfigAndCreateContext } from '@bamboocss/node'
 import type { Plugin } from 'vite'
 import { bamboocssCss } from './css'
-import { foldSource, type ForeignRecipes, type SkipReason, type SkippedCall } from './fold'
+import { foldSource, SURVIVES_TO_RUNTIME, type ForeignRecipes, type SkipReason, type SkippedCall } from './fold'
 import { createRuntimeCss, type RuntimeCss } from './runtime-css'
 
 export interface BambooVitePluginOptions {
@@ -111,22 +111,6 @@ export const isGeneratedOutput = (filePath: string, ctx: { config: { cwd: string
 
   return file === root || file.startsWith(`${root}/`)
 }
-
-/**
- * The skip reasons that leave a `css()`-family call in the output.
- *
- * `overlapping` is handled by the enclosing fold, and `not-imported` is somebody else's
- * function of the same name — neither leaves a call of ours. `not-foldable` is a `cva`/`sva`
- * definition, which keeps the recipe runtime rather than the css engine; see `strict`.
- */
-const SURVIVES_TO_RUNTIME = new Set<SkipReason>([
-  'dynamic',
-  'raw-call',
-  'unsupported-kind',
-  'no-call-expression',
-  'empty',
-  'unresolved-token',
-])
 
 /** 1-indexed line of a source offset, for an error a user can navigate to. */
 const lineAt = (code: string, offset: number) => code.slice(0, offset).split('\n').length
@@ -277,9 +261,12 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
 
       let result: ReturnType<typeof foldSource>
       try {
-        ctx.project.addSourceFile(filePath, code)
+        const sourceFile = ctx.project.addSourceFile(filePath, code)
         const parserResult = ctx.project.parseSourceFile(filePath)
-        if (!parserResult || parserResult.isEmpty()) return null
+        // Under `strict` an empty result is not proof of nothing to say: a module whose only
+        // bamboo usage is a shape the parser does not recognise produces exactly that, and
+        // skipping it here is what let those modules pass a build they should have failed.
+        if (!parserResult || (parserResult.isEmpty() && !strict)) return null
 
         result = foldSource({
           ctx,
@@ -293,6 +280,9 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
           // build would make the fold depend on discovery order.
           parseModule: (path) => ctx?.project.parseSourceFile(path),
           recipeConfigCache,
+          // Only `strict` acts on it, and it costs an identifier walk.
+          reportSurvivors: strict,
+          sourceFile,
         })
       } catch (error) {
         logger.caughtError('vite:transform', `Failed to fold ${filePath}`, error)
@@ -359,7 +349,12 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
 
         const detail = Array.from(byFile.entries())
           .map(([file, entries]) =>
-            [`  ${file}`, ...entries.map((e) => `    ${e.line}: ${e.name}() — ${e.reason}`)].join('\n'),
+            [
+              `  ${file}`,
+              ...entries.map(
+                (e) => `    ${e.line}: ${e.name}${e.reason === 'runtime-binding' ? '' : '()'} — ${e.reason}`,
+              ),
+            ].join('\n'),
           )
           .join('\n')
 
