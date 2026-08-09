@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { beforeAll, describe, expect, test } from 'vitest'
 import { lowerRecipeCall, type RecipeConfig } from '../src/fold-recipe'
+import { isInertExpression } from '../src/fold'
 import { getRecipeIdentity } from '@bamboocss/shared'
 import { Project, SyntaxKind } from 'ts-morph'
 
@@ -40,7 +41,7 @@ const foldOf = (config: RecipeConfig, argSource: string, resolvedSelection?: Rec
   const call = file.getDescendantsOfKind(SyntaxKind.CallExpression)[0]!
 
   const entry = config ? { config, name: getRecipeIdentity(config), box: undefined } : undefined
-  return lowerRecipeCall(call, entry, ctx, resolvedSelection)
+  return lowerRecipeCall(call, entry, ctx, isInertExpression, resolvedSelection)
 }
 
 const CONFIGS: Array<{ label: string; config: RecipeConfig }> = [
@@ -204,7 +205,12 @@ describe('a lowered dynamic axis evaluates to what the runtime returns', () => {
     const project = new Project({ useInMemoryFileSystem: true })
     const file = project.createSourceFile('t.ts', `badge(${source})`)
     const call = file.getDescendantsOfKind(SyntaxKind.CallExpression)[0]!
-    const lowered = lowerRecipeCall(call, { config, name: getRecipeIdentity(config), box: undefined }, ctx)
+    const lowered = lowerRecipeCall(
+      call,
+      { config, name: getRecipeIdentity(config), box: undefined },
+      ctx,
+      isInertExpression,
+    )
 
     expect(lowered.kind).toBe('expression')
     if (lowered.kind !== 'expression') return
@@ -234,7 +240,12 @@ describe('a lowered dynamic axis evaluates to what the runtime returns', () => {
     const project = new Project({ useInMemoryFileSystem: true })
     const file = project.createSourceFile('t.ts', `badge({ tone: v })`)
     const call = file.getDescendantsOfKind(SyntaxKind.CallExpression)[0]!
-    const lowered = lowerRecipeCall(call, { config, name: getRecipeIdentity(config), box: undefined }, ctx)
+    const lowered = lowerRecipeCall(
+      call,
+      { config, name: getRecipeIdentity(config), box: undefined },
+      ctx,
+      isInertExpression,
+    )
 
     expect(lowered.kind).toBe('expression')
     if (lowered.kind !== 'expression') return
@@ -247,6 +258,44 @@ describe('a lowered dynamic axis evaluates to what the runtime returns', () => {
     }
   })
 
+  /**
+   * The claim this change rests on: the expression survives and runs exactly once, in place.
+   *
+   * Evaluated rather than inspected, and counted rather than assumed — an expression emitted
+   * twice would still produce the right class while running the effect twice.
+   */
+  test('an effectful selection runs exactly once, and picks the same class', () => {
+    const config: RecipeConfig = { base: {}, variants: { tone: { a: { color: 'red.300' }, b: { color: 'blue.300' } } } }
+    const project = new Project({ useInMemoryFileSystem: true })
+    const file = project.createSourceFile('t.ts', `badge({ tone: pick() })`)
+    const call = file.getDescendantsOfKind(SyntaxKind.CallExpression)[0]!
+    const lowered = lowerRecipeCall(
+      call,
+      { config, name: getRecipeIdentity(config), box: undefined },
+      ctx,
+      isInertExpression,
+    )
+
+    expect(lowered.kind).toBe('expression')
+    if (lowered.kind !== 'expression') return
+
+    const evaluate = new Function('cvaPick', 'pick', `return ${lowered.expression}`) as (
+      p: unknown,
+      pick: () => string,
+    ) => string
+
+    for (const value of ['a', 'b', 'zzz']) {
+      let calls = 0
+      const result = evaluate(cvaPick, () => {
+        calls++
+        return value
+      })
+
+      expect(calls, `tone=${value}`).toBe(1)
+      expect(result, `tone=${value}`).toBe(cva(config)({ tone: value }))
+    }
+  })
+
   test.each(CASES)('$label', ({ config, values }) => {
     const runtime = cva(config)
     const key = Object.keys(config.variants ?? {})[0]!
@@ -254,7 +303,12 @@ describe('a lowered dynamic axis evaluates to what the runtime returns', () => {
     const project = new Project({ useInMemoryFileSystem: true })
     const file = project.createSourceFile('t.ts', `badge({ ${key}: v })`)
     const call = file.getDescendantsOfKind(SyntaxKind.CallExpression)[0]!
-    const lowered = lowerRecipeCall(call, { config, name: getRecipeIdentity(config), box: undefined }, ctx)
+    const lowered = lowerRecipeCall(
+      call,
+      { config, name: getRecipeIdentity(config), box: undefined },
+      ctx,
+      isInertExpression,
+    )
 
     expect(lowered.kind).toBe('expression')
     if (lowered.kind !== 'expression') return

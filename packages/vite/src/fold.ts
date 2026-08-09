@@ -173,7 +173,7 @@ const isInertArgument = (node: Node): boolean =>
  * expression, a getter or method definition is a function — none of those are safe to
  * delete, so they are declined rather than enumerated.
  */
-const isInertExpression = (node: Node): boolean => {
+export const isInertExpression = (node: Node): boolean => {
   if (isInertArgument(node)) return true
 
   // A bare identifier is a binding read, which cannot run anything — and this check is
@@ -876,10 +876,11 @@ export const foldSource = (options: FoldOptions): FoldResult => {
           // it. `badge({ tone: trace() })` has a knowable class *and* a call in its selection —
           // the same trade `token()`'s fallback and the constant-slot fold already decline.
           const entry = recipeConfigs.get(name)
-          const inert = Node.isCallExpression(call) && call.getArguments().every(isInertExpression)
-          const lowered = inert
-            ? lowerRecipeCall(call, entry, ctx, resolvedSelection)
-            : ({ kind: 'decline', reason: 'dynamic' } as const)
+          // Inertness is decided per property rather than for the whole argument: lowering
+          // keeps an expression by making it the helper's argument, so a call inside one still
+          // runs. Only a property being resolved to a literal, or dropped, would delete it —
+          // and `lowerRecipeCall` is what knows which of those is about to happen.
+          const lowered = lowerRecipeCall(call, entry, ctx, isInertExpression, resolvedSelection)
 
           if (lowered.kind === 'expression') {
             // The helper has to be callable here by whatever name this file gives it, and

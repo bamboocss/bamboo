@@ -224,6 +224,14 @@ export const lowerRecipeCall = (
   entry: RecipeEntry | undefined,
   ctx: ClassFormatterContext,
   /**
+   * Whether an expression can be evaluated without doing anything observable.
+   *
+   * Passed in rather than imported, because `fold` already imports this module. Required, not
+   * defaulted: it decides which properties may be resolved to a literal or dropped, and a
+   * default in either direction is a decision a caller should have to make.
+   */
+  isInert: (node: Node) => boolean,
+  /**
    * The selection as the extractor resolved it, when there is exactly one resolution.
    *
    * Used only to *supply* values, never to decide which properties exist — a property the
@@ -257,6 +265,13 @@ export const lowerRecipeCall = (
   const selection: Dict = {}
   /** Variant → the source expression selecting it, for axes that stay runtime decisions. */
   const dynamicAxes = new Map<string, string>()
+  /**
+   * Variants whose expression could run something, in the order the source evaluates them.
+   *
+   * The text is kept, not just the key: a later property writing the same key replaces the
+   * entry in `dynamicAxes`, and the expression recorded here would then never be emitted.
+   */
+  const effectful: Array<{ key: string; text: string }> = []
 
   if (args.length === 1) {
     const arg = args[0]
@@ -282,7 +297,30 @@ export const lowerRecipeCall = (
 
       const key = propertyKey(nameNode)
       if (key === undefined) return { kind: 'decline', reason: 'dynamic' }
-      const literal = literalValue(property.getInitializer())
+
+      const initializer = property.getInitializer()
+
+      // An expression that could run something has to survive into the output, so it takes
+      // the runtime path whatever its value resolves to. Folding it to a literal would delete
+      // the call as surely as declining to fold would have kept the whole recipe.
+      if (initializer && !isInert(initializer)) {
+        // `hasOwn`, for the same reason the value side of these tables uses it: a key of
+        // `toString` or `__proto__` reaches `Object.prototype`, so a plain lookup says the
+        // variant exists, the emission loop over `Object.keys` then never emits it, and the
+        // expression is deleted along with whatever it would have run.
+        if (!Object.hasOwn(config.variants ?? {}, key)) {
+          // Nowhere to re-emit it: this variant has no table, and dropping the property would
+          // drop the call with it.
+          return { kind: 'decline', reason: 'dynamic' }
+        }
+
+        effectful.push({ key, text: initializer.getText() })
+        dynamicAxes.set(key, initializer.getText())
+        delete selection[key]
+        continue
+      }
+
+      const literal = literalValue(initializer)
 
       if (literal !== undefined) {
         selection[key] = literal
@@ -298,7 +336,6 @@ export const lowerRecipeCall = (
       if (!resolvedSelection || !Object.hasOwn(resolvedSelection, key)) {
         // Not resolvable, but still knowable: the config declares every value this variant
         // can take, so the choice among them is what ships.
-        const initializer = property.getInitializer()
         if (!initializer) return { kind: 'decline', reason: 'dynamic' }
         dynamicAxes.set(key, initializer.getText())
         delete selection[key]
@@ -314,29 +351,51 @@ export const lowerRecipeCall = (
     }
   }
 
+  /**
+   * Every expression that could run something has to reach the output carrying its own text.
+   *
+   * A later property writing the same key replaces it in `dynamicAxes` — `badge({ tone: a(),
+   * tone: 'b' })` is last-wins for the *value*, but `a()` still runs, and emitting only the
+   * literal would delete it. Duplicate keys are a type error in TypeScript; the fold does not
+   * typecheck and does transform `.js`, so this is reachable.
+   */
+  const everyEffectSurvives = () => effectful.every(({ key, text }) => dynamicAxes.get(key) === text)
+
   // Exactly what `cvaFn` does: defaults first, then the selection with `undefined` dropped.
   const merged = { ...(config.defaultVariants ?? {}), ...compact(selection) }
   const format = classFormatter(ctx)
 
   if (dynamicAxes.size === 0) {
+    if (!everyEffectSurvives()) return { kind: 'decline', reason: 'dynamic' }
+
     return {
       kind: 'class',
       className: getRecipeClassNames(name, config.variants, merged, ctx.utility.separator, format),
     }
   }
 
+  // Terms are emitted in the config's variant order, so two properties that could both run
+  // something would evaluate in that order rather than the source's. One effectful property
+  // cannot be reordered against itself; more than one has to already agree.
+  if (!everyEffectSurvives()) return { kind: 'decline', reason: 'dynamic' }
+
+  if (effectful.length > 1) {
+    const variantOrder = Object.keys(config.variants ?? {})
+    const keys = effectful.map((entry) => entry.key)
+    const reordered = [...keys].sort((a, b) => variantOrder.indexOf(a) - variantOrder.indexOf(b))
+    if (reordered.join('\u0000') !== keys.join('\u0000')) return { kind: 'decline', reason: 'dynamic' }
+  }
+
   // Axes the config declares no values for contribute nothing at runtime either — `cvaFn`
   // looks one up and skips it — so they are dropped rather than declining the call.
   for (const key of [...dynamicAxes.keys()]) {
-    if (!config.variants?.[key]) dynamicAxes.delete(key)
+    if (!Object.hasOwn(config.variants ?? {}, key)) dynamicAxes.delete(key)
   }
 
   if (dynamicAxes.size === 0) {
-    const staticOnly = { ...merged }
-    for (const key of dynamicAxes.keys()) delete staticOnly[key]
     return {
       kind: 'class',
-      className: getRecipeClassNames(name, config.variants, staticOnly, ctx.utility.separator, format),
+      className: getRecipeClassNames(name, config.variants, merged, ctx.utility.separator, format),
     }
   }
 
@@ -355,7 +414,12 @@ export const lowerRecipeCall = (
       // Resolved: the same three conditions `getRecipeClassNames` applies before appending.
       const value = merged[key]
       if (value == null) continue
-      if (config.variants?.[key]?.[value as string] == null) continue
+
+      // The same three conditions `getRecipeClassNames` applies, including its own-key check —
+      // without it a value of `'toString'` names a class the runtime never emits and no rule
+      // backs, which is exactly the dev-versus-build divergence this ordering exists to avoid.
+      const declared = config.variants?.[key]
+      if (!declared || !Object.hasOwn(declared, value as string) || declared[value as string] == null) continue
 
       const className = format(`${name}--${key}${ctx.utility.separator}${withoutSpace(value as string)}`)
       parts.push(JSON.stringify(` ${className}`))

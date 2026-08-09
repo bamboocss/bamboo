@@ -379,19 +379,112 @@ describe('calls of an inline recipe', () => {
   })
 
   /**
-   * Folding deletes the argument, so anything evaluating it would have done goes with it.
-   * The class is knowable here and the call still must not fold — the same trade `token()`'s
-   * discarded fallback and the constant-slot fold already decline.
+   * A selection that could run something keeps running it.
+   *
+   * Folding to a literal would delete the call, so a property whose expression is not inert
+   * takes the runtime path instead — where it survives verbatim as the helper's argument and
+   * evaluates exactly once, in place. That is strictly better than declining: the call is
+   * preserved *and* the recipe config still leaves the bundle.
    */
-  test('a selection that could run something does not fold', () => {
+  test('a selection that could run something keeps the call, and still lowers', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(
+      inline(`
+      const trace = () => 'a'
+      export const cls = badge({ tone: trace() })
+    `),
+    )
+
+    expect(result.folded).toHaveLength(1)
+    expect(result.code).toContain('cvaPick(trace(),')
+  })
+
+  /**
+   * Terms are emitted in the config's variant order, so two properties that could each run
+   * something would swap. One can never be reordered against itself; two must already agree.
+   */
+  /**
+   * A property name that reaches `Object.prototype`.
+   *
+   * `config.variants[key]` answers truthily for `toString` or `__proto__`, so the property
+   * looked like a real variant — while the emission loop iterates `Object.keys`, which does
+   * not contain it. The expression was therefore accepted and then never emitted, taking
+   * whatever it would have run with it. The value side of these same tables has guarded this
+   * for a while; this is the key side.
+   */
+  test.each(['__proto__', 'toString', 'constructor', 'valueOf'])(
+    'a property named %s does not fold, so its expression survives',
+    (key) => {
+      const { fold } = createFoldFixture()
+      const code = inline(`
+      const trace = () => 'a'
+      export const cls = badge({ ${key}: trace() })
+    `)
+
+      expect(fold(code).folded).toHaveLength(0)
+      expect(fold(code).code).toBe(code)
+    },
+  )
+
+  /**
+   * A key written twice. The *value* is last-wins, but the earlier expression still runs, so
+   * emitting only the winner would delete it. A type error in TypeScript, reachable in the
+   * `.js` and `.jsx` the fold also transforms.
+   */
+  test.each([
+    [`{ tone: trace(), tone: 'a' }`, 'a literal overwriting an effectful one'],
+    [`{ tone: trace(), tone: other() }`, 'two effectful writes'],
+  ])('a duplicate key does not fold — %s', (selection) => {
     const { fold } = createFoldFixture()
     const code = inline(`
       const trace = () => 'a'
-      export const cls = badge({ tone: trace() })
+      const other = () => 'b'
+      export const cls = badge(${selection})
     `)
 
     expect(fold(code).folded).toHaveLength(0)
     expect(fold(code).code).toBe(code)
+  })
+
+  /**
+   * The fold's own copy of `getRecipeClassNames`'s skip condition has to make the same own-key
+   * check, or it names a class for `'toString'` that the runtime never emits and no rule backs.
+   */
+  test('a variant value naming a prototype member emits no class', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(inline(`export const cls = badge({ tone: 'toString' })`))
+
+    expect(result.folded).toHaveLength(1)
+    expect(result.folded[0]!.className).not.toContain('toString')
+  })
+
+  test('two effectful properties that would swap do not fold', () => {
+    const { fold } = createFoldFixture()
+    const code = `
+      import { cva } from 'styled-system/css'
+      const badge = cva({ base: {}, variants: { tone: { a: {}, b: {} }, size: { sm: {}, md: {} } } })
+      const a = () => 'sm'
+      const b = () => 'a'
+      export const cls = badge({ size: a(), tone: b() })
+    `
+
+    expect(fold(code).folded).toHaveLength(0)
+    expect(fold(code).code).toBe(code)
+  })
+
+  test('two effectful properties already in config order do fold', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(`
+      import { cva } from 'styled-system/css'
+      const badge = cva({ base: {}, variants: { tone: { a: {}, b: {} }, size: { sm: {}, md: {} } } })
+      const a = () => 'sm'
+      const b = () => 'a'
+      export const cls = badge({ tone: b(), size: a() })
+    `)
+
+    expect(result.folded).toHaveLength(1)
+    // Both calls survive, in the order the source wrote them.
+    expect(result.code.indexOf('b()')).toBeLessThan(result.code.indexOf('a()'))
   })
 
   /**
