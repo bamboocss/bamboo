@@ -160,7 +160,7 @@ function setupSva(ctx: Context): Artifact {
 }
 
 function setupCx(ctx: Context): Artifact {
-  const code = generateCx()
+  const code = generateCx(ctx)
   return {
     id: 'cx',
     dir: ctx.paths.css,

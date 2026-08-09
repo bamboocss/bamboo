@@ -1,3 +1,4 @@
+import type { Context } from '@bamboocss/core'
 import outdent from 'outdent'
 
 /**
@@ -52,11 +53,26 @@ const declaration = outdent`
      classNameByValue: Record<string, string>,
      fallback?: string,
    ): string
+
+   /**
+    * Split a props object into the listed keys and everything else.
+    *
+    * Re-exported here so the build has one module to reach for when it lowers a recipe: this
+    * is what \`recipe.splitVariantProps\` calls, so a lowered call is the same function reached
+    * directly rather than through the recipe object — which is what lets the recipe's config
+    * leave the bundle.
+    */
+   export declare function splitProps<T extends Record<string, unknown>, K extends Array<keyof T>>(
+     props: T,
+     ...keys: K
+   ): [Record<string, unknown>, Record<string, unknown>]
   `
 
-export function generateCx() {
+export function generateCx(ctx: Context) {
   return {
     js: outdent`
+  ${ctx.file.import('splitProps', '../helpers')}
+
   function cx(...args) {
     let str = ''
 
@@ -84,7 +100,7 @@ export function generateCx() {
     return Object.hasOwn(classNameByValue, value) ? classNameByValue[value] : ''
   }
 
-  export { cx, cvaPick }
+  export { cx, cvaPick, splitProps }
 `,
     dts: declaration,
   }

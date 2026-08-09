@@ -312,6 +312,58 @@ describe('a lowered dynamic axis evaluates to what the runtime returns', () => {
     }
   })
 
+  /**
+   * `input(variantProps)` — the wrapper shape, where the variants are the component's public
+   * API and so can never be literals. The build cannot see inside the object; it does not need
+   * to, because a recipe emits one class per *declared* variant, so the call is one term per
+   * variant reading that binding.
+   */
+  test('an opaque selection binding matches the runtime for every shape of props', () => {
+    const config: RecipeConfig = {
+      base: { display: 'flex' },
+      variants: {
+        size: { sm: { padding: '2' }, md: { padding: '4' } },
+        tone: { a: { color: 'red.300' }, b: { color: 'blue.300' } },
+      },
+      defaultVariants: { size: 'md' },
+    }
+
+    const project = new Project({ useInMemoryFileSystem: true })
+    const file = project.createSourceFile('t.ts', `badge(variantProps)`)
+    const call = file.getDescendantsOfKind(SyntaxKind.CallExpression)[0]!
+    const lowered = lowerRecipeCall(
+      call,
+      { config, name: getRecipeIdentity(config), box: undefined },
+      ctx,
+      isInertExpression,
+    )
+
+    expect(lowered.kind).toBe('expression')
+    if (lowered.kind !== 'expression') return
+
+    const evaluate = new Function('cvaPick', 'variantProps', `return ${lowered.expression}`) as (
+      p: unknown,
+      v: Record<string, unknown>,
+    ) => string
+    const runtime = cva(config)
+
+    const shapes: Array<Record<string, unknown>> = [
+      {},
+      { size: 'sm' },
+      { size: 'md', tone: 'a' },
+      { tone: 'b' },
+      { size: undefined },
+      { size: null },
+      { size: 'bogus' },
+      { size: 'sm', tone: 'a', unrelated: 'x' },
+      { tone: 'a', size: 'sm' },
+    ]
+
+    for (const props of shapes) {
+      expect(evaluate(cvaPick, props), JSON.stringify(props)).toBe(runtime(props))
+    }
+  })
+
   test.each(CASES)('$label', ({ config, values }) => {
     const runtime = cva(config)
     const key = Object.keys(config.variants ?? {})[0]!

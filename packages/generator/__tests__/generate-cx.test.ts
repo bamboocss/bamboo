@@ -11,11 +11,11 @@ type CvaPick = (value: unknown, classNameByValue: Record<string, string>, fallba
  * exact string, and a test that reimplemented them would be free to drift from them.
  */
 const compile = (): { cx: Cx; cvaPick: CvaPick } => {
-  const { js } = generateCx()
-  return new Function(`${js.replace(/export\s*\{[^}]*\}/, 'return { cx, cvaPick }')}`)() as {
-    cx: Cx
-    cvaPick: CvaPick
-  }
+  const { js } = generateCx(createGeneratorContext())
+  // `splitProps` is re-exported from helpers, so the import is dropped rather than resolved —
+  // nothing here exercises it, and the two functions defined in this module are the point.
+  const body = js.replace(/^import[^\n]*\n/m, '').replace(/export\s*\{[^}]*\}/, 'return { cx, cvaPick }')
+  return new Function(body)() as { cx: Cx; cvaPick: CvaPick }
 }
 
 const { cx, cvaPick } = compile()
@@ -125,13 +125,12 @@ describe('generated cx is identical in every build', () => {
     ['separator', { separator: '-' } as Config],
   ]
 
-  const baseline = generateCx()
+  const baseline = generateCx(createGeneratorContext())
 
   test.each(configs)('%s emits the same implementation and declaration', (_label, config) => {
-    // The config is built to prove the emitted artifact does not consult it.
-    createGeneratorContext(config as Config)
-
-    const { js, dts } = generateCx()
+    // Built from each config to prove the emitted artifact does not consult it. The context is
+    // needed only to spell the `helpers` import, which no styling option changes.
+    const { js, dts } = generateCx(createGeneratorContext(config as Config))
     expect(js).toBe(baseline.js)
     expect(dts).toBe(baseline.dts)
   })

@@ -5,10 +5,12 @@ import type { Dict, ParserResultInterface, ResultItem } from '@bamboocss/types'
 import MagicString from 'magic-string'
 import { Node, type SourceFile, SyntaxKind } from 'ts-morph'
 import {
+  AMBIGUOUS,
   collectRecipeConfigs,
   ensureRecipeHelperImport,
   lowerRecipeCall,
   RECIPE_PICK_HELPER,
+  SPLIT_PROPS_HELPER,
   type RecipeEntry,
 } from './fold-recipe'
 import {
@@ -482,7 +484,10 @@ const argumentsAccountedFor = (call: Node, boxNode: BoxNode): boolean => {
   if (!Node.isCallExpression(call)) return false
 
   const args = call.getArguments()
-  if (args.length === 0) return false
+  // Nothing written is nothing to account for. `buttonStyle()` means every default, which is
+  // exactly what the extractor recorded — declining it left a call that folds when spelled
+  // `buttonStyle({})` and does not when spelled `buttonStyle()`.
+  if (args.length === 0) return true
 
   if (box.isArray(boxNode) && boxNode.getNode() === call) {
     if (boxNode.value.length !== args.length) return false
@@ -721,6 +726,9 @@ export const foldSource = (options: FoldOptions): FoldResult => {
    */
   const recipeCalls = new Map<string, { seen: number; lowered: number }>()
 
+  /** Bindings whose `splitVariantProps` was rewritten, so that access no longer reads them. */
+  const loweredSplitProps = new Set<string>()
+
   /** Ranges already reported as declined, so one call is never counted twice. */
   const reportedRanges = new Set<string>()
 
@@ -885,7 +893,13 @@ export const foldSource = (options: FoldOptions): FoldResult => {
           if (lowered.kind === 'expression') {
             // The helper has to be callable here by whatever name this file gives it, and
             // adding an import is only safe against the module bamboo generates.
-            const helper = ensureRecipeHelperImport(call, isBambooCssModule, isGeneratedCssModule, isShadowed)
+            const helper = ensureRecipeHelperImport(
+              RECIPE_PICK_HELPER,
+              call,
+              isBambooCssModule,
+              isGeneratedCssModule,
+              isShadowed,
+            )
 
             if (helper) {
               tally.lowered++
@@ -1009,7 +1023,12 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       continue
     }
 
-    if (!isStaticBox(item.box) || !hasStyles(item.data) || !argumentsAccountedFor(call, item.box)) {
+    // A call written with no arguments has no argument box to be static about: the parser
+    // stores a fallback, which `isStaticBox` rejects. The selection is still fully known —
+    // it is every default — so `buttonStyle()` folds like the `buttonStyle({})` it means.
+    const noArguments = Node.isCallExpression(call) && call.getArguments().length === 0 && item.data.length === 1
+
+    if ((!noArguments && !isStaticBox(item.box)) || !hasStyles(item.data) || !argumentsAccountedFor(call, item.box)) {
       const partial = partial_ ? tryPartial(item, call, rootName) : undefined
 
       if (partial) {
@@ -1143,6 +1162,62 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     applied.push(...ranges)
     folded.push({ name, kind: 'class', className, classNames: [className], start, end })
     collectSourceFiles(item.box, dependencyScan)
+  }
+
+  // `input.splitVariantProps(props)` — the other way a wrapper reaches its recipe.
+  //
+  // Lowered because it is what keeps the binding alive once the calls have folded. The keys it
+  // splits on are `Object.keys(variants)`, known here, and the function it runs is `splitProps`
+  // — so the lowered form calls the same helper directly and reads nothing off the recipe. The
+  // bytes are already paid: `splitVariantProps` calls `splitProps` today.
+  //
+  // Not driven by `parserResult`: a property access on a local binding is not a style call, so
+  // nothing records it. The source file is the only place it exists.
+  // Any recorded definition gives the module being rewritten; they all share it.
+  const recipeSourceFile = recipeConfigs?.size
+    ? [...recipeConfigs.values()]
+        .find((entry) => entry.box)
+        ?.box?.getNode?.()
+        ?.getSourceFile()
+    : undefined
+
+  if (recipeSourceFile) {
+    for (const access of recipeSourceFile.getDescendantsOfKind(SyntaxKind.PropertyAccessExpression)) {
+      if (access.getName() !== 'splitVariantProps') continue
+
+      const target = access.getExpression()
+      if (!Node.isIdentifier(target)) continue
+
+      const entry = recipeConfigs?.get(target.getText())
+      if (!entry || entry === AMBIGUOUS) continue
+      if (isShadowed(access, target.getText())) continue
+
+      const call = access.getParent()
+      if (!Node.isCallExpression(call) || call.getExpression() !== access) continue
+
+      const args = call.getArguments()
+      if (args.length !== 1) continue
+
+      const start = call.getStart()
+      const end = call.getEnd()
+      if (code.slice(start, end) !== call.getText()) continue
+      if (collides([[start, end]])) continue
+
+      const helper = ensureRecipeHelperImport(
+        SPLIT_PROPS_HELPER,
+        call,
+        isBambooCssModule,
+        isGeneratedCssModule,
+        isShadowed,
+      )
+      if (!helper) continue
+
+      const keys = Object.keys(entry.config.variants ?? {})
+      magic.overwrite(start, end, `${helper.name}(${args[0]!.getText()}, ${JSON.stringify(keys)})`)
+      applyInsert(helper.insert)
+      applied.push([start, end])
+      loweredSplitProps.add(target.getText())
+    }
   }
 
   // A binding nothing reads any more: mark its config pure so the bundler can drop it.

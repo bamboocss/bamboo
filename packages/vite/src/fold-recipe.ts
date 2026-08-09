@@ -100,10 +100,17 @@ export const collectRecipeConfigs = (parserResult: ParserResultInterface): Map<s
 /** The generated binding a lowered dynamic axis calls. Lives in `cx`, which pulls no engine. */
 export const RECIPE_PICK_HELPER = 'cvaPick'
 
+/** What `recipe.splitVariantProps` calls, reached directly once the call is lowered. */
+export const SPLIT_PROPS_HELPER = 'splitProps'
+
 const HELPER = RECIPE_PICK_HELPER
 
 /** Marker for a binding the fold must never resolve — declared twice, or unresolvable. */
 export const AMBIGUOUS: RecipeEntry = Object.freeze({ config: {}, name: '', box: undefined })
+
+/** `.size`, or `["x-large"]` when the variant is not a valid identifier. */
+const IDENTIFIER = /^[A-Za-z_$][\w$]*$/
+const propertyAccess = (key: string) => (IDENTIFIER.test(key) ? `.${key}` : `[${JSON.stringify(key)}]`)
 
 const LITERAL_KINDS = new Set([
   SyntaxKind.StringLiteral,
@@ -156,6 +163,7 @@ const propertyKey = (nameNode: Node): string | undefined => {
  * a file defining a recipe necessarily has, since `cva` came from it.
  */
 export const ensureRecipeHelperImport = (
+  imported: string,
   call: Node,
   isBambooCssModule: (mod: string) => boolean,
   isGeneratedCssModule: (mod: string) => boolean,
@@ -171,7 +179,7 @@ export const ensureRecipeHelperImport = (
     for (const named of declaration.getNamedImports()) {
       if (named.isTypeOnly()) continue
 
-      if (named.getNameNode().getText() === RECIPE_PICK_HELPER) {
+      if (named.getNameNode().getText() === imported) {
         // Somebody else's `cvaPick`, or one shadowed here, is not the one this calls.
         if (!isBambooCssModule(mod)) return undefined
         const local = (named.getAliasNode() ?? named.getNameNode()).getText()
@@ -186,13 +194,13 @@ export const ensureRecipeHelperImport = (
 
   // A module-scope binding of this name would collide with the one being added, and one in
   // scope at the call site would be reached instead of it.
-  if (declaredAtModuleScope(sourceFile).has(RECIPE_PICK_HELPER)) return undefined
-  if (isShadowed(call, RECIPE_PICK_HELPER)) return undefined
+  if (declaredAtModuleScope(sourceFile).has(imported)) return undefined
+  if (isShadowed(call, imported)) return undefined
 
   const last = host.getNamedImports().at(-1)
   if (!last) return undefined
 
-  return { name: RECIPE_PICK_HELPER, insert: { pos: last.getEnd(), names: [RECIPE_PICK_HELPER] } }
+  return { name: imported, insert: { pos: last.getEnd(), names: [imported] } }
 }
 
 export type LowerResult =
@@ -275,79 +283,99 @@ export const lowerRecipeCall = (
 
   if (args.length === 1) {
     const arg = args[0]
-    if (!arg || !Node.isObjectLiteralExpression(arg)) return { kind: 'decline', reason: 'dynamic' }
+    if (!arg) return { kind: 'decline', reason: 'dynamic' }
 
-    for (const property of arg.getProperties()) {
-      // A spread contributes keys the build cannot enumerate, and a computed key is one it
-      // cannot name — neither leaves a knowable set of classes.
-      if (Node.isSpreadAssignment(property)) return { kind: 'decline', reason: 'dynamic' }
+    /**
+     * `input(variantProps)` — a selection the build cannot see inside.
+     *
+     * The classes are still knowable: a recipe emits one per declared variant, so the call is
+     * one term per variant reading that binding. This is the shape a wrapper component takes,
+     * where the variants are the component's public API and cannot be literals by definition.
+     *
+     * An identifier only. Each variant reads the binding again, and re-reading anything else —
+     * a call, a property access — would evaluate it once per axis instead of once.
+     */
+    if (Node.isIdentifier(arg)) {
+      const binding = arg.getText()
 
-      // `{ tone }`, the idiomatic spelling. The name is the expression.
-      if (Node.isShorthandPropertyAssignment(property)) {
-        // Last write wins, as the object literal itself would evaluate.
-        dynamicAxes.set(property.getName(), property.getName())
-        delete selection[property.getName()]
-        continue
+      for (const key of Object.keys(config.variants ?? {})) {
+        dynamicAxes.set(key, `${binding}${propertyAccess(key)}`)
       }
+    } else if (!Node.isObjectLiteralExpression(arg)) {
+      return { kind: 'decline', reason: 'dynamic' }
+    } else {
+      for (const property of arg.getProperties()) {
+        // A spread contributes keys the build cannot enumerate, and a computed key is one it
+        // cannot name — neither leaves a knowable set of classes.
+        if (Node.isSpreadAssignment(property)) return { kind: 'decline', reason: 'dynamic' }
 
-      if (!Node.isPropertyAssignment(property)) return { kind: 'decline', reason: 'dynamic' }
-
-      const nameNode = property.getNameNode()
-      if (Node.isComputedPropertyName(nameNode)) return { kind: 'decline', reason: 'dynamic' }
-
-      const key = propertyKey(nameNode)
-      if (key === undefined) return { kind: 'decline', reason: 'dynamic' }
-
-      const initializer = property.getInitializer()
-
-      // An expression that could run something has to survive into the output, so it takes
-      // the runtime path whatever its value resolves to. Folding it to a literal would delete
-      // the call as surely as declining to fold would have kept the whole recipe.
-      if (initializer && !isInert(initializer)) {
-        // `hasOwn`, for the same reason the value side of these tables uses it: a key of
-        // `toString` or `__proto__` reaches `Object.prototype`, so a plain lookup says the
-        // variant exists, the emission loop over `Object.keys` then never emits it, and the
-        // expression is deleted along with whatever it would have run.
-        if (!Object.hasOwn(config.variants ?? {}, key)) {
-          // Nowhere to re-emit it: this variant has no table, and dropping the property would
-          // drop the call with it.
-          return { kind: 'decline', reason: 'dynamic' }
+        // `{ tone }`, the idiomatic spelling. The name is the expression.
+        if (Node.isShorthandPropertyAssignment(property)) {
+          // Last write wins, as the object literal itself would evaluate.
+          dynamicAxes.set(property.getName(), property.getName())
+          delete selection[property.getName()]
+          continue
         }
 
-        effectful.push({ key, text: initializer.getText() })
-        dynamicAxes.set(key, initializer.getText())
-        delete selection[key]
-        continue
-      }
+        if (!Node.isPropertyAssignment(property)) return { kind: 'decline', reason: 'dynamic' }
 
-      const literal = literalValue(initializer)
+        const nameNode = property.getNameNode()
+        if (Node.isComputedPropertyName(nameNode)) return { kind: 'decline', reason: 'dynamic' }
 
-      if (literal !== undefined) {
-        selection[key] = literal
+        const key = propertyKey(nameNode)
+        if (key === undefined) return { kind: 'decline', reason: 'dynamic' }
+
+        const initializer = property.getInitializer()
+
+        // An expression that could run something has to survive into the output, so it takes
+        // the runtime path whatever its value resolves to. Folding it to a literal would delete
+        // the call as surely as declining to fold would have kept the whole recipe.
+        if (initializer && !isInert(initializer)) {
+          // `hasOwn`, for the same reason the value side of these tables uses it: a key of
+          // `toString` or `__proto__` reaches `Object.prototype`, so a plain lookup says the
+          // variant exists, the emission loop over `Object.keys` then never emits it, and the
+          // expression is deleted along with whatever it would have run.
+          if (!Object.hasOwn(config.variants ?? {}, key)) {
+            // Nowhere to re-emit it: this variant has no table, and dropping the property would
+            // drop the call with it.
+            return { kind: 'decline', reason: 'dynamic' }
+          }
+
+          effectful.push({ key, text: initializer.getText() })
+          dynamicAxes.set(key, initializer.getText())
+          delete selection[key]
+          continue
+        }
+
+        const literal = literalValue(initializer)
+
+        if (literal !== undefined) {
+          selection[key] = literal
+          dynamicAxes.delete(key)
+          continue
+        }
+
+        // Not a literal, but the extractor may still have resolved it — a module constant, an
+        // imported one, a helper's return value. Trusted only when this exact key survived,
+        // which is what separates `badge({ tone: t })` with `const t = 'a'` above it from
+        // `badge({ tone: t })` with a parameter. (Shorthand never reaches here: `{ tone }` is
+        // not a PropertyAssignment and declines above.)
+        if (!resolvedSelection || !Object.hasOwn(resolvedSelection, key)) {
+          // Not resolvable, but still knowable: the config declares every value this variant
+          // can take, so the choice among them is what ships.
+          if (!initializer) return { kind: 'decline', reason: 'dynamic' }
+          dynamicAxes.set(key, initializer.getText())
+          delete selection[key]
+          continue
+        }
+
+        const value = resolvedSelection[key]
+        // A nested object is not a variant selection, and `undefined` is `compact`'s job.
+        if (value !== null && typeof value === 'object') return { kind: 'decline', reason: 'dynamic' }
+
+        selection[key] = value
         dynamicAxes.delete(key)
-        continue
       }
-
-      // Not a literal, but the extractor may still have resolved it — a module constant, an
-      // imported one, a helper's return value. Trusted only when this exact key survived,
-      // which is what separates `badge({ tone: t })` with `const t = 'a'` above it from
-      // `badge({ tone: t })` with a parameter. (Shorthand never reaches here: `{ tone }` is
-      // not a PropertyAssignment and declines above.)
-      if (!resolvedSelection || !Object.hasOwn(resolvedSelection, key)) {
-        // Not resolvable, but still knowable: the config declares every value this variant
-        // can take, so the choice among them is what ships.
-        if (!initializer) return { kind: 'decline', reason: 'dynamic' }
-        dynamicAxes.set(key, initializer.getText())
-        delete selection[key]
-        continue
-      }
-
-      const value = resolvedSelection[key]
-      // A nested object is not a variant selection, and `undefined` is `compact`'s job.
-      if (value !== null && typeof value === 'object') return { kind: 'decline', reason: 'dynamic' }
-
-      selection[key] = value
-      dynamicAxes.delete(key)
     }
   }
 

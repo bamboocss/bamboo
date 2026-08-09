@@ -314,6 +314,66 @@ describe('calls of an inline recipe', () => {
   })
 
   /**
+   * The wrapper shape: a component that forwards its own props to the recipe.
+   *
+   * `input(variantProps)` cannot be resolved — the variants are the component's public API —
+   * but the classes are still knowable, because a recipe emits one per *declared* variant. The
+   * `splitVariantProps` access is lowered alongside it, since it is what would otherwise keep
+   * the binding alive and the config in the bundle.
+   */
+  describe('a component wrapping a recipe', () => {
+    const wrapper = `
+      import { cva, cx } from 'styled-system/css'
+      const input = cva({
+        base: { color: 'red.300' },
+        variants: { size: { sm: {}, md: {} }, tone: { a: {}, b: {} } },
+        defaultVariants: { size: 'md' },
+      })
+      export const Input = ({ className, ...props }) => {
+        const [variantProps, rest] = input.splitVariantProps(props)
+        return <span className={cx(input(variantProps), className)} {...rest} />
+      }
+    `
+
+    test('the call lowers, keeping the component variant API', () => {
+      const { fold } = createFoldFixture()
+      const result = fold(wrapper)
+
+      expect(result.folded).toHaveLength(1)
+      expect(result.code).toContain('cvaPick(variantProps.size,')
+      expect(result.code).toContain('cvaPick(variantProps.tone,')
+    })
+
+    test('splitVariantProps lowers to the helper it already called', () => {
+      const { fold } = createFoldFixture()
+      const result = fold(wrapper)
+
+      expect(result.code).toContain('splitProps(props, ["size","tone"])')
+      expect(result.code).not.toContain('input.splitVariantProps')
+    })
+
+    test('nothing reads the binding, so its config is marked droppable', () => {
+      const { fold } = createFoldFixture()
+      const result = fold(wrapper)
+
+      expect(result.code).toContain('/*#__PURE__*/')
+    })
+
+    /**
+     * `.raw` is a read of the recipe object, and nothing lowers it — so the binding stays
+     * referenced and a bundler keeps the config, annotation or not. The annotation says the
+     * *call* is side-effect free, which is true either way; it only licenses a drop that an
+     * unread binding would have allowed anyway.
+     */
+    test('a surviving read of the recipe keeps the binding referenced', () => {
+      const { fold } = createFoldFixture()
+      const result = fold(`${wrapper}\nexport const raw = input.raw({ size: 'sm' })`)
+
+      expect(result.code).toContain('input.raw(')
+    })
+  })
+
+  /**
    * A slot recipe returns one class per slot — an object, not a string — so there is no literal
    * that stands for it. The parser records its calls as recipe calls like any other, so what
    * keeps it safe is that the fold's binding→config map is built from `cva` definitions only.
