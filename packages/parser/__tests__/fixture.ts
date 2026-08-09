@@ -31,6 +31,16 @@ export function cssParser(code: string) {
   }
 }
 
+/**
+ * `token()` and `token.var()` entries, which share one set and are told apart by `type`.
+ * Separate from `cssParser` because a standalone token call produces no `css` entry at all.
+ */
+export function tokenParser(code: string) {
+  const project = getProject(code)
+  const data = project.parseSourceFile(filePath)!
+  return data.token
+}
+
 export function cvaParser(code: string) {
   const project = getProject(code)
   const data = project.parseSourceFile(filePath)!

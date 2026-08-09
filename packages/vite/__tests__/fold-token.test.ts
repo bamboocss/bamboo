@@ -210,20 +210,169 @@ describe('fold: token() declines', () => {
       }
     })
   }
+})
 
-  test('token.var is left alone', () => {
+/**
+ * `token.var()` is the more foldable of the two, and for a while was the one that did not
+ * fold: its callee is a property access, so the parser's bare-name matchers never saw the
+ * call and the extractor dropped it before the fold could be asked.
+ *
+ * Where `token()` has to choose between a token's literal value and its variable reference,
+ * `.var` is always the reference — no condition to read, no non-string case to decline. The
+ * risk is entirely in the two halves being told apart, which is what this pins.
+ */
+describe('fold: token.var()', () => {
+  test('a base token folds to its variable reference, not to its value', () => {
     const { fold } = createFoldFixture()
-    const code = `
+    const result = fold(`
       import { token } from 'styled-system/tokens'
       export const ref = token.var('colors.red.300')
-    `
-    const result = fold(code)
+    `)
 
-    // `token.var` returns the variable reference where `token` returns the resolved
-    // value. Folding one as the other swaps a themeable reference for a fixed colour.
-    expect(result.code).toBe(code)
-    expect(result.folded).toHaveLength(0)
+    expect(result.code).toContain('export const ref = "var(--colors-red-300)"')
+    expect(result.folded).toHaveLength(1)
+    expect(result.folded[0]!.kind).toBe('value')
+    // The literal `token()` resolves to for the same path. Emitting it here would swap a
+    // themeable reference for a fixed colour, which is the one difference a fold can make
+    // that no class-name check would catch.
+    expect(result.code).not.toContain('#fca5a5')
   })
+
+  test('the two halves of one entry fold differently in the same module', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(`
+      import { token } from 'styled-system/tokens'
+      export const value = token('colors.red.300')
+      export const ref = token.var('colors.red.300')
+    `)
+
+    expect(result.code).toContain('export const value = "#fca5a5"')
+    expect(result.code).toContain('export const ref = "var(--colors-red-300)"')
+    expect(result.folded).toHaveLength(2)
+  })
+
+  test('a conditional token folds to the same reference as its value half', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(`
+      import { token } from 'styled-system/tokens'
+      export const brand = token.var('colors.primary')
+    `)
+
+    // A conditional token is the case where `token()` already returns a reference, so both
+    // halves agree here. `.var` reaching a *different* variable would mean the two tables
+    // had drifted apart.
+    expect(result.folded[0]!.value).toMatch(/^var\(--/)
+    expect(result.code).not.toContain('#ef4444')
+  })
+
+  test('an aliased import folds', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(`
+      import { token as t } from 'styled-system/tokens'
+      export const ref = t.var('colors.red.300')
+    `)
+
+    expect(result.code).toContain('export const ref = "var(--colors-red-300)"')
+    expect(result.folded).toHaveLength(1)
+  })
+
+  test('a namespace import folds', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(`
+      import * as tokens from 'styled-system/tokens'
+      export const ref = tokens.token.var('colors.red.300')
+    `)
+
+    expect(result.folded[0]?.value).toBe('var(--colors-red-300)')
+  })
+
+  test('a fold reports no class, so nothing looks for a rule behind it', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(`
+      import { token } from 'styled-system/tokens'
+      export const ref = token.var('colors.red.300')
+    `)
+
+    expect(result.folded[0]!.className).toBe('')
+    expect(result.folded[0]!.classNames).toEqual([])
+  })
+
+  const declines: Array<{ name: string; reason: string; code: string }> = [
+    {
+      name: 'a path that is not a literal',
+      reason: 'dynamic',
+      code: `
+        import { token } from 'styled-system/tokens'
+        export const pick = (name) => token.var(name)
+      `,
+    },
+    {
+      name: 'a ternary path, where every branch is resolvable',
+      reason: 'dynamic',
+      code: `
+        import { token } from 'styled-system/tokens'
+        export const pick = (dark) => token.var(dark ? 'colors.red.300' : 'colors.red.400')
+      `,
+    },
+    {
+      name: 'a path naming no token, where the fallback decides',
+      reason: 'unresolved-token',
+      code: `
+        import { token } from 'styled-system/tokens'
+        export const nope = token.var('colors.does.not.exist', 'var(--fallback)')
+      `,
+    },
+    {
+      name: 'a fallback that could run something',
+      reason: 'dynamic',
+      code: `
+        import { token } from 'styled-system/tokens'
+        export const ref = token.var('colors.red.300', compute())
+      `,
+    },
+    {
+      name: 'a local binding shadowing the import',
+      reason: 'not-imported',
+      code: `
+        import { token } from 'styled-system/tokens'
+        export const make = (token) => token.var('colors.red.300')
+      `,
+    },
+    {
+      name: 'a same-named function from somewhere else',
+      reason: 'not-imported',
+      code: `
+        import { token } from '@acme/design'
+        export const ref = token.var('colors.red.300')
+      `,
+    },
+    {
+      // Not our half of the entry, and not a name the token runtime has at all.
+      name: 'some other method on the token binding',
+      reason: 'unsupported-kind',
+      code: `
+        import { token } from 'styled-system/tokens'
+        export const ref = token.ref('colors.red.300')
+      `,
+    },
+  ]
+
+  for (const { name, reason, code } of declines) {
+    test(`declines ${name}`, () => {
+      const { fold } = createFoldFixture()
+      const result = fold(code)
+
+      expect(result.code, name).toBe(code)
+      expect(result.folded, name).toHaveLength(0)
+
+      if (result.skipped.length) {
+        expect(
+          result.skipped.map((entry) => entry.reason),
+          name,
+        ).toContain(reason)
+      }
+    })
+  }
 })
 
 /**

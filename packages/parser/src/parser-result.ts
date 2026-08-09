@@ -147,8 +147,14 @@ export class ParserResult implements ParserResultInterface {
     if (unresolved.length) this.unresolved.push(...unresolved)
   }
 
-  setToken(result: ResultItem) {
-    this.token.add(this.append(Object.assign({ type: 'token' }, result)))
+  /**
+   * `kind` separates `token()` from `token.var()`, which resolve to the value and to the
+   * variable reference respectively. They share this set deliberately: everything that reads
+   * a result for the token *path* — `collectTokenReferences`, keeping a declaration alive
+   * through pruning — wants both, and only the fold cares which half was asked for.
+   */
+  setToken(result: ResultItem, kind: 'token' | 'tokenVar' = 'token') {
+    this.token.add(this.append(Object.assign({ type: kind }, result)))
     // Token calls are tracked but don't need encoding like CSS/CVA/SVA
     // They're runtime functions that reference design tokens
   }

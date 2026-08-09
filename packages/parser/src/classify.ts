@@ -128,10 +128,14 @@ export function classifyProject(ctx: ParserOptions, resultMap: ParserResultMap):
 
     // A recipe invocation is recorded for the transform's coverage report, not for this one:
     // its argument is a variant selection, and walking it would file `tone: 'a'` as a utility
-    // property with a value. Unreachable in practice — the walk below only visits the css,
-    // cva, pattern and recipe buckets — but stated, so `ReportItemType` need not carry a
-    // member no report can contain.
-    if (item.type === 'cva-call') {
+    // property with a value. `tokenVar` is here for the same reason and a simpler one — it
+    // lives in the token bucket, and a token call resolves to a value rather than to a set of
+    // properties to walk.
+    //
+    // Both unreachable in practice — the walk below only visits the css, cva, pattern and
+    // recipe buckets — but stated, so `ReportItemType` need not carry members no report can
+    // contain.
+    if (item.type === 'cva-call' || item.type === 'tokenVar') {
       return
     }
 

@@ -79,17 +79,20 @@ export interface RuntimeToken {
  * every module in the build — not once per `foldSource`, which would price a whole token
  * table into each of the overwhelming majority of modules that call `token()` zero times.
  * Keyed weakly so a context that goes out of scope takes its table with it.
+ *
+ * Both halves of the generated entry are stored, because `token()` and `token.var()` read
+ * different ones and building a second table would pay the same per-project cost twice.
  */
-const tokenValues = new WeakMap<Context, Map<string, unknown>>()
+const tokenValues = new WeakMap<Context, Map<string, { value: unknown; variable: string }>>()
 
 const tokenValuesFor = (ctx: Context) => {
   let values = tokenValues.get(ctx)
   if (values) return values
 
-  values = new Map<string, unknown>()
+  values = new Map<string, { value: unknown; variable: string }>()
   for (const token of ctx.tokens.allTokens) {
     const { varRef, isVirtual, condition } = token.extensions
-    values.set(token.name, isVirtual || condition !== 'base' ? varRef : token.value)
+    values.set(token.name, { value: isVirtual || condition !== 'base' ? varRef : token.value, variable: varRef })
   }
   tokenValues.set(ctx, values)
 
@@ -99,12 +102,26 @@ const tokenValuesFor = (ctx: Context) => {
 export const createRuntimeToken =
   (ctx: Context): RuntimeToken =>
   (path) => {
-    const value = tokenValuesFor(ctx).get(path)
+    const value = tokenValuesFor(ctx).get(path)?.value
     // Only a string can stand in for what the runtime returned. A token whose value is a
     // number would fold to `123` where the runtime returns the number `123` — the same
     // text, a different type.
     return typeof value === 'string' ? value : undefined
   }
+
+/**
+ * The generated runtime's `token.var`, rebuilt in-process.
+ *
+ * Mirrors `tokenVar` in `generateTokenJs`, which reads the `variable` half of the same
+ * entry `token()` reads the `value` half of. That half is `varRef` for every token
+ * regardless of condition, so unlike `createRuntimeToken` there is no split to get wrong
+ * and no non-string case to decline: a `var()` reference is a string or the token does not
+ * exist. Which is what makes this the more foldable of the two.
+ */
+export const createRuntimeTokenVar =
+  (ctx: Context): RuntimeToken =>
+  (path) =>
+    tokenValuesFor(ctx).get(path)?.variable || undefined
 
 /**
  * The generated `createRecipe`, rebuilt in-process.

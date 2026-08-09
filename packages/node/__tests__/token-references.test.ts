@@ -44,7 +44,9 @@ const collect = (files: Record<string, string>, results: any[] = []) =>
   collectTokenReferences(createContext(files), results as any)
 
 describe('collectTokenReferences', () => {
-  test('finds token.var(), which the extractor does not report', () => {
+  // The extractor reports `token.var()` too, but only these scans run for a caller that
+  // supplies no parser results — the watch rebuild and the PostCSS plugin.
+  test('finds token.var() from the text alone', () => {
     expect(collect({ 'a.tsx': `const c = token.var('colors.pink.400')` })).toEqual(new Set(['--colors-pink-400']))
   })
 

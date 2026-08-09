@@ -4,10 +4,11 @@ import type { BambooContext } from './create-context'
 
 /**
  * `token.var('colors.red.300')` and `token('spacing.4')`, including the whitespace a
- * formatter may leave behind. The parser already reports `token()` calls and resolves
- * constants and template literals through them, but it does not match `token.var()`,
- * whose callee is a property access. Scanning the text covers that, and covers a path
- * built somewhere the extractor cannot follow.
+ * formatter may leave behind. The parser reports both, resolving constants and template
+ * literals through them — `token.var()` included, since it is recorded as its own kind
+ * rather than dropped for having a property access as its callee. Scanning the text still
+ * earns its place twice over: it covers a path built somewhere the extractor cannot
+ * follow, and it covers the callers below that supply no `results` at all.
  */
 const TOKEN_CALL = /\btoken(?:\s*\.\s*var)?\s*\(\s*['"`]([^'"`]+)['"`]/g
 
@@ -58,7 +59,8 @@ function* sourceTexts(ctx: BambooContext): Generator<string> {
  * costs bytes; dropping one that is breaks the page, so the bias belongs on this side.
  *
  * `results` is a second, redundant source for the same paths: the extractor resolves one
- * built from a constant, which the text scan reads literally and fails to look up. Callers
+ * built from a constant — for `token.var()` as well as `token()` — which the text scan reads
+ * literally and fails to look up. Callers
  * that cannot supply it — the watch rebuild and the PostCSS plugin, where re-parsing would
  * encode every style a second time — pass none, and stay correct only because a path the
  * scan misses can lose nothing: `token()` hands javascript a literal for exactly the

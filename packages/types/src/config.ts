@@ -215,7 +215,7 @@ interface FileSystemOptions {
    *    css: 'styled-system/css',
    *    recipes: 'styled-system/recipes',
    *    patterns: 'styled-system/patterns',
-   *    jsx: 'styled-system/jsx',
+   *    tokens: 'styled-system/tokens',
    * }
    * ```
    */
@@ -303,10 +303,11 @@ interface CssgenOptions {
    *
    * It is opt-in because reachability cannot be proven for every reference. `token()` and
    * `token.var()` calls are read out of the source, as is any literal `var(--x)` written
-   * by hand. Three things stay invisible: a token named by a path the source does not
-   * spell out as a string literal, one referenced only from a stylesheet outside
-   * `include`, and one used by a separate package consuming the output as design tokens.
-   * Use `staticCss` to keep those.
+   * by hand — and both forms are resolved through a constant or a template literal the
+   * extractor can follow, not only through a path spelled out at the call. Three things
+   * stay invisible: a token named by a path assembled from a value that only exists at
+   * runtime, one referenced only from a stylesheet outside `include`, and one used by a
+   * separate package consuming the output as design tokens. Use `staticCss` to keep those.
    *
    * Only the *second* form of the first case is a risk. `token(key)` is safe for any path,
    * because javascript receives a literal for a plain token rather than a reference. It is
@@ -397,7 +398,7 @@ interface CssgenOptions {
   prunePreflight?: boolean
   /**
    * The root selector for the css variables.
-   * @default ':where(:host, :root)'
+   * @default ':where(:root, :host)'
    */
   cssVarRoot?: string
   /**

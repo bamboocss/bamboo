@@ -27,6 +27,7 @@ import {
   createRuntimeCss,
   createRuntimeRecipe,
   createRuntimeToken,
+  createRuntimeTokenVar,
   type RuntimeCss,
 } from './runtime-css'
 
@@ -813,6 +814,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
   const runtimeRecipe = createRuntimeRecipe(ctx)
   const isConstantSlot = createConstantSlotCheck(ctx)
   const runtimeToken = createRuntimeToken(ctx)
+  const runtimeTokenVar = createRuntimeTokenVar(ctx)
 
   /**
    * Does this specifier name a module that exports the css API, exactly?
@@ -1099,7 +1101,11 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     // none of the class-producing machinery below has anything to say about it. Folding it
     // is worth the separate path because the alternative is shipping the whole token map —
     // every token in the project — to resolve a handful of string lookups at runtime.
-    if (type === 'token') {
+    //
+    // `token.var()` shares the path because every guard below is the same question. It only
+    // resolves differently at the end, reading the variable reference where `token()` reads
+    // the value.
+    if (type === 'token' || type === 'tokenVar') {
       if (!call) {
         skipped.push({ name, reason: 'no-call-expression', start: 0, end: 0 })
         continue
@@ -1126,19 +1132,27 @@ export const foldSource = (options: FoldOptions): FoldResult => {
         continue
       }
 
-      // `token.var(path)` returns the variable reference where `token(path)` returns the
-      // resolved value, and both are recorded under the name `token`. The parser does not
-      // currently record `.var` at all, so this guards a case that cannot arise today —
-      // and would silently inline the wrong half of the entry the day it does.
+      // The recorded kind and the callee have to name the same half of the entry.
+      // `token(path)` resolves to the value and `token.var(path)` to the variable
+      // reference, so inlining one as the other swaps a themeable reference for a fixed
+      // colour — the one difference a fold can make that no class-name check would catch.
       //
-      // Only a property access can name the wrong half, so only one is asked. A bare
-      // callee is whatever the file bound the import to, which `token as t` makes some
-      // name the matcher has never heard of.
+      // Only a property access can name a half at all, so only one is asked. A bare callee
+      // is whatever the file bound the import to, which `token as t` makes some name the
+      // matcher has never heard of.
       const callee = Node.isCallExpression(call) ? call.getExpression() : undefined
-      if (
-        Node.isPropertyAccessExpression(callee) &&
-        !ctx.imports.matchers.tokens.match(callee.getNameNode().getText())
-      ) {
+      const propertyName = Node.isPropertyAccessExpression(callee) ? callee.getNameNode().getText() : undefined
+      const wantsVar = type === 'tokenVar'
+
+      if (wantsVar !== (propertyName === 'var')) {
+        skipped.push({ name, reason: 'unsupported-kind', start, end })
+        continue
+      }
+
+      // `ns.token(path)` puts `token` in that same position, so the non-var side tests the
+      // matcher rather than merely testing for absence — anything else named there is a
+      // method of somebody's object, not ours.
+      if (!wantsVar && propertyName !== undefined && !ctx.imports.matchers.tokens.match(propertyName)) {
         skipped.push({ name, reason: 'unsupported-kind', start, end })
         continue
       }
@@ -1170,13 +1184,16 @@ export const foldSource = (options: FoldOptions): FoldResult => {
         continue
       }
 
-      const value = runtimeToken(path)
+      const value = wantsVar ? runtimeTokenVar(path) : runtimeToken(path)
       // Three ways to land here, all of them the same decision: the path names no token,
       // the token's value is not a string (a numeric `fontWeights` token stays a number
       // through the dictionary, and the runtime returns that number), or the value is
       // empty. The runtime is `tokens[path]?.value || fallback`, so in the first and last
       // cases the fallback decides; in the middle one no string literal can stand in for
       // what it returns. Declining leaves all three where the user wrote them.
+      //
+      // Only the first and last can arise on the `.var` side, whose half of the entry is a
+      // `var()` reference for every token regardless of condition.
       if (!value) {
         skipped.push({ name, reason: 'unresolved-token', start, end })
         continue

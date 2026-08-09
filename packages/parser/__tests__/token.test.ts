@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { cssParser } from './fixture'
+import { cssParser, tokenParser } from './fixture'
 
 describe('token extraction and resolution', () => {
   test('should resolve token() used in css() object', () => {
@@ -309,5 +309,70 @@ describe('token extraction and resolution', () => {
         },
       ]
     `)
+  })
+})
+
+/**
+ * A standalone `token.var()` — one whose result is not a style-object value.
+ *
+ * Inside a style object the extractor resolves the call to a literal and the enclosing
+ * `css()` entry carries it, which is what the suite above covers. On its own there is no
+ * enclosing entry, and for a long time there was no entry at all: the callee is a property
+ * access, so the name never matched `matchFn` and the call was dropped before anything
+ * downstream could see it. That is what left `token.var()` unfoldable.
+ */
+describe('standalone token.var()', () => {
+  const tokenEntries = (code: string) => Array.from(tokenParser(code))
+
+  test('is recorded as its own kind, distinct from token()', () => {
+    const byType = tokenEntries(`
+      import { token } from '../styled-system/tokens'
+
+      export const value = token('colors.blue.500')
+      export const ref = token.var('colors.blue.500')
+    `).map((item) => [item.type, item.data])
+
+    // Same path, two entries, and the kind is the only thing distinguishing them — the
+    // fold reads it to decide which half of the entry to inline.
+    expect(byType).toEqual([
+      ['token', ['colors.blue.500']],
+      ['tokenVar', ['colors.blue.500']],
+    ])
+  })
+
+  test('is recorded under an aliased import', () => {
+    const entries = tokenEntries(`
+      import { token as t } from '../styled-system/tokens'
+      export const ref = t.var('colors.blue.500')
+    `)
+
+    expect(entries).toHaveLength(1)
+    expect(entries[0]!.type).toBe('tokenVar')
+    expect(entries[0]!.data).toEqual(['colors.blue.500'])
+  })
+
+  test('resolves a path built from a constant, which a text scan cannot', () => {
+    const entries = tokenEntries(`
+      import { token } from '../styled-system/tokens'
+
+      const KEY = 'colors.blue.500'
+      export const ref = token.var(KEY)
+    `)
+
+    // This is what the extractor buys over the regex in `token-references.ts`, which reads
+    // `KEY` literally and looks up nothing. Reported here, the token's declaration is kept
+    // through pruning by name rather than by the blanket exemption.
+    expect(entries).toHaveLength(1)
+    expect(entries[0]!.type).toBe('tokenVar')
+    expect(entries[0]!.data).toEqual(['colors.blue.500'])
+  })
+
+  test('is not recorded for a same-named function from somewhere else', () => {
+    expect(
+      tokenEntries(`
+        import { token } from '@acme/design'
+        export const ref = token.var('colors.blue.500')
+      `),
+    ).toHaveLength(0)
   })
 })
