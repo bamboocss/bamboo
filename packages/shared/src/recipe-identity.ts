@@ -136,7 +136,13 @@ export const getRecipeClassNames = (
 
     // Looked up raw, named with `withoutSpace`. The config declares `'x large'`, so the
     // lookup has to use that, while the class it produces cannot contain a space.
-    if (variants?.[variant]?.[value as string] == null) continue
+    //
+    // An own-key check, not a plain lookup: a value of `'toString'` or `'constructor'` would
+    // otherwise find `Object.prototype`'s member, pass the null test, and name a class the
+    // build emitted no rule for. The fold derives the same names from the same config and
+    // has to agree here, so the check belongs in the one function they share.
+    const declared = variants?.[variant]
+    if (!declared || !Object.hasOwn(declared, value as string) || declared[value as string] == null) continue
 
     result += ` ${format(`${name}--${variant}${separator}${withoutSpace(value as string)}`)}`
   }

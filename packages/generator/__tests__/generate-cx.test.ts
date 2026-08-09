@@ -4,19 +4,70 @@ import { describe, expect, test } from 'vitest'
 import { generateCx } from '../src/artifacts/js/cx'
 
 type Cx = (...args: unknown[]) => string
+type CvaPick = (value: unknown, classNameByValue: Record<string, string>, fallback?: string) => string
 
 /**
- * Evaluate the emitted artifact rather than a copy of it. `cx` ships to the browser as this
- * exact string, and a test that reimplemented it would be free to drift from it.
+ * Evaluate the emitted artifact rather than a copy of it. These ship to the browser as this
+ * exact string, and a test that reimplemented them would be free to drift from them.
  */
-const compile = (): Cx => {
+const compile = (): { cx: Cx; cvaPick: CvaPick } => {
   const { js } = generateCx()
-  return new Function(`${js.replace(/export\s*\{\s*cx\s*\}/, 'return cx')}`)() as Cx
+  return new Function(`${js.replace(/export\s*\{[^}]*\}/, 'return { cx, cvaPick }')}`)() as {
+    cx: Cx
+    cvaPick: CvaPick
+  }
 }
 
-describe('generated cx', () => {
-  const cx = compile()
+const { cx, cvaPick } = compile()
 
+/**
+ * The helper the fold emits for a variant chosen at runtime.
+ *
+ * It stands in for what `cvaFn` would have decided, so it has to make the same three
+ * distinctions: `undefined` means the property was never passed and the recipe's default
+ * applies; a declared value selects its class; anything else selects nothing — including
+ * `null`, which `compact` deliberately keeps rather than treating as absent.
+ */
+describe('generated cvaPick', () => {
+  const table = { a: ' badge--tone_a', b: ' badge--tone_b' }
+
+  test('selects the class a declared value names', () => {
+    expect(cvaPick('a', table)).toBe(' badge--tone_a')
+    expect(cvaPick('b', table)).toBe(' badge--tone_b')
+  })
+
+  test('falls back only for undefined, which is what compact drops', () => {
+    expect(cvaPick(undefined, table, ' badge--tone_b')).toBe(' badge--tone_b')
+    expect(cvaPick(null, table, ' badge--tone_b')).toBe('')
+  })
+
+  test('selects nothing for a value the config does not declare', () => {
+    for (const value of ['zzz', '', 0, false, Number.NaN]) {
+      expect(cvaPick(value, table, ' badge--tone_b')).toBe('')
+    }
+  })
+
+  test('with no fallback, an absent value selects nothing', () => {
+    expect(cvaPick(undefined, table)).toBe('')
+  })
+
+  /**
+   * The table is an object literal, so a plain lookup would find `Object.prototype` and
+   * concatenate a *function* into the class attribute.
+   */
+  test.each(['toString', 'constructor', 'hasOwnProperty', 'valueOf', '__proto__'])(
+    'a value of %s selects nothing rather than a prototype member',
+    (value) => {
+      expect(cvaPick(value, table)).toBe('')
+    },
+  )
+
+  test('a variant genuinely named like a prototype member still works', () => {
+    expect(cvaPick('toString', { toString: ' badge--tone_toString' })).toBe(' badge--tone_toString')
+  })
+})
+
+describe('generated cx', () => {
   test('joins its arguments', () => {
     expect(cx('px_4', 'c_red.300')).toBe('px_4 c_red.300')
   })

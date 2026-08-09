@@ -34,6 +34,24 @@ const declaration = outdent`
     * \`css(base, override)\` resolves per property before any class name exists.
     */
    export declare function cx(...args: Argument[]): string
+
+   /**
+    * Pick a recipe variant's class for a value only known at runtime.
+    *
+    * Emitted by the build when it folds an inline recipe call whose selection it could not
+    * fully resolve — \`badge({ tone })\` becomes \`"badge" + cvaPick(tone, { … }, " badge--tone_a")\`.
+    * Written by the transform, not by hand.
+    *
+    * The three cases are the ones \`cva\` itself distinguishes: \`undefined\` means the property
+    * was never passed, so the recipe's default applies; a value the config declares selects
+    * its class; anything else — including \`null\`, which \`compact\` deliberately keeps — selects
+    * nothing, exactly as \`getRecipeClassNames\` skips a value it cannot find.
+    */
+   export declare function cvaPick(
+     value: unknown,
+     classNameByValue: Record<string, string>,
+     fallback?: string,
+   ): string
   `
 
 export function generateCx() {
@@ -55,7 +73,18 @@ export function generateCx() {
     return str
   }
 
-  export { cx }
+  // \`hasOwn\`, not a plain lookup: the table is an object literal, so \`cvaPick(v, t)\` with
+  // \`v\` of "toString" or "constructor" would otherwise find the prototype's method and
+  // concatenate a function into the class attribute. See the declaration for the cases.
+  const cvaPick = (value, classNameByValue, fallback = '') => {
+    if (value === undefined) return fallback
+    // \`null\` before the lookup, because \`getRecipeClassNames\` rejects it on \`value == null\`
+    // and a config may genuinely declare a variant value spelled "null".
+    if (value === null) return ''
+    return Object.hasOwn(classNameByValue, value) ? classNameByValue[value] : ''
+  }
+
+  export { cx, cvaPick }
 `,
     dts: declaration,
   }

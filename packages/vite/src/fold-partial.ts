@@ -515,7 +515,7 @@ const importsAnything = (sourceFile: SourceFile, matches: (mod: string) => boole
  */
 const moduleScopeCache = new WeakMap<SourceFile, { text: string; value: Set<string> }>()
 
-const declaredAtModuleScope = (sourceFile: SourceFile): Set<string> =>
+export const declaredAtModuleScope = (sourceFile: SourceFile): Set<string> =>
   byText(moduleScopeCache, sourceFile, () => collectModuleScopeNames(sourceFile))
 
 const collectModuleScopeNames = (sourceFile: SourceFile): Set<string> => {

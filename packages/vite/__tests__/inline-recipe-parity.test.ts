@@ -24,11 +24,13 @@ const cwd = join(here, '../../../sandbox/codegen')
 
 let ctx: Awaited<ReturnType<typeof loadConfigAndCreateContext>>
 let cva: (config: RecipeConfig) => (props?: Record<string, unknown>) => string
+let cvaPick: (value: unknown, table: Record<string, string>, fallback?: string) => string
 
 beforeAll(async () => {
   ctx = await loadConfigAndCreateContext({ cwd })
   const generated = await import(join(cwd, 'styled-system/css/index.mjs'))
   cva = generated.cva as never
+  cvaPick = generated.cvaPick as never
 }, 60_000)
 
 /** Lower `badge(<selection>)` the way the fold would, given `config`. */
@@ -140,6 +142,135 @@ describe('a config imported from another module', () => {
   })
 })
 
+/**
+ * The lowered *expression*, evaluated, against what the runtime returns.
+ *
+ * A static fold is one string to compare; this is a choice made in the browser, so the
+ * comparison has to run it. The values below are the ones `cvaFn` distinguishes and a naive
+ * lowering conflates: `undefined` (never passed, so the default applies), `null` — which
+ * `compact` deliberately keeps, so it selects nothing rather than falling back — and a value
+ * the config does not declare.
+ */
+describe('a lowered dynamic axis evaluates to what the runtime returns', () => {
+  const CASES: Array<{ label: string; config: RecipeConfig; values: unknown[] }> = [
+    {
+      label: 'one axis, no default',
+      config: {
+        base: { color: 'red.300' },
+        variants: { tone: { a: { color: 'blue.300' }, b: { color: 'green.300' } } },
+      },
+      values: ['a', 'b', 'zzz', '', undefined, null, 0, false],
+    },
+    {
+      label: 'one axis with a default',
+      config: {
+        base: {},
+        variants: { size: { sm: { padding: '2' }, md: { padding: '4' } } },
+        defaultVariants: { size: 'md' },
+      },
+      values: ['sm', 'md', 'nope', undefined, null],
+    },
+    {
+      label: 'boolean variant',
+      config: { base: {}, variants: { open: { true: { padding: '4' }, false: { padding: '2' } } } },
+      values: [true, false, undefined, null, 'true'],
+    },
+    {
+      label: 'a value containing a space',
+      config: { base: {}, variants: { size: { 'x large': { padding: '8' }, sm: {} } } },
+      values: ['x large', 'sm', undefined],
+    },
+  ]
+
+  /**
+   * Order, which single-axis cases cannot see.
+   *
+   * `getRecipeClassNames` appends in the config's variant order. Emitting the resolved classes
+   * first and the runtime ones after put a dynamic axis declared *before* a static one on the
+   * wrong side — the cascade does not care, but dev and build then produce different `class`
+   * attributes for the same element, which userland snapshots and SSR/CSR hydration do.
+   */
+  test.each([
+    { label: 'dynamic axis declared first', source: `{ size: 'sm', tone: v }`, props: { size: 'sm' } },
+    { label: 'dynamic axis declared second', source: `{ tone: 'a', size: v }`, props: { tone: 'a' } },
+    { label: 'written out of config order', source: `{ size: 'sm', tone: v }`, props: { size: 'sm' } },
+  ])('$label', ({ source, props }) => {
+    const config: RecipeConfig = {
+      base: {},
+      variants: { tone: { a: { color: 'red.300' }, b: { color: 'blue.300' } }, size: { sm: { padding: '2' }, md: {} } },
+      defaultVariants: { size: 'md' },
+    }
+
+    const project = new Project({ useInMemoryFileSystem: true })
+    const file = project.createSourceFile('t.ts', `badge(${source})`)
+    const call = file.getDescendantsOfKind(SyntaxKind.CallExpression)[0]!
+    const lowered = lowerRecipeCall(call, { config, name: getRecipeIdentity(config), box: undefined }, ctx)
+
+    expect(lowered.kind).toBe('expression')
+    if (lowered.kind !== 'expression') return
+
+    const evaluate = new Function('cvaPick', 'v', `return ${lowered.expression}`) as (p: unknown, v: unknown) => string
+    const runtime = cva(config)
+    const dynamicKey = source.includes('tone: v') ? 'tone' : 'size'
+
+    for (const value of ['a', 'b', 'sm', 'md', undefined, null]) {
+      expect(evaluate(cvaPick, value), `${dynamicKey}=${String(value)}`).toBe(
+        runtime({ ...props, [dynamicKey]: value }),
+      )
+    }
+  })
+
+  /**
+   * A config that genuinely declares a variant value spelled `"null"`. The runtime rejects a
+   * `null` selection on `value == null` before ever looking it up, so the declared entry must
+   * not be reachable by passing `null`.
+   */
+  test('a variant named "null" is not selected by a null value', () => {
+    const config: RecipeConfig = {
+      base: {},
+      variants: { tone: { null: { color: 'red.300' }, a: { color: 'blue.300' } } },
+    }
+
+    const project = new Project({ useInMemoryFileSystem: true })
+    const file = project.createSourceFile('t.ts', `badge({ tone: v })`)
+    const call = file.getDescendantsOfKind(SyntaxKind.CallExpression)[0]!
+    const lowered = lowerRecipeCall(call, { config, name: getRecipeIdentity(config), box: undefined }, ctx)
+
+    expect(lowered.kind).toBe('expression')
+    if (lowered.kind !== 'expression') return
+
+    const evaluate = new Function('cvaPick', 'v', `return ${lowered.expression}`) as (p: unknown, v: unknown) => string
+    const runtime = cva(config)
+
+    for (const value of [null, 'null', 'a', undefined]) {
+      expect(evaluate(cvaPick, value), `tone=${String(value)}`).toBe(runtime({ tone: value }))
+    }
+  })
+
+  test.each(CASES)('$label', ({ config, values }) => {
+    const runtime = cva(config)
+    const key = Object.keys(config.variants ?? {})[0]!
+
+    const project = new Project({ useInMemoryFileSystem: true })
+    const file = project.createSourceFile('t.ts', `badge({ ${key}: v })`)
+    const call = file.getDescendantsOfKind(SyntaxKind.CallExpression)[0]!
+    const lowered = lowerRecipeCall(call, { config, name: getRecipeIdentity(config), box: undefined }, ctx)
+
+    expect(lowered.kind).toBe('expression')
+    if (lowered.kind !== 'expression') return
+
+    // Evaluate exactly what the bundle would run, against the generated helper.
+    const evaluate = new Function('cvaPick', 'v', `return ${lowered.expression}`) as (
+      pick: unknown,
+      v: unknown,
+    ) => string
+
+    for (const value of values) {
+      expect(evaluate(cvaPick, value), `${key}=${String(value)}`).toBe(runtime({ [key]: value }))
+    }
+  })
+})
+
 describe('inline recipe lowering matches the generated runtime', () => {
   test.each(CONFIGS)('$label', ({ config }) => {
     const runtime = cva(config)
@@ -160,16 +291,27 @@ describe('inline recipe lowering matches the generated runtime', () => {
    * — folding the first as the second emits a class string missing a variant.
    */
   test.each([
-    [`{ tone: t }`, 'a runtime identifier'],
-    [`{ tone }`, 'shorthand'],
-    [`{ ...rest }`, 'a spread'],
-    [`{ [key]: 'a' }`, 'a computed key'],
-    [`{ tone: cond ? 'a' : 'b' }`, 'a ternary'],
-    [`{ tone: 'a' }, extra`, 'a second argument'],
-  ])('declines %s (%s)', (source) => {
+    [`{ ...rest }`, 'a spread contributes keys the build cannot enumerate'],
+    [`{ [key]: 'a' }`, 'a computed key is one it cannot name'],
+    [`{ tone: 'a' }, extra`, 'a second argument is not a shape cvaFn accepts'],
+  ])('declines %s — %s', (source) => {
     const lowered = foldOf(CONFIGS[0]!.config, source)
 
     expect(lowered.kind).toBe('decline')
+  })
+
+  /**
+   * A value the build cannot resolve is not a reason to give up: the config declares every
+   * value the variant can take, so the *choice* is what ships instead of the config.
+   */
+  test.each([
+    [`{ tone: t }`, 'a runtime identifier'],
+    [`{ tone }`, 'shorthand, the idiomatic spelling'],
+    [`{ tone: cond ? 'a' : 'b' }`, 'a ternary'],
+  ])('lowers %s — %s', (source) => {
+    const lowered = foldOf(CONFIGS[0]!.config, source)
+
+    expect(lowered.kind).toBe('expression')
   })
 
   test('declines when the binding is not a known recipe', () => {
@@ -196,11 +338,13 @@ describe('inline recipe lowering matches the generated runtime', () => {
       if (lowered.kind === 'class') expect(lowered.className).toBe(cva(config)({ tone: 'a' }))
     })
 
-    test('does not rescue a property the extractor dropped', () => {
+    test('a property the extractor dropped becomes a runtime choice, never a literal', () => {
       // What `badge({ tone: t })` actually produces when `t` is a parameter: the key is gone.
+      // The danger was folding that as though the property had not been written at all.
       const lowered = foldOf(config, `{ tone: t }`, {})
 
-      expect(lowered.kind).toBe('decline')
+      expect(lowered.kind).toBe('expression')
+      if (lowered.kind === 'expression') expect(lowered.expression).toContain('cvaPick(t,')
     })
 
     test('cannot introduce a property the source did not write', () => {
@@ -213,6 +357,12 @@ describe('inline recipe lowering matches the generated runtime', () => {
 
     test('declines a resolved value that is not a scalar', () => {
       expect(foldOf(config, `{ tone: t }`, { tone: { base: 'a' } }).kind).toBe('decline')
+    })
+
+    test('a resolved value still folds to a literal rather than a lookup', () => {
+      const lowered = foldOf(config, `{ tone: t }`, { tone: 'a' })
+
+      expect(lowered.kind).toBe('class')
     })
   })
 })

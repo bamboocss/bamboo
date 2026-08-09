@@ -1,7 +1,8 @@
 import { classFormatter, type ClassFormatterContext } from '@bamboocss/core'
-import { compact, getRecipeClassNames, getRecipeIdentity } from '@bamboocss/shared'
+import { compact, getRecipeClassNames, getRecipeIdentity, withoutSpace } from '@bamboocss/shared'
 import type { ParserResultInterface, ResultItem } from '@bamboocss/types'
 import { Node, SyntaxKind } from 'ts-morph'
+import { declaredAtModuleScope } from './fold-partial'
 
 /**
  * Lowering a call of an inline recipe to the class string it produces.
@@ -96,6 +97,11 @@ export const collectRecipeConfigs = (parserResult: ParserResultInterface): Map<s
   return configs
 }
 
+/** The generated binding a lowered dynamic axis calls. Lives in `cx`, which pulls no engine. */
+export const RECIPE_PICK_HELPER = 'cvaPick'
+
+const HELPER = RECIPE_PICK_HELPER
+
 /** Marker for a binding the fold must never resolve — declared twice, or unresolvable. */
 export const AMBIGUOUS: RecipeEntry = Object.freeze({ config: {}, name: '', box: undefined })
 
@@ -141,8 +147,69 @@ const propertyKey = (nameNode: Node): string | undefined => {
   return undefined
 }
 
+/**
+ * Make `cvaPick` callable at this call site, by whatever name the file gives it.
+ *
+ * Not `ensureCxImport`: that one resolves `cx` and finds the declaration to extend by
+ * matching the *callee* against an import. An inline recipe's callee is a local binding, so
+ * there is nothing to match — the host here is any import of the generated css module, which
+ * a file defining a recipe necessarily has, since `cva` came from it.
+ */
+export const ensureRecipeHelperImport = (
+  call: Node,
+  isBambooCssModule: (mod: string) => boolean,
+  isGeneratedCssModule: (mod: string) => boolean,
+  isShadowed: (call: Node, name: string) => boolean,
+): { name: string; insert?: { pos: number; names: string[] } } | undefined => {
+  const sourceFile = call.getSourceFile()
+  let host: ReturnType<typeof sourceFile.getImportDeclarations>[number] | undefined
+
+  for (const declaration of sourceFile.getImportDeclarations()) {
+    const mod = declaration.getModuleSpecifierValue()
+    if (declaration.isTypeOnly()) continue
+
+    for (const named of declaration.getNamedImports()) {
+      if (named.isTypeOnly()) continue
+
+      if (named.getNameNode().getText() === RECIPE_PICK_HELPER) {
+        // Somebody else's `cvaPick`, or one shadowed here, is not the one this calls.
+        if (!isBambooCssModule(mod)) return undefined
+        const local = (named.getAliasNode() ?? named.getNameNode()).getText()
+        return isShadowed(call, local) ? undefined : { name: local }
+      }
+    }
+
+    if (!host && isGeneratedCssModule(mod) && declaration.getNamedImports().length > 0) host = declaration
+  }
+
+  if (!host) return undefined
+
+  // A module-scope binding of this name would collide with the one being added, and one in
+  // scope at the call site would be reached instead of it.
+  if (declaredAtModuleScope(sourceFile).has(RECIPE_PICK_HELPER)) return undefined
+  if (isShadowed(call, RECIPE_PICK_HELPER)) return undefined
+
+  const last = host.getNamedImports().at(-1)
+  if (!last) return undefined
+
+  return { name: RECIPE_PICK_HELPER, insert: { pos: last.getEnd(), names: [RECIPE_PICK_HELPER] } }
+}
+
 export type LowerResult =
   | { kind: 'class'; className: string }
+  /**
+   * An expression, for a selection with an axis the build could not resolve.
+   *
+   * `badge({ tone })` becomes `"cva_x" + cvaPick(tone, {a:" cva_x--tone_a"}, " cva_x--tone_b")`.
+   * Every class the recipe can produce is known — only which of them applies is not — so the
+   * choice is what ships rather than the config it would have been derived from.
+   *
+   * `classNames` is every class the expression can emit, so a consumer checking that the CSS
+   * backs what was folded sees all of them rather than only the branch taken. `staticClasses`
+   * is the part that is unconditionally present — what `className` means elsewhere, where the
+   * whole call resolved.
+   */
+  | { kind: 'expression'; expression: string; classNames: string[]; staticClasses: string }
   | { kind: 'decline'; reason: 'dynamic' | 'unsupported-shape' | 'unknown-recipe' }
 
 /**
@@ -188,14 +255,26 @@ export const lowerRecipeCall = (
   if (args.length > 1) return { kind: 'decline', reason: 'unsupported-shape' }
 
   const selection: Dict = {}
+  /** Variant → the source expression selecting it, for axes that stay runtime decisions. */
+  const dynamicAxes = new Map<string, string>()
 
   if (args.length === 1) {
     const arg = args[0]
     if (!arg || !Node.isObjectLiteralExpression(arg)) return { kind: 'decline', reason: 'dynamic' }
 
     for (const property of arg.getProperties()) {
-      // A spread contributes keys the build cannot enumerate; a computed key is one it cannot
-      // name. Either way the selection is not fully known.
+      // A spread contributes keys the build cannot enumerate, and a computed key is one it
+      // cannot name — neither leaves a knowable set of classes.
+      if (Node.isSpreadAssignment(property)) return { kind: 'decline', reason: 'dynamic' }
+
+      // `{ tone }`, the idiomatic spelling. The name is the expression.
+      if (Node.isShorthandPropertyAssignment(property)) {
+        // Last write wins, as the object literal itself would evaluate.
+        dynamicAxes.set(property.getName(), property.getName())
+        delete selection[property.getName()]
+        continue
+      }
+
       if (!Node.isPropertyAssignment(property)) return { kind: 'decline', reason: 'dynamic' }
 
       const nameNode = property.getNameNode()
@@ -207,6 +286,7 @@ export const lowerRecipeCall = (
 
       if (literal !== undefined) {
         selection[key] = literal
+        dynamicAxes.delete(key)
         continue
       }
 
@@ -216,7 +296,13 @@ export const lowerRecipeCall = (
       // `badge({ tone: t })` with a parameter. (Shorthand never reaches here: `{ tone }` is
       // not a PropertyAssignment and declines above.)
       if (!resolvedSelection || !Object.hasOwn(resolvedSelection, key)) {
-        return { kind: 'decline', reason: 'dynamic' }
+        // Not resolvable, but still knowable: the config declares every value this variant
+        // can take, so the choice among them is what ships.
+        const initializer = property.getInitializer()
+        if (!initializer) return { kind: 'decline', reason: 'dynamic' }
+        dynamicAxes.set(key, initializer.getText())
+        delete selection[key]
+        continue
       }
 
       const value = resolvedSelection[key]
@@ -224,13 +310,82 @@ export const lowerRecipeCall = (
       if (value !== null && typeof value === 'object') return { kind: 'decline', reason: 'dynamic' }
 
       selection[key] = value
+      dynamicAxes.delete(key)
     }
   }
 
   // Exactly what `cvaFn` does: defaults first, then the selection with `undefined` dropped.
   const merged = { ...(config.defaultVariants ?? {}), ...compact(selection) }
+  const format = classFormatter(ctx)
 
-  const className = getRecipeClassNames(name, config.variants, merged, ctx.utility.separator, classFormatter(ctx))
+  if (dynamicAxes.size === 0) {
+    return {
+      kind: 'class',
+      className: getRecipeClassNames(name, config.variants, merged, ctx.utility.separator, format),
+    }
+  }
 
-  return { kind: 'class', className }
+  // Axes the config declares no values for contribute nothing at runtime either — `cvaFn`
+  // looks one up and skips it — so they are dropped rather than declining the call.
+  for (const key of [...dynamicAxes.keys()]) {
+    if (!config.variants?.[key]) dynamicAxes.delete(key)
+  }
+
+  if (dynamicAxes.size === 0) {
+    const staticOnly = { ...merged }
+    for (const key of dynamicAxes.keys()) delete staticOnly[key]
+    return {
+      kind: 'class',
+      className: getRecipeClassNames(name, config.variants, staticOnly, ctx.utility.separator, format),
+    }
+  }
+
+  // Emitted in the config's variant order, which is the order `getRecipeClassNames` appends
+  // in. Grouping the static classes first and the runtime ones after would put a dynamic axis
+  // declared before a static one on the wrong side, so the same element would carry a
+  // different `class` string in dev — where `cva` still runs — than in the build.
+  const ownClass = format(name)
+  const parts: string[] = [JSON.stringify(ownClass)]
+  const classNames: string[] = [ownClass]
+
+  for (const key of Object.keys(config.variants ?? {})) {
+    const expression = dynamicAxes.get(key)
+
+    if (expression === undefined) {
+      // Resolved: the same three conditions `getRecipeClassNames` applies before appending.
+      const value = merged[key]
+      if (value == null) continue
+      if (config.variants?.[key]?.[value as string] == null) continue
+
+      const className = format(`${name}--${key}${ctx.utility.separator}${withoutSpace(value as string)}`)
+      parts.push(JSON.stringify(` ${className}`))
+      classNames.push(className)
+      continue
+    }
+
+    const values = config.variants![key]!
+    const table: Record<string, string> = {}
+
+    for (const value of Object.keys(values)) {
+      const className = format(`${name}--${key}${ctx.utility.separator}${withoutSpace(value)}`)
+      table[value] = ` ${className}`
+      classNames.push(className)
+    }
+
+    // What the default contributes when the property is absent at runtime, resolved here.
+    const fallbackValue = config.defaultVariants?.[key]
+    const fallback =
+      fallbackValue != null && values[fallbackValue as string] != null
+        ? ` ${format(`${name}--${key}${ctx.utility.separator}${withoutSpace(fallbackValue as string)}`)}`
+        : undefined
+
+    parts.push(
+      `${HELPER}(${expression}, ${JSON.stringify(table)}${fallback === undefined ? '' : `, ${JSON.stringify(fallback)}`})`,
+    )
+  }
+
+  // Every axis turned out to name no variant, so nothing runtime survived.
+  if (parts.length === 1) return { kind: 'class', className: ownClass }
+
+  return { kind: 'expression', expression: parts.join(' + '), classNames, staticClasses: ownClass }
 }

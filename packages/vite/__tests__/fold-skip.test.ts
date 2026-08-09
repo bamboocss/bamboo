@@ -333,20 +333,49 @@ describe('calls of an inline recipe', () => {
     expect(result.code).toBe(code)
   })
 
-  test('a dynamic call is reported the same way', () => {
+  /**
+   * A selection the build cannot resolve is still a choice among classes it knows, so it
+   * lowers to that choice rather than keeping the recipe. The runtime that survives is the
+   * `cvaPick` join, not `cva` — and once every call of a binding lowers, its config is dead.
+   */
+  test('a dynamic call lowers to a choice between known classes', () => {
     const { fold } = createFoldFixture()
     const result = fold(inline(`export const make = (tone) => badge({ tone })`))
 
+    expect(result.folded).toHaveLength(1)
+    expect(result.code).toContain('cvaPick(tone,')
+    expect(result.code).toContain(`import { cva, cvaPick }`)
+  })
+
+  test('a selection the build cannot enumerate is still reported', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(inline(`export const make = (rest) => badge({ ...rest })`))
+
+    expect(result.folded).toHaveLength(0)
     expect(result.skipped.map((s) => s.reason)).toContain('recipe-call')
   })
 
-  test('the definition is still reported, since it cannot fold', () => {
+  test('the definition is still reported, and marked pure once nothing reads it', () => {
     const { fold } = createFoldFixture()
     const result = fold(inline(`export const cls = badge({ tone: 'a' })`))
 
     // `cva(...)` returns a function; only its invocations resolve to a class string.
     expect(result.skipped.map((s) => s.reason)).toContain('not-foldable')
-    expect(result.code).toContain('const badge = cva(')
+    // Left in place, but annotated — a bundler cannot prove `cva` is side-effect free, so
+    // without this the config stays and folding makes the module larger, not smaller.
+    expect(result.code).toContain('const badge = /*#__PURE__*/cva(')
+  })
+
+  test('the definition is not marked pure while a call still reads it', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(
+      inline(`
+      export const cls = badge({ tone: 'a' })
+      export const other = (rest) => badge({ ...rest })
+    `),
+    )
+
+    expect(result.code).not.toContain('/*#__PURE__*/')
   })
 
   /**

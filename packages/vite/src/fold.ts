@@ -4,7 +4,13 @@ import { type BoxNode, box, unbox } from '@bamboocss/extractor'
 import type { Dict, ParserResultInterface, ResultItem } from '@bamboocss/types'
 import MagicString from 'magic-string'
 import { Node, type SourceFile, SyntaxKind } from 'ts-morph'
-import { collectRecipeConfigs, lowerRecipeCall, type RecipeEntry } from './fold-recipe'
+import {
+  collectRecipeConfigs,
+  ensureRecipeHelperImport,
+  lowerRecipeCall,
+  RECIPE_PICK_HELPER,
+  type RecipeEntry,
+} from './fold-recipe'
 import {
   accountsForSource,
   ensureCxImport,
@@ -703,6 +709,18 @@ export const foldSource = (options: FoldOptions): FoldResult => {
   /** Built on first use: most modules declare no inline recipe. */
   let recipeConfigs: Map<string, RecipeEntry> | undefined
 
+  /**
+   * Per inline recipe binding: calls seen, calls lowered.
+   *
+   * A binding whose every call lowered is no longer read, so its `cva({ … })` config can leave
+   * the bundle — which is the whole point, the config being far larger than the runtime. But a
+   * bundler will not drop the call on its own: `cva` closes over the config and builds an
+   * object, and Rollup cannot prove that is side-effect free, so it keeps the expression and
+   * the module ends up *larger* than before folding. The annotation below is what makes the
+   * saving real, and it is only correct to claim it once nothing reads the binding.
+   */
+  const recipeCalls = new Map<string, { seen: number; lowered: number }>()
+
   /** Ranges already reported as declined, so one call is never counted twice. */
   const reportedRanges = new Set<string>()
 
@@ -846,6 +864,10 @@ export const foldSource = (options: FoldOptions): FoldResult => {
           }
 
           recipeConfigs ??= collectRecipeConfigs(parserResult)
+
+          const tally = recipeCalls.get(name) ?? { seen: 0, lowered: 0 }
+          tally.seen++
+          recipeCalls.set(name, tally)
           // One resolution only: a ternary yields several candidate selections, and there is
           // no single literal that stands for all of them.
           const resolvedSelection = item.data?.length === 1 ? (item.data[0] as Dict) : undefined
@@ -859,7 +881,37 @@ export const foldSource = (options: FoldOptions): FoldResult => {
             ? lowerRecipeCall(call, entry, ctx, resolvedSelection)
             : ({ kind: 'decline', reason: 'dynamic' } as const)
 
+          if (lowered.kind === 'expression') {
+            // The helper has to be callable here by whatever name this file gives it, and
+            // adding an import is only safe against the module bamboo generates.
+            const helper = ensureRecipeHelperImport(call, isBambooCssModule, isGeneratedCssModule, isShadowed)
+
+            if (helper) {
+              tally.lowered++
+              candidates.push({
+                item,
+                call,
+                node: call,
+                start,
+                end,
+                replacement:
+                  helper.name === RECIPE_PICK_HELPER
+                    ? lowered.expression
+                    : lowered.expression.replaceAll(`${RECIPE_PICK_HELPER}(`, `${helper.name}(`),
+                className: lowered.staticClasses,
+                classNames: lowered.classNames,
+                insert: helper.insert,
+                configBox: entry?.box,
+              })
+              continue
+            }
+
+            skipped.push({ name, reason: 'recipe-call', start, end })
+            continue
+          }
+
           if (lowered.kind === 'class') {
+            tally.lowered++
             // `replacement`, not `value`: this is a class string, and the `value` path is
             // `token()`'s — it records an empty `className`, which is what a consumer checks
             // for a backing rule.
@@ -1090,6 +1142,33 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     applied.push(...ranges)
     folded.push({ name, kind: 'class', className, classNames: [className], start, end })
     collectSourceFiles(item.box, dependencyScan)
+  }
+
+  // A binding nothing reads any more: mark its config pure so the bundler can drop it.
+  //
+  // `cva(config)` hashes the config, memoizes and builds an object — no side effect, but not
+  // one Rollup can prove, so without this it keeps the whole style object as a bare expression
+  // statement and folding makes the module *larger* rather than smaller. The config is the
+  // prize here; the runtime it feeds is a fraction of its size.
+  //
+  // Only when every call lowered. While one survives the binding is still read, so the
+  // annotation would change nothing — and claiming the saving would be wrong.
+  for (const [binding, tally] of recipeCalls) {
+    if (!tally.seen || tally.lowered !== tally.seen) continue
+
+    const definition = recipeConfigs?.get(binding)?.box?.getNode?.()
+    if (!definition) continue
+
+    const call = Node.isCallExpression(definition)
+      ? definition
+      : definition.getFirstAncestorByKind(SyntaxKind.CallExpression)
+    if (!call) continue
+
+    // Offsets are only meaningful against the module being rewritten.
+    const start = call.getStart()
+    if (code.slice(start, call.getEnd()) !== call.getText()) continue
+
+    magic.appendLeft(start, '/*#__PURE__*/')
   }
 
   if (folded.length === 0) {
