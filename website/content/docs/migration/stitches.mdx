@@ -84,8 +84,8 @@ const styles = cva({
 
 ## styled function
 
-In Stitches, the `styled` function can be used to create components that are bound to both regular and variant styles
-objects.
+In Stitches, the `styled` function creates components bound to both regular and variant style objects, and generates a
+unique className for each variant.
 
 ```tsx
 import { styled } from '@stitches/react'
@@ -99,36 +99,11 @@ const Button = styled('button', {
     // variant styles
   },
 })
-```
-
-In Bamboo, the base styles object needs to added to the `base` key of a `cva`.
-
-```tsx
-import { cva } from '../styled-system/css'
-
-const button = cva({
-  // base styles
-  base: {
-    backgroundColor: 'gainsboro',
-    borderRadius: '9999px',
-  },
-  variants: {
-    // variant styles
-  },
-})
-```
-
-In Stitches, the styled function generates a unique className for each variant.
-
-```tsx
-import { styled } from '@stitches/react'
-
-const Button = styled('button', {})
 // => <button class="c-coNKBW c-coNKBW-dnSdJM-variant-primary">Button</button>
 ```
 
-In Bamboo, both kinds of recipe emit a named class per variant, into the `recipes` cascade layer. What you choose is
-where the recipe lives, and what that costs.
+Bamboo has no `styled` factory. Base styles go under the `base` key of a recipe, and both kinds of recipe emit a named
+class per variant, into the `recipes` cascade layer. What you choose is where the recipe lives, and what that costs.
 
 - **Colocated** with the component, using the `cva` function. Every variant it declares is generated, because the build
   cannot cheaply find which ones your code uses.
@@ -182,7 +157,7 @@ export default defineConfig({
 import { buttonStyle } from '../styled-system/recipes'
 ;<button className={buttonStyle({ variant: 'primary' })}>Button</button>
 
-// => <button className="button button--variant-primary">Button</button>
+// => <button className="button button--variant_primary">Button</button>
 ```
 
 ## Responsive Styles
@@ -296,21 +271,8 @@ const styles = css({
 })
 ```
 
-Notice that in Bamboo, you don't need to use the `$` prefix to access the tokens. If you really want to use the `$`
-prefix, you can either update the name of the token:
-
-```diff
-export default defineConfig({
-  theme: {
-    colors: {
--      gray100: { value: 'hsl(206,22%,99%)' },
-+      $gray100: { value: 'hsl(206,22%,99%)' },
-    },
-  }
-})
-```
-
-Or you can tweak the token engine to format them with the `$` prefix:
+Notice that in Bamboo, you don't need to use the `$` prefix to access the tokens. If you want to keep it across the
+board, format the token names in a hook rather than renaming every token:
 
 ```ts
 import { defineConfig } from '@bamboocss/dev'
@@ -518,7 +480,7 @@ globalStyles()
 
 In Bamboo, you define the global styles in the `bamboo.config.ts` using the `globalCss` function.
 
-> The styles be injected automatically under the `base` cascade layer via PostCSS
+> The styles are injected automatically under the `base` cascade layer via PostCSS
 
 ```ts {3-5}
 import { defineConfig, defineGlobalStyles } from '@bamboocss/dev'
@@ -573,33 +535,11 @@ const buttonClass = css({
 
 ## Server Side Rendering
 
-In Stitches, you need to configure the server-side rendering for your framework.
+Stitches needs per-framework SSR wiring — `getCssText()` from `createStitches`, and its output placed into the document
+head by hand.
 
-```tsx
-// stitches.config.ts
-import { createStitches } from '@stitches/react'
-export const { getCssText } = createStitches()
-
-// _document.tsx
-export default class Document extends NextDocument {
-  render() {
-    return (
-      <Html lang="en">
-        <Head>
-          <style id="stitches" dangerouslySetInnerHTML={{ __html: getCssText() }} />
-        </Head>
-        <body>
-          <Main />
-          <NextScript />
-        </body>
-      </Html>
-    )
-  }
-}
-```
-
-In Bamboo, you don't need to configure anything. Bamboo automatically extracts the styles and injects them at build time
-using PostCSS.
+Bamboo needs none of it. Styles are extracted and emitted at build time by PostCSS, so there is nothing to collect at
+request time.
 
 ## Conclusion
 

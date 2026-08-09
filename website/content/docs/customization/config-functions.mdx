@@ -90,10 +90,11 @@ and instead just having a className that handles children on 1 DOM element.
 
 It pairs well with [ZagJs](https://zagjs.com/) and [Ark-UI](https://ark-ui.com/)
 
-Let's refactor the previous example to use parts instead of slots:
+To refactor the slot recipe above, swap `defineSlotRecipe` for `defineRecipe`, drop `slots`, and wrap every slot object
+— in `base` and in each variant value — in `parts()`:
 
 ```ts
-import { defineParts, definetRecipe } from '@bamboocss/dev'
+import { defineParts, defineRecipe } from '@bamboocss/dev'
 
 const parts = defineParts({
   root: { selector: '& [data-part="root"]' },
@@ -103,27 +104,12 @@ const parts = defineParts({
 
 export const checkboxRecipe = defineRecipe({
   className: 'checkbox',
-  description: 'A checkbox style',
   base: parts({
     root: { display: 'flex', alignItems: 'center', gap: '2' },
     control: { borderWidth: '1px', borderRadius: 'sm' },
     label: { marginStart: '2' },
   }),
-  variants: {
-    size: {
-      sm: parts({
-        control: { width: '8', height: '8' },
-        label: { fontSize: 'sm' },
-      }),
-      md: parts({
-        control: { width: '10', height: '10' },
-        label: { fontSize: 'md' },
-      }),
-    },
-  },
-  defaultVariants: {
-    size: 'sm',
-  },
+  // ...variants and defaultVariants unchanged, each variant value wrapped in parts()
 })
 ```
 
@@ -211,6 +197,23 @@ const globalCss = defineGlobalStyles({
 })
 ```
 
+### `defineGlobalFontface`
+
+Function for [global font face](/docs/guides/fonts#global-font-face) definitions. Each key is a font family name, and
+its value is one `@font-face` rule or an array of them.
+
+```ts
+import { defineGlobalFontface } from '@bamboocss/dev'
+
+const globalFontface = defineGlobalFontface({
+  Inter: {
+    src: 'url(/fonts/inter.woff2) format("woff2")',
+    fontWeight: '400',
+    fontStyle: 'normal',
+  },
+})
+```
+
 ### `defineUtility`
 
 Function for [utility](/docs/customization/utilities) definitions.
@@ -224,6 +227,34 @@ export const br = defineUtility({
   transform(value) {
     return { borderRadius: value }
   },
+})
+```
+
+### `defineThemeVariant`
+
+Function for a single entry of [`config.themes`](/docs/references/config#themes). Accepts the `tokens` and
+`semanticTokens` a [theme variant](/docs/guides/multiple-themes) may override.
+
+```ts
+import { defineThemeVariant } from '@bamboocss/dev'
+
+export const primary = defineThemeVariant({
+  tokens: {
+    colors: { text: { value: 'red' } },
+  },
+})
+```
+
+### `defineThemeContract`
+
+Takes a partial theme variant and returns a `defineThemeVariant` that requires every token named in it, so a set of
+variants cannot drift apart. See [Multiple themes](/docs/guides/multiple-themes) for a worked example.
+
+```ts
+import { defineThemeContract } from '@bamboocss/dev'
+
+const defineTheme = defineThemeContract({
+  tokens: { colors: { red: { value: '' } } },
 })
 ```
 
@@ -264,6 +295,24 @@ const layerStyles = defineLayerStyles({
       background: 'gray.50',
       border: '2px solid',
       borderColor: 'gray.500',
+    },
+  },
+})
+```
+
+### `defineAnimationStyles`
+
+Function for [animation styles](/docs/theming/animation-styles) definitions. Same `{ description?, value }` shape as
+text and layer styles, holding the animation properties to compose. That page has a worked example.
+
+```ts
+import { defineAnimationStyles } from '@bamboocss/dev'
+
+export const animationStyles = defineAnimationStyles({
+  'fade-in': {
+    value: {
+      animationName: 'fade-in',
+      animationDuration: 'fast',
     },
   },
 })
@@ -321,15 +370,7 @@ const theme = {
 }
 ```
 
-You can also use this function to define tokens in a separate file:
-
-```ts filename="tokens/colors.ts"
-import { defineTokens } from '@bamboocss/dev'
-
-export const colors = defineTokens.colors({
-  primary: { value: '#ff0000' },
-})
-```
+A per-category form — `defineTokens.colors(…)` — is also available, for defining tokens in a separate file.
 
 ### `defineSemanticTokens`
 
@@ -347,14 +388,4 @@ const theme = {
 }
 ```
 
-You can also use this function to define tokens in a separate file:
-
-```ts filename="tokens/colors.semantic.ts"
-import { defineSemanticTokens } from '@bamboocss/dev'
-
-export const colors = defineSemanticTokens.colors({
-  primary: {
-    value: { _light: '{colors.blue.400}', _dark: '{colors.blue.200}' },
-  },
-})
-```
+`defineSemanticTokens.colors(…)` and the other per-category forms work the same way.

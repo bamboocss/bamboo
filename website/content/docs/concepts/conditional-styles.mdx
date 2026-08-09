@@ -116,37 +116,8 @@ const App = () => {
 
 ## Pseudo Classes
 
-### Hover, Active, Focus, and Disabled
-
-You can style the hover, active, focus, and disabled states of an element using their `_` modifier:
-
-```jsx
-<button
-  className={css({
-    bg: 'red.500',
-    _hover: { bg: 'red.700' },
-    _active: { bg: 'red.900' },
-  })}
->
-  Hover me
-</button>
-```
-
-### First, Last, Odd, Even
-
-You can style the first, last, odd, and even elements of a group using their `_` modifier:
-
-```jsx
-<ul>
-  {items.map((item) => (
-    <li key={item} className={css({ _first: { color: 'red.500' } })}>
-      {item}
-    </li>
-  ))}
-</ul>
-```
-
-You can also style even and odd elements using the `_even` and `_odd` modifier:
+Every pseudo class in the [Reference](#reference) has a `_` modifier that works like the `_hover` above — `_active`,
+`_focus`, `_disabled`, `_first`, `_last`, `_even`, `_odd`, and so on:
 
 ```jsx
 <table>
@@ -191,9 +162,9 @@ You can style the `::before` and `::after` pseudo elements of an element using t
 ```jsx
 css({
   // This works ✅
-  _dark: { _backdrop: { color: 'red' } }
+  _dark: { _backdrop: { color: 'red' } },
   // This doesn't work ❌
-  _backdrop: { _dark: { color: 'red' } }
+  _backdrop: { _dark: { color: 'red' } },
 })
 ```
 
@@ -237,86 +208,26 @@ Style the file input button using the `_file` modifier:
 
 ## Media Queries
 
-### Reduced Motion
-
-Use the `_motionReduce` and `_motionSafe` modifiers to style an element based on the user's motion preference:
-
-```jsx
-<div
-  className={css({
-    _motionReduce: { transition: 'none' },
-    _motionSafe: { transition: 'all 0.3s' },
-  })}
->
-  Hello
-</div>
-```
-
-### Color Scheme
-
-The `prefers-color-scheme` media feature is used to detect if the user has requested the system use a light or dark
-color theme.
-
-Use the `_osLight` and `_osDark` modifiers to style an element based on the user's color scheme preference:
+User-preference media features have `_` modifiers of their own, and compose like any other condition:
 
 ```jsx
 <div
   className={css({
     bg: 'white',
     _osDark: { bg: 'black' },
+    _motionReduce: { transition: 'none' },
   })}
 >
   Hello
 </div>
 ```
 
-Let's say your app is dark by default, but you want to allow users to switch to a light theme. You can do it like this:
-
-```jsx
-<div
-  className={css({
-    bg: 'black',
-    _osLight: { bg: 'white' },
-  })}
->
-  Hello
-</div>
-```
-
-### Color Contrast
-
-The `prefers-contrast` media feature is used to detect if the user has requested the system use a high or low contrast
-theme.
-
-Use the `_highContrast` and `_lessContrast` modifiers to style an element based on the user's color contrast preference:
-
-```jsx
-<div
-  className={css({
-    bg: 'white',
-    _highContrast: { bg: 'black' },
-  })}
->
-  Hello
-</div>
-```
-
-### Orientation
-
-The `orientation` media feature is used to detect if the user has a device in portrait or landscape mode.
-
-Use the `_portrait` and `_landscape` modifiers to style an element based on the user's device orientation:
-
-```jsx
-<div
-  className={css({
-    pb: '4',
-    _portrait: { pb: '8' },
-  })}
->
-  Hello
-</div>
-```
+| Modifiers                                           | Media query                                                |
+| --------------------------------------------------- | ---------------------------------------------------------- |
+| `_motionReduce` / `_motionSafe`                     | `prefers-reduced-motion: reduce` / `no-preference`         |
+| `_osDark` / `_osLight`                              | `prefers-color-scheme: dark` / `light`                     |
+| `_lessContrast` / `_moreContrast` / `_highContrast` | `prefers-contrast: less` / `more`, `forced-colors: active` |
+| `_portrait` / `_landscape`                          | `orientation: portrait` / `landscape`                      |
 
 ## Group Selectors
 
@@ -501,13 +412,13 @@ function Demo() {
 This will generate the following CSS:
 
 ```css
-.cq-type_inline-size {
+.cq-t_inline-size {
   container-type: inline-size;
 }
 
-@container (inline-size >= 60em) {
-  .\@\/sm:fs_md {
-    container-type: inline-size;
+@container (inline-size >= 60rem) {
+  .\@\/sm\:fs_md {
+    font-size: var(--font-sizes-md);
   }
 }
 ```

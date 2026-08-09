@@ -3,8 +3,6 @@ title: Using Vite
 description: Easily use Bamboo with Vite, React and Typescript with our dedicated integration.
 ---
 
-This guide will show you how to set up Bamboo CSS in a Vite project using PostCSS.
-
 ## Start a new project
 
 <Steps>
@@ -48,32 +46,32 @@ To get started, we will need to create a new Vite project using `react-ts` templ
 
 ### Install Bamboo
 
-Install bamboo and create your `bamboo.config.ts` file.
+Install bamboo and the Vite plugin, then create your `bamboo.config.ts` file.
 
 <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
   {/* <!-- prettier-ignore-start --> */}
   <Tab>
     ```bash
-    pnpm install -D @bamboocss/dev
-    pnpm bamboo init --postcss
+    pnpm install -D @bamboocss/dev @bamboocss/vite
+    pnpm bamboo init
     ```
   </Tab>
   <Tab>
     ```bash
-    npm install -D @bamboocss/dev
-    npx bamboo init --postcss
+    npm install -D @bamboocss/dev @bamboocss/vite
+    npx bamboo init
     ```
   </Tab>
   <Tab>
     ```bash
-    yarn add -D @bamboocss/dev
-    yarn bamboo init --postcss
+    yarn add -D @bamboocss/dev @bamboocss/vite
+    yarn bamboo init
     ```
   </Tab>
   <Tab>
     ```bash
-    bun add -D @bamboocss/dev
-    bun bamboo init --postcss
+    bun add -D @bamboocss/dev @bamboocss/vite
+    bun bamboo init
     ```
   </Tab>
   {/* <!-- prettier-ignore-end --> */}
@@ -81,25 +79,8 @@ Install bamboo and create your `bamboo.config.ts` file.
 
 ### Update package.json scripts
 
-Open your `package.json` file and update the `scripts` section as follows:
-
-```diff {3} filename="package.json"
-{
-  "scripts": {
-+    "prepare": "bamboo codegen",
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
-  }
-}
-```
-
-- `"prepare"` - script that will run Bamboo CSS CLI codegen before each build. Read more about
-  [codegen](/docs/references/cli#codegen) in the CLI section.
-
-> This step ensures that the bamboo output directory is regenerated after each dependency installation. So you can add
-> the output directory to your `.gitignore` file and not worry about it.
+Add `"prepare": "bamboo codegen"` to `scripts`. It runs [codegen](/docs/references/cli#codegen) after every dependency
+install, so the output directory can stay in `.gitignore`.
 
 ### Configure the content
 
@@ -119,57 +100,50 @@ export default defineConfig({
   // Files to exclude
   exclude: [],
 
-  // Generates JSX utilities with options of React, Preact, Qwik, Solid, Vue
-
   // The output directory for your css system
   outdir: 'styled-system',
 })
 ```
 
-### Configure the entry CSS with layers
+### Add the plugin to your Vite config
 
-Add this code to an `src/index.css` file imported in the root component of your project.
+```ts filename="vite.config.ts"
+import { defineConfig } from 'vite'
+import bamboocss from '@bamboocss/vite'
+import react from '@vitejs/plugin-react'
 
-```css filename="src/index.css"
-@layer reset, base, tokens, recipes, utilities;
+export default defineConfig({
+  plugins: [bamboocss(), react()],
+})
 ```
+
+### Import the virtual stylesheet
+
+```ts filename="src/main.tsx"
+import 'virtual:bamboo.css'
+```
+
+Reference the ambient declaration so TypeScript accepts that import:
+
+```ts filename="src/vite-env.d.ts"
+/// <reference types="vite/client" />
+/// <reference types="@bamboocss/vite/client" />
+```
+
+That is the whole setup – no `postcss.config.cjs` entry for Bamboo, and no file carrying the `@layer` statement, since
+the virtual module emits its own. You still need PostCSS for anything else you run through it, autoprefixer included.
+
+In development the stylesheet is served from memory and hot-replaced in place, so editing a style repaints without a
+reload or a loss of component state. In a production build it is hashed into the asset graph like any other CSS.
 
 > **Note:** Feel free to remove `src/App.css` file as we don't need it anymore, and make sure to remove the import from
 > the `src/App.tsx` file.
 
 ## Start your build process
 
-Run the following command to start your development server.
-
-<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
-  {/* <!-- prettier-ignore-start --> */}
-  <Tab>
-    ```bash
-    pnpm dev
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    npm run dev
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    yarn dev
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    bun dev
-    ```
-  </Tab>
-  {/* <!-- prettier-ignore-end --> */}
-</Tabs>
+Start the dev server with `pnpm dev`.
 
 ### Start using Bamboo
-
-Now you can start using Bamboo CSS in your project. Here is the snippet of code that you can use in your `src/App.tsx`
-file.
 
 ```tsx filename="src/App.tsx"
 import { css } from '../styled-system/css'
@@ -183,57 +157,10 @@ export default App
 
 </Steps>
 
-## Alternative: emit CSS from the Vite plugin
+## Plugin options
 
-The setup above generates CSS through PostCSS. `@bamboocss/vite` can do it instead, which removes the PostCSS config and
-the entry CSS file entirely.
-
-```bash
-pnpm add -D @bamboocss/vite
-```
-
-```ts filename="vite.config.ts"
-import { defineConfig } from 'vite'
-import bamboocss from '@bamboocss/vite'
-import react from '@vitejs/plugin-react'
-
-export default defineConfig({
-  plugins: [bamboocss(), react()],
-})
-```
-
-Import the virtual stylesheet where you imported the entry CSS:
-
-```ts filename="src/main.tsx"
-import 'virtual:bamboo.css'
-```
-
-And reference the ambient declaration so TypeScript accepts that import:
-
-```ts filename="src/vite-env.d.ts"
-/// <reference types="vite/client" />
-/// <reference types="@bamboocss/vite/client" />
-```
-
-That is the whole setup – no `postcss.config.cjs` entry for Bamboo, and no file carrying the `@layer` statement, since
-the virtual module emits its own. You still need PostCSS for anything else you run through it, autoprefixer included.
-
-In development the stylesheet is served from memory and hot-replaced in place, so editing a style repaints without a
-reload or a loss of component state. In a production build it is hashed into the asset graph like any other CSS.
-
-<Callout type="warning">
-  Use this **or** the PostCSS plugin, not both. Each emits a complete stylesheet, so configuring the two together puts
-  two copies of it in your bundle – and a minifier merges most of the duplication away, which makes it read as a
-  rounding error rather than as the whole sheet twice.
-</Callout>
-
-## Optional: fold static styles at build time
-
-The setup above resolves styles at runtime – `css({ color: 'red.300' })` runs on every render and returns a class
-string. The result is cached, but for a call whose arguments never change that work buys nothing.
-
-`@bamboocss/vite` removes it. During a production build it rewrites statically-resolvable calls into the string they
-would have returned:
+`bamboocss()` emits the stylesheet and, during production builds, folds statically-resolvable style calls into the class
+strings they would have returned:
 
 ```tsx
 // you write
@@ -243,37 +170,39 @@ export const title = css({ fontSize: 'lg', fontWeight: 'bold' })
 export const title = 'fs_lg fw_bold'
 ```
 
-```bash
-pnpm add -D @bamboocss/vite
+| option          | default | what it does                                                                |
+| --------------- | ------- | --------------------------------------------------------------------------- |
+| `transform`     | `true`  | Fold statically-resolvable calls. Build only – it never runs in `vite dev`. |
+| `partial`       | `true`  | Split a partly-static call so the resolvable half still becomes a literal.  |
+| `strict`        | `false` | Fail the build when any `css()` or pattern call is left for the runtime.    |
+| `reportSummary` | `true`  | Print a coverage summary when the build finishes.                           |
+| `reportSkipped` | `false` | Report every call site that did not fold, and why, per file.                |
+| `configPath`    | –       | Path to `bamboo.config.ts`. Resolved the way the CLI resolves it.           |
+| `cwd`           | –       | Directory the config is resolved from.                                      |
+
+Calls that cannot be resolved at build time are left alone and keep working as they do today. See
+[Source Transformation](/docs/guides/source-transformation) for exactly what folds, what does not, and what `strict`
+checks.
+
+## Alternative: emit CSS from PostCSS
+
+Bamboo can emit the stylesheet through PostCSS instead of the Vite plugin. Install `@bamboocss/dev` alone, run
+`bamboo init --postcss` to write `postcss.config.cjs`, and add an entry CSS file carrying the layer order:
+
+```css filename="src/index.css"
+@layer reset, base, tokens, recipes, utilities;
 ```
 
-```ts filename="vite.config.ts"
-import { defineConfig } from 'vite'
-import bamboocss from '@bamboocss/vite'
+Import that file from your root component in place of `virtual:bamboo.css`. This path has no build-time fold; every
+`css()` call resolves at runtime.
 
-export default defineConfig({
-  plugins: [bamboocss({ transform: true })],
-})
-```
-
-<Callout type="info">
-  This does not replace the PostCSS setup above. The plugin emits no CSS – PostCSS stays responsible for the stylesheet,
-  and the CSS output is identical either way. Only the JavaScript changes. The fold is also **off by default**; you have
-  to pass `transform: true`.
+<Callout type="warning">
+  Use this **or** `@bamboocss/vite`, not both. Each emits a complete stylesheet, so configuring the two together puts
+  two copies of it in your bundle – and a minifier merges most of the duplication away, which makes it read as a
+  rounding error rather than as the whole sheet twice.
 </Callout>
-
-Calls that cannot be resolved at build time are left alone and keep working as they do today, so this is safe to add to
-an existing project. See [Source Transformation](/docs/guides/source-transformation) for exactly what folds, what does
-not, and why.
 
 ## Troubleshooting
 
-If you're not getting import autocomplete in your IDE, you may need to include the `styled-system` directory in your
-`tsconfig.json` file:
-
-```json filename="tsconfig.json"
-{
-  // ...
-  "include": ["src", "styled-system"]
-}
-```
+If your IDE does not autocomplete `styled-system` imports, add that directory to `include` in `tsconfig.json`. See
+[the CLI guide](/docs/installation/cli#troubleshooting).

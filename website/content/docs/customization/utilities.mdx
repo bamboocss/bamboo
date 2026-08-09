@@ -16,6 +16,16 @@ Here are the properties you need to define or customize a utility:
 - `values`: The possible values the property can have. Could be a token category, or an enum of values, string, number,
   or boolean.
 - `transform`: A function that converts the value to a valid css object
+- `property`: The css property this utility maps to. Its accepted values are added to the utility's own type, unless
+  [`strictTokens`](/docs/references/config#stricttokens) is on.
+- `group`: The semantic group the utility belongs to, used to organise generated documentation.
+- `deprecated`: Whether the utility is deprecated. See [Deprecations](/docs/customization/deprecations).
+- `customProperties`: Custom properties this utility composes its value from, registered with `@property`. Several
+  utilities build one declaration out of many variables — `filter` out of nine, `translate` out of its axes — while a
+  sibling utility sets each variable on its own. Declaring them here is what registers them, so the utility that reads a
+  variable is the thing that guarantees it exists, and registration is merged across every configured utility. Omitting
+  `initialValue` gives the property the guaranteed-invalid value, which is what a `var(--x, )` reference expects; a
+  variable read without a fallback needs one declared instead, or the whole declaration is invalid.
 
 ## Creating a custom utility
 
@@ -41,42 +51,11 @@ export default defineConfig({
 
 Then you can run the following command to generate the pattern JS code:
 
-<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
-  {/* <!-- prettier-ignore-start --> */}
-    <Tab>
-      ```bash
-      pnpm bamboo codegen
-      ```
-    </Tab>
-    <Tab>
-      ```bash
-      npm bamboo codegen
-      ```
-    </Tab>
-    <Tab>
-      ```bash
-      yarn bamboo codegen
-      ```
-    </Tab>
-    <Tab>
-      ```bash
-      bun bamboo codegen
-      ```
-    </Tab>
-  {/* <!-- prettier-ignore-end --> */}
-</Tabs>
-
-Now, we can use the `br` property in our components.
-
-```jsx
-import { css } from '../styled-system/css'
-
-function App() {
-  return <div className={css({ br: 'sm' })} />
-}
+```bash
+pnpm bamboo codegen
 ```
 
-or use in JSX style props
+Now, we can use the `br` property in our components.
 
 ```jsx
 import { css } from '../styled-system/css'
@@ -169,8 +148,3 @@ export default defineConfig({
   },
 })
 ```
-
-## Minimal setup
-
-If you want to use Bamboo with the bare minimum, without any of the defaults, you can read more about it
-[here](/docs/guides/minimal-setup)

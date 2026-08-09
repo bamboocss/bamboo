@@ -1,208 +1,44 @@
-## Folder structure
+# @bamboocss/node
 
-- `.bamboo`
-  - `tokens` (index.js, index.d.ts, index.css)
-  - `styled-system` (index.js, index.d.ts)
-  - `package.json`
+The Node runtime behind Bamboo CSS: config loading, context creation, extraction and the write side of codegen and
+`styles.css`.
 
-```js
-const tokens = {
-  'colors.red.400': { value: '...', variable: '...' },
-}
+This is an internal package. It is what `@bamboocss/dev` (the CLI), `@bamboocss/postcss` and `@bamboocss/vite` are built
+on, and it is versioned with them — most projects should install one of those instead. User-facing documentation lives
+at [bamboocss.com/docs](https://bamboocss.com/docs).
 
-const tokenMap = {
-  colors: [{ group: 'red', key: 'red.400', value: '...' }],
-  fonts: [],
-}
+## Exports
 
-function getToken(path) {
-  const { value } = tokens[path] || {}
-  return value
-}
+Everything below is exported from `@bamboocss/node`.
 
-function getTokenVar(path) {
-  const { variable } = tokens[path] || {}
-  return variable
-}
-```
+### Context
 
-```js
-import { generateCssVar, generateDts, generateJs } from '@bamboocss/generator'
-import { createTokenMap } from '@bamboocss/token-dictionary'
+- `loadConfigAndCreateContext({ cwd?, config?, configPath? })` – resolve the config file, merge presets and inline
+  overrides, auto-inject the built-in plugins (`vue`, `svelte`, `lightningcss`), and return a `BambooContext`.
+- `BambooContext` – the resolved config plus everything derived from it: tokens, utilities, conditions, recipes,
+  patterns, the `ts-morph` project, the output engine and the diff engine.
+- `Builder` – the incremental driver the bundler plugins use. It owns context setup, tracks which files and config
+  dependencies changed, re-extracts only those, and hands back the stylesheet (`toCss`) or writes it into a PostCSS root
+  (`write`).
 
-const conf = new Conf()
+### Commands
 
-const dict = createTokenMap(config)
+Each takes a `BambooContext`, and each backs the CLI command of the same name.
 
-const cssVars = generateCssVar(dict, { root: ':root' })
-const dts = generateDts(dict)
-const files = generateJs(dict, { formats: ['esm', 'cjs'] })
-```
+- `generate(config, configPath?)` – the full build, including `--watch`. Unlike the rest, it creates its own context.
+- `codegen(ctx, ids?)` – write the generated `styled-system` artifacts.
+- `cssgen(ctx, options)` – write the stylesheet.
+- `analyze(ctx, options?)` – report token and recipe usage.
+- `debug(ctx, options)` – write the resolved config, per-file AST and per-file CSS.
+- `buildInfo(ctx, outfile)` – write the static extraction result as JSON, for consumers that ship it instead of source.
+- `spec(ctx, options)` – write the spec files.
 
-```json
-{
-  "name": "dot-bamboo",
-  "description": "...",
-  "exports": {
-    "./tokens": {
-      "import": "./generated/tokens/index.mjs"
-    },
-    "./css": {
-      "import": "./generated/css/index.mjs"
-    }
-  },
-  "typeVersions": {
-    "*": {
-      "tokens": ["./generated/tokens"],
-      "css": ["./generated/css"]
-    }
-  }
-}
-```
+### Setup and utilities
 
-```js
-import { definePackage, writePackage } from '@bamboocss/generators'
-
-const pkg = setupPackage({
-  name: 'dot-bamboo',
-  description: '...',
-  dir: 'generated',
-  exports: ['tokens', 'css'],
-})
-
-writePackage(pkg)
-
-updateTsConfig({
-  compilerOptions: {
-    paths: {
-      'design-system': ['./.bamboo'],
-    },
-  },
-})
-
-updateGitIgnore({ comment: '# Bamboo', path: '.@bamboocss/dev' })
-```
-
-```ts
-type ConditionType =
-  | 'color-scheme'
-  | 'resolution'
-  | 'writing-mode'
-  | 'pseudo'
-  | 'selector'
-  | 'viewport'
-  | 'interaction-media'
-  | 'reduced-motion'
-  | 'reduced-data'
-  | 'reduced-transparent'
-  | 'contrast'
-
-const conditions = {
-  dark: {
-    type: 'color-scheme',
-    value: '[data-theme=dark]',
-    colorScheme: 'dark',
-  },
-  darkDimmed: {
-    type: 'color-scheme',
-    value: '[data-theme=dark_dimmed]',
-    colorScheme: 'dark',
-  },
-  ltr: {
-    type: 'dir',
-    value: '[dir=rtl]',
-  },
-  rtl: {
-    type: 'dir',
-    value: '[dir=rtl]',
-  },
-  hover: {
-    type: 'pseudo',
-    value: '&:hover',
-  },
-  focus: {
-    type: 'pseudo',
-    value: '&:focus',
-  },
-  sm: {
-    type: 'viewport',
-    value: '@media (min-width: 480px)',
-  },
-}
-```
-
-```ts
-const defaults = {
-  className: ({ prop, value }) => `${prop}-${esc(value)}`,
-}
-
-const tt = defineConfig({
-  utilities: [
-    {
-      properties: {
-        display: {
-          className: ({ value }) => `d-${value}`,
-          transform(value) {
-            return { display: value }
-          },
-          values: {
-            fl: 'flex',
-            ib: 'inline-block',
-          },
-        },
-        background: {
-          className: ({ prop, value }) => `bg-${value}`,
-          values: ({ tokens }) => ({
-            ...tokens.colors,
-            inherit: 'inherit',
-          }),
-        },
-        color: {
-          className: ({ prop, value }) => `text-${value}`,
-          values: (tokens) => ({ ...tokens.colors }),
-        },
-        fill: { values: 'colors' },
-        lineClamp: {
-          className: ({ prop, value }) => `clamp-${value}`,
-          values: {
-            '1': {
-              '--line-clamp': '1',
-            },
-          },
-        },
-      },
-      shorthands: {
-        bg: 'background',
-      },
-    },
-
-    {
-      properties: {
-        strokeWidth: {
-          values: { '1': '1px', 2: '2px' },
-        },
-      },
-    },
-
-    {
-      properties: {
-        paddingLeft: { values: 'space', className: 'pl' },
-        paddingRight: { values: 'space', className: 'pr' },
-        paddingX: {
-          className: 'px',
-          values({ theme, map }) {
-            return map(theme.space, (value) => ({
-              paddingLeft: value,
-              paddingRight: value,
-            }))
-          },
-        },
-      },
-      shorthands: {
-        pl: 'paddingLeft',
-        px: 'paddingX',
-      },
-    },
-  ],
-})
-```
+- `setupConfig(cwd, options?)` / `setupPostcss(cwd)` – scaffold `bamboo.config.ts` and the PostCSS config.
+- `setupGitIgnore(ctx)` – add the outdir to `.gitignore`, unless `config.gitignore` is off.
+- `parseDependency(fileOrGlob)` – turn a `config.dependencies` entry into a PostCSS `dependency` or `dir-dependency`
+  message.
+- `setLogStream({ cwd, logfile })` – tee logs to a file.
+- `startProfiling(cwd, prefix, isWatching?)` – start a V8 CPU profile; the returned function stops it and writes
+  `bamboo-{prefix}-{timestamp}.cpuprofile` into `cwd`.

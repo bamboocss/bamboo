@@ -3,8 +3,6 @@ title: Using Rsbuild
 description: Easily use Bamboo with Rsbuild, React and Typescript with our dedicated integration.
 ---
 
-This guide shows you how to set up Bamboo CSS in a Rsbuild project using PostCSS.
-
 ## Start a new project
 
 <Steps>
@@ -81,24 +79,8 @@ Install bamboo and create your `bamboo.config.ts` file.
 
 ### Update package.json scripts
 
-Open your `package.json` file and update the `scripts` section as follows:
-
-```diff {5} filename="package.json"
-{
-  "scripts": {
-    "build": "rsbuild build",
-    "dev": "rsbuild dev --open",
-+   "prepare": "bamboo codegen",
-    "preview": "rsbuild preview"
-  }
-}
-```
-
-- `"prepare"` - script that will run Bamboo CSS CLI codegen before each build. Read more about
-  [codegen](/docs/references/cli#codegen) in the CLI section.
-
-> This step ensures that the bamboo output directory is regenerated after each dependency installation. So you can add
-> the output directory to your `.gitignore` file and not worry about it.
+Add `"prepare": "bamboo codegen"` to `scripts`. It runs [codegen](/docs/references/cli#codegen) after every dependency
+install, so the output directory can stay in `.gitignore`.
 
 ### Configure the content
 
@@ -118,8 +100,6 @@ export default defineConfig({
   // Files to exclude
   exclude: [],
 
-  // Generates JSX utilities with options of React, Preact, Qwik, Solid, Vue
-
   // The output directory for your css system
   outdir: 'styled-system',
 })
@@ -135,37 +115,9 @@ Add this code to an `src/App.css` file imported in the root component of your pr
 
 ## Start your build process
 
-Run the following command to start your development server.
-
-<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
-  {/* <!-- prettier-ignore-start --> */}
-  <Tab>
-    ```bash
-    pnpm dev
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    npm run dev
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    yarn dev
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    bun dev
-    ```
-  </Tab>
-  {/* <!-- prettier-ignore-end --> */}
-</Tabs>
+Start the dev server with `pnpm dev`.
 
 ### Start using Bamboo
-
-Now you can start using Bamboo CSS in your project. Here is the snippet of code that you can use in your `src/App.tsx`
-file.
 
 ```tsx filename="src/App.tsx"
 import { css } from '../styled-system/css'
@@ -181,12 +133,5 @@ export default App
 
 ## Troubleshooting
 
-If you're not getting import autocomplete in your IDE, you may need to include the `styled-system` directory in your
-`tsconfig.json` file:
-
-```json filename="tsconfig.json"
-{
-  // ...
-  "include": ["src", "styled-system"]
-}
-```
+If your IDE does not autocomplete `styled-system` imports, add that directory to `include` in `tsconfig.json`. See
+[the CLI guide](/docs/installation/cli#troubleshooting).

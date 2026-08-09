@@ -3,8 +3,6 @@ title: Using SolidJS
 description: Easily use Bamboo with SolidJS with our dedicated integration.
 ---
 
-This guide will show you how to set up Bamboo CSS in a Solid.js project using PostCSS.
-
 ## Start a new project
 
 <Steps>
@@ -81,25 +79,8 @@ Install bamboo and create your `bamboo.config.ts` file.
 
 ### Update package.json scripts
 
-Open your `package.json` file and update the `scripts` section as follows:
-
-```diff {3} filename="package.json"
-{
-  "scripts": {
-+    "prepare": "bamboo codegen",
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
-  }
-}
-```
-
-- `"prepare"` - script that will run Bamboo CSS CLI codegen before each build. Read more about
-  [codegen](/docs/references/cli#codegen) in the CLI section.
-
-  > This step ensures that the bamboo output directory is regenerated after each dependency installation. So you can add
-  > the output directory to your `.gitignore` file and not worry about it.
+Add `"prepare": "bamboo codegen"` to `scripts`. It runs [codegen](/docs/references/cli#codegen) after every dependency
+install, so the output directory can stay in `.gitignore`.
 
 ### Configure the content
 
@@ -137,37 +118,9 @@ Add this code to an `src/index.css` file imported in the root component of your 
 
 ## Start your build process
 
-Run the following command to start your development server.
-
-<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
-  {/* <!-- prettier-ignore-start --> */}
-  <Tab>
-    ```bash
-    pnpm dev
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    npm run dev
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    yarn dev
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    bun dev
-    ```
-  </Tab>
-  {/* <!-- prettier-ignore-end --> */}
-</Tabs>
+Start the dev server with `pnpm dev`.
 
 ### Start using Bamboo
-
-Now you can start using Bamboo CSS in your project. Here is the snippet of code that you can use in your `src/App.tsx`
-file.
 
 ```tsx filename="src/App.tsx"
 import type { Component } from 'solid-js'
@@ -184,12 +137,5 @@ export default App
 
 ## Troubleshooting
 
-If you're not getting import autocomplete in your IDE, you may need to include the `styled-system` directory in your
-`tsconfig.json` file:
-
-```json filename="tsconfig.json"
-{
-  // ...
-  "include": ["src", "styled-system"]
-}
-```
+If your IDE does not autocomplete `styled-system` imports, add that directory to `include` in `tsconfig.json`. See
+[the CLI guide](/docs/installation/cli#troubleshooting).

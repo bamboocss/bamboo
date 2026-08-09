@@ -3,8 +3,6 @@ title: Using Astro
 description: Easily use Bamboo with Astro with our dedicated integration.
 ---
 
-This guide shows you how to set up Bamboo CSS in an Astro project using our dedicated integration.
-
 ## Setup
 
 <Steps>
@@ -44,24 +42,8 @@ Install bamboo and create your `bamboo.config.ts` file.
 
 ### Update package.json scripts
 
-Open your `package.json` file and update the `scripts` section as follows:
-
-```diff {3}
-{
-  "scripts": {
-+   "prepare": "bamboo codegen",
-    "dev": "astro dev",
-    "start": "astro start",
-    "build": "astro build",
-    "preview": "astro preview"
-  }
-}
-```
-
-    The `prepare` script that will run codegen after dependency installation. Read more about [codegen](/docs/references/cli#codegen) in the CLI section.
-
-> This step ensures that the bamboo output directory is regenerated after each dependency installation. So you can add
-> the output directory to your `.gitignore` file and not worry about it.
+Add `"prepare": "bamboo codegen"` to `scripts`. It runs [codegen](/docs/references/cli#codegen) after every dependency
+install, so the output directory can stay in `.gitignore`.
 
 ### Configure the content
 
@@ -97,9 +79,9 @@ import '../index.css';
 
 ### Update the postcss config
 
-Astro requires a little change for the `postcss.config.[c]js`:
+Astro's Vite pipeline needs the array form of the plugin list. Both forms are equivalent to Bamboo; only Astro cares.
 
-```diff {3} filename="postcss.config.js"
+```diff {3} filename="postcss.config.cjs"
 module.exports = {
 -  plugins: {
 -   '@bamboocss/dev/postcss': {}
@@ -110,32 +92,7 @@ module.exports = {
 
 ### Start your build process
 
-Run your build process with `npm run dev` or whatever command is configured in your package.json file.
-
-<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
-  {/* <!-- prettier-ignore-start --> */}
-  <Tab>
-    ```bash
-    pnpm dev
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    npm run dev
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    yarn dev
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    bun dev
-    ```
-  </Tab>
-  {/* <!-- prettier-ignore-end --> */}
-</Tabs>
+Start the dev server with `pnpm dev`.
 
 ### Start using Bamboo
 
@@ -152,12 +109,5 @@ import { css } from '../../styled-system/css';
 
 ## Troubleshooting
 
-If you're not getting import autocomplete in your IDE, you may need to include the `styled-system` directory in your
-`tsconfig.json` file:
-
-```json filename="tsconfig.json"
-{
-  // ...
-  "include": ["src", "styled-system"]
-}
-```
+If your IDE does not autocomplete `styled-system` imports, add that directory to `include` in `tsconfig.json`. See
+[the CLI guide](/docs/installation/cli#troubleshooting).

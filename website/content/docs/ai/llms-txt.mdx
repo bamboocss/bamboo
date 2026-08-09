@@ -12,19 +12,37 @@ This helps AI tools better understand our styling engine, its APIs, and usage pa
 
 These routes are available to help AI tools access our documentation:
 
-- [/llms.txt](/llms.txt) - Contains a structured overview of all concepts and their documentation links
+- [/llms.txt](/llms.txt) - An index linking the complete documentation and each of the nine category files below
 - [/llms-full.txt](/llms-full.txt) - Provides comprehensive documentation including implementation details and examples
+
+### Category files
+
+Each category is served in full at `/llms/<category>.txt`. The extensionless form redirects to it, so `/llms/concepts`
+and `/llms/concepts.txt` both work.
+
+| Route                                              | Contents                                              |
+| -------------------------------------------------- | ----------------------------------------------------- |
+| [/llms/overview.txt](/llms/overview.txt)           | Getting started, browser support, FAQ, why Bamboo CSS |
+| [/llms/installation.txt](/llms/installation.txt)   | Framework-specific installation guides                |
+| [/llms/concepts.txt](/llms/concepts.txt)           | Patterns, recipes, conditional styles, responsive     |
+| [/llms/theming.txt](/llms/theming.txt)             | Tokens, text styles, layer styles, animation styles   |
+| [/llms/utilities.txt](/llms/utilities.txt)         | All CSS utilities by category                         |
+| [/llms/customization.txt](/llms/customization.txt) | Theme, utilities, patterns and preset customization   |
+| [/llms/guides.txt](/llms/guides.txt)               | Practical guides for specific use cases               |
+| [/llms/migration.txt](/llms/migration.txt)         | Migrating from other CSS-in-JS libraries              |
+| [/llms/references.txt](/llms/references.txt)       | CLI commands and configuration reference              |
 
 ## Access Individual Pages
 
-You can also access the raw markdown content for any documentation page by adding `.mdx` to the end of the URL. For
+Every documentation page is also served on its own, as raw markdown, by adding `.mdx` to the end of the URL. For
 example:
 
-- [`/docs/overview/getting-started.mdx`](/docs/overview/getting-started) - Raw markdown for the getting started page
-- [`/docs/concepts/recipes.mdx`](/docs/concepts/recipes) - Raw markdown for the recipes documentation
-- [`/docs/theming/tokens.mdx`](/docs/theming/tokens) - Raw markdown for the tokens documentation
+- [`/docs/overview/getting-started.mdx`](/docs/overview/getting-started.mdx) - Raw markdown for the getting started page
+- [`/docs/concepts/recipes.mdx`](/docs/concepts/recipes.mdx) - Raw markdown for the recipes documentation
+- [`/docs/theming/tokens.mdx`](/docs/theming/tokens.mdx) - Raw markdown for the tokens documentation
 
-This is useful for AI tools that need to access specific documentation sections directly.
+`/docs/<path>.mdx` redirects to `/llms/<path>.mdx`, which is where the raw markdown is emitted. This is useful for AI
+tools that need to access specific documentation sections directly.
 
 ## Usage with AI Tools
 

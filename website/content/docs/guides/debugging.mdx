@@ -52,6 +52,13 @@ from your config file.
   {/* <!-- prettier-ignore-end --> */}
 </Tabs>
 
+The command also takes:
+
+- `--dry` – print the debug output to stdout instead of writing it to disk
+- `--only-config` – emit only `config.json`, skipping the per-file AST and CSS
+- `--outdir [dir]` – where the debug files go, `./styled-system/debug` by default
+- `--silent`, `-c, --config <path>`, `--cwd <cwd>`, `--cpu-prof` and `--logfile <file>`, as on the other commands
+
 This would generate a `debug` folder in your `config.outdir` folder with the following structure:
 
 <FileTree>
@@ -142,22 +149,16 @@ If Bamboo is taking too long to process your files, you can use the `--cpu-prof`
 `bamboo codegen` and `bamboo debug` commands to generate a flamegraph of the whole process, which will allow you (or us
 as maintainers) to see which part of the process is taking the most time.
 
-This will generate a `bamboo-{command}-{timestamp}.cpuprofile` file in the current working directory, which can be
-opened in tools like [Speedscope](https://www.speedscope.app/)
+This will generate a `bamboo-{command}-{timestamp}.cpuprofile` file, which can be opened in tools like
+[Speedscope](https://www.speedscope.app/). It is written to the directory `--cwd` resolves to, not to `process.cwd()`,
+and the bare command is named `cli` rather than after a subcommand:
 
 ```bash
 pnpm bamboo --cpu-prof
+# → bamboo-cli-20260809T101530123Z.cpuprofile
 ```
 
-## FAQ
-
-### Why are my styles not applied?
-
-Check that the [`@layer` rules](/docs/concepts/cascade-layers#layer-css) are set and the corresponding `.css` file is
-included. [If you're not using `postcss`](/docs/installation/cli), ensure that `styled-system/styles.css` is imported
-and that the `bamboo` command has been run (or is running with `--watch`).
-
-### Some CSS is missing when using absolute imports
+## Some CSS is missing when using absolute imports
 
 This can happen when `tsconfig` (with `paths` or `baseUrl`) or with package.json
 [`#imports`](https://nodejs.org/api/packages.html#subpath-imports). Bamboo tries to automatically infer and read the
@@ -197,55 +198,7 @@ export default defineConfig({
 
 This will ensure that the paths are resolved correctly, and HMR works as expected.
 
----
-
-### How can I debug the styles?
-
-You can use the `bamboo debug` to debug design token extraction & css generated from files.
-
-If the issue persists, you can try looking for it in the [issues](https://github.com/bamboocss/bamboo/issues). If you
-can't find it, please create a minimal reproduction and submit
-[a new github issue](https://github.com/bamboocss/bamboo/issues/new/choose) so we can help you.
-
----
-
-### Why is my IDE not showing `styled-system` imports?
-
-If you're not getting import autocomplete in your IDE, you may need to include the `styled-system` directory in your
-tsconfig.json file.
-
-### HMR does not work when I use `tsconfig` paths?
-
-Bamboo tries to automatically infer and read the custom paths defined in `tsconfig.json` file. However, there might be
-scenarios where the hot module replacement doesn't work.
-
-To fix this add the `importMap` option to your `bamboo.config.js` file, setting it's value to the specified `paths` in
-your `tsconfig.json` file.
-
-```json
-// tsconfig.json
-
-{
-  "compilerOptions": {
-    "baseUrl": "./src",
-    "paths": {
-      "@my-path/*": ["./styled-system/*"]
-    }
-  }
-}
-```
-
-```js
-// bamboo.config.js
-
-module.exports = {
-  importMap: '@my-path',
-}
-```
-
-This will ensure that the paths are resolved correctly, and HMR works as expected.
-
----
+The rest of the troubleshooting answers live in the [FAQ](/docs/overview/faq).
 
 ## The postcss plugin sometimes seems slow or runs too frequently
 

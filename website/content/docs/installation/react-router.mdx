@@ -3,8 +3,6 @@ title: Using React Router
 description: Easily use Bamboo with React Router with our dedicated integration.
 ---
 
-This guide will show you how to set up Bamboo CSS in a React Router project using PostCSS.
-
 ## Start a new project
 
 <Steps>
@@ -86,25 +84,8 @@ Install bamboo and create your `bamboo.config.ts` file.
 
 ### Update package.json scripts
 
-Open your `package.json` file and update the `scripts` section as follows:
-
-```diff {3} filename="package.json"
-{
-  "scripts": {
-+    "prepare": "bamboo codegen",
-    "build": "cross-env NODE_ENV=production react-router build",
-    "dev": "react-router dev",
-    "start": "cross-env NODE_ENV=production react-router-serve ./build/server/index.js",
-    "typecheck": "react-router typegen && tsc"
-  },
-}
-```
-
-- `"prepare"` - script that will run Bamboo CSS CLI codegen before each build. Read more about
-  [codegen](/docs/references/cli#codegen) in the CLI section.
-
-> This step ensures that the bamboo output directory is regenerated after each dependency installation. So you can add
-> the Bamboo CSS output directory to your `.gitignore` file and not worry about it.
+Add `"prepare": "bamboo codegen"` to `scripts`. It runs [codegen](/docs/references/cli#codegen) after every dependency
+install, so the output directory can stay in `.gitignore`.
 
 ### Configure the content
 
@@ -129,23 +110,18 @@ export default defineConfig({
 })
 ```
 
-### Replace TailwindCSS with BambooCSS
+### Replace Tailwind CSS with Bamboo CSS
 
-Update the `vite.config.ts` file to use BambooCSS instead of TailwindCSS.
+Remove the Tailwind CSS plugin from `vite.config.ts`. Vite discovers the `postcss.config.cjs` that
+`bamboo init --postcss` wrote, so nothing else is needed here — an inline `css.postcss` block would replace file
+discovery and leave that config unread.
 
-```ts {3,10} filename="vite.config.ts"
+```ts filename="vite.config.ts"
 import { reactRouter } from '@react-router/dev/vite'
-import autoprefixer from 'autoprefixer'
-import bamboocss from '@bamboocss/dev/postcss'
 import { defineConfig } from 'vite'
 import tsconfigPaths from 'vite-tsconfig-paths'
 
 export default defineConfig({
-  css: {
-    postcss: {
-      plugins: [bamboocss, autoprefixer],
-    },
-  },
   plugins: [reactRouter(), tsconfigPaths()],
 })
 ```
@@ -197,41 +173,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 ### Start your build process
 
-Run the following command to start your development server.
-
-<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
-  {/* <!-- prettier-ignore-start --> */}
-  <Tab>
-    ```bash
-    pnpm dev
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    npm run dev
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    yarn dev
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    bun dev
-    ```
-  </Tab>
-  {/* <!-- prettier-ignore-end --> */}
-</Tabs>
+Start the dev server with `pnpm dev`.
 
 ### Start using Bamboo
 
-Now you can start using Bamboo CSS in your project. Here is the snippet of code that you can use in your
-`app/routes/home.tsx` file.
-
 ```tsx filename="app/routes/home.tsx"
 import type { Route } from './+types/home'
-import { css } from 'styled-system/css'
+import { css } from '../../styled-system/css'
 
 export function meta({}: Route.MetaArgs) {
   return [{ title: 'New React Router App' }, { name: 'description', content: 'Welcome to React Router!' }]
@@ -250,12 +198,5 @@ export default function Home() {
 
 ## Troubleshooting
 
-If you're not getting import autocomplete in your IDE, you may need to include the `styled-system` directory in your
-`tsconfig.json` file:
-
-```json filename="tsconfig.json"
-{
-  // ...
-  "include": ["app", "styled-system"]
-}
-```
+If your IDE does not autocomplete `styled-system` imports, add that directory to `include` in `tsconfig.json`, alongside
+`app`. See [the CLI guide](/docs/installation/cli#troubleshooting).

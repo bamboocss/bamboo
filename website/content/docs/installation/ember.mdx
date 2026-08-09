@@ -3,8 +3,6 @@ title: Using Ember
 description: Easily use Bamboo with Ember with our dedicated integration.
 ---
 
-This guide shows you how to set up Bamboo CSS in an Ember project using PostCSS.
-
 ## Start a new project
 
 <Steps>
@@ -48,7 +46,7 @@ cd test-app
 ### Install Bamboo
 
 Install bamboo and its peer dependencies, as well as `postcss-loader`. Run the init command to generate the
-`bamboo.config.ts` and `postcss.config.js` file.
+`bamboo.config.ts` and `postcss.config.cjs` files.
 
 <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
   {/* <!-- prettier-ignore-start --> */}
@@ -128,22 +126,8 @@ module.exports = {
 
 ### Update package.json scripts
 
-Open the `package.json` file and update the `scripts` section as follows:
-
-```diff {3} filename="package.json"
-{
-  "scripts": {
-+    "prepare": "bamboo codegen",
-    // ...
-  }
-}
-```
-
-- `"prepare"` - script that will run Bamboo CSS CLI codegen before each build. Read more about
-  [codegen](/docs/references/cli#codegen) in the CLI section.
-
-> This step ensures that the bamboo output directory is regenerated after each dependency installation. So you can add
-> the output directory to your `.gitignore` file and not worry about it.
+Add `"prepare": "bamboo codegen"` to `scripts`. It runs [codegen](/docs/references/cli#codegen) after every dependency
+install, so the output directory can stay in `.gitignore`.
 
 ### Configure the content
 
@@ -205,36 +189,9 @@ loadInitializers(App, config.modulePrefix)
 
 ### Start your build process
 
-Run the following command to start your development server.
-
-<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
-  {/* <!-- prettier-ignore-start --> */}
-  <Tab>
-    ```bash
-    pnpm start
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    npm run start
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    yarn start
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    bun start
-    ```
-  </Tab>
-  {/* <!-- prettier-ignore-end --> */}
-</Tabs>
+Start the dev server with `pnpm start`.
 
 ### Start using Bamboo
-
-Now you can start using Bamboo CSS in your project.
 
 ```ts filename="app/components/hello-bamboo.ts"
 import Component from '@glimmer/component'
@@ -249,15 +206,7 @@ export default class HelloBamboo extends Component {
 <div class={{this.style}}>Hello 🎋!</div>
 ```
 
-```hbs {5} filename="app/templates/application.hbs"
-{{page-title 'TestApp'}}
-
-<h2 id='title'>Welcome to Ember</h2>
-
-<HelloBamboo />
-
-{{outlet}}
-```
+Render `<HelloBamboo />` from a template such as `app/templates/application.hbs`.
 
 > For the best developer experience, set up
 > [template tag component authoring format](https://guides.emberjs.com/release/components/template-tag-format/) in
@@ -267,12 +216,5 @@ export default class HelloBamboo extends Component {
 
 ## Troubleshooting
 
-If you're not getting import autocomplete in your IDE, you may need to include the `styled-system` directory in your
-`tsconfig.json` file:
-
-```json filename="tsconfig.json"
-{
-  // ...
-  "include": ["app/styled-system"]
-}
-```
+If your IDE does not autocomplete `styled-system` imports, add `app/styled-system` to `include` in `tsconfig.json`. See
+[the CLI guide](/docs/installation/cli#troubleshooting).

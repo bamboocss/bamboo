@@ -17,7 +17,7 @@ export default defineConfig({
 
 ### presets
 
-**Type**: `string[]`
+**Type**: `(string | Preset | Promise<Preset>)[]`
 
 **Default**: `['@bamboocss/preset-base', '@bamboocss/preset-bamboo']`
 
@@ -90,29 +90,8 @@ The resulting `reset` css would look like this:
 }
 ```
 
-You can also set the level to `element` (defaults to `parent`) to only reset the elements that have the scope class
-assigned.
-
-```json
-{
-  "preflight": { "scope": ".extension", "level": "element" }
-}
-```
-
-The resulting `reset` css would look like this:
-
-```css
-button.extension,
-select.extension {
-  text-transform: none;
-}
-
-table.extension {
-  text-indent: 0;
-  border-color: inherit;
-  border-collapse: collapse;
-}
-```
+Setting `level: 'element'` (defaults to `parent`) puts the scope on the element instead – `button.extension` rather than
+`.extension button` – so only elements carrying the scope class are reset.
 
 ### emitTokensOnly
 
@@ -122,31 +101,30 @@ table.extension {
 
 Whether to only emit the `tokens` directory
 
-```json
-{
-  "emitTokensOnly": false
-}
-```
-
 ### prefix
 
-**Type**: `string`
+**Type**: `string | { cssVar?: string; className?: string }`
 
-The namespace prefix for the generated css classes and css variables.
+**Default**: `''`
 
-Ex: when using a prefix of `bamboo-`
+The namespace prefix for the generated css classes and css variables. A string prefixes both; the object form sets them
+separately.
 
-```json
-{
-  "prefix": "bamboo"
-}
-```
+The examples in this section all use the same call, referred to below as the shared example:
 
 ```tsx
 import { css } from '../styled-system/css'
 
 const App = () => {
   return <div className={css({ color: 'blue.500' })} />
+}
+```
+
+Ex: when using a prefix of `bamboo`
+
+```json
+{
+  "prefix": "bamboo"
 }
 ```
 
@@ -160,7 +138,9 @@ would result in:
 
 ### layers
 
-**Type**: `Partial<Layer>`
+**Type**: `Partial<CascadeLayers>`
+
+**Default**: `{ reset: 'reset', base: 'base', tokens: 'tokens', recipes: 'recipes', utilities: 'utilities' }`
 
 Cascade layers used in generated css.
 
@@ -174,15 +154,7 @@ Ex: when customizing the utilities layer
 }
 ```
 
-```tsx
-import { css } from '../styled-system/css'
-
-const App = () => {
-  return <div className={css({ color: 'blue.500' })} />
-}
-```
-
-would result in:
+the [shared example](#prefix) would result in:
 
 ```css
 @layer bamboo_utilities {
@@ -202,23 +174,7 @@ You should update the layer in your root css also.
 
 The separator for the generated css classes.
 
-```json
-{
-  "separator": "_"
-}
-```
-
-Using a `=` with:
-
-```tsx
-import { css } from '../styled-system/css'
-
-const App = () => {
-  return <div className={css({ color: 'blue.500' })} />
-}
-```
-
-would result in:
+Using a `=`, the [shared example](#prefix) would result in:
 
 ```css
 .text\=blue\.500 {
@@ -247,14 +203,9 @@ Measured on the example apps in this repository:
 | vite-ts | -21.6% | -5.6% |  -4.8% |
 | svelte  | -20.4% | -6.6% |  -7.3% |
 
-The gzip column is much smaller than the raw one because compression has already collapsed the indentation before you
-get there. It is still worth taking where it applies: unlike renaming what is emitted, removing whitespace never comes
-out negative, so there is nothing to weigh it against.
-
-**Whether you need it.** If you import the stylesheet through a bundler, you probably do not – Vite, Next.js and any
-PostCSS setup with `cssnano` already minify CSS in their production build, and running it twice changes nothing. It
-matters when you ship `styled-system/styles.css` as-is: linked straight from an HTML file, served from a CDN, or
-published inside a component library. Nothing turns it on for you, so that case ships the indented output today.
+If you import the stylesheet through a bundler you probably do not need this – Vite, Next.js and any PostCSS setup with
+`cssnano` already minify CSS in their production build. It matters when you ship `styled-system/styles.css` as-is:
+linked straight from an HTML file, served from a CDN, or published inside a component library.
 
 Pass `--minify` to [`bamboo cssgen`](/docs/references/cli#cssgen) to enable it for a single build without changing the
 config. [`bamboo debug`](/docs/references/cli#debug) always writes unminified css, whatever this is set to.
@@ -266,67 +217,16 @@ config. [`bamboo debug`](/docs/references/cli#debug) always writes unminified cs
 **Default**: `false`
 
 Whether to hash the generated class names / css variables. This is useful if want to shorten the class names or css
-variables.
+variables. `true` hashes both; the object form hashes each independently.
 
-Hash the class names and css variables:
+For the [shared example](#prefix), the emitted class and variable are:
 
-```json
-{
-  "hash": true
-}
-```
-
-This
-
-```tsx
-import { css } from '../styled-system/css'
-
-const App = () => {
-  return <div className={css({ color: 'blue.500' })} />
-}
-```
-
-would result in something that looks like:
-
-```css
-.dOFUTE {
-  color: var(--cgpxvS);
-}
-```
-
-You can also hash them individually.
-
-E.g. only hash the css variables:
-
-```json
-{
-  "hash": { "cssVar": true, "className": false }
-}
-```
-
-Then the result looks like this:
-
-```css
-.text_blue\.500 {
-  color: var(--cgpxvS);
-}
-```
-
-Now only hash the class names:
-
-```json
-{
-  "hash": { "cssVar": false, "className": true }
-}
-```
-
-Then the result looks like this:
-
-```css
-.dOFUTE {
-  color: var(--colors-blue-500);
-}
-```
+| setting                              | class             | variable                 |
+| ------------------------------------ | ----------------- | ------------------------ |
+| `false`                              | `.text_blue\.500` | `var(--colors-blue-500)` |
+| `true`                               | `.dOFUTE`         | `var(--cgpxvS)`          |
+| `{ cssVar: true, className: false }` | `.text_blue\.500` | `var(--cgpxvS)`          |
+| `{ cssVar: false, className: true }` | `.dOFUTE`         | `var(--colors-blue-500)` |
 
 Hashing also turns off [`cx` merging](/docs/concepts/writing-styles#classname-concatenation), since the property it
 compares is no longer in the class name. Watch for this if you hash in production only: the merge holds in development
@@ -341,12 +241,6 @@ and is gone from the build you ship.
 **Default**: `true`
 
 Whether to update the .gitignore file.
-
-```json
-{
-  "gitignore": true
-}
-```
 
 Will add your [`outdir`](#outdir) to your `.gitignore` file:
 
@@ -377,12 +271,6 @@ The current working directory.
 
 Whether to clean the output directory before generating the css.
 
-```json
-{
-  "clean": false
-}
-```
-
 ### outdir
 
 **Type**: `string`
@@ -391,17 +279,12 @@ Whether to clean the output directory before generating the css.
 
 The output directory for the generated css.
 
-```json
-{
-  "outdir": "styled-system"
-}
-```
-
 ### importMap
 
-**Type**: `string | Partial<OutdirImportMap>`
+**Type**: `string | ImportMapInput | Array<string | ImportMapInput>`
 
-**Default**: `{ "css": "styled-system/css", "recipes": "styled-system/recipes", "patterns": "styled-system/patterns" }`
+**Default**:
+`{ "css": "styled-system/css", "recipes": "styled-system/recipes", "patterns": "styled-system/patterns", "tokens": "styled-system/tokens" }`
 
 Allows you to customize the import paths for the generated outdir.
 
@@ -415,7 +298,8 @@ Allows you to customize the import paths for the generated outdir.
 }
 ```
 
-You can also use a string to customize the base import path and keep the default entrypoints:
+A string is the base import path with the default entrypoints appended – `"@scope/styled-system"` resolves to
+`@scope/styled-system/css`, `/recipes`, `/patterns` and `/tokens`:
 
 ```json
 {
@@ -423,17 +307,7 @@ You can also use a string to customize the base import path and keep the default
 }
 ```
 
-is the equivalent of:
-
-```json
-{
-  "importMap": {
-    "css": "@scope/styled-system/css",
-    "recipes": "@scope/styled-system/recipes",
-    "patterns": "@scope/styled-system/patterns"
-  }
-}
-```
+An array of either form is also accepted, and matches an entrypoint imported from any of them.
 
 Check out the [Component Library](/docs/guides/component-library) guide for more information on how to use the
 `importMap` option.
@@ -460,12 +334,6 @@ List of files glob to watch for changes.
 
 List of files glob to ignore.
 
-```json
-{
-  "exclude": []
-}
-```
-
 ### dependencies
 
 **Type**: `string[]`
@@ -491,12 +359,6 @@ Explicit list of config related files that should trigger a context reload on ch
 
 Whether to watch for changes and regenerate the css.
 
-```json
-{
-  "watch": false
-}
-```
-
 ### poll
 
 **Type**: `boolean`
@@ -505,12 +367,6 @@ Whether to watch for changes and regenerate the css.
 
 Whether to use polling instead of filesystem events when watching.
 
-```json
-{
-  "poll": false
-}
-```
-
 ### outExtension
 
 **Type**: `'mjs' | 'js'`
@@ -518,12 +374,6 @@ Whether to use polling instead of filesystem events when watching.
 **Default**: `mjs`
 
 File extension for generated javascript files.
-
-```json
-{
-  "outExtension": "mjs"
-}
-```
 
 ### forceConsistentTypeExtension
 
@@ -550,6 +400,9 @@ If set to `true` and `outExtension` is set to `mjs`, the generated typescript `.
 
 Whether to use `lightningcss` instead of `postcss` for css optimization.
 
+Setting it injects `@bamboocss/plugin-lightningcss` ahead of any plugins you configure, so the optimizer runs before
+your own hooks.
+
 ```json
 {
   "lightningcss": true
@@ -560,7 +413,8 @@ Whether to use `lightningcss` instead of `postcss` for css optimization.
 
 **Type**: `string[]`
 
-**Default**: `[]`
+**Default**: unset – when [`lightningcss`](#lightningcss) is on and this is not set, it is filled in from the
+browserslist config found in your project.
 
 Browserslist query to target specific browsers. Only used when `lightningcss` is set to `true`.
 
@@ -592,31 +446,12 @@ Polyfill CSS @layers at-rules for older browsers.
 
 **Default**: `true`
 
-Whether to allow shorthand properties
+Whether to allow shorthand properties.
 
-```json
-{
-  "shorthands": true
-}
-```
-
-Ex `true`:
-
-```tsx
-const styles = css({
-  bgColor: 'gainsboro',
-  p: '10px 15px',
-})
-```
-
-Ex false:
-
-```tsx
-const styles = css({
-  backgroundColor: 'gainsboro',
-  padding: '10px 15px',
-})
-```
+| setting | accepted                                        |
+| ------- | ----------------------------------------------- |
+| `true`  | `css({ bgColor: 'gainsboro', p: '10px 15px' })` |
+| `false` | longhand only – `backgroundColor`, `padding`    |
 
 ### pruneUnusedTokens
 
@@ -648,31 +483,15 @@ There is an escape hatch because reachability cannot be proven for every referen
 
 Use [`staticCss`](#staticcss) to keep those, or set this to `false` to keep every token declaration.
 
-Turning it off does **not** bring back the `@property` rules your utilities register. Those are not tokens – nothing
-hands one to JavaScript and none appear in the `token()` surface – so the reachability problem above cannot apply to
-them, and whether the finished stylesheet mentions one is the whole question. A preset registers what its utilities
-compose (filters, gradients, transforms, transitions) and ships the set regardless of what you draw, which on the
-example apps here is 42 rules and 3.2 kB that nothing reads. Opting out of the half that cannot be proven should not
-mean carrying the half that can.
-
-One cost is worth knowing about. Tokens that javascript receives as a `var()` rather than a literal are always kept, so
-that `token()` answers correctly for any path at runtime – that covers virtual tokens, any token carrying a condition,
-and negative tokens. A negative token resolves to `calc(var(--spacing-4) * -1)`, so every token with a negative
-counterpart pins its own declaration. Spacing scales generate one negative per entry, which keeps the whole scale
-whether or not your app uses it. On the default preset that is roughly a third of what survives pruning.
-
-That exemption is skipped entirely when no file under [`include`](#include) reaches for a token from JavaScript – no
-`token()`, no `token.var()`, no import of the tokens artifact. The artifact is generated into your project rather than
-installed, so the import is written in your own source and the scan finds it. The import test is deliberately loose: any
-specifier ending in `/tokens` counts, so a custom [`outdir`](#outdir), a path alias, and the `.js` extension NodeNext
-requires are all covered. On the example apps here it is worth up to 20% of a stylesheet raw and 13% gzipped, and
-nothing at all on the one that does call `token()` – which is the point, since a project with a caller keeps every
-declaration.
-
-Two shapes it does not see. `include` scopes style extraction rather than everything that may import, so a build script,
-a config file, or a sibling workspace package calling `token()` is not covered; nor is a binding renamed away from
-`token`, as in `const t = token`. Both are rare, and neither announces itself – the declaration is pruned and the call
-returns a `var()` that nothing declares. Set `pruneUnusedTokens: false` if you are in that position.
+Turning it off does **not** bring back the `@property` rules your utilities register: those are not tokens, so
+reachability never applied to them, and a preset ships the set it composes from regardless of what you draw. Tokens that
+javascript receives as a `var()` rather than a literal are always kept so `token()` answers correctly for any path at
+runtime, which pins every token with a negative counterpart and so most of a spacing scale – an exemption skipped
+entirely when no file under [`include`](#include) reaches for a token from javascript, tested by a `/tokens` path
+segment on a `from`, `import` or `require` specifier so that a custom [`outdir`](#outdir), a path alias and the `.js`
+extension NodeNext requires are all covered. The scan does not see a caller outside `include` – a build script, a config
+file, a sibling workspace package – nor a binding renamed away from `token`, and neither announces itself, so set
+`pruneUnusedTokens: false` if you are in that position.
 
 ### prunePreflight
 
@@ -716,25 +535,17 @@ nothing about it says which element it reaches.
 </Callout>
 
 **Check your entry template first.** The scan reads the files [`include`](#include) covers, and `include` conventionally
-covers components rather than markup: `./src/**/*.tsx` does not match `index.html`. That is where `<noscript>`, a static
-`<table>`, and the rest of a page's hand-written markup usually live, so those elements are dropped even though the page
-renders them – the most likely way to get bitten, and the easiest to miss, since the build succeeds either way.
-
-Listing the template alongside your components covers it. The scan reads any file `include` names, not only ones the
-parser understands:
+covers components rather than markup: `./src/**/*.tsx` does not match `index.html`, where `<noscript>`, a static
+`<table>` and the rest of a page's hand-written markup usually live. Name the template – or any other markup outside
+`include`, such as an email template or a server-rendered layout – alongside your components; the scan reads any file
+`include` covers, not only ones the parser understands:
 
 ```ts
-export default defineConfig({
-  prunePreflight: true,
-  include: ['./src/**/*.{ts,tsx}', './index.html'],
-})
+include: ['./src/**/*.{ts,tsx}', './index.html']
 ```
 
-The same applies to any other markup outside `include` – an email template, a server-rendered layout, a static partial.
-
-The scan reads each file from disk rather than the parsed copy the build holds, which matters for single-file
-components: a `.svelte` or `.vue` file is transformed to TSX before the build sees it, and that transform drops markup
-in several ways. Reading the file keeps `<table>` visible wherever you wrote it.
+Each file is read from disk rather than from the parsed copy the build holds, so a `.svelte` or `.vue` file keeps the
+markup its transform to TSX would have dropped.
 
 A [scoped reset](#preflight) is handled – `preflight: { scope: '.app' }` writes `.app table`, and the scope is stripped
 before the element is read out. `bamboo cssgen preflight` prunes as well, so the `reset.css` it writes matches the one a
@@ -775,15 +586,9 @@ a used one silently stops an animation.
 
 **Type**: `string`
 
-**Default**: `:where(:host, :root)`
+**Default**: `:where(:root, :host)`
 
 The root selector for the css variables.
-
-```json
-{
-  "cssVarRoot": ":where(:host, :root)"
-}
-```
 
 ### conditions
 
@@ -817,6 +622,16 @@ The global styles for your project.
   }
 }
 ```
+
+### globalVars
+
+**Type**: `Extendable<GlobalVarsDefinition>`
+
+**Default**: `{}`
+
+Additional global css variables, emitted at [`cssVarRoot`](#cssvarroot). A string value declares the variable directly;
+an object value registers it with `@property`. See
+[Global styles](/docs/concepts/global-styles#custom-global-variables-globalvars) for a worked example.
 
 ### theme
 
@@ -873,24 +688,6 @@ The theme variants configuration for your project.
           }
         }
       }
-    },
-    "secondary": {
-      "tokens": {
-        "colors": {
-          "text": { "value": "blue" }
-        }
-      },
-      "semanticTokens": {
-        "colors": {
-          "muted": { "value": "{colors.blue.200}" },
-          "body": {
-            "value": {
-              "base": "{colors.blue.600}",
-              "_osDark": "{colors.blue.400}"
-            }
-          }
-        }
-      }
     }
   }
 }
@@ -911,7 +708,7 @@ The css utility definitions.
       borderX: {
         values: ['1px', '2px', '4px'],
         shorthand: 'bx', // `bx` or `borderX` can be used
-        transform(value, token) {
+        transform(value, { token }) {
           return {
             borderInlineWidth: value,
             borderColor: token('colors.red.200'), // read the css variable for red.200
@@ -987,12 +784,6 @@ Used to generate css utility classes for your project.
 Only allow token values and prevent custom or raw CSS values. Will only affect properties that have config tokens, such
 as `color`, `bg`, `borderColor`, etc. [Learn more.](/docs/concepts/writing-styles#type-safety)
 
-```json
-{
-  "strictTokens": false
-}
-```
-
 ### strictPropertyValues
 
 **Type**: `boolean`
@@ -1002,12 +793,6 @@ as `color`, `bg`, `borderColor`, etc. [Learn more.](/docs/concepts/writing-style
 Only use valid CSS values for properties that do have a predefined list of values. Will throw for properties that do not
 have config tokens, such as `display`, `content`, `willChange`, etc.
 [Learn more.](/docs/concepts/writing-styles#type-safety)
-
-```json
-{
-  "strictPropertyValues": false
-}
-```
 
 ### globalFontface
 
@@ -1037,21 +822,36 @@ Global font face definitions.
 Check out the [Custom Fonts](/docs/guides/fonts#global-font-face) guide for more information on how to use the
 `globalFontface` option.
 
+### globalPositionTry
+
+**Type**: `Extendable<GlobalPositionTry>`
+
+**Default**: `{}`
+
+Named [`@position-try`](https://developer.mozilla.org/en-US/docs/Web/CSS/@position-try) fallbacks for anchor
+positioning. Each key emits one `@position-try` rule, and a key without a leading `--` gets one added, so
+`bottom-scrollable` below becomes `--bottom-scrollable`.
+
+```json
+{
+  "globalPositionTry": {
+    "bottom-scrollable": {
+      "positionArea": "block-start span-inline-end",
+      "alignSelf": "stretch"
+    }
+  }
+}
+```
+
 ## Diagnostics options
 
-### log level
+### logLevel
 
 **Type**: `'debug' | 'info' | 'warn' | 'error' | 'silent'`
 
 **Default**: `info`
 
 The log level for the built-in logger.
-
-```json
-{
-  "logLevel": "info"
-}
-```
 
 ### validation
 

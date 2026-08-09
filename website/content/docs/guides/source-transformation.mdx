@@ -40,8 +40,9 @@ export default defineConfig({
 ```
 
 <Callout type="info">
-  This plugin does not emit CSS. Keep your existing PostCSS setup – it stays responsible for the stylesheet. The
-  plugin's only job is the fold.
+  The fold is not this package's only job: it also emits the stylesheet, as the virtual module `virtual:bamboo.css`, in
+  dev and in build. A PostCSS setup for Bamboo is not required alongside it – see [Vite](/docs/installation/vite) for
+  the import and the ambient declaration.
 </Callout>
 
 ## What folds
@@ -96,8 +97,7 @@ variable reference rather than either branch:
 token('colors.primary') // → 'var(--colors-primary)', still themeable
 ```
 
-Getting that split backwards is the one mistake here that no class-name check would catch, so it is worth stating
-plainly: a base token inlines its literal value, and anything with conditions inlines its `var()`.
+A base token inlines its literal value; anything with conditions inlines its `var()`.
 
 When every `token()` call in a module folds, its import of the generated token map – every token in your project – is
 left unused, and your bundler drops it. The fold does not remove the import statement itself; the generated
@@ -125,8 +125,6 @@ literal stands in for that. In the first two cases the runtime's `tokens[path]?.
 the fallback, which is exactly what declining preserves.
 
 `token.var()` is left alone.
-
-`jsx: false` turns element folding off altogether, leaving call sites folding on their own.
 
 ## What does not fold
 
@@ -181,8 +179,7 @@ const pad = (n) => {
 css(pad('4')) // → "p_4", and `count` is never incremented
 ```
 
-Telling that apart needs analysis of the body rather than of the value, and a style helper that mutates is rare enough
-that the fold does not pay for it. Keep effects out of the helpers you style with.
+Keep effects out of the helpers you style with.
 
 When a fold reads from another module, the plugin registers that module as a watch dependency, so editing it
 re-transforms the files that folded against it rather than leaving a stale literal behind.
@@ -237,13 +234,9 @@ list declines. Being walked is not the same as being complete, though – the ex
 any depth – so a recorded spread gets the same audit the call itself gets, rather than being trusted for having been
 seen.
 
-The list is of _successes_ on purpose. A list of failures would only be safe while it was exhaustive, and being wrong
-there means dropping styles rather than missing a fold.
-
 One case declines despite resolving: a spread the extractor _evaluated_ rather than walked, such as an imported
 `css.raw()` value spread inside a nested selector. Its keys are re-boxed against the spread site, so the module they
-came from is no longer recoverable – and a literal that depends on a file the build cannot name is a file it cannot
-watch.
+came from is no longer recoverable, and the build cannot name the file it would have to watch.
 
 ## Partly static calls
 
@@ -316,26 +309,26 @@ src/Button.tsx: dynamic=2 raw-call=1
 
 The reasons are:
 
-| Reason               | Meaning                                                           |
-| -------------------- | ----------------------------------------------------------------- |
-| `dynamic`            | Some part of the arguments could not be resolved at build time.   |
-| `raw-call`           | A `.raw()` call, which must keep returning a style object.        |
-| `not-foldable`       | `cva` or `sva` – returns a function, not a class string.          |
-| `recipe-call`        | An inline recipe call whose classes are not knowable (see below). |
-| `unsupported-kind`   | A slot recipe call, or a shape this phase does not handle.        |
-| `not-imported`       | The callee is not a Bamboo import (see below).                    |
-| `empty`              | Resolved, but produced no class names.                            |
-| `overlapping`        | Nested inside another folded call.                                |
-| `unresolved-token`   | A `token()` path resolving to no usable string (see above).       |
-| `no-call-expression` | The call site could not be located in the source.                 |
-| `runtime-binding`    | A Bamboo import still referenced after the rewrite (see below).   |
+| Reason               | Meaning                                                                             |
+| -------------------- | ----------------------------------------------------------------------------------- |
+| `dynamic`            | Some part of the arguments could not be resolved at build time.                     |
+| `raw-call`           | A `.raw()` call, which must keep returning a style object.                          |
+| `not-foldable`       | `cva` or `sva` – returns a function, not a class string.                            |
+| `recipe-call`        | An inline recipe call whose classes are not knowable (see below).                   |
+| `unsupported-kind`   | A bare slot-recipe call with no slot access, or a shape this phase does not handle. |
+| `not-imported`       | The callee is not a Bamboo import (see below).                                      |
+| `empty`              | Resolved, but produced no class names.                                              |
+| `overlapping`        | Nested inside another folded call.                                                  |
+| `unresolved-token`   | A `token()` path resolving to no usable string (see above).                         |
+| `no-call-expression` | The call site could not be located in the source.                                   |
+| `runtime-binding`    | A Bamboo import still referenced after the rewrite (see below).                     |
 
 `runtime-binding` is reported only under [`strict`](#strict), because it is the only reason that costs an extra walk of
 the module and the only one nothing else acts on.
 
 `not-foldable` and `unsupported-kind` are deliberately separate. The first is permanent – `cva` and `sva` return
-functions, so there is no class string to fold to. The second is a limitation of this phase, such as a slot recipe,
-which resolves to one class per slot rather than to a single string.
+functions, so there is no class string to fold to. The second is a limitation of this phase, such as a bare slot-recipe
+call, which resolves to one class per slot rather than to a single string.
 
 You can also just read the output bundle: a folded call is a string literal, an unfolded one still says `css(`.
 
@@ -370,15 +363,10 @@ attribute rather than the same set in a different order.
 the three distinctions `cva` itself makes: a value the config declares selects its class; `undefined` means the property
 was never passed, so the recipe's default applies; anything else – including `null` – selects nothing.
 
-**The reason this is worth far more than the calls it removes.** `cva({ base, variants })` ships the whole style object
-to the browser, purely so the runtime can hash it into a name and pick classes off it – and those styles are already in
-your stylesheet. Once _every_ call of a binding lowers, nothing reads the binding, and the build marks the definition
-`/*#__PURE__*/` so your bundler can drop the config with it. Measured on an application with 1,271 inline recipe
-bindings, **1,266 lowered completely and took 76.9 kB gzipped of config with them**; the `cva` runtime is 4.5 kB by
-comparison. Bundling one module with a single dynamic recipe call: **10,347 B → 139 B** minified.
-
-That annotation is what makes the saving real. A bundler will not drop `cva(…)` on its own – it cannot prove the call is
-side-effect free – so without it, folding leaves the config in place and the module ends up _larger_.
+Once _every_ call of a binding lowers, nothing reads the binding, and the build marks the definition `/*#__PURE__*/` so
+your bundler can drop the config with it. Measured on an application with 1,271 inline recipe bindings, **1,266 lowered
+completely and took 76.9 kB gzipped of config with them**. Bundling one module with a single dynamic recipe call:
+**10,347 B → 139 B** minified.
 
 A call is still reported as `recipe-call`, and left alone, when the classes it can produce are not knowable:
 
@@ -418,24 +406,6 @@ Three things stop a name resolving that way: a namespace import (`import * as s`
 export, and a recipe outside the project's `include`, which is never parsed and so has no rules to fold against. Two
 `export *`s carrying the same name are ambiguous and resolve to neither.
 
-This matters more than it sounds. Until it worked, such calls were in **neither** column – not folded, not declined – so
-a project that kept its recipes in a shared module read as having almost no recipe call sites at all, and `strict` had
-nothing to fail on.
-
-Four shapes are neither folded nor counted, so a project using them reads as having fewer sites than it has:
-
-- **`badge.raw(...)`.** Only the bare name is tracked, and `raw-call` is already the reason that fits a `.raw()` call,
-  so these are left out rather than filed under `recipe-call`.
-- **A recipe composed with `.merge(...)`.** `badge.merge(other)` returns another recipe function, so what goes uncounted
-  is the call of _that_ – `const m = badge.merge(other)`, then `m({ … })`.
-- **A recipe bound through a namespace import** – `import * as s from 'styled-system/css'`, then
-  `const badge = s.cva({ … })`. Only an identifier callee is recognised.
-- **A recipe not bound at module scope with `const`.** A `let` can be reassigned to something that is not a recipe. One
-  declared anywhere but the top level – inside a function, a `namespace` block, or a bare block – is skipped
-  deliberately: names are registered per file rather than per binding, so a nested `const css = cva({ … })` would
-  otherwise shadow the `css` import for the whole module and cost its calls their rules. Such a recipe rebuilds itself
-  on every call anyway, and its CSS comes from the `cva(...)` definition either way.
-
 ## `strict`
 
 A coverage percentage cannot tell you whether you won anything. The fold's real prize is not the per-call CPU it saves –
@@ -465,10 +435,8 @@ imports the engine, and the bundle keeps it.
 
 ### What it checks beyond the declined calls
 
-A skip reason only exists for a call something _recognised_. A guarantee built on those alone is worth exactly what the
-recogniser is – and a shape nothing looks at appears in neither the folded nor the declined column, so the build passes
-while the module still imports the engine. That is not hypothetical: before imported recipes were resolved, a project
-could run `strict` clean while shipping several hundred runtime recipe calls.
+A skip reason only exists for a call something _recognised_, and a shape nothing looks at appears in neither the folded
+nor the declined column – so the ledger alone can read clean while the module still imports the engine.
 
 So `strict` also asks the question the guarantee actually makes, of the output rather than the ledger: once every
 rewrite is applied, is anything from a Bamboo module still referenced? Anything that is gets reported as
@@ -485,13 +453,8 @@ That call _folds_, so it declines nothing, and its runtime half is written strai
 module the walk reads – it was invisible in both directions. A split that resolves everything leaves no call and reports
 nothing.
 
-Three exclusions are deliberate. The helpers the fold itself writes – `cx`, `cvaPick`, `splitProps` – live in the `cx`
-module and pull no engine, so a reference to one is the fold working rather than failing. `cssLeaf` is excluded here
-too, but for a different reason: it _can_ reach the engine, and `lowered-leaf` above already says so – reporting it
-twice under two names would only inflate the count. And a reference _inside_ a range the fold rewrote is not reported: a
-partial fold copies its dynamic half across verbatim, but narrowing the check to the text actually removed would report
-bindings the fold had resolved away, such as a `token(...)` folded into the static half. A false failure on a module
-that folded correctly is worse than a missed one, for a gate with no per-call override.
+Three things are excluded from that walk: the helpers the fold itself writes (`cx`, `cvaPick`, `splitProps`), `cssLeaf`
+(already reported as `lowered-leaf`), and any reference inside a range the fold rewrote.
 
 ### What it does not check
 
@@ -513,7 +476,7 @@ reaches the css engine** – not a call, not a re-export, not a binding handed s
 keep a runtime roughly half the size, and their invocations are not verified at all – which is why `recipe-call` exists
 in the report even though it does not fail the build.
 
-One edge is worth knowing because it does not follow that rule: a **config** slot recipe call is reported as
+One edge is worth knowing because it does not follow that rule: a bare **config** slot recipe call is reported as
 `unsupported-kind`, which _does_ fail `strict`, while the equivalent inline `sva(...)` call is reported as
 `recipe-call`, which does not. Neither keeps the `css()` engine, so by the rule above neither should fail.
 `unsupported-kind` is a catch-all that also covers shapes which are genuinely unresolved, and it is treated as a
@@ -554,8 +517,9 @@ its style calls pre-resolved. So the transform stays where it pays for itself.
   yourself – keep their runtime path, even though the equivalent `buttonStyle({ size: 'sm' })` call folds. A recipe
   element is not counted in the coverage summary either, so a project using them reads as having fewer sites than it
   has.
-- **It does not fold slot recipe calls.** One resolves to a class per slot rather than to a single string, so there is
-  no single literal to substitute. Reported as `unsupported-kind`.
+- **It does not fold a bare slot recipe call.** One resolves to a class per slot rather than to a single string, so
+  there is no single literal to substitute; it is reported as `unsupported-kind`. A slot access – `recipe(props).slot` –
+  does fold, and a slot that takes no variants of its own folds even when the props are fully dynamic.
 - **It does not hoist repeated class literals.** Two call sites resolving to the same string each get their own literal.
   Measured on `sandbox/runtime-perf`, a folded module repeats seven strings, most of them short leaf-helper prefixes —
   and the compression cost noted above comes from literals being _distinct_, which hoisting cannot address. Across

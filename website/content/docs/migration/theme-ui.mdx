@@ -8,11 +8,12 @@ differences between the two libraries.
 
 Here are some similarities between the two libraries.
 
-- Bamboo and Theme UI both support JSX style props.
-- Supports design tokens and themes.
-- Support for styling primitives like `Box`, `Flex`, `Grid`, etc.
+- Both support design tokens and themes.
+- Both ship layout primitives — Theme UI as components (`Box`, `Flex`, `Grid`), Bamboo as pattern **functions** that
+  return a class name.
 
-Below are some of the differences between the two libraries.
+Below are some of the differences between the two libraries. The one that shapes the whole migration: Bamboo has no JSX
+style props and no `sx` prop. Every style is a `css()`, `cva()` or pattern call whose class name you put on an element.
 
 ## Performance
 
@@ -98,26 +99,11 @@ export const Demo = (props) => (
 )
 ```
 
-Bamboo offers two similar ways to style components. The first is `cva`, which lets you name the styles and add variants.
+Bamboo has no `sx` prop. Write the same object with the `css` function and pass the class name it returns. Numeric scale
+steps become named tokens — the default preset's `fontSizes` run `2xs` through `9xl`.
 
 ```jsx
-import { cva } from 'styled-system/css'
-
-const demo = cva({
-  base: {
-    color: 'white',
-    bg: 'primary',
-    fontSize: 4,
-  },
-})
-
-export const Demo = (props) => <div {...props} className={demo()} />
-```
-
-The simplest approach is to use the `css` function to write one-off styles.
-
-```jsx
-import { css } from 'styled-system/css'
+import { css } from '../styled-system/css'
 
 export const Demo = (props) => (
   <div
@@ -125,11 +111,13 @@ export const Demo = (props) => (
     className={css({
       color: 'white',
       bg: 'primary',
-      fontSize: 4,
+      fontSize: 'xl',
     })}
   />
 )
 ```
+
+Reach for [`cva`](/docs/concepts/recipes) instead when the styles need a name and variants.
 
 ## Variants
 
@@ -171,78 +159,35 @@ export default {
 <button sx={{ variant: 'buttons.primary' }} />
 ```
 
-In Bamboo, multi-variant styles are referred to as recipes. Recipes are a collection of styles that can be applied to
-any component.
+In Bamboo, multi-variant styles are called recipes. Both kinds of recipe emit a named class per variant into the
+`recipes` cascade layer, so a consumer's `css()` in the `utilities` layer overrides them by cascade. What you choose is
+where the recipe lives.
 
-There are two ways to define recipes in Bamboo. The first approach is to use the `cva` function which produces atomic
-classnames.
+Colocated with the component, using the `cva` function:
 
 ```js
-import { cva } from 'styled-system/css'
+import { cva } from '../styled-system/css'
 
 const buttonStyles = cva({
+  className: 'button',
   base: {
     display: 'inline-flex',
   },
   variants: {
     variant: {
-      primary: {
-        color: 'white',
-        bg: 'primary',
-      },
-      secondary: {
-        color: 'white',
-        bg: 'secondary',
-      },
-      accent: {
-        color: 'white',
-        bg: 'accent',
-      },
+      primary: { color: 'white', bg: 'primary' },
+      secondary: { color: 'white', bg: 'secondary' },
+      accent: { color: 'white', bg: 'accent' },
     },
   },
 })
 
-const Demo = () => (
-  <button
-    className={buttonStyles({
-      variant: 'accent',
-    })}
-  />
-)
+const Demo = () => <button className={buttonStyles({ variant: 'accent' })} />
 ```
 
-The second approach is to define the recipe in the `theme.recipes` property of the bamboo config. This is referred to as
-'Config recipes' in Bamboo and allows for sharing recipes across components and projects.
-
-```js
-// bamboo.config.js
-import { defineConfig } from '@bamboocss/dev'
-
-export default defineConfig({
-  theme: {
-    extend: {
-      recipes: {
-        button: {
-          className: 'button',
-          base: { display: 'inline-flex' },
-          variants: {
-            variant: {
-              primary: { color: 'white', bg: 'primary' },
-              secondary: { color: 'white', bg: 'secondary' },
-              accent: { color: 'white', bg: 'accent' },
-            },
-          },
-        },
-      },
-    },
-  },
-})
-
-// Button.js
-import { button } from 'styled-system/recipes'
-
-const Demo = () => <button className={button({ variant: 'accent' })} />
-```
+Or in the `theme.recipes` property of the bamboo config — 'config recipes' — which shares the recipe across components
+and projects and generates only the variants the project uses. You then import it from `../styled-system/recipes`. See
+[Recipes](/docs/concepts/recipes).
 
 ## Color Modes
 
@@ -266,8 +211,8 @@ const theme = {
 const Demo = () => <button sx={{ color: 'primary' }} />
 ```
 
-In Bamboo, color modes related values are defined as `semanticTokens` in the theme. Semantic tokens are tokens that
-change depending on the color mode.
+In Bamboo, color mode values are defined as `semanticTokens` in the theme. Semantic tokens change depending on the color
+mode, so the call site stays an ordinary `css({ color: 'primary' })`.
 
 ```js
 // bamboo.config.js
@@ -284,17 +229,6 @@ export default defineConfig({
     },
   },
 })
-
-// Button.js
-import { css } from 'styled-system/css'
-
-const Demo = () => (
-  <button
-    className={css({
-      color: 'primary',
-    })}
-  />
-)
 ```
 
 ## Global Styles
@@ -318,7 +252,7 @@ export default (props) => (
 )
 ```
 
-In Bamboo, global styles are defined in the `theme.global` property of the bamboo config.
+In Bamboo, global styles are defined in the top-level `globalCss` property of the bamboo config — not under `theme`.
 
 ```js
 // bamboo.config.js
@@ -357,8 +291,8 @@ In Bamboo, these are called "layout patterns", or "patterns" for short. Each one
 name, so it composes with any element.
 
 ```jsx
-import { css } from 'styled-system/css'
-import { grid } from 'styled-system/patterns'
+import { css } from '../styled-system/css'
+import { grid } from '../styled-system/patterns'
 
 const Demo = () => (
   <div className={grid({ width: [128, null, 192] })}>

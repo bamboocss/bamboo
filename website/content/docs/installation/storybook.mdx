@@ -3,8 +3,6 @@ title: Using Storybook
 description: Easily use Bamboo with Storybook with our dedicated integration.
 ---
 
-Learn how to set up Bamboo CSS in a Storybook project using PostCSS.
-
 ## Setup
 
 We are assuming that you already have a project set up with a framework like React, Vue or Svelte.
@@ -74,10 +72,10 @@ Install bamboo and create your `bamboo.config.ts` file.
   {/* <!-- prettier-ignore-end --> */}
 </Tabs>
 
-If you are using Storybook with the Vite builder, you will have to update your PostCSS config file to use the array
-syntax for the plugins instead of the object syntax. Simply change `postcss.config.[c]js`:
+Storybook's Vite builder needs the array form of the plugin list. Both forms are equivalent to Bamboo; only the builder
+cares. Change `postcss.config.cjs`:
 
-```diff filename="postcss.config.js"
+```diff filename="postcss.config.cjs"
 module.exports = {
 -  plugins: {
 -   '@bamboocss/dev/postcss': {}
@@ -88,21 +86,8 @@ module.exports = {
 
 ### Update package.json scripts
 
-Open your `package.json` file and update the `scripts` section as follows:
-
-```diff {3} filename="web/package.json"
-{
-  "scripts": {
-+    "prepare": "bamboo codegen"
-  }
-}
-```
-
-- `"prepare"` - script that will run Bamboo CSS CLI codegen before each build. Read more about
-  [codegen](/docs/references/cli#codegen) in the CLI section.
-
-> This step ensures that the bamboo output directory is regenerated after each dependency installation. So you can add
-> the output directory to your `.gitignore` file and not worry about it.
+Add `"prepare": "bamboo codegen"` to `scripts`. It runs [codegen](/docs/references/cli#codegen) after every dependency
+install, so the output directory can stay in `.gitignore`.
 
 ### Configure the content
 
@@ -160,93 +145,20 @@ export default preview
 
 ### Start the Storybook server
 
-Run the following command to start your Storybook server.
-
-<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
-  {/* <!-- prettier-ignore-start --> */}
-  <Tab>
-    ```bash
-    pnpm storybook
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    npm run storybook
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    yarn storybook
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    bun storybook
-    ```
-  </Tab>
-  {/* <!-- prettier-ignore-end --> */}
-</Tabs>
+Start the Storybook server with `pnpm storybook`.
 
 ### Start using Bamboo
 
-Now you can start using Bamboo CSS in Storybook.
-
-Here is the example of a Button component and its corresponding Storybook story:
-
 ```tsx filename="src/stories/Button.tsx"
-import { ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { css } from '../../styled-system/css'
 
-export interface IButtonProps {
-  children: ReactNode
-}
-
-export const Button = ({ children }: IButtonProps) => {
-  return (
-    <button
-      className={css({
-        bg: 'red.300',
-        fontFamily: 'Inter',
-        px: '4',
-        py: '3',
-        borderRadius: 'md',
-        _hover: { bg: 'red.400' },
-      })}
-    >
-      {children}
-    </button>
-  )
-}
+export const Button = ({ children }: { children: ReactNode }) => (
+  <button className={css({ bg: 'red.300', px: '4', py: '3', _hover: { bg: 'red.400' } })}>{children}</button>
+)
 ```
 
-```tsx filename="src/stories/Button.stories.tsx"
-import type { Meta, StoryObj } from '@storybook/react'
-import { css } from '../../styled-system/css'
-
-import { Button } from './Button'
-
-const meta = {
-  title: 'Example/Button',
-  component: Button,
-  tags: ['autodocs'],
-  decorators: [
-    (Story) => (
-      <div className={css({ m: 10 })}>
-        <Story />
-      </div>
-    ),
-  ],
-} satisfies Meta<typeof Button>
-
-export default meta
-type Story = StoryObj<typeof meta>
-
-export const Default: Story = {
-  args: {
-    children: 'Hello 🎋!',
-  },
-}
-```
+Stories pick the styles up with no extra configuration, as long as the story files are covered by `include`.
 
 </Steps>
 
@@ -286,10 +198,10 @@ With that in place, you should see the light/dark switcher in Storybook's toolba
 
 ### Cannot find postcss plugin
 
-If you are having issues with the PostCSS plugin similar to `Cannot find module '@bamboocss/dev/postcss'`, update the
-PostCSS config as follows:
+If you are having issues with the PostCSS plugin similar to `Cannot find module '@bamboocss/dev/postcss'`, pass the
+plugin uncalled instead:
 
-```js filename="postcss.config.js"
+```js filename="postcss.config.cjs"
 module.exports = {
   plugins: [require('@bamboocss/dev/postcss')],
 }
@@ -298,7 +210,7 @@ module.exports = {
 ### HMR not triggered
 
 If you are having issues with HMR not being triggered after a `bamboo.config.ts` change (or one of its
-[dependencies](/docs/references/config#dependencies), you can manually specify the files that should trigger a rebuild
+[dependencies](/docs/references/config#dependencies)), you can manually specify the files that should trigger a rebuild
 by adding the following to your `bamboo.config.ts`:
 
 ```js filename="bamboo.config.ts"
@@ -317,7 +229,7 @@ If you are having issues with your `args` not generating the expected CSS, it's 
 - you didn't add a file glob for the Storybook files in your [`config.include`](/docs/references/config#include) like
   `"./stories/**/*.{js,jsx,ts,tsx}"`
 - you didn't wrap your `args` object (or some part of it) with the
-  [`.raw()` marker that helps Bamboo find style usage](https://bamboocss.com/docs/guides/dynamic-styling#alternative)
+  [`.raw()` marker that helps Bamboo find style usage](/docs/guides/dynamic-styling#alternative)
 
 ```tsx filename="stories/Button.stories.tsx"
 import type { Meta, StoryObj } from '@storybook/react'

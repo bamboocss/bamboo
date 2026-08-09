@@ -3,8 +3,6 @@ title: Using Angular
 description: Easily use Bamboo with Angular with our dedicated integration.
 ---
 
-This guide shows you how to set up Bamboo CSS in an Angular project using PostCSS.
-
 ## Start a new project
 
 <Steps>
@@ -77,24 +75,8 @@ Create a `postcss.config.json` file in the root of your project and add the foll
 
 ### Update package.json scripts
 
-Open your `package.json` file and update the `scripts` section as follows:
-
-```diff {3} filename="package.json"
-{
-  "scripts": {
-+    "prepare": "bamboo codegen",
-    "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build",
-  }
-}
-```
-
-- `"prepare"` - script that will run Bamboo CSS CLI codegen before each build. Read more about
-  [codegen](/docs/references/cli#codegen) in the CLI section.
-
-> This step ensures that the bamboo output directory is regenerated after each dependency installation. So you can add
-> the output directory to your `.gitignore` file and not worry about it.
+Add `"prepare": "bamboo codegen"` to `scripts`. It runs [codegen](/docs/references/cli#codegen) after every dependency
+install, so the output directory can stay in `.gitignore`.
 
 ### Configure the content
 
@@ -129,37 +111,9 @@ Add this code to an `src/index.css` file and import it in the root component of 
 
 ## Start your build process
 
-Run the following command to start your development server.
-
-<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
-  {/* <!-- prettier-ignore-start --> */}
-  <Tab>
-    ```bash
-    pnpm dev
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    npm run dev
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    yarn dev
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    bun dev
-    ```
-  </Tab>
-  {/* <!-- prettier-ignore-end --> */}
-</Tabs>
+Start the dev server with `ng serve`.
 
 ### Start using Bamboo
-
-Now you can start using Bamboo CSS in your project. Here is the snippet of code that you can use in your
-`src/app.component.ts` file.
 
 ```typescript filename="src/app.component.ts"
 import { Component } from '@angular/core'

@@ -5,11 +5,6 @@ description:
   multi-theme tokens using nested conditions.
 ---
 
-## Multi-Theme Tokens
-
-Bamboo supports advance token definition beyond just light/dark mode; theming beyond just dark mode. You can define
-multi-theme tokens using nested conditions.
-
 Let's say your application supports a pink and blue theme, and each theme can have a light and dark mode. Let's see how
 to model this in Bamboo.
 
@@ -221,7 +216,7 @@ Each theme has a corresponding JSON file with a similar structure:
 ```json
 {
   "name": "primary",
-  "id": "bamboo-themes-primary",
+  "id": "bamboo-theme-primary",
   "css": "[data-bamboo-theme=primary] { ... }"
 }
 ```
@@ -231,9 +226,9 @@ Each theme has a corresponding JSON file with a similar structure:
 ```ts
 import { getTheme } from '../styled-system/themes'
 
-const theme = await getTheme('red')
+const theme = await getTheme('primary')
 //    ^? {
-//     name: "red";
+//     name: "primary";
 //     id: string;
 //     css: string;
 // }
@@ -244,7 +239,7 @@ const theme = await getTheme('red')
 ```ts
 import { injectTheme } from '../styled-system/themes'
 
-const theme = await getTheme('red')
+const theme = await getTheme('primary')
 injectTheme(document.documentElement, theme) // this returns the injected style element
 ```
 

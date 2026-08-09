@@ -84,20 +84,20 @@ deeply merged with the existing one:
 import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
-  presets: ['@acme/my-preset']
+  presets: ['@acme/my-preset'],
   utilities: {
     extend: {
       br: {
-        className: 'br' // css({ br: "sm" }) => br-sm
-      }
-    }
-  }
+        className: 'br', // css({ br: "sm" }) => br-sm
+      },
+    },
+  },
 })
 ```
 
 ## Removing something from a preset
 
-Let's say you want to remove the `br` utility from the `@acme/my-preset` preset. You can do it like this:
+Destructure away the part you don't want and spread the rest. To drop the `br` utility from `@acme/my-preset`:
 
 ```ts
 import { defineConfig } from '@bamboocss/dev'
@@ -106,21 +106,17 @@ import myPreset from '@acme/my-preset'
 const { br, ...utilities } = myPreset.utilities
 
 export default defineConfig({
-  presets: ['@acme/my-preset']
+  presets: ['@acme/my-preset'],
   utilities: {
     extend: {
       ...utilities, // 👈 we still want the other utilities from this preset
       // your customizations here
-    }
-  }
+    },
+  },
 })
 ```
 
-## Removing something from the base presets
-
-Let's say you want to remove the `stack` pattern from the `@bamboocss/preset-base` preset (included by default).
-
-You can pick only the parts that you need with and spread the rest, like this:
+The base presets work the same way — here, dropping the `stack` pattern from `@bamboocss/preset-base`:
 
 ```ts
 import bambooBasePreset from '@bamboocss/preset-base'
@@ -130,9 +126,6 @@ const { stack, ...bambooBasePresetPatterns } = bambooBasePreset.patterns
 
 export default defineConfig({
   presets: ['@bamboocss/preset-bamboo'], // 👈 we still want the tokens, breakpoints and textStyles from this preset
-
-  // ⚠️ we need to eject to prevent the `@bamboocss/preset-base` from being resolved
-  // https://bamboocss.com/docs/customization/presets#which-bamboo-presets-will-be-included-
   eject: true,
   patterns: {
     extend: {
@@ -142,6 +135,9 @@ export default defineConfig({
   },
 })
 ```
+
+> ⚠️ `eject: true` is required in that second case: without it `@bamboocss/preset-base` is resolved anyway and puts
+> `stack` back. See [which presets are included](/docs/customization/presets#which-bamboo-presets-will-be-included-).
 
 ## Minimal setup
 

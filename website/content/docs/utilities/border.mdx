@@ -5,6 +5,11 @@ description: Bamboo's border utilities.
 
 Bamboo provides CSS properties for styling borders.
 
+Every group below has a logical counterpart that resolves against the document's writing mode. `borderStartWidth` emits
+`border-inline-start-width`, which is the left edge in LTR and the right edge in RTL. The radius shorthands compose
+corners rather than mapping to a single property: `borderStartRadius` sets `border-start-start-radius` and
+`border-end-start-radius`.
+
 ## Compound Properties
 
 The border compound property maps to the `borders` token category.
@@ -19,53 +24,26 @@ The border compound property maps to the `borders` token category.
 
 ## Border Radius
 
-### All sides
-
 ```jsx
 <div className={css({ borderRadius: 'md' })} />
 <div className={css({ rounded: 'md' })} /> // shorthand
+<div className={css({ roundedTop: 'md' })} /> // one side
+<div className={css({ roundedTopLeft: 'md' })} /> // one corner
 ```
 
-### Specific sides
-
-Use the `border{Left|Right|Top|Bottom}Radius` properties, or the shorthand equivalent to apply border radius on a
-specific side of an element.
-
-```jsx
-<div className={css({ borderTopRadius: 'md' })} />
-<div className={css({ roundedTop: 'md' })} /> // shorthand
-
-<div className={css({ borderLeftRadius: 'md' })} />
-<div className={css({ roundedLeft: 'md' })} /> // shorthand
-```
-
-### Specific corners
-
-Use the `border{Top|Bottom}{Left|Right}Radius` properties, or the shorthand equivalent to round a specific corner.
-
-```jsx
-<div className={css({ borderTopLeftRadius: 'md' })} />
-<div className={css({ roundedTopLeft: 'md' })} /> // shorthand
-```
-
-| Prop                                     | CSS Property                        | Token Category |
-| ---------------------------------------- | ----------------------------------- | -------------- |
-| `rounded`,`borderRadius`                 | `border-radius`                     | `radii`        |
-| `roundedTopLeft`,`borderTopLeftRadius`   | `border-top-left-radius`            | `radii`        |
-| `roundedTopRight`,`borderTopRight`       | `border-top-right-radius`           | `radii`        |
-| `roundedBottomRight`,`borderBottomRight` | `border-bottom-right-radius`        | `radii`        |
-| `roundedBottomLeft`,`borderBottomLeft`   | `border-bottom-left-radius`         | `radii`        |
-| `roundedTop`,`borderTopRadius`           | `border-top-{left+right}-radius`    | `radii`        |
-| `roundedRight`,`borderRightRadius`       | `border-{top+bottom}-right-radius`  | `radii`        |
-| `roundedBottom`,`borderBottomRadius`     | `border-bottom-{left+right}-radius` | `radii`        |
-| `roundedLeft`,`borderLeftRadius`         | `border-{top+bottom}-left-radius`   | `radii`        |
+| Prop                                           | CSS Property                        | Token Category |
+| ---------------------------------------------- | ----------------------------------- | -------------- |
+| `rounded`,`borderRadius`                       | `border-radius`                     | `radii`        |
+| `roundedTopLeft`,`borderTopLeftRadius`         | `border-top-left-radius`            | `radii`        |
+| `roundedTopRight`,`borderTopRightRadius`       | `border-top-right-radius`           | `radii`        |
+| `roundedBottomRight`,`borderBottomRightRadius` | `border-bottom-right-radius`        | `radii`        |
+| `roundedBottomLeft`,`borderBottomLeftRadius`   | `border-bottom-left-radius`         | `radii`        |
+| `roundedTop`,`borderTopRadius`                 | `border-top-{left+right}-radius`    | `radii`        |
+| `roundedRight`,`borderRightRadius`             | `border-{top+bottom}-right-radius`  | `radii`        |
+| `roundedBottom`,`borderBottomRadius`           | `border-bottom-{left+right}-radius` | `radii`        |
+| `roundedLeft`,`borderLeftRadius`               | `border-{top+bottom}-left-radius`   | `radii`        |
 
 ### Logical Properties
-
-Bamboo also provides the logical properties for border radius, which map to corresponding physical properties based on
-the document's writing mode.
-
-> For example, `borderStartRadius` will map to `border-left-radius` in LTR mode, and `border-right-radius` in RTL mode.
 
 ```jsx
 <div className={css({ borderStartRadius: 'md' })} />
@@ -83,19 +61,9 @@ the document's writing mode.
 
 ## Border Width
 
-### All sides
-
 ```jsx
 <div className={css({ borderWidth: '1px' })} />
-```
-
-### Specific sides
-
-Use the `border{Left|Right|Top|Bottom}Width` properties, to apply border width on a specific side of an element.
-
-```jsx
-<div className={css({ borderTopWidth: '1px' })} />
-<div className={css({ borderLeftWidth: '1px' })} />
+<div className={css({ borderTopWidth: '1px' })} /> // one side
 ```
 
 | Prop                                 | CSS Property                |
@@ -110,37 +78,22 @@ Use the `border{Left|Right|Top|Bottom}Width` properties, to apply border width o
 
 ### Logical Properties
 
-Bamboo also provides the logical properties for border width, which map to corresponding physical properties based on
-the document's writing mode.
-
-> For example, `borderStartWidth` will map to `border-left-width` in LTR mode, and `border-right-width` in RTL mode.
-
 ```jsx
 <div className={css({ borderStartWidth: '1px' })} />
 ```
 
-| Prop                                          | CSS Property               |
-| --------------------------------------------- | -------------------------- |
-| `borderStartWidth` , `borderInlineStartWidth` | `border-{start+end}-width` |
-| `borderEndWidth` , `borderInlineEndWidth`     | `border-{start+end}-width` |
+| Prop                                          | CSS Property                |
+| --------------------------------------------- | --------------------------- |
+| `borderStartWidth` , `borderInlineStartWidth` | `border-inline-start-width` |
+| `borderEndWidth` , `borderInlineEndWidth`     | `border-inline-end-width`   |
 
 ## Border Color
 
 The border color utilities are used to set the border color of an element. It references the `colors` token category.
 
-### All sides
-
 ```jsx
 <div className={css({ borderColor: 'primary' })} />
-```
-
-### Specific sides
-
-Use the `border{Left|Right|Top|Bottom}Color` properties to apply border color on a specific side of an element.
-
-```jsx
-<div className={css({ borderTopColor: 'primary' })} />
-<div className={css({ borderLeftColor: 'primary' })} />
+<div className={css({ borderTopColor: 'primary' })} /> // one side
 ```
 
 | Prop                | CSS Property          | Token Category |
@@ -153,19 +106,13 @@ Use the `border{Left|Right|Top|Bottom}Color` properties to apply border color on
 
 ### Logical Properties
 
-Bamboo also provides the logical properties for border color, which map to corresponding physical properties based on
-the document's writing mode.
-
-> For example, `borderInlineStartColor` will map to `border-left-color` in LTR mode, and `border-right-color` in RTL
-> mode.
-
 ```jsx
 <div className={css({ borderInlineStartColor: 'red.500' })} />
 ```
 
-| Prop                                          | CSS Property               | Token Category |
-| --------------------------------------------- | -------------------------- | -------------- |
-| `borderStartColor` , `borderInlineStartColor` | `border-{start+end}-color` | `colors`       |
-| `borderEndColor` , `borderInlineEndColor`     | `border-{start+end}-color` | `colors`       |
-| `borderXColor`, `borderInlineColor`           | `border-inline-color`      | `colors`       |
-| `borderYColor`, `borderBlockColor`            | `border-block-color`       | `colors`       |
+| Prop                                          | CSS Property                | Token Category |
+| --------------------------------------------- | --------------------------- | -------------- |
+| `borderStartColor` , `borderInlineStartColor` | `border-inline-start-color` | `colors`       |
+| `borderEndColor` , `borderInlineEndColor`     | `border-inline-end-color`   | `colors`       |
+| `borderXColor`, `borderInlineColor`           | `border-inline-color`       | `colors`       |
+| `borderYColor`, `borderBlockColor`            | `border-block-color`        | `colors`       |

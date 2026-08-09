@@ -9,7 +9,7 @@ Bamboo provides utilities for defining and customizing transitions.
 
 A shorthand utility for defining common transition sets.
 
-Values are `all`, `common`, `colors`, `opacity`, `shadow`, `transform`.
+Values are `all`, `common`, `size`, `position`, `background`, `colors`, `opacity`, `shadow`, `transform`.
 
 ```jsx
 <div className={css({ transition: 'all' })} />
@@ -20,9 +20,9 @@ Values are `all`, `common`, `colors`, `opacity`, `shadow`, `transform`.
 
 | Prop                       | CSS Property                 | Token Category |
 | -------------------------- | ---------------------------- | -------------- |
-| `transitionTimingFunction` | `transition-timing-function	` | `easings`      |
-| `transitionDelay`          | `transition-delay	`           | `durations`    |
-| `transitionDuration`       | `transition-duration	`        | `durations`    |
+| `transitionTimingFunction` | `transition-timing-function` | `easings`      |
+| `transitionDelay`          | `transition-delay`           | `durations`    |
+| `transitionDuration`       | `transition-duration`        | `durations`    |
 
 ## Animation
 
@@ -36,6 +36,6 @@ Control the animation property. It supports the `animations` token category.
 
 | Prop             | CSS Property      | Token Category |
 | ---------------- | ----------------- | -------------- |
-| `animation`      | `animation-name	`  | animations     |
-| `animationName`  | `animation-name	`  | animationName  |
-| `animationDelay` | `animation-delay	` | durations      |
+| `animation`      | `animation`       | `animations`   |
+| `animationName`  | `animation-name`  | `keyframes`    |
+| `animationDelay` | `animation-delay` | `durations`    |

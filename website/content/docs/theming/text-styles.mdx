@@ -85,28 +85,10 @@ export default defineConfig({
       textStyles: {
         heading: {
           DEFAULT: {
-            value: {
-              fontFamily: 'Inter',
-              fontWeight: 'bold',
-              fontSize: '1.5rem',
-              lineHeight: '1.2',
-            },
+            value: { fontSize: '1.5rem', lineHeight: '1.2' },
           },
           h1: {
-            value: {
-              fontFamily: 'Inter',
-              fontWeight: 'bold',
-              fontSize: '2.5rem',
-              lineHeight: '1.1',
-            },
-          },
-          h2: {
-            value: {
-              fontFamily: 'Inter',
-              fontWeight: 'bold',
-              fontSize: '2rem',
-              lineHeight: '1.15',
-            },
+            value: { fontSize: '2.5rem', lineHeight: '1.1' },
           },
         },
       },
@@ -124,12 +106,13 @@ function App() {
   return (
     <div>
       <h1 className={css({ textStyle: 'heading.h1' })}>Main Title</h1>
-      <h2 className={css({ textStyle: 'heading.h2' })}>Subtitle</h2>
-      <h3 className={css({ textStyle: 'heading' })}>Uses DEFAULT variant</h3>
+      <h2 className={css({ textStyle: 'heading' })}>Uses DEFAULT variant</h2>
     </div>
   )
 }
 ```
+
+Layer styles and animation styles nest the same way.
 
 ## Best Practices
 

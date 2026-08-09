@@ -7,7 +7,7 @@ Learn the various ways to consume Bamboo tokens in your project.
 
 ## Style Properties
 
-The recommended way to consume your tokens is in the `css` function or style props.
+The recommended way to consume your tokens is in the `css` function.
 
 ```jsx
 import { css } from '../styled-system/css'
@@ -118,7 +118,7 @@ function App() {
 
 Each of your design tokens will be available in the generated `/tokens` folder. It looks like this:
 
-```js filename="styled-system/tokens.ts"
+```js filename="styled-system/tokens/index.mjs"
 const tokens = {
   // ...
   'colors.blue.200': {
@@ -134,6 +134,10 @@ const tokens = {
 
 Both functions are typesafe and expect a known dot-separated token path, they also accept a fallback value as a second
 argument.
+
+A path that is not a string literal — `token.var(key)` — is invisible to the reachability analysis behind
+[`pruneUnusedTokens`](/docs/references/config#pruneunusedtokens), so the variable it names may not be declared. Spell
+the path out, or set `pruneUnusedTokens: false`.
 
 Using the example above, `token('colors.blue.200')` would return `#bfdbfe` and `token.var('colors.blue.200')` would
 return `var(--colors-blue-200)`.

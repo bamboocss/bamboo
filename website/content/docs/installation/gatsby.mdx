@@ -3,8 +3,6 @@ title: Using Gatsby
 description: Easily use Bamboo with Gatsby with our dedicated integration.
 ---
 
-This guide shows you how to set up Bamboo CSS in a Gatsby project using PostCSS.
-
 <Steps>
 
 ### Create Gatsby project
@@ -67,27 +65,8 @@ export default config
 
 ### Update package.json scripts
 
-Open your `package.json` file and update the `scripts` section as follows:
-
-```diff {3} filename="package.json"
-{
-  "scripts": {
-+    "prepare": "bamboo codegen",
-    "develop": "gatsby develop",
-    "start": "gatsby develop",
-    "build": "gatsby build",
-    "serve": "gatsby serve",
-    "clean": "gatsby clean",
-    "typecheck": "tsc --noEmit"
-  }
-}
-```
-
-- `"prepare"` - script that will run Bamboo CSS CLI codegen before each build. Read more about
-  [codegen](/docs/references/cli#codegen) in the CLI section.
-
-> This step ensures that the bamboo output directory is regenerated after each dependency installation. So you can add
-> the output directory to your `.gitignore` file and not worry about it.
+Add `"prepare": "bamboo codegen"` to `scripts`. It runs [codegen](/docs/references/cli#codegen) after every dependency
+install, so the output directory can stay in `.gitignore`.
 
 ### Configure the content
 
@@ -103,7 +82,7 @@ import { defineConfig } from '@bamboocss/dev'
 export default defineConfig({
   preflight: true,
   // Where to look for your css declarations
-  include: ['./src/pages/*.{js,jsx,ts,tsx}', './src/components/**/*.{js,jsx,ts,tsx}'],
+  include: ['./src/pages/**/*.{js,jsx,ts,tsx}', './src/components/**/*.{js,jsx,ts,tsx}'],
   exclude: [],
   outdir: 'styled-system',
 })
@@ -135,33 +114,17 @@ npm run develop
 
 ### Start using Bamboo
 
-Now you can start using Bamboo CSS in your project. Here is the snippet of code that you can use in your
-`src/pages/index.tsx` file.
-
-```tsx {3,7} filename="src/pages/index.tsx"
-import * as React from 'react'
-import type { HeadFC, PageProps } from 'gatsby'
+```tsx {1} filename="src/pages/index.tsx"
 import { css } from '../../styled-system/css'
 
-const IndexPage: React.FC<PageProps> = () => {
-  return <div className={css({ fontSize: '2xl', fontWeight: 'bold' })}>Hello 🎋!</div>
-}
+const IndexPage = () => <div className={css({ fontSize: '2xl', fontWeight: 'bold' })}>Hello 🎋!</div>
 
 export default IndexPage
-
-export const Head: HeadFC = () => <title>Home Page</title>
 ```
 
 </Steps>
 
 ## Troubleshooting
 
-If you're not getting import autocomplete in your IDE, you may need to include the `styled-system` directory in your
-`tsconfig.json` file:
-
-```json filename="tsconfig.json"
-{
-  // ...
-  "include": ["src", "styled-system"]
-}
-```
+If your IDE does not autocomplete `styled-system` imports, add that directory to `include` in `tsconfig.json`. See
+[the CLI guide](/docs/installation/cli#troubleshooting).

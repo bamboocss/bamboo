@@ -3,8 +3,8 @@ title: Get started with Bamboo
 description: Build-time, type-safe, zero-runtime CSS-in-JS
 ---
 
-Bamboo scans your JavaScript and TypeScript for style props and function calls, and generates atomic CSS for the call
-sites it finds. It runs as a CLI or a PostCSS plugin.
+Bamboo scans your JavaScript and TypeScript for style function calls, and generates atomic CSS for the call sites it
+finds. It runs as a CLI or a PostCSS plugin.
 
 You author styles as plain objects. Tokens, recipes and variants are generated from your config as types, so the editor
 autocompletes them and the compiler checks them.
@@ -20,8 +20,8 @@ and the config shape all carry over, so [migrating](/docs/migration/panda) is la
 ## Features
 
 - ⚡️ Write plain style objects, extracted at build time
-- 🪶 [Optional zero runtime](/docs/guides/source-transformation) – fold static `css()`, pattern and recipe calls into
-  plain class strings at build time
+- 🪶 [Zero runtime where it can be](/docs/guides/source-transformation) – with `@bamboocss/vite`, a production build
+  folds static `css()`, pattern and recipe calls into plain class strings, on by default
 - ✨ Modern CSS output – cascade layers `@layer`, css variables and more
 - ✂️ Prune [unused tokens](/docs/references/config#pruneunusedtokens) and
   [keyframes](/docs/references/config#pruneunusedkeyframes) – ship only what your app uses

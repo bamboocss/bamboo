@@ -4,7 +4,8 @@ description: Creating your own reusable preset for utilities and theme
 ---
 
 By default, any configuration you add in your own `bamboo.config.js` file is smartly merged with the
-[default configuration](#), allowing you to override or extend specific parts of the configuration.
+[default configuration](/docs/customization/theme), allowing you to override or extend specific parts of the
+configuration.
 
 You can specify a preset in your `bamboo.config.js` file by using the `presets` option:
 
@@ -60,9 +61,13 @@ The available keys for a preset are:
 - [`conditions`](/docs/concepts/conditional-styles)
 - [`globalCss`](/docs/concepts/writing-styles#global-styles)
 - [`globalFontface`](/docs/guides/fonts#global-font-face)
+- [`globalPositionTry`](/docs/references/config#globalpositiontry)
+- [`globalVars`](/docs/concepts/global-styles#custom-global-variables-globalvars)
 - [`patterns`](/docs/concepts/patterns)
+- [`presets`](#creating-a-preset) — a preset may itself nest presets
 - [`staticCss`](/docs/guides/static)
 - [`theme`](/docs/customization/theme)
+- [`themes`](/docs/guides/multiple-themes)
 - [`utilities`](/docs/customization/utilities)
 
 ### Asynchronous presets
@@ -118,8 +123,3 @@ export default defineConfig({
   presets: [bambooPreset, myCustomPreset],
 })
 ```
-
-## Minimal setup
-
-If you want to use Bamboo with the bare minimum, without any of the defaults, you can read more about it
-[here](/docs/guides/minimal-setup)

@@ -28,7 +28,7 @@ This will generate:
     background: var(--mix-background, var(--colors-red-300));
   }
 
-  .text_white {
+  .c_white {
     color: var(--colors-white);
   }
 }
@@ -91,10 +91,11 @@ then the same utility transform as above can be written like this:
 export default defineConfig({
   utilities: {
     background: {
-      shorthand: "bg",
-      className: "bg",
-      values: "colors",
-      transform: createColorMixTransform("background"),
+      shorthand: 'bg',
+      className: 'bg',
+      values: 'colors',
+      transform: createColorMixTransform('background'),
+    },
   },
-});
+})
 ```

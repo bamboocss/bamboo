@@ -18,14 +18,20 @@ export default {
     css: [],
     // the recipes you want to generate
     recipes: {},
+    // the patterns you want to generate
+    patterns: {},
+    // the theme variants you want to generate
+    themes: [],
   },
 }
 ```
 
-The `static` property supports two properties:
+The `staticCss` property supports four properties:
 
-- `css` - an array of CSS properties you want to generate with their `conditions`
-- `recipes` - the component recipes you want to generate
+- `css` - an array of CSS rules you want to generate, each with their `conditions`
+- `recipes` - the component recipes you want to generate, or `'*'` for every recipe and every variant
+- `patterns` - the patterns you want to generate, keyed by pattern name
+- `themes` - the [theme variants](/docs/guides/multiple-themes#pregenerating-themes) to include in the CSS output
 
 ## Generating CSS Properties
 
@@ -33,12 +39,11 @@ The `css` property is an array of CSS properties you want to generate with their
 
 You can specify the following options:
 
-- `properties`: the CSS properties you want to generate
+- `properties`: an object mapping each CSS property to the array of values to generate for it. `'*'` stands for every
+  value the tokens define; any other entry is generated as written.
 - `conditions`: the CSS conditions or selectors you want to generate in addition to the default values. Values can be
   `light, dark`, etc.
 - `responsive`: whether or not to generate responsive classes
-- `values`: the values you want to generate for the CSS property. When set to `*`, all values defined in the tokens will
-  be included. When set to an array, only the values in the array will be generated.
 
 ```js
 export default {
@@ -112,9 +117,7 @@ export default defineConfig({
   // ...
   staticCss: {
     recipes: {
-      card: {
-        size: ['*'],
-      },
+      card: [{ size: ['*'] }],
     },
   },
 })
@@ -135,11 +138,39 @@ export default defineConfig({
 
 This is mostly useful for testing purposes with [`Storybook`](/docs/installation/storybook).
 
+## Generating Patterns
+
+The `patterns` property is an object of patterns, each taking the same rules as `css`. The properties are the pattern's
+own props rather than CSS properties, and `'*'` covers every prop the pattern declares.
+
+```js
+export default {
+  staticCss: {
+    patterns: {
+      stack: [{ properties: { gap: ['*'], align: ['center'] } }],
+      // shorthand for every prop of the pattern
+      circle: ['*'],
+    },
+  },
+}
+```
+
+## Generating Themes
+
+`themes` lists the [theme variants](/docs/guides/multiple-themes#pregenerating-themes) to emit. No theme variant reaches
+the CSS output unless it is named here.
+
+```js
+export default {
+  staticCss: {
+    themes: ['primary', 'secondary'],
+  },
+}
+```
+
 ## Performance Considerations
 
-Bamboo provides intelligent caching and memoization to optimize static CSS generation. However, **pre-generating large
-numbers of styles can still impact build times**. It's important to be selective and only generate the styles you
-actually need.
+Pre-generating large numbers of styles costs build time and CSS size. Only generate the styles you actually need.
 
 ### Best Practices
 
@@ -198,54 +229,6 @@ Wildcards (`['*']`) are appropriate when:
 
 The `responsive` property multiplies the number of generated classes by your breakpoints. Only enable it for properties
 that genuinely need responsive behavior.
-
-**❌ Avoid: Responsive for all properties**
-
-```js
-export default {
-  staticCss: {
-    css: [
-      {
-        // This generates classes for ALL breakpoints (sm, md, lg, xl, 2xl)
-        responsive: true,
-        properties: {
-          color: ['red.500', 'blue.500'],
-          backgroundColor: ['white', 'gray.50'],
-          fontWeight: ['400', '500', '600'],
-          borderRadius: ['sm', 'md', 'lg'],
-        },
-      },
-    ],
-  },
-}
-```
-
-**✅ Better: Responsive only for layout properties**
-
-```js
-export default {
-  staticCss: {
-    css: [
-      {
-        // Responsive for layout properties that change across breakpoints
-        responsive: true,
-        properties: {
-          display: ['none', 'block', 'flex'],
-          flexDirection: ['row', 'column'],
-          width: ['full', '1/2', '1/3'],
-        },
-      },
-      {
-        // No responsive needed for colors/typography that stay the same
-        properties: {
-          color: ['red.500', 'blue.500'],
-          fontWeight: ['400', '500', '600'],
-        },
-      },
-    ],
-  },
-}
-```
 
 Properties that commonly need `responsive: true`:
 

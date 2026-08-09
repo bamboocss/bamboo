@@ -5,38 +5,12 @@ description: Bamboo provides utilities for styling SVG elements.
 
 Bamboo provides utilities for styling SVG elements.
 
-## Fill
-
-Change the fill color of an SVG element.
-
 ```jsx
-<svg className={css({ fill: 'blue.500' })} />
-```
-
-| Prop   | CSS Property | Token Category |
-| ------ | ------------ | -------------- |
-| `fill` | `fill`       | `colors`       |
-
-## Stroke
-
-Change the stroke color of an SVG element.
-
-```jsx
-<svg className={css({ stroke: 'blue.500' })} />
-```
-
-| Prop     | CSS Property | Token Category |
-| -------- | ------------ | -------------- |
-| `stroke` | `stroke`     | colors         |
-
-## Stroke Width
-
-Change the stroke width of an SVG element.
-
-```jsx
-<svg className={css({ strokeWidth: '1px' })} />
+<svg className={css({ fill: 'blue.500', stroke: 'blue.700', strokeWidth: '1px' })} />
 ```
 
 | Prop          | CSS Property   | Token Category |
 | ------------- | -------------- | -------------- |
-| `strokeWidth` | `stroke-width` | borderWidths   |
+| `fill`        | `fill`         | `colors`       |
+| `stroke`      | `stroke`       | `colors`       |
+| `strokeWidth` | `stroke-width` | `borderWidths` |

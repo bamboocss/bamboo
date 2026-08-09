@@ -3,8 +3,6 @@ title: Using Redwood
 description: Easily use Bamboo with Redwood.js with our dedicated integration.
 ---
 
-This guide shows you how to set up Bamboo CSS in a Redwood project using PostCSS.
-
 > Redwood uses `yarn` as its primary package manager.
 
 ## Start a new project
@@ -35,7 +33,7 @@ Respond to the prompts as follows:
 
 ### Install Bamboo
 
-Install bamboo and generate the `bamboo.config.ts` and `postcss.config.js` file.
+Install bamboo and generate the `bamboo.config.ts` and `postcss.config.cjs` files.
 
 ```bash
 cd web
@@ -45,18 +43,18 @@ yarn bamboo init --postcss
 
 ### Move to config folder
 
-Redwood uses a `config` folder for all of the configuration files. Move the `bamboo.config.ts` and `postcss.config.js`
+Redwood uses a `config` folder for all of the configuration files. Move the `bamboo.config.ts` and `postcss.config.cjs`
 files to the `config` folder.
 
 ```bash
-mv bamboo.config.ts postcss.config.js config/
+mv bamboo.config.ts postcss.config.cjs config/
 ```
 
 ### Update configs
 
 Update the postcss config file to use the `bamboo.config.ts` file.
 
-```diff filename="web/config/postcss.config.js"
+```diff filename="web/config/postcss.config.cjs"
 + const path = require('path')
 
 module.exports = {
@@ -84,21 +82,8 @@ Update the tsconfig file to include the `styled-system` folder.
 
 ### Update package.json scripts
 
-Open the `web/package.json` file and update the `scripts` section as follows:
-
-```diff {3} filename="web/package.json"
-{
-  "scripts": {
-+    "prepare": "bamboo codegen"
-  }
-}
-```
-
-- `"prepare"` - script that will run Bamboo CSS CLI codegen before each build. Read more about
-  [codegen](/docs/references/cli#codegen) in the CLI section.
-
-> This step ensures that the bamboo output directory is regenerated after each dependency installation. So you can add
-> the output directory to your `.gitignore` file and not worry about it.
+Add `"prepare": "bamboo codegen"` to `scripts` in `web/package.json`. It runs [codegen](/docs/references/cli#codegen)
+after every dependency install, so the output directory can stay in `.gitignore`.
 
 ### Configure the content
 
@@ -118,7 +103,7 @@ export default defineConfig({
 
 ### Configure the entry CSS with layers
 
-Add this code to an `src/style/index.css` file imported in the root component of your project.
+Add this code to a `web/src/index.css` file imported in the root component of your project.
 
 ```css filename="web/src/index.css"
 @layer reset, base, tokens, recipes, utilities;
@@ -134,32 +119,10 @@ yarn rw dev
 
 ### Start using Bamboo
 
-Now you can start using Bamboo CSS in your project.
-
 ```tsx filename="web/src/pages/HomePage/HomePage.tsx"
 import { css } from 'styled-system/css'
-import { stack } from 'styled-system/patterns'
-import { Link, routes } from '@redwoodjs/router'
-import { MetaTags } from '@redwoodjs/web'
 
-const HomePage = () => {
-  return (
-    <>
-      <MetaTags title="Home" description="Home page" />
-
-      <div
-        className={stack({
-          bg: { base: 'red.300', _hover: 'red.500' },
-          py: '12',
-          px: '8',
-        })}
-      >
-        <h1 className={css({ fontSize: '4xl', fontWeight: 'bold' })}>HomePage</h1>
-        <p>Hello World</p>
-      </div>
-    </>
-  )
-}
+const HomePage = () => <h1 className={css({ fontSize: '4xl', fontWeight: 'bold' })}>Hello 🎋!</h1>
 
 export default HomePage
 ```
@@ -168,12 +131,5 @@ export default HomePage
 
 ## Troubleshooting
 
-If you're not getting import autocomplete in your IDE, you may need to include the `styled-system` directory in your
-`tsconfig.json` file:
-
-```json filename="web/tsconfig.json"
-{
-  // ...
-  "include": ["src", "styled-system"]
-}
-```
+If your IDE does not autocomplete `styled-system` imports, add that directory to `include` in `web/tsconfig.json`. See
+[the CLI guide](/docs/installation/cli#troubleshooting).

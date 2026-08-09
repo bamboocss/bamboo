@@ -6,9 +6,9 @@ description: Deprecating tokens, utilities, patterns and config recipes.
 Deprecations are mostly relevant for large teams that want to deprecate certain utilities, patterns, recipes, or tokens
 before removing them from the codebase.
 
-## Deprecating a Utility
+## Marking something deprecated
 
-To deprecate a utility, set the `deprecated` property to `true` in the `utility` object.
+Set the `deprecated` property to `true` on the definition itself:
 
 ```ts filename="bamboo.config.ts"
 import { defineConfig } from '@bamboocss/dev'
@@ -25,62 +25,19 @@ export default defineConfig({
 })
 ```
 
-## Deprecating a Token
+The property goes in the same place for each kind of definition:
 
-To deprecate a token, set the `deprecated` property to `true` in the `token` object.
-
-```ts filename="bamboo.config.ts"
-import { defineConfig } from '@bamboocss/dev'
-
-export default defineConfig({
-  theme: {
-    tokens: {
-      spacing: {
-        lg: { value: '8px', deprecated: true },
-      },
-    },
-  },
-})
-```
-
-## Deprecating a Pattern
-
-To deprecate a pattern, set the `deprecated` property to true in the `pattern` definition.
-
-```ts filename="bamboo.config.ts"
-import { defineConfig } from '@bamboocss/dev'
-
-export default defineConfig({
-  patterns: {
-    customStack: {
-      deprecated: true,
-    },
-  },
-})
-```
-
-## Deprecating a Recipe
-
-To deprecate a recipe, set the `deprecated` property to true in the `recipe` definition.
-
-```ts filename="bamboo.config.ts"
-import { defineConfig } from '@bamboocss/dev'
-
-export default defineConfig({
-  theme: {
-    recipes: {
-      btn: {
-        deprecated: true,
-      },
-    },
-  },
-})
-```
+| Kind    | Where it goes                                                   |
+| ------- | --------------------------------------------------------------- |
+| Utility | `utilities.<name>.deprecated`                                   |
+| Token   | `theme.tokens.<category>.<name>.deprecated` (alongside `value`) |
+| Pattern | `patterns.<name>.deprecated`                                    |
+| Recipe  | `theme.recipes.<name>.deprecated`                               |
 
 ## Custom Deprecation Messages
 
-You can also provide a custom deprecation message by setting the `deprecated` property to a string. i.e. the migration
-message.
+Tokens, patterns and recipes also accept a string instead of `true` — the migration message to report in place of the
+default one. Utilities do not: `deprecated` is a boolean there.
 
 ```ts filename="bamboo.config.ts"
 import { defineConfig } from '@bamboocss/dev'
@@ -92,15 +49,6 @@ export default defineConfig({
         primary: { value: 'blue.500', deprecated: 'use `blue.600` instead' },
       },
     },
-  },
-})
-```
-
-```ts filename="bamboo.config.ts"
-import { defineConfig } from '@bamboocss/dev'
-
-export default defineConfig({
-  theme: {
     recipes: {
       btn: {
         deprecated: 'will be removed in v2.0',

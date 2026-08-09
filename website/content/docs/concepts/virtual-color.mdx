@@ -212,75 +212,7 @@ function ButtonShowcase() {
 
 ## Configuration
 
-By default, color palette generation is enabled and includes all colors defined in your theme.
-
-You can control which colors are used to generate color palettes by configuring the `colorPalette` property in your
-theme.
-
-### Disable Color Palette
-
-To completely disable color palette generation, set `enabled` to `false`:
-
-```ts filename="bamboo.config.ts"
-import { defineConfig } from '@bamboocss/dev'
-
-export default defineConfig({
-  theme: {
-    colorPalette: {
-      enabled: false,
-    },
-  },
-})
-```
-
-### Include Specific Colors
-
-To generate color palettes for only specific colors, use the `include` option:
-
-```ts filename="bamboo.config.ts"
-import { defineConfig } from '@bamboocss/dev'
-
-export default defineConfig({
-  theme: {
-    colorPalette: {
-      include: ['gray', 'blue', 'red'],
-    },
-  },
-})
-```
-
-This will only generate color palettes for `gray`, `blue`, and `red` colors, even if you have other colors defined in
-your theme.
-
-**Glob patterns** are supported for nested tokens:
-
-```ts filename="bamboo.config.ts"
-colorPalette: {
-  include: ['gray.*', 'blue.*'] // Includes all nested tokens
-}
-```
-
-### Exclude Specific Colors
-
-To exclude certain colors from color palette generation, use the `exclude` option:
-
-```ts filename="bamboo.config.ts"
-import { defineConfig } from '@bamboocss/dev'
-
-export default defineConfig({
-  theme: {
-    colorPalette: {
-      exclude: ['yellow', 'orange'],
-    },
-  },
-})
-```
-
-This will generate color palettes for all colors except `yellow` and `orange`.
-
-### Combination of Options
-
-You can combine the `enabled`, `include`, and `exclude` options as needed:
+Color palette generation is on by default and covers every color in your theme. Narrow it with `theme.colorPalette`:
 
 ```ts filename="bamboo.config.ts"
 import { defineConfig } from '@bamboocss/dev'
@@ -289,42 +221,16 @@ export default defineConfig({
   theme: {
     colorPalette: {
       enabled: true,
-      include: ['gray', 'blue', 'red', 'green'],
-      exclude: ['red'], // This will override the include for 'red'
+      include: ['gray', 'blue', 'red', 'green', 'button.*'],
+      exclude: ['red'],
     },
   },
 })
 ```
 
-In this example, color palettes will be generated for `gray`, `blue`, and `green`, but not for `red` (since it's
-excluded).
-
-## Nested Semantic Tokens
-
-If nested tokens show as raw paths (e.g., `colors.base.accent`) instead of CSS variables, use glob patterns:
-
-```ts filename="bamboo.config.ts"
-semanticTokens: {
-  colors: {
-    button: {
-      primary: {
-        DEFAULT: { value: '{colors.blue.500}' },
-        hover: { value: '{colors.blue.600}' }
-      }
-    }
-  }
-},
-colorPalette: {
-  include: ['button.*']  // Include all nested paths
-}
-```
-
-Usage:
-
-```tsx
-className={css({
-  colorPalette: 'button.primary',
-  bg: 'colorPalette',
-  _hover: { bg: 'colorPalette.hover' }
-})}
-```
+| Option        | Type       | Effect                                                                                                                                  |
+| ------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `enabled`     | `boolean`  | Skips color palette generation entirely when `false`. Defaults to `true`.                                                               |
+| `include`     | `string[]` | Restricts generation to these colors. Everything else in the theme is skipped.                                                          |
+| `exclude`     | `string[]` | Drops these colors. Applied after `include`, so `red` above is excluded despite being listed.                                           |
+| glob patterns | —          | `include` and `exclude` entries accept `*`, e.g. `'button.*'`. Nested tokens need this, or they resolve to raw paths rather than a var. |

@@ -302,9 +302,9 @@ These compile unchanged and do something else, so they are worth checking on mig
 - **Slot recipes scope their variants.** A slot recipe declaring a slot named `root` is scoped automatically: only the
   root takes variants, and every other slot's variant styles become `@scope` rules anchored on it. A slot deep in a
   compound component then needs nothing delivered to it — no context, no provider. It also means
-  `.checkbox__control--size_md` is no longer emitted, and that `@scope` sets Bamboo's
-  [browser baseline](/docs/overview/browser-support): Chrome 118, Firefox 146, Safari 17.4. This is the change most
-  likely to affect a migrating app, and it is silent; see
+  `.checkbox__control--size_md` is no longer emitted, and that `@scope` sets the Firefox floor of Bamboo's
+  [browser baseline](/docs/overview/browser-support) at 146; the rest of that baseline – Chrome 123, Safari 17.5 – comes
+  from `light-dark()`. This is the change most likely to affect a migrating app, and it is silent; see
   [Slot recipes scope their variants](/docs/migration/panda#slot-recipes-scope-their-variants) and
   [Variant scoping](/docs/concepts/slot-recipes#variant-scoping). `scopeRoots: []` opts out of the scoping, not of the
   baseline.
@@ -337,17 +337,6 @@ else, so an element rendered by a dependency, by `dangerouslySetInnerHTML`, or b
 - There is no JSX factory to import at all, so `styled-system/jsx` — previously the largest generated barrel — is not
   generated.
 
-### A faster runtime
-
-- `css()` and the pattern helpers memoize their class names on a structural hash confirmed by an exact comparison.
-  Repeated `css()` calls get roughly 4-5x faster, multi-argument calls about 4x, and the pattern helpers – which were
-  not memoized at all – about 1.3x. Class name output is unchanged.
-- That cache is bounded. It previously grew for the lifetime of the process, which leaked in long-lived SSR.
-- Copying styles now happens at the `raw()` boundary rather than on every merge, so the two places that need an
-  independent object pay for it instead of every caller.
-- `splitProps` reads each key's descriptor on demand rather than building one for the whole object: 2.4-2.9x on plain
-  and frozen props. Accessor props, which is what Solid compiles to, keep the descriptor path.
-
 ### Optional zero-runtime output
 
 [`@bamboocss/vite`](/docs/guides/source-transformation) rewrites statically-resolvable calls into the class string they
@@ -361,16 +350,9 @@ export const title = css({ fontSize: 'lg', fontWeight: 'bold' })
 export const title = 'fs_lg fw_bold'
 ```
 
-It also folds pattern and config recipe calls, and follows named imports across files. CSS output is unchanged – only
-the JavaScript changes. It is off by default, build-only, and reports how much of your source it managed to fold.
-
-### Faster builds
-
-- The dependency graph resolves imports without initializing the TypeScript type checker, which was costing hundreds of
-  milliseconds on a cold build for what is only a filesystem question.
-- Watch mode builds the stylesheet once per edit rather than once per affected file. Editing a shared style file with 60
-  importers previously ran the full optimize pipeline and wrote to disk 61 times.
-- Editing a shared style file now re-parses the files importing it, so consumers stop emitting stale styles.
+It also folds pattern calls, config recipe calls, and inline and imported `cva` recipe calls – following named imports
+across files – and splits a partly static call so the half that resolves becomes a literal. CSS output is unchanged –
+only the JavaScript changes. It is on by default, build-only, and reports how much of your source it managed to fold.
 
 ---
 
@@ -452,7 +434,7 @@ export const title = 'fs_lg'
 ```
 
 It covers `css()`, pattern and config recipe calls, and the static half of anything only partly static. The CSS is
-unchanged; only the JavaScript is. Off by default and build-only – see
+unchanged; only the JavaScript is. On by default and build-only – see
 [Source Transformation](/docs/guides/source-transformation).
 
 ---
@@ -539,7 +521,7 @@ First of all you cast the css from the other library(s) to a css layer:
 Then update the default layer list to deprioritize the styles from the other library(s):
 
 ```css
-@layer bootstrap, reset, base, token, recipes, utilities;
+@layer bootstrap, reset, base, tokens, recipes, utilities;
 
-@layer ionic, reset, base, token, recipes, utilities;
+@layer ionic, reset, base, tokens, recipes, utilities;
 ```

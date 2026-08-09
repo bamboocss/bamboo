@@ -3,8 +3,6 @@ title: Using Remix
 description: How to use Bamboo with Remix with our dedicated integration.
 ---
 
-This guide will show you how to set up Bamboo CSS in a Remix project using PostCSS.
-
 ## Start a new project
 
 <Steps>
@@ -86,25 +84,8 @@ Install bamboo and create your `bamboo.config.ts` file.
 
 ### Update package.json scripts
 
-Open your `package.json` file and update the `scripts` section as follows:
-
-```diff {3} filename="package.json"
-{
-  "scripts": {
-+    "prepare": "bamboo codegen",
-    "build": "remix build",
-    "dev": "remix dev",
-    "start": "remix-serve build",
-    "typecheck": "tsc"
-  }
-}
-```
-
-- `"prepare"` - script that will run Bamboo CSS CLI codegen before each build. Read more about
-  [codegen](/docs/references/cli#codegen) in the CLI section.
-
-> This step ensures that the bamboo output directory is regenerated after each dependency installation. So you can add
-> the Bamboo CSS output directory to your `.gitignore` file and not worry about it.
+Add `"prepare": "bamboo codegen"` to `scripts`. It runs [codegen](/docs/references/cli#codegen) after every dependency
+install, so the output directory can stay in `.gitignore`.
 
 ### Configure the content
 
@@ -137,18 +118,25 @@ Create a new file `app/index.css` and add the following content:
 @layer reset, base, tokens, recipes, utilities;
 ```
 
-Import the `index.css` file in your `app/root.tsx` file and add the `styles` variable to the `links` function.
+Import the `index.css` file in your `app/root.tsx` file and add it to the `links` function. This guide uses the Remix
+classic compiler, so the import takes no `?url` suffix and `cssBundleHref` from `@remix-run/css-bundle` carries the
+bundled CSS:
 
-Please note the `?url` query parameter in the `import` statement. This is required by Vite to generate the correct path
-to the CSS file.
+```bash
+pnpm add @remix-run/css-bundle
+```
 
-```tsx filename="app/root.tsx" {4,6}
+```tsx filename="app/root.tsx" {1,5,8-9}
+import { cssBundleHref } from '@remix-run/css-bundle'
 import type { LinksFunction } from '@remix-run/node'
 import { Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration } from '@remix-run/react'
 
-import styles from './index.css?url'
+import styles from './index.css'
 
-export const links: LinksFunction = () => [{ rel: 'stylesheet', href: styles }]
+export const links: LinksFunction = () => [
+  ...(cssBundleHref ? [{ rel: 'stylesheet', href: cssBundleHref }] : []),
+  { rel: 'stylesheet', href: styles },
+]
 
 export default function App() {
   return (
@@ -172,41 +160,13 @@ export default function App() {
 
 ### Start your build process
 
-Run the following command to start your development server.
-
-<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
-  {/* <!-- prettier-ignore-start --> */}
-  <Tab>
-    ```bash
-    pnpm dev
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    npm run dev
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    yarn dev
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    bun dev
-    ```
-  </Tab>
-  {/* <!-- prettier-ignore-end --> */}
-</Tabs>
+Start the dev server with `pnpm dev`.
 
 ### Start using Bamboo
 
-Now you can start using Bamboo CSS in your project. Here is the snippet of code that you can use in your
-`app/routes/_index.tsx` file.
-
 ```tsx filename="app/routes/_index.tsx"
 import type { MetaFunction } from '@remix-run/node'
-import { css } from 'styled-system/css'
+import { css } from '../../styled-system/css'
 
 export const meta: MetaFunction = () => {
   return [{ title: 'New Remix App' }, { name: 'description', content: 'Welcome to Remix!' }]
@@ -221,15 +181,8 @@ export default function Index() {
 
 ## Troubleshooting
 
-If you're not getting import autocomplete in your IDE, you may need to include the `styled-system` directory in your
-`tsconfig.json` file:
-
-```json filename="tsconfig.json"
-{
-  // ...
-  "include": ["src", "styled-system"]
-}
-```
+If your IDE does not autocomplete `styled-system` imports, add that directory to `include` in `tsconfig.json`. See
+[the CLI guide](/docs/installation/cli#troubleshooting).
 
 If your app doesn't reload when making changes to the `bamboo.config.ts` file, consider adding `watchPaths` in your
 remix config file.

@@ -29,7 +29,7 @@ structure:
 styled-system/
 └── specs/                        # Generated documentation-ready spec files
     ├── animation-styles.json     # Animation style presets (empty if none defined)
-    ├── color-palette.json        # List of palette names (blue, teal, etc.)
+    ├── color-palette.json        # List of palette names (blue, teal, etc.) — conditional
     ├── conditions.json           # Condition selectors (_hover, _focus, ...)
     ├── keyframes.json            # Keyframe definitions (spin, ping, ...)
     ├── layer-styles.json         # Layer style definitions (card, overlay, ...)
@@ -37,8 +37,13 @@ styled-system/
     ├── recipes.json              # Component recipes + variants + defaults
     ├── semantic-tokens.json      # Semantic tokens with conditions (base, dark, etc.)
     ├── text-styles.json          # Text style definitions (xs, sm, md, ...)
+    ├── themes.json               # Per-theme tokens and semantic tokens — conditional
     └── tokens.json               # Raw design tokens grouped by category
 ```
+
+`color-palette.json` and `themes.json` are only written when there is something to write: the first when the theme
+defines at least one color palette and `theme.colorPalette.enabled` is not `false`, the second when `themes` is
+non-empty. The other nine are always emitted, with an empty `data` array if nothing is configured.
 
 Below is a breakdown of what each file contains and how it can be used.
 
@@ -151,36 +156,6 @@ Each semantic token in the `values` array includes:
 - **tokenFunctionExamples**: examples of how to use the token in the `token` function
 - **functionExamples**: examples of how to use the token in the `css` function
 
-#### Usage
-
-Here's an example of how to document semantic color tokens with their conditional values:
-
-```tsx
-import semanticTokens from 'styled-system/specs/semantic-tokens.json'
-
-const Demo = () => {
-  const colors = semanticTokens.data.find((token) => token.type === 'colors')
-  return (
-    <div>
-      {colors?.values.map((token) => (
-        <div key={token.name}>
-          <p>{token.name}</p>
-          <p>{token.cssVar}</p>
-          <div>
-            {token.values.map(({ condition, value }) => (
-              <div key={condition}>
-                <span>{condition}</span>
-                <p>{value}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-```
-
 ### `recipes.json`
 
 #### Structure
@@ -270,7 +245,9 @@ Contains a list of all color names defined in your palette.
 
 - `values` – an array of color keys (e.g., `"blue"`, `"teal"`, `"pink"` and more).
 - Does not contain the color scales (e.g., 500, 600); it only lists the available palette names.
-- Optional examples: `functionExamples`
+- `functionExamples` – examples of how to use `colorPalette` in the `css` function
+
+This file is only written when the theme has at least one color palette and `theme.colorPalette.enabled` is not `false`.
 
 ### `text-styles.json`
 
@@ -295,27 +272,6 @@ Each text style in the `data` array includes:
 - **name**: the text style name (e.g., `xs`, `sm`, `md`, `lg`, `xl`, `2xl`)
 - **functionExamples**: examples of how to use the text style in the `css` function
 
-#### Usage
-
-Here's an example of how to document text styles with a visual preview:
-
-```tsx
-import textStyles from 'styled-system/specs/text-styles.json'
-
-const Demo = () => {
-  return (
-    <div>
-      {textStyles.data.map((style) => (
-        <div key={style.name}>
-          <span className={css({ textStyle: style.name })}>{style.name}</span>
-          <p>The quick brown fox jumps over the lazy dog</p>
-        </div>
-      ))}
-    </div>
-  )
-}
-```
-
 ### `layer-styles.json`
 
 #### Structure
@@ -339,36 +295,16 @@ Each layer style in the `data` array includes:
 - **name**: the layer style name (e.g., `card`, `overlay`, `offShadow`)
 - **functionExamples**: examples of how to use the layer style in the `css` function
 
-#### Usage
-
-Here's an example of how to document layer styles with a visual preview:
-
-```tsx
-import layerStyles from 'styled-system/specs/layer-styles.json'
-
-const Demo = () => {
-  return (
-    <div>
-      {layerStyles.data.map((style) => (
-        <div key={style.name}>
-          <div className={css({ layerStyle: style.name })} />
-          <span>{style.name}</span>
-        </div>
-      ))}
-    </div>
-  )
-}
-```
-
 ### `animation-styles.json`
 
 Contains an array of animation style entries. Each entry includes:
 
 - `name` – the animation preset name
-- Animation properties such as `duration`, `timingFunction`, etc.
-- Optional examples: `functionExamples`
+- `description` – optional description of the preset
+- `functionExamples` – examples of how to use the animation style in the `css` function
 
-If no animation styles are configured in your `bamboo.config.ts` file , this file will contain an empty data array.
+The declarations themselves are not part of the spec. If no animation styles are configured in your `bamboo.config.ts`
+file, this file will contain an empty data array.
 
 ### `keyframes.json`
 
@@ -393,27 +329,6 @@ Each keyframe in the `data` array includes:
 - **name**: the keyframe name (e.g., `spin`, `ping`, `pulse`, `bounce`, `fade-in`)
 - **functionExamples**: examples of how to use the keyframe in the `css` function
 
-#### Usage
-
-Here's an example of how to document keyframes with animated previews:
-
-```tsx
-import keyframes from 'styled-system/specs/keyframes.json'
-
-const Demo = () => {
-  return (
-    <div>
-      {keyframes.data.map((keyframe) => (
-        <div key={keyframe.name}>
-          <div style={{ animation: `${keyframe.name} 1s ease-in-out infinite` }} />
-          <span>{keyframe.name}</span>
-        </div>
-      ))}
-    </div>
-  )
-}
-```
-
 ### `patterns.json`
 
 #### Structure
@@ -426,12 +341,10 @@ This file contains an array of pattern definitions for layout utilities.
   "data": [
     {
       "name": "flex",
-      "jsx": "Flex",
       "properties": [
-        { "name": "align", "type": "SystemProperties['alignItems']" },
-        { "name": "justify", "type": "SystemProperties['justifyContent']" },
-        { "name": "direction", "type": "SystemProperties['flexDirection']" },
-        { "name": "wrap", "type": "SystemProperties['flexWrap']" }
+        { "name": "align", "type": "SystemProperties[\"alignItems\"]" },
+        { "name": "justify", "type": "SystemProperties[\"justifyContent\"]" },
+        { "name": "direction", "type": "SystemProperties[\"flexDirection\"]" }
       ],
       "functionExamples": ["flex({ align: 'center' })", "flex({ justify: 'space-between' })"]
     }
@@ -439,10 +352,11 @@ This file contains an array of pattern definitions for layout utilities.
 }
 ```
 
+The `properties` array above is abridged — `flex` has seven.
+
 Each pattern in the `data` array includes:
 
 - **name**: the pattern function name (e.g., `flex`, `grid`, `stack`, `center`)
-- **jsx**: the JSX component name for the pattern (e.g., `Flex`, `Grid`, `Stack`)
 - **properties**: an array of pattern-specific props, each with:
   - **name**: the prop name (e.g., `align`, `justify`, `gap`)
   - **type**: the TypeScript type for the prop
@@ -462,11 +376,6 @@ const Demo = () => {
       {patterns.data.map((pattern) => (
         <div key={pattern.name}>
           <h3>{pattern.name}</h3>
-          <span>
-            {'<'}
-            {pattern.jsx} {'/'}
-            {'>'}
-          </span>
           {pattern.properties.length > 0 && (
             <table>
               <thead>
@@ -500,7 +409,15 @@ Contains an array of condition entries. Each entry includes:
 
 - `name` – the condition key used in style objects (e.g.,`_hover`, `_focus`, `_focusWithin`)
 - `value` – the CSS selector or media query that the condition maps to
-- Optional examples: `functionExamples`
+- `functionExamples` – examples of how to use the condition in the `css` function
+
+### `themes.json`
+
+Contains one entry per theme declared in `themes`. Each entry includes:
+
+- `name` – the theme key
+- `tokens` – the token groups the theme overrides, in the same shape as `tokens.json`
+- `semanticTokens` – the semantic token groups the theme overrides, in the same shape as `semantic-tokens.json`
 
 ## FAQs
 

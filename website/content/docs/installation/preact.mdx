@@ -3,28 +3,42 @@ title: Using Preact
 description: Easily use Bamboo with Preact with our dedicated integration.
 ---
 
-This guide shows you how to set up Bamboo CSS in a Preact project using PostCSS.
-
 ## Start a new project
 
 <Steps>
 
 ### Create Vite project
 
-To get started, we will need to create a new Preact project using `typescript` template.
+To get started, we will need to create a new Preact project using the `preact-ts` template.
 
-<Tabs items={['npm', 'yarn']}>
+<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
   {/* <!-- prettier-ignore-start --> */}
   <Tab>
     ```bash
-    npx preact-cli create typescript test-app
+    pnpm create vite test-app --template preact-ts
     cd test-app
+    pnpm install
     ```
   </Tab>
   <Tab>
     ```bash
-    npx preact-cli create typescript test-app --yarn
+    npm create vite@latest test-app -- --template preact-ts
     cd test-app
+    npm install
+    ```
+  </Tab>
+  <Tab>
+    ```bash
+    yarn create vite test-app --template preact-ts
+    cd test-app
+    yarn
+    ```
+  </Tab>
+  <Tab>
+    ```bash
+    bun create vite test-app --template preact-ts
+    cd test-app
+    bun install
     ```
   </Tab>
   {/* <!-- prettier-ignore-end --> */}
@@ -34,8 +48,14 @@ To get started, we will need to create a new Preact project using `typescript` t
 
 Install bamboo and create your `bamboo.config.ts` file.
 
-<Tabs items={['npm', 'yarn']}>
+<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
   {/* <!-- prettier-ignore-start --> */}
+  <Tab>
+    ```bash
+    pnpm install -D @bamboocss/dev
+    pnpm bamboo init --postcss
+    ```
+  </Tab>
   <Tab>
     ```bash
     npm install -D @bamboocss/dev
@@ -48,31 +68,19 @@ Install bamboo and create your `bamboo.config.ts` file.
     yarn bamboo init --postcss
     ```
   </Tab>
+  <Tab>
+    ```bash
+    bun add -D @bamboocss/dev
+    bun bamboo init --postcss
+    ```
+  </Tab>
   {/* <!-- prettier-ignore-end --> */}
 </Tabs>
 
 ### Update package.json scripts
 
-Open your `package.json` file and update the `scripts` section as follows:
-
-```diff {3} filename="package.json"
-{
-  "scripts": {
-+    "prepare": "bamboo codegen",
-    "build": "cross-env NODE_OPTIONS=--openssl-legacy-provider preact build",
-    "serve": "sirv build --cors --single",
-    "dev": "cross-env NODE_OPTIONS=--openssl-legacy-provider preact watch",
-    "lint": "eslint src",
-    "test": "jest"
-  }
-}
-```
-
-- `"prepare"` - script that will run Bamboo CSS CLI codegen before each build. Read more about
-  [codegen](/docs/references/cli#codegen) in the CLI section.
-
-> This step ensures that the bamboo output directory is regenerated after each dependency installation. So you can add
-> the output directory to your `.gitignore` file and not worry about it.
+Add `"prepare": "bamboo codegen"` to `scripts`. It runs [codegen](/docs/references/cli#codegen) after every dependency
+install, so the output directory can stay in `.gitignore`.
 
 ### Configure the content
 
@@ -93,57 +101,29 @@ export default defineConfig({
 
 ### Configure the entry CSS with layers
 
-Add this code to an `src/style/index.css` file imported in the root component of your project.
+Add this code to the `src/index.css` file that `src/main.tsx` already imports.
 
-```css filename="src/style/index.css"
+```css filename="src/index.css"
 @layer reset, base, tokens, recipes, utilities;
 ```
 
 ## Start your build process
 
-Run the following command to start your development server.
-
-<Tabs items={['npm', 'yarn']}>
-  {/* <!-- prettier-ignore-start --> */}
-  <Tab>
-    ```bash
-    npm run dev
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    yarn dev
-    ```
-  </Tab>
-  {/* <!-- prettier-ignore-end --> */}
-</Tabs>
+Start the dev server with `pnpm dev`.
 
 ### Start using Bamboo
 
-Now you can start using Bamboo CSS in your project. Here is the snippet of code that you can use in your
-`src/routes/home/index.tsx` file.
+```tsx filename="src/app.tsx"
+import { css } from '../styled-system/css'
 
-```tsx filename="src/routes/home/index.tsx"
-import { h } from 'preact'
-import { css } from '../../../styled-system/css'
-
-const Home = () => {
-  return <div class={css({ fontSize: '2xl', fontWeight: 'bold', pt: '56px' })}>Hello 🎋!</div>
+export const App = () => {
+  return <div class={css({ fontSize: '2xl', fontWeight: 'bold' })}>Hello 🎋!</div>
 }
-
-export default Home
 ```
 
 </Steps>
 
 ## Troubleshooting
 
-If you're not getting import autocomplete in your IDE, you may need to include the `styled-system` directory in your
-`tsconfig.json` file:
-
-```json filename="tsconfig.json"
-{
-  // ...
-  "include": ["src", "styled-system"]
-}
-```
+If your IDE does not autocomplete `styled-system` imports, add that directory to `include` in `tsconfig.json`. See
+[the CLI guide](/docs/installation/cli#troubleshooting).

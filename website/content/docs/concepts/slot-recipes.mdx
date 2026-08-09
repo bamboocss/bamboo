@@ -77,49 +77,41 @@ const Checkbox = () => {
 }
 ```
 
-When a slot recipe is created, Bamboo will pre-generate the css of all the possible combinations of variants and
-compound variants as atomic classes.
+Bamboo emits the recipe into the `recipes.slots` layer: one constant class per slot, and each variant's rules `@scope`d
+by the class the root slot carries for it.
 
 ```css
-@layer utilities {
-  .border_width_1px {
-    border-width: 1px;
+@layer recipes.slots {
+  .sva_gCdRhI__root {
+    gap: var(--spacing-2);
+    display: flex;
+    align-items: center;
   }
 
-  .rounded_sm {
+  .sva_gCdRhI__control {
+    border-width: 1px;
     border-radius: var(--radii-sm);
   }
 
-  .margin_start_2 {
+  .sva_gCdRhI__label {
     margin-inline-start: var(--spacing-2);
   }
 
-  .w_8 {
-    width: var(--sizing-8);
-  }
+  @scope (.sva_gCdRhI__root--size_sm) to (.sva_gCdRhI__root) {
+    .sva_gCdRhI__control {
+      width: var(--sizes-8);
+      height: var(--sizes-8);
+    }
 
-  .h_8 {
-    height: var(--sizing-8);
+    .sva_gCdRhI__label {
+      font-size: var(--font-sizes-sm);
+    }
   }
-
-  .font_size_sm {
-    font-size: var(--fontSizes-sm);
-  }
-
-  .w_10 {
-    width: var(--sizing-10);
-  }
-
-  .h_10 {
-    height: var(--sizing-10);
-  }
-
-  .font_size_md {
-    font-size: var(--fontSizes-md);
-  }
-  /* ... */
+  /* ... and the same block for size_md */
 }
 ```
+
+The non-root slots carry no variant class of their own — see [Variant scoping](#variant-scoping) for why.
 
 ### Compound Variants
 
@@ -204,21 +196,15 @@ export type CheckboxVariants = RecipeVariantProps<typeof checkbox>
 
 ### Usage in JSX
 
-A slot recipe returns a record of classes rather than a single class, so each slot picks its own.
+A slot recipe returns a record of classes rather than a single class, so each slot picks its own. The component from
+[Using the recipe](#using-the-recipe) takes its variants as props:
 
-```jsx
-import { css } from '../styled-system/css'
+```tsx
 import { checkbox, type CheckboxVariants } from './checkbox.recipe'
 
 const Checkbox = (props: CheckboxVariants) => {
   const classes = checkbox(props)
-  return (
-    <label className={classes.root}>
-      <input type="checkbox" className={css({ srOnly: true })} />
-      <div className={classes.control} />
-      <span className={classes.label}>Checkbox Label</span>
-    </label>
-  )
+  // ...markup unchanged
 }
 ```
 
@@ -425,42 +411,8 @@ scopeRoots: [] // every slot keeps its own variant class, and stays callable
 
 ### Styling JSX Compound Components
 
-Compound components are a great way to create reusable components for better composition. With scoping, a compound
-component needs no context at all — each part reads its own constant class:
-
-```jsx
-const Checkbox = ({ size, children }) => <label className={checkbox.root({ size })}>{children}</label>
-Checkbox.Control = () => <div className={checkbox.control} />
-Checkbox.Label = ({ children }) => <span className={checkbox.label}>{children}</span>
-```
-
-A **portal** keeps one context, and it is worth being exact about what for. Two different things can need the variant
-delivered:
-
-1. **A second anchor.** The portaled subtree is its own anchor, so name it in
-   [`scopeRoots`](#components-that-span-a-portal) alongside the root — and then _deliver the variant to it_, because an
-   anchor is callable and the consumer authors it as a sibling of the root. This is the one context a portaled component
-   keeps; see [The second anchor still needs the variant](#the-second-anchor-still-needs-the-variant).
-2. **A slot no anchor reaches.** Once both anchors are named this is usually empty. When it is not, `slotsAffectedBy`
-   says which slots a variant actually writes styles for, so only those need threading:
-
-   ```js
-   checkbox.variantKeys //          ['size']
-   checkbox.slotsAffectedBy.size // ['control', 'label']
-   ```
-
-   [`auditSlotScopes`](#catching-an-unreachable-slot-in-development) reports this case at runtime in development, since
-   no build step can detect it.
-
-A component with no portal has a single anchor — the element already receiving the props — so it needs no context at
-all.
-
-> **Note:** This is an advanced topic and you don't need to understand it to use slot recipes.
-
-The one shape that still needs a context is a component that spans a portal, and it needs it for its _second anchor_
-rather than for its slots. `createStyleContext`-style helpers — a provider per slot, wrapping every part — were the
-answer when each slot carried its own variant class. Scoping removes that need: a slot's class is a constant, so it can
-be read directly.
+With scoping, a compound component needs no context and no wrapper per part — a slot's class is a constant, so each part
+reads its own:
 
 ```jsx
 // no provider, no context, no wrapper per part
@@ -469,8 +421,9 @@ Checkbox.Control = () => <div className={checkbox.control} />
 Checkbox.Label = ({ children }) => <span className={checkbox.label}>{children}</span>
 ```
 
-If you use React and do need a context for a portaled anchor, remember it makes the file a client component — add
-`'use client'` at the top.
+The one shape that still needs a context is a component spanning a portal, and it needs it for its second _anchor_
+rather than for its slots — see [The second anchor still needs the variant](#the-second-anchor-still-needs-the-variant).
+In React that makes the file a client component, so add `'use client'` at the top.
 
 ## Config Slot Recipe
 
@@ -569,44 +522,37 @@ const Checkbox = () => {
 }
 ```
 
-The generated css is registered under the `recipe` [cascade layer](/docs/concepts/cascade-layers) with the class name
-that matches the recipe-slot-variant name pattern `<recipe-className>__<slot-name>--<variant-name>`.
+The generated css is registered under the `recipes.slots` [cascade layer](/docs/concepts/cascade-layers). Every slot
+carries a constant `<recipe-className>__<slot-name>` class; the anchor slot additionally carries
+`<recipe-className>__<slot-name>--<variant-name>_<variant-value>`, which scopes the other slots' variant rules — see
+[Variant scoping](#variant-scoping).
 
 ```css
-@layer recipes {
-  @layer base {
-    .checkbox__root {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-    }
+@layer recipes.slots {
+  .checkbox__root {
+    gap: var(--spacing-2);
+    display: flex;
+    align-items: center;
+  }
 
+  .checkbox__control {
+    border-width: 1px;
+    border-radius: var(--radii-sm);
+  }
+
+  .checkbox__label {
+    margin-inline-start: var(--spacing-2);
+  }
+
+  @scope (.checkbox__root--size_sm) to (.checkbox__root) {
     .checkbox__control {
-      border-width: var(--border-widths-1px);
-      border-radius: var(--radii-sm);
+      width: var(--sizes-8);
+      height: var(--sizes-8);
     }
 
     .checkbox__label {
-      margin-start: var(--space-2);
+      font-size: var(--font-sizes-sm);
     }
-  }
-
-  .checkbox__control--size-sm {
-    width: var(--space-8);
-    height: var(--space-8);
-  }
-
-  .checkbox__label--size-sm {
-    font-size: var(--font-sizes-sm);
-  }
-
-  .checkbox__control--size-md {
-    width: var(--space-10);
-    height: var(--space-10);
-  }
-
-  .checkbox__label--size-md {
-    font-size: var(--font-sizes-md);
   }
 }
 ```
@@ -639,7 +585,7 @@ It pairs well with [ZagJs](https://zagjs.com/) and [Ark-UI](https://ark-ui.com/)
 Let's refactor the previous example to use parts instead of slots:
 
 ```ts
-import { defineParts, definetRecipe } from '@bamboocss/dev'
+import { defineParts, defineRecipe } from '@bamboocss/dev'
 
 const parts = defineParts({
   root: { selector: '& [data-part="root"]' },

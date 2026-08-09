@@ -8,22 +8,7 @@ lifecycle.
 
 Hooks are mostly callbacks that can be added to the bamboo config via the `hooks` property, or installed via `plugins`.
 
-Here are some examples of what you can do with hooks:
-
-- modify the resolved config (`config:resolved`), like strip out tokens or keyframes.
-- modify presets after they are resolved (`preset:resolved`), like removing specific tokens or theme properties from a
-  preset.
-- tweak the design token or classname engine (`tokens:created`, `utility:created`), like prefixing token names, or
-  customizing the hashing function
-- transform a source file to a `tsx` friendly syntax before it's parsed (`parser:before`) so that Bamboo can
-  automatically extract its styles usage
-- create your own styles parser (`parser:before`, `parser:after`) using the file's content so that Bamboo could be used
-  with any templating language
-- alter the generated JS and DTS code (`codegen:prepare`)
-- modify the generated CSS (`cssgen:done`), for anything the built-in passes do not cover — rewriting asset URLs,
-  prepending a licence banner, running the output through another processor
-- restrict `strictTokens` to a specific set of token categories, ex: only affect `colors` and `spacing` tokens and
-  therefore allow any value for `fontSizes` and `lineHeights`
+See the [Reference](#reference) below for the full list of hooks and their signatures.
 
 ## Examples
 
@@ -207,7 +192,8 @@ export interface BambooHooks {
    */
   'config:resolved': (args: ConfigResolvedHookArgs) => MaybeAsyncReturn<void | ConfigResolvedHookArgs['config']>
   /**
-   * Called when a preset is resolved, allowing you to modify it before it's merged into the config.
+   * Called when each preset is resolved, allowing modification of individual presets.
+   * This hook is called for each preset during the resolution process, before they are merged together.
    */
   'preset:resolved': (args: PresetResolvedHookArgs) => MaybeAsyncReturn<void | PresetResolvedHookArgs['preset']>
   /**
@@ -241,7 +227,7 @@ export interface BambooHooks {
    * Called right before writing the codegen files to disk.
    * You can use this hook to tweak the codegen files before they are written to disk.
    */
-  'codegen:prepare': (args: CodegenPrepareHookArgs) => MaybeAsyncReturn<Artifact[]>
+  'codegen:prepare': (args: CodegenPrepareHookArgs) => MaybeAsyncReturn<void | Artifact[]>
   /**
    * Called after the codegen is completed
    */
@@ -252,5 +238,11 @@ export interface BambooHooks {
    * You can use it to tweak the CSS content before it's written to disk or injected through the postcss plugin.
    */
   'cssgen:done': (args: CssgenDoneHookArgs) => string | void
+  /**
+   * Called when CSS needs to be optimized. Use this hook to replace the default PostCSS-based optimizer
+   * with a custom one (e.g. LightningCSS).
+   * Return the optimized CSS string, or void to fall through to the default PostCSS optimizer.
+   */
+  'css:optimize': (args: CssOptimizeHookArgs) => string | void
 }
 ```

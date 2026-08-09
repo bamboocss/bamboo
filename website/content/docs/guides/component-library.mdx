@@ -144,6 +144,29 @@ This approach comes with a few downsides:
   your app code
 - have your component library (`@acme-org/components`) use the `@acme-org/styled-system` package as external
 
+De-coupling the component library from the `styled-system` lets your users share one copy of the runtime between your
+library and their app code, and lets them pass styles in:
+
+```tsx filename="component-lib/src/button.tsx"
+import { css } from '@acme-org/styled-system/css'
+
+export function Button({ children, css: cssProp }) {
+  return (
+    <button type="button" className={css({ bg: 'red.300', px: '2', py: '3' }, cssProp)}>
+      {children}
+    </button>
+  )
+}
+```
+
+```tsx filename="app/src/App.tsx"
+import { Button } from '@acme-org/design-system'
+
+export function App() {
+  return <Button css={{ color: 'white' }}>Click me</Button>
+}
+```
+
 ---
 
 Let's make a dedicated workspace package for your `outdir`:
@@ -192,7 +215,7 @@ This should look similar to this:
     "./styles.css": "./styles.css"
   },
   "devDependencies": {
-    "@bamboocss/dev": "^1.4.2",
+    "@bamboocss/dev": "^1.28.0",
     "@types/react": "19.2.2",
     "react": "^19.2.0"
   },
@@ -247,6 +270,8 @@ runtime code is imported only once, avoiding duplication.
 tsdown src/index.tsx --external @acme-org/styled-system
 ```
 
+Both variants below share that setup. They differ only in what the app's `include` points at.
+
 ### Include the src files
 
 Include the `src` directory from the library code in the bamboo config.
@@ -278,34 +303,6 @@ Generate the build info file:
 bamboo ship --outfile dist/bamboo.buildinfo.json
 ```
 
-**App code**
-
-Install the newly created `@acme-org/styled-system` package in your app code.
-
-```bash
-pnpm add @acme-org/styled-system
-```
-
-Configure the `importMap` in your `bamboo.config.ts` to match the `name` field of your outdir `package.json`. This will
-inform Bamboo which imports belong to the `styled-system`.
-
-```tsx filename="bamboo.config.ts"
-import { defineConfig } from '@bamboocss/dev'
-
-export default defineConfig({
-  //...
-  importMap: '@acme-org/styled-system',
-  outdir: 'styled-system',
-})
-```
-
-Will allow imports like:
-
-```tsx
-import { css } from '@acme-org/styled-system/css'
-import { button } from '@acme-org/styled-system/recipes'
-```
-
 Next, you need to include the build info file from the library code in the bamboo config.
 
 ```tsx {6} filename="bamboo.config.ts"
@@ -320,70 +317,6 @@ export default defineConfig({
 ```
 
 ## FAQ
-
-### Why should my component library use an external package `styled-system`?
-
-By de-coupling the component library from the `styled-system`, your users can share the same runtime code between your
-library and their app code.
-
-```tsx filename="component-lib/src/button.tsx"
-import { css } from '@acme-org/styled-system/css'
-
-export function Button({ children, css: cssProp }) {
-  return (
-    <button type="button" className={css({ bg: 'red.300', px: '2', py: '3' }, cssProp)}>
-      {children}
-    </button>
-  )
-}
-```
-
-```tsx filename="app/src/App.tsx"
-import { Button } from '@acme-org/design-system'
-import { css } from '@acme-org/styled-system/css'
-
-export function App() {
-  return <Button css={{ color: 'white' }}>Click me</Button>
-}
-```
-
-Marking the `styled-system` as an external package in your build tool means that the generated JS runtime code (the
-`css` function is the example above) is imported only once, avoiding duplication.
-
-### How do I use the `@acme-org/styled-system` package ?
-
-You can use your monorepo workspace package `@acme-org/styled-system` just like any other dependency in your app or
-component library code.
-
-```bash
-pnpm add @acme-org/styled-system
-```
-
-Set the `importMap` in your `bamboo.config.ts` to that same package name. This will inform Bamboo which imports belong
-to the `styled-system`.
-
-```tsx filename="bamboo.config.ts"
-import { defineConfig } from '@bamboocss/dev'
-
-export default defineConfig({
-  //...
-  importMap: '@acme-org/styled-system',
-})
-```
-
-Then you can import the functions from the `@acme-org/styled-system` monorepo package.
-
-```tsx
-import { css } from '@acme-org/styled-system/css'
-
-export function Button({ children }) {
-  return (
-    <button type="button" className={css({ bg: 'red.300', px: '2', py: '3' })}>
-      {children}
-    </button>
-  )
-}
-```
 
 ### How to override tokens used by the `@acme-org/styled-system` package?
 

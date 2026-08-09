@@ -5,12 +5,8 @@ description:
   predefined patterns like stack, hstack, vstack, wrap, etc. Each one is a function that returns a class name.
 ---
 
-Think of patterns as a set of predefined styles to reduce repetition and improve readability. You can override the
-properties as needed, just like in the `css` function.
-
-## Creating Patterns
-
-To learn how to create patterns, check out the [customization](/docs/customization/patterns) section.
+Pattern properties can be overridden as needed, just like in the `css` function. To define your own, see
+[customization](/docs/customization/patterns).
 
 ## Predefined Patterns
 
@@ -82,8 +78,8 @@ function App() {
 
 #### HStack
 
-The HStack pattern is a wrapper around the `stack` pattern that sets the `direction` property to `horizontal`, and
-centers the elements vertically.
+The HStack pattern lays its children out in a `row` and centers them vertically. It accepts `gap` and `justify` (an
+alias for the css `justify-content` property).
 
 ```tsx
 import { hstack } from '../styled-system/patterns'
@@ -101,8 +97,8 @@ function App() {
 
 #### VStack
 
-The VStack pattern is a wrapper around the `stack` pattern that sets the `direction` property to `vertical`, and centers
-the elements horizontally.
+The VStack pattern lays its children out in a `column` and centers them horizontally. It accepts `gap` and `justify` (an
+alias for the css `justify-content` property).
 
 ```tsx
 import { vstack } from '../styled-system/patterns'
@@ -174,7 +170,7 @@ The Flex pattern is used to create a flex container and provides some shortcuts 
 The `flex` function accepts the following properties:
 
 - `direction`: The flex direction of the container. Can be `row`, `column`, `row-reverse` or `column-reverse`.
-- `wrap`: Whether to wrap the flex items. The value is a boolean.
+- `wrap`: An alias for the css `flex-wrap` property.
 - `align`: An alias for the css `align-items` property.
 - `justify`: An alias for the css `justify-content` property.
 - `basis`: An alias for the css `flex-basis` property.
@@ -245,8 +241,8 @@ The Float pattern is used to anchor an element to the top, bottom, left or right
 
 The `float` function accepts the following properties:
 
-- `placement`: The placement of the element. Can be `top-start`, `top`, `top-end`, `bottom-start`, `bottom`,
-  `bottom-end`, `left-start`, `left`, `left-end`, `right-start`, `right` or `right-end`.
+- `placement`: The placement of the element. Can be `bottom-end`, `bottom-start`, `top-end`, `top-start`,
+  `bottom-center`, `top-center`, `middle-center`, `middle-end` or `middle-start`. Defaults to `top-end`.
 - `offset`: The offset of the element from the edge of the container. Can be a number or a string.
 - `offsetX`: Same as `offset`, but only for the horizontal axis.
 - `offsetY`: Same as `offset`, but only for the vertical axis.
@@ -373,6 +369,29 @@ function App() {
 }
 ```
 
+### Spacer
+
+The Spacer pattern is used to create an adjustable, empty space in a flex or grid layout.
+
+The `spacer` function accepts the following properties:
+
+- `size`: The fixed size of the spacer. Can be a spacing token, or arbitrary value. When omitted, the spacer grows to
+  fill the remaining space.
+
+```tsx
+import { hstack, spacer } from '../styled-system/patterns'
+
+function App() {
+  return (
+    <div className={hstack()}>
+      <div>Logo</div>
+      <div className={spacer()} />
+      <div>Menu</div>
+    </div>
+  )
+}
+```
+
 ### Visually Hidden
 
 The Visually Hidden pattern is used to hide an element visually, but keep it accessible to screen readers.
@@ -383,9 +402,7 @@ import { visuallyHidden } from '../styled-system/patterns'
 export function Checkbox() {
   return (
     <label>
-      <input type="checkbox" className={visuallyHidden()}>
-        I'm hidden
-      </input>
+      <input type="checkbox" className={visuallyHidden()} />
       <span>Checkbox</span>
     </label>
   )

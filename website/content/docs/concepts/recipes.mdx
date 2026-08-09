@@ -73,18 +73,18 @@ rule per variant, in the `recipes` layer.
 
 ```css
 @layer recipes {
-  .cva_bMDqTx {
+  .cva_dtkzrK {
     display: flex;
   }
 
-  .cva_bMDqTx--visual_solid {
-    background-color: #fed7d7;
-    color: #fff;
+  .cva_dtkzrK--visual_solid {
+    background: var(--colors-red-200);
+    color: var(--colors-white);
   }
 
-  .cva_bMDqTx--visual_outline {
+  .cva_dtkzrK--visual_outline {
     border-width: 1px;
-    border-color: #fed7d7;
+    border-color: var(--colors-red-200);
   }
   /* ... */
 }
@@ -92,7 +92,7 @@ rule per variant, in the `recipes` layer.
 
 ### Naming the recipe
 
-`cva_bMDqTx` above is derived by hashing the config, because an inline recipe has no name to take. Both the stylesheet
+`cva_dtkzrK` above is derived by hashing the config, because an inline recipe has no name to take. Both the stylesheet
 and the browser derive it the same way from the same object, so it is stable — but it is not readable.
 
 Set `className` when you want it to be:
@@ -247,21 +247,16 @@ const Button = () => {
 }
 ```
 
-Overall, using compound variants allows you to create more complex sets of styles that can be applied to your components
-based on multiple conditions.
-
-By combining simple variants together in this way, you can create a wide range of visual styles without cluttering up
-your code with lots of conditional logic.
-
 ### TypeScript Guide
 
 Bamboo provides two type utilities for inferring the variant types of a recipe: `RecipeVariant` and
 `RecipeVariantProps`.
 
-Use `RecipeVariant` to infer the raw variant type of a recipe. Each variant key is required.
+`RecipeVariant` gives the raw variant type, where each key is required. `RecipeVariantProps` gives the JSX prop type,
+where each key is optional.
 
 ```tsx
-import { cva, type RecipeVariant } from '../styled-system/css'
+import { cva, type RecipeVariant, type RecipeVariantProps } from '../styled-system/css'
 
 const buttonStyle = cva({
   base: {
@@ -280,31 +275,8 @@ const buttonStyle = cva({
   },
 })
 
-export type ButtonVariants = RecipeVariant<typeof buttonStyle>
+export type ButtonVariant = RecipeVariant<typeof buttonStyle>
 // { size: 'small' | 'large' }
-```
-
-Use `RecipeVariantProps` when you want to use the recipe in JSX and need type safety for the variants as optional props.
-
-```tsx
-import { cva, type RecipeVariantProps } from '../styled-system/css'
-
-const buttonStyle = cva({
-  base: {
-    color: 'red',
-    textAlign: 'center',
-  },
-  variants: {
-    size: {
-      small: {
-        fontSize: '1rem',
-      },
-      large: {
-        fontSize: '2rem',
-      },
-    },
-  },
-})
 
 export type ButtonVariants = RecipeVariantProps<typeof buttonStyle>
 // { size?: 'small' | 'large' | undefined } | undefined
@@ -447,27 +419,29 @@ function App() {
 }
 ```
 
-The generated css is registered under the `recipe` [cascade layer](/docs/concepts/cascade-layers) with the class name
-that matches the recipe-variant name pattern `<recipe-className>--<variant-name>`.
+The generated css is registered under the `recipes` [cascade layer](/docs/concepts/cascade-layers) with the class name
+that matches the recipe-variant name pattern `<recipe-className>--<variant-name>_<variant-value>`.
 
 > **Technical Notes 📝:** Only the recipe and variants used in your application are generated. Not more!
 
 ```css
 @layer recipes {
-  @layer base {
-    .button {
-      font-size: var(--font-sizes-lg);
-    }
+  .button {
+    display: flex;
   }
 
-  .button--visual-funky {
-    background-color: var(--colors-red-200);
+  .button--visual_funky {
+    background: var(--colors-red-200);
     color: var(--colors-white);
   }
 
-  .button--size-lg {
-    padding: var(--space-8);
-    font-size: var(--font-sizes-40px);
+  .button--size_sm {
+    padding: var(--spacing-4);
+    font-size: 12px;
+  }
+
+  .button--shape_circle {
+    border-radius: var(--radii-full);
   }
 }
 ```
@@ -705,20 +679,8 @@ export const Demo = {
   }
   ```
 
-  **When you use the recipe in a custom component that is not named as per the recipe name, Bamboo won't be able to
-  track the usage of the recipe variants.**
-
-  In below example, the component name `Button` is renamed to `Random` and we are using `button` recipe.
-
-  ```tsx
-  const Random = ({ size, children }) => {
-    return (
-      <button {...props} className={button({ size })}>
-        {children}
-      </button>
-    )
-  }
-  ```
+  The same applies when the component itself is renamed away from the recipe name — the identical body declared as
+  `const Random = ({ size, children }) => …` is not tracked either.
 
 - When using `compoundVariants` in the recipe, you're not able to use responsive values in the variants.
 
@@ -767,19 +729,10 @@ More information about static CSS can be found [here](/docs/guides/static#genera
 
 ## Should I use atomic or config recipes ?
 
-[Config recipes](/docs/concepts/recipes#config-recipe) are generated just in time, meaning that only the recipes and
-variants you use will exist in the generated CSS, regardless of the number of recipes in the config.
-
-This contrasts with [Atomic recipes](/docs/concepts/recipes#atomic-recipe-or-cva) (cva), which generates all of the
-variants regardless of what was used in your code. The reason for this difference is that all `config.recipes` are known
-at the start of the bamboo process when we evaluate your config.
-
-In contrast, the CVA recipes are scattered throughout your code. To get all of them and find their usage across your
-code, we would need to scan your app code multiple times, which would not be ideal performance-wise.
-
-When dealing with simple use cases, or if you need code colocation, or even avoiding dynamic styling, atomic recipes
-shine by providing all style variants. Config recipes are preferred for design system components, delivering leaner CSS
-with only the styles used. Choose according to your component needs.
+[Config recipes](/docs/concepts/recipes#config-recipe) are generated just in time — only the variants your code uses
+reach the CSS — because all of `config.recipes` is known when the config is evaluated.
+[Atomic recipes](/docs/concepts/recipes#atomic-recipe-or-cva) (`cva`) are scattered through your source instead, so all
+of their variants are emitted rather than scanning your app code repeatedly to find which are used.
 
 |                                                        | Config recipe                                                                                                                                                                                                             | Atomic recipe (cva)                                                                                                                                                                                                  |
 | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

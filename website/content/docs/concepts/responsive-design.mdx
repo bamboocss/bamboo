@@ -3,11 +3,7 @@ title: Responsive Design
 description: How to write mobile responsive designs in your CSS in Bamboo
 ---
 
-Responsive design is a fundamental aspect of modern web development, allowing websites and applications to adapt
-seamlessly to different screen sizes and devices.
-
-Bamboo provides a comprehensive set of responsive utilities and features to facilitate the creation of responsive
-layouts. It lets you do this through conditional styles for different breakpoints.
+Bamboo expresses responsive styles as conditional styles keyed by breakpoint.
 
 Let's say you want to change the font weight of a text on large screens, you can do it like this:
 
@@ -126,12 +122,7 @@ Let's say we want to apply styles only in the `lg` breakpoint, we use the `lgOnl
 
 ### Customizing Breakpoints
 
-When encountering certain scenarios, it may become necessary to establish custom breakpoints tailored to your
-application's needs. It is advisable to utilize commonly used aliases such as `sm`, `md`, `lg`, and `xl` for this
-purpose.
-
-In order to define custom breakpoints, you can easily accomplish this by passing them as an object within your Bamboo
-config.
+Define custom breakpoints by passing them as an object in your Bamboo config.
 
 > Note: Make sure that the CSS units of your breakpoints are consistent. Use either all pixels (`px`) or all `em`, but
 > do not mix them.

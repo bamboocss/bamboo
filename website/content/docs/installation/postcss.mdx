@@ -3,9 +3,6 @@ title: Using PostCSS
 description: Installing Bamboo as a PostCSS plugin is the recommended way to integrate it with your project.
 ---
 
-This guide shows you how to install Bamboo as a PostCSS plugin, which is the recommended way to integrate it with your
-project.
-
 <Steps>
 ### Install Bamboo
 
@@ -15,25 +12,25 @@ Install bamboo and create your `bamboo.config.ts` file.
   {/* <!-- prettier-ignore-start --> */}
   <Tab>
     ```bash
-    pnpm install -D @bamboocss/dev postcss
+    pnpm install -D @bamboocss/dev postcss postcss-cli
     pnpm bamboo init -p
     ```
   </Tab>
   <Tab>
     ```bash
-    npm install -D @bamboocss/dev postcss
+    npm install -D @bamboocss/dev postcss postcss-cli
     npx bamboo init -p
     ```
   </Tab>
   <Tab>
     ```bash
-    yarn add -D @bamboocss/dev postcss
+    yarn add -D @bamboocss/dev postcss postcss-cli
     yarn bamboo init -p
     ```
   </Tab>
   <Tab>
     ```bash
-    bun add -D @bamboocss/dev postcss
+    bun add -D @bamboocss/dev postcss postcss-cli
     bun bamboo init -p
     ```
   </Tab>
@@ -69,21 +66,8 @@ export default defineConfig({
 
 ### Update package.json scripts
 
-Open your `package.json` file and update the `scripts` section as follows:
-
-```diff {3}
-{
-  "scripts": {
-+    "prepare": "bamboo codegen",
-  }
-}
-```
-
-The `prepare` script will run codegen after dependency installation. Read more about
-[codegen](/docs/references/cli#codegen) in the CLI section.
-
-> This step ensures that the bamboo output directory is regenerated after each dependency installation. So you can add
-> the output directory to your `.gitignore` file and not worry about it.
+Add `"prepare": "bamboo codegen"` to `scripts`. It runs [codegen](/docs/references/cli#codegen) after every dependency
+install, so the output directory can stay in `.gitignore`.
 
 ### Configure the entry CSS with layers
 
@@ -107,10 +91,11 @@ Run your build process by feeding the [root css](#configure-the-entry-css-with-l
   <Tab>
     ```js
     const postcss = require("postcss");
+    const bamboocss = require("@bamboocss/dev/postcss");
     const fs = require("fs");
 
     fs.readFile("index.css", (err, css) => {
-      postcss()
+      postcss([bamboocss])
         .process(css, { from: "index.css", to: "output.css" })
         .then((result) => {
           console.log(result.css);
@@ -141,12 +126,5 @@ export function App() {
 
 ## Troubleshooting
 
-If you're not getting import autocomplete in your IDE, you may need to include the `styled-system` directory in your
-`tsconfig.json` file:
-
-```json filename="tsconfig.json"
-{
-  // ...
-  "include": ["src", "styled-system"]
-}
-```
+If your IDE does not autocomplete `styled-system` imports, add that directory to `include` in `tsconfig.json`. See
+[the CLI guide](/docs/installation/cli#troubleshooting).

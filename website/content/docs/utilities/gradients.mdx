@@ -67,45 +67,17 @@ Create sweeping color transitions that rotate around a central point:
 css({
   boxSize: '24',
   rounded: 'full',
-  bgConic: 'in srgb',
-  gradientFrom: 'blue.600',
-  gradientTo: 'sky.400',
-  gradientToPosition: '50%',
-})
-css({
-  boxSize: '24',
-  rounded: 'full',
   bgConic: 'from 180deg',
   gradientFrom: 'blue.600',
   gradientVia: 'blue.50',
   gradientTo: 'blue.600',
 })
-css({
-  boxSize: '24',
-  rounded: 'full',
-  bgConic: 'in oklch decreasing hue',
-  gradientFrom: 'violet.700',
-  gradientVia: 'lime.300',
-  gradientTo: 'violet.700',
-})
 ```
 
-### Controlling color stops
+### Color stops
 
-Define which colors appear in your gradient using `gradientFrom`, `gradientVia`, and `gradientTo`:
-
-```jsx
-css({
-  bgLinear: 'to-r',
-  gradientFrom: 'indigo.500',
-  gradientVia: 'purple.500',
-  gradientTo: 'pink.500',
-})
-```
-
-### Positioning color stops
-
-Control exactly where each color appears along the gradient using position utilities:
+`gradientFrom`, `gradientVia` and `gradientTo` set the colors; the matching `*Position` utilities take a length or
+percentage and place them along the gradient.
 
 ```jsx
 css({
@@ -130,20 +102,6 @@ css({
   gradientTo: 'pink.400',
   fontSize: '4xl',
   fontWeight: 'bold',
-})
-```
-
-### Custom gradient values
-
-Use bracket notation to create gradients with arbitrary values:
-
-```jsx
-css({
-  bgLinear: '25deg',
-  gradientFrom: 'red.50%',
-  gradientVia: 'yellow.60%',
-  gradientTo: 'lime.90%',
-  gradientToPosition: 'teal.100%',
 })
 ```
 

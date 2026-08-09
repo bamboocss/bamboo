@@ -90,6 +90,7 @@ npx -y @bamboocss/mcp --cwd ./my-project
 | --------------------- | -------------------------- |
 | `--config, -c <path>` | Path to Bamboo config file |
 | `--cwd <path>`        | Current working directory  |
+| `--help, -h`          | Show usage and exit        |
 
 It is packaged separately because the Model Context Protocol SDK brings an HTTP server and a JOSE implementation with it
 – around 18 MB, several times the weight of Bamboo's own CSS toolchain. Keeping it out of `@bamboocss/dev` means a
@@ -153,12 +154,8 @@ current working directory when started.
 
 ## Manual Configuration
 
-If you prefer to configure MCP manually, create the appropriate config file for your AI client. Replace `<version>` with
-your installed Bamboo version:
-
-### Claude
-
-Create `.mcp.json` in your project root:
+If you prefer to configure MCP manually, create the config file your client expects — the paths are in the table above —
+with these contents. Replace `<version>` with your installed Bamboo version:
 
 ```json
 {
@@ -171,39 +168,10 @@ Create `.mcp.json` in your project root:
 }
 ```
 
-### Cursor
+VS Code is the one exception: `.vscode/mcp.json` names the top-level key `servers` rather than `mcpServers`. Everything
+under it is the same.
 
-Create `.cursor/mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "bamboo": {
-      "command": "npx",
-      "args": ["-y", "@bamboocss/mcp@<version>"]
-    }
-  }
-}
-```
-
-### VS Code
-
-Create `.vscode/mcp.json`:
-
-```json
-{
-  "servers": {
-    "bamboo": {
-      "command": "npx",
-      "args": ["-y", "@bamboocss/mcp@<version>"]
-    }
-  }
-}
-```
-
-### Custom Config Path
-
-If your Bamboo config is not in the default location, specify it explicitly:
+If your Bamboo config is not in the default location, pass it explicitly:
 
 ```json
 {
@@ -215,34 +183,6 @@ If your Bamboo config is not in the default location, specify it explicitly:
   }
 }
 ```
-
-## Example Interactions
-
-Here are some example prompts you can use with AI assistants once MCP is configured:
-
-### Exploring Tokens
-
-> "What spacing tokens are available?"
-
-The AI will use `get_tokens` with `category: "spacing"` to show you all spacing values.
-
-### Understanding Recipes
-
-> "How do I use the button recipe with a destructive variant?"
-
-The AI will use `get_recipes` with `name: "button"` to show variants and usage.
-
-### Finding Unused Tokens
-
-> "Which design tokens are not being used in my codebase?"
-
-The AI will use `get_usage_report` with `scope: "token"` to identify unused tokens.
-
-### Checking Conditions
-
-> "What responsive breakpoints are defined?"
-
-The AI will use `get_conditions` to show all available breakpoints.
 
 ## Troubleshooting
 

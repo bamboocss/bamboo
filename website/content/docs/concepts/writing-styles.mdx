@@ -3,16 +3,11 @@ title: Writing Styles
 description: Bamboo generates the utilities you need to style your components with confidence.
 ---
 
-Using the object syntax is a fundamental approach to writing styles in Bamboo. It not only provides a type-safe style
-authoring experience, but also improves readability and ensures a consistent experience with style overrides.
+Styles in Bamboo are written as objects.
 
 ## Atomic Styles
 
-When you write styles in Bamboo, it generates a modern atomic stylesheet that is automatically scoped to the
-`@layer utilities` cascade layer.
-
-The atomic stylesheets approach offers several advantages, such as improved code maintainability and reusability, as
-well as a smaller overall CSS footprint.
+When you write styles in Bamboo, it generates an atomic stylesheet scoped to the `@layer utilities` cascade layer.
 
 Bamboo exposes a `css` function that can be used to author styles. It accepts a style object and returns a className
 string.
@@ -28,7 +23,7 @@ const styles = css({
 })
 
 // Generated className:
-// --> bg_gainsboro rounded_9999px fs_13px p_10px_15px
+// --> p_10px_15px bdr_9999px bg-c_gainsboro fs_13px
 
 <div className={styles}>
   <p>Hello World</p>
@@ -39,20 +34,20 @@ The styles generated at build time end up like this:
 
 ```css
 @layer utilities {
-  .bg_gainsboro {
-    background-color: gainsboro;
+  .p_10px_15px {
+    padding: 10px 15px;
   }
 
-  .rounded_9999px {
+  .bdr_9999px {
     border-radius: 9999px;
+  }
+
+  .bg-c_gainsboro {
+    background-color: gainsboro;
   }
 
   .fs_13px {
     font-size: 13px;
-  }
-
-  .p_10px_15px {
-    padding: 10px 15px;
   }
 }
 ```
@@ -153,84 +148,11 @@ css({ content: '""' }) // ✅ Valid, since `content` does not have a predefined 
 css({ flex: '0 1' }) // ✅ Valid, since `flex` does not have a predefined list of values
 ```
 
-The `config.strictPropertyValues` option will only be applied to this exhaustive list of properties:
-
-```ts
-type StrictableProps =
-  | 'alignContent'
-  | 'alignItems'
-  | 'alignSelf'
-  | 'all'
-  | 'animationComposition'
-  | 'animationDirection'
-  | 'animationFillMode'
-  | 'appearance'
-  | 'backfaceVisibility'
-  | 'backgroundAttachment'
-  | 'backgroundClip'
-  | 'borderCollapse'
-  | 'border'
-  | 'borderBlock'
-  | 'borderBlockEnd'
-  | 'borderBlockStart'
-  | 'borderBottom'
-  | 'borderInline'
-  | 'borderInlineEnd'
-  | 'borderInlineStart'
-  | 'borderLeft'
-  | 'borderRight'
-  | 'borderTop'
-  | 'borderBlockEndStyle'
-  | 'borderBlockStartStyle'
-  | 'borderBlockStyle'
-  | 'borderBottomStyle'
-  | 'borderInlineEndStyle'
-  | 'borderInlineStartStyle'
-  | 'borderInlineStyle'
-  | 'borderLeftStyle'
-  | 'borderRightStyle'
-  | 'borderTopStyle'
-  | 'boxDecorationBreak'
-  | 'boxSizing'
-  | 'breakAfter'
-  | 'breakBefore'
-  | 'breakInside'
-  | 'captionSide'
-  | 'clear'
-  | 'columnFill'
-  | 'columnRuleStyle'
-  | 'contentVisibility'
-  | 'direction'
-  | 'display'
-  | 'emptyCells'
-  | 'flexDirection'
-  | 'flexWrap'
-  | 'float'
-  | 'fontKerning'
-  | 'forcedColorAdjust'
-  | 'isolation'
-  | 'lineBreak'
-  | 'mixBlendMode'
-  | 'objectFit'
-  | 'outlineStyle'
-  | 'overflow'
-  | 'overflowX'
-  | 'overflowY'
-  | 'overflowBlock'
-  | 'overflowInline'
-  | 'overflowWrap'
-  | 'pointerEvents'
-  | 'position'
-  | 'resize'
-  | 'scrollBehavior'
-  | 'touchAction'
-  | 'transformBox'
-  | 'transformStyle'
-  | 'userSelect'
-  | 'visibility'
-  | 'wordBreak'
-  | 'writingMode'
-```
+`config.strictPropertyValues` only applies to properties that have a fixed set of values — layout, box-model and
+text-flow properties such as `display`, `position`, `overflow`, `flexDirection`, `alignItems`, `visibility` and the
+`*Style` border properties. Border shorthands such as `border` and `borderTop` are not in the set. The generated
+`styled-system/types/style-props.d.ts` is the authoritative list: a restricted property is typed there as a union of its
+allowed values.
 
 ## Nested Styles
 
@@ -361,7 +283,7 @@ import { Button } from './Button'
 export default function Page() {
   return (
     <Button css={{ color: 'pink', _hover: { color: 'red' } }}>
-      will result in `class="d_flex items_center text_pink hover:text_red"`
+      will result in `class="d_flex ai_center c_pink hover:c_red"`
     </Button>
   )
 }
@@ -424,58 +346,16 @@ export const Button = ({ css: cssProp = {}, children }) => {
 
 **SVA Example:**
 
-```tsx filename="src/components/Button.tsx"
-import { css, sva } from '../styled-system/css'
+An `sva` recipe's `.raw()` returns one style object per slot, so each slot merges the same way:
 
-const checkbox = sva({
-  slots: ['root', 'control', 'label'],
-  base: {
-    root: { display: 'flex', alignItems: 'center', gap: '2' },
-    control: { borderWidth: '1px', borderRadius: 'sm' },
-    label: { marginStart: '2' },
-  },
-  variants: {
-    size: {
-      sm: {
-        control: { width: '8', height: '8' },
-        label: { fontSize: 'sm' },
-      },
-      md: {
-        control: { width: '10', height: '10' },
-        label: { fontSize: 'md' },
-      },
-    },
-  },
-  defaultVariants: {
-    size: 'sm',
-  },
-})
+```tsx
+const slotStyles = checkbox.raw({ size: 'md' })
 
-export const Checkbox = ({ rootProps, controlProps, labelProps }) => {
-  // using the checkbox recipe
-  const slotStyles = checkbox.raw({ size: 'md' })
-
-  return (
-    <label className={css(slotStyles.root, rootProps)}>
-      <input type="checkbox" className={css({ srOnly: true })} />
-      <div className={css(slotStyles.control, controlProps)} />
-      <span className={css(slotStyles.label, labelProps)}>Checkbox Label</span>
-    </label>
-  )
-}
-
-// Usage
-
-const App = () => {
-  return (
-    <Checkbox
-      rootProps={css.raw({ gap: 4 })}
-      controlProps={css.raw({ borderColor: 'yellow.400' })}
-      labelProps={css.raw({ fontSize: 'lg' })}
-    />
-  )
-}
+// rootProps is a `css.raw({ ... })` object supplied by the caller
+;<label className={css(slotStyles.root, rootProps)} />
 ```
+
+See [Slot recipes](/docs/concepts/slot-recipes) for the recipe this comes from.
 
 ### Classname concatenation
 
@@ -652,8 +532,8 @@ css({
 })
 ```
 
-`fallback(...)` works anywhere a value does – conditions, breakpoints, `globalCss`, recipes, patterns and JSX style
-props. Adding `!important` marks every candidate, not just the winning one.
+`fallback(...)` works anywhere a value does – conditions, breakpoints, `globalCss`, recipes and patterns. Adding
+`!important` marks every candidate, not just the winning one.
 
 ### What it can't do
 
@@ -732,8 +612,8 @@ Both reach the stylesheet verbatim and are ignored by the browser:
   `calc(fallback(a, b))` or `1px solid fallback(red, blue)`. Under [`strictTokens`](#stricttokens) a misspelling is a
   type error; the embedded forms are not.
 - **The candidates themselves aren't type-checked.** `fallback(red.300, rd)` typechecks even under `strictTokens`,
-  because the whole thing is one string to TypeScript. The `[...]` escape hatch has the same property, and the
-  `no-escape-hatch` lint rule does not see either.
+  because the whole thing is one string to TypeScript. The `[...]` escape hatch has the same property — the
+  `no-escape-hatch` lint rule does still catch it, since it parses each candidate individually.
 
 ## TypeScript
 
@@ -757,8 +637,8 @@ property will take precedence over the longhand property.
 import { css } from '../styled-system/css'
 
 const styles = css({
-  paddingTop: '20px'
-  padding: "10px",
+  paddingTop: '20px',
+  padding: '10px',
 })
 ```
 

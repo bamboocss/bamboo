@@ -13,25 +13,26 @@ used as output path to generate the `styled-system` in.
 This is the core of what the `styled-system` does:
 
 ```ts
-css({ color: 'blue.300' }) // => "text_blue_300"
+css({ color: 'blue.300' }) // => "c_blue.300"
 ```
 
-Since Bamboo doesn't rely on any bundler's (`vite`, `webpack`, etc) plugin, there is no code transformation happening to
-convert the CSS-in-JS syntax to class names at compile-time. This is why we need a lightweight runtime to do that.
+The runtime is the fallback, not the only path. The [Vite plugin](/docs/guides/source-transformation) folds static call
+sites at build time — it is on by default and rewrites `css({ color: 'blue.300' })` to the string literal `"c_blue.300"`
+in the emitted bundle. Call sites the fold cannot resolve statically keep calling the runtime, which is why it still
+ships.
 
-The same principles applies to `patterns`, `recipes` and even `jsx` components, as they all use the `css` function under
-the hood.
+The same principles apply to `patterns` and `recipes`, as they all use the `css` function under the hood.
 
 If you look inside your `styled-system` folder, you should see the main entrypoints for the runtime:
 
 <FileTree>
   <FileTree.Folder name="styled-system" defaultOpen>
     <FileTree.Folder name="css" />
-    <FileTree.Folder name="jsx" />
     <FileTree.Folder name="recipes" />
     <FileTree.Folder name="patterns" />
     <FileTree.Folder name="tokens" />
     <FileTree.Folder name="types" />
+    <FileTree.File name="helpers.mjs" />
     <FileTree.File name="styles.css" />
   </FileTree.Folder>
 </FileTree>

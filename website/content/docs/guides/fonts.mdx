@@ -126,44 +126,15 @@ Then alias the font names to css variables.
 
 ### Global Font Face
 
-You can also define global font face in your bamboo config.
-
-```js
-export default defineConfig({
-  globalFontface: {
-    Fira: {
-      src: 'url(/fonts/fira.woff2) format("woff2")',
-      fontWeight: 400,
-      fontStyle: 'normal',
-      fontDisplay: 'swap',
-    },
-  },
-})
-```
-
-You can also define multiple font sources for the same weight.
-
-```js
-export default defineConfig({
-  globalFontface: {
-    Fira: {
-      src: ['url(/fonts/fira.woff2) format("woff2")', 'url(/fonts/fira.woff) format("woff")'],
-      fontWeight: 400,
-      fontStyle: 'normal',
-      fontDisplay: 'swap',
-    },
-  },
-})
-```
-
-You can also define multiple font weights.
+You can also define global font face in your bamboo config. A family takes one face or an array of them, and each face's
+`src` takes one source or an array of them.
 
 ```js
 export default defineConfig({
   globalFontface: {
     Fira: [
       {
-        src: 'url(/fonts/fira.woff2) format("woff2")',
+        src: ['url(/fonts/fira.woff2) format("woff2")', 'url(/fonts/fira.woff) format("woff")'],
         fontWeight: 400,
         fontStyle: 'normal',
         fontDisplay: 'swap',

@@ -19,14 +19,15 @@ const style2 = {
   bg: 'blue',
 }
 
-const className = css(style1, style2) // => 'bg_blue text_white'
+const className = css(style1, style2) // => 'bg_blue c_white'
 ```
 
 In some cases though, the style object might not be colocated in the same file as the component. In this case, you can
 use the `css.raw` function to preserve the original style object.
 
-> All `.raw(...)` signatures are identity functions that return the same value as the input, but serve as a hint to the
-> compiler that the value is a style object.
+> `css.raw(...)` and a config recipe's `.raw(...)` are identity functions: they return their input, and serve as a hint
+> to the compiler that the value is a style object. `cva(...).raw(...)` and `sva(...).raw(...)` are not — they resolve
+> the variants and return the merged style object, which is what makes the `cva` example below work.
 
 ```js
 // style.js
@@ -45,7 +46,7 @@ const style2 = css.raw({
   bg: 'blue',
 })
 
-const className = css(style1, style2) // => 'bg_blue text_white'
+const className = css(style1, style2) // => 'bg_blue c_white'
 ```
 
 ## Spreading `css.raw` objects
@@ -114,7 +115,7 @@ const className = css(
   overrideStyles,
 )
 
-// => 'bg_red border_1px_solid_black color_white font-size_12px'
+// => 'bg_red bd_1px_solid_black c_white fs_12px'
 ```
 
 ## Merging `sva` + `css` styles
@@ -126,24 +127,24 @@ import { css, sva } from 'styled-system/css'
 
 const overrideStyles = css.raw({
   bg: 'red',
-  color: 'white'
+  color: 'white',
 })
 
 const buttonStyles = sva({
-  slots: ['root']
+  slots: ['root'],
   base: {
     root: {
       bg: 'blue',
-      border: '1px solid black'
-    }
+      border: '1px solid black',
+    },
   },
   variants: {
     size: {
-      root: {
-        small: { fontSize: '12px' }
-      }
-    }
-  }
+      small: {
+        root: { fontSize: '12px' },
+      },
+    },
+  },
 })
 
 // returns the resolved style object for all slots
@@ -152,64 +153,36 @@ const { root } = buttonStyles.raw({ size: 'small' })
 const className = css(
   root,
   // add the override styles
-  overrideStyles
+  overrideStyles,
 )
 
-// => 'bg_red border_1px_solid_black color_white font-size_12px'
+// => 'bg_red bd_1px_solid_black c_white fs_12px'
 ```
 
 ## Merging config recipe and style object
 
-Due to the fact that the generated styles of a config recipe are saved in the `@layer recipe` cascade layer, they can be
-overridden with any atomic styles. Use the `cx` function to achieve that.
+Due to the fact that the generated styles of a config recipe are saved in the `@layer recipes` cascade layer, they can
+be overridden with any atomic styles. Use the `cx` function to achieve that.
 
-> The `utilties` layer has more precedence than the `recipe` layer.
+> The `utilities` layer has more precedence than the `recipes` layer.
 
 ```js
 import { css, cx } from 'styled-system/css'
 import { button } from 'styled-system/recipes'
 
 const className = cx(
-  // returns the resolved class name: `button button--size-small`
+  // returns the resolved class name: `button button--size_small`
   button({ size: 'small' }),
   // add the override styles
   css({ bg: 'red' }), // => 'bg_red'
 )
 
-// => 'button button--size-small bg_red'
+// => 'button button--size_small bg_red'
 ```
 
-That override works because of the layer, not because of `cx`. `utilities` is declared after `recipes`, so the `css()`
-class wins whatever order the class names are in.
-
-`cx` **joins** class names. It does not resolve conflicts between them:
-
-```js
-cx(css({ paddingX: '4' }), css({ paddingX: '2' })) // => 'px_4 px_2', not 'px_2'
-```
-
-Both land on the element, in the same layer, and the browser picks by their order in the stylesheet rather than by the
-order you passed them.
-
-This is deliberate. `cx` cannot resolve conflicts in every build — under [`hash`](/docs/references/config#hash) a class
-name is an opaque digest with no property to compare. A `cx` that merged where it could and joined where it could not
-would behave differently in development and in a minified production build, from the same source, with nothing raised
-either way. It does the same thing everywhere instead.
-
-So when you need one style to beat another, decide it by origin:
-
-- **A component you want reliably overridable** needs its styles in a lower cascade layer than the consumer's. A
-  **recipe** puts them there: `cva()` and `sva()` name their classes from the config — `button--size_sm` — and emit them
-  into `recipes`, whether you declare them inline or in `theme.recipes`. A consumer's `css()` is in `utilities`, so it
-  wins by layer in every build.
-- **Or take a style object instead of a class name.** `css(base, props.css)` merges per property before any class name
-  exists, so it resolves the same way in every build and needs no layer at all:
-
-  ```jsx
-  const Card = ({ css: cssProp, ...rest }) => <div className={css({ p: '4' }, cssProp)} {...rest} />
-  ```
-
-- **Two `css()` calls you own** are in the same layer, so merge the objects rather than the classes: `css(a, b)`.
+That override works because of the layer, not because of `cx`. `cx` joins class names and does not resolve conflicts
+between them — see [Classname concatenation](/docs/concepts/writing-styles#classname-concatenation) for why, and for how
+to decide precedence by origin instead.
 
 ## Merging within JSX component
 
@@ -237,34 +210,14 @@ function Demo() {
 }
 ```
 
-If you use any other prop name other than `css`, then you must use the `css.raw(...)` function to ensure Bamboo extracts
-the style object.
+Any prop name other than `css` works the same way, except the caller must wrap the object in `css.raw(...)` for Bamboo
+to extract it:
 
 ```jsx
-const cardStyles = css.raw({
-  bg: 'red',
-  color: 'white',
-})
-
 function Card({ title, description, style }) {
-  return (
-    // merge the `cardStyles` with the `style` passed in
-    <div className={css(cardStyles, style)}>
-      <h1>{title}</h1>
-      <p>{description}</p>
-    </div>
-  )
+  return <div className={css(cardStyles, style)}>{/* ... */}</div>
 }
 
 // usage
-function Demo() {
-  return (
-    <Card
-      title="Hello World"
-      description="This is a card component"
-      // use `css.raw(...)` to ensure Bamboo extracts the style object
-      style={css.raw({ bg: 'blue' })}
-    />
-  )
-}
+;<Card title="Hello World" description="This is a card component" style={css.raw({ bg: 'blue' })} />
 ```

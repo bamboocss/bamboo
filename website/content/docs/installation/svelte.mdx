@@ -3,8 +3,6 @@ title: Using Svelte
 description: Easily use Bamboo with Svelte with our dedicated integration.
 ---
 
-This guide will show you how to set up Bamboo CSS in a Svelte project using PostCSS.
-
 ## Start a new project
 
 <Steps>
@@ -124,28 +122,8 @@ To install Bamboo and corresponding dependencies run the following commands:
 
 ### Update package.json scripts
 
-Open your `package.json` file and update the `scripts` section as follows:
-
-```json {3}
-{
-  "scripts": {
-    "prepare": "bamboo codegen",
-    "dev": "vite dev",
-    "build": "vite build",
-    "preview": "vite preview",
-    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "lint": "prettier --plugin-search-dir . --check . && eslint .",
-    "format": "prettier --plugin-search-dir . --write ."
-  }
-}
-```
-
-This `"prepare"` script will run Bamboo CSS CLI codegen before each build. Read more about
-[codegen](/docs/references/cli#codegen) in the CLI section.
-
-> This step ensures that the bamboo output directory is regenerated after each dependency installation. So you can add
-> the output directory to your `.gitignore` file and not worry about it.
+Add `"prepare": "bamboo codegen"` to `scripts`. It runs [codegen](/docs/references/cli#codegen) after every dependency
+install, so the output directory can stay in `.gitignore`.
 
 ### Configure the content
 
@@ -264,37 +242,9 @@ Create the `src/routes/+layout.svelte` file and add the following content:
 
 ### Start your build process
 
-Run the following command to start your development server.
-
-<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
-  {/* <!-- prettier-ignore-start --> */}
-  <Tab>
-    ```bash
-    pnpm dev
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    npm run dev
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    yarn dev
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    bun dev
-    ```
-  </Tab>
-  {/* <!-- prettier-ignore-end --> */}
-</Tabs>
+Start the dev server with `pnpm dev`.
 
 ### Start using Bamboo
-
-Now you can start using Bamboo CSS in your project. Here is the snippet of code that you can use in your
-`src/routes/+page.svelte` file.
 
 ```svelte filename="src/routes/+page.svelte"
 <script>

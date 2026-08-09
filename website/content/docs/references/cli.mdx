@@ -7,6 +7,19 @@ description:
 
 Use Bamboo's Command-Line Interface (CLI) to develop, build, and preview your project from a terminal.
 
+## Common flags
+
+These flags are shared between commands and are left out of the per-command tables below. Only `--cwd` is accepted
+everywhere; the rest list the commands that take them.
+
+| Flag                  | Description                                                             | Commands                                       | Related                                               |
+| --------------------- | ----------------------------------------------------------------------- | ---------------------------------------------- | ----------------------------------------------------- |
+| `--cwd <path>`        | Current working directory                                               | all                                            | [`config.cwd`](/docs/references/config#cwd)           |
+| `--silent`            | Whether to suppress all output                                          | all except `init-mcp`                          | [`config.logLevel`](/docs/references/config#loglevel) |
+| `--config, -c <path>` | Path to Bamboo config file                                              | all except `emit-pkg` and `init-mcp`           | [`config`](/docs/references/config)                   |
+| `--logfile <file>`    | Outputs logs to a file                                                  | `init`, `bamboo`, `codegen`, `cssgen`, `debug` | [Debugging](/docs/guides/debugging)                   |
+| `--cpu-prof`          | Generate a `bamboo-{command}-{timestamp}.cpuprofile` file for profiling | `bamboo`, `codegen`, `cssgen`, `debug`         | [Debugging](/docs/guides/debugging)                   |
+
 ## init
 
 Initialize Bamboo in a project. This process will:
@@ -29,15 +42,11 @@ pnpm bamboo init --postcss
 | `--interactive, -i`     | Whether to run the interactive mode                           | -                                                             |
 | `--force, -f`           | Whether to overwrite existing files                           | -                                                             |
 | `--postcss, -p`         | Whether to emit a [postcss](https://postcss.org/) config file | -                                                             |
-| `--config, -c <path>`   | Path to Bamboo config file                                    | [`config`](/docs/references/config)                           |
-| `--cwd <dir>`           | Path to current working directory                             | -                                                             |
-| `--silent`              | Whether to suppress all output                                | -                                                             |
-| `--no-gitignore`        | Whether to update gitignore with the output directory         | -                                                             |
-| `--no-codegen`          | Whether to run the codegen process                            | -                                                             |
+| `--no-gitignore`        | Don't update the `.gitignore` with the output directory       | [`config.gitignore`](/docs/references/config#gitignore)       |
+| `--no-codegen`          | Don't run the codegen process                                 | -                                                             |
 | `--out-extension <ext>` | The extension of the generated js files (default: 'mjs')      | [`config.outExtension`](/docs/references/config#outextension) |
 | `--outdir <dir>`        | The output directory for the generated files                  | [`config.outdir`](/docs/references/config#outdir)             |
 | `--strict-tokens`       | Set strictTokens to true                                      | [`config.strictTokens`](/docs/references/config#stricttokens) |
-| `--logfile <file>`      | Outputs logs to a file                                        | [Debugging](/docs/guides/debugging)                           |
 
 ---
 
@@ -56,24 +65,19 @@ pnpm bamboo src/components/Button.tsx
 pnpm bamboo "./src/components/**"
 ```
 
-| Flag                    | Description                                                             | Related                                                           |
-| ----------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| `--outdir, -o [dir]`    | The output directory for the generated CSS utilities                    | [`config.outdir`](/docs/references/config#outdir)                 |
-| `--minify, -m`          | Whether to minify the generated CSS                                     | [`config.minify`](/docs/references/config#minify)                 |
-| `--watch, -w`           | Whether to watch for changes in the project                             | [`config.watch`](/docs/references/config#watch)                   |
-| `--poll`                | Whether to poll for file changes                                        | [`config.poll`](/docs/references/config#poll)                     |
-| `--config, -c <path>`   | The path to the config file                                             | [`config`](/docs/references/config)                               |
-| `--cwd <path>`          | The current working directory                                           | [`config.cwd`](/docs/references/config#cwd)                       |
-| `--preflight`           | Whether to emit the preflight or reset CSS                              | [`config.preflight`](/docs/references/config#preflight)           |
-| `--silent`              | Whether to suppress all output                                          | [`config.logLevel`](/docs/references/config#log-level)            |
-| `--exclude, -e <files>` | Files to exclude from the extract process                               | [`config`](/docs/references/config)                               |
-| `--clean`               | Whether to clean the output directory before emitting                   | [`config.clean`](/docs/references/config#clean)                   |
-| `--hash`                | Whether to hash the output classnames                                   | [`config.hash`](/docs/references/config#hash)                     |
-| `--lightningcss`        | Use `lightningcss` instead of `postcss` for css optimization            | [`config.lightningcss`](/docs/references/config#lightningcss)     |
-| `--polyfill`            | Polyfill CSS @layers at-rules for older browsers                        | [`config.polyfill`](/docs/references/config#polyfill)             |
-| `--emitTokensOnly`      | Whether to only emit the `tokens` directory                             | [`config.emitTokensOnly`](/docs/references/config#emittokensonly) |
-| `--cpu-prof`            | Generate a `bamboo-{command}-{timestamp}.cpuprofile` file for profiling | [Debugging](/docs/guides/debugging)                               |
-| `--logfile <file>`      | Outputs logs to a file                                                  | [Debugging](/docs/guides/debugging)                               |
+| Flag                    | Description                                                                     | Related                                                           |
+| ----------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `--outdir, -o <dir>`    | The output directory for the generated CSS utilities (default: 'styled-system') | [`config.outdir`](/docs/references/config#outdir)                 |
+| `--minify, -m`          | Whether to minify the generated CSS                                             | [`config.minify`](/docs/references/config#minify)                 |
+| `--watch, -w`           | Whether to watch for changes in the project                                     | [`config.watch`](/docs/references/config#watch)                   |
+| `--poll`                | Whether to poll for file changes                                                | [`config.poll`](/docs/references/config#poll)                     |
+| `--preflight`           | Whether to emit the preflight or reset CSS                                      | [`config.preflight`](/docs/references/config#preflight)           |
+| `--exclude, -e <files>` | Files to exclude from the extract process                                       | [`config`](/docs/references/config)                               |
+| `--clean`               | Whether to clean the output directory before emitting                           | [`config.clean`](/docs/references/config#clean)                   |
+| `--hash`                | Whether to hash the output classnames                                           | [`config.hash`](/docs/references/config#hash)                     |
+| `--lightningcss`        | Use `lightningcss` instead of `postcss` for css optimization                    | [`config.lightningcss`](/docs/references/config#lightningcss)     |
+| `--polyfill`            | Polyfill CSS @layers at-rules for older browsers                                | [`config.polyfill`](/docs/references/config#polyfill)             |
+| `--emitTokensOnly`      | Whether to only emit the `tokens` directory                                     | [`config.emitTokensOnly`](/docs/references/config#emittokensonly) |
 
 ---
 
@@ -91,16 +95,11 @@ pnpm bamboo codegen --clean
 pnpm bamboo codegen --watch
 ```
 
-| Flag                  | Description                                                             | Related                                                |
-| --------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------ |
-| `--silent`            | Whether to suppress all output                                          | [`config.logLevel`](/docs/references/config#log-level) |
-| `--clean`             | Whether to clean the output directory before emitting                   | [`config.clean`](/docs/references/config#clean)        |
-| `--config, -c <path>` | Path to Bamboo config file                                              | [`config`](/docs/references/config)                    |
-| `--watch, -w`         | Whether to watch for changes in the project                             | [`config.watch`](/docs/references/config#watch)        |
-| `--poll, -p`          | Whether to poll for file changes                                        | [`config.poll`](/docs/references/config#poll)          |
-| `--cwd <path>`        | Current working directory                                               | [`config.cwd`](/docs/references/config#cwd)            |
-| `--cpu-prof`          | Generate a `bamboo-{command}-{timestamp}.cpuprofile` file for profiling | [Debugging](/docs/guides/debugging)                    |
-| `--logfile <file>`    | Outputs logs to a file                                                  | [Debugging](/docs/guides/debugging)                    |
+| Flag          | Description                                           | Related                                         |
+| ------------- | ----------------------------------------------------- | ----------------------------------------------- |
+| `--clean`     | Whether to clean the output directory before emitting | [`config.clean`](/docs/references/config#clean) |
+| `--watch, -w` | Whether to watch for changes in the project           | [`config.watch`](/docs/references/config#watch) |
+| `--poll, -p`  | Whether to poll for file changes                      | [`config.poll`](/docs/references/config#poll)   |
 
 ## cssgen
 
@@ -163,40 +162,20 @@ The main `styles.css` file contains the `@layer` declarations and imports all th
 @import './styles/utilities.css';
 ```
 
-You can then choose how to import these files:
-
-```css
-/* Option 1: Import everything (default) */
-@import './styled-system/styles.css';
-
-/* Option 2: Import specific layers only */
-@import './styled-system/styles/tokens.css';
-@import './styled-system/styles/utilities.css';
-
-/* Option 3: Import specific recipes */
-@import './styled-system/styles/recipes/button.css';
-@import './styled-system/styles/recipes/card.css';
-
-/* Option 4: Import a specific theme (when using multiple themes) */
-@import './styled-system/styles/themes/oceanic.css';
-```
+Import `styles.css` for everything, or any of the files above on its own — the per-layer, per-recipe and per-theme files
+are all importable directly.
 
 | Flag                   | Description                                                                            | Related                                                       |
 | ---------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| `--outfile, -o <file>` | Output file for extracted css, default to './styled-system/styles.css'                 | -                                                             |
-| `--silent`             | Whether to suppress all output                                                         | [`config.logLevel`](/docs/references/config#log-level)        |
+| `--outfile, -o [file]` | Output file for extracted css, default to './styled-system/styles.css'                 | -                                                             |
 | `--minify, -m`         | Whether to minify the generated CSS                                                    | [`config.minify`](/docs/references/config#minify)             |
 | `--clean`              | Whether to clean the output directory before emitting                                  | [`config.clean`](/docs/references/config#clean)               |
-| `--config, -c <path>`  | Path to Bamboo config file                                                             | [`config`](/docs/references/config)                           |
 | `--watch, -w`          | Whether to watch for changes in the project                                            | [`config.watch`](/docs/references/config#watch)               |
 | `--minimal`            | Skip generating CSS for theme tokens, preflight, keyframes, static and global css      | -                                                             |
 | `--splitting`          | Emit CSS as separate files per layer (reset, global, tokens, utilities) and per recipe | -                                                             |
 | `--poll, -p`           | Whether to poll for file changes                                                       | [`config.poll`](/docs/references/config#poll)                 |
-| `--cwd <path>`         | Current working directory                                                              | [`config.cwd`](/docs/references/config#cwd)                   |
 | `--lightningcss`       | Use `lightningcss` instead of `postcss` for css optimization                           | [`config.lightningcss`](/docs/references/config#lightningcss) |
 | `--polyfill`           | Polyfill CSS @layers at-rules for older browsers                                       | [`config.polyfill`](/docs/references/config#polyfill)         |
-| `--cpu-prof`           | Generate a `bamboo-{command}-{timestamp}.cpuprofile` file for profiling                | [Debugging](/docs/guides/debugging)                           |
-| `--logfile <file>`     | Outputs logs to a file                                                                 | [Debugging](/docs/guides/debugging)                           |
 
 ## spec
 
@@ -209,12 +188,9 @@ pnpm bamboo spec
 pnpm bamboo spec --outdir ./theme-specs
 ```
 
-| Flag                  | Description                     | Related                                                |
-| --------------------- | ------------------------------- | ------------------------------------------------------ |
-| `--silent`            | Whether to suppress all output  | [`config.logLevel`](/docs/references/config#log-level) |
-| `--outdir <dir>`      | Output directory for spec files | -                                                      |
-| `--config, -c <path>` | Path to Bamboo config file      | [`config`](/docs/references/config)                    |
-| `--cwd <path>`        | Current working directory       | [`config.cwd`](/docs/references/config#cwd)            |
+| Flag             | Description                     | Related |
+| ---------------- | ------------------------------- | ------- |
+| `--outdir <dir>` | Output directory for spec files | -       |
 
 > The spec output represents your entire design system, everything available in your Bamboo setup. If you want to
 > understand which tokens or recipes your app is actually using, you should use the
@@ -242,13 +218,10 @@ pnpm bamboo analyze --scope token
 pnpm bamboo analyze --scope recipe
 ```
 
-| Flag                   | Description                                  | Related                                                |
-| ---------------------- | -------------------------------------------- | ------------------------------------------------------ |
-| `--outfile <filepath>` | Output analyze report in given JSON filepath | -                                                      |
-| `--silent`             | Whether to suppress all output               | [`config.logLevel`](/docs/references/config#log-level) |
-| `--scope <type>`       | Select analysis scope (token or recipe)      | -                                                      |
-| `--config, -c <path>`  | Path to Bamboo config file                   | [`config`](/docs/references/config)                    |
-| `--cwd <path>`         | Current working directory                    | [`config.cwd`](/docs/references/config#cwd)            |
+| Flag                   | Description                                  | Related |
+| ---------------------- | -------------------------------------------- | ------- |
+| `--outfile [filepath]` | Output analyze report in given JSON filepath | -       |
+| `--scope <type>`       | Select analysis scope (token or recipe)      | -       |
 
 ## debug
 
@@ -269,16 +242,11 @@ pnpm bamboo debug --dry
 pnpm bamboo debug --only-config
 ```
 
-| Flag                  | Description                                                             | Related                                                   |
-| --------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------- |
-| `--silent`            | Whether to suppress all output                                          | -                                                         |
-| `--dry`               | Output debug files in stdout without writing to disk                    | -                                                         |
-| `--outdir <dir>`      | Output directory for debug files, defaults to `../styled-system/debug`  | -                                                         |
-| `--only-config`       | Should only output the config file, default to 'false'                  | -                                                         |
-| `--config, -c <path>` | Path to Bamboo config file                                              | [`config`](/docs/references/config)                       |
-| `--cwd <path>`        | Current working directory                                               | [`config.cwd`](/docs/references/config#cwd)               |
-| `--cpu-prof`          | Generate a `bamboo-{command}-{timestamp}.cpuprofile` file for profiling | [Debugging](/docs/guides/debugging#performance-profiling) |
-| `--logfile <file>`    | Outputs logs to a file                                                  | [Debugging](/docs/guides/debugging)                       |
+| Flag             | Description                                                           | Related |
+| ---------------- | --------------------------------------------------------------------- | ------- |
+| `--dry`          | Output debug files in stdout without writing to disk                  | -       |
+| `--outdir [dir]` | Output directory for debug files, defaults to `./styled-system/debug` | -       |
+| `--only-config`  | Should only output the config file, default to 'false'                | -       |
 
 ## ship
 
@@ -294,15 +262,12 @@ pnpm bamboo ship src/components/Button.tsx
 pnpm bamboo ship "./src/components/**"
 ```
 
-| Flag                   | Description                                                                                  | Related                                                |
-| ---------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| `--outfile <filepath>` | Output path for the JSON build info file, default to './styled-system/bamboo.buildinfo.json' | -                                                      |
-| `--silent`             | Whether to suppress all output                                                               | [`config.logLevel`](/docs/references/config#log-level) |
-| `--minify, -m`         | Whether to minify the generated JSON                                                         | -                                                      |
-| `--config, -c <path>`  | Path to Bamboo config file                                                                   | [`config`](/docs/references/config)                    |
-| `--cwd <path>`         | Current working directory                                                                    | [`config.cwd`](/docs/references/config#cwd)            |
-| `--watch, -w`          | Whether to watch for changes in the project                                                  | [`config.watch`](/docs/references/config#watch)        |
-| `--poll, -p`           | Whether to poll for file changes                                                             | [`config.poll`](/docs/references/config#poll)          |
+| Flag                   | Description                                                                                  | Related                                         |
+| ---------------------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `--outfile <filepath>` | Output path for the JSON build info file, default to './styled-system/bamboo.buildinfo.json' | -                                               |
+| `--minify, -m`         | Whether to minify the generated JSON                                                         | -                                               |
+| `--watch, -w`          | Whether to watch for changes in the project                                                  | [`config.watch`](/docs/references/config#watch) |
+| `--poll, -p`           | Whether to poll for file changes                                                             | [`config.poll`](/docs/references/config#poll)   |
 
 ## emit-pkg
 
@@ -317,12 +282,10 @@ pnpm bamboo emit-pkg
 pnpm bamboo emit-pkg --outdir styled-system
 ```
 
-| Flag             | Description                                          | Related                                                |
-| ---------------- | ---------------------------------------------------- | ------------------------------------------------------ |
-| `--outdir <dir>` | The output directory for the generated CSS utilities | [`config.outdir`](/docs/references/config#outdir)      |
-| `--base <path>`  | The base directory of the package.json entrypoints   | -                                                      |
-| `--silent`       | Whether to suppress all output                       | [`config.logLevel`](/docs/references/config#log-level) |
-| `--cwd <path>`   | Current working directory                            | [`config.cwd`](/docs/references/config#cwd)            |
+| Flag             | Description                                                        | Related                                           |
+| ---------------- | ------------------------------------------------------------------ | ------------------------------------------------- |
+| `--outdir <dir>` | The output directory for the generated package.json (default: '.') | [`config.outdir`](/docs/references/config#outdir) |
+| `--base <path>`  | The base directory of the package.json entrypoints                 | -                                                 |
 
 ## mcp
 
@@ -352,10 +315,9 @@ pnpm bamboo init-mcp --client claude,cursor
 pnpm bamboo init-mcp --cwd ./my-project
 ```
 
-| Flag               | Description                               | Related                                     |
-| ------------------ | ----------------------------------------- | ------------------------------------------- |
-| `--client <names>` | AI clients to configure (comma-separated) | -                                           |
-| `--cwd <path>`     | Current working directory                 | [`config.cwd`](/docs/references/config#cwd) |
+| Flag               | Description                               | Related |
+| ------------------ | ----------------------------------------- | ------- |
+| `--client <names>` | AI clients to configure (comma-separated) | -       |
 
 Supported clients: `claude`, `cursor`, `vscode`, `windsurf`, `codex`
 

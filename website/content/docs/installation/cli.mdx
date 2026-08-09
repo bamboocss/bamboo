@@ -3,8 +3,6 @@ title: Bamboo CLI
 description: An alternative way to use Bamboo is by running the Bamboo CLI tool.
 ---
 
-This guide shows you how to use Bamboo as an alternative approach by running the Bamboo CLI tool.
-
 <Steps>
 
 ### Install Bamboo
@@ -55,21 +53,8 @@ export default defineConfig({
 
 ### Update package.json scripts
 
-Open your `package.json` file and update the `scripts` section as follows:
-
-```diff {3}
-{
-  "scripts": {
-+    "prepare": "bamboo codegen",
-  }
-}
-```
-
-The `prepare` script that will run codegen after dependency installation. Read more about
-[codegen](/docs/references/cli#codegen) in the CLI section.
-
-> This step ensures that the bamboo output directory is regenerated after each dependency installation. So you can add
-> the output directory to your `.gitignore` file and not worry about it.
+Add `"prepare": "bamboo codegen"` to `scripts`. It runs [codegen](/docs/references/cli#codegen) after every dependency
+install, so the output directory can stay in `.gitignore`.
 
 ### Import the generated CSS
 

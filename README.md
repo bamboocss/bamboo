@@ -23,16 +23,14 @@ production build can
 
 ## Features
 
-- ⚡️ Write style objects or style props, extract them at build time
-- 🪶 [Optional zero runtime](https://bamboocss.com/docs/guides/source-transformation) – fold static `css()` calls and
-  JSX into plain class strings at build time
+- ⚡️ Write style objects, extract them at build time
+- 🪶 [Optional zero runtime](https://bamboocss.com/docs/guides/source-transformation) – fold static `css()`, pattern and
+  recipe calls into plain class strings at build time
 - ✨ Modern CSS output – cascade layers `@layer`, css variables and more
 - ✂️ Prune [unused tokens](https://bamboocss.com/docs/references/config#pruneunusedtokens) and
   [keyframes](https://bamboocss.com/docs/references/config#pruneunusedkeyframes) – ship only what your app uses
-- 📦 [Grouped class output](https://bamboocss.com/docs/references/config#cssmode) – one class per `css()` call instead
-  of one per property
-- 🎯 [Predictable overrides](https://bamboocss.com/docs/concepts/writing-styles#classname-concatenation) – `cx` resolves
-  conflicting utilities, so the last one passed wins instead of whichever the stylesheet ordered last
+- 🎯 [Predictable overrides](https://bamboocss.com/docs/concepts/cascade-layers) – precedence is decided by cascade
+  layer, so a component written with `cva`/`sva` lands in `recipes` and a consumer's `css()` in `utilities` wins
 - 🛟 [Fallback values](https://bamboocss.com/docs/concepts/writing-styles#fallback-values) – `fallback(100dvh, 100vh)`
   for progressive enhancement, in one declaration
 - 🎬 [View transitions](https://bamboocss.com/docs/concepts/view-transitions) – `viewTransition()` writes the
@@ -105,6 +103,10 @@ function Example() {
 | [node](packages/node)                         | Contains the Node.js API of Bamboo's features                |
 | [token-dictionary](packages/token-dictionary) | Contains code used to process tokens and semantic tokens     |
 | [shared](packages/shared)                     | Contains shared TS functions                                 |
+| [vite](packages/vite)                         | Vite plugin: emits the stylesheet and folds static calls     |
+| [postcss](packages/postcss)                   | PostCSS plugin                                               |
+| [types](packages/types)                       | Public type definitions, including the config shape          |
+| [mcp](packages/mcp)                           | MCP server exposing tokens, recipes and usage to assistants  |
 
 ## Contributing
 

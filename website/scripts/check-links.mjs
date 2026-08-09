@@ -85,6 +85,16 @@ for (const file of files) {
         const [path, anchor] = link.slice('/docs/'.length).split('#')
         const target = path.replace(/\/$/, '')
 
+        // `/docs/<path>.mdx` is the raw-markdown alias for agents, redirected to
+        // `/llms/<path>.mdx` by `public/_redirects`. It names a real page, so resolve it
+        // against the same map with the extension removed rather than skipping it --
+        // otherwise a typo in one of these goes unchecked.
+        if (target.endsWith('.mdx')) {
+          const aliased = target.slice(0, -'.mdx'.length)
+          if (!pages.has(aliased)) failures.push({ from, line: index + 1, link, why: 'no such page' })
+          continue
+        }
+
         if (!pages.has(target)) {
           failures.push({ from, line: index + 1, link, why: 'no such page' })
         } else if (anchor && !pages.get(target).has(anchor)) {

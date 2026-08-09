@@ -60,6 +60,11 @@ function App() {
 }
 ```
 
+A value that looks like a token path but names no token is reported at build time. Bamboo warns with the value, the
+property and the token category it searched, since the unresolved path is otherwise emitted verbatim — valid CSS that
+the browser then drops, which surfaces much later as "this style never applied". Wrap the value in `[…]` if it really is
+a literal.
+
 You can also add an optional description to your tokens. This will be used in the autogenerate token documentation.
 
 ```js {8}
@@ -143,6 +148,12 @@ export default defineConfig({
 > NOTE 🚨: The conditions used in semantic tokens must be an at-rule or parent selector
 > [condition](/docs/concepts/conditional-styles#reference).
 
+A token whose only conditional value is `_osDark` is emitted differently: the `base` and `_osDark` pair folds into a
+single `light-dark()` declaration instead of a `@media (prefers-color-scheme: dark)` block, and
+`color-scheme: light dark` is declared on `cssVarRoot`. Because `light-dark()` reads the inherited `color-scheme`
+property, an explicit toggle is `color-scheme: dark` on a subtree rather than a second copy of every token. A token that
+also defines `_osLight` keeps the media-query form.
+
 ## Token Nesting
 
 Tokens can be nested to create a hierarchy of tokens. This is useful when you want to group tokens together.
@@ -190,7 +201,38 @@ function App() {
 
 ## Token Types
 
-Bamboo supports the following token types:
+Most token types take a single scalar value:
+
+```jsx
+const theme = {
+  tokens: {
+    sizes: {
+      sm: { value: '12px' },
+    },
+  },
+}
+```
+
+| Category         | Value                | Typical use                                                           |
+| ---------------- | -------------------- | --------------------------------------------------------------------- |
+| `sizes`          | `string`             | `width`, `height`, `min-width`/`max-width`, `min-height`/`max-height` |
+| `spacing`        | `string \| number`   | `margin`, `padding`, `gap`, `top`/`right`/`bottom`/`left`             |
+| `fonts`          | `string \| string[]` | `font-family`                                                         |
+| `fontSizes`      | `string`             | `font-size`                                                           |
+| `fontWeights`    | `string \| number`   | `font-weight`                                                         |
+| `letterSpacings` | `string`             | `letter-spacing`                                                      |
+| `lineHeights`    | `string \| number`   | `line-height`                                                         |
+| `radii`          | `string`             | `border-radius`                                                       |
+| `borderWidths`   | `string`             | `border-width`, `outline-width`                                       |
+| `blurs`          | `string`             | the `blur` and `backdropBlur` utilities                               |
+| `opacity`        | `string \| number`   | `opacity`                                                             |
+| `zIndex`         | `string \| number`   | `z-index`                                                             |
+| `durations`      | `string`             | `transition-duration`, `animation-duration`                           |
+| `animations`     | `string`             | `animation`                                                           |
+| `aspectRatios`   | `string`             | `aspect-ratio`                                                        |
+| `cursor`         | `string`             | `cursor`                                                              |
+
+The remaining six types accept composite values.
 
 ### Colors
 
@@ -246,135 +288,6 @@ const theme = {
 }
 ```
 
-### Sizes
-
-Size tokens represent the width and height of an element. Its value is defined as a string.
-
-```jsx
-const theme = {
-  tokens: {
-    sizes: {
-      sm: { value: '12px' },
-    },
-  },
-}
-```
-
-> Size tokens are typically used in `width`, `height`, `min-width`, `max-width`, `min-height`, `max-height` properties.
-
-### Spacings
-
-Spacing tokens represent the margin and padding of an element. Its value is defined as a string.
-
-```jsx
-const theme = {
-  tokens: {
-    spacing: {
-      sm: { value: '12px' },
-    },
-  },
-}
-```
-
-> Spacing tokens are typically used in `margin`, `padding`, `gap`, and `{top|right|bottom|left}` properties.
-
-### Fonts
-
-Font tokens represent the font family of a text element. Its value is defined as a string or an array of strings.
-
-```jsx
-const theme = {
-  tokens: {
-    fonts: {
-      body: { value: 'Inter, sans-serif' },
-      heading: { value: ['Roboto Mono', 'sans-serif'] },
-    },
-  },
-}
-```
-
-> Font tokens are typically used in `font-family` property.
-
-### Font Sizes
-
-Font size tokens represent the size of a text element. Its value is defined as a string.
-
-```jsx
-const theme = {
-  tokens: {
-    fontSizes: {
-      sm: { value: '12px' },
-    },
-  },
-}
-```
-
-> Font size tokens are typically used in `font-size` property.
-
-### Font Weights
-
-Font weight tokens represent the weight of a text element. Its value is defined as a string.
-
-```jsx
-const theme = {
-  tokens: {
-    fontWeights: {
-      bold: { value: '700' },
-    },
-  },
-}
-```
-
-> Font weight tokens are typically used in `font-weight` property.
-
-### Letter Spacings
-
-Letter spacing tokens represent the spacing between letters in a text element. Its value is defined as a string.
-
-```jsx
-const theme = {
-  tokens: {
-    letterSpacings: {
-      wide: { value: '0.1em' },
-    },
-  },
-}
-```
-
-> Letter spacing tokens are typically used in `letter-spacing` property.
-
-### Line Heights
-
-Line height tokens represent the height of a line of text. Its value is defined as a string.
-
-```jsx
-const theme = {
-  tokens: {
-    lineHeights: {
-      normal: { value: '1.5' },
-    },
-  },
-}
-```
-
-> Line height tokens are typically used in `line-height` property.
-
-### Radii
-
-Radii tokens represent the radius of a border. Its value is defined as a string.
-
-```jsx
-const theme = {
-  tokens: {
-    radii: {
-      sm: { value: '4px' },
-    },
-  },
-}
-```
-
-> Radii tokens are typically used in `border-radius` property.
-
 ### Borders
 
 A border is a line surrounding a UI element. You can define them as string values or as a composite value
@@ -396,22 +309,6 @@ const theme = {
 
 > Border tokens are typically used in `border`, `border-top`, `border-right`, `border-bottom`, `border-left`, `outline`
 > properties.
-
-### Border Widths
-
-Border width tokens represent the width of a border. Its value is defined as a string.
-
-```jsx
-const theme = {
-  tokens: {
-    borderWidths: {
-      thin: { value: '1px' },
-      thick: { value: '2px' },
-      medium: { value: '1.5px' },
-    },
-  },
-}
-```
 
 ### Shadows
 
@@ -478,38 +375,6 @@ const theme = {
 
 > Ease tokens are typically used in `transition-timing-function` property.
 
-### Opacity
-
-Opacity tokens help you set the opacity of an element.
-
-```js
-const theme = {
-  tokens: {
-    opacity: {
-      50: { value: 0.5 },
-    },
-  },
-}
-```
-
-> Opacity tokens are typically used in `opacity` property.
-
-### Z-Index
-
-This token type represents the depth of an element's position on the z-axis.
-
-```jsx
-const theme = {
-  tokens: {
-    zIndex: {
-      modal: { value: 1000 },
-    },
-  },
-}
-```
-
-> Z-index tokens are typically used in `z-index` property.
-
 ### Assets
 
 Asset tokens represent a url or svg string. Its value is defined as a string or a composite value.
@@ -535,75 +400,6 @@ const theme = {
 ```
 
 > Asset tokens are typically used in `background-image` property.
-
-### Durations
-
-Duration tokens represent the length of time in milliseconds an animation or animation cycle takes to complete. Its
-value is defined as a string.
-
-```jsx
-const theme = {
-  tokens: {
-    durations: {
-      fast: { value: '100ms' },
-    },
-  },
-}
-```
-
-> Duration tokens are typically used in `transition-duration` and `animation-duration` properties.
-
-### Animations
-
-Animation tokens represent a keyframe animation. Its value is defined as a string value.
-
-```jsx
-const theme = {
-  tokens: {
-    animations: {
-      spin: {
-        value: 'spin 1s linear infinite',
-      },
-    },
-  },
-}
-```
-
-> Animation tokens are typically used in `animation` property.
-
-### Aspect Ratios
-
-Aspect ratio tokens represent the aspect ratio of an element. Its value is defined as a string.
-
-```js
-const theme = {
-  tokens: {
-    aspectRatios: {
-      '1:1': { value: '1 / 1' },
-      '16:9': { value: '16 / 9' },
-    },
-  },
-}
-```
-
-### Cursor
-
-Cursor tokens define the style of the mouse pointer when it hovers over a specific element or area. These tokens
-represent the visual behavior of interactions, indicating actions such as clickable areas, draggable elements, or
-loading states. Their value is defined as a string.
-
-```js
-const theme = {
-  tokens: {
-    cursor: {
-      click: { value: 'pointer' },
-      disabled: { value: 'not-allowed' },
-      // custom value
-      custom: { value: 'url(cursor.svg), auto' },
-    },
-  },
-}
-```
 
 ## Token Helpers
 
@@ -632,5 +428,10 @@ This will generate a CSS file similar to the following:
   /* ... */
 }
 ```
+
+Only the tokens your generated CSS can reach are declared there.
+[`pruneUnusedTokens`](/docs/references/config#pruneunusedtokens) defaults to `true`, and the gap is usually wide — the
+`vite-ts` example in this repository ships 480 tokens in `tokens/index.mjs` and declares 45 of them in `styles.css`. Set
+it to `false` to declare every token.
 
 You can also define type-safe CSS variables using [globalVars](/docs/concepts/writing-styles#property-conflicts).

@@ -96,9 +96,9 @@ const fade = viewTransition({
 
 Conditions that lower to a **selector** rather than an at-rule — `_hover`, `_dark`, `_before` — do not work here, and
 are not rejected. A `::view-transition-*` pseudo-element lives in its own overlay tree: it is not a descendant of the
-element carrying the class, so `_dark`'s `[data-theme=dark] &` can never reach it, and nothing may follow a
-pseudo-element, so `_hover` cannot attach to it either. Both emit a rule that simply never matches. Stick to `@media`,
-`@supports` and `@container` conditions inside a slot.
+element carrying the class, so `_dark`'s `.dark &` can never reach it, and nothing may follow a pseudo-element, so
+`_hover` cannot attach to it either. Both emit a rule that simply never matches. Stick to `@media`, `@supports` and
+`@container` conditions inside a slot.
 
 ## Keyframes
 

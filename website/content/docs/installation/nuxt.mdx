@@ -3,8 +3,6 @@ title: Using Nuxt
 description: Easily use Bamboo with Nuxt with the vue integration.
 ---
 
-Learn how to set up Bamboo CSS in a Nuxt project using PostCSS.
-
 ## Start a new project
 
 <Steps>
@@ -99,25 +97,8 @@ Install bamboo and create your `bamboo.config.ts` file.
 
 ### Update package.json scripts
 
-Open your `package.json` file and update the `scripts` section as follows:
-
-```diff {3} filename="package.json"
-{
-  "scripts": {
-+    "prepare": "bamboo codegen",
-    "build": "nuxt build",
-    "dev": "nuxt dev",
-    "generate": "nuxt generate",
-    "preview": "nuxt preview"
-  }
-}
-```
-
-- `"prepare"` - script that will run Bamboo CSS CLI codegen before each build. Read more about
-  [codegen](/docs/references/cli#codegen) in the CLI section.
-
-> This step ensures that the bamboo output directory is regenerated after each dependency installation. So you can add
-> the output directory to your `.gitignore` file and not worry about it.
+Add `"prepare": "bamboo codegen"` to `scripts`. It runs [codegen](/docs/references/cli#codegen) after every dependency
+install, so the output directory can stay in `.gitignore`.
 
 ### Configure the content
 
@@ -144,26 +125,19 @@ export default defineConfig({
 
 ### Configure the entry CSS with layers
 
-Add this code to an `assets/css/global.css` file.
+Add this code to an `assets/main.css` file.
 
-```css filename="assets/css/global.css"
+```css filename="assets/main.css"
 @layer reset, base, tokens, recipes, utilities;
 ```
 
 ### Configure Nuxt
 
-Add the following configuration to the `nuxt.config.ts` file
+Register the entry CSS and the PostCSS plugin in `nuxt.config.ts`.
 
-```js {1-2,5-17}  filename="nuxt.config.ts"
-import { createResolver } from '@nuxt/kit'
-const { resolve } = createResolver(import.meta.url)
-
+```js {3-6} filename="nuxt.config.ts"
 export default defineNuxtConfig({
-  alias: {
-    'styled-system': resolve('./styled-system'),
-  },
-
-  css: ['@/assets/css/global.css'],
+  css: ['~/assets/main.css'],
 
   postcss: {
     plugins: {
@@ -173,50 +147,17 @@ export default defineNuxtConfig({
 })
 ```
 
-With the above we've performed the following:
-
-- imported the global css file '@/assets/css/global.css' at the root of the system.
-- created an alias that points to the `styled-system` directory.
-- added bamboo into the postcss plugins section.
+Import `styled-system` with a relative path from your components — no alias is needed.
 
 ## Start your build process
 
-Run the following command to start your development server.
-
-<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
-  {/* <!-- prettier-ignore-start --> */}
-  <Tab>
-    ```bash
-    pnpm dev
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    npm run dev
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    yarn dev
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    bun dev
-    ```
-  </Tab>
-  {/* <!-- prettier-ignore-end --> */}
-</Tabs>
+Start the dev server with `pnpm dev`.
 
 ### Start using Bamboo
 
-Now you can start using Bamboo CSS in your project.
-
-As an example here is a snippet of code for a `components/Demo.vue` file.
-
 ```xml filename="components/Demo.vue"
 <script setup lang="ts">
-import { css } from "styled-system/css";
+import { css } from "../styled-system/css";
 </script>
 
 <template>

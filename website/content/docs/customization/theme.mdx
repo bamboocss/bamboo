@@ -58,23 +58,7 @@ Bamboo comes with a handful of colors picked from the amazing Tailwind color pal
 
 ### Spacing
 
-Use the `spacing` key in the theme section of your Bamboo config file to customize the default spacing values.
-
-```ts filename="bamboo.config.ts"
-import { defineConfig } from '@bamboocss/dev'
-
-export default defineConfig({
-  theme: {
-    extend: {
-      tokens: {
-        spacing: {
-          gutter: { value: '32px' },
-        },
-      },
-    },
-  },
-})
-```
+Same shape under `tokens.spacing` — `gutter: { value: '32px' }`.
 
 Bamboo ships with the following spacing tokens by default:
 
@@ -82,7 +66,7 @@ Bamboo ships with the following spacing tokens by default:
 
 ### Border Radius
 
-Use the `radii` key in the theme section of your Bamboo config file to customize the default border radius values.
+Same shape under `tokens.radii`.
 
 <TokenDocs type="radii" />
 
@@ -96,23 +80,7 @@ Bamboo ships with the following shadows by default:
 
 ### Sizing
 
-Use the `sizes` key in the theme section of your Bamboo config file to customize the default sizing values.
-
-```ts filename="bamboo.config.ts"
-import { defineConfig } from '@bamboocss/dev'
-
-export default defineConfig({
-  theme: {
-    extend: {
-      tokens: {
-        sizes: {
-          icon: { value: '24px' },
-        },
-      },
-    },
-  },
-})
-```
+Same shape under `tokens.sizes` — `icon: { value: '24px' }`.
 
 Bamboo ships with the following sizing tokens by default, in addition with the values from the default Bamboo
 [spacing](#spacing) tokens:
@@ -121,23 +89,7 @@ Bamboo ships with the following sizing tokens by default, in addition with the v
 
 ### Fonts
 
-Use the `fonts` key in the theme object to customize the default font families.
-
-```ts filename="bamboo.config.ts"
-import { defineConfig } from '@bamboocss/dev'
-
-export default defineConfig({
-  theme: {
-    extend: {
-      tokens: {
-        fonts: {
-          marketing: { value: 'Inter Variable' },
-        },
-      },
-    },
-  },
-})
-```
+Same shape under `tokens.fonts` — `marketing: { value: 'Inter Variable' }`.
 
 Bamboo ships with the following font families tokens by default:
 
@@ -145,23 +97,7 @@ Bamboo ships with the following font families tokens by default:
 
 ### Font Sizes
 
-Use the `fontSizes` key in the theme object to customize the default font sizes.
-
-```ts filename="bamboo.config.ts"
-import { defineConfig } from '@bamboocss/dev'
-
-export default defineConfig({
-  theme: {
-    extend: {
-      tokens: {
-        fontSizes: {
-          big: { value: '80px' },
-        },
-      },
-    },
-  },
-})
-```
+Same shape under `tokens.fontSizes` — `big: { value: '80px' }`.
 
 Bamboo ships with the following font size tokens by default:
 
@@ -195,8 +131,3 @@ export default defineConfig({
 Bamboo ships with the following keyframes by default:
 
 <TokenDocs type="keyframes" />
-
-## Minimal setup
-
-If you want to use Bamboo with the bare minimum, without any of the defaults, you can read more about it
-[here](/docs/guides/minimal-setup)

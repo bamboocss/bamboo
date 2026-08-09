@@ -17,7 +17,6 @@ Use these utilities to style background colors, gradients, and images.
 | ---------------------------- | ------------------ | -------------- |
 | `bg`, `background`           | `background`       | `colors`       |
 | `bgColor`, `backgroundColor` | `background-color` | `colors`       |
-| `bgGradient`                 | `background-image` | `gradients`    |
 
 ## Background Gradients
 
@@ -91,15 +90,15 @@ Properties for controlling the src and position of a background image.
 />
 ```
 
-| Prop                                   | CSS Property        | Token Category |
-| -------------------------------------- | ------------------- | -------------- |
-| `bgPosition`, `backgroundPosition`     | `background-image`  | none           |
-| `bgPositionX`, `backgroundPositionX`   | `background-image`  | none           |
-| `bgPositionY`, `backgroundPositionY`   | `background-image`  | none           |
-| `bgAttachment` ,`backgroundAttachment` | `background-size`   | none           |
-| `bgClip`, `backgroundClip`             | `background-size`   | none           |
-| `bgOrigin`, `backgroundOrigin`         | `background-size`   | none           |
-| `bgImage`, `backgroundImage`           | `background-size`   | assets         |
-| `bgRepeat`, `backgroundRepeat`         | `background-repeat` | none           |
-| `bgBlendMode`, `backgroundBlendMode`   | `background-size`   | none           |
-| `bgSize`, `backgroundSize`             | `background-size`   | none           |
+| Prop                                   | CSS Property                                 | Token Category |
+| -------------------------------------- | -------------------------------------------- | -------------- |
+| `bgPosition`, `backgroundPosition`     | `background-position`                        | none           |
+| `bgPositionX`, `backgroundPositionX`   | `background-position-x`                      | none           |
+| `bgPositionY`, `backgroundPositionY`   | `background-position-y`                      | none           |
+| `bgAttachment` ,`backgroundAttachment` | `background-attachment`                      | none           |
+| `bgClip`, `backgroundClip`             | `background-clip`, `-webkit-background-clip` | none           |
+| `bgOrigin`, `backgroundOrigin`         | `background-origin`                          | none           |
+| `bgImage`, `backgroundImage`           | `background-image`                           | assets         |
+| `bgRepeat`, `backgroundRepeat`         | `background-repeat`                          | none           |
+| `bgBlendMode`, `backgroundBlendMode`   | `background-blend-mode`                      | none           |
+| `bgSize`, `backgroundSize`             | `background-size`                            | none           |
