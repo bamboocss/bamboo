@@ -32,6 +32,10 @@ const unresolvedReasons: Record<ParserResult['unresolved'][number]['reason'], (p
     'an object spread or computed key leaves the build unable to tell which properties this call sets',
     'Write the properties out, or spread a value the build can resolve, to group it.',
   ],
+  'unresolved-raw': (prop) => [
+    `${prop}.raw() composes its own props rather than its styles, so ${prop}'s declarations will not reach the stylesheet`,
+    `Call it instead — cx(${prop}(props), css({ … })) — or move the overrides into ${prop} itself.`,
+  ],
 }
 
 export class BambooContext extends Generator {

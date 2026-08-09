@@ -27,7 +27,20 @@ export interface UnresolvedStyle {
    *   pair of alternatives.
    * - `too-many-combinations` — more ternary branches than it will enumerate.
    */
-  reason: 'unresolvable-value' | 'missing-property' | 'unenumerable-keys'
+  reason:
+    | 'unresolvable-value'
+    | 'missing-property'
+    | 'unenumerable-keys'
+    /**
+     * `css(recipe.raw(props), …)` — the build reads `.raw` as returning what it was passed.
+     *
+     * True of `css.raw`, which is the identity it was written for. A recipe or pattern's
+     * `.raw` takes *props* and returns *styles*, so the build composes the props instead: the
+     * recipe's own declarations never reach the stylesheet, and its variant names are handed
+     * to the encoder as if they were properties. The browser then asks for classes no rule
+     * backs, and the element renders without them.
+     */
+    | 'unresolved-raw'
 }
 
 /**

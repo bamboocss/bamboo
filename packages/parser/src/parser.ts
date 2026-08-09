@@ -149,6 +149,19 @@ export function createParser(context: ParserOptions) {
         matchArg: () => true,
       },
       getEvaluateOptions: (node) => {
+        /**
+         * `css(recipe.raw(props), …)` loses what the recipe would have contributed.
+         *
+         * `.raw` on a recipe or pattern takes props and returns styles; the build reads it as
+         * the identity `css.raw` means. Resolving it properly would mean running the recipe
+         * here, and emitting the wrong styles is worse than emitting none — so this says so
+         * rather than guessing.
+         */
+        const reportUnresolvedRaw = (base: string, at: Node) => {
+          const { line, column } = sourceFile.getLineAndColumnAtPos(at.getStart())
+          parserResult.unresolved.push({ kind: 'atomic', prop: base, filePath, line, column, reason: 'unresolved-raw' })
+        }
+
         if (!Node.isCallExpression(node)) return evaluateOptions
         const propAccessExpr = node.getExpression()
 
@@ -168,11 +181,34 @@ export function createParser(context: ParserOptions) {
         if (!Node.isPropertyAccessExpression(propAccessExpr)) return evaluateOptions
         let name = propAccessExpr.getText()
 
+        const rawBase = name.endsWith('.raw') ? name.slice(0, -'.raw'.length) : undefined
+
+        // An inline recipe's `.raw` is not an `isRawFn`, so the call is simply unresolvable and
+        // the composition silently contributes nothing. Reported here, before that early
+        // return — and deliberately *not* given the identity below, which would hand the
+        // recipe's variant names to the encoder as though they were properties.
+        if (rawBase && file.isLocalRecipe(rawBase)) {
+          reportUnresolvedRaw(rawBase, node)
+          return evaluateOptions
+        }
+
         if (!file.isRawFn(name as string)) {
           return evaluateOptions
         }
 
         name = name.replace('.raw', '')
+
+        // The identity below is what `css.raw` means: it returns the style object it was
+        // given. A recipe or pattern's `.raw` takes *props* and returns *styles*, so identity
+        // composes the props — losing every declaration the recipe or pattern would have
+        // contributed, and feeding variant names to the encoder as if they were properties.
+        //
+        // Reported rather than guessed at: resolving it properly means running the recipe here,
+        // and emitting the wrong styles would be worse than emitting none. Without this the
+        // element simply renders without them, with nothing said.
+        if (file.isValidRecipe(name) || file.isValidPattern(name)) {
+          reportUnresolvedRaw(name, node)
+        }
 
         return {
           environment: Object.assign({}, defaultEnv, {
