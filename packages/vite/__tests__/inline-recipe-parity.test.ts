@@ -109,13 +109,17 @@ const SELECTIONS = [
 /**
  * A config that lives in another module.
  *
- * The extractor does not resolve one — `cva(badgeConfig)` comes back as `{}` rather than as the
- * imported object. That empty result is not an empty config, and folding against it produced the
- * identity of `{}`: a class with no rules behind it, substituted in place of the call that would
- * have produced the real ones, leaving the element permanently unstyled with nothing to report.
+ * These resolve and fold like any other, and the config's module is registered as a watch
+ * dependency — its contents decide the recipe's identity, so editing it renames every rule and
+ * a literal folded against the old name would be stale.
+ *
+ * What must not fold is a config the extractor could not read at all. An unresolvable one comes
+ * back as `{}`, which is not an empty config: folding against it emits the identity of nothing
+ * in place of the call that would have produced the real classes, leaving the element
+ * permanently unstyled with no diagnostic.
  */
-describe('a config imported from another module', () => {
-  test('declines rather than folding against an unresolved config', async () => {
+describe('a config the call site does not spell out', () => {
+  test('one imported from another module folds, and watches that module', async () => {
     const { createFoldFixture } = await import('./fixture')
     const { fold, addFiles } = createFoldFixture()
 
@@ -123,11 +127,23 @@ describe('a config imported from another module', () => {
       'app/cfg.ts': `export const badgeConfig = { base: { color: 'red.300' }, variants: { tone: { a: { color: 'blue.300' } } } }\n`,
     })
 
-    const code = `import { cva } from 'styled-system/css'\nimport { badgeConfig } from './cfg'\nconst badge = cva(badgeConfig)\nexport const cls = badge({ tone: 'a' })\n`
-    const result = fold(code)
+    const result = fold(
+      `import { cva } from 'styled-system/css'\nimport { badgeConfig } from '../cfg'\nconst badge = cva(badgeConfig)\nexport const cls = badge({ tone: 'a' })\n`,
+    )
 
-    expect(result.folded).toHaveLength(0)
-    expect(result.code).toBe(code)
+    expect(result.folded).toHaveLength(1)
+    expect(result.folded[0]!.className).toContain('--tone_a')
+    expect(result.dependencies.some((path) => path.includes('cfg'))).toBe(true)
+  })
+
+  test('one the extractor could not read does not fold', async () => {
+    const { createFoldFixture } = await import('./fixture')
+    const { fold } = createFoldFixture()
+
+    const code = `import { cva } from 'styled-system/css'\nconst badge = cva(makeConfig())\nexport const cls = badge({ tone: 'a' })\n`
+
+    expect(fold(code).folded).toHaveLength(0)
+    expect(fold(code).code).toBe(code)
   })
 
   test('a config resolved in this module still folds', async () => {

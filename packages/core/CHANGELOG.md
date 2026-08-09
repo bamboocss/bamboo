@@ -49,9 +49,10 @@
   - A ternary, which yields several candidate selections and no single literal.
   - **A selection that could _run_ something.** `badge({ tone: pick() })` has a knowable class and a call inside it;
     folding deletes the argument, so the call would never run. Same contract the `token()` fallback already keeps.
-  - **A config the build could not read** — `cva(makeConfig())`, or one imported from another module, both of which the
-    extractor resolves to `{}`. That is not an empty config, and folding against it would substitute the identity of
-    `{}` for the call that produces the real classes, leaving the element permanently unstyled.
+  - **A config the build could not read**, such as `cva(makeConfig())`, which the extractor resolves to `{}`. That is
+    not an empty config, and folding against it would substitute the identity of `{}` for the call that produces the
+    real classes, leaving the element permanently unstyled. (A config _imported from another module_ does resolve and
+    does fold — an earlier draft of this note said otherwise, and was wrong.)
   - A slot recipe. `sva(...)` invocations return one class per slot rather than a string.
   - `.raw()`, `.merge()`, and anything else reaching the recipe object rather than calling it.
 
