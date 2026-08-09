@@ -288,6 +288,13 @@ export const lowerRecipeCall = (
     /**
      * `input(variantProps)` — a selection the build cannot see inside.
      *
+     * Inline recipes only. `cva` resolves a selection with `getRecipeClassNames`, which reads
+     * a variant value as a key and so cannot take a conditional — a `{ base, md }` object finds
+     * no entry and names no class, exactly as `cvaPick` does. A **config** recipe routes its
+     * selection through `createCss`, which *expands* conditions into one class per breakpoint,
+     * so a scalar lookup silently drops them. That is why this lowering is not applied to
+     * config recipes: for a dynamic axis the build cannot know which kind of value arrives.
+     *
      * The classes are still knowable: a recipe emits one per declared variant, so the call is
      * one term per variant reading that binding. This is the shape a wrapper component takes,
      * where the variants are the component's public API and cannot be literals by definition.

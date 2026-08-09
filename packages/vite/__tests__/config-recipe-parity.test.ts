@@ -1,19 +1,24 @@
 import { loadConfigAndCreateContext } from '@bamboocss/node'
-import { getRecipeIdentity } from '@bamboocss/shared'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Project, SyntaxKind } from 'ts-morph'
 import { beforeAll, describe, expect, test } from 'vitest'
 import { isInertExpression } from '../src/fold'
 import { lowerRecipeCall, type RecipeConfig } from '../src/fold-recipe'
+import { createFoldFixture } from './fixture'
 
 /**
- * A config recipe lowered for a selection the build cannot resolve, against the recipe the
- * codegen actually emitted.
+ * Why a config recipe's calls are not lowered the way an inline recipe's are.
  *
- * Config recipes reach the runtime through `createRecipe`, not `cva` — a different generated
- * function — so agreeing with `cva` proves nothing here. What has to hold is that the classes
- * this emits are the ones `buttonStyle(props)` returns in the browser, for every selection.
+ * The two runtimes resolve a selection differently. `cva` reads a variant value as a key
+ * through `getRecipeClassNames`, so a conditional value finds no entry and names no class —
+ * which is exactly what `cvaPick` does, and why lowering an inline recipe is sound. A config
+ * recipe routes its selection through `createCss`, which *expands* a conditional into one
+ * class per condition.
+ *
+ * For a **dynamic** axis the build cannot know which kind of value arrives, so a scalar lookup
+ * would silently drop every class a responsive variant produces. That shipped once; these pin
+ * both the divergence and the decision that follows from it.
  */
 const here = dirname(fileURLToPath(import.meta.url))
 const cwd = join(here, '../../../sandbox/codegen')
@@ -28,7 +33,7 @@ beforeAll(async () => {
   recipes = (await import(join(cwd, 'styled-system/recipes/index.mjs'))) as never
 }, 60_000)
 
-const lowerFor = (recipe: string) => {
+const loweredFor = (recipe: string) => {
   const config = ctx.recipes.getConfig(recipe) as RecipeConfig & { className: string }
   const project = new Project({ useInMemoryFileSystem: true })
   const file = project.createSourceFile('t.ts', `${recipe}(props)`)
@@ -37,33 +42,9 @@ const lowerFor = (recipe: string) => {
   return lowerRecipeCall(call, { config, name: config.className, box: undefined }, ctx, isInertExpression)
 }
 
-/** Selections restricted to what `splitVariantProps` can produce: declared variants only. */
-const declaredOnly = (recipe: string, props: Record<string, unknown>) => {
-  const config = ctx.recipes.getConfig(recipe) as RecipeConfig
-  const keys = Object.keys(config.variants ?? {})
-  return Object.fromEntries(Object.entries(props).filter(([key]) => keys.includes(key)))
-}
-
-describe('a config recipe lowered against an opaque selection', () => {
-  test.each([
-    [
-      'button',
-      [{}, { size: 'sm' }, { size: 'md' }, { variant: 'solid' }, { size: 'sm', variant: 'solid' }, { size: 'nope' }],
-    ],
-    [
-      'buttonWithCompoundVariants',
-      [
-        {},
-        { size: 'sm' },
-        { size: 'md' },
-        { visual: 'solid' },
-        { size: 'sm', visual: 'solid' },
-        { size: 'md', visual: 'outline' },
-      ],
-    ],
-  ] as const)('%s matches the generated recipe', (recipe, selections) => {
-    const lowered = lowerFor(recipe)
-
+describe('a config recipe resolves conditionals a scalar lookup cannot', () => {
+  test('a scalar selection would agree', () => {
+    const lowered = loweredFor('button')
     expect(lowered.kind).toBe('expression')
     if (lowered.kind !== 'expression') return
 
@@ -72,26 +53,35 @@ describe('a config recipe lowered against an opaque selection', () => {
       props: Record<string, unknown>,
     ) => string
 
-    for (const raw of selections) {
-      // `splitVariantProps` is what feeds this shape, and it filters to declared variants —
-      // which matters, because the generated recipe names a class for an undeclared key while
-      // a config-derived lowering cannot enumerate one.
-      const props = declaredOnly(recipe, raw)
-      expect(evaluate(cvaPick, props), `${recipe} ${JSON.stringify(props)}`).toBe(recipes[recipe]!(props))
+    for (const props of [{}, { visual: 'solid' }, { visual: 'outline' }, { visual: 'bogus' }]) {
+      expect(evaluate(cvaPick, props), JSON.stringify(props)).toBe(recipes.button!(props))
     }
   })
 
   /**
-   * The gate, through the real fold. Only a selection that provably holds declared variants
-   * only may lower — because the generated recipe names a class for any key it is handed and
-   * a config-derived lowering cannot enumerate one it does not know about.
+   * The reason the fold leaves config recipes alone. A responsive variant is documented and
+   * type-permitted, and the runtime expands it into a class per condition; a table lookup
+   * finds no entry for the object and yields nothing at all.
    */
-  /**
-   * These drive the real fold, whose fixture has its own recipes — `buttonStyle` here, not the
-   * `sandbox/codegen` ones the parity cases above compare against.
-   */
-  describe('what the fold admits', () => {
-    const wrapper = `
+  test.each([
+    { label: 'a conditional value', props: { visual: { base: 'solid', md: 'outline' } } as Record<string, unknown> },
+    { label: 'a responsive array', props: { visual: ['solid', 'outline'] } as Record<string, unknown> },
+  ])('$label diverges from a scalar lookup', ({ props }) => {
+    const lowered = loweredFor('button')
+    if (lowered.kind !== 'expression') throw new Error('expected an expression')
+
+    const evaluate = new Function('cvaPick', 'props', `return ${lowered.expression}`) as (
+      p: unknown,
+      props: Record<string, unknown>,
+    ) => string
+
+    expect(evaluate(cvaPick, props)).not.toBe(recipes.button!(props))
+  })
+})
+
+describe('what the fold does with config recipes', () => {
+  test('a wrapper forwarding runtime props does not lower', () => {
+    const code = `
       import { cx } from 'styled-system/css'
       import { buttonStyle } from 'styled-system/recipes'
       export const B = (props) => {
@@ -100,53 +90,32 @@ describe('a config recipe lowered against an opaque selection', () => {
       }
     `
 
-    test('the wrapper shape lowers, and splitVariantProps goes with it', async () => {
-      const { createFoldFixture } = await import('./fixture')
-      const result = createFoldFixture().fold(wrapper)
-
-      expect(result.folded).toHaveLength(1)
-      expect(result.code).toContain('cvaPick(variantProps.')
-      expect(result.code).toContain('splitProps(props, [')
-    })
-
-    test('an arbitrary object does not lower', async () => {
-      const { createFoldFixture } = await import('./fixture')
-      const code = `
-        import { buttonStyle } from 'styled-system/recipes'
-        export const B = (opts) => buttonStyle(opts)
-      `
-
-      expect(createFoldFixture().fold(code).folded).toHaveLength(0)
-    })
-
-    test('a selection split from a different recipe does not lower', async () => {
-      const { createFoldFixture } = await import('./fixture')
-      const code = `
-        import { buttonStyle, checkbox } from 'styled-system/recipes'
-        export const B = (props) => {
-          const [variantProps] = checkbox.splitVariantProps(props)
-          return buttonStyle(variantProps)
-        }
-      `
-
-      expect(createFoldFixture().fold(code).folded).toHaveLength(0)
-    })
+    expect(createFoldFixture().fold(code).folded).toHaveLength(0)
   })
 
-  /** A slot recipe resolves to one class per slot; there is no string to substitute. */
-  test('a slot recipe does not lower', () => {
-    const config = ctx.recipes.getConfig('slotButton') as RecipeConfig & { className: string }
-    const project = new Project({ useInMemoryFileSystem: true })
-    const file = project.createSourceFile('t.ts', `slotButton(props)`)
-    const call = file.getDescendantsOfKind(SyntaxKind.CallExpression)[0]!
+  /** Unaffected: a selection the build resolved is a scalar, and folds through the recipe path. */
+  test('a statically resolvable call still folds', () => {
+    const result = createFoldFixture().fold(`
+      import { buttonStyle } from 'styled-system/recipes'
+      export const cls = buttonStyle({ size: 'sm' })
+    `)
 
-    const lowered = lowerRecipeCall(
-      call,
-      { config, name: config.className ?? getRecipeIdentity(config), box: undefined },
-      ctx,
-      isInertExpression,
-    )
+    expect(result.folded).toHaveLength(1)
+    expect(result.folded[0]!.className).toContain('--size_sm')
+  })
 
-    expect(lowered.kind).toBe('decline')
+  /** Inline recipes are sound for the reason above, and keep lowering. */
+  test('an inline recipe wrapper still lowers', () => {
+    const result = createFoldFixture().fold(`
+      import { cva, cx } from 'styled-system/css'
+      const badge = cva({ base: {}, variants: { tone: { a: {}, b: {} } } })
+      export const B = (props) => {
+        const [variantProps, rest] = badge.splitVariantProps(props)
+        return <span className={cx(badge(variantProps), rest.className)} />
+      }
+    `)
+
+    expect(result.folded).toHaveLength(1)
+    expect(result.code).toContain('cvaPick(variantProps.tone,')
   })
 })

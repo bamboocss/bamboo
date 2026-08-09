@@ -743,48 +743,6 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     return names
   }
 
-  /**
-   * Lower a config recipe call the same way an inline one lowers.
-   *
-   * The config lives in `ctx.recipes` rather than in the module, and the classes are named
-   * from it identically — so this is the same `lowerRecipeCall`, handed the config from a
-   * different place. Slot recipes are excluded by the caller: they resolve to one class per
-   * slot rather than to a string.
-   */
-  const lowerConfigRecipeCall = (call: Node, name: string) => {
-    const config = ctx.recipes.getConfig(name) as RecipeEntry['config'] | undefined
-    if (!config || (config as { slots?: unknown }).slots !== undefined) return undefined
-
-    const className = (config as { className?: string }).className
-    if (!className) return undefined
-
-    // Any selection, now that both recipe runtimes agree on an undeclared key: `createRecipe`
-    // filters to the declared variant map exactly as `getRecipeClassNames` does, so a lowering
-    // derived from the config reproduces either. This used to be restricted to the output of
-    // `splitVariantProps`, which was the only selection that provably held no undeclared key.
-    const lowered = lowerRecipeCall(call, { config, name: className, box: undefined }, ctx, isInertExpression)
-    if (lowered.kind !== 'expression') return undefined
-
-    const helper = ensureRecipeHelperImport(
-      RECIPE_PICK_HELPER,
-      call,
-      isBambooCssModule,
-      isGeneratedCssModule,
-      isShadowed,
-    )
-    if (!helper) return undefined
-
-    return {
-      replacement:
-        helper.name === RECIPE_PICK_HELPER
-          ? lowered.expression
-          : lowered.expression.replaceAll(`${RECIPE_PICK_HELPER}(`, `${helper.name}(`),
-      className: lowered.staticClasses,
-      classNames: lowered.classNames,
-      insert: helper.insert,
-    }
-  }
-
   for (const item of parserResult.toArray()) {
     const type = item.type ?? ''
     const name = item.name ?? type
@@ -1075,17 +1033,6 @@ export const foldSource = (options: FoldOptions): FoldResult => {
 
       if (partial) {
         candidates.push({ item, call, node: call, start, end, ...partial })
-        continue
-      }
-
-      // A config recipe whose selection the build cannot resolve — the wrapper shape, where
-      // the variants are the component's public API. Its classes are named from its config
-      // exactly as an inline recipe's are, so the same lowering applies: one term per declared
-      // variant. Without this, `defineRecipe` recipes were the one kind that could not lower.
-      const lowered = type === 'recipe' && !slot ? lowerConfigRecipeCall(call, name) : undefined
-
-      if (lowered) {
-        candidates.push({ item, call, node: call, start, end, ...lowered })
         continue
       }
 
