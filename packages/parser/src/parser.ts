@@ -105,6 +105,21 @@ export function createParser(context: ParserOptions) {
       }
     }
 
+    /**
+     * `css(recipe.raw(props), …)` loses what the recipe would have contributed.
+     *
+     * `.raw` on a recipe or pattern takes props and returns styles; the build reads it as the
+     * identity `css.raw` means. Resolving it properly would mean running the recipe here, and
+     * emitting the wrong styles is worse than emitting none — so this says so rather than
+     * guessing.
+     *
+     * Defined out here rather than inside `getEvaluateOptions`, which runs per call node.
+     */
+    const reportUnresolvedRaw = (base: string, at: Node) => {
+      const { line, column } = sourceFile.getLineAndColumnAtPos(at.getStart())
+      parserResult.unresolved.push({ kind: 'atomic', prop: base, filePath, line, column, reason: 'unresolved-raw' })
+    }
+
     const extractResultByName = extract({
       ast: sourceFile,
       tokens: context.tokens
@@ -149,19 +164,6 @@ export function createParser(context: ParserOptions) {
         matchArg: () => true,
       },
       getEvaluateOptions: (node) => {
-        /**
-         * `css(recipe.raw(props), …)` loses what the recipe would have contributed.
-         *
-         * `.raw` on a recipe or pattern takes props and returns styles; the build reads it as
-         * the identity `css.raw` means. Resolving it properly would mean running the recipe
-         * here, and emitting the wrong styles is worse than emitting none — so this says so
-         * rather than guessing.
-         */
-        const reportUnresolvedRaw = (base: string, at: Node) => {
-          const { line, column } = sourceFile.getLineAndColumnAtPos(at.getStart())
-          parserResult.unresolved.push({ kind: 'atomic', prop: base, filePath, line, column, reason: 'unresolved-raw' })
-        }
-
         if (!Node.isCallExpression(node)) return evaluateOptions
         const propAccessExpr = node.getExpression()
 

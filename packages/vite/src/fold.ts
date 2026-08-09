@@ -743,6 +743,84 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     return names
   }
 
+  /**
+   * Is this binding the variant half of `<recipe>.splitVariantProps(...)`?
+   *
+   * Read off the declaration rather than the type, so it is the same recipe and the same
+   * destructuring position the source actually wrote.
+   */
+  const isSplitVariantPropsOf = (binding: Node, recipe: string): boolean => {
+    for (const declaration of binding.getSourceFile().getDescendantsOfKind(SyntaxKind.VariableDeclaration)) {
+      const nameNode = declaration.getNameNode()
+      if (!Node.isArrayBindingPattern(nameNode)) continue
+
+      const first = nameNode.getElements()[0]
+      if (!first || !Node.isBindingElement(first)) continue
+      if (first.getNameNode().getText() !== binding.getText()) continue
+
+      const initializer = declaration.getInitializer()
+      if (!initializer || !Node.isCallExpression(initializer)) return false
+
+      const callee = initializer.getExpression()
+      if (!Node.isPropertyAccessExpression(callee)) return false
+
+      return callee.getName() === 'splitVariantProps' && callee.getExpression().getText() === recipe
+    }
+
+    return false
+  }
+
+  /**
+   * Lower a config recipe call the same way an inline one lowers.
+   *
+   * The config lives in `ctx.recipes` rather than in the module, and the classes are named
+   * from it identically — so this is the same `lowerRecipeCall`, handed the config from a
+   * different place. Slot recipes are excluded by the caller: they resolve to one class per
+   * slot rather than to a string.
+   */
+  const lowerConfigRecipeCall = (call: Node, name: string) => {
+    const config = ctx.recipes.getConfig(name) as RecipeEntry['config'] | undefined
+    if (!config || (config as { slots?: unknown }).slots !== undefined) return undefined
+
+    const className = (config as { className?: string }).className
+    if (!className) return undefined
+
+    // Only a selection that provably holds no undeclared key.
+    //
+    // The generated `createRecipe` names a class for *any* prop it is handed — its transform
+    // is `${name}--${prop}_${value}` with no check that the variant exists — where `cva` skips
+    // one the config does not declare. So the two runtimes disagree on an undeclared key, and
+    // a lowering built from the config cannot reproduce a class for a key it cannot enumerate.
+    //
+    // `splitVariantProps` filters to `Object.keys(variants)`, so its output cannot contain
+    // one. That is the wrapper shape, and it is the only shape this lowers.
+    if (!Node.isCallExpression(call)) return undefined
+    const argument = call.getArguments()[0]
+    if (!argument || !Node.isIdentifier(argument) || !isSplitVariantPropsOf(argument, name)) return undefined
+
+    const lowered = lowerRecipeCall(call, { config, name: className, box: undefined }, ctx, isInertExpression)
+    if (lowered.kind !== 'expression') return undefined
+
+    const helper = ensureRecipeHelperImport(
+      RECIPE_PICK_HELPER,
+      call,
+      isBambooCssModule,
+      isGeneratedCssModule,
+      isShadowed,
+    )
+    if (!helper) return undefined
+
+    return {
+      replacement:
+        helper.name === RECIPE_PICK_HELPER
+          ? lowered.expression
+          : lowered.expression.replaceAll(`${RECIPE_PICK_HELPER}(`, `${helper.name}(`),
+      className: lowered.staticClasses,
+      classNames: lowered.classNames,
+      insert: helper.insert,
+    }
+  }
+
   for (const item of parserResult.toArray()) {
     const type = item.type ?? ''
     const name = item.name ?? type
@@ -1036,6 +1114,17 @@ export const foldSource = (options: FoldOptions): FoldResult => {
         continue
       }
 
+      // A config recipe whose selection the build cannot resolve — the wrapper shape, where
+      // the variants are the component's public API. Its classes are named from its config
+      // exactly as an inline recipe's are, so the same lowering applies: one term per declared
+      // variant. Without this, `defineRecipe` recipes were the one kind that could not lower.
+      const lowered = type === 'recipe' && !slot ? lowerConfigRecipeCall(call, name) : undefined
+
+      if (lowered) {
+        candidates.push({ item, call, node: call, start, end, ...lowered })
+        continue
+      }
+
       skipped.push({ name, reason: 'dynamic', start, end })
       continue
     }
@@ -1174,12 +1263,11 @@ export const foldSource = (options: FoldOptions): FoldResult => {
   // Not driven by `parserResult`: a property access on a local binding is not a style call, so
   // nothing records it. The source file is the only place it exists.
   // Any recorded definition gives the module being rewritten; they all share it.
-  const recipeSourceFile = recipeConfigs?.size
-    ? [...recipeConfigs.values()]
-        .find((entry) => entry.box)
-        ?.box?.getNode?.()
-        ?.getSourceFile()
-    : undefined
+  const recipeSourceFile =
+    [...(recipeConfigs?.values() ?? [])]
+      .find((entry) => entry.box)
+      ?.box?.getNode?.()
+      ?.getSourceFile() ?? candidates[0]?.node.getSourceFile()
 
   if (recipeSourceFile) {
     for (const access of recipeSourceFile.getDescendantsOfKind(SyntaxKind.PropertyAccessExpression)) {
@@ -1187,10 +1275,24 @@ export const foldSource = (options: FoldOptions): FoldResult => {
 
       const target = access.getExpression()
       if (!Node.isIdentifier(target)) continue
-
-      const entry = recipeConfigs?.get(target.getText())
-      if (!entry || entry === AMBIGUOUS) continue
       if (isShadowed(access, target.getText())) continue
+
+      // An inline recipe the module bound, or a config recipe it imported. The keys are
+      // `Object.keys(variants)` either way, and both reach `splitProps` underneath.
+      const local = recipeConfigs?.get(target.getText())
+      const importedConfig =
+        !local && importsFor(recipeSourceFile).has(target.getText())
+          ? (ctx.recipes.getConfig(target.getText()) as RecipeEntry['config'] | undefined)
+          : undefined
+
+      const entry =
+        local && local !== AMBIGUOUS
+          ? local
+          : importedConfig
+            ? ({ config: importedConfig, name: '', box: undefined } satisfies RecipeEntry)
+            : undefined
+
+      if (!entry) continue
 
       const call = access.getParent()
       if (!Node.isCallExpression(call) || call.getExpression() !== access) continue
