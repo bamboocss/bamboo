@@ -7,7 +7,13 @@ export type { ImportResult } from './file-matcher'
 export { ImportMap } from './import-map'
 export { JsxEngine } from './jsx'
 export { Layers } from './layers'
-export { checkNamingAgreement, formatNamingDisagreement, type NamingDisagreement } from './naming-agreement'
+export {
+  checkNamingAgreement,
+  classFormatter,
+  type ClassFormatterContext,
+  formatNamingDisagreement,
+  type NamingDisagreement,
+} from './naming-agreement'
 export { expandNestedCss, optimizeCss } from './optimize'
 export { Patterns, type PatternNode } from './patterns'
 export { pruneKeyframes } from './prune-keyframes'

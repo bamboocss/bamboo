@@ -65,6 +65,9 @@ stack({ gap: '4', align: 'center' })
 // ✅ config recipe calls, default and compound variants included
 buttonStyle({ size: 'sm' })
 
+// ✅ inline recipe calls — `const badge = cva({ … })` — when the whole selection resolves
+badge({ tone: 'info' })
+
 // ✅ inside a JSX expression, which is still a call site
 <div className={css({ px: '4' })} />
 ```
@@ -309,18 +312,18 @@ src/Button.tsx: dynamic=2 raw-call=1
 
 The reasons are:
 
-| Reason               | Meaning                                                         |
-| -------------------- | --------------------------------------------------------------- |
-| `dynamic`            | Some part of the arguments could not be resolved at build time. |
-| `raw-call`           | A `.raw()` call, which must keep returning a style object.      |
-| `not-foldable`       | `cva` or `sva` – returns a function, not a class string.        |
-| `recipe-call`        | An invocation of an inline recipe (see below).                  |
-| `unsupported-kind`   | A slot recipe call, or a shape this phase does not handle.      |
-| `not-imported`       | The callee is not a Bamboo import (see below).                  |
-| `empty`              | Resolved, but produced no class names.                          |
-| `overlapping`        | Nested inside another folded call.                              |
-| `unresolved-token`   | A `token()` path resolving to no usable string (see above).     |
-| `no-call-expression` | The call site could not be located in the source.               |
+| Reason               | Meaning                                                           |
+| -------------------- | ----------------------------------------------------------------- |
+| `dynamic`            | Some part of the arguments could not be resolved at build time.   |
+| `raw-call`           | A `.raw()` call, which must keep returning a style object.        |
+| `not-foldable`       | `cva` or `sva` – returns a function, not a class string.          |
+| `recipe-call`        | An inline recipe call whose selection is not fully known (below). |
+| `unsupported-kind`   | A slot recipe call, or a shape this phase does not handle.        |
+| `not-imported`       | The callee is not a Bamboo import (see below).                    |
+| `empty`              | Resolved, but produced no class names.                            |
+| `overlapping`        | Nested inside another folded call.                                |
+| `unresolved-token`   | A `token()` path resolving to no usable string (see above).       |
+| `no-call-expression` | The call site could not be located in the source.                 |
 
 `not-foldable` and `unsupported-kind` are deliberately separate. The first is permanent – `cva` and `sva` return
 functions, so there is no class string to fold to. The second is a limitation of this phase, such as a slot recipe,
@@ -339,18 +342,35 @@ const badge = cva({ base: { rounded: 'full' }, variants: { tone: { info: { bg: '
 badge({ tone: 'info' })
 ```
 
-The `cva(...)` definition is reported as `not-foldable`, which it always was. The **call** is reported as `recipe-call`,
-which is new – and until it was, it did not appear at all.
+The `cva(...)` definition is reported as `not-foldable` – it returns a function, so there is no class string to fold it
+to. The **call** folds, when the build can resolve the whole selection:
 
-That gap was worth closing on its own. Bamboo recognises style calls by the name they were _imported_ as, and `badge` is
-not an import, so nothing looked at these call sites. They were not counted in the coverage summary and they did not
-appear under `reportSkipped`, which meant a call the build could not fold was indistinguishable from a call the build
-had never parsed. The percentage read higher than the project's real coverage.
+```ts
+// the bundle gets
+const cls = 'cva_1a2b3c cva_1a2b3c--tone_info'
+```
 
-They are reported, not folded. A config recipe imported from `styled-system/recipes` still folds; an inline one keeps
-its runtime path.
+**The reason this is worth more than the call it removes.** `cva({ base, variants })` ships the whole style object to
+the browser, purely so the runtime can hash it into a name and pick classes off it – and those styles are already in
+your stylesheet. Once _every_ call of a binding folds, the binding is unreferenced and your bundler drops the config
+with it. Measured on an application with 1,271 inline recipe bindings, 175 folded completely and took **9.9 kB gzipped**
+of config with them; the `cva` runtime is 4.5 kB by comparison.
 
-Four shapes are still not counted, so a project using them reads as having fewer sites than it has:
+A call is reported as `recipe-call` when its selection is not fully known:
+
+```ts
+badge({ tone }) // ❌ `tone` is a prop or state
+badge({ tone: on ? 'info' : 'warn' }) // ❌ a ternary is several selections, not one
+```
+
+This is deliberately all-or-nothing. An unresolved variant does not merely omit one class – which variant is selected
+can change which others apply – so a partially-known selection does not fold at all.
+
+Values the extractor can resolve do fold, even when they are not literals at the call site: a module constant, an
+imported one, a value returned by a pure helper. What never happens is the reverse – a property written at the call site
+that the build could not resolve makes the call decline, rather than folding as though it had not been written.
+
+Four shapes are neither folded nor counted, so a project using them reads as having fewer sites than it has:
 
 - **`badge.raw(...)`.** Only the bare name is tracked, and `raw-call` is already the reason that fits a `.raw()` call,
   so these are left out rather than filed under `recipe-call`.

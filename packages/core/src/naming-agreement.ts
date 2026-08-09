@@ -77,6 +77,9 @@ export interface NamingDisagreement {
 
 type NamingContext = Pick<Context, 'config' | 'conditions' | 'utility' | 'hash' | 'encoder' | 'decoder' | 'recipes'>
 
+/** What `classFormatter` needs, which is less than a full naming check. */
+export type ClassFormatterContext = Pick<Context, 'utility' | 'hash'>
+
 /**
  * Whether the stylesheet names a class the runtime will actually ask for.
  *
@@ -178,8 +181,11 @@ function checkSlotRecipeNamingAgreement(
  * What `createCss` does to a recipe's class: prefix it, and hash it when `hash.className`
  * is set. Recipe selections carry no conditions — `assertCompoundVariant` rejects them —
  * so the condition half of `hashFn` is not in play.
+ *
+ * Exported because the fold derives the same names when it lowers a recipe call, and a
+ * second implementation of prefixing and hashing is a second thing to keep in agreement.
  */
-const classFormatter = (ctx: NamingContext) => {
+export const classFormatter = (ctx: ClassFormatterContext) => {
   const prefix = ctx.utility.prefix
   const withPrefix = (className: string) => (prefix ? (className ? `${prefix}-${className}` : prefix) : className)
   return ctx.hash.className ? (className: string) => withPrefix(ctx.utility.toHash([className], toHash)) : withPrefix

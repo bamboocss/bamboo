@@ -290,14 +290,47 @@ describe('calls of an inline recipe', () => {
       ${body}
     `
 
-  test('a static call is reported, and the source is unchanged', () => {
+  test('a static call folds to the classes the recipe would have produced', () => {
     const { fold } = createFoldFixture()
-    const code = inline(`export const cls = badge({ tone: 'a' })`)
+    const result = fold(inline(`export const cls = badge({ tone: 'a' })`))
+
+    expect(result.folded).toHaveLength(1)
+    expect(result.code).toContain('export const cls = "')
+    expect(result.folded[0]!.className).toContain('--tone_a')
+    // Named from the config, not per property — the rules live in the recipes layer.
+    expect(result.folded[0]!.className).not.toContain('c_blue')
+  })
+
+  test('a call with no arguments folds, applying the defaults', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(`
+      import { cva } from 'styled-system/css'
+      const badge = cva({ base: { color: 'red.300' }, variants: { tone: { a: {}, b: {} } }, defaultVariants: { tone: 'b' } })
+      export const cls = badge()
+    `)
+
+    expect(result.folded).toHaveLength(1)
+    expect(result.folded[0]!.className).toContain('--tone_b')
+  })
+
+  /**
+   * A slot recipe returns one class per slot — an object, not a string — so there is no literal
+   * that stands for it. The parser records its calls as recipe calls like any other, so what
+   * keeps it safe is that the fold's binding→config map is built from `cva` definitions only.
+   */
+  test('a slot recipe call never folds', () => {
+    const { fold } = createFoldFixture()
+    const code = `
+      import { sva } from 'styled-system/css'
+      const parts = sva({ slots: ['root'], base: { root: { color: 'red.300' } }, variants: { tone: { a: { root: { color: 'green.300' } } } } })
+      export const cls = parts({ tone: 'a' })
+      export const root = parts({ tone: 'a' }).root
+    `
+
     const result = fold(code)
 
-    expect(result.code).toBe(code)
     expect(result.folded).toHaveLength(0)
-    expect(result.skipped.map((s) => s.reason)).toContain('recipe-call')
+    expect(result.code).toBe(code)
   })
 
   test('a dynamic call is reported the same way', () => {
@@ -307,20 +340,79 @@ describe('calls of an inline recipe', () => {
     expect(result.skipped.map((s) => s.reason)).toContain('recipe-call')
   })
 
-  test('the definition and the call are reported separately', () => {
+  test('the definition is still reported, since it cannot fold', () => {
     const { fold } = createFoldFixture()
     const result = fold(inline(`export const cls = badge({ tone: 'a' })`))
 
-    const reasons = result.skipped.map((s) => s.reason)
-    expect(reasons).toContain('not-foldable') // the cva(...) definition
-    expect(reasons).toContain('recipe-call') // the badge(...) invocation
+    // `cva(...)` returns a function; only its invocations resolve to a class string.
+    expect(result.skipped.map((s) => s.reason)).toContain('not-foldable')
+    expect(result.code).toContain('const badge = cva(')
   })
 
   /**
-   * The parser registers an inline recipe for the whole file, so these two are the shapes
-   * where the name at the call site is not the recipe at all. Cosmetic while this only
-   * reports — but the report is the entire point of it, and a fold built on top would be
-   * rewriting somebody else's function.
+   * Folding deletes the argument, so anything evaluating it would have done goes with it.
+   * The class is knowable here and the call still must not fold — the same trade `token()`'s
+   * discarded fallback and the constant-slot fold already decline.
+   */
+  test('a selection that could run something does not fold', () => {
+    const { fold } = createFoldFixture()
+    const code = inline(`
+      const trace = () => 'a'
+      export const cls = badge({ tone: trace() })
+    `)
+
+    expect(fold(code).folded).toHaveLength(0)
+    expect(fold(code).code).toBe(code)
+  })
+
+  /**
+   * The key is read off the name node, not unquoted from its text. `'\u0074one'` names the
+   * variant `tone`; stripping the quotes leaves the escape uninterpreted, the variant does
+   * not match, and its class is silently dropped from the string.
+   */
+  test.each([
+    [`{ 'tone': 'a' }`, 'a quoted key'],
+    [`{ '\u0074one': 'a' }`, 'an escaped key'],
+  ])('%s folds like a bare one (%s)', (selection) => {
+    const { fold } = createFoldFixture()
+    const result = fold(inline(`export const cls = badge(${selection})`))
+
+    expect(result.folded).toHaveLength(1)
+    expect(result.folded[0]!.className).toContain('--tone_a')
+  })
+
+  /**
+   * A config the extractor could not read is not an empty config. Folding against one emits
+   * the identity of `{}` and deletes the call that would have produced real classes, leaving
+   * the element permanently unstyled with nothing to report it.
+   */
+  test('a config the build could not resolve does not fold', () => {
+    const { fold } = createFoldFixture()
+    const code = `
+      import { cva } from 'styled-system/css'
+      const badge = cva(makeConfig())
+      export const cls = badge({ tone: 'a' })
+    `
+
+    expect(fold(code).folded).toHaveLength(0)
+    expect(fold(code).code).toBe(code)
+  })
+
+  test('a config chosen by a ternary does not fold', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(`
+      import { cva } from 'styled-system/css'
+      const badge = cva(dark ? { base: { color: 'red.300' } } : { base: { color: 'blue.300' } })
+      export const cls = badge({})
+    `)
+
+    expect(result.folded).toHaveLength(0)
+  })
+
+  /**
+   * Shapes where the name at the call site is not the recipe at all. The parser registers an
+   * inline recipe for the whole file, so without these guards the fold would be rewriting
+   * somebody else's function into a class string.
    */
   test('a nearer binding of the same name is not reported', () => {
     const { fold } = createFoldFixture()
@@ -348,11 +440,11 @@ describe('calls of an inline recipe', () => {
     expect(result.skipped.map((s) => s.reason)).not.toContain('recipe-call')
   })
 
-  test('a call nested in a function still reports, when nothing shadows it', () => {
+  test('a call nested in a function still folds, when nothing shadows it', () => {
     const { fold } = createFoldFixture()
     const result = fold(inline(`export function ok() { return badge({ tone: 'a' }) }`))
 
-    expect(result.skipped.map((s) => s.reason)).toContain('recipe-call')
+    expect(result.folded).toHaveLength(1)
   })
 
   test('an inline recipe call does not block a css() fold beside it', () => {
@@ -364,8 +456,8 @@ describe('calls of an inline recipe', () => {
     `).replace(`import { cva }`, `import { css, cva }`),
     )
 
-    expect(result.folded).toHaveLength(1)
     expect(result.code).toContain('export const b = "c_red.300"')
-    expect(result.code).toContain(`badge({ tone: 'a' })`)
+    // Both fold now: the css() call by property, the recipe call by its config.
+    expect(result.folded).toHaveLength(2)
   })
 })

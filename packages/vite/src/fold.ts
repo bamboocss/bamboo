@@ -4,6 +4,7 @@ import { type BoxNode, box, unbox } from '@bamboocss/extractor'
 import type { Dict, ParserResultInterface, ResultItem } from '@bamboocss/types'
 import MagicString from 'magic-string'
 import { Node, type SourceFile, SyntaxKind } from 'ts-morph'
+import { collectRecipeConfigs, lowerRecipeCall, type RecipeEntry } from './fold-recipe'
 import {
   accountsForSource,
   ensureCxImport,
@@ -28,7 +29,7 @@ export type SkipReason =
   | 'dynamic' // some part of the arguments could not be resolved at build time
   | 'raw-call' // `css.raw(...)` returns a style object, not a class string
   | 'not-foldable' // the call cannot evaluate to a class string at all (cva/sva)
-  | 'recipe-call' // an invocation of a locally-bound recipe, which this phase does not fold yet
+  | 'recipe-call' // an inline recipe call whose selection the build could not fully resolve
   | 'unsupported-kind' // could fold in principle, but this phase does not (config recipes)
   | 'not-imported' // the callee is not a Bamboo import — a local function of the same name
   | 'no-call-expression' // could not locate the enclosing call to replace
@@ -100,22 +101,13 @@ export interface FoldOptions {
 }
 
 /**
- * `cva`/`sva` return a function, so neither can collapse to a class string. Their
- * *invocations* could, but those are separate call sites the parser does not record as
- * such. `token` also resolves to no class, but it does resolve to a literal, so it folds
- * through its own path rather than being declined outright.
+ * `cva`/`sva` return a function, so neither *definition* can collapse to a class string.
+ * `token` also resolves to no class, but it does resolve to a literal, so it folds through
+ * its own path rather than being declined outright.
  *
- * Folding an invocation is now *possible* in a way it was not: a recipe's classes are named
- * semantically, so the build knows every class a call can produce from the config alone.
- * What is missing is upstream — the parser matches calls by imported name, so a local
- * `button()` from `const button = cva(...)` is never recorded, and tracking those bindings
- * is a change to the extractor rather than to this set.
- *
- * Worth knowing before taking that on: semantic naming already took most of the prize.
- * `cvaFn` used to run `mergeCss` and name a class per property on every call; it is now a
- * memoized loop over `variantKeys` doing string concatenation. That is an inspection of the
- * two implementations, not a measurement — benchmark it before deciding it is worth the
- * extractor work.
+ * Their invocations are a different matter and do fold — `cva`'s through `fold-recipe`,
+ * which is a separate set because the call is recorded under the name the file bound rather
+ * than the name it imported. `sva`'s do not: a slot recipe resolves to one class per slot.
  */
 const FOLDABLE_TYPES = new Set(['css', 'pattern', 'recipe'])
 
@@ -139,14 +131,13 @@ const UNFOLDABLE_TYPES = new Set(['cva', 'sva'])
 /**
  * A call of a recipe the file bound itself: `const badge = cva(...)`, then `badge({ tone })`.
  *
- * Reported rather than folded. The classes are knowable -- a recipe is named semantically
- * from its config, so the build can say exactly what any selection produces -- but resolving
- * them means emitting a literal for a static selection and a lookup over the variant map for
- * a dynamic one, which is a bigger change than this set.
+ * Folded when the whole selection resolves, reported under this reason when it does not.
+ * Deliberately all-or-nothing: an unresolved variant does not merely omit its own class, so a
+ * partially-known selection is not foldable at all.
  *
- * Reported at all because it used to be invisible. The parser matched calls by imported
- * name, so a local binding was never recorded, and an unfoldable invocation looked identical
- * to code nothing had parsed.
+ * Visible at all because it used to not be. The parser matched calls by imported name, so a
+ * local binding was never recorded, and an unfoldable invocation looked identical to code
+ * nothing had parsed.
  */
 const RECIPE_CALL_TYPE = 'cva-call'
 
@@ -682,6 +673,14 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     classNames?: string[]
     /** Replacement text for a partially folded call, in place of a bare class string. */
     replacement?: string
+    /**
+     * The node of the *definition* a recipe call was folded against.
+     *
+     * Registered as a watch dependency alongside the call's own module: an inline recipe's
+     * class names are hashed from its config, so a config living in another file has to
+     * re-transform this one when it changes.
+     */
+    configBox?: ResultItem['box']
     /** The resolved value, for a `token()` call. Its presence is what marks one. */
     value?: string
     /** Bindings to add to an existing import, by name so duplicates can be dropped. */
@@ -701,6 +700,9 @@ export const foldSource = (options: FoldOptions): FoldResult => {
 
   const candidates: Candidate[] = []
   const seenRanges = new Set<string>()
+  /** Built on first use: most modules declare no inline recipe. */
+  let recipeConfigs: Map<string, RecipeEntry> | undefined
+
   /** Ranges already reported as declined, so one call is never counted twice. */
   const reportedRanges = new Set<string>()
 
@@ -834,6 +836,50 @@ export const foldSource = (options: FoldOptions): FoldResult => {
 
         if (!reportedRanges.has(rangeKey)) {
           reportedRanges.add(rangeKey)
+
+          // Offsets only mean something against the module being rewritten, and a box can
+          // carry nodes from any module the extractor resolved through — the same guard the
+          // fold path applies before touching `magic`.
+          if (code.slice(start, end) !== call.getText()) {
+            skipped.push({ name, reason: 'no-call-expression', start: 0, end: 0 })
+            continue
+          }
+
+          recipeConfigs ??= collectRecipeConfigs(parserResult)
+          // One resolution only: a ternary yields several candidate selections, and there is
+          // no single literal that stands for all of them.
+          const resolvedSelection = item.data?.length === 1 ? (item.data[0] as Dict) : undefined
+
+          // Folding deletes the argument, so whatever evaluating it would have done goes with
+          // it. `badge({ tone: trace() })` has a knowable class *and* a call in its selection —
+          // the same trade `token()`'s fallback and the constant-slot fold already decline.
+          const entry = recipeConfigs.get(name)
+          const inert = Node.isCallExpression(call) && call.getArguments().every(isInertExpression)
+          const lowered = inert
+            ? lowerRecipeCall(call, entry, ctx, resolvedSelection)
+            : ({ kind: 'decline', reason: 'dynamic' } as const)
+
+          if (lowered.kind === 'class') {
+            // `replacement`, not `value`: this is a class string, and the `value` path is
+            // `token()`'s — it records an empty `className`, which is what a consumer checks
+            // for a backing rule.
+            candidates.push({
+              item,
+              call,
+              node: call,
+              start,
+              end,
+              replacement: JSON.stringify(lowered.className),
+              className: lowered.className,
+              classNames: lowered.className.split(' ').filter(Boolean),
+              // The *definition's* node, not just the call's. A config imported from another
+              // module is what the class name is hashed from, so editing it has to
+              // re-transform this one or the literal here goes stale against a renamed rule.
+              configBox: entry?.box,
+            })
+            continue
+          }
+
           skipped.push({ name, reason: 'recipe-call', start, end })
         }
       }
@@ -1004,6 +1050,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
         end,
       })
       collectSourceFiles(item.box, dependencyScan)
+      if (candidate.configBox) collectSourceFiles(candidate.configBox, dependencyScan)
       continue
     }
 
