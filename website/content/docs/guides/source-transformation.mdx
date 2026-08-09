@@ -69,6 +69,9 @@ buttonStyle({ size: 'sm' })
 badge({ tone: 'info' }) // → a literal
 badge({ tone }) // → a choice among the classes the config declares
 
+// ✅ the same, for a recipe declared in another module and imported here
+textInput({ size: 'sm' })
+
 // ✅ inside a JSX expression, which is still a call site
 <div className={css({ px: '4' })} />
 ```
@@ -325,6 +328,10 @@ The reasons are:
 | `overlapping`        | Nested inside another folded call.                                |
 | `unresolved-token`   | A `token()` path resolving to no usable string (see above).       |
 | `no-call-expression` | The call site could not be located in the source.                 |
+| `runtime-binding`    | A Bamboo import still referenced after the rewrite (see below).   |
+
+`runtime-binding` is reported only under [`strict`](#strict), because it is the only reason that costs an extra walk of
+the module and the only one nothing else acts on.
 
 `not-foldable` and `unsupported-kind` are deliberately separate. The first is permanent – `cva` and `sva` return
 functions, so there is no class string to fold to. The second is a limitation of this phase, such as a slot recipe,
@@ -385,6 +392,36 @@ badge({ tone: a(), size: b() }) // ❌ two properties that could run something, 
 A selection that could _run_ something is otherwise fine – `badge({ tone: getTone() })` lowers with `getTone()` intact
 as the helper's argument, evaluated exactly once, where it was.
 
+### A recipe declared in another module
+
+Nothing above requires the recipe to be bound in the file that calls it. A `cva(...)` in `app/styles.ts` folds at every
+call site that imports it:
+
+```ts
+// app/styles.ts
+export const textInput = cva({ base: { rounded: 'md' }, variants: { size: { sm: {}, lg: {} } } })
+
+// app/Field.tsx
+import { textInput } from './styles'
+textInput({ size: 'sm' }) // → a literal, exactly as if it were declared here
+```
+
+The binding is followed through `export { x } from './m'`, `export * from './m'`, `import { x } … export { x }`, and an
+alias at either end, so a barrel is transparent. A class name is hashed from the config rather than from where the call
+is, so a recipe lowered in a consuming module produces the same string its own module does.
+
+If the lowering needs `cvaPick` and the file imports nothing from the generated css module – which it need not, since it
+imports the binding rather than the factory – the import is written in, after the last existing one so a `'use client'`
+prologue stays first.
+
+Three things stop a name resolving that way: a namespace import (`import * as s`, then `s.textInput(…)`), a default
+export, and a recipe outside the project's `include`, which is never parsed and so has no rules to fold against. Two
+`export *`s carrying the same name are ambiguous and resolve to neither.
+
+This matters more than it sounds. Until it worked, such calls were in **neither** column – not folded, not declined – so
+a project that kept its recipes in a shared module read as having almost no recipe call sites at all, and `strict` had
+nothing to fail on.
+
 Four shapes are neither folded nor counted, so a project using them reads as having fewer sites than it has:
 
 - **`badge.raw(...)`.** Only the bare name is tracked, and `raw-call` is already the reason that fits a `.raw()` call,
@@ -426,11 +463,41 @@ them with `staticCss` — or set `strict: false` to accept the runtime.
 value that is not a scalar, such as a responsive array, and the build cannot prove your `tone` never is one. So it
 imports the engine, and the bundle keeps it.
 
+### What it checks beyond the declined calls
+
+A skip reason only exists for a call something _recognised_. A guarantee built on those alone is worth exactly what the
+recogniser is – and a shape nothing looks at appears in neither the folded nor the declined column, so the build passes
+while the module still imports the engine. That is not hypothetical: before imported recipes were resolved, a project
+could run `strict` clean while shipping several hundred runtime recipe calls.
+
+So `strict` also asks the question the guarantee actually makes, of the output rather than the ledger: once every
+rewrite is applied, is anything from a Bamboo module still referenced? Anything that is gets reported as
+`runtime-binding`. It catches a binding passed on rather than called, one handed to a function the build cannot follow,
+a module whose only Bamboo usage produced no parse result at all, a wrapper re-exporting the css API – and the half a
+**partial fold** keeps, which is the one most projects will meet:
+
+```ts
+css({ color: 'red.300', _hover: { color: tone } })
+// → cx("c_red.300", css({ _hover: { color: tone } }))
+```
+
+That call _folds_, so it declines nothing, and its runtime half is written straight into the output rather than into the
+module the walk reads – it was invisible in both directions. A split that resolves everything leaves no call and reports
+nothing.
+
+Three exclusions are deliberate. The helpers the fold itself writes – `cx`, `cvaPick`, `splitProps` – live in the `cx`
+module and pull no engine, so a reference to one is the fold working rather than failing. `cssLeaf` is excluded here
+too, but for a different reason: it _can_ reach the engine, and `lowered-leaf` above already says so – reporting it
+twice under two names would only inflate the count. And a reference _inside_ a range the fold rewrote is not reported: a
+partial fold copies its dynamic half across verbatim, but narrowing the check to the text actually removed would report
+bindings the fold had resolved away, such as a `token(...)` folded into the static half. A false failure on a module
+that folded correctly is worse than a missed one, for a gate with no per-call override.
+
 ### What it does not check
 
 **`strict` is deliberately silent about inline recipes.** A `cva(...)` definition returns a function and can never
-collapse to a class string, and its invocations are not folded by this phase either – so neither fails the build. A
-project full of recipes can pass `strict` while shipping plenty of Bamboo runtime.
+collapse to a class string, so it does not fail the build – and neither do its invocations, whether they lowered or were
+declined as `recipe-call`. A project full of recipes can pass `strict` while shipping plenty of Bamboo runtime.
 
 Being silent about recipes is the intended trade rather than an oversight, because the two runtimes are not the same
 size. Measured as tree-shaken production bundles of `sandbox/vite-ts`:
@@ -441,9 +508,10 @@ size. Measured as tree-shaken production bundles of `sandbox/vite-ts`:
 | `cva` + `cx`  | 4,477 B |
 | `css` + `cva` | 8,546 B |
 
-So what `strict` guarantees is narrower than "no runtime", and it is the half worth guaranteeing: **nothing still calls
-`css()`.** Recipes keep a runtime roughly half the size, and their invocations are not verified at all – which is why
-`recipe-call` exists in the report even though it does not fail the build.
+So what `strict` guarantees is narrower than "no runtime", and it is the half worth guaranteeing: **nothing still
+reaches the css engine** – not a call, not a re-export, not a binding handed somewhere the build cannot follow. Recipes
+keep a runtime roughly half the size, and their invocations are not verified at all – which is why `recipe-call` exists
+in the report even though it does not fail the build.
 
 One edge is worth knowing because it does not follow that rule: a **config** slot recipe call is reported as
 `unsupported-kind`, which _does_ fail `strict`, while the equivalent inline `sva(...)` call is reported as
