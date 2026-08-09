@@ -744,33 +744,6 @@ export const foldSource = (options: FoldOptions): FoldResult => {
   }
 
   /**
-   * Is this binding the variant half of `<recipe>.splitVariantProps(...)`?
-   *
-   * Read off the declaration rather than the type, so it is the same recipe and the same
-   * destructuring position the source actually wrote.
-   */
-  const isSplitVariantPropsOf = (binding: Node, recipe: string): boolean => {
-    for (const declaration of binding.getSourceFile().getDescendantsOfKind(SyntaxKind.VariableDeclaration)) {
-      const nameNode = declaration.getNameNode()
-      if (!Node.isArrayBindingPattern(nameNode)) continue
-
-      const first = nameNode.getElements()[0]
-      if (!first || !Node.isBindingElement(first)) continue
-      if (first.getNameNode().getText() !== binding.getText()) continue
-
-      const initializer = declaration.getInitializer()
-      if (!initializer || !Node.isCallExpression(initializer)) return false
-
-      const callee = initializer.getExpression()
-      if (!Node.isPropertyAccessExpression(callee)) return false
-
-      return callee.getName() === 'splitVariantProps' && callee.getExpression().getText() === recipe
-    }
-
-    return false
-  }
-
-  /**
    * Lower a config recipe call the same way an inline one lowers.
    *
    * The config lives in `ctx.recipes` rather than in the module, and the classes are named
@@ -785,19 +758,10 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     const className = (config as { className?: string }).className
     if (!className) return undefined
 
-    // Only a selection that provably holds no undeclared key.
-    //
-    // The generated `createRecipe` names a class for *any* prop it is handed — its transform
-    // is `${name}--${prop}_${value}` with no check that the variant exists — where `cva` skips
-    // one the config does not declare. So the two runtimes disagree on an undeclared key, and
-    // a lowering built from the config cannot reproduce a class for a key it cannot enumerate.
-    //
-    // `splitVariantProps` filters to `Object.keys(variants)`, so its output cannot contain
-    // one. That is the wrapper shape, and it is the only shape this lowers.
-    if (!Node.isCallExpression(call)) return undefined
-    const argument = call.getArguments()[0]
-    if (!argument || !Node.isIdentifier(argument) || !isSplitVariantPropsOf(argument, name)) return undefined
-
+    // Any selection, now that both recipe runtimes agree on an undeclared key: `createRecipe`
+    // filters to the declared variant map exactly as `getRecipeClassNames` does, so a lowering
+    // derived from the config reproduces either. This used to be restricted to the output of
+    // `splitVariantProps`, which was the only selection that provably held no undeclared key.
     const lowered = lowerRecipeCall(call, { config, name: className, box: undefined }, ctx, isInertExpression)
     if (lowered.kind !== 'expression') return undefined
 

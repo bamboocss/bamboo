@@ -200,9 +200,27 @@ export const createRuntimeRecipe = (ctx: Context): RuntimeRecipe => {
     // Built through `recipeCss` even for a constant, rather than by concatenating the name:
     // `hash.className` and `prefix` are applied there, and reconstructing the string is
     // exactly how the runtime and the stylesheet drifted apart once already.
+    const declaredValues = (config.variants ?? {}) as Record<string, Record<string, unknown>>
+
+    /**
+     * The same filter the generated `createRecipe` applies: only a value the config declares
+     * names a class.
+     *
+     * Scalars only — a conditional or responsive value is an object of leaves, and the leaves
+     * are what name classes when `createCss` walks them.
+     */
+    const onlyDeclared = (styles: Dict): Dict =>
+      Object.fromEntries(
+        Object.entries(styles).filter(([prop, value]) => {
+          if (prop === className) return true
+          if (value === null || typeof value === 'object') return true
+          return Object.hasOwn(declaredValues, prop) && Object.hasOwn(declaredValues[prop] ?? {}, String(value))
+        }),
+      )
+
     const recipeStyles = isConstantSlot
       ? { [className]: '__ignore__' }
-      : { [className]: '__ignore__', ...defaultVariants, ...compact(variants) }
+      : onlyDeclared({ [className]: '__ignore__', ...defaultVariants, ...compact(variants) })
 
     // The generated `transform` calls `assertCompoundVariant` on every prop, which throws
     // for a conditional variant value on a recipe that has compound variants. So the

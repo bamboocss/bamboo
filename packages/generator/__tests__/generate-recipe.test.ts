@@ -36,7 +36,7 @@ describe('generate recipes', () => {
       const withPrefix = (className) => className
       export const formatRecipeClass = withPrefix
 
-      export const createRecipe = (name, defaultVariants, compoundVariants) => {
+      export const createRecipe = (name, defaultVariants, compoundVariants, variantMap) => {
        const getVariantProps = (variants) => {
          return {
            [name]: '__ignore__',
@@ -73,7 +73,28 @@ describe('generate recipes', () => {
            }
          })
 
-         const recipeStyles = getVariantProps(variants)
+         // Only what the config declares names a class.
+         //
+         // Without this the transform named one for *any* prop it was handed — the build emits
+         // rules only for declared values, so the element carried a class nothing backed. It also
+         // disagreed with \`cva\`, which skips an undeclared value, leaving the two recipe kinds
+         // with different class strings for the same call.
+         //
+         // Filtered here rather than in \`getVariantProps\`, which is public and is what compound
+         // variants are matched against.
+         const declared = getVariantProps(variants)
+         const recipeStyles = variantMap
+           ? Object.fromEntries(
+               Object.entries(declared).filter(([prop, value]) => {
+                 if (prop === name) return true
+                 // A conditional or responsive value is an object of leaves, and the leaves are
+                 // what name classes: createCss walks them and calls transform per condition.
+                 // Only a scalar can be judged here.
+                 if (value === null || typeof value === 'object') return true
+                 return Object.hasOwn(variantMap, prop) && variantMap[prop].includes(String(value))
+               }),
+             )
+           : declared
 
          // No class for the compound variants. Their rule selects on the variant classes
          // \`recipeCss\` just named — \`.btn--size_sm.btn--tone_a\` — so it applies on its own,
@@ -156,14 +177,14 @@ describe('generate recipes', () => {
           "js": "import { memo, splitProps } from '../helpers.mjs';
       import { createRecipe, mergeRecipes } from './create-recipe.mjs';
 
-      const textStyleFn = /* @__PURE__ */ createRecipe('textStyle', {}, [])
-
       const textStyleVariantMap = {
         "size": [
           "h1",
           "h2"
         ]
       }
+
+      const textStyleFn = /* @__PURE__ */ createRecipe('textStyle', {}, [], textStyleVariantMap)
 
       const textStyleVariantKeys = Object.keys(textStyleVariantMap)
 
@@ -220,9 +241,9 @@ describe('generate recipes', () => {
           "js": "import { memo, splitProps } from '../helpers.mjs';
       import { createRecipe, mergeRecipes } from './create-recipe.mjs';
 
-      const tooltipStyleFn = /* @__PURE__ */ createRecipe('tooltipStyle', {}, [])
-
       const tooltipStyleVariantMap = {}
+
+      const tooltipStyleFn = /* @__PURE__ */ createRecipe('tooltipStyle', {}, [], tooltipStyleVariantMap)
 
       const tooltipStyleVariantKeys = Object.keys(tooltipStyleVariantMap)
 
@@ -279,13 +300,13 @@ describe('generate recipes', () => {
           "js": "import { memo, splitProps } from '../helpers.mjs';
       import { createRecipe, mergeRecipes } from './create-recipe.mjs';
 
-      const cardStyleFn = /* @__PURE__ */ createRecipe('card', {}, [])
-
       const cardStyleVariantMap = {
         "rounded": [
           "true"
         ]
       }
+
+      const cardStyleFn = /* @__PURE__ */ createRecipe('card', {}, [], cardStyleVariantMap)
 
       const cardStyleVariantKeys = Object.keys(cardStyleVariantMap)
 
@@ -349,11 +370,6 @@ describe('generate recipes', () => {
           "js": "import { memo, splitProps } from '../helpers.mjs';
       import { createRecipe, mergeRecipes } from './create-recipe.mjs';
 
-      const buttonStyleFn = /* @__PURE__ */ createRecipe('buttonStyle', {
-        "size": "md",
-        "variant": "solid"
-      }, [])
-
       const buttonStyleVariantMap = {
         "size": [
           "sm",
@@ -364,6 +380,11 @@ describe('generate recipes', () => {
           "outline"
         ]
       }
+
+      const buttonStyleFn = /* @__PURE__ */ createRecipe('buttonStyle', {
+        "size": "md",
+        "variant": "solid"
+      }, [], buttonStyleVariantMap)
 
       const buttonStyleVariantKeys = Object.keys(buttonStyleVariantMap)
 
@@ -457,7 +478,13 @@ describe('generate recipes', () => {
        * carries, so that slot's class is a constant and nothing has to reach it at runtime.
        */
       const checkboxAnchors = ["root"]
-      const checkboxAnchorFns = /* @__PURE__ */ checkboxAnchors.map((slotName) => [slotName, createRecipe(\`checkbox__\${slotName}\`, checkboxDefaultVariants, getSlotCompoundVariant(checkboxCompoundVariants, slotName))])
+      const checkboxAnchorFns = /* @__PURE__ */ checkboxAnchors.map((slotName) => [slotName, createRecipe(\`checkbox__\${slotName}\`, checkboxDefaultVariants, getSlotCompoundVariant(checkboxCompoundVariants, slotName), {
+        "size": [
+          "sm",
+          "md",
+          "lg"
+        ]
+      })])
       const checkboxStaticSlots = /* @__PURE__ */ Object.fromEntries(
         checkboxSlotNames.filter(([slotName]) => !checkboxAnchors.includes(slotName)),
       )
@@ -582,7 +609,14 @@ describe('generate recipes', () => {
        * against a stylesheet emitting \`.bam-menu__trigger\` — which is easy to miss, since
        * the obvious reading is that this is a hashing problem.
        */
-      const badgeSlotFns = /* @__PURE__ */ badgeSlotNames.map(([slotName]) => [slotName, createRecipe(\`badge__\${slotName}\`, badgeDefaultVariants, getSlotCompoundVariant(badgeCompoundVariants, slotName))])
+      const badgeSlotFns = /* @__PURE__ */ badgeSlotNames.map(([slotName]) => [slotName, createRecipe(\`badge__\${slotName}\`, badgeDefaultVariants, getSlotCompoundVariant(badgeCompoundVariants, slotName), {
+        "size": [
+          "sm"
+        ],
+        "raised": [
+          "true"
+        ]
+      })])
 
       const badgeFn = memo((props = {}) => {
         return Object.fromEntries(badgeSlotFns.map(([slotName, slotFn]) => [slotName, slotFn.recipeFn(props)]))

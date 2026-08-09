@@ -44,7 +44,7 @@ export function generateCreateRecipe(ctx: Context) {
      hash.className ? `(className) => withPrefix((${utility.toHash})([className], toHash))` : `withPrefix`
    }
 
-   export const createRecipe = (name, defaultVariants, compoundVariants) => {
+   export const createRecipe = (name, defaultVariants, compoundVariants, variantMap) => {
     const getVariantProps = (variants) => {
       return {
         [name]: '__ignore__',
@@ -81,7 +81,28 @@ export function generateCreateRecipe(ctx: Context) {
         }
       })
 
-      const recipeStyles = getVariantProps(variants)
+      // Only what the config declares names a class.
+      //
+      // Without this the transform named one for *any* prop it was handed — the build emits
+      // rules only for declared values, so the element carried a class nothing backed. It also
+      // disagreed with \`cva\`, which skips an undeclared value, leaving the two recipe kinds
+      // with different class strings for the same call.
+      //
+      // Filtered here rather than in \`getVariantProps\`, which is public and is what compound
+      // variants are matched against.
+      const declared = getVariantProps(variants)
+      const recipeStyles = variantMap
+        ? Object.fromEntries(
+            Object.entries(declared).filter(([prop, value]) => {
+              if (prop === name) return true
+              // A conditional or responsive value is an object of leaves, and the leaves are
+              // what name classes: createCss walks them and calls transform per condition.
+              // Only a scalar can be judged here.
+              if (value === null || typeof value === 'object') return true
+              return Object.hasOwn(variantMap, prop) && variantMap[prop].includes(String(value))
+            }),
+          )
+        : declared
 
       // No class for the compound variants. Their rule selects on the variant classes
       // \`recipeCss\` just named — \`.btn--size_sm.btn--tone_a\` — so it applies on its own,
@@ -194,7 +215,7 @@ export function generateRecipes(ctx: Context, filters?: ArtifactFilters) {
          * carries, so that slot's class is a constant and nothing has to reach it at runtime.
          */
         const ${baseName}Anchors = ${JSON.stringify(anchors)}
-        const ${baseName}AnchorFns = /* @__PURE__ */ ${baseName}Anchors.map((slotName) => [slotName, createRecipe(\`${config.className}__\${slotName}\`, ${baseName}DefaultVariants, getSlotCompoundVariant(${baseName}CompoundVariants, slotName))])
+        const ${baseName}AnchorFns = /* @__PURE__ */ ${baseName}Anchors.map((slotName) => [slotName, createRecipe(\`${config.className}__\${slotName}\`, ${baseName}DefaultVariants, getSlotCompoundVariant(${baseName}CompoundVariants, slotName), ${stringify(variantKeyMap)})])
         const ${baseName}StaticSlots = /* @__PURE__ */ Object.fromEntries(
           ${baseName}SlotNames.filter(([slotName]) => !${baseName}Anchors.includes(slotName)),
         )
@@ -216,7 +237,7 @@ export function generateRecipes(ctx: Context, filters?: ArtifactFilters) {
          * against a stylesheet emitting \`.bam-menu__trigger\` — which is easy to miss, since
          * the obvious reading is that this is a hashing problem.
          */
-        const ${baseName}SlotFns = /* @__PURE__ */ ${baseName}SlotNames.map(([slotName]) => [slotName, createRecipe(\`${config.className}__\${slotName}\`, ${baseName}DefaultVariants, getSlotCompoundVariant(${baseName}CompoundVariants, slotName))])
+        const ${baseName}SlotFns = /* @__PURE__ */ ${baseName}SlotNames.map(([slotName]) => [slotName, createRecipe(\`${config.className}__\${slotName}\`, ${baseName}DefaultVariants, getSlotCompoundVariant(${baseName}CompoundVariants, slotName), ${stringify(variantKeyMap)})])
 
         const ${baseName}Fn = memo((props = {}) => {
           return Object.fromEntries(${baseName}SlotFns.map(([slotName, slotFn]) => [slotName, slotFn.recipeFn(props)]))
@@ -258,11 +279,11 @@ export function generateRecipes(ctx: Context, filters?: ArtifactFilters) {
         ${ctx.file.import('memo, splitProps', '../helpers')}
         ${ctx.file.import('createRecipe, mergeRecipes', './create-recipe')}
 
+        const ${baseName}VariantMap = ${stringify(variantKeyMap)}
+
         const ${baseName}Fn = /* @__PURE__ */ createRecipe('${config.className}', ${stringify(
           defaultVariants ?? {},
-        )}, ${stringify(compoundVariants ?? [])})
-
-        const ${baseName}VariantMap = ${stringify(variantKeyMap)}
+        )}, ${stringify(compoundVariants ?? [])}, ${baseName}VariantMap)
 
         const ${baseName}VariantKeys = Object.keys(${baseName}VariantMap)
 
