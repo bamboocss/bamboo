@@ -803,6 +803,11 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       ].filter(Boolean),
       replacement: `${cx.name}(${parts.join(', ')})`,
       insert: cx.insert,
+      // The half that stays a call. A split is a real gain — the static properties become a
+      // literal — but this is still `css(...)` in the output, so the engine is still in the
+      // bundle. It reaches the module through magic-string rather than the AST, which is why
+      // the identifier walk cannot see it and why the plan has to say so here.
+      runtimeCallee: runtimePart ? callee : undefined,
     }
   }
   const runtimeRecipe = createRuntimeRecipe(ctx)
@@ -1378,6 +1383,14 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       const partial = partial_ ? tryPartial(item, call, rootName) : undefined
 
       if (partial) {
+        // Reported before the candidate, so the range is in the ledger by the time the
+        // identifier walk reads it and the callee is not counted a second time.
+        if (reportSurvivors && partial.runtimeCallee) {
+          // Under the *imported* name, as every other `runtime-binding` is — `css as c`
+          // reports `css`, matching the `dynamic` entry a neighbouring call would produce.
+          skipped.push({ name, reason: 'runtime-binding', start, end })
+        }
+
         candidates.push({ item, call, node: call, start, end, ...partial })
         continue
       }

@@ -76,6 +76,54 @@ export function local({ css }) {
     expect(survivors(result)).toContain('css')
   })
 
+  /**
+   * The half a partial fold keeps.
+   *
+   * A split is a real gain — the static properties become a literal — but what is left is
+   * still `css(...)`, so the engine is still in the bundle. It is written through
+   * magic-string rather than into the AST, so the identifier walk cannot see it, and the call
+   * produced no skip entry because it *did* fold. It was the last shape that kept the engine
+   * while `strict` reported a clean build.
+   */
+  test('the runtime half of a partial fold', () => {
+    const { foldStrict } = createFoldFixture()
+    const result = foldStrict(
+      `import { css } from 'styled-system/css'\nexport const f = (tone) => css({ color: 'red.300', _hover: { color: tone } })\n`,
+    )
+
+    expect(result.folded).toHaveLength(1)
+    expect(result.code).toContain('css({')
+    expect(survivors(result)).toEqual(['css'])
+  })
+
+  test('is reported under the imported name, as every other survivor is', () => {
+    const { foldStrict } = createFoldFixture()
+    const result = foldStrict(
+      `import { css as c } from 'styled-system/css'\nexport const f = (tone) => c({ color: 'red.300', _hover: { color: tone } })\n`,
+    )
+
+    expect(survivors(result)).toEqual(['css'])
+  })
+
+  /**
+   * The complement: a split that leaves no call behind emits no `css(` at all, so there is
+   * nothing to report and the build must still pass. Reporting every partial fold regardless
+   * would fail exactly the builds the split exists to make possible.
+   */
+  test('is not reported when the split leaves no runtime call', () => {
+    const { foldStrict } = createFoldFixture()
+    const result = foldStrict(
+      `import { css } from 'styled-system/css'
+declare const flag: boolean
+export const cls = css({ color: 'red.300', display: flag ? 'flex' : 'grid' })
+`,
+    )
+
+    expect(result.folded).toHaveLength(1)
+    expect(result.code).not.toContain('css(')
+    expect(survivors(result)).toEqual([])
+  })
+
   test('is silent when the ledger already fails on that binding', () => {
     const { foldStrict } = createFoldFixture()
     const result = foldStrict(`import { css } from 'styled-system/css'\nexport const f = (p) => css({ ...p })\n`)

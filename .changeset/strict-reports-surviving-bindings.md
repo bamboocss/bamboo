@@ -28,11 +28,21 @@ declaration, and `button`, `input`, `label`, `select`, `table`, `dialog` and `fo
 counting every identifier failed builds on modules that had folded completely, because of their markup. Type positions
 are excluded too: they are erased, and the import with them.
 
-Two consequences worth expecting. A module that keeps any other value from the css module — `fallback(...)` inside a
-`cva` config, or `recipe.variantKeys` — now fails `strict` where it passed before; that is the check working, since
-those imports retain the engine, but it is a build that used to be green. And a _partial_ fold writes its runtime half
-into the output rather than the module's AST, so a surviving `css(...)` there is still neither folded nor reported —
-unchanged by this, and the remaining gap in the guarantee.
+A partial fold is covered too, and it needed saying separately: it writes its runtime half into the output through
+magic-string rather than into the module's AST, so the walk cannot see it — and the call produced no skip entry in the
+first place, because it _did_ fold. Splitting `css({ color: 'red.300', _hover: { color: tone } })` still leaves
+`css({ _hover: … })` in the bundle. The plan now reports that half. A split that leaves no call behind reports nothing.
+
+What is still not reported is a reference _inside_ a rewritten call — a partial fold copies its dynamic half and its
+ternary conditions across verbatim, so a bamboo binding mentioned there survives unreported. That is deliberate rather
+than pending: the check ignores everything inside a range it rewrote, and narrowing that to the text actually removed
+would report bindings the fold had resolved away, such as a `token(...)` folded into the static half. A false failure on
+a module that folded correctly is worse than a missed one, for a gate with no per-call override.
+
+Expect builds that used to pass to fail, in three shapes: a partial fold with a dynamic remainder (above); a module
+keeping any other value from the css module, such as `fallback(...)` inside a `cva` config or `recipe.variantKeys`; and
+a wrapper module re-exporting the css API. Each genuinely retains the engine — `strict` was wrong before, not now — but
+each is a green build turning red on upgrade. `strict` is off by default and this changes nothing for builds without it.
 
 Off unless `strict` is on. The walk measured ~5x on the per-module fold of a 400-line module that imports bamboo; a
 module that imports none of it costs nothing, since the check returns before walking. Default builds are unaffected.
