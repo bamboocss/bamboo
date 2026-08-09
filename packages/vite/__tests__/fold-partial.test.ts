@@ -427,6 +427,54 @@ describe('tsconfig path aliases', () => {
   })
 })
 
+describe('a css module spelled with an extension', () => {
+  /**
+   * What bamboo itself emits. `outExtension: 'js'` under NodeNext resolution makes a file
+   * write `styled-system/css/index.js`, and the module check compared that against a bare
+   * `styled-system/css` by equality or tail — so it matched neither.
+   *
+   * Extraction was never affected (`ImportMap.match` is substring-based), which is what made
+   * this quiet: the call folded, the `cx` insert was refused, and the whole thing surfaced as
+   * `dynamic`. A project using the extension lost partial folding everywhere at once.
+   */
+  test.each([
+    ['index.js', 'styled-system/css/index.js'],
+    ['index.mjs', 'styled-system/css/index.mjs'],
+    ['index.ts', 'styled-system/css/index.ts'],
+    ['relative index.js', '../styled-system/css/index.js'],
+    ['nested relative', '../../styled-system/css/index.js'],
+  ])('%s still splits and receives the insert', (_label, specifier) => {
+    const { fold } = createFoldFixture()
+    const result = fold(
+      `import { css } from '${specifier}'\nexport const f = (p) => css({ color: 'red.300', padding: p })\n`,
+    )
+
+    expect(result.folded).toHaveLength(1)
+    expect(result.code).toContain(`import { css, cx, cssLeaf } from '${specifier}'`)
+  })
+
+  /**
+   * The equality the matcher is built on, which stripping an extension must not cost.
+   *
+   * `styled-system/css/css.mjs` is a real sibling — `css/index.mjs` re-exports it — and it
+   * exports no `cx`, so adding one there imports a binding that does not exist. The
+   * extensionless spelling of this is already covered above; this is the one the new
+   * stripping could have broken, since it is an extension on something that is *not* an
+   * index file.
+   */
+  test.each(['styled-system/css/css.mjs', 'styled-system/css/cx.mjs', 'styled-system/jsx/index.js'])(
+    '%s is still refused',
+    (specifier) => {
+      const { fold } = createFoldFixture()
+      const code = `import { css } from '${specifier}'\nexport const f = (p) => css({ color: 'red.300', padding: p })\n`
+      const result = fold(code)
+
+      expect(result.folded).toHaveLength(0)
+      expect(result.code).toBe(code)
+    },
+  )
+})
+
 describe('a configured importMap wrapper', () => {
   /**
    * `importMap.css` points at the user's own module. A wrapper that re-exports `css` need

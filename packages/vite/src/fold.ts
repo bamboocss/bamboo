@@ -150,6 +150,16 @@ const UNFOLDABLE_TYPES = new Set(['cva', 'sva'])
 const RECIPE_CALL_TYPE = 'cva-call'
 
 /**
+ * The pieces `trim` reduces a module specifier by, hoisted because a regex literal
+ * constructs a new object every time it is evaluated and `trim` runs per specifier per
+ * import declaration per module.
+ */
+const LEADING_RELATIVE = /^(?:\.\.?\/)+/
+const TRAILING_SLASH = /\/$/
+const MODULE_EXTENSION = /\.[mc]?[jt]sx?$/
+const TRAILING_INDEX = /\/index$/
+
+/**
  * An argument that cannot run anything when it is evaluated.
  *
  * `token(path, fallback)` evaluates both arguments before the call, so a fold that drops
@@ -643,11 +653,31 @@ export const foldSource = (options: FoldOptions): FoldResult => {
    */
   const generatedCssModule = [ctx.imports.outdir, 'css'].join('/')
   const pathMappings = ctx.conf.tsOptions?.pathMappings
+  /**
+   * The spelling reduced to the module it names.
+   *
+   * The extension and `/index` are stripped because bamboo's own output makes a file
+   * import them: `outExtension: 'js'` under NodeNext resolution is written
+   * `styled-system/css/index.js`, which is neither equal to `styled-system/css` nor a
+   * tail of it. Extraction admitted such a file anyway — `ImportMap.match` is
+   * substring-based — so the call was folded while the *insert* was refused, and the
+   * result was reported as `dynamic`: the same silent downgrade the alias case above
+   * describes, reached through the extension instead.
+   *
+   * This does not weaken the equality the comment above insists on. `styled-system/css/css`
+   * still names neither, because only a trailing `/index` is a module's own directory.
+   *
+   * `.d.ts` is deliberately not stripped. A declaration file exports no runtime binding, so
+   * matching one would authorise inserting an import that resolves to nothing — and a value
+   * import cannot name one anyway, which is what makes leaving it out free.
+   */
   const trim = (value: string) =>
     value
       .replaceAll('\\', '/')
-      .replace(/^(?:\.\.?\/)+/, '')
-      .replace(/\/$/, '')
+      .replace(LEADING_RELATIVE, '')
+      .replace(TRAILING_SLASH, '')
+      .replace(MODULE_EXTENSION, '')
+      .replace(TRAILING_INDEX, '')
 
   const matchesModule = (mod: string, entries: string[]) => {
     const candidates = [mod]
