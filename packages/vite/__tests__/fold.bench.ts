@@ -101,6 +101,36 @@ export const View = ({ tone, rest }) => (
 )
 `
 
+/**
+ * A module of inline recipes, which nothing else here has.
+ *
+ * This is the one shape whose cost is not proportional to call sites alone: the fold builds a
+ * binding→config map once per module, then derives class names per call — hashing the recipe's
+ * identity once per recipe and walking its variants once per dynamic axis. A component file
+ * that declares a recipe and calls it a few times is the realistic shape; the definitions are
+ * what make it different from `JSX_MODULE`.
+ */
+const RECIPE_MODULE = `
+import { cva } from 'styled-system/css'
+
+${Array.from(
+  { length: 6 },
+  (_, index) => `
+const recipe${index} = cva({
+  base: { display: 'flex', padding: '${index % 4}' },
+  variants: {
+    tone: { info: { color: 'blue.500' }, warn: { color: 'red.300' }, muted: { color: 'gray.500' } },
+    size: { sm: { fontSize: 'sm' }, md: { fontSize: 'md' }, lg: { fontSize: 'lg' } },
+  },
+  defaultVariants: { size: 'md' },
+})
+export const static${index} = recipe${index}({ tone: 'info', size: 'sm' })
+export const dynamic${index} = (tone) => recipe${index}({ tone })
+export const mixed${index} = (tone) => recipe${index}({ tone, size: 'lg' })
+`,
+).join('')}
+`
+
 const ctx = createContext()
 const runtimeCss = createRuntimeCss(ctx)
 
@@ -148,6 +178,16 @@ describe('per-module transform cost', () => {
 
   bench('parse + fold (jsx module)', () => {
     parseAndFold(JSX_MODULE)
+  })
+
+  // The control for the pair below: parsing dominates, so a change to the recipe path shows
+  // up as the gap between these two rather than in either alone.
+  bench('parse only (recipe module)', () => {
+    parseOnly(RECIPE_MODULE)
+  })
+
+  bench('parse + fold (recipe module)', () => {
+    parseAndFold(RECIPE_MODULE)
   })
 
   for (const { file, code } of SANDBOX_FILES) {

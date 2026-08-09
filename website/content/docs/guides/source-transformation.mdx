@@ -65,8 +65,9 @@ stack({ gap: '4', align: 'center' })
 // ✅ config recipe calls, default and compound variants included
 buttonStyle({ size: 'sm' })
 
-// ✅ inline recipe calls — `const badge = cva({ … })` — when the whole selection resolves
-badge({ tone: 'info' })
+// ✅ inline recipe calls — `const badge = cva({ … })` — resolved or not
+badge({ tone: 'info' }) // → a literal
+badge({ tone }) // → a choice among the classes the config declares
 
 // ✅ inside a JSX expression, which is still a call site
 <div className={css({ px: '4' })} />
@@ -317,7 +318,7 @@ The reasons are:
 | `dynamic`            | Some part of the arguments could not be resolved at build time.   |
 | `raw-call`           | A `.raw()` call, which must keep returning a style object.        |
 | `not-foldable`       | `cva` or `sva` – returns a function, not a class string.          |
-| `recipe-call`        | An inline recipe call whose selection is not fully known (below). |
+| `recipe-call`        | An inline recipe call whose classes are not knowable (see below). |
 | `unsupported-kind`   | A slot recipe call, or a shape this phase does not handle.        |
 | `not-imported`       | The callee is not a Bamboo import (see below).                    |
 | `empty`              | Resolved, but produced no class names.                            |
@@ -343,32 +344,46 @@ badge({ tone: 'info' })
 ```
 
 The `cva(...)` definition is reported as `not-foldable` – it returns a function, so there is no class string to fold it
-to. The **call** folds, when the build can resolve the whole selection:
+to. The **calls** fold, whether or not the build can resolve the selection:
 
 ```ts
-// the bundle gets
-const cls = 'cva_1a2b3c cva_1a2b3c--tone_info'
+badge({ tone: 'info' })
+// → 'cva_1a2b3c cva_1a2b3c--tone_info'
+
+badge({ tone })
+// → 'cva_1a2b3c' + cvaPick(tone, { info: ' cva_1a2b3c--tone_info', warn: ' cva_1a2b3c--tone_warn' })
 ```
 
-**The reason this is worth more than the call it removes.** `cva({ base, variants })` ships the whole style object to
-the browser, purely so the runtime can hash it into a name and pick classes off it – and those styles are already in
-your stylesheet. Once _every_ call of a binding folds, the binding is unreferenced and your bundler drops the config
-with it. Measured on an application with 1,271 inline recipe bindings, 175 folded completely and took **9.9 kB gzipped**
-of config with them; the `cva` runtime is 4.5 kB by comparison.
+A recipe's classes are **additive** – one per variant, never one per combination – so a call with three runtime variants
+lowers to three terms rather than to every pairing of their values. Terms are emitted in the order the config declares
+the variants, which is the order the runtime appends them, so a folded module and a dev build produce the same `class`
+attribute rather than the same set in a different order.
 
-A call is reported as `recipe-call` when its selection is not fully known:
+`cvaPick` is a ~45-byte helper exported from the generated `cx` module, which pulls none of the style engine. It makes
+the three distinctions `cva` itself makes: a value the config declares selects its class; `undefined` means the property
+was never passed, so the recipe's default applies; anything else – including `null` – selects nothing.
+
+**The reason this is worth far more than the calls it removes.** `cva({ base, variants })` ships the whole style object
+to the browser, purely so the runtime can hash it into a name and pick classes off it – and those styles are already in
+your stylesheet. Once _every_ call of a binding lowers, nothing reads the binding, and the build marks the definition
+`/*#__PURE__*/` so your bundler can drop the config with it. Measured on an application with 1,271 inline recipe
+bindings, **1,266 lowered completely and took 76.9 kB gzipped of config with them**; the `cva` runtime is 4.5 kB by
+comparison. Bundling one module with a single dynamic recipe call: **10,347 B → 139 B** minified.
+
+That annotation is what makes the saving real. A bundler will not drop `cva(…)` on its own – it cannot prove the call is
+side-effect free – so without it, folding leaves the config in place and the module ends up _larger_.
+
+A call is still reported as `recipe-call`, and left alone, when the classes it can produce are not knowable:
 
 ```ts
-badge({ tone }) // ❌ `tone` is a prop or state
-badge({ tone: on ? 'info' : 'warn' }) // ❌ a ternary is several selections, not one
+badge({ ...rest }) // ❌ the selection cannot be enumerated
+badge({ [key]: 'info' }) // ❌ a computed key names no variant the build can see
+badge({ tone: a(), size: b() }) // ❌ two properties that could run something, in an order the
+//    emitted terms would swap
 ```
 
-This is deliberately all-or-nothing. An unresolved variant does not merely omit one class – which variant is selected
-can change which others apply – so a partially-known selection does not fold at all.
-
-Values the extractor can resolve do fold, even when they are not literals at the call site: a module constant, an
-imported one, a value returned by a pure helper. What never happens is the reverse – a property written at the call site
-that the build could not resolve makes the call decline, rather than folding as though it had not been written.
+A selection that could _run_ something is otherwise fine – `badge({ tone: getTone() })` lowers with `getTone()` intact
+as the helper's argument, evaluated exactly once, where it was.
 
 Four shapes are neither folded nor counted, so a project using them reads as having fewer sites than it has:
 
