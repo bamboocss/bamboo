@@ -1,5 +1,191 @@
 # @bamboocss/vite
 
+## 1.23.0
+
+### Minor Changes
+
+- f4a2824: Fold calls of inline recipes into the class string they produce.
+
+  ```ts
+  const badge = cva({
+    base: { rounded: 'full' },
+    variants: { tone: { info: { bg: 'blue.100' } } },
+  })
+
+  // you write
+  const cls = badge({ tone: 'info' })
+
+  // the bundle gets
+  const cls = 'cva_1a2b3c cva_1a2b3c--tone_info'
+  ```
+
+  **The prize is the config, not the runtime.** `cva({ base, variants })` ships the whole style object to the browser so
+  that `cva` can hash it into a name and pick classes off it — but those styles are already in the stylesheet. Once
+  every call of a binding folds, the binding is unreferenced and your bundler drops the config with it. Measured on an
+  application with 1,271 inline recipe bindings: **173 of them fold completely, dropping 9.6 kB gzipped of config**,
+  while the folded call sites are themselves slightly _smaller_ than the calls they replace. The `cva` runtime is 4.5 kB
+  by comparison.
+
+  **Correct by construction.** The class names come from `getRecipeIdentity` and `getRecipeClassNames` — the same
+  functions the generated `cva` runs, not a reimplementation — and prefixing and hashing from `classFormatter`, which is
+  what the encoder emitted the rules under. A parity suite compares the folded string against the real generated `cva`
+  across defaults, multi-axis selections, values containing spaces, a declared `className`, compound variants and a
+  default naming an undeclared value.
+
+  **What still declines,** reported as `recipe-call` exactly as before:
+  - Any selection with a property the build cannot resolve — `badge({ tone })` where `tone` is a prop or state. This is
+    the common case in application code, and it is deliberately all-or-nothing: an unresolved variant does not merely
+    omit a class, so a partially-known selection does not fold at all.
+  - A ternary, which yields several candidate selections and no single literal.
+  - **A selection that could _run_ something.** `badge({ tone: pick() })` has a knowable class and a call inside it;
+    folding deletes the argument, so the call would never run. Same contract the `token()` fallback already keeps.
+  - **A config the build could not read** — `cva(makeConfig())`, or one imported from another module, both of which the
+    extractor resolves to `{}`. That is not an empty config, and folding against it would substitute the identity of
+    `{}` for the call that produces the real classes, leaving the element permanently unstyled.
+  - A slot recipe. `sva(...)` invocations return one class per slot rather than a string.
+  - `.raw()`, `.merge()`, and anything else reaching the recipe object rather than calling it.
+
+  **The value a call site was written with always comes from the source.** The extractor's resolved data is consulted
+  only to supply a value for a property that is present in both — because that data is lossy in the one direction that
+  matters: a property it could not resolve is _dropped_ rather than flagged, so `badge({ tone })` and `badge({})` are
+  indistinguishable in it. Folding the first as the second would emit a class string missing a variant and render the
+  element wrongly, with nothing to report it.
+
+  Variant keys are read from the property's name node rather than by stripping quotes from its text, so
+  `badge({ '\u0074one': 'info' })` selects `tone` as the runtime does instead of silently dropping the variant.
+
+  `classFormatter` is now exported from `@bamboocss/core`, so the fold and the naming-agreement check derive names the
+  same way.
+
+- b041398: Report calls of inline recipes, which the build previously could not see at all.
+
+  An inline recipe is one you bind yourself rather than declaring in the config:
+
+  ```ts
+  const badge = cva({
+    base: { rounded: 'full' },
+    variants: { tone: { info: { bg: 'blue.100' } } },
+  })
+
+  badge({ tone: 'info' }) // ← this call
+  ```
+
+  Bamboo recognises style calls by the name they were _imported_ as, and `badge` is not an import. So while the
+  `cva(...)` definition was extracted normally — the CSS was always correct — the **invocations** were never looked at.
+  They were absent from the transform's coverage summary and from `reportSkipped`, which meant a call the fold could not
+  handle was indistinguishable from a call nothing had parsed, and the reported percentage read higher than a project's
+  real coverage. They now appear as the skip reason `recipe-call`.
+
+  The summary's denominator is `folded + declined`, so invisible calls inflated it directly. `sandbox/vite-ts` reported
+  `Folded 33/41 (80%)` and now truthfully reports
+  `Folded 33/43 (77%) — declined: dynamic=4 empty=2 not-foldable=2 recipe-call=2`. **Expect your coverage number to go
+  down**; nothing about the build got worse.
+
+  **Nothing changes for the ordinary case.** The rules already came from the definition; this records a call site, it
+  does not encode one. Output differs only for a recipe whose name collides with another surface, tabulated below — and
+  only by dropping rules nothing referenced.
+
+  **Reported, not folded, and it does not fail `strict`** — an inline recipe keeps the recipe runtime rather than the
+  `css()` engine, which is the thing `strict` exists to drive to zero.
+
+  Only a **module-scope `const`** binding is registered, and only when its initializer resolves to the imported
+  `cva`/`sva` — so a project's own `cva` helper is not picked up, and a `let` that could be reassigned to something else
+  is not either. Module scope is the load-bearing part: a name is registered per file rather than per binding, so a
+  nested `const css = cva({ … })` shadowing the `css` import would make the module's real `css()` calls look like recipe
+  calls and emit no rules for them. A recipe declared inside a function rebuilds itself on every call anyway, and its
+  rules come from the `cva(...)` definition regardless.
+
+  **Where CSS output differs.** A module-scope recipe whose name is one the file already matched was previously routed
+  to that other surface, and the variant selection at its call site read as props for that surface. Swept across every
+  pattern key, every recipe key, and every bare-matched name, in each import context:
+
+  | a module-scope `const N = cva(...)` where…        | what is no longer emitted                       |
+  | ------------------------------------------------- | ----------------------------------------------- |
+  | `N` is an ordinary name — the common case         | nothing; output is identical                    |
+  | `N` is `sva`, `token`, `viewTransition`, `cx`     | nothing; those misroutes were never CSS-bearing |
+  | `N` is `css`                                      | atomic rules built from the call's argument     |
+  | `N` names a pattern, via a namespace import       | that pattern's full default output              |
+  | `N` names a config recipe, via a namespace import | that recipe's whole rule set, base and variants |
+
+  The `css` case is the reachable one — it needs no namespace import, because the name `css` is matched whatever a file
+  imports. It is also the one whose removed rules look legitimate: `css({ color: 'blue.300' })` emitted `.c_blue\.300`
+  before. Nothing rendered it. The call invokes a recipe, and a recipe names its classes from its config, so any rule
+  derived from reading its argument as style props was unreferenced.
+
+  **Rules are only ever removed — the swept "added" set is empty in every case** — and each removal is a correction.
+  Regenerating every codegen scenario from a fresh build produces **zero artifact drift**, which also rules out a
+  cascade through token and keyframe pruning.
+
+  **One way you could notice a loss.** Mis-dispatching a call also marked that config recipe as _used_. A project that
+  renders a config recipe through a path the parser cannot see — a runtime import, a computed `className` — and was
+  accidentally kept alive by sharing its name with a local recipe will now lose those rules. Reach for
+  [`staticCss`](https://bamboocss.com/docs/references/config#staticcss), which is the supported way to force emission.
+
+  **Perf-neutral**, measured rather than assumed. The pass that finds these bindings has to run before extraction, since
+  `matchFn` is memoized per name. Written as a recursive walk it cost **~10%** of extraction on every file, and 13% on
+  files defining recipes. Restricting it to module scope makes it a walk of the top-level statement list rather than of
+  the tree, gated on the file importing `cva`/`sva` at all — measured at parity on `extract-modes` (1.02x / 1.00x, in a
+  back-to-back A/B whose control moved less than the effect).
+
+- 087b884: Lower inline recipe calls the build cannot resolve, so the recipe config leaves the bundle.
+
+  `badge({ tone })` where `tone` is a prop or state used to keep the whole recipe. Every class it can produce is
+  knowable — only _which one_ applies is not — so what ships is the choice:
+
+  ```ts
+  // you write
+  const badge = cva({ base: { rounded: 'full' }, variants: { tone: { info: {…}, warn: {…} } } })
+  const cls = badge({ tone })
+
+  // the bundle gets
+  const cls = 'cva_1a2b3c' + cvaPick(tone, { info: ' cva_1a2b3c--tone_info', warn: ' cva_1a2b3c--tone_warn' })
+  ```
+
+  `cvaPick` is a new export of the generated `cx` module — chosen because it pulls no engine — and is about 45 bytes. A
+  recipe's classes are **additive**, one per variant, so N runtime axes lower to N terms rather than to every
+  combination of their values.
+
+  **Measured end to end**, bundling a module with one dynamic recipe call:
+
+  |        | minified  | gzipped   |
+  | ------ | --------- | --------- |
+  | before | 10,347 B  | 4,034 B   |
+  | after  | **139 B** | **150 B** |
+
+  **The saving is the config, and it needs `/*#__PURE__*/` to happen at all.** `cva({ base, variants })` ships the whole
+  style object so the runtime can hash it into a name — but those styles are already in the stylesheet. Once every call
+  of a binding lowers, nothing reads it; a bundler still will not drop `cva(…)`, because it cannot prove the call is
+  side-effect free, so the build now annotates it. Without that annotation folding made modules **larger**: 10,347 →
+  10,447 B, classes added and nothing removed. The annotation is only emitted when every call of that binding lowered —
+  while one survives, the binding is still read.
+
+  Across an application with 1,271 inline recipe bindings, **1,024 lower completely**, freeing 62 kB gzipped of config
+  against 17 kB of added call sites.
+
+  **What still declines,** reported as `recipe-call`: a spread or computed key, whose selection cannot be enumerated; a
+  selection that could _run_ something, since folding deletes the argument; a config the build could not read; and slot
+  recipes, which resolve to one class per slot rather than a string.
+
+  **Classes are emitted in the config's variant order**, which is the order the runtime appends them — so a folded
+  module and a dev build produce the same `class` attribute rather than the same set in a different order.
+
+  `getRecipeClassNames` now looks variant values up as own keys. A value of `'toString'` or `'constructor'` previously
+  found `Object.prototype`'s member, passed the null check and named a class no rule backs; both sides now agree it
+  selects nothing.
+
+### Patch Changes
+
+- Updated dependencies [f4a2824]
+- Updated dependencies [b041398]
+- Updated dependencies [087b884]
+  - @bamboocss/core@1.23.0
+  - @bamboocss/types@1.23.0
+  - @bamboocss/shared@1.23.0
+  - @bamboocss/node@1.23.0
+  - @bamboocss/config@1.23.0
+  - @bamboocss/logger@1.23.0
+  - @bamboocss/extractor@1.23.0
+
 ## 1.22.0
 
 ### Minor Changes
