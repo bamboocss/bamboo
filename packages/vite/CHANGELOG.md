@@ -1,5 +1,82 @@
 # @bamboocss/vite
 
+## 1.27.0
+
+### Minor Changes
+
+- b975ba7: A config recipe no longer names a class for a variant its config does not declare.
+
+  `createRecipe`'s transform was `${name}--${prop}_${value}` with no check that the variant exists, so any prop handed
+  to a recipe became a class:
+
+  ```ts
+  button({ nope: 'x' }) // → "button button--nope_x"   ← no rule was ever emitted for it
+  button({ visual: 'bogus' }) // → "button button--visual_bogus"
+  ```
+
+  The build emits rules only for values the config declares, so those classes styled nothing. `cva` already skipped them
+  — `getRecipeClassNames` checks the declared values — which left the two recipe kinds returning different class strings
+  for the same call.
+
+  Both now agree, and **the stylesheet is unchanged**: nothing backed those classes, so removing them removes only dead
+  markup.
+
+  Scalars only. A conditional or responsive value is an object of leaves and the leaves are what name classes, so those
+  pass through as before — including the case where a conditional variant on a recipe with compound variants throws,
+  which still throws where the author put it.
+
+  **This is what unblocks folding config recipes generally.** A lowering derived from the config can reproduce a class
+  for a declared variant, never for a key it cannot enumerate — so while the two runtimes disagreed, the fold had to
+  restrict itself to selections that provably held no undeclared key, meaning the output of `splitVariantProps`. With
+  them in agreement that restriction is gone, and a config recipe call lowers on the same terms as an inline one:
+
+  ```tsx
+  const [variantProps, rest] = button.splitVariantProps(props)
+  cx(button(variantProps), className) // ✅ lowered
+  cx(button({ size })) // ✅ lowered — was declined before
+  ```
+
+  The build-side resolver the transform uses for static recipe calls applies the identical filter, so folded output and
+  the browser continue to agree; a parity suite compares the two across defaults, multi-axis selections, compound
+  variants and conditional values.
+
+### Patch Changes
+
+- 8f0cabc: Stop lowering config recipe calls whose selection is decided at runtime — it dropped responsive variants.
+
+  `1.26.0` extended the wrapper lowering from inline `cva` recipes to `defineRecipe` ones. That was unsound, and the
+  failure was silent:
+
+  ```tsx
+  button({ visual: { base: 'solid', md: 'outline' } })
+
+  // runtime : "button button--visual_solid md:button--visual_outline"
+  // folded  : "button"
+  ```
+
+  Both classes were lost, so a responsive variant rendered unstyled in a production build while working in dev.
+
+  **Why it cannot be patched.** The two recipe kinds resolve a selection differently. `cva` reads a variant value as a
+  key through `getRecipeClassNames`, so a conditional value finds no entry and names no class — which is exactly what
+  the `cvaPick` helper does, and why lowering an inline recipe is sound. A config recipe routes its selection through
+  `createCss`, which _expands_ a conditional into one class per condition. For a dynamic axis the build cannot know
+  which kind of value will arrive, so a table lookup is wrong whenever the caller passes a conditional — and responsive
+  variants are a documented, type-permitted feature of config recipes.
+
+  Unaffected: statically resolvable config recipe calls still fold, `buttonStyle()` with no arguments still folds, and
+  inline `cva` recipes — including the wrapper shape — still lower, because `cva` cannot take a conditional in the first
+  place.
+
+  The parity suite now evaluates the lowered expression against the recipe the codegen emitted for conditional and
+  responsive values, not scalars alone, which is what would have caught this.
+  - @bamboocss/node@1.27.0
+  - @bamboocss/config@1.27.0
+  - @bamboocss/core@1.27.0
+  - @bamboocss/extractor@1.27.0
+  - @bamboocss/logger@1.27.0
+  - @bamboocss/shared@1.27.0
+  - @bamboocss/types@1.27.0
+
 ## 1.26.0
 
 ### Minor Changes
