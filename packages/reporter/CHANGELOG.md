@@ -1,5 +1,16 @@
 # @bamboocss/reporter
 
+## 1.28.0
+
+### Patch Changes
+
+- Updated dependencies [d7fc408]
+  - @bamboocss/types@1.28.0
+  - @bamboocss/core@1.28.0
+  - @bamboocss/generator@1.28.0
+  - @bamboocss/logger@1.28.0
+  - @bamboocss/shared@1.28.0
+
 ## 1.27.0
 
 ### Patch Changes
