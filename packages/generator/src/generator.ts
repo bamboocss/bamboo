@@ -102,7 +102,7 @@ export class Generator extends Context {
   pruneTokens = (sheet: Stylesheet, keep?: Set<string>, tokensReachableFromJs = true) => {
     // `pruneUnusedTokens` governs the token declarations only. The `@property` rules a
     // utility registers are pruned either way: the reason that flag exists is that a token
-    // can be reached by a name this pass never sees -- `token.var()` with a path assembled
+    // can be reached by a name this pass never sees -- `token()` with a path assembled
     // at runtime -- and a registration has no such surface. Nothing hands one to javascript,
     // and it is not part of the token api, so "does the finished stylesheet mention it"
     // is the whole question. Opting out of token pruning should not mean carrying a

@@ -102,7 +102,6 @@ reference, for every token — which is what makes it always foldable.
 `token.value()` only accepts a token that _has_ a literal. A conditional or semantic token resolves to a variable rather
 than to either branch, a virtual one has none of its own, and a negative one resolves to a `calc()` over its
 counterpart, so those are a type error at the call rather than a reference handed to something that cannot resolve it.
-`token.var()` is an alias of `token()` and folds identically.
 
 When every `token()` call in a module folds, its import of the generated token map – every token in your project – is
 left unused, and your bundler drops it. The fold does not remove the import statement itself; the generated
@@ -117,17 +116,12 @@ token(dark ? 'colors.a' : 'colors.b') // ❌ declines – folding a branch would
 token(chosen || 'colors.red.300') // ❌ declines – for the same reason
 ```
 
-A second argument that could _run_ something also declines, because both arguments evaluate before the call:
-
-```tsx
-token('colors.red.300', 'rebeccapurple') // ✅ folds – the fallback is inert and dead
-token('colors.red.300', computeFallback()) // ❌ declines – folding would delete the call
-```
+`token()` takes only a path. A fallback is `token(path) ?? fallback`, which the fold leaves alone – it rewrites the call
+and not the expression around it.
 
 A path the fold cannot resolve to a usable string is reported as `unresolved-token`: the path names no token, or the
 resolved value is empty, or it is not a string at all – a numeric `fontWeights` token stays a number, and no string
-literal stands in for that. In those cases the runtime's `tokens[path]?.value ?? fallback` hands the result to the
-fallback, which is exactly what declining preserves.
+literal stands in for that. The runtime returns `undefined` in those cases, which is exactly what declining preserves.
 
 ## What does not fold
 

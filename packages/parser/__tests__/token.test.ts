@@ -119,13 +119,13 @@ describe('token extraction and resolution', () => {
     `)
   })
 
-  test('should resolve token.var() in css() object', () => {
+  test('should resolve token.value() in css() object to the literal', () => {
     const code = `
       import { token } from '../styled-system/tokens'
       import { css } from '../styled-system/css'
 
       const styles = css({
-        color: token.var('colors.blue.500')
+        color: token.value('colors.blue.500')
       })
     `
     const result = cssParser(code)
@@ -135,7 +135,7 @@ describe('token extraction and resolution', () => {
     expect(cssResult.data).toMatchInlineSnapshot(`
       [
         {
-          "color": "var(--colors-blue-500)",
+          "color": "#3b82f6",
         },
       ]
     `)
@@ -211,52 +211,48 @@ describe('token extraction and resolution', () => {
     `)
   })
 
-  test('should use fallback value when token() path does not exist', () => {
+  test('drops the property when token() names no token', () => {
     const code = `
       import { token } from '../styled-system/tokens'
       import { css } from '../styled-system/css'
 
       const styles = css({
-        color: token('colors.nonexistent.token', '#fallback'),
-        backgroundColor: token('spacing.unknown', '2rem')
+        color: token('colors.nonexistent.token'),
+        backgroundColor: token('spacing.unknown')
       })
     `
     const result = cssParser(code)
 
     expect(result.css.size).toBe(1)
     const cssResult = Array.from(result.css)[0]
-    // Should use fallback values when token path doesn't exist
+    // No fallback parameter any more: an unresolvable path resolves to nothing, and the
+    // property is dropped rather than emitted with a guessed value.
     expect(cssResult.data).toMatchInlineSnapshot(`
       [
-        {
-          "backgroundColor": "2rem",
-          "color": "#fallback",
-        },
+        {},
       ]
     `)
   })
 
-  test('should use fallback value when token.var() path does not exist', () => {
+  test('drops the property when token.value() names no token', () => {
     const code = `
       import { token } from '../styled-system/tokens'
       import { css } from '../styled-system/css'
 
       const styles = css({
-        color: token.var('colors.nonexistent.token', 'var(--fallback-color)'),
-        padding: token.var('spacing.unknown', 'var(--fallback-spacing)')
+        color: token.value('colors.nonexistent.token'),
+        padding: token.value('spacing.unknown')
       })
     `
     const result = cssParser(code)
 
     expect(result.css.size).toBe(1)
     const cssResult = Array.from(result.css)[0]
-    // Should use fallback values when token path doesn't exist
+    // No fallback parameter any more: an unresolvable path resolves to nothing, and the
+    // property is dropped rather than emitted with a guessed value.
     expect(cssResult.data).toMatchInlineSnapshot(`
       [
-        {
-          "color": "var(--fallback-color)",
-          "padding": "var(--fallback-spacing)",
-        },
+        {},
       ]
     `)
   })
@@ -286,14 +282,14 @@ describe('token extraction and resolution', () => {
     `)
   })
 
-  test('should resolve token.var() with existing path and ignore fallback', () => {
+  test('should resolve token.value() with existing path and ignore fallback', () => {
     const code = `
       import { token } from '../styled-system/tokens'
       import { css } from '../styled-system/css'
 
       const styles = css({
-        color: token.var('colors.blue.500', 'var(--ignored)'),
-        margin: token.var('spacing.8', 'var(--also-ignored)')
+        color: token.value('colors.blue.500', 'var(--ignored)'),
+        margin: token.value('spacing.8', 'var(--also-ignored)')
       })
     `
     const result = cssParser(code)
@@ -304,8 +300,8 @@ describe('token extraction and resolution', () => {
     expect(cssResult.data).toMatchInlineSnapshot(`
       [
         {
-          "color": "var(--colors-blue-500)",
-          "margin": "var(--spacing-8)",
+          "color": "#3b82f6",
+          "margin": "2rem",
         },
       ]
     `)
@@ -319,7 +315,7 @@ describe('token extraction and resolution', () => {
  * carries it, which is what the suite above covers. On its own there is no enclosing entry,
  * and for a long time a method call produced no entry at all: the callee is a property
  * access, so the name never matched `matchFn` and the call was dropped before anything
- * downstream could see it. That is what left `token.var()` unfoldable.
+ * downstream could see it. That is what left `token.value()` unfoldable.
  */
 describe('standalone token calls', () => {
   const tokenEntries = (code: string) => Array.from(tokenParser(code))
@@ -329,14 +325,12 @@ describe('standalone token calls', () => {
       import { token } from '../styled-system/tokens'
 
       export const ref = token('colors.blue.500')
-      export const alias = token.var('colors.blue.500')
       export const value = token.value('colors.blue.500')
     `).map((item) => [item.type, item.data])
 
-    // `token()` and `token.var()` land in one bucket because they resolve identically. Only
-    // `.value` is distinct, and the fold reads that to decide which half to inline.
+    // Same path, two kinds. The fold reads the kind to decide which half to inline, and
+    // inlining one as the other swaps a themeable reference for a fixed value.
     expect(byType).toEqual([
-      ['token', ['colors.blue.500']],
       ['token', ['colors.blue.500']],
       ['tokenValue', ['colors.blue.500']],
     ])
@@ -345,7 +339,7 @@ describe('standalone token calls', () => {
   test('is recorded under an aliased import', () => {
     const entries = tokenEntries(`
       import { token as t } from '../styled-system/tokens'
-      export const ref = t.var('colors.blue.500')
+      export const ref = t('colors.blue.500')
       export const value = t.value('colors.blue.500')
     `)
 
@@ -357,7 +351,7 @@ describe('standalone token calls', () => {
       import { token } from '../styled-system/tokens'
 
       const KEY = 'colors.blue.500'
-      export const ref = token.var(KEY)
+      export const ref = token(KEY)
     `)
 
     // This is what the extractor buys over the regex in `token-references.ts`, which reads
@@ -372,7 +366,7 @@ describe('standalone token calls', () => {
     expect(
       tokenEntries(`
         import { token } from '@acme/design'
-        export const ref = token.var('colors.blue.500')
+        export const ref = token.value('colors.blue.500')
       `),
     ).toHaveLength(0)
   })

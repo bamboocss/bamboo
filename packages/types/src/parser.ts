@@ -4,8 +4,8 @@ export interface ResultItem {
   name?: string
   data: Array<Unboxed['raw']>
   /**
-   * `token` covers `token(path)` and `token.var(path)`, which resolve identically to the
-   * variable reference. `tokenValue` is `token.value(path)`, the literal — distinct because
+   * `token` is `token(path)`, the variable reference. `tokenValue` is `token.value(path)`, the
+   * literal — distinct because
    * inlining one as the other swaps a themeable reference for a fixed value.
    *
    * Both live in `ParserResult.token`, since every consumer that reads a token *path* out of

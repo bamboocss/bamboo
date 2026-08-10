@@ -302,18 +302,18 @@ interface CssgenOptions {
    * declared through `globalVars` are yours and are never removed.
    *
    * It is opt-in because reachability cannot be proven for every reference. `token()`,
-   * `token.var()` and `token.value()` calls are read out of the source, as is any literal
+   * `token()` and `token.value()` calls are read out of the source, as is any literal
    * `var(--x)` written by hand — and each form is resolved through a constant or a template
    * literal the extractor can follow, not only through a path spelled out at the call. Three
    * things stay invisible: a token named by a path assembled from a value that only exists at
    * runtime, one referenced only from a stylesheet outside `include`, and one used by a
    * separate package consuming the output as design tokens. Use `staticCss` to keep those.
    *
-   * Every form is a risk, which is a change. `token()` used to hand javascript a literal for
+   * Both forms are a risk, which is a change. `token()` used to hand javascript a literal for
    * a plain token, so a path it could not resolve cost nothing; it now returns `var(--x)` for
-   * *every* token, and so does its `token.var()` alias. Only `token.value()` still returns a
-   * literal, and only for a token carrying no condition. So a path this pass cannot read is a
-   * declaration that has to survive whichever form asked for it.
+   * *every* token. Only `token.value()` returns a literal, and only for a token that has one.
+   * So a path this pass cannot read is a declaration that has to survive whichever form asked
+   * for it.
    *
    * A custom property declared by `globalCss` or `globalVars` is not one of these cases:
    * the declaration ships whether or not anything in the stylesheet reads it, so whatever

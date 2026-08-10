@@ -50,31 +50,29 @@ export function generateTokenJs(ctx: Context) {
     js: outdent`
   const tokens = ${JSON.stringify(obj, null, 2)}
 
-  // \`??\`, not \`||\`. The fallback is for a path that names no token, and \`||\` also swallows a
-  // token whose value is legitimately falsy — \`zIndex: { base: { value: 0 } }\` returned the
-  // fallback instead of 0. Nothing in the default preset has one, so this only ever bit a
-  // custom theme.
-  export function token(path, fallback) {
-    return tokens[path]?.variable ?? fallback
+  // No fallback parameter: \`token(path) ?? fallback\` says the same thing in the language, and
+  // the parameter had to be proved side-effect-free before a build could fold the call away.
+  export function token(path) {
+    return tokens[path]?.variable
   }
 
-  function tokenValue(path, fallback) {
-    return tokens[path]?.value ?? fallback
+  function tokenValue(path) {
+    return tokens[path]?.value
   }
 
-  // \`token.var\` predates \`token()\` returning the reference itself. Kept as the same
-  // function rather than removed, so the spelling that was correct before still is.
-  token.var = token
   token.value = tokenValue
   `,
     dts: outdent`
   ${ctx.file.importType('Token, LiteralToken', './tokens')}
 
   export declare const token: {
-    /** The css variable reference — \`var(--colors-red-300)\`. Stays correct across themes. */
-    (path: Token, fallback?: string): string
-    /** Alias of \`token()\`, kept for compatibility. */
-    var: (path: Token, fallback?: string) => string
+    /**
+     * The css variable reference — \`var(--colors-red-300)\`. Stays correct across themes.
+     *
+     * The parameter is the closed set of tokens the theme declares, so this always answers.
+     * A path cast past that type does not, which is the usual bargain for a cast.
+     */
+    (path: Token): string
     /**
      * The resolved literal — \`#fca5a5\`. Use where css variables cannot be resolved, such as
      * a canvas fill or a charting library.
@@ -85,7 +83,7 @@ export function generateTokenJs(ctx: Context) {
      * a literal that cannot exist is a type error rather than a reference the caller then
      * hands to a canvas.
      */
-    value: (path: LiteralToken, fallback?: string) => string
+    value: (path: LiteralToken) => string
   }
 
   ${ctx.file.exportTypeStar('./tokens')}

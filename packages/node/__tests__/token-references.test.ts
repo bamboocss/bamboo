@@ -44,10 +44,10 @@ const collect = (files: Record<string, string>, results: any[] = []) =>
   collectTokenReferences(createContext(files), results as any)
 
 describe('collectTokenReferences', () => {
-  // The extractor reports `token.var()` too, but only these scans run for a caller that
+  // The extractor reports `token.value()` too, but only these scans run for a caller that
   // supplies no parser results — the watch rebuild and the PostCSS plugin.
-  test('finds token.var() from the text alone', () => {
-    expect(collect({ 'a.tsx': `const c = token.var('colors.pink.400')` })).toEqual(new Set(['--colors-pink-400']))
+  test('finds token.value() from the text alone', () => {
+    expect(collect({ 'a.tsx': `const c = token.value('colors.pink.400')` })).toEqual(new Set(['--colors-pink-400']))
   })
 
   test('finds a plain token() call', () => {
@@ -61,7 +61,16 @@ describe('collectTokenReferences', () => {
   })
 
   test('reads through the whitespace a formatter may introduce', () => {
-    expect(collect({ 'a.tsx': `token . var ( "colors.purple.600" )` })).toEqual(new Set(['--colors-purple-600']))
+    expect(collect({ 'a.tsx': `token . value ( "colors.purple.600" )` })).toEqual(new Set(['--colors-purple-600']))
+  })
+
+  /**
+   * `token.value` was an alias of `token()` and is gone. Neither scan may recognise it: the
+   * property is `undefined` at runtime, so there is no reference to keep alive, and a scan
+   * that still matched it would keep a declaration for a call that throws.
+   */
+  test('ignores the removed .var alias', () => {
+    expect(collect({ 'a.tsx': `token.var('colors.pink.400')` })).toEqual(new Set())
   })
 
   test('ignores a call that merely ends in token', () => {
@@ -96,7 +105,7 @@ describe('collectTokenReferences', () => {
 
   test('reads text the project already holds instead of going to disk', () => {
     // Absent from `files`, so a disk read would throw ENOENT and skip the file.
-    const ctx = createContext({}, { 'a.tsx': `token.var('colors.pink.400')` })
+    const ctx = createContext({}, { 'a.tsx': `token.value('colors.pink.400')` })
 
     expect(collectTokenReferences(ctx, [])).toEqual(new Set(['--colors-pink-400']))
   })
@@ -268,7 +277,7 @@ describe('tokensReachableFromJs', () => {
 
   test.each([
     ['a plain call', `token('spacing.4')`],
-    ['token.var()', `const c = token.var('colors.pink.400')`],
+    ['token.value()', `const c = token.value('colors.pink.400')`],
     ['an import of the artifact', `import { token } from 'styled-system/tokens'`],
     ['an aliased import of the artifact', `import { token as t } from '@/styled-system/tokens'`],
     ['a relative import', `import { token } from '../../styled-system/tokens'`],
@@ -285,8 +294,8 @@ describe('tokensReachableFromJs', () => {
     ['a require', `const { token: t } = require('@ds/tokens')`],
     ['a dynamic import', `const { token } = await import('@ds/tokens')`],
     // The gate has to see a call a formatter has wrapped, or the alignment below breaks.
-    ['a call split across lines', `const c = token\n  .var(KEY)`],
-    ['a call with spaces around the dot', `const c = token . var(KEY)`],
+    ['a call split across lines', `const c = token\n  .value(KEY)`],
+    ['a call with spaces around the dot', `const c = token . value(KEY)`],
   ])('is true for %s', (_label, source) => {
     expect(reachable({ 'a.tsx': source })).toBe(true)
   })
@@ -347,8 +356,8 @@ describe('tokensReachableFromJs', () => {
   /**
    * The same property asserted as a coupling rather than an example, because it is what the
    * callers passing no parser results rest on and it has already been broken once: this file
-   * allowed whitespace around the `.` of `token.var` and the gate did not, so a formatter
-   * wrapping `token\n  .var(SOME_CONST)` was invisible to both.
+   * allowed whitespace around the `.` of `token.value` and the gate did not, so a formatter
+   * wrapping `token\n  .value(SOME_CONST)` was invisible to both.
    *
    * For every spelling of a call: a path the scan can resolve is resolved, and the same
    * spelling with a path it cannot resolve turns the gate on instead.
@@ -356,12 +365,12 @@ describe('tokensReachableFromJs', () => {
   test.each([
     ['token(%)', `token(%)`],
     ['token (%)', `token (%)`],
-    ['token.var(%)', `token.var(%)`],
-    ['token .var(%)', `token .var(%)`],
-    ['token. var(%)', `token. var(%)`],
-    ['token . var(%)', `token . var(%)`],
-    ['token\\n.var(%)', `token\n  .var(%)`],
-    ['token\\n. var(%)', `token\n  . var(%)`],
+    ['token.value(%)', `token.value(%)`],
+    ['token .value(%)', `token .value(%)`],
+    ['token. value(%)', `token. value(%)`],
+    ['token . value(%)', `token . value(%)`],
+    ['token\\n.value(%)', `token\n  .value(%)`],
+    ['token\\n. value(%)', `token\n  . value(%)`],
   ])('the gate covers whatever the reference scan cannot resolve: %s', (_label, spelling) => {
     const literal = spelling.replace('%', `'spacing.4'`)
     const constant = spelling.replace('%', 'KEY')

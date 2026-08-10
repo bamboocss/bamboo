@@ -6,14 +6,14 @@ import { snapshotTexts, sourceSnapshots } from './source-snapshots'
 import { accountSnapshot, type DeclinedReference, type TokenAccounting } from './token-accounting'
 
 /**
- * `token.var('colors.red.300')` and `token('spacing.4')`, including the whitespace a
+ * `token('spacing.4')` and `token.value('colors.red.300')`, including the whitespace a
  * formatter may leave behind. The parser reports both, resolving constants and template
- * literals through them — `token.var()` included, since it is recorded as its own kind
+ * literals through them — `token.value()` included, since it is recorded as its own kind
  * rather than dropped for having a property access as its callee. Scanning the text still
  * earns its place twice over: it covers a path built somewhere the extractor cannot
  * follow, and it covers the callers below that supply no `results` at all.
  */
-const TOKEN_CALL = /\btoken(?:\s*\.\s*(?:var|value))?\s*\(\s*['"`]([^'"`]+)['"`]/g
+const TOKEN_CALL = /\btoken(?:\s*\.\s*value)?\s*\(\s*['"`]([^'"`]+)['"`]/g
 
 /**
  * A token reached from javascript at all — a call of any shape, or an import of the artifact.
@@ -23,7 +23,7 @@ const TOKEN_CALL = /\btoken(?:\s*\.\s*(?:var|value))?\s*\(\s*['"`]([^'"`]+)['"`]
  * No `g` flag, so `test` carries no state between files.
  */
 const REACHABLE_FROM_JS =
-  /\btoken(\s*\.\s*(?:var|value))?\s*\(|\b(?:from|import|require)\s*\(?\s*['"][^'"]*\/tokens(\/[^'"]*|\.[cm]?[jt]sx?)?['"]/
+  /\btoken(\s*\.\s*value)?\s*\(|\b(?:from|import|require)\s*\(?\s*['"][^'"]*\/tokens(\/[^'"]*|\.[cm]?[jt]sx?)?['"]/
 
 /**
  * The text of every file `include` covers — as written on disk, and, when they differ, as the
@@ -56,7 +56,7 @@ function* sourceTexts(ctx: BambooContext): Generator<string> {
  * costs bytes; dropping one that is breaks the page, so the bias belongs on this side.
  *
  * `results` is a second, redundant source for the same paths: the extractor resolves one
- * built from a constant — for `token.var()` and `token.value()` as well as `token()` — which
+ * built from a constant — for `token.value()` as well as `token()` — which
  * the text scan reads literally and fails to look up. Callers that cannot supply it — the
  * watch rebuild and the PostCSS plugin, where re-parsing would encode every style a second
  * time — pass none, and stay correct only because a path the scan misses can lose nothing:
@@ -75,8 +75,8 @@ function* sourceTexts(ctx: BambooContext): Generator<string> {
  *
  * That alignment is a real coupling, not an observation: the gate's call pattern has to stay
  * a superset of this one, matching wherever `TOKEN_CALL` matches and also wherever it gives
- * up. It briefly was not — this allowed whitespace around the `.` of `token.var` and the gate
- * did not, so a formatter wrapping `token\n  .var(SOME_CONST)` slipped past both. Change one
+ * up. It briefly was not — this allowed whitespace around the `.` of the method and the gate
+ * did not, so a formatter wrapping `token\n  .value(SOME_CONST)` slipped past both. Change one
  * of the two and change the other; `token-references.test.ts` pins the property directly.
  *
  * Where it stops holding is a binding renamed away from `token` — `const t = token`, then

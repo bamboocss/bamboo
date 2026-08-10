@@ -9,7 +9,7 @@ Correct the `pruneUnusedTokens` documentation for `token()` returning a css vari
 
 The JSDoc every editor shows on hover still described the old contract, and inverted the advice for exactly the failure
 the new one introduces: it said `token(key)` was "safe for any path, because javascript receives a literal", and pointed
-users at `token.var()` as the form needing `staticCss`. Both halves now return `var(--x)`, and the form that returns a
+users at `token.var()` as the form needing `staticCss`. `token()` now returns `var(--x)`, and the form that returns a
 literal is `token.value()`, which the text never mentioned.
 
 It also quantifies the bluntness rather than repeating the old figure: a project reaching for a token from javascript

@@ -44,7 +44,7 @@ describe('pruneTokens', () => {
 
   /**
    * The flag exists because a token can be reached by a name this pass never sees —
-   * `token.var()` with a path built at runtime. A registration has no such surface: nothing
+   * `token.value()` with a path built at runtime. A registration has no such surface: nothing
    * hands one to javascript and none are part of the token api, so whether the finished
    * stylesheet mentions it is the whole question. Opting out of the half that cannot be
    * proven should not mean carrying the half that can.
@@ -67,7 +67,7 @@ describe('pruneTokens', () => {
     expect(after.length).toBeLessThan(before.length)
   })
 
-  test('keeps a token named only by the caller, standing in for token.var()', () => {
+  test('keeps a token named only by the caller, standing in for token.value()', () => {
     const css = buildCss({ pruneUnusedTokens: true }, new Set(['--colors-pink-500']))
 
     expect(declares(css, '--colors-pink-500')).toBe(true)

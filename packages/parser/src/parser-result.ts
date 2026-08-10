@@ -148,8 +148,8 @@ export class ParserResult implements ParserResultInterface {
   }
 
   /**
-   * `kind` separates the variable reference — `token()` and its `token.var()` alias — from
-   * `token.value()`, the resolved literal. They share this set deliberately: everything that
+   * `kind` separates the variable reference — `token()` — from `token.value()`, the resolved
+   * literal. They share this set deliberately: everything that
    * reads a result for the token *path* — `collectTokenReferences`, keeping a declaration
    * alive through pruning — wants both, and only the fold cares which half was asked for.
    */

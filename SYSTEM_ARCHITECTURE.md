@@ -450,7 +450,7 @@ const styles = css({
 | **Template literal + CallExpression** | `` `1px solid ${token('colors.yellow.100')}` `` | AST evaluation → Raw value    | `"1px solid #fef9c3"`                  |
 | **String pattern (no call)**          | `"1px solid token(colors.yellow.100)"`          | RuleProcessor → CSS variable  | `"1px solid var(--colors-yellow-100)"` |
 | **Object property + CallExpression**  | `{ color: token('colors.red.500') }`            | AST evaluation → Raw value    | `{ color: "#ef4444" }`                 |
-| **Object property + token.var()**     | `{ color: token.var('colors.red.500') }`        | AST evaluation → CSS variable | `{ color: "var(--colors-red-500)" }`   |
+| **Object property + token()**         | `{ color: token.value('colors.red.500') }`      | AST evaluation → CSS variable | `{ color: "var(--colors-red-500)" }`   |
 
 #### Why This Design?
 
@@ -461,7 +461,7 @@ This dual-mode system exists because:
 2. **String patterns** are processed by Bamboo's RuleProcessor and can be transformed to CSS variables for dynamic
    theming
 3. **Semantic tokens** (with conditions) must always use CSS variables to support responsive/conditional values
-4. Users can explicitly request CSS variables with `token.var()` when needed in CallExpressions
+4. Users can explicitly request CSS variables with `token()` when needed in CallExpressions
 
 ## Build Optimization
 

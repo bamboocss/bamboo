@@ -23,7 +23,7 @@ interface PruneOptions {
   tokenVars: Set<string>
   /**
    * Custom properties to keep regardless of what the css references, covering what this
-   * pass cannot see: `token()` and `token.var()` calls, hand-written `var()` in source
+   * pass cannot see: `token()` and `token.value()` calls, hand-written `var()` in source
    * files, and tokens whose own value is a var reference.
    */
   keep?: Set<string>

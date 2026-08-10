@@ -69,7 +69,7 @@ describe('fold: token()', () => {
     expect(result.folded[0]!.classNames).toEqual([])
   })
 
-  test('a resolving token drops an inert fallback', () => {
+  test('a resolving token drops an inert extra argument', () => {
     const { fold } = createFoldFixture()
     const result = fold(`
       import { token } from 'styled-system/tokens'
@@ -102,6 +102,28 @@ describe('fold: token()', () => {
     `)
 
     expect(result.folded[0]?.value).toBe('var(--colors-red-300)')
+  })
+
+  /**
+   * `token.var` was an alias of `token()` and is gone. Nothing may fold it — the property does
+   * not exist at runtime, so a fold would put a value in the bundle for a call that throws.
+   */
+  test.each([
+    ['a bare call', `import { token } from 'styled-system/tokens'\nexport const a = token.var('colors.red.300')`],
+    [
+      'an aliased import',
+      `import { token as t } from 'styled-system/tokens'\nexport const a = t.var('colors.red.300')`,
+    ],
+    [
+      'a namespace import',
+      `import * as ds from 'styled-system/tokens'\nexport const a = ds.token.var('colors.red.300')`,
+    ],
+  ])('the removed .var alias folds nothing — %s', (_label, code) => {
+    const { fold } = createFoldFixture()
+    const result = fold(code)
+
+    expect(result.code).toBe(code)
+    expect(result.folded).toHaveLength(0)
   })
 
   // Through `.value`, which is the only side that can now produce a quote: a variable
@@ -168,7 +190,7 @@ describe('fold: token() declines', () => {
       `,
     },
     {
-      name: 'a path naming no token, where the fallback decides',
+      name: 'a path naming no token',
       reason: 'unresolved-token',
       code: `
         import { token } from 'styled-system/tokens'
@@ -280,17 +302,6 @@ describe('fold: token.value()', () => {
     expect(result.code).not.toContain('#ef4444')
   })
 
-  test('.var is an alias of token(), not of .value', () => {
-    const { fold } = createFoldFixture()
-    const result = fold(`
-      import { token } from 'styled-system/tokens'
-      export const ref = token.var('colors.red.300')
-    `)
-
-    expect(result.code).toContain('export const ref = "var(--colors-red-300)"')
-    expect(result.code).not.toContain('#fca5a5')
-  })
-
   test('an aliased import folds', () => {
     const { fold } = createFoldFixture()
     const result = fold(`
@@ -341,7 +352,7 @@ describe('fold: token.value()', () => {
       `,
     },
     {
-      name: 'a path naming no token, where the fallback decides',
+      name: 'a path naming no token',
       reason: 'unresolved-token',
       code: `
         import { token } from 'styled-system/tokens'

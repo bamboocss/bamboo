@@ -220,8 +220,8 @@ export function maybeBoxNode(
       // `ns.token('x')` asked whether `ns` was a token function, which it never is, so a
       // namespaced call inside a style object silently resolved to nothing.
       let fnName = ''
-      // `token()` and `token.var()` both resolve to the variable reference; only
-      // `token.value()` asks for the literal.
+      // `token()` resolves to the variable reference; only `token.value()` asks for the
+      // literal.
       let isValueMethod = false
 
       if (Node.isIdentifier(expr)) {
@@ -229,8 +229,8 @@ export function maybeBoxNode(
       } else if (Node.isPropertyAccessExpression(expr)) {
         const propertyName = expr.getName()
 
-        if (propertyName === 'var' || propertyName === 'value') {
-          isValueMethod = propertyName === 'value'
+        if (propertyName === 'value') {
+          isValueMethod = true
           fnName = expr.getExpression().getText()
         } else {
           fnName = expr.getText()
@@ -252,14 +252,13 @@ export function maybeBoxNode(
         const tokenPath = tokenPathArg ? literalStringOf(tokenPathArg, stack, ctx) : undefined
 
         if (tokenPath !== undefined) {
-          const fallbackArg = args[1]
-          const fallbackValue = fallbackArg ? literalStringOf(fallbackArg, stack, ctx) : undefined
-
-          // `token()` and `token.var()` return css variables (e.g. "var(--colors-gray-400)");
-          // only `token.value()` returns the raw value (e.g. "#9ca3af").
-          const resolvedValue = isValueMethod
-            ? ctx.tokens.view.get(tokenPath, fallbackValue)
-            : ctx.tokens.view.getVar(tokenPath, fallbackValue)
+          // `token()` returns a css variable (e.g. "var(--colors-gray-400)"); only
+          // `token.value()` returns the raw value (e.g. "#9ca3af").
+          // No fallback argument: the runtime takes only a path, so reading a second one here
+          // made the build resolve `token('colors.nope', 'rebeccapurple')` to the fallback and
+          // emit a rule for it, while the runtime returned `undefined` and dropped the
+          // property. An unresolvable path now drops it on both sides.
+          const resolvedValue = isValueMethod ? ctx.tokens.view.get(tokenPath) : ctx.tokens.view.getVar(tokenPath)
 
           if (resolvedValue) {
             return cache(box.literal(resolvedValue, node, stack))

@@ -55,7 +55,7 @@ export const generateTokenExamples = (token: Token, resolved: unknown) => {
   const tokenFunctionExamples: string[] = [`token('${fullTokenName}')`]
 
   // `token()` already hands back the reference, so the second example is the other half of
-  // the api — the resolved literal — rather than the `token.var()` alias of the first.
+  // the api — the resolved literal.
   //
   // Offered only where there is a literal to show. `token.value` is typed to `LiteralToken`,
   // so a virtual, conditional or negative token is a *type error* there — and this ran

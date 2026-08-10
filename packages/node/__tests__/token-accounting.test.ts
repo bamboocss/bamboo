@@ -35,7 +35,6 @@ const imports = "import { token } from 'styled-system/tokens'\n"
 describe('accepted references record the path they ask for', () => {
   test.each([
     ['a literal path', `${imports}export const a = token('colors.red.300')`, 'colors.red.300'],
-    ['the .var alias', `${imports}export const a = token.var('colors.red.300')`, 'colors.red.300'],
     ['the .value half', `${imports}export const a = token.value('spacing.4')`, 'spacing.4'],
     [
       'an aliased import — the shape that broke the predecessor',
@@ -119,6 +118,13 @@ describe('unreadable references decline', () => {
     ],
     // A bare `token` this pass never bound came from somewhere it could not follow.
     ['an unbound token identifier', `export const a = (p) => token(p)`],
+    // `token.var` is gone. It is `undefined` at runtime, so a call of it is not something this
+    // pass can account for — and declining keeps every declaration, which is the safe answer.
+    ['the removed .var alias', `${imports}export const a = token.var('colors.red.300')`],
+    [
+      'the removed alias on a namespace',
+      `import * as ds from 'styled-system/tokens'\nexport const a = ds.token.var('colors.red.300')`,
+    ],
     // Every file is handed to ts-morph as TSX, so a construct valid in `.ts` and invalid in
     // TSX parses into a JsxElement that swallows the rest of the file. The bytes match, so
     // only the tree shows it — every call below the offending line ceases to exist.

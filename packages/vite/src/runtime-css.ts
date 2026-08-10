@@ -80,7 +80,7 @@ export interface RuntimeToken {
  * table into each of the overwhelming majority of modules that call `token()` zero times.
  * Keyed weakly so a context that goes out of scope takes its table with it.
  *
- * Both halves of the generated entry are stored, because `token()` and `token.var()` read
+ * Both halves of the generated entry are stored, because `token()` and `token.value()` read
  * different ones and building a second table would pay the same per-project cost twice.
  */
 const tokenValues = new WeakMap<Context, Map<string, { value: unknown; variable: string }>>()

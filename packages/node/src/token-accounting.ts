@@ -298,8 +298,8 @@ const nameOf = (node: Node) => (Node.isIdentifier(node) ? String(node.compilerNo
 /**
  * The token path one occurrence asks for, or `undefined` if it is not a call this can read.
  *
- * Accepts the callee position and nothing else — `token('x')`, `token.var('x')`,
- * `token.value('x')`, and the namespaced spellings. An identifier anywhere else is a value
+ * Accepts the callee position and nothing else — `token('x')`, `token.value('x')`, and the
+ * namespaced spellings of each. An identifier anywhere else is a value
  * escaping somewhere this pass cannot follow: assigned (`const t = token`), passed
  * (`useMemo(() => token)`), spread, or enumerated.
  */
@@ -317,7 +317,7 @@ function accountedPath(identifier: Node): string | undefined {
   const property = parent.getNameNode().getText()
   const grandParent = parent.getParent()
 
-  if (property === 'var' || property === 'value') {
+  if (property === 'value') {
     return Node.isCallExpression(grandParent) && grandParent.getExpression() === parent
       ? literalPath(grandParent)
       : undefined
@@ -328,10 +328,10 @@ function accountedPath(identifier: Node): string | undefined {
   // `ns.token('x')`
   if (Node.isCallExpression(grandParent) && grandParent.getExpression() === parent) return literalPath(grandParent)
 
-  // `ns.token.var('x')` / `ns.token.value('x')`
+  // `ns.token.value('x')`
   if (Node.isPropertyAccessExpression(grandParent) && grandParent.getExpression() === parent) {
     const method = grandParent.getNameNode().getText()
-    if (method !== 'var' && method !== 'value') return undefined
+    if (method !== 'value') return undefined
 
     const call = grandParent.getParent()
     return Node.isCallExpression(call) && call.getExpression() === grandParent ? literalPath(call) : undefined

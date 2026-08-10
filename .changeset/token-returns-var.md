@@ -14,8 +14,12 @@
 ```ts
 token('colors.red.300') // "var(--colors-red-300)"  — was "#fca5a5"
 token.value('colors.red.300') // "#fca5a5"
-token.var('colors.red.300') // unchanged; now an alias of token()
 ```
+
+`token.var()` is gone — it did exactly what `token()` now does, and two spellings for one behaviour is the redundancy
+this change exists to remove. So is the second `fallback` argument: `token(path) ?? fallback` says the same thing in the
+language, and the parameter had to be proved side-effect-free before a build could fold the call away. A path naming no
+token returns `undefined`.
 
 **Why.** `token()` used to return the literal for a plain token and the variable reference for a virtual or conditional
 one, so the kind of thing you got back was decided by the theme rather than by the call. Adding a `_dark` variant to a
@@ -37,9 +41,9 @@ Two different failure modes to expect. A `token()` call that should now be `toke
 **silently** — both return `string`, nothing throws — so that one is worth grepping for. A `token.value()` call naming a
 conditional, virtual or negative token is a **compile error**, which finds itself.
 
-**Extraction and folding.** `token()`, `token.var()` and `token.value()` are all recognised by the parser and folded at
-build time, including paths built from a constant or template literal the extractor can follow. `token()` is now the
-trivially foldable form: no condition to read and no non-string case to decline.
+**Extraction and folding.** `token()` and `token.value()` are both recognised by the parser and folded at build time,
+including paths built from a constant or template literal the extractor can follow. `token()` is now the trivially
+foldable form: no condition to read and no non-string case to decline.
 
 **Fixed along the way: negative tokens lost their sign.** A negative token has no css variable of its own — its `varRef`
 names the positive counterpart, and the negation survives only in the value — so a token whose positive counterpart

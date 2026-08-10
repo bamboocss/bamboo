@@ -30,10 +30,9 @@ every `.ts` file using a generic arrow (`<T>(x: T) => x`) or an old-style assert
 the parser as TSX; and a `.vue` or `.svelte` file mentioning `token` anywhere declines, because a single-file component
 is stored post-transform and the tree is not the code that ships.
 
-What resolves: a string literal path, either half (`token`, `token.var`, `token.value`), an aliased import, a namespace
-import. What is reported: a path built at runtime or from a constant, a binding that escapes (`const t = token`), a
-re-export, a `require`, and an import from a module Bamboo cannot classify as the artifact — which covers a barrel
-re-exporting it.
+What resolves: a string literal path, either half (`token`, `token.value`), an aliased import, a namespace import. What
+is reported: a path built at runtime or from a constant, a binding that escapes (`const t = token`), a re-export, a
+`require`, and an import from a module Bamboo cannot classify as the artifact — which covers a barrel re-exporting it.
 
 The one thing it cannot check is a caller **outside** `include`, since that scopes style extraction rather than
 everything that may import. Confirm `include` covers every file reaching for a token before turning this on; the default

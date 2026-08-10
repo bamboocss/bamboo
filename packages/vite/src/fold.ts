@@ -1149,15 +1149,10 @@ export const foldSource = (options: FoldOptions): FoldResult => {
         continue
       }
 
-      // The reference side accepts three spellings: a bare callee, the `.var` alias, and
-      // `ns.token(path)`, which puts `token` in that position. Anything else named there is
-      // a method of somebody's object, not ours.
-      if (
-        !wantsValue &&
-        propertyName !== undefined &&
-        propertyName !== 'var' &&
-        !ctx.imports.matchers.tokens.match(propertyName)
-      ) {
+      // The reference side accepts two spellings: a bare callee, and `ns.token(path)`, which
+      // puts `token` in that position. Anything else named there is a method of somebody's
+      // object, not ours.
+      if (!wantsValue && propertyName !== undefined && !ctx.imports.matchers.tokens.match(propertyName)) {
         skipped.push({ name, reason: 'unsupported-kind', start, end })
         continue
       }
@@ -1193,9 +1188,9 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       // Three ways to land here, all of them the same decision: the path names no token,
       // the token's value is not a string (a numeric `fontWeights` token stays a number
       // through the dictionary, and the runtime returns that number), or the value is
-      // empty. The runtime is `tokens[path]?.value || fallback`, so in the first and last
-      // cases the fallback decides; in the middle one no string literal can stand in for
-      // what it returns. Declining leaves all three where the user wrote them.
+      // empty. The runtime returns `undefined` in the first and last; in the middle one no
+      // string literal can stand in for what it returns. Declining leaves all three where
+      // the user wrote them.
       //
       // Only the first and last can arise on the reference side, whose half of the entry is
       // a `var()` for every token regardless of condition.
