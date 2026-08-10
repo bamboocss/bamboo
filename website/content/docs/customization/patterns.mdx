@@ -13,10 +13,37 @@ A pattern accepts the following parameters:
 - `properties` - The list of properties that the pattern accepts.
 - `defaultValues` - The default values for the properties. This is useful when you want to provide a default value for a
   property.
-- `transform` - The function that accepts the properties and returns a css object.
+- `transform` - The function that accepts the properties and a set of [helpers](#transform-helpers), and returns a css
+  object.
 - `blocklist` - The list of properties that are not allowed to be used in the pattern. Can be used to ensure strict
   typings when using the pattern.
 - `strict` - Whether to only generate types for the specified properties. This will disallow css properties.
+
+## Transform helpers
+
+`transform` receives a second argument with everything it needs to shape values it cannot inspect itself:
+
+| helper                   | returns                                                                       |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| `map(value, fn)`         | `fn` applied to a value, or to each leaf of a conditional one                 |
+| `token(path, fallback?)` | the css variable for a token path, or `fallback` when the path names no token |
+| `isCssUnit(value)`       | whether the value is a css length, e.g. `10px`                                |
+| `isCssVar(value)`        | whether the value is a `var(...)` reference                                   |
+| `isCssFunction(value)`   | whether the value is a css function call                                      |
+
+`token` is what lets a pattern accept either a token name or a raw css value, which is how the built-in `bleed`, `grid`
+and `spacer` patterns work:
+
+```ts
+transform(props, { token, isCssUnit }) {
+  // '4' → var(--spacing-4) · 'auto' → auto · '10px' → 10px
+  const value = isCssUnit(props.size) ? props.size : token(`spacing.${props.size}`, props.size)
+  return { flex: `0 0 ${value}` }
+}
+```
+
+Resolve the token here rather than emitting a reference for the css pipeline to read later — the build, the extractor
+and the browser all answer through this helper, so the value a pattern produces is the same in each.
 
 ## Creating a Pattern
 

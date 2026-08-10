@@ -148,7 +148,7 @@ Perf-sensitive code has Vitest benchmarks in `{packages,sandbox}/*/__tests__/**/
 | `core/sort-style-rules`                         | rule ordering                          |
 | `extractor/extract-speed`                       | expression evaluation                  |
 | `parser/ts-eval`, `parser/extract-modes`        | extraction                             |
-| `generator/css-fn`, `generator/cva`             | the generated runtime                  |
+| `generator/css-fn`, `cva`, `recipe`             | the generated runtime                  |
 | `shared/split-props`, `shared/leaf-class`       | runtime helpers on the per-render path |
 | `vite/fold`                                     | the fold's per-module cost             |
 | `sandbox/runtime-perf/render`                   | a React render of a folded tree        |
