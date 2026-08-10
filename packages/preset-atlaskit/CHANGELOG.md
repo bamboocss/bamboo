@@ -1,5 +1,12 @@
 # @bamboocss/preset-atlaskit
 
+## 1.30.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @bamboocss/types@1.30.0
+
 ## 1.29.0
 
 ### Patch Changes

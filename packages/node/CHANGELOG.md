@@ -1,5 +1,68 @@
 # @bamboocss/node
 
+## 1.30.0
+
+### Minor Changes
+
+- Remove `token.var()` and the token `fallback` parameter.
+
+  `token.var` was `token.var = token` — a literal alias, so two spellings for one behaviour, which is the redundancy the
+  `token()` change exists to remove. `token()` is the reference.
+
+  The second `fallback` argument is gone too: `token(path) ?? fallback` says the same thing in the language, and the
+  parameter had to be proved side-effect-free before a build could fold the call away. A path naming no token resolves
+  to nothing, and the property is dropped — at build time and at runtime alike, which they did not previously agree on.
+
+  `token()` and `token.value()` return `string`. Their parameters are the closed sets of paths the theme declares, so a
+  call that typechecks always answers.
+
+- 009294f: Bound a dynamic token path by its static prefix instead of keeping every declaration.
+
+  Under `pruneUnusedTokens: 'strict'`, ``token(`colors.${shade}`)`` used to be reported as unresolvable, which keeps the
+  whole token layer — 468 declarations on the default preset against 68 for the old, narrower exemption. Bamboo cannot
+  tell which token that call wants, but it can tell which it _cannot_: everything the expression produces starts
+  `colors.`. It now keeps that category and prunes the rest.
+
+  The static head was already sitting in the source and was thrown away. It is the shape the documentation site itself
+  uses, and the only genuinely dynamic token call in this repository.
+
+  A head that bounds nothing — ``token(`${path}`)`` — is still reported, and still keeps everything.
+
+- 242b24c: `pruneUnusedTokens: 'strict'` now fails the build on a reference it cannot resolve, instead of warning.
+
+  `strict` is an assertion — you are stating that every token path in the project resolves at build time. When that
+  turned out to be false it printed a warning and quietly kept every token declaration, which leaves you believing the
+  layer was pruned when it was not. That is the same silence the flag exists to remove.
+
+  Only that one fails. Everything else is **reported** and keeps the layer exactly as the default would — a `.vue` or
+  `.svelte` component stored post-transform, a file it could not parse, a barrel it cannot classify, a dynamic
+  `import()`. Those reasons exist because declining used to be free, so the accounting declined anything it could not
+  prove; several of them have nothing to do with tokens, and failing a build over a route-splitting `import()` would be
+  indefensible.
+
+  A failed _rebuild_ now reports itself too. A throw inside a watch callback was discarded by the file watcher, surfaced
+  as an internal `Unhandled rejection`, left the exit code at 0, and was invisible at `logLevel: 'silent'`.
+
+  The error is `TOKEN_REFERENCE_UNRESOLVED`, and names every unresolved reference with its file and line.
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies [242b24c]
+  - @bamboocss/generator@1.30.0
+  - @bamboocss/core@1.30.0
+  - @bamboocss/parser@1.30.0
+  - @bamboocss/types@1.30.0
+  - @bamboocss/shared@1.30.0
+  - @bamboocss/reporter@1.30.0
+  - @bamboocss/config@1.30.0
+  - @bamboocss/logger@1.30.0
+  - @bamboocss/plugin-lightningcss@1.30.0
+  - @bamboocss/plugin-svelte@1.30.0
+  - @bamboocss/plugin-vue@1.30.0
+  - @bamboocss/token-dictionary@1.30.0
+
 ## 1.29.0
 
 ### Minor Changes
