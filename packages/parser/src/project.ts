@@ -62,6 +62,32 @@ export interface ProjectOptions extends TsProjectOptions {
   tsOptions?: ConfigTsOptions
 }
 
+/**
+ * How to parse a file, decided by its extension.
+ *
+ * Everything used to be `TSX`, which is not a superset of `TS`: the two disagree on exactly
+ * the constructs where `<` is ambiguous. Under `TSX` a generic arrow `<T>(x: T) => x` and an
+ * old-style assertion `<HTMLElement>node` parse as a *JSX element*, which then swallows the
+ * rest of the file into its children. The file still reads fine and the bytes are unchanged;
+ * the tree is simply wrong, and every `css()` call below the offending line stops existing as
+ * far as extraction is concerned. It reports as styles that silently never got emitted.
+ *
+ * Only `.ts` moves. A `.ts` file cannot legally contain JSX — TypeScript requires `.tsx` for
+ * that — so parsing one as `TSX` can only ever mis-parse, never accept something real.
+ *
+ * Everything else stays `TSX` deliberately:
+ *
+ * - `.js` and `.jsx` routinely carry JSX in projects that never adopted TypeScript, and `TSX`
+ *   accepts the type syntax they do not use anyway.
+ * - a single-file component is stored under its own extension after `parser:before` rewrites
+ *   it to tsx, so `.vue` and `.svelte` have to keep parsing as tsx.
+ * - an unknown extension is somebody's template that a hook may have compiled to jsx.
+ */
+const scriptKindFor = (filePath: string): ScriptKind => {
+  const extension = filePath.slice(filePath.lastIndexOf('.')).toLowerCase()
+  return extension === '.ts' || extension === '.mts' || extension === '.cts' ? ScriptKind.TS : ScriptKind.TSX
+}
+
 export class Project {
   project: TsProject
   parser: ReturnType<typeof createParser>
@@ -262,7 +288,7 @@ export class Project {
     this.invalidate()
     return this.project.createSourceFile(filePath, readFile(filePath), {
       overwrite: true,
-      scriptKind: ScriptKind.TSX,
+      scriptKind: scriptKindFor(filePath),
     })
   }
 
@@ -282,7 +308,7 @@ export class Project {
     this.invalidate(!(filePath.includes('/') && this.project.getSourceFile(filePath)))
     return this.project.createSourceFile(filePath, content, {
       overwrite: true,
-      scriptKind: ScriptKind.TSX,
+      scriptKind: scriptKindFor(filePath),
     })
   }
 
