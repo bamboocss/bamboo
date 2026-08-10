@@ -1,5 +1,102 @@
 # @bamboocss/types
 
+## 1.29.0
+
+### Minor Changes
+
+- 0dbe9c4: Add `pruneUnusedTokens: 'strict'`, which prunes the token layer for projects whose token paths all resolve at
+  build time.
+
+  Since `token()` returns a css variable reference for every token, a path the build cannot read could name any of them,
+  so every declaration has to be kept — and the check for that is all-or-nothing: one token call or `/tokens` import
+  anywhere under `include` keeps the lot. On the default preset that is 468 declarations instead of 68.
+
+  `'strict'` is an assertion rather than a cleverer inference. You state that every token path is spelled out at the
+  call; Bamboo accounts for each reference, keeps by name only what is asked for, and prints everything it could not
+  read:
+
+  ```
+  ⚠ tokens:strict  2 token reference(s) could not be resolved, so every token declaration is kept.
+
+    src/chart.tsx
+      14: unresolved-reference
+    src/theme.ts
+      3: unclassified-import
+  ```
+
+  A reference it cannot read is never pruned — it falls back to whatever the default would have answered for that
+  project. So `strict` is never less safe and never larger than the default, and it says why when it cannot prune.
+
+  Two things keep it inert rather than wrong: any file whose parsed tree carries syntax errors declines, which includes
+  every `.ts` file using a generic arrow (`<T>(x: T) => x`) or an old-style assertion, since Bamboo hands every file to
+  the parser as TSX; and a `.vue` or `.svelte` file mentioning `token` anywhere declines, because a single-file
+  component is stored post-transform and the tree is not the code that ships.
+
+  What resolves: a string literal path, either half (`token`, `token.var`, `token.value`), an aliased import, a
+  namespace import. What is reported: a path built at runtime or from a constant, a binding that escapes
+  (`const t = token`), a re-export, a `require`, and an import from a module Bamboo cannot classify as the artifact —
+  which covers a barrel re-exporting it.
+
+  The one thing it cannot check is a caller **outside** `include`, since that scopes style extraction rather than
+  everything that may import. Confirm `include` covers every file reaching for a token before turning this on; the
+  default remains unchanged.
+
+- 38393c4: `token()` now returns the css variable reference for every token, and `token.value()` returns the resolved
+  literal.
+
+  ```ts
+  token('colors.red.300') // "var(--colors-red-300)"  — was "#fca5a5"
+  token.value('colors.red.300') // "#fca5a5"
+  token.var('colors.red.300') // unchanged; now an alias of token()
+  ```
+
+  **Why.** `token()` used to return the literal for a plain token and the variable reference for a virtual or
+  conditional one, so the kind of thing you got back was decided by the theme rather than by the call. Adding a `_dark`
+  variant to a token silently changed what every caller received — same call, same path, a colour before and a variable
+  after, both typed `string`, with nothing to catch it. Always-a-reference is the predictable half and the one that
+  keeps responding to the cascade, so it takes the short name; the literal has to be asked for, which is also the honest
+  signal, since it is the form that stops tracking the theme.
+
+  `token.value()` keeps the old per-token split rather than always returning a literal: a virtual or conditional token
+  has no single literal, so its `var()` is still the only truthful answer.
+
+  **Migrating.** Rename any call whose result goes somewhere a css variable will not resolve — a `<canvas>` fill, a
+  charting library, `<meta name="theme-color">`, or arithmetic on the value — to `token.value()`. Everything else can
+  stay as it is and gets better behaviour for free. Nothing throws and no type changes, since both forms return
+  `string`, so this is worth grepping for rather than waiting on.
+
+  **Extraction and folding.** `token()`, `token.var()` and `token.value()` are all recognised by the parser and folded
+  at build time, including paths built from a constant or template literal the extractor can follow. `token()` is now
+  the trivially foldable form: no condition to read and no non-string case to decline.
+
+  **Fixed along the way: negative tokens lost their sign.** A negative token has no css variable of its own — its
+  `varRef` names the positive counterpart, and the negation survives only in the value — so a token whose positive
+  counterpart carried a condition resolved to a _positive_ length. `token.value('spacing.-gutter')` returned
+  `var(--spacing-gutter)` where it should return `calc(var(--spacing-gutter) * -1)`. Both halves now read through the
+  token view, so the generated runtime, the extractor and the build-time fold cannot disagree.
+
+  **Stylesheet size.** This makes `pruneUnusedTokens` coarser in one case. Because `token()` can hand back a `var()` for
+  any token, a project that reaches for a token from javascript at all now keeps every token declaration, where before
+  it kept only the virtual, conditional and negative ones. A project that never imports the tokens artifact is
+  unaffected, and one whose paths all resolve statically will be too once the reachability gate is narrowed to
+  distinguish them — tracked as follow-up work.
+
+### Patch Changes
+
+- 6114f6e: Correct the `pruneUnusedTokens` documentation for `token()` returning a css variable.
+
+  The JSDoc every editor shows on hover still described the old contract, and inverted the advice for exactly the
+  failure the new one introduces: it said `token(key)` was "safe for any path, because javascript receives a literal",
+  and pointed users at `token.var()` as the form needing `staticCss`. Both halves now return `var(--x)`, and the form
+  that returns a literal is `token.value()`, which the text never mentioned.
+
+  It also quantifies the bluntness rather than repeating the old figure: a project reaching for a token from javascript
+  keeps 468 declarations on the default preset where the narrower exemption kept 68.
+
+  `bamboo init`'s scaffold comment said `token.var()` with a computed path; it is `token()`. The token spec now offers
+  `token.value()` unconditionally, since the `varRef` guard it inherited asked a question only the `token.var()` alias
+  cared about.
+
 ## 1.28.1
 
 ### Patch Changes

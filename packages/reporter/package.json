@@ -1,6 +1,6 @@
 {
   "name": "@bamboocss/reporter",
-  "version": "1.28.1",
+  "version": "1.29.0",
   "description": "Track and report usage of tokens and recipes",
   "homepage": "https://bamboocss.com",
   "license": "MIT",
