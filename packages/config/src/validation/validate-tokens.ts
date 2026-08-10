@@ -59,6 +59,7 @@ export const validateTokens = (options: Options) => {
       }
 
       const valueStr = serializeTokenValue(itemValue.value || itemValue)
+
       if (isTokenReference(valueStr)) {
         refsByPath.set(formattedPath, new Set([]))
       }
@@ -101,6 +102,7 @@ export const validateTokens = (options: Options) => {
           }
 
           const valueStr = serializeTokenValue(itemValue.value || itemValue)
+
           if (isTokenReference(valueStr)) {
             if (!refsByPath.has(formattedPath)) {
               refsByPath.set(formattedPath, new Set())

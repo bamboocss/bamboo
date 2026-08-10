@@ -24,7 +24,16 @@ import { isCompositeTokenValue } from './is-composite'
 import { middlewares } from './middleware'
 import { Token, type TokenExtensions } from './token'
 import { transforms, type ColorPaletteExtensions } from './transform'
-import { assertTokenFormat, expandReferences, getReferences, isToken, mapToJson, referenceOf } from './utils'
+import {
+  assertTokenFormat,
+  curlyReferenceMessage,
+  expandReferences,
+  findCurlyReference,
+  getReferences,
+  isToken,
+  mapToJson,
+  referenceOf,
+} from './utils'
 import { expandTokenReferences } from './expand-token-references'
 
 type EnforcePhase = 'pre' | 'post'
@@ -404,6 +413,11 @@ export class TokenDictionary {
    * Expand token references to their CSS variable
    */
   expandReferenceInValue(value: string) {
+    const stale = findCurlyReference(value)
+    if (stale) {
+      throw new BambooError('INVALID_TOKEN', curlyReferenceMessage(stale, `the value \`${value}\``))
+    }
+
     return expandTokenReferences(value, (path) => {
       if (!path) return
 

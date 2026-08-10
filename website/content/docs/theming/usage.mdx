@@ -55,8 +55,8 @@ const className = css({
 
 <Callout type="info">
   Earlier versions also accepted a curly form, `{'{colors.red.400}'}`, which meant exactly the same thing. It has been
-  removed so there is one way to write a reference. The curly form no longer resolves — it is left in the value as
-  literal text rather than reported, so search for it when upgrading.
+  removed so there is one way to write a reference. It is an error rather than a silent fallback: a curly reference in a
+  token value fails the build naming the token and its replacement, and one in a style value throws where it is used.
 </Callout>
 
 ## Vanilla JS

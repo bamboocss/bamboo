@@ -8,6 +8,7 @@ import { validateConditions } from './validation/validate-condition'
 import { validatePatterns } from './validation/validate-patterns'
 import { validateRecipes } from './validation/validate-recipes'
 import { validateRemovedOptions } from './validation/validate-removed'
+import { assertNoRetiredSyntax } from './validation/validate-retired-syntax'
 import { validateTokens } from './validation/validate-tokens'
 
 /**
@@ -20,8 +21,13 @@ import { validateTokens } from './validation/validate-tokens'
  * - Check for conditions selectors (must contain '&')
  * - Check for breakpoints units (must be the same)
  * - Check for options that have been removed, which are otherwise ignored in silence
+ * - Throw on token values still written in the retired curly reference syntax
  */
 export const validateConfig = (config: Partial<UserConfig>) => {
+  // Ahead of the opt-out: a retired spelling is not an opinion about a config that still builds,
+  // it is output that is already broken. See `validate-retired-syntax`.
+  assertNoRetiredSyntax(config)
+
   if (config.validation === 'none') return
 
   const warnings = new Set<string>()

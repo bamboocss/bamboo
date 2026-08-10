@@ -41,6 +41,39 @@ export function getReferences(value: string) {
 
 export const hasReference = (value: string) => getReferences(value).length > 0
 
+/**
+ * The retired curly reference — `{colors.red.300}`, or `{$spacing-2}` under a custom
+ * `formatTokenName`.
+ *
+ * Detected in order to *fail*, because leaving it alone is silent in both directions: in a style
+ * value the declaration is dropped, and in a token value the literal text is emitted into the
+ * stylesheet. Neither reports itself and neither is valid css.
+ *
+ * Safe to throw on because the spelling was never available for anything else. Until it was
+ * removed, `{…}` in a value was consumed unconditionally — braces stripped, and an unresolved
+ * path emitted bare — so no literal `{a.b}` could have survived to mean itself. There is no
+ * legitimate use to break, which is what separates this from a strict-mode opinion.
+ *
+ * Excludes whitespace, quotes and `:` so a `content` string holding json-ish text is not read as
+ * a stale reference.
+ */
+const CURLY_REFERENCE = /\{[^{}\s:;"']+\}/
+
+/** The stale spelling in `value`, or `undefined`. Guarded, since this runs per style value. */
+export const findCurlyReference = (value: string) =>
+  value.includes('{') ? (CURLY_REFERENCE.exec(value)?.[0] ?? undefined) : undefined
+
+/** Shared wording, so the config and style-value paths say the same thing. */
+export const curlyReferenceMessage = (found: string, where: string) => {
+  const path = found.slice(1, -1)
+
+  return (
+    `\`${found}\` in ${where} is the retired token reference syntax. Write \`token(${path})\` instead.\n\n` +
+    `Curly references were removed so a token is referenced one way. They are not ignored quietly: in a style value ` +
+    `the declaration is dropped, and in a token value the text is emitted into the stylesheet as-is.`
+  )
+}
+
 const tokenFunctionRegex = /token\(([^)]+)\)/g
 const closingParenthesisRegex = /\)$/g
 const hasTokenReference = (str: string) => str.includes('token(')

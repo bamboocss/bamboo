@@ -152,24 +152,25 @@ describe('color-mix', () => {
   /**
    * The retired curly spelling, which used to mean the same as the `token()` above.
    *
-   * Pinned as *inert* rather than deleted: a half-removal that still resolved `{…}` somewhere
-   * would leave two ways to say one thing, which is the whole reason it went. It stays a literal
-   * — no `color-mix`, no `var()` — and the declaration is dropped, since `{…}` is not a css
-   * value.
+   * An error rather than a literal: left alone it is silent in both directions — the declaration
+   * is dropped here, and a curly value in a *token* emits its text into the stylesheet. Neither
+   * reports itself, and neither is valid css.
    *
-   * Worth being plain that this is quiet, not loud: nothing warns, and the same value in a
-   * *theme* token emits the literal text into the stylesheet. An upgrade diagnostic for the old
-   * spelling is a real gap, tracked separately rather than pretended away here.
+   * Safe to throw on because the spelling was never available for anything else: until it was
+   * removed, `{…}` in a value was consumed unconditionally, so no literal `{a.b}` could have
+   * survived to mean itself.
    */
-  test('a curly reference is no longer a reference', () => {
-    expect(css({ color: '{colors.pink.400/30}' })).toMatchInlineSnapshot(`
-      {
-        "className": [
-          "c_\\{colors\\.pink\\.400\\/30\\}",
-        ],
-        "css": "",
-      }
-    `)
+  test('a curly reference fails rather than emitting a literal', () => {
+    expect(() => css({ color: '{colors.pink.400/30}' })).toThrow(/retired token reference syntax/)
+  })
+
+  test('the error names the replacement', () => {
+    expect(() => css({ color: '1px solid {colors.red.300}' })).toThrow(/token\(colors\.red\.300\)/)
+  })
+
+  /** Braces that are not a reference are left alone — a `content` string, most obviously. */
+  test('a brace that is not a reference still passes through', () => {
+    expect(() => css({ content: '"{ a: 1 }"' })).not.toThrow()
   })
 
   // below are invalid cases

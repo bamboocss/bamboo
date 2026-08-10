@@ -13,6 +13,20 @@ const REFERENCE_REGEX = /token\(([^(),]+)\)/g
 export const isValidToken = (token: unknown) => isObject(token) && Object.hasOwnProperty.call(token, 'value')
 export const isTokenReference = (value: unknown) => typeof value === 'string' && getReferences(value).length > 0
 
+/**
+ * The retired curly reference — `{colors.red.300}`, or `{$spacing-2}` under a custom
+ * `formatTokenName`. A copy of the regex in `@bamboocss/token-dictionary`, which this package
+ * does not depend on.
+ *
+ * Reported here as well as there because a *token* value carrying one is the worse case: the
+ * text is emitted into the stylesheet rather than dropped, and validation is the only thing that
+ * can name which token it came from.
+ */
+const CURLY_REFERENCE = /\{[^{}\s:;"']+\}/
+
+export const findCurlyReference = (value: string) =>
+  value.includes('{') ? (CURLY_REFERENCE.exec(value)?.[0] ?? undefined) : undefined
+
 export const formatPath = (path: string) => path
 export const SEP = '.'
 
