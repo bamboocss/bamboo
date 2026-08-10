@@ -285,22 +285,25 @@ export function createParser(context: ParserOptions) {
           return
         }
 
-        // token.var('colors.red.300')
+        // token.var('colors.red.300') and token.value('colors.red.300')
         //
         // Ahead of the chain, and on `alias` rather than `name`, for the reason the block
         // above is: the callee is a property access, so `getName` has no import to resolve
         // it to and every matcher below tests a bare name. Left to the chain it matched
-        // nothing and the call was dropped — which is what kept `token.var()` unfoldable.
-        if (file.isTokenVarFn(alias)) {
+        // nothing and the call was dropped — which is what kept these unfoldable.
+        const tokenMethod = file.tokenMethod(alias)
+        if (tokenMethod) {
           result.queryList.forEach((query) => {
             if (query.kind === 'call-expression') {
               parserResult.setToken(
                 {
-                  name: 'token.var',
+                  name: `token.${tokenMethod}`,
                   box: (query.box.value[0] as BoxNodeMap) ?? box.fallback(query.box),
                   data: combineResult(unbox(query.box.value[0])),
                 },
-                'tokenVar',
+                // `.var` is an alias of `token()`, so it lands in the same bucket. Only
+                // `.value` resolves to something different.
+                tokenMethod === 'value' ? 'tokenValue' : 'token',
               )
             }
           })

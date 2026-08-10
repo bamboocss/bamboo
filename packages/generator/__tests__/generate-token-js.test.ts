@@ -1782,147 +1782,147 @@ test('[dts] should generate package', () => {
       },
       "spacing.-1": {
         "value": "calc(var(--spacing-1) * -1)",
-        "variable": "var(--spacing-1)"
+        "variable": "calc(var(--spacing-1) * -1)"
       },
       "spacing.-2": {
         "value": "calc(var(--spacing-2) * -1)",
-        "variable": "var(--spacing-2)"
+        "variable": "calc(var(--spacing-2) * -1)"
       },
       "spacing.-3": {
         "value": "calc(var(--spacing-3) * -1)",
-        "variable": "var(--spacing-3)"
+        "variable": "calc(var(--spacing-3) * -1)"
       },
       "spacing.-4": {
         "value": "calc(var(--spacing-4) * -1)",
-        "variable": "var(--spacing-4)"
+        "variable": "calc(var(--spacing-4) * -1)"
       },
       "spacing.-5": {
         "value": "calc(var(--spacing-5) * -1)",
-        "variable": "var(--spacing-5)"
+        "variable": "calc(var(--spacing-5) * -1)"
       },
       "spacing.-6": {
         "value": "calc(var(--spacing-6) * -1)",
-        "variable": "var(--spacing-6)"
+        "variable": "calc(var(--spacing-6) * -1)"
       },
       "spacing.-7": {
         "value": "calc(var(--spacing-7) * -1)",
-        "variable": "var(--spacing-7)"
+        "variable": "calc(var(--spacing-7) * -1)"
       },
       "spacing.-8": {
         "value": "calc(var(--spacing-8) * -1)",
-        "variable": "var(--spacing-8)"
+        "variable": "calc(var(--spacing-8) * -1)"
       },
       "spacing.-9": {
         "value": "calc(var(--spacing-9) * -1)",
-        "variable": "var(--spacing-9)"
+        "variable": "calc(var(--spacing-9) * -1)"
       },
       "spacing.-10": {
         "value": "calc(var(--spacing-10) * -1)",
-        "variable": "var(--spacing-10)"
+        "variable": "calc(var(--spacing-10) * -1)"
       },
       "spacing.-11": {
         "value": "calc(var(--spacing-11) * -1)",
-        "variable": "var(--spacing-11)"
+        "variable": "calc(var(--spacing-11) * -1)"
       },
       "spacing.-12": {
         "value": "calc(var(--spacing-12) * -1)",
-        "variable": "var(--spacing-12)"
+        "variable": "calc(var(--spacing-12) * -1)"
       },
       "spacing.-14": {
         "value": "calc(var(--spacing-14) * -1)",
-        "variable": "var(--spacing-14)"
+        "variable": "calc(var(--spacing-14) * -1)"
       },
       "spacing.-16": {
         "value": "calc(var(--spacing-16) * -1)",
-        "variable": "var(--spacing-16)"
+        "variable": "calc(var(--spacing-16) * -1)"
       },
       "spacing.-20": {
         "value": "calc(var(--spacing-20) * -1)",
-        "variable": "var(--spacing-20)"
+        "variable": "calc(var(--spacing-20) * -1)"
       },
       "spacing.-24": {
         "value": "calc(var(--spacing-24) * -1)",
-        "variable": "var(--spacing-24)"
+        "variable": "calc(var(--spacing-24) * -1)"
       },
       "spacing.-28": {
         "value": "calc(var(--spacing-28) * -1)",
-        "variable": "var(--spacing-28)"
+        "variable": "calc(var(--spacing-28) * -1)"
       },
       "spacing.-32": {
         "value": "calc(var(--spacing-32) * -1)",
-        "variable": "var(--spacing-32)"
+        "variable": "calc(var(--spacing-32) * -1)"
       },
       "spacing.-36": {
         "value": "calc(var(--spacing-36) * -1)",
-        "variable": "var(--spacing-36)"
+        "variable": "calc(var(--spacing-36) * -1)"
       },
       "spacing.-40": {
         "value": "calc(var(--spacing-40) * -1)",
-        "variable": "var(--spacing-40)"
+        "variable": "calc(var(--spacing-40) * -1)"
       },
       "spacing.-44": {
         "value": "calc(var(--spacing-44) * -1)",
-        "variable": "var(--spacing-44)"
+        "variable": "calc(var(--spacing-44) * -1)"
       },
       "spacing.-48": {
         "value": "calc(var(--spacing-48) * -1)",
-        "variable": "var(--spacing-48)"
+        "variable": "calc(var(--spacing-48) * -1)"
       },
       "spacing.-52": {
         "value": "calc(var(--spacing-52) * -1)",
-        "variable": "var(--spacing-52)"
+        "variable": "calc(var(--spacing-52) * -1)"
       },
       "spacing.-56": {
         "value": "calc(var(--spacing-56) * -1)",
-        "variable": "var(--spacing-56)"
+        "variable": "calc(var(--spacing-56) * -1)"
       },
       "spacing.-60": {
         "value": "calc(var(--spacing-60) * -1)",
-        "variable": "var(--spacing-60)"
+        "variable": "calc(var(--spacing-60) * -1)"
       },
       "spacing.-64": {
         "value": "calc(var(--spacing-64) * -1)",
-        "variable": "var(--spacing-64)"
+        "variable": "calc(var(--spacing-64) * -1)"
       },
       "spacing.-72": {
         "value": "calc(var(--spacing-72) * -1)",
-        "variable": "var(--spacing-72)"
+        "variable": "calc(var(--spacing-72) * -1)"
       },
       "spacing.-80": {
         "value": "calc(var(--spacing-80) * -1)",
-        "variable": "var(--spacing-80)"
+        "variable": "calc(var(--spacing-80) * -1)"
       },
       "spacing.-96": {
         "value": "calc(var(--spacing-96) * -1)",
-        "variable": "var(--spacing-96)"
+        "variable": "calc(var(--spacing-96) * -1)"
       },
       "spacing.-0.5": {
         "value": "calc(var(--spacing-0\\\\.5) * -1)",
-        "variable": "var(--spacing-0\\\\.5)"
+        "variable": "calc(var(--spacing-0\\\\.5) * -1)"
       },
       "spacing.-1.5": {
         "value": "calc(var(--spacing-1\\\\.5) * -1)",
-        "variable": "var(--spacing-1\\\\.5)"
+        "variable": "calc(var(--spacing-1\\\\.5) * -1)"
       },
       "spacing.-2.5": {
         "value": "calc(var(--spacing-2\\\\.5) * -1)",
-        "variable": "var(--spacing-2\\\\.5)"
+        "variable": "calc(var(--spacing-2\\\\.5) * -1)"
       },
       "spacing.-3.5": {
         "value": "calc(var(--spacing-3\\\\.5) * -1)",
-        "variable": "var(--spacing-3\\\\.5)"
+        "variable": "calc(var(--spacing-3\\\\.5) * -1)"
       },
       "spacing.-4.5": {
         "value": "calc(var(--spacing-4\\\\.5) * -1)",
-        "variable": "var(--spacing-4\\\\.5)"
+        "variable": "calc(var(--spacing-4\\\\.5) * -1)"
       },
       "spacing.-5.5": {
         "value": "calc(var(--spacing-5\\\\.5) * -1)",
-        "variable": "var(--spacing-5\\\\.5)"
+        "variable": "calc(var(--spacing-5\\\\.5) * -1)"
       },
       "spacing.-gutter": {
-        "value": "var(--spacing-gutter)",
-        "variable": "var(--spacing-gutter)"
+        "value": "calc(var(--spacing-gutter) * -1)",
+        "variable": "calc(var(--spacing-gutter) * -1)"
       },
       "colors.surface": {
         "value": "var(--colors-surface)",
@@ -2031,14 +2031,17 @@ test('[dts] should generate package', () => {
     }
 
     export function token(path, fallback) {
-      return tokens[path]?.value || fallback
-    }
-
-    function tokenVar(path, fallback) {
       return tokens[path]?.variable || fallback
     }
 
-    token.var = tokenVar"
+    function tokenValue(path, fallback) {
+      return tokens[path]?.value || fallback
+    }
+
+    // \`token.var\` predates \`token()\` returning the reference itself. Kept as the same
+    // function rather than removed, so the spelling that was correct before still is.
+    token.var = token
+    token.value = tokenValue"
   `,
   )
 })
@@ -3827,147 +3830,147 @@ test('with formatTokenName', () => {
       },
       "$spacing--1": {
         "value": "calc(var(--spacing-1) * -1)",
-        "variable": "var(--spacing-1)"
+        "variable": "calc(var(--spacing-1) * -1)"
       },
       "$spacing--2": {
         "value": "calc(var(--spacing-2) * -1)",
-        "variable": "var(--spacing-2)"
+        "variable": "calc(var(--spacing-2) * -1)"
       },
       "$spacing--3": {
         "value": "calc(var(--spacing-3) * -1)",
-        "variable": "var(--spacing-3)"
+        "variable": "calc(var(--spacing-3) * -1)"
       },
       "$spacing--4": {
         "value": "calc(var(--spacing-4) * -1)",
-        "variable": "var(--spacing-4)"
+        "variable": "calc(var(--spacing-4) * -1)"
       },
       "$spacing--5": {
         "value": "calc(var(--spacing-5) * -1)",
-        "variable": "var(--spacing-5)"
+        "variable": "calc(var(--spacing-5) * -1)"
       },
       "$spacing--6": {
         "value": "calc(var(--spacing-6) * -1)",
-        "variable": "var(--spacing-6)"
+        "variable": "calc(var(--spacing-6) * -1)"
       },
       "$spacing--7": {
         "value": "calc(var(--spacing-7) * -1)",
-        "variable": "var(--spacing-7)"
+        "variable": "calc(var(--spacing-7) * -1)"
       },
       "$spacing--8": {
         "value": "calc(var(--spacing-8) * -1)",
-        "variable": "var(--spacing-8)"
+        "variable": "calc(var(--spacing-8) * -1)"
       },
       "$spacing--9": {
         "value": "calc(var(--spacing-9) * -1)",
-        "variable": "var(--spacing-9)"
+        "variable": "calc(var(--spacing-9) * -1)"
       },
       "$spacing--10": {
         "value": "calc(var(--spacing-10) * -1)",
-        "variable": "var(--spacing-10)"
+        "variable": "calc(var(--spacing-10) * -1)"
       },
       "$spacing--11": {
         "value": "calc(var(--spacing-11) * -1)",
-        "variable": "var(--spacing-11)"
+        "variable": "calc(var(--spacing-11) * -1)"
       },
       "$spacing--12": {
         "value": "calc(var(--spacing-12) * -1)",
-        "variable": "var(--spacing-12)"
+        "variable": "calc(var(--spacing-12) * -1)"
       },
       "$spacing--14": {
         "value": "calc(var(--spacing-14) * -1)",
-        "variable": "var(--spacing-14)"
+        "variable": "calc(var(--spacing-14) * -1)"
       },
       "$spacing--16": {
         "value": "calc(var(--spacing-16) * -1)",
-        "variable": "var(--spacing-16)"
+        "variable": "calc(var(--spacing-16) * -1)"
       },
       "$spacing--20": {
         "value": "calc(var(--spacing-20) * -1)",
-        "variable": "var(--spacing-20)"
+        "variable": "calc(var(--spacing-20) * -1)"
       },
       "$spacing--24": {
         "value": "calc(var(--spacing-24) * -1)",
-        "variable": "var(--spacing-24)"
+        "variable": "calc(var(--spacing-24) * -1)"
       },
       "$spacing--28": {
         "value": "calc(var(--spacing-28) * -1)",
-        "variable": "var(--spacing-28)"
+        "variable": "calc(var(--spacing-28) * -1)"
       },
       "$spacing--32": {
         "value": "calc(var(--spacing-32) * -1)",
-        "variable": "var(--spacing-32)"
+        "variable": "calc(var(--spacing-32) * -1)"
       },
       "$spacing--36": {
         "value": "calc(var(--spacing-36) * -1)",
-        "variable": "var(--spacing-36)"
+        "variable": "calc(var(--spacing-36) * -1)"
       },
       "$spacing--40": {
         "value": "calc(var(--spacing-40) * -1)",
-        "variable": "var(--spacing-40)"
+        "variable": "calc(var(--spacing-40) * -1)"
       },
       "$spacing--44": {
         "value": "calc(var(--spacing-44) * -1)",
-        "variable": "var(--spacing-44)"
+        "variable": "calc(var(--spacing-44) * -1)"
       },
       "$spacing--48": {
         "value": "calc(var(--spacing-48) * -1)",
-        "variable": "var(--spacing-48)"
+        "variable": "calc(var(--spacing-48) * -1)"
       },
       "$spacing--52": {
         "value": "calc(var(--spacing-52) * -1)",
-        "variable": "var(--spacing-52)"
+        "variable": "calc(var(--spacing-52) * -1)"
       },
       "$spacing--56": {
         "value": "calc(var(--spacing-56) * -1)",
-        "variable": "var(--spacing-56)"
+        "variable": "calc(var(--spacing-56) * -1)"
       },
       "$spacing--60": {
         "value": "calc(var(--spacing-60) * -1)",
-        "variable": "var(--spacing-60)"
+        "variable": "calc(var(--spacing-60) * -1)"
       },
       "$spacing--64": {
         "value": "calc(var(--spacing-64) * -1)",
-        "variable": "var(--spacing-64)"
+        "variable": "calc(var(--spacing-64) * -1)"
       },
       "$spacing--72": {
         "value": "calc(var(--spacing-72) * -1)",
-        "variable": "var(--spacing-72)"
+        "variable": "calc(var(--spacing-72) * -1)"
       },
       "$spacing--80": {
         "value": "calc(var(--spacing-80) * -1)",
-        "variable": "var(--spacing-80)"
+        "variable": "calc(var(--spacing-80) * -1)"
       },
       "$spacing--96": {
         "value": "calc(var(--spacing-96) * -1)",
-        "variable": "var(--spacing-96)"
+        "variable": "calc(var(--spacing-96) * -1)"
       },
       "$spacing--0.5": {
         "value": "calc(var(--spacing-0\\\\.5) * -1)",
-        "variable": "var(--spacing-0\\\\.5)"
+        "variable": "calc(var(--spacing-0\\\\.5) * -1)"
       },
       "$spacing--1.5": {
         "value": "calc(var(--spacing-1\\\\.5) * -1)",
-        "variable": "var(--spacing-1\\\\.5)"
+        "variable": "calc(var(--spacing-1\\\\.5) * -1)"
       },
       "$spacing--2.5": {
         "value": "calc(var(--spacing-2\\\\.5) * -1)",
-        "variable": "var(--spacing-2\\\\.5)"
+        "variable": "calc(var(--spacing-2\\\\.5) * -1)"
       },
       "$spacing--3.5": {
         "value": "calc(var(--spacing-3\\\\.5) * -1)",
-        "variable": "var(--spacing-3\\\\.5)"
+        "variable": "calc(var(--spacing-3\\\\.5) * -1)"
       },
       "$spacing--4.5": {
         "value": "calc(var(--spacing-4\\\\.5) * -1)",
-        "variable": "var(--spacing-4\\\\.5)"
+        "variable": "calc(var(--spacing-4\\\\.5) * -1)"
       },
       "$spacing--5.5": {
         "value": "calc(var(--spacing-5\\\\.5) * -1)",
-        "variable": "var(--spacing-5\\\\.5)"
+        "variable": "calc(var(--spacing-5\\\\.5) * -1)"
       },
       "$spacing--gutter": {
-        "value": "var(--spacing-gutter)",
-        "variable": "var(--spacing-gutter)"
+        "value": "calc(var(--spacing-gutter) * -1)",
+        "variable": "calc(var(--spacing-gutter) * -1)"
       },
       "$colors-surface": {
         "value": "var(--colors-surface)",
@@ -4076,14 +4079,17 @@ test('with formatTokenName', () => {
     }
 
     export function token(path, fallback) {
-      return tokens[path]?.value || fallback
-    }
-
-    function tokenVar(path, fallback) {
       return tokens[path]?.variable || fallback
     }
 
-    token.var = tokenVar"
+    function tokenValue(path, fallback) {
+      return tokens[path]?.value || fallback
+    }
+
+    // \`token.var\` predates \`token()\` returning the reference itself. Kept as the same
+    // function rather than removed, so the spelling that was correct before still is.
+    token.var = token
+    token.value = tokenValue"
   `,
   )
 })
@@ -4122,8 +4128,16 @@ test('use raw value when possible for semanticTokens', () => {
       "dts": "import type { Token } from './tokens';
 
     export declare const token: {
+      /** The css variable reference — \`var(--colors-red-300)\`. Stays correct across themes. */
       (path: Token, fallback?: string): string
+      /** Alias of \`token()\`, kept for compatibility. */
       var: (path: Token, fallback?: string) => string
+      /**
+       * The resolved literal — \`#fca5a5\`. Use where css variables cannot be resolved, such as
+       * canvas or a charting library. A conditional token has no single literal and still
+       * returns its \`var()\`.
+       */
+      value: (path: Token, fallback?: string) => string
     }
 
     export * from './tokens';",
@@ -4155,15 +4169,71 @@ test('use raw value when possible for semanticTokens', () => {
     }
 
     export function token(path, fallback) {
-      return tokens[path]?.value || fallback
-    }
-
-    function tokenVar(path, fallback) {
       return tokens[path]?.variable || fallback
     }
 
-    token.var = tokenVar",
+    function tokenValue(path, fallback) {
+      return tokens[path]?.value || fallback
+    }
+
+    // \`token.var\` predates \`token()\` returning the reference itself. Kept as the same
+    // function rather than removed, so the spelling that was correct before still is.
+    token.var = token
+    token.value = tokenValue",
     }
   `,
   )
+})
+
+/**
+ * The generated map has to agree with the token view, per token and per half.
+ *
+ * That agreement is what makes three things say the same thing about a token: the runtime
+ * (this map), the extractor resolving an in-style-object call (`view.get`/`view.getVar` in
+ * `maybe-box-node.ts`), and the fold inlining a call site (`tokenValuesFor` in
+ * `@bamboocss/vite`). Nothing else checks it, and the snapshots above cannot -- they pin what
+ * is emitted, not whether it matches what resolves the same call elsewhere.
+ *
+ * It broke exactly once, when `token()` was flipped to return the reference and the reference
+ * was taken from `varRef`. A negative token has no variable of its own: `addCssVariables`
+ * formats its var from `originalPath`, so `spacing.-4`'s `varRef` is `var(--spacing-4)` and
+ * the negation survives only in the value. `token('spacing.-4')` returned a *positive*
+ * length, and every suite stayed green.
+ *
+ * Counted rather than sampled, so a new token category cannot quietly opt out.
+ */
+test('the generated map agrees with the token view for every token', () => {
+  const ctx = createContext()
+  const map = JSON.parse(generateTokenJs(ctx).js.match(/const tokens = ([\s\S]*?)\n\nexport function/)![1]!)
+
+  const mismatches: Array<{ name: string; half: string; map: unknown; view: unknown }> = []
+
+  for (const token of ctx.tokens.allTokens) {
+    const entry = map[token.name]
+    if (!entry) continue
+
+    const view = { value: ctx.tokens.view.get(token.name), variable: ctx.tokens.view.getVar(token.name) }
+
+    // A token the view has no entry for -- one without a category -- falls back to `varRef`
+    // rather than to nothing, so it is not a disagreement.
+    if (view.variable !== undefined && entry.variable !== view.variable) {
+      mismatches.push({ name: token.name, half: 'variable', map: entry.variable, view: view.variable })
+    }
+    if (view.value !== undefined && String(entry.value) !== String(view.value)) {
+      mismatches.push({ name: token.name, half: 'value', map: entry.value, view: view.value })
+    }
+  }
+
+  expect(mismatches).toEqual([])
+})
+
+/** The shape that broke it, pinned on its own so the failure names itself. */
+test('a negative token keeps its sign on both halves', () => {
+  const ctx = createContext()
+  const map = JSON.parse(generateTokenJs(ctx).js.match(/const tokens = ([\s\S]*?)\n\nexport function/)![1]!)
+
+  expect(map['spacing.-4']).toEqual({
+    value: 'calc(var(--spacing-4) * -1)',
+    variable: 'calc(var(--spacing-4) * -1)',
+  })
 })

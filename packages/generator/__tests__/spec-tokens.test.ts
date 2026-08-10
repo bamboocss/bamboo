@@ -82,7 +82,7 @@ describe('generateTokensSpec', () => {
       expect(colorsGroup.tokenFunctionExamples).toMatchInlineSnapshot(`
         [
           "token('colors.red')",
-          "token.var('colors.red')",
+          "token.value('colors.red')",
         ]
       `)
     }
@@ -293,7 +293,7 @@ describe('generateSemanticTokensSpec', () => {
       expect(colorsGroup.tokenFunctionExamples).toMatchInlineSnapshot(`
         [
           "token('colors.primary')",
-          "token.var('colors.primary')",
+          "token.value('colors.primary')",
         ]
       `)
     }

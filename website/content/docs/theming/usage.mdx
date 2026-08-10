@@ -129,19 +129,37 @@ const tokens = {
 }
 ```
 
-- The `token()` function returns the raw value of the token.
-- The `token.var()` function returns the CSS custom property used to reference the token.
+- The `token()` function returns the CSS custom property that references the token — the same for every token.
+- The `token.value()` function returns the resolved raw value.
+- The `token.var()` function is an alias of `token()`, kept so existing code keeps working.
 
-Both functions are typesafe and expect a known dot-separated token path, they also accept a fallback value as a second
+All of them are typesafe and expect a known dot-separated token path, and each accepts a fallback value as a second
 argument.
 
-The extractor follows a path built from a constant or a template literal, so `token.var(KEY)` is seen by the
-reachability analysis behind [`pruneUnusedTokens`](/docs/references/config#pruneunusedtokens) as well as a path spelled
-out at the call. A path assembled from a value that only exists at runtime is not; keep those tokens with `staticCss`,
-or set `pruneUnusedTokens: false`.
+Using the example above, `token('colors.blue.200')` returns `var(--colors-blue-200)` and
+`token.value('colors.blue.200')` returns `#bfdbfe`.
 
-Using the example above, `token('colors.blue.200')` would return `#bfdbfe` and `token.var('colors.blue.200')` would
-return `var(--colors-blue-200)`.
+### Which one to reach for
+
+Prefer `token()`. A variable reference keeps responding to whatever the cascade decides, so a value read through it
+still changes when the theme does.
+
+Reach for `token.value()` only where a CSS variable cannot be resolved — a `<canvas>` fill, a charting library, a
+`<meta name="theme-color">` tag, or anywhere you do arithmetic on the value. It is a snapshot: it stops tracking the
+theme, and for a token that carries a condition there is no single literal to snapshot, so `token.value()` hands back
+the variable anyway.
+
+<Callout type="warning">
+  Before Bamboo 2, `token()` returned the raw value for a plain token and the variable reference for a conditional one —
+  so which kind you got was decided by the theme rather than by the call, and adding a `_dark` variant to a token
+  silently changed what every caller received. `token()` now always returns the reference. If you were relying on the
+  literal, rename those calls to `token.value()`.
+</Callout>
+
+The extractor follows a path built from a constant or a template literal, so `token(KEY)` is seen by the reachability
+analysis behind [`pruneUnusedTokens`](/docs/references/config#pruneunusedtokens) as well as a path spelled out at the
+call. A path assembled from a value that only exists at runtime is not; keep those tokens with `staticCss`, or set
+`pruneUnusedTokens: false`.
 
 ### Styled Components
 

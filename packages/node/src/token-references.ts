@@ -10,7 +10,7 @@ import type { BambooContext } from './create-context'
  * earns its place twice over: it covers a path built somewhere the extractor cannot
  * follow, and it covers the callers below that supply no `results` at all.
  */
-const TOKEN_CALL = /\btoken(?:\s*\.\s*var)?\s*\(\s*['"`]([^'"`]+)['"`]/g
+const TOKEN_CALL = /\btoken(?:\s*\.\s*(?:var|value))?\s*\(\s*['"`]([^'"`]+)['"`]/g
 
 /**
  * The text of every file `include` covers — as written on disk, and, when they differ, as the
@@ -59,21 +59,22 @@ function* sourceTexts(ctx: BambooContext): Generator<string> {
  * costs bytes; dropping one that is breaks the page, so the bias belongs on this side.
  *
  * `results` is a second, redundant source for the same paths: the extractor resolves one
- * built from a constant — for `token.var()` as well as `token()` — which the text scan reads
- * literally and fails to look up. Callers
- * that cannot supply it — the watch rebuild and the PostCSS plugin, where re-parsing would
- * encode every style a second time — pass none, and stay correct only because a path the
- * scan misses can lose nothing: `token()` hands javascript a literal for exactly the
- * tokens this cannot see, and hands it a `var()` only for virtual, conditional and
- * negative tokens, which `getAlwaysKeptTokenVars` keeps.
+ * built from a constant — for `token.var()` and `token.value()` as well as `token()` — which
+ * the text scan reads literally and fails to look up. Callers that cannot supply it — the
+ * watch rebuild and the PostCSS plugin, where re-parsing would encode every style a second
+ * time — pass none, and stay correct only because a path the scan misses can lose nothing:
+ * `getAlwaysKeptTokenVars` keeps every token's declaration once anything reaches for a token
+ * from javascript at all.
  *
- * Those blanket keeps are no longer unconditional — `tokensReachableFromJs` gates them — and
- * this comment used to warn that narrowing them would break the argument above. It does not,
- * for a reason worth stating rather than rediscovering: the gate matches `token(` regardless
- * of what follows, where `TOKEN_CALL` below needs a string literal. So the one shape this
- * scan cannot resolve, a path built from a constant, is exactly the shape that turns the
- * gate on and restores every blanket keep. The two failures line up, which is what makes the
- * redundancy hold.
+ * That blanket keep used to be narrower, covering only the virtual, conditional and negative
+ * tokens `token()` returned a `var()` for. It cannot be, now that `token()` returns the
+ * reference for *every* token: a path this scan could not resolve could name any of them.
+ *
+ * The keeps are still not unconditional — `tokensReachableFromJs` gates them — and that gate
+ * is what the argument above rests on. The gate matches `token(` regardless of what follows,
+ * where `TOKEN_CALL` below needs a string literal. So the one shape this scan cannot resolve,
+ * a path built from a constant, is exactly the shape that turns the gate on and restores
+ * every keep. The two failures line up, which is what makes the redundancy hold.
  *
  * That alignment is a real coupling, not an observation: the gate's call pattern has to stay
  * a superset of this one, matching wherever `TOKEN_CALL` matches and also wherever it gives
@@ -225,7 +226,7 @@ export function collectRenderedElements(ctx: BambooContext) {
  */
 export function tokensReachableFromJs(ctx: BambooContext) {
   const pattern =
-    /\btoken(\s*\.\s*var)?\s*\(|\b(?:from|import|require)\s*\(?\s*['"][^'"]*\/tokens(\/[^'"]*|\.[cm]?[jt]sx?)?['"]/
+    /\btoken(\s*\.\s*(?:var|value))?\s*\(|\b(?:from|import|require)\s*\(?\s*['"][^'"]*\/tokens(\/[^'"]*|\.[cm]?[jt]sx?)?['"]/
 
   for (const content of sourceTexts(ctx)) {
     if (pattern.test(content)) return true

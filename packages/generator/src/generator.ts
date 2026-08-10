@@ -269,42 +269,50 @@ export class Generator extends Context {
   }
 
   /**
-   * Tokens whose javascript value is a `var()` reference rather than a literal.
-   * `token('colors.text')` hands those to the caller as a reference, so the declaration
-   * has to survive whether or not the generated css mentions it. Ordinary tokens resolve
-   * to a literal in javascript and need no such exemption.
+   * The token declarations held open so a runtime `token()` can answer for any path.
    *
-   * The two cases mirror `generateTokenJs`, which is what decides the value javascript
-   * actually receives:
+   * `token()` hands javascript the *variable reference* for every token, so a path the build
+   * cannot resolve could name any of them and every declaration has to survive. That is a
+   * blunt instrument, and deliberately so: the alternative failure is a `var()` with no
+   * declaration behind it, which resolves to the guaranteed-invalid value and inherits
+   * rather than falling back — silently wrong, which is worse than visibly large.
    *
-   * - A virtual token, or one carrying a condition, is handed its own `varRef`.
-   * - A negative token is handed `calc(var(--x) * -1)`, so it is a reference too — but to
-   *   the *positive* token's declaration. Its own var is never declared, so the name has
-   *   to come out of the value.
+   * It used to be narrower, because `token()` used to return a *literal* for a plain token
+   * and only a `var()` for virtual, conditional and negative ones. That split is gone, and
+   * narrowing this to match it would now strand exactly the base tokens the old split made
+   * safe.
+   *
+   * So the gate below carries the whole saving. `styled-system/tokens` is generated into the
+   * project, so nothing outside it can import them -- if no file under `include` reaches for
+   * a token from javascript, no caller exists to serve and the declarations are as prunable
+   * as any other.
+   *
+   * That gate is all-or-nothing per project, which is the coarse part worth fixing next: a
+   * project whose token calls all resolve to string literals needs none of this, because
+   * `collectTokenReferences` already kept those paths by name. Deciding that needs the
+   * reference accounting the gate does not do yet -- see `tokensReachableFromJs`.
    */
   private getAlwaysKeptTokenVars = (tokensReachableFromJs: boolean) => {
     const names = new Set<string>()
 
-    // The whole exemption exists to serve `token()`. `styled-system/tokens` is generated
-    // into the project, so nothing outside it can import them -- if no file under `include`
-    // reaches for a token from javascript, no caller exists to serve and the declarations
-    // are as prunable as any other. That matters most for the spacing scale: negatives are
-    // never declared themselves, so each one pins its positive counterpart and keeps the
-    // whole scale alive, which is about a third of what otherwise survives.
     if (!tokensReachableFromJs) return names
 
+    // Mirrors what `generateTokenJs` puts in the map, which is the only thing a runtime
+    // caller can receive: `variable` is `varRef` for every token, and `value` is that same
+    // `varRef` for a virtual or conditional token and the literal otherwise.
     this.tokens.allTokens.forEach((token) => {
-      const { isVirtual, isNegative, condition, var: varName } = token.extensions
+      const { var: varName } = token.extensions
 
-      if (isVirtual || condition !== 'base') {
-        if (varName) names.add(varName.startsWith('--') ? varName : `--${varName}`)
-        return
-      }
+      if (varName) names.add(varName.startsWith('--') ? varName : `--${varName}`)
 
-      if (!isNegative) return
-
-      for (const name of cssVarRefs(token.value)) {
-        names.add(name)
+      // The literal side, which matters for one shape: a negative token is never declared
+      // itself -- its value is `calc(var(--spacing-4) * -1)`, so what has to survive is its
+      // positive counterpart's declaration. Guarded because a token's value need not be a
+      // string; a `fontWeights` entry stays a number through the dictionary.
+      if (typeof token.value === 'string') {
+        for (const name of cssVarRefs(token.value)) {
+          names.add(name)
+        }
       }
     })
 

@@ -636,7 +636,14 @@ export class TokenDictionaryView {
 
     // Store raw value matching runtime behavior:
     // Use varRef for virtual tokens or non-base conditions, otherwise use raw token.value
-    const rawValue = isVirtual || condition !== 'base' ? varRef : token.value
+    //
+    // Negatives are read off `value` above instead. A negative token has no variable of its
+    // own -- `addCssVariables` formats its var from `originalPath`, so `varRef` names the
+    // *positive* counterpart and handing that back drops the sign. Only conditional negatives
+    // took that branch (a base one already resolved to its negated `token.value`), which made
+    // `token.value('spacing.-gutter')` a positive length whenever `spacing.gutter` carried a
+    // condition.
+    const rawValue = isNegative ? value : isVirtual || condition !== 'base' ? varRef : token.value
     rawValues.set(token.name, rawValue)
   }
 

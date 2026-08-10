@@ -135,7 +135,7 @@ export function classifyProject(ctx: ParserOptions, resultMap: ParserResultMap):
     // Both unreachable in practice — the walk below only visits the css, cva, pattern and
     // recipe buckets — but stated, so `ReportItemType` need not carry members no report can
     // contain.
-    if (item.type === 'cva-call' || item.type === 'tokenVar') {
+    if (item.type === 'cva-call' || item.type === 'tokenValue') {
       return
     }
 

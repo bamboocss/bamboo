@@ -2,7 +2,15 @@ import { createGeneratorContext } from '@bamboocss/fixture'
 import type { Config } from '@bamboocss/types'
 import { describe, expect, test } from 'vitest'
 
-const buildCss = (userConfig?: Config, keep?: Set<string>) => {
+/**
+ * `reachable` is `tokensReachableFromJs` — whether anything under `include` reaches for a
+ * token from javascript. It defaults to *false* here, unlike in `pruneTokens` itself, because
+ * these tests are about what the reachability walk can decide. With it true there is nothing
+ * left to decide: `token()` hands back a `var()` for every token, so every declaration is
+ * kept and pruning is a no-op. `the gate keeps everything once js can reach a token` below
+ * pins that half.
+ */
+const buildCss = (userConfig?: Config, keep?: Set<string>, reachable = false) => {
   const ctx = createGeneratorContext({
     // stands in for what extraction would contribute, without needing source files
     staticCss: { css: [{ properties: { color: ['red.300'] } }] },
@@ -12,7 +20,7 @@ const buildCss = (userConfig?: Config, keep?: Set<string>) => {
   const sheet = ctx.createSheet()
   ctx.appendLayerParams(sheet)
   ctx.appendBaselineCss(sheet)
-  ctx.pruneTokens(sheet, keep)
+  ctx.pruneTokens(sheet, keep, reachable)
 
   return ctx.getCss(sheet)
 }
@@ -66,8 +74,27 @@ describe('pruneTokens', () => {
   })
 
   /**
-   * `token()` hands a conditional token to javascript as a `var()` reference rather than a
-   * literal, so its declaration has to survive whether or not the css names it.
+   * The cost of `token()` returning a reference for every token: a path the build cannot
+   * resolve could name any of them, so once javascript can reach a token at all, nothing is
+   * prunable.
+   *
+   * This is the coarse half of the design, and the reason narrowing the gate is the next
+   * piece of work: a project whose token calls all resolve to string literals needs none of
+   * these keeps, because `collectTokenReferences` already kept those paths by name.
+   */
+  test('the gate keeps everything once js can reach a token', () => {
+    const reached = buildCss({ pruneUnusedTokens: true }, undefined, true)
+    const unreached = buildCss({ pruneUnusedTokens: true }, undefined, false)
+
+    expect(declares(reached, '--colors-pink-500')).toBe(true)
+    expect(declares(unreached, '--colors-pink-500')).toBe(false)
+    expect(reached.length).toBeGreaterThan(unreached.length)
+  })
+
+  /**
+   * `token()` hands a conditional token to javascript as a `var()` reference, so once js can
+   * reach a token its declaration has to survive whether or not the css names it. Passed
+   * `reachable` explicitly, because that is the premise being tested rather than the default.
    */
   test('keeps conditional tokens whatever the css references', () => {
     const config: Config = {
@@ -83,7 +110,7 @@ describe('pruneTokens', () => {
       },
     }
 
-    expect(declares(buildCss(config), '--colors-unreferenced')).toBe(true)
+    expect(declares(buildCss(config, undefined, true), '--colors-unreferenced')).toBe(true)
   })
 
   test('does not disturb keyframes', () => {

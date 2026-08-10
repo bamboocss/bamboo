@@ -292,29 +292,32 @@ export class FileMatcher {
   }
 
   /**
-   * `token.var(path)` — the half of the token runtime that returns the variable reference.
+   * Which half of the token runtime a property-access callee names: `token.var(path)` or
+   * `token.value(path)`. `undefined` for anything else, including a bare `token(path)`.
    *
-   * Its callee is a property access, so the name is not an alias and never reaches
-   * `isAliasFnName`; the bare-name matcher in `import-map.ts` is anchored `^(token)$` and
-   * does not see it either. Between them that kept `token.var()` out of the extractor
-   * entirely, which is why nothing downstream could fold it.
+   * A property access is not an alias, so the name never reaches `isAliasFnName`; the
+   * bare-name matcher in `import-map.ts` is anchored `^(token)$` and does not see it either.
+   * Between them that kept both methods out of the extractor entirely, which is why nothing
+   * downstream could fold them.
    *
    * Asking about the *root* binding rather than the text is what makes `token as t` work
    * here, the same way `isTokenAlias` does for a call inside a style object.
    */
-  isTokenVarFn = (fnName: string) => {
+  tokenMethod = (fnName: string): 'var' | 'value' | undefined => {
     const parts = fnName.split('.')
-    if (parts.length < 2 || parts[parts.length - 1] !== 'var') return false
+    const method = parts[parts.length - 1]
+    if (parts.length < 2 || (method !== 'var' && method !== 'value')) return undefined
 
     // `ns.token.var(...)`. The module has to be a token entrypoint for the same reason
     // `matchFn` checks it below — a namespace of any other module may well export a
     // `token` of its own.
     if (parts.length === 3) {
       const ns = this.namespaces.get(parts[0]!)
-      return Boolean(ns && parts[1] === 'token' && this.importMap.tokens.some((m) => ns.mod.includes(m)))
+      const matches = Boolean(ns && parts[1] === 'token' && this.importMap.tokens.some((m) => ns.mod.includes(m)))
+      return matches ? method : undefined
     }
 
-    return parts.length === 2 && this.tokenAliases.has(parts[0]!)
+    return parts.length === 2 && this.tokenAliases.has(parts[0]!) ? method : undefined
   }
 
   matchFn = memo((fnName: string) => {
@@ -322,7 +325,7 @@ export class FileMatcher {
     if (this.localRecipes.has(fnName)) return true
     if (this.isAliasFnName(fnName) || this.isRawFn(fnName)) return true
     if (this.functions.has(fnName)) return true
-    if (this.isTokenVarFn(fnName)) return true
+    if (this.tokenMethod(fnName)) return true
 
     const [namespace, identifier] = fnName.split('.')
     const ns = this.namespaces.get(namespace)

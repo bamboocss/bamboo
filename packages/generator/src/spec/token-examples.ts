@@ -36,8 +36,10 @@ export const generateTokenExamples = (token: Token) => {
   const functionExamples: string[] = [`css({ ${prop}: '${tokenName}' })`]
   const tokenFunctionExamples: string[] = [`token('${fullTokenName}')`]
 
+  // `token()` already hands back the reference, so the second example is the other half of
+  // the api — the resolved literal — rather than the `token.var()` alias of the first.
   if (token.extensions.varRef) {
-    tokenFunctionExamples.push(`token.var('${fullTokenName}')`)
+    tokenFunctionExamples.push(`token.value('${fullTokenName}')`)
   }
 
   return { functionExamples, tokenFunctionExamples }

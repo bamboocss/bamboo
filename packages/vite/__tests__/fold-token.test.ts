@@ -7,23 +7,40 @@ import { createFoldFixture, FILE_PATH } from './fixture'
 /**
  * `token()` is the one fold that does not produce a class.
  *
- * It resolves to a CSS *value* — either a literal (`#fca5a5`) or a variable reference
- * (`var(--colors-primary)`), depending on whether the token is conditional. Which of the
- * two it picks is the whole risk: inlining a base colour where the runtime would have
- * emitted a variable produces source that looks right and stops responding to themes.
+ * It resolves to a CSS *value* — the token's variable reference, for every token. That is
+ * what makes it trivially foldable: there is no condition to read and no non-string case,
+ * so the only risk left is confusing it with `token.value()`, which is covered below.
  */
 describe('fold: token()', () => {
-  test('a base token folds to its literal value', () => {
+  test('a base token folds to its variable reference', () => {
     const { fold } = createFoldFixture()
     const result = fold(`
       import { token } from 'styled-system/tokens'
       export const red = token('colors.red.300')
     `)
 
-    expect(result.code).toContain('export const red = "#fca5a5"')
+    expect(result.code).toContain('export const red = "var(--colors-red-300)"')
     expect(result.folded).toHaveLength(1)
     expect(result.folded[0]!.kind).toBe('value')
-    expect(result.folded[0]!.value).toBe('#fca5a5')
+    expect(result.folded[0]!.value).toBe('var(--colors-red-300)')
+    // The literal `token.value()` would give for the same path.
+    expect(result.code).not.toContain('#fca5a5')
+  })
+
+  /**
+   * A negative token has no variable of its own — its `varRef` names the *positive*
+   * counterpart, and the negation survives only in the value. Folding the bare `varRef` here
+   * would turn a negative margin into a positive one, in source that still reads correctly.
+   */
+  test('a negative token keeps its sign', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(`
+      import { token } from 'styled-system/tokens'
+      export const gutter = token('spacing.-4')
+    `)
+
+    expect(result.folded[0]!.value).toBe('calc(var(--spacing-4) * -1)')
+    expect(result.code).toContain('calc(var(--spacing-4) * -1)')
   })
 
   test('a semantic token folds to its variable reference, not to either branch', () => {
@@ -59,7 +76,7 @@ describe('fold: token()', () => {
       export const red = token('colors.red.300', 'rebeccapurple')
     `)
 
-    expect(result.code).toContain('export const red = "#fca5a5"')
+    expect(result.code).toContain('export const red = "var(--colors-red-300)"')
     expect(result.code).not.toContain('rebeccapurple')
   })
 
@@ -73,7 +90,7 @@ describe('fold: token()', () => {
     // Which binding the call reaches is `calleeRootName`'s question, and the import scan
     // has already answered it. Asking the *callee* to spell `token` as well would decline
     // every aliased import, which is a rename away from any project that has one.
-    expect(result.code).toContain('export const red = "#fca5a5"')
+    expect(result.code).toContain('export const red = "var(--colors-red-300)"')
     expect(result.folded).toHaveLength(1)
   })
 
@@ -84,14 +101,16 @@ describe('fold: token()', () => {
       export const red = tokens.token('colors.red.300')
     `)
 
-    expect(result.folded[0]?.value).toBe('#fca5a5')
+    expect(result.folded[0]?.value).toBe('var(--colors-red-300)')
   })
 
+  // Through `.value`, which is the only side that can now produce a quote: a variable
+  // reference never contains one.
   test('a value containing quotes survives as a string literal', () => {
     const { fold } = createFoldFixture()
     const result = fold(`
       import { token } from 'styled-system/tokens'
-      export const mono = token('fonts.mono')
+      export const mono = token.value('fonts.mono')
     `)
 
     // The font stack quotes its multi-word families. Splicing it in unescaped would end
@@ -213,66 +232,73 @@ describe('fold: token() declines', () => {
 })
 
 /**
- * `token.var()` is the more foldable of the two, and for a while was the one that did not
- * fold: its callee is a property access, so the parser's bare-name matchers never saw the
- * call and the extractor dropped it before the fold could be asked.
+ * `token.value()` is the explicit opt-out — the resolved literal, for the cases where a css
+ * variable cannot be resolved.
  *
- * Where `token()` has to choose between a token's literal value and its variable reference,
- * `.var` is always the reference — no condition to read, no non-string case to decline. The
- * risk is entirely in the two halves being told apart, which is what this pins.
+ * It carries the risk `token()` used to: which of a token's two values it picks depends on
+ * the token, since a conditional one has no single literal and still resolves to its `var()`.
+ * Telling the two halves apart is what this pins — inlining one as the other swaps a
+ * themeable reference for a fixed colour, and no class-name check would catch it.
  */
-describe('fold: token.var()', () => {
-  test('a base token folds to its variable reference, not to its value', () => {
+describe('fold: token.value()', () => {
+  test('a base token folds to its literal, not to its reference', () => {
     const { fold } = createFoldFixture()
     const result = fold(`
       import { token } from 'styled-system/tokens'
-      export const ref = token.var('colors.red.300')
+      export const red = token.value('colors.red.300')
     `)
 
-    expect(result.code).toContain('export const ref = "var(--colors-red-300)"')
+    expect(result.code).toContain('export const red = "#fca5a5"')
     expect(result.folded).toHaveLength(1)
     expect(result.folded[0]!.kind).toBe('value')
-    // The literal `token()` resolves to for the same path. Emitting it here would swap a
-    // themeable reference for a fixed colour, which is the one difference a fold can make
-    // that no class-name check would catch.
-    expect(result.code).not.toContain('#fca5a5')
+    expect(result.code).not.toContain('var(--colors-red-300)')
   })
 
   test('the two halves of one entry fold differently in the same module', () => {
     const { fold } = createFoldFixture()
     const result = fold(`
       import { token } from 'styled-system/tokens'
-      export const value = token('colors.red.300')
-      export const ref = token.var('colors.red.300')
+      export const ref = token('colors.red.300')
+      export const value = token.value('colors.red.300')
     `)
 
-    expect(result.code).toContain('export const value = "#fca5a5"')
     expect(result.code).toContain('export const ref = "var(--colors-red-300)"')
+    expect(result.code).toContain('export const value = "#fca5a5"')
     expect(result.folded).toHaveLength(2)
   })
 
-  test('a conditional token folds to the same reference as its value half', () => {
+  test('a conditional token folds to a reference, having no single literal', () => {
     const { fold } = createFoldFixture()
     const result = fold(`
       import { token } from 'styled-system/tokens'
-      export const brand = token.var('colors.primary')
+      export const brand = token.value('colors.primary')
     `)
 
-    // A conditional token is the case where `token()` already returns a reference, so both
-    // halves agree here. `.var` reaching a *different* variable would mean the two tables
-    // had drifted apart.
+    // The one case where `.value` agrees with `token()`: neither branch of a conditional
+    // token is a truthful answer, so both hand back the variable.
     expect(result.folded[0]!.value).toMatch(/^var\(--/)
     expect(result.code).not.toContain('#ef4444')
+  })
+
+  test('.var is an alias of token(), not of .value', () => {
+    const { fold } = createFoldFixture()
+    const result = fold(`
+      import { token } from 'styled-system/tokens'
+      export const ref = token.var('colors.red.300')
+    `)
+
+    expect(result.code).toContain('export const ref = "var(--colors-red-300)"')
+    expect(result.code).not.toContain('#fca5a5')
   })
 
   test('an aliased import folds', () => {
     const { fold } = createFoldFixture()
     const result = fold(`
       import { token as t } from 'styled-system/tokens'
-      export const ref = t.var('colors.red.300')
+      export const red = t.value('colors.red.300')
     `)
 
-    expect(result.code).toContain('export const ref = "var(--colors-red-300)"')
+    expect(result.code).toContain('export const red = "#fca5a5"')
     expect(result.folded).toHaveLength(1)
   })
 
@@ -280,17 +306,17 @@ describe('fold: token.var()', () => {
     const { fold } = createFoldFixture()
     const result = fold(`
       import * as tokens from 'styled-system/tokens'
-      export const ref = tokens.token.var('colors.red.300')
+      export const red = tokens.token.value('colors.red.300')
     `)
 
-    expect(result.folded[0]?.value).toBe('var(--colors-red-300)')
+    expect(result.folded[0]?.value).toBe('#fca5a5')
   })
 
   test('a fold reports no class, so nothing looks for a rule behind it', () => {
     const { fold } = createFoldFixture()
     const result = fold(`
       import { token } from 'styled-system/tokens'
-      export const ref = token.var('colors.red.300')
+      export const ref = token.value('colors.red.300')
     `)
 
     expect(result.folded[0]!.className).toBe('')
@@ -303,7 +329,7 @@ describe('fold: token.var()', () => {
       reason: 'dynamic',
       code: `
         import { token } from 'styled-system/tokens'
-        export const pick = (name) => token.var(name)
+        export const pick = (name) => token.value(name)
       `,
     },
     {
@@ -311,7 +337,7 @@ describe('fold: token.var()', () => {
       reason: 'dynamic',
       code: `
         import { token } from 'styled-system/tokens'
-        export const pick = (dark) => token.var(dark ? 'colors.red.300' : 'colors.red.400')
+        export const pick = (dark) => token.value(dark ? 'colors.red.300' : 'colors.red.400')
       `,
     },
     {
@@ -319,7 +345,7 @@ describe('fold: token.var()', () => {
       reason: 'unresolved-token',
       code: `
         import { token } from 'styled-system/tokens'
-        export const nope = token.var('colors.does.not.exist', 'var(--fallback)')
+        export const nope = token.value('colors.does.not.exist', 'var(--fallback)')
       `,
     },
     {
@@ -327,7 +353,7 @@ describe('fold: token.var()', () => {
       reason: 'dynamic',
       code: `
         import { token } from 'styled-system/tokens'
-        export const ref = token.var('colors.red.300', compute())
+        export const ref = token.value('colors.red.300', compute())
       `,
     },
     {
@@ -335,7 +361,7 @@ describe('fold: token.var()', () => {
       reason: 'not-imported',
       code: `
         import { token } from 'styled-system/tokens'
-        export const make = (token) => token.var('colors.red.300')
+        export const make = (token) => token.value('colors.red.300')
       `,
     },
     {
@@ -343,7 +369,7 @@ describe('fold: token.var()', () => {
       reason: 'not-imported',
       code: `
         import { token } from '@acme/design'
-        export const ref = token.var('colors.red.300')
+        export const ref = token.value('colors.red.300')
       `,
     },
     {
@@ -466,12 +492,12 @@ describe('fold: token() alongside styles', () => {
       import { css } from 'styled-system/css'
       import { token } from 'styled-system/tokens'
       export const cls = css({ color: 'red.300' })
-      export const chart = { grid: token('colors.red.300') }
+      export const chart = { grid: token.value('colors.red.300') }
     `)
 
-    // The case `token()` exists for: a design token needed somewhere bamboo emits no CSS
-    // — an inline style, a canvas, a chart config. Nothing claims that span, so the call
-    // collapses to the value on its own, alongside the class fold above it.
+    // The case `token.value()` exists for: a design token needed somewhere a css variable
+    // will not resolve — a canvas, a chart config. Nothing claims that span, so the call
+    // collapses to the literal on its own, alongside the class fold above it.
     const value = result.folded.find((entry) => entry.kind === 'value')
     expect(value?.value).toBe('#fca5a5')
     expect(result.code).toContain('{ grid: "#fca5a5" }')

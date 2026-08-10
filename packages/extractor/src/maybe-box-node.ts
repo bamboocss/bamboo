@@ -216,19 +216,20 @@ export function maybeBoxNode(
     if (ctx.tokens) {
       const expr = node.getExpression()
       let fnName = ''
-      let isVarMethod = false
+      // `token()` and `token.var()` both resolve to the variable reference; only
+      // `token.value()` asks for the literal.
+      let isValueMethod = false
 
       if (Node.isIdentifier(expr)) {
         fnName = expr.getText()
       } else if (Node.isPropertyAccessExpression(expr)) {
-        // Check if this is token.var('path') or just token()
+        // Check if this is token.var('path'), token.value('path') or just token()
         const exprName = expr.getExpression()
         const propertyName = expr.getName()
 
         if (Node.isIdentifier(exprName)) {
           fnName = exprName.getText()
-          // Check if the property access is .var (e.g., token.var())
-          isVarMethod = propertyName === 'var'
+          isValueMethod = propertyName === 'value'
         }
       }
 
@@ -245,12 +246,11 @@ export function maybeBoxNode(
           const fallbackValue =
             fallbackArg && Node.isStringLiteral(fallbackArg) ? fallbackArg.getLiteralValue() : undefined
 
-          // Use getVar() for token.var(), get() for token()
-          // token() returns raw values (e.g., "#9ca3af")
-          // token.var() returns CSS variables (e.g., "var(--colors-gray-400)")
-          const resolvedValue = isVarMethod
-            ? ctx.tokens.view.getVar(tokenPath, fallbackValue)
-            : ctx.tokens.view.get(tokenPath, fallbackValue)
+          // `token()` and `token.var()` return css variables (e.g. "var(--colors-gray-400)");
+          // only `token.value()` returns the raw value (e.g. "#9ca3af").
+          const resolvedValue = isValueMethod
+            ? ctx.tokens.view.get(tokenPath, fallbackValue)
+            : ctx.tokens.view.getVar(tokenPath, fallbackValue)
 
           if (resolvedValue) {
             return cache(box.literal(resolvedValue, node, stack))

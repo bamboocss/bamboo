@@ -87,17 +87,22 @@ needed somewhere Bamboo emits no CSS – an inline style, a canvas, a chart conf
 const chart = { grid: token('colors.red.300') }
 
 // the bundle gets
-const chart = { grid: '#fca5a5' }
+const chart = { grid: 'var(--colors-red-300)' }
 ```
 
-What it folds to is exactly what the runtime would have returned, which for a conditional or semantic token is the
-variable reference rather than either branch:
+`token.value()` folds the same way, to the resolved literal instead:
 
 ```tsx
-token('colors.primary') // → 'var(--colors-primary)', still themeable
+const chart = { grid: token.value('colors.red.300') } // → '#fca5a5'
 ```
 
-A base token inlines its literal value; anything with conditions inlines its `var()`.
+What each folds to is exactly what the runtime would have returned. `token()` is the trivial case — the variable
+reference, for every token — which is what makes it always foldable. `token.value()` is the one with a decision in it: a
+conditional or semantic token has no single literal, so it folds to the variable rather than to either branch.
+
+```tsx
+token.value('colors.primary') // → 'var(--colors-primary)', not '#ef4444'
+```
 
 When every `token()` call in a module folds, its import of the generated token map – every token in your project – is
 left unused, and your bundler drops it. The fold does not remove the import statement itself; the generated

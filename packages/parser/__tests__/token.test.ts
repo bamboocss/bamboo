@@ -19,8 +19,8 @@ describe('token extraction and resolution', () => {
     expect(cssResult.data).toMatchInlineSnapshot(`
       [
         {
-          "backgroundColor": "#f3f4f6",
-          "color": "#ef4444",
+          "backgroundColor": "var(--colors-gray-100)",
+          "color": "var(--colors-red-500)",
         },
       ]
     `)
@@ -43,7 +43,7 @@ describe('token extraction and resolution', () => {
     expect(cssResult.data).toMatchInlineSnapshot(`
       [
         {
-          "border": "1px solid #9ca3af",
+          "border": "1px solid var(--colors-gray-400)",
         },
       ]
     `)
@@ -67,9 +67,9 @@ describe('token extraction and resolution', () => {
     expect(cssResult.data).toMatchInlineSnapshot(`
       [
         {
-          "backgroundColor": "#f3f4f6",
-          "borderColor": "#93c5fd",
-          "color": "#ef4444",
+          "backgroundColor": "var(--colors-gray-100)",
+          "borderColor": "var(--colors-blue-300)",
+          "color": "var(--colors-red-500)",
         },
       ]
     `)
@@ -91,7 +91,7 @@ describe('token extraction and resolution', () => {
     expect(cssResult.data).toMatchInlineSnapshot(`
       [
         {
-          "padding": "1rem",
+          "padding": "var(--spacing-4)",
         },
       ]
     `)
@@ -113,7 +113,7 @@ describe('token extraction and resolution', () => {
     expect(cssResult.data).toMatchInlineSnapshot(`
       [
         {
-          "color": "#4ade80",
+          "color": "var(--colors-green-400)",
         },
       ]
     `)
@@ -157,7 +157,7 @@ describe('token extraction and resolution', () => {
     expect(cssResult.data).toMatchInlineSnapshot(`
       [
         {
-          "boxShadow": "0 0 10px #fecaca, 0 0 20px #bfdbfe",
+          "boxShadow": "0 0 10px var(--colors-red-200), 0 0 20px var(--colors-blue-200)",
         },
       ]
     `)
@@ -279,8 +279,8 @@ describe('token extraction and resolution', () => {
     expect(cssResult.data).toMatchInlineSnapshot(`
       [
         {
-          "color": "#ef4444",
-          "padding": "1rem",
+          "color": "var(--colors-red-500)",
+          "padding": "var(--spacing-4)",
         },
       ]
     `)
@@ -313,30 +313,32 @@ describe('token extraction and resolution', () => {
 })
 
 /**
- * A standalone `token.var()` — one whose result is not a style-object value.
+ * A standalone token call — one whose result is not a style-object value.
  *
- * Inside a style object the extractor resolves the call to a literal and the enclosing
- * `css()` entry carries it, which is what the suite above covers. On its own there is no
- * enclosing entry, and for a long time there was no entry at all: the callee is a property
+ * Inside a style object the extractor resolves the call and the enclosing `css()` entry
+ * carries it, which is what the suite above covers. On its own there is no enclosing entry,
+ * and for a long time a method call produced no entry at all: the callee is a property
  * access, so the name never matched `matchFn` and the call was dropped before anything
  * downstream could see it. That is what left `token.var()` unfoldable.
  */
-describe('standalone token.var()', () => {
+describe('standalone token calls', () => {
   const tokenEntries = (code: string) => Array.from(tokenParser(code))
 
-  test('is recorded as its own kind, distinct from token()', () => {
+  test('separates the reference from the value', () => {
     const byType = tokenEntries(`
       import { token } from '../styled-system/tokens'
 
-      export const value = token('colors.blue.500')
-      export const ref = token.var('colors.blue.500')
+      export const ref = token('colors.blue.500')
+      export const alias = token.var('colors.blue.500')
+      export const value = token.value('colors.blue.500')
     `).map((item) => [item.type, item.data])
 
-    // Same path, two entries, and the kind is the only thing distinguishing them — the
-    // fold reads it to decide which half of the entry to inline.
+    // `token()` and `token.var()` land in one bucket because they resolve identically. Only
+    // `.value` is distinct, and the fold reads that to decide which half to inline.
     expect(byType).toEqual([
       ['token', ['colors.blue.500']],
-      ['tokenVar', ['colors.blue.500']],
+      ['token', ['colors.blue.500']],
+      ['tokenValue', ['colors.blue.500']],
     ])
   })
 
@@ -344,11 +346,10 @@ describe('standalone token.var()', () => {
     const entries = tokenEntries(`
       import { token as t } from '../styled-system/tokens'
       export const ref = t.var('colors.blue.500')
+      export const value = t.value('colors.blue.500')
     `)
 
-    expect(entries).toHaveLength(1)
-    expect(entries[0]!.type).toBe('tokenVar')
-    expect(entries[0]!.data).toEqual(['colors.blue.500'])
+    expect(entries.map((entry) => entry.type)).toEqual(['token', 'tokenValue'])
   })
 
   test('resolves a path built from a constant, which a text scan cannot', () => {
@@ -363,7 +364,7 @@ describe('standalone token.var()', () => {
     // `KEY` literally and looks up nothing. Reported here, the token's declaration is kept
     // through pruning by name rather than by the blanket exemption.
     expect(entries).toHaveLength(1)
-    expect(entries[0]!.type).toBe('tokenVar')
+    expect(entries[0]!.type).toBe('token')
     expect(entries[0]!.data).toEqual(['colors.blue.500'])
   })
 

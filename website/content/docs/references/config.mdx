@@ -472,26 +472,34 @@ size of your app. Across the example apps in this repository it is worth 10–67
 ```
 
 A variable is kept when the generated css references it, when a kept variable's own value references it, or when it is
-named by `token()`, `token.var()`, or a literal `var(--x)` anywhere under [`include`](#include). Anything a theme refers
-to is kept as well, since themes ship as separate artifacts injected at runtime.
+named by `token()`, `token.value()`, or a literal `var(--x)` anywhere under [`include`](#include). Anything a theme
+refers to is kept as well, since themes ship as separate artifacts injected at runtime.
 
 There is an escape hatch because reachability cannot be proven for every reference. Three things stay invisible to it:
 
-- A token named by a path your source does not spell out as a string literal, such as `token.var(key)`.
+- A token named by a path your source does not spell out as a string literal, such as `token(key)`. A path built from a
+  constant or a template literal the extractor can follow **is** seen; only a value that exists solely at runtime is
+  not.
 - A token referenced only from a stylesheet outside `include`.
 - A token consumed by a separate package that treats your output as design tokens.
 
 Use [`staticCss`](#staticcss) to keep those, or set this to `false` to keep every token declaration.
 
 Turning it off does **not** bring back the `@property` rules your utilities register: those are not tokens, so
-reachability never applied to them, and a preset ships the set it composes from regardless of what you draw. Tokens that
-javascript receives as a `var()` rather than a literal are always kept so `token()` answers correctly for any path at
-runtime, which pins every token with a negative counterpart and so most of a spacing scale – an exemption skipped
-entirely when no file under [`include`](#include) reaches for a token from javascript, tested by a `/tokens` path
-segment on a `from`, `import` or `require` specifier so that a custom [`outdir`](#outdir), a path alias and the `.js`
-extension NodeNext requires are all covered. The scan does not see a caller outside `include` – a build script, a config
-file, a sibling workspace package – nor a binding renamed away from `token`, and neither announces itself, so set
-`pruneUnusedTokens: false` if you are in that position.
+reachability never applied to them, and a preset ships the set it composes from regardless of what you draw.
+
+<Callout type="warning">
+  **Reaching for a token from javascript currently disables token pruning.** `token()` hands back a `var()` for every
+  token, so a path the build cannot resolve could name any of them and every declaration has to be kept. The check is
+  all-or-nothing per project: it looks for a token call or a `/tokens` path segment on a `from`, `import` or `require`
+  specifier anywhere under [`include`](#include), which covers a custom [`outdir`](#outdir), a path alias and the `.js`
+  extension NodeNext requires. Narrowing it to projects whose token paths all resolve statically is planned; until then,
+  an app that imports the tokens artifact keeps its whole token layer.
+</Callout>
+
+The scan does not see a caller outside `include` – a build script, a config file, a sibling workspace package – nor a
+binding renamed away from `token`, and neither announces itself, so set `pruneUnusedTokens: false` if you are in that
+position.
 
 ### prunePreflight
 

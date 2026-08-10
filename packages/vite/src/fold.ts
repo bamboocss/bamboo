@@ -27,7 +27,7 @@ import {
   createRuntimeCss,
   createRuntimeRecipe,
   createRuntimeToken,
-  createRuntimeTokenVar,
+  createRuntimeTokenValue,
   type RuntimeCss,
 } from './runtime-css'
 
@@ -814,7 +814,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
   const runtimeRecipe = createRuntimeRecipe(ctx)
   const isConstantSlot = createConstantSlotCheck(ctx)
   const runtimeToken = createRuntimeToken(ctx)
-  const runtimeTokenVar = createRuntimeTokenVar(ctx)
+  const runtimeTokenValue = createRuntimeTokenValue(ctx)
 
   /**
    * Does this specifier name a module that exports the css API, exactly?
@@ -1102,10 +1102,10 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     // is worth the separate path because the alternative is shipping the whole token map —
     // every token in the project — to resolve a handful of string lookups at runtime.
     //
-    // `token.var()` shares the path because every guard below is the same question. It only
-    // resolves differently at the end, reading the variable reference where `token()` reads
-    // the value.
-    if (type === 'token' || type === 'tokenVar') {
+    // `token.value()` shares the path because every guard below is the same question. It
+    // only resolves differently at the end, reading the literal where `token()` reads the
+    // variable reference.
+    if (type === 'token' || type === 'tokenValue') {
       if (!call) {
         skipped.push({ name, reason: 'no-call-expression', start: 0, end: 0 })
         continue
@@ -1133,8 +1133,8 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       }
 
       // The recorded kind and the callee have to name the same half of the entry.
-      // `token(path)` resolves to the value and `token.var(path)` to the variable
-      // reference, so inlining one as the other swaps a themeable reference for a fixed
+      // `token(path)` resolves to the variable reference and `token.value(path)` to the
+      // literal, so inlining one as the other swaps a themeable reference for a fixed
       // colour — the one difference a fold can make that no class-name check would catch.
       //
       // Only a property access can name a half at all, so only one is asked. A bare callee
@@ -1142,17 +1142,22 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       // matcher has never heard of.
       const callee = Node.isCallExpression(call) ? call.getExpression() : undefined
       const propertyName = Node.isPropertyAccessExpression(callee) ? callee.getNameNode().getText() : undefined
-      const wantsVar = type === 'tokenVar'
+      const wantsValue = type === 'tokenValue'
 
-      if (wantsVar !== (propertyName === 'var')) {
+      if (wantsValue !== (propertyName === 'value')) {
         skipped.push({ name, reason: 'unsupported-kind', start, end })
         continue
       }
 
-      // `ns.token(path)` puts `token` in that same position, so the non-var side tests the
-      // matcher rather than merely testing for absence — anything else named there is a
-      // method of somebody's object, not ours.
-      if (!wantsVar && propertyName !== undefined && !ctx.imports.matchers.tokens.match(propertyName)) {
+      // The reference side accepts three spellings: a bare callee, the `.var` alias, and
+      // `ns.token(path)`, which puts `token` in that position. Anything else named there is
+      // a method of somebody's object, not ours.
+      if (
+        !wantsValue &&
+        propertyName !== undefined &&
+        propertyName !== 'var' &&
+        !ctx.imports.matchers.tokens.match(propertyName)
+      ) {
         skipped.push({ name, reason: 'unsupported-kind', start, end })
         continue
       }
@@ -1184,7 +1189,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
         continue
       }
 
-      const value = wantsVar ? runtimeTokenVar(path) : runtimeToken(path)
+      const value = wantsValue ? runtimeTokenValue(path) : runtimeToken(path)
       // Three ways to land here, all of them the same decision: the path names no token,
       // the token's value is not a string (a numeric `fontWeights` token stays a number
       // through the dictionary, and the runtime returns that number), or the value is
@@ -1192,8 +1197,8 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       // cases the fallback decides; in the middle one no string literal can stand in for
       // what it returns. Declining leaves all three where the user wrote them.
       //
-      // Only the first and last can arise on the `.var` side, whose half of the entry is a
-      // `var()` reference for every token regardless of condition.
+      // Only the first and last can arise on the reference side, whose half of the entry is
+      // a `var()` for every token regardless of condition.
       if (!value) {
         skipped.push({ name, reason: 'unresolved-token', start, end })
         continue

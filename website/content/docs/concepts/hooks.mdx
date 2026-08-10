@@ -149,8 +149,8 @@ export default defineConfig({
 <Callout type="warning">
   Do not use this to strip unused tokens or keyframes. [`pruneUnusedTokens`](/docs/references/config#pruneunusedtokens)
   and [`pruneUnusedKeyframes`](/docs/references/config#pruneunusedkeyframes) already do it, are on by default, and are
-  safe in a way a scan of the finished CSS cannot be — they keep the declarations `token()` and `token.var()` resolve to
-  at runtime, which nothing in the stylesheet refers to. [`prunePreflight`](/docs/references/config#prunepreflight)
+  safe in a way a scan of the finished CSS cannot be — they keep the declarations `token()` and `token.value()` resolve
+  to at runtime, which nothing in the stylesheet refers to. [`prunePreflight`](/docs/references/config#prunepreflight)
   covers the reset.
 </Callout>
 

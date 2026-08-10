@@ -59,7 +59,7 @@ export const createRuntimeCss = (ctx: Context): RuntimeCss => {
 }
 
 /**
- * The generated runtime's `token`, rebuilt in-process from a resolved context.
+ * The generated runtime's `token.value`, rebuilt in-process from a resolved context.
  *
  * Mirrors `generateTokenJs` in `@bamboocss/generator`, down to which of a token's two
  * values it resolves to: a virtual or conditional token resolves to its `var()` reference,
@@ -92,14 +92,19 @@ const tokenValuesFor = (ctx: Context) => {
   values = new Map<string, { value: unknown; variable: string }>()
   for (const token of ctx.tokens.allTokens) {
     const { varRef, isVirtual, condition } = token.extensions
-    values.set(token.name, { value: isVirtual || condition !== 'base' ? varRef : token.value, variable: varRef })
+    // Both halves through the view, for the reason `generateTokenJs` does it: a negative
+    // token's `varRef` names its *positive* counterpart, so reading it would flip the sign.
+    values.set(token.name, {
+      value: ctx.tokens.view.get(token.name) ?? (isVirtual || condition !== 'base' ? varRef : token.value),
+      variable: ctx.tokens.view.getVar(token.name) ?? varRef,
+    })
   }
   tokenValues.set(ctx, values)
 
   return values
 }
 
-export const createRuntimeToken =
+export const createRuntimeTokenValue =
   (ctx: Context): RuntimeToken =>
   (path) => {
     const value = tokenValuesFor(ctx).get(path)?.value
@@ -110,15 +115,15 @@ export const createRuntimeToken =
   }
 
 /**
- * The generated runtime's `token.var`, rebuilt in-process.
+ * The generated runtime's `token()`, rebuilt in-process.
  *
- * Mirrors `tokenVar` in `generateTokenJs`, which reads the `variable` half of the same
- * entry `token()` reads the `value` half of. That half is `varRef` for every token
- * regardless of condition, so unlike `createRuntimeToken` there is no split to get wrong
- * and no non-string case to decline: a `var()` reference is a string or the token does not
- * exist. Which is what makes this the more foldable of the two.
+ * Reads the `variable` half of the same entry `token.value()` reads the `value` half of.
+ * That half is `varRef` for every token regardless of condition, so unlike
+ * `createRuntimeTokenValue` there is no split to get wrong and no non-string case to
+ * decline: a `var()` reference is a string or the token does not exist. Which is what makes
+ * the default form the trivially foldable one.
  */
-export const createRuntimeTokenVar =
+export const createRuntimeToken =
   (ctx: Context): RuntimeToken =>
   (path) =>
     tokenValuesFor(ctx).get(path)?.variable || undefined

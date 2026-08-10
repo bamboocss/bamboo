@@ -26,7 +26,10 @@ const buildCss = (options: Record<string, any>, userConfig?: Config) => {
   ctx.appendLayerParams(sheet)
   ctx.appendBaselineCss(sheet)
   ctx.appendParserCss(sheet)
-  ctx.pruneTokens(sheet)
+  // `tokensReachableFromJs: false`, because the question here is whether a transition rule
+  // roots the token it names. With it true `token()` could hand back any token's reference,
+  // every declaration is kept, and the walk under test never gets to decide anything.
+  ctx.pruneTokens(sheet, undefined, false)
   ctx.pruneKeyframes(sheet)
 
   return ctx.getCss(sheet)

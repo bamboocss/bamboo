@@ -86,8 +86,8 @@ import { stack } from '../styled-system/patterns'
 import { token } from '../styled-system/tokens'
 import { css, fallback, viewTransition } from '../styled-system/css'
 
-token('colors.red.500') // the resolved value
-token.var('colors.red.500') // var(--colors-red-500)
+token('colors.red.500') // var(--colors-red-500)
+token.value('colors.red.500') // the resolved value, for canvas and the like
 css({ height: fallback('100dvh', '100vh') }) // progressive enhancement
 viewTransition({
   /* … */
