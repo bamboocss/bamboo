@@ -703,8 +703,9 @@ globalFontface: { Roboto: { src: "url(/fonts/roboto.woff2) format('woff2')" } }
 globalCss: { '@font-face': { fontFamily: 'Roboto', src: "url(/fonts/roboto.woff2) format('woff2')" } }
 ```
 
-Same for [`globalPositionTry`](#globalpositiontry), which adds the leading `--` a `@position-try` name requires. Written
-here you have to remember it, and `@position-try flip` is invalid css that ships silently and never fires.
+Same for [`globalPositionTry`](#globalpositiontry), which registers its names as values `positionTryFallbacks` and
+`positionTry` accept, and adds the leading `--` those require. Written here you have to remember the `--`, and
+`@position-try flip` is invalid css that ships silently and never fires.
 
 ### globalVars
 
@@ -917,8 +918,12 @@ Check out the [Custom Fonts](/docs/guides/fonts#global-font-face) guide for more
 
 Named [`@position-try`](https://developer.mozilla.org/en-US/docs/Web/CSS/@position-try) fallbacks for anchor
 positioning. Each key emits one `@position-try` rule, and a key without a leading `--` gets one added, so
-`bottom-scrollable` below becomes `--bottom-scrollable` — which is why this is worth preferring over writing
-`@position-try` into [`globalCss`](#globalcss), where a missing `--` is invalid css that ships silently.
+`bottom-scrollable` below becomes `--bottom-scrollable`.
+
+Each name is also registered as a value `positionTryFallbacks` and `positionTry` accept, so
+`css({ positionTryFallbacks: '--bottom-scrollable' })` autocompletes and — under [`strictTokens`](#stricttokens) —
+typechecks. That is the reason to declare one here rather than as a raw `@position-try` in [`globalCss`](#globalcss),
+which emits the same rule but leaves the name unknown.
 
 ```json
 {

@@ -17,7 +17,7 @@ import type {
 import { Conditions } from './conditions'
 import { FileEngine } from './file'
 import { GlobalFontface } from './global-fontface'
-import { GlobalPositionTry } from './global-position-try'
+import { GlobalPositionTry, positionTryIdent } from './global-position-try'
 import { GlobalVars } from './global-vars'
 import { HooksApi } from './hooks-api'
 import { ImportMap } from './import-map'
@@ -146,6 +146,7 @@ export class Context {
     this.setupCompositions(theme)
     this.registerAnimationName(theme)
     this.registerFontFamily(config.globalFontface)
+    this.registerPositionTryFallbacks(config.globalPositionTry)
 
     this.recipes.save(this.baseSheetContext)
 
@@ -318,6 +319,24 @@ export class Context {
 
   private registerFontFamily = (fontFaces: Record<string, any> | undefined): void => {
     this.utility.addPropertyType('fontFamily', Object.keys(fontFaces ?? {}))
+  }
+
+  /**
+   * The `@position-try` names a config declares, as values the properties that take one accept.
+   *
+   * The same trade as `registerFontFamily`: declaring the rule is what makes its name known, so
+   * `positionTryFallbacks: '--flip'` autocompletes and — under `strictTokens` — typechecks. A
+   * rule written as a raw `@position-try` in `globalCss` still ships, but its name stays unknown.
+   *
+   * Registered under the dashed spelling because that is what the property takes: `position-try-
+   * fallbacks: flip` is invalid css. `positionTryOrder` is left alone — it takes keywords, not a
+   * name.
+   */
+  private registerPositionTryFallbacks = (positionTry: Record<string, any> | undefined): void => {
+    const names = Object.keys(positionTry ?? {}).map(positionTryIdent)
+
+    this.utility.addPropertyType('positionTryFallbacks', names)
+    this.utility.addPropertyType('positionTry', names)
   }
 
   setupProperties = (): void => {
