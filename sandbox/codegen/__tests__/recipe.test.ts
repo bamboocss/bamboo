@@ -87,4 +87,20 @@ describe('recipe', () => {
       }
     `)
   })
+
+  /**
+   * The boundary of the scalar fast path.
+   *
+   * A scalar selection names its classes by lookup; anything object-typed falls back to
+   * `createCss`. `null` is object-typed and `compact` keeps it, so it takes the slow path — and
+   * has to come out the same either way, which is what this pins.
+   */
+  test('a null variant selects nothing, as it did before', () => {
+    expect(button({ visual: null as never })).toMatchInlineSnapshot('"button"')
+  })
+
+  /** An undeclared value names no class, since the build emitted no rule for one. */
+  test('an undeclared variant value selects nothing', () => {
+    expect(button({ visual: 'nope' as never })).toMatchInlineSnapshot('"button"')
+  })
 })
