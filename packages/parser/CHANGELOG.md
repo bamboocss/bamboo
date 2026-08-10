@@ -1,5 +1,145 @@
 # @bamboocss/parser
 
+## 1.31.0
+
+### Minor Changes
+
+- 8fb87ac: **Config options are renamed and removed in this release.** It ships as a minor, so nothing in the version
+  signals it — the migration notes below are the warning. Every removed or renamed option is reported by name on the
+  next build, with the edit to make.
+
+  Settle the config surface before the API freezes: remove the options that were a second way to say something the
+  config already said, and rename the ones whose names disagreed with each other.
+
+  Every removed or renamed option is reported by name on the next build, with the edit to make. An unknown key is
+  otherwise ignored in silence, which would mean the build reverting to a default without saying so.
+
+  **`strict` now means exactly one thing.** It was six options across three packages covering three unrelated concerns.
+  `strictTokens` and `strictPropertyValues` are unchanged and are the only remaining use of the word — both narrow
+  generated TypeScript and neither affects a build.
+  - `vite.strict` → `vite.failOnUnfolded`. Named for what it checks.
+  - `PatternConfig.strict` + `PatternConfig.blocklist` → `PatternConfig.cssProps: 'all' | 'none' | { except }`. These
+    were two answers to one question, and setting both silently dropped the blocklist — it is only applied to the type
+    that `strict: true` does not emit.
+  - `validation: 'none'` → `validation: 'off'`, matching `prune`.
+
+  **`prune` separates the strategy from the report.**
+  - `prune.tokens` takes `'off' | 'reachable' | 'accounted'` instead of a boolean.
+  - `prune.unresolved` → `prune.unresolvedPath`, and is now orthogonal: the accounting pass is `tokens: 'accounted'`,
+    the severity is `unresolvedPath`. `'off'` used to mean both "do not account" and "do not report", which left
+    "account, and stay quiet" unsayable.
+  - `prune.propertyRegistrations` is new. Dropping unreachable `@property` registrations was a side effect of
+    `prune.tokens`, and happened even when it was off — so an option documented as keeping every token declaration
+    quietly removed something else, and nothing could keep them.
+
+  **Four `global*` keys become one.** `globalCss`, `globalFontface`, `globalPositionTry` and `globalVars` are
+  `global.css`, `global.fontface`, `global.positionTry` and `global.vars`. `globalVars` was the one of the four
+  `PresetCore` never listed, so it kept its `extend` wrapper in the resolved config while its siblings lost theirs.
+
+  **`themes` becomes `theme.variants`.** One character from `theme`, both spellings valid, so the typo resolved to a
+  different feature rather than to an error.
+
+  **`presets` is authoritative.** What the config lists is what is loaded; an unset `presets` loads `defaultPresets`,
+  exported from `@bamboocss/dev/presets`. `eject` is removed — `presets: []` is what it meant. Previously, listing any
+  preset kept `@bamboocss/preset-base` and silently dropped `@bamboocss/preset-bamboo`, so `presets` was neither
+  additive nor replacing, and `presets: []` meant "base only" rather than "none". A config that lists presets without
+  `preset-base` now warns, because the change is otherwise silent: `preset-base` carries the utility table, so dropping
+  it changes every generated class name rather than raising an error.
+
+  ```ts
+  import { defaultPresets } from '@bamboocss/dev/presets'
+
+  export default defineConfig({ presets: [...defaultPresets, myPreset] })
+  ```
+
+  **`lightningcss` is removed; list the plugin instead.** Its only job was to push `pluginLightningcss()` into
+  `plugins`. Naming the plugin from inside `@bamboocss/node` made it a static import, so
+  `@bamboocss/plugin-lightningcss` — and the `lightningcss` native binary behind it — installed with every project
+  whether or not the flag was set. It is a separate package so that cost can be opt-in.
+
+  ```ts
+  import { pluginLightningcss } from '@bamboocss/plugin-lightningcss'
+
+  export default defineConfig({ plugins: [pluginLightningcss()] })
+  ```
+
+  **Fixes**
+  - `validation` no longer switches off removed-option detection. Setting it to `'none'` returned before that check ran,
+    so the one mechanism that tells an upgrader their setting is no longer read was disabled by a severity setting.
+  - `forceConsistentTypeExtension` now emits import specifiers as `./x.mjs` rather than `./x.d.mts`, which is only legal
+    under `allowImportingTsExtensions`. The flag previously emitted imports that did not resolve.
+
+- 678bdee: Remove `token(path, fallback)`. A token is referenced one way: `token(path)`.
+
+  The fallback bundled two unrelated behaviours under one spelling — "resolve this, or use the literal if it names no
+  token", answered at build time, and "emit `var(--x, fallback)`", answered by the browser. The call site could not say
+  which it was getting, and the build-time half silently masked a typo'd path, which is the same reason the `fallback`
+  argument was removed from `token.value()`.
+
+  **Patterns resolve tokens directly now.** `PatternHelpers` gains `token(path, fallback)`:
+
+  ```ts
+  // before — deferred into a string for the css pipeline to parse later
+  const val = isCssUnit(v) ? v : `token(spacing.${v}, ${v})`
+
+  // after — answered where it can be answered
+  const val = isCssUnit(v) ? v : token(`spacing.${v}`, v)
+  ```
+
+  Same semantics: `spacer({ size: '4' })` resolves to `var(--spacing-4)`, `spacer({ size: 'auto' })` to `auto`. The
+  build, the extractor and the browser answer identically — the browser through the generated tokens artifact, so it
+  cannot disagree with the build about a variable's name.
+
+  **What this buys.** `expand-token-references.ts` was a 180-line character-state parser, and every line of it existed
+  for the fallback and its nesting. It is now **22 lines and one regex**. That also closes a live bug for free:
+  `token(path)` in a theme or semantic token value was never expanded — it landed in the stylesheet as literal text,
+  with no warning — because the parser's shape forced a reference regex that could not see it.
+
+  **Breaking.** A retired form now fails rather than emitting text: in a token value the build stops and names the token
+  and its replacement; in a style value it throws where it is used.
+
+  `spacer`, `grid` and `bleed` emit `var(--spacing-4)` where they emitted `token(spacing.4, 4)`, so their declarations
+  lose a now-redundant css fallback and the class names derived from those values change. Apps not using those three
+  patterns are byte-identical — verified on an example app.
+
+  Cost: a pattern module now imports the generated tokens artifact, shared with any other `token()` use in the app.
+
+### Patch Changes
+
+- 232a83a: Emit css for a config recipe's variant the build could not read, instead of a class with no rule behind it.
+
+  `buttonStyle({ size })`, where `size` is a prop, emitted only the default's rule. At runtime `size="sm"` then put
+  `buttonStyle--size_sm` on the element and nothing backed it — silently unstyled, with no diagnostic anywhere. Inline
+  `cva` recipes never had this: they emit every declared value precisely so a call the build cannot read still lands on
+  a rule.
+
+  The premise was written down and wrong. `hashInlineRecipe`'s comment reasons that a config recipe "can emit only what
+  is used because its call sites name their variants statically" — they do not have to.
+
+  Only the axes some call site actually left dynamic are enumerated, so a project whose recipe calls are all static
+  emits exactly what it did before; verified byte-identical on the example apps. Slot recipes get the same treatment,
+  where the shortfall was worse — an unread axis leaves every slot short rather than one.
+
+  `ParserResult.setRecipe` is what supplies the signal: `buttonStyle({ size })` and `buttonStyle()` both unbox to `{}`,
+  so the encoder cannot tell them apart, but the box still holds the key carrying an `unresolvable`.
+
+- Updated dependencies [8fb87ac]
+- Updated dependencies [8fb87ac]
+- Updated dependencies [232a83a]
+- Updated dependencies [cd5954c]
+- Updated dependencies [9c32b00]
+- Updated dependencies [9fdce28]
+- Updated dependencies [dd9d6dc]
+- Updated dependencies [678bdee]
+- Updated dependencies [a72eb09]
+- Updated dependencies [774048b]
+  - @bamboocss/types@1.31.0
+  - @bamboocss/config@1.31.0
+  - @bamboocss/core@1.31.0
+  - @bamboocss/logger@1.31.0
+  - @bamboocss/shared@1.31.0
+  - @bamboocss/extractor@1.31.0
+
 ## 1.30.1
 
 ### Patch Changes

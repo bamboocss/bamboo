@@ -1,5 +1,255 @@
 # @bamboocss/generator
 
+## 1.31.0
+
+### Minor Changes
+
+- 8fb87ac: **Config options are renamed and removed in this release.** It ships as a minor, so nothing in the version
+  signals it — the migration notes below are the warning. Every removed or renamed option is reported by name on the
+  next build, with the edit to make.
+
+  Settle the config surface before the API freezes: remove the options that were a second way to say something the
+  config already said, and rename the ones whose names disagreed with each other.
+
+  Every removed or renamed option is reported by name on the next build, with the edit to make. An unknown key is
+  otherwise ignored in silence, which would mean the build reverting to a default without saying so.
+
+  **`strict` now means exactly one thing.** It was six options across three packages covering three unrelated concerns.
+  `strictTokens` and `strictPropertyValues` are unchanged and are the only remaining use of the word — both narrow
+  generated TypeScript and neither affects a build.
+  - `vite.strict` → `vite.failOnUnfolded`. Named for what it checks.
+  - `PatternConfig.strict` + `PatternConfig.blocklist` → `PatternConfig.cssProps: 'all' | 'none' | { except }`. These
+    were two answers to one question, and setting both silently dropped the blocklist — it is only applied to the type
+    that `strict: true` does not emit.
+  - `validation: 'none'` → `validation: 'off'`, matching `prune`.
+
+  **`prune` separates the strategy from the report.**
+  - `prune.tokens` takes `'off' | 'reachable' | 'accounted'` instead of a boolean.
+  - `prune.unresolved` → `prune.unresolvedPath`, and is now orthogonal: the accounting pass is `tokens: 'accounted'`,
+    the severity is `unresolvedPath`. `'off'` used to mean both "do not account" and "do not report", which left
+    "account, and stay quiet" unsayable.
+  - `prune.propertyRegistrations` is new. Dropping unreachable `@property` registrations was a side effect of
+    `prune.tokens`, and happened even when it was off — so an option documented as keeping every token declaration
+    quietly removed something else, and nothing could keep them.
+
+  **Four `global*` keys become one.** `globalCss`, `globalFontface`, `globalPositionTry` and `globalVars` are
+  `global.css`, `global.fontface`, `global.positionTry` and `global.vars`. `globalVars` was the one of the four
+  `PresetCore` never listed, so it kept its `extend` wrapper in the resolved config while its siblings lost theirs.
+
+  **`themes` becomes `theme.variants`.** One character from `theme`, both spellings valid, so the typo resolved to a
+  different feature rather than to an error.
+
+  **`presets` is authoritative.** What the config lists is what is loaded; an unset `presets` loads `defaultPresets`,
+  exported from `@bamboocss/dev/presets`. `eject` is removed — `presets: []` is what it meant. Previously, listing any
+  preset kept `@bamboocss/preset-base` and silently dropped `@bamboocss/preset-bamboo`, so `presets` was neither
+  additive nor replacing, and `presets: []` meant "base only" rather than "none". A config that lists presets without
+  `preset-base` now warns, because the change is otherwise silent: `preset-base` carries the utility table, so dropping
+  it changes every generated class name rather than raising an error.
+
+  ```ts
+  import { defaultPresets } from '@bamboocss/dev/presets'
+
+  export default defineConfig({ presets: [...defaultPresets, myPreset] })
+  ```
+
+  **`lightningcss` is removed; list the plugin instead.** Its only job was to push `pluginLightningcss()` into
+  `plugins`. Naming the plugin from inside `@bamboocss/node` made it a static import, so
+  `@bamboocss/plugin-lightningcss` — and the `lightningcss` native binary behind it — installed with every project
+  whether or not the flag was set. It is a separate package so that cost can be opt-in.
+
+  ```ts
+  import { pluginLightningcss } from '@bamboocss/plugin-lightningcss'
+
+  export default defineConfig({ plugins: [pluginLightningcss()] })
+  ```
+
+  **Fixes**
+  - `validation` no longer switches off removed-option detection. Setting it to `'none'` returned before that check ran,
+    so the one mechanism that tells an upgrader their setting is no longer read was disabled by a severity setting.
+  - `forceConsistentTypeExtension` now emits import specifiers as `./x.mjs` rather than `./x.d.mts`, which is only legal
+    under `allowImportingTsExtensions`. The flag previously emitted imports that did not resolve.
+
+- 8fb87ac: Declare the generated output's entry points in its `package.json`, so `node16`/`nodenext` resolve them and
+  the modules behind them stop being importable.
+
+  `styled-system/tokens` did not resolve under those modes at all. They do no directory-index lookup and the file
+  declared no `exports`, so the artifact had to be spelled `styled-system/tokens/index.mjs` — a workaround the token
+  scanner still has to recognise because projects have it written down. Both spellings resolve now.
+
+  The map also states the boundary: `./css`, `./tokens`, `./types`, `./patterns`, `./recipes`, `./themes`,
+  `./styles.css`, `./styles/*` and `./specs/*` are the output. `css/merge-css`, `css/utilities`, `tokens/tokens` and
+  `helpers` exist for the modules beside them and are no longer reachable from outside. A relative import within the
+  generated directory is unaffected.
+
+  This enforces where the output is resolved as a package — the component-library layout `emit-pkg` produces. It cannot
+  enforce against a `paths` alias like `"styled-system/*": ["./styled-system/*"]`, which resolves straight to the
+  filesystem without consulting `exports`; there the map documents intent rather than imposing it.
+
+  `emit-pkg` now derives its map from the same builder instead of restating it. That copy had drifted: it advertised a
+  `require` condition pointing at `.mjs`, for output that is ESM under every setting, and listed `./types` as a runtime
+  entry for a directory holding only declarations.
+
+- cd5954c: Group the three prune flags under `prune`, and rename the mode that was called `'strict'`.
+
+  ```ts
+  // before
+  pruneUnusedTokens: 'strict'
+  pruneUnusedKeyframes: false
+  prunePreflight: true
+
+  // after
+  prune: { unresolved: 'error', keyframes: false, preflight: true }
+  ```
+
+  Three options for one concept had drifted apart on all three of naming, default and value type: two said "Unused" and
+  one did not, two defaulted to `true` and one to `false`, one took a string and two did not. Each key is independent
+  and setting one keeps the defaults for the rest.
+
+  **`'strict'` is now `unresolved: 'error'`.** The word already meant something unrelated in the same config —
+  `strictTokens` and `strictPropertyValues` narrow generated _typescript_, and neither implies nor is implied by failing
+  a build over a token path. The option is now named for what it checks.
+
+  **`unresolved: 'warn'` is new.** It runs the same accounting as `'error'` and reports the same references without
+  failing the build, so a project can read what turning `'error'` on would reject before a build depends on the answer.
+  The pruning is identical either way — only whether an unreadable path stops the build differs.
+
+  **Upgrading.** A config still setting a removed option is now reported by name, with the replacement:
+
+  ```
+  ⚠️ Invalid config:
+  - [config] `pruneUnusedTokens: 'strict'` is now `prune: { unresolved: 'error' }`.
+  ```
+
+  That check exists because an unknown config key was otherwise ignored in **silence** — there is no schema walk, so a
+  stale `pruneUnusedTokens: 'strict'` would have built clean, pruned by the default instead, and quietly stopped
+  enforcing the assertion it asked for. Set `validation: 'error'` to make it fail rather than warn.
+
+  Emitted css is unchanged for an equivalent config; verified byte-identical on three example apps.
+
+  Preset merging is per key: a preset setting `prune: { keyframes: false }` and an app setting
+  `prune: { preflight: true }` get both. That needed doing deliberately — `mergeConfigs` deep-merges only the options it
+  names and shallow-assigns the rest, so nesting three booleans into an object introduced a way for a preset's setting
+  to vanish because an app set a _different_ key. Nothing about the output would have shown it, so it is pinned by a
+  test.
+
+- 9c32b00: Narrow `styled-system/css` to the authoring API.
+
+  The barrel was four `export *` lines, so every binding its modules happened to export became part of the public API.
+  Seven were plumbing:
+
+  ```text
+  what `import { … } from 'styled-system/css'` offered before:
+
+    css, css.raw, cx, cva, sva, fallback, viewTransition, auditSlotScopes
+    cssLeaf, cvaPick, splitProps           <- written by the source transform, never by hand
+    mergeCss, assignCss, mergeCssUncached  <- internal merge plumbing
+  ```
+
+  The barrel is now a deliberate list. `cssLeaf`, `cvaPick` and `splitProps` are still exported at runtime — the fold
+  adds them to whatever `styled-system/css` import a file already has, so that is the specifier its emitted calls
+  resolve against — but the declaration file omits them. Folded code is rewritten in memory during the bundler's
+  transform and never typechecked, so a declaration bought nothing beyond an autocomplete entry advertising them as API.
+  Each stays typed in the module that defines it.
+
+  **`mergeCss` and `mergeCssUncached` leave the barrel.** They remain at `styled-system/css/merge-css`, which is where
+  `cva` imports them from. `css.raw(...)` is the authoring API for merging style objects and always was the documented
+  one: it is `mergeCss` plus the clone that makes a shared, memoized result safe to hand back, so the uncloned function
+  beside it was a footgun under a second name.
+
+  **`assignCss` is removed.** It had no callers — not in the runtime, the artifacts, the sandboxes or the docs — and no
+  documented purpose.
+
+  The runtime/declaration split was already there and pointing the other way: `css.mjs` re-exported the merge trio while
+  `css.d.ts` never declared it, so `mergeCss` was importable but untyped through the barrel. That is now consistent.
+
+  A test pins the half that nothing else could catch. The barrel is a hand-written list, the emitted calls are never
+  typechecked, and a bundler only _warns_ about an import naming a missing export — so dropping `cvaPick` from the list
+  would leave the fold emitting calls that silently receive `undefined`. The test asserts every name the fold can inject
+  is exported by the barrel's runtime, and that none of them is declared in its types.
+
+- 678bdee: Remove `token(path, fallback)`. A token is referenced one way: `token(path)`.
+
+  The fallback bundled two unrelated behaviours under one spelling — "resolve this, or use the literal if it names no
+  token", answered at build time, and "emit `var(--x, fallback)`", answered by the browser. The call site could not say
+  which it was getting, and the build-time half silently masked a typo'd path, which is the same reason the `fallback`
+  argument was removed from `token.value()`.
+
+  **Patterns resolve tokens directly now.** `PatternHelpers` gains `token(path, fallback)`:
+
+  ```ts
+  // before — deferred into a string for the css pipeline to parse later
+  const val = isCssUnit(v) ? v : `token(spacing.${v}, ${v})`
+
+  // after — answered where it can be answered
+  const val = isCssUnit(v) ? v : token(`spacing.${v}`, v)
+  ```
+
+  Same semantics: `spacer({ size: '4' })` resolves to `var(--spacing-4)`, `spacer({ size: 'auto' })` to `auto`. The
+  build, the extractor and the browser answer identically — the browser through the generated tokens artifact, so it
+  cannot disagree with the build about a variable's name.
+
+  **What this buys.** `expand-token-references.ts` was a 180-line character-state parser, and every line of it existed
+  for the fallback and its nesting. It is now **22 lines and one regex**. That also closes a live bug for free:
+  `token(path)` in a theme or semantic token value was never expanded — it landed in the stylesheet as literal text,
+  with no warning — because the parser's shape forced a reference regex that could not see it.
+
+  **Breaking.** A retired form now fails rather than emitting text: in a token value the build stops and names the token
+  and its replacement; in a style value it throws where it is used.
+
+  `spacer`, `grid` and `bleed` emit `var(--spacing-4)` where they emitted `token(spacing.4, 4)`, so their declarations
+  lose a now-redundant css fallback and the class names derived from those values change. Apps not using those three
+  patterns are byte-identical — verified on an example app.
+
+  Cost: a pattern module now imports the generated tokens artifact, shared with any other `token()` use in the app.
+
+### Patch Changes
+
+- 725223e: Name a config recipe's classes by lookup when its variants are scalars.
+
+  Every config recipe call rebuilt its class string through `createCss` — merge defaults, filter against the variant
+  map, walk conditions, prefix, hash — to arrive at the recipe's own class plus one per selected variant. That is what
+  `getRecipeClassNames` already returns for an inline `cva`, so a scalar selection now takes the same route.
+
+  Measured on a three-variant recipe, in one run so the two share a machine:
+
+  | path                        | before     | after                    |
+  | --------------------------- | ---------- | ------------------------ |
+  | scalar variants, unmemoized | 720,958 hz | 2,278,994 hz (**3.16x**) |
+  | conditional variant         | 569,009 hz | unchanged                |
+  | memoized re-call            | 11.5M hz   | unchanged                |
+
+  The gain lands on a `memo` miss — the first call for each variant combination — since a hit never reaches the body at
+  all. So it is cold render and variant-heavy trees that get it, not steady-state re-renders. `packages/generator`'s
+  `recipe.bench.ts` is new: nothing covered the config recipe path, and `cva.bench.ts` covers only the inline one.
+
+  Responsive and conditional variants are untouched: `button({ visual: { base: 'solid', _hover: 'outline' } })` still
+  resolves through `createCss`, because its classes carry condition prefixes a lookup cannot build. The gate is "no
+  object-typed value", which also routes `null` — kept by `compact` — down the same path it took before.
+
+  A side effect worth having: the build's fold and the browser now derive a config recipe's class names from one
+  function rather than two. That duplication is what `naming-agreement.ts` exists to police, and there is one less of
+  it.
+
+  Emitted css is unchanged, and so are the class names — verified against the generated artifacts and byte-identical
+  cssgen on an example app.
+
+- Updated dependencies [8fb87ac]
+- Updated dependencies [8fb87ac]
+- Updated dependencies [232a83a]
+- Updated dependencies [cd5954c]
+- Updated dependencies [9c32b00]
+- Updated dependencies [9fdce28]
+- Updated dependencies [dd9d6dc]
+- Updated dependencies [678bdee]
+- Updated dependencies [a72eb09]
+- Updated dependencies [774048b]
+  - @bamboocss/types@1.31.0
+  - @bamboocss/core@1.31.0
+  - @bamboocss/logger@1.31.0
+  - @bamboocss/shared@1.31.0
+  - @bamboocss/token-dictionary@1.31.0
+  - @bamboocss/is-valid-prop@1.31.0
+
 ## 1.30.1
 
 ### Patch Changes
