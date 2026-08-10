@@ -152,10 +152,6 @@ export function createMergeCss(context: CreateCssContext) {
     return mergeProps(...resolve(styles))
   }
 
-  function assignCss(...styles: StyleObject[]) {
-    return Object.assign({}, ...resolve(styles))
-  }
-
   // `mergeCss` is memoized for callers that reach it directly and repeatedly with the same
   // arguments: `cva` merges once per active variant while resolving, and `css.raw` is called
   // straight from user code. Those callers treat the result as read-only.
@@ -175,5 +171,5 @@ export function createMergeCss(context: CreateCssContext) {
   // four distinct styles, the inner memo served zero hits while paying a hash, a bucket scan,
   // a snapshot and an insert for each miss. Driven directly the same function hit 24,996
   // times, which is why the memoized export stays.
-  return { mergeCss: memo(mergeCss), assignCss, mergeCssUncached: mergeCss }
+  return { mergeCss: memo(mergeCss), mergeCssUncached: mergeCss }
 }

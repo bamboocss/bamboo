@@ -69,7 +69,6 @@ describe('generate css-fn', () => {
         "js": "import { cloneStyles, createCssUncached, hypenateProperty, leafClass, memo, viewTransitionClassName, withoutSpace } from '../helpers.mjs';
       import { sortConditions, finalizeConditions } from './conditions.mjs';
       import { classNameByProp } from './utilities.mjs';
-      export { mergeCss, assignCss, mergeCssUncached } from './merge-css.mjs';
       import { mergeCss, mergeCssUncached, resolveShorthand } from './merge-css.mjs';
 
       const context = {
@@ -210,7 +209,6 @@ describe('generate css-fn', () => {
         "js": "import { cloneStyles, createCssUncached, hypenateProperty, leafClass, memo, viewTransitionClassName, withoutSpace } from '../helpers.mjs';
       import { sortConditions, finalizeConditions } from './conditions.mjs';
       import { classNameByProp } from './utilities.mjs';
-      export { mergeCss, assignCss, mergeCssUncached } from './merge-css.mjs';
       import { mergeCss, mergeCssUncached, resolveShorthand } from './merge-css.mjs';
 
       const context = {

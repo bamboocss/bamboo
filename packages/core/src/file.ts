@@ -42,6 +42,16 @@ export class FileEngine {
     return `export { ${mod} } from '${this.ext(file)}';`
   }
 
+  /**
+   * The same, said from a declaration file.
+   *
+   * Not `exportType`: that emits `export type { … }`, which drops the value side of
+   * anything it names. A barrel re-exporting `css` needs the binding, not just its type.
+   */
+  reExportDts(mod: string, file: string): string {
+    return `export { ${mod} } from '${this.__extDts(file)}';`
+  }
+
   exportStar(file: string): string {
     return `export * from '${this.ext(file)}';`
   }

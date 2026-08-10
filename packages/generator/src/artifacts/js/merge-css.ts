@@ -20,7 +20,10 @@ import { outdent } from 'outdent'
  * trade, and it is the right way round: a `css()` call surviving to runtime already costs
  * 1,684 B for the engine behind it, and `strict` exists to drive that count to zero.
  *
- * `css.mjs` re-exports the merge, so the authoring API is unchanged.
+ * Nothing here reaches the `styled-system/css` barrel. `css.raw(...)` is the authoring API
+ * for merging style objects, and it is `mergeCss` plus the defensive clone that makes a
+ * shared, memoized result safe to hand to a caller — so exporting the uncloned function
+ * beside it offered a footgun under a second name. `cva` imports it from here directly.
  */
 export function generateMergeCssFn(ctx: Context) {
   const { conditions, utility } = ctx
@@ -42,8 +45,6 @@ export function generateMergeCssFn(ctx: Context) {
 
     /** Deep-merge style objects, resolving shorthands before merging. */
     export declare function mergeCss(...styles: SystemStyleObject[]): SystemStyleObject;
-    /** Shallow-assign style objects, resolving shorthands first. */
-    export declare function assignCss(...styles: SystemStyleObject[]): SystemStyleObject;
     /** \`mergeCss\` without the memo, for callers that already cache. */
     export declare function mergeCssUncached(...styles: SystemStyleObject[]): SystemStyleObject;
     /** Whether any utility declares a shorthand. */
@@ -82,7 +83,7 @@ export function generateMergeCssFn(ctx: Context) {
       utility: { hasShorthand, resolveShorthand },
     }
 
-    export const { mergeCss, assignCss, mergeCssUncached } = createMergeCss(mergeContext)
+    export const { mergeCss, mergeCssUncached } = createMergeCss(mergeContext)
     `,
   }
 }

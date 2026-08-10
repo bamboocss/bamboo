@@ -253,19 +253,40 @@ function setupPatterns(ctx: Context, filters?: ArtifactFilters): Artifact | unde
   }
 }
 
+/**
+ * The `styled-system/css` barrel.
+ *
+ * A deliberate list rather than `export *`, because two of the four modules also export
+ * helpers the source transform writes, and a blanket re-export made those part of the
+ * authoring API by accident. The runtime and the declaration file name different sets on
+ * purpose — see the note in the emitted js.
+ */
 function setupCssIndex(ctx: Context): Artifact {
   const index = {
     js: outdent`
-  ${ctx.file.exportStar('./css')}
-  ${ctx.file.exportStar('./cx')}
-  ${ctx.file.exportStar('./cva')}
-  ${ctx.file.exportStar('./sva')}
+  ${ctx.file.reExport('css, fallback, viewTransition', './css')}
+  ${ctx.file.reExport('cx', './cx')}
+  ${ctx.file.reExport('cva', './cva')}
+  ${ctx.file.reExport('sva, auditSlotScopes', './sva')}
+
+  // Written by the source transform, never by hand. They are exported here because the
+  // transform adds them to whatever \`styled-system/css\` import the file already has, so
+  // this is the specifier its emitted calls resolve against.
+  //
+  // The declaration file below deliberately omits them. Folded code is rewritten in memory
+  // during the bundler's transform and never typechecked, so a declaration here would buy
+  // nothing but an autocomplete entry advertising them as API. Each stays fully typed in
+  // the module that defines it, for anyone deep-importing on purpose.
+  ${ctx.file.reExport('cssLeaf', './css')}
+  ${ctx.file.reExport('cvaPick, splitProps', './cx')}
  `,
     dts: outdent`
-  ${ctx.file.exportTypeStar('./css')}
-  ${ctx.file.exportTypeStar('./cx')}
-  ${ctx.file.exportTypeStar('./cva')}
-  ${ctx.file.exportTypeStar('./sva')}
+  ${ctx.file.reExportDts('css, fallback, viewTransition', './css')}
+  ${ctx.file.reExportDts('cx', './cx')}
+  ${ctx.file.reExportDts('cva', './cva')}
+  ${ctx.file.exportType('RecipeVariant, RecipeVariantProps', './cva')}
+  ${ctx.file.reExportDts('sva, auditSlotScopes', './sva')}
+  ${ctx.file.exportType('SlotScopeProblem, AuditSlotScopesOptions', './sva')}
   `,
   }
 
