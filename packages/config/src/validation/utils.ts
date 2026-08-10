@@ -27,6 +27,12 @@ const CURLY_REFERENCE = /\{[^{}\s:;"']+\}/
 export const findCurlyReference = (value: string) =>
   value.includes('{') ? (CURLY_REFERENCE.exec(value)?.[0] ?? undefined) : undefined
 
+/** The retired `token(path, fallback)` form. See `findCurlyReference` for why these fail. */
+const FALLBACK_REFERENCE = /token\([^(),]+,[^()]*\)/
+
+export const findFallbackReference = (value: string) =>
+  value.includes('token(') ? (FALLBACK_REFERENCE.exec(value)?.[0] ?? undefined) : undefined
+
 export const formatPath = (path: string) => path
 export const SEP = '.'
 

@@ -63,6 +63,21 @@ const CURLY_REFERENCE = /\{[^{}\s:;"']+\}/
 export const findCurlyReference = (value: string) =>
   value.includes('{') ? (CURLY_REFERENCE.exec(value)?.[0] ?? undefined) : undefined
 
+/**
+ * The retired fallback form — `token(spacing.4, 4)`.
+ *
+ * Removed along with the parser that existed to read it. A pattern that needed "this token, or
+ * this literal" now asks `PatternHelpers.token()` and emits the answer, so the question is
+ * settled where it can be answered rather than deferred into a string.
+ *
+ * Detected in order to fail: left alone, the comma keeps it out of `REFERENCE_REGEX`, so it is
+ * emitted into the stylesheet as text — the same silence the curly form had.
+ */
+const FALLBACK_REFERENCE = /token\([^(),]+,[^()]*\)/
+
+export const findFallbackReference = (value: string) =>
+  value.includes('token(') ? (FALLBACK_REFERENCE.exec(value)?.[0] ?? undefined) : undefined
+
 /** Shared wording, so the config and style-value paths say the same thing. */
 export const curlyReferenceMessage = (found: string, where: string) => {
   const path = found.slice(1, -1)
@@ -74,23 +89,14 @@ export const curlyReferenceMessage = (found: string, where: string) => {
   )
 }
 
-const tokenFunctionRegex = /token\(([^)]+)\)/g
-const closingParenthesisRegex = /\)$/g
-const hasTokenReference = (str: string) => str.includes('token(')
-
-const tokenReplacer = (a: string, b?: string) =>
-  b ? (a.endsWith(')') ? a.replace(closingParenthesisRegex, `, ${b})`) : `var(${a}, ${b})`) : a
-
 const notFoundMessage = (key: string, value: string) => `Reference not found: \`${key}\` in "${value}"`
 
-const isTokenReference = (v: string) => hasReference(v) || hasTokenReference(v)
-
 export function expandReferences(value: string, fn: (key: string) => string) {
-  if (!isTokenReference(value)) return value
+  if (!hasReference(value)) return value
 
   const references = getReferences(value)
 
-  const expanded = references.reduce((valueStr, key) => {
+  return references.reduce((valueStr, key) => {
     const resolved = fn(key)
     if (!resolved) {
       logger.warn('token', notFoundMessage(key, value))
@@ -99,29 +105,17 @@ export function expandReferences(value: string, fn: (key: string) => string) {
 
     return replaceReference(valueStr, key, expandedValue)
   }, value)
+}
 
-  if (!expanded.includes(`token(`)) return expanded
+/** The same, for the fallback form. */
+export const fallbackReferenceMessage = (found: string, where: string) => {
+  const path = found.slice('token('.length, found.lastIndexOf(',')).trim()
 
-  return expanded.replace(tokenFunctionRegex, (_, token) => {
-    const [tokenValue, tokenFallback] = token.split(',').map((s: string) => s.trim())
-
-    const result = [tokenValue, tokenFallback].filter(Boolean).map((key) => {
-      const resolved = fn(key)
-
-      if (!resolved && isTokenReference(key)) {
-        logger.warn('token', notFoundMessage(key, value))
-      }
-
-      return resolved ?? esc(key)
-    })
-
-    if (result.length > 1) {
-      const [a, b] = result
-      return tokenReplacer(a, b)
-    }
-
-    return tokenReplacer(result[0])
-  })
+  return (
+    `\`${found}\` in ${where} uses the retired \`token(path, fallback)\` form. Write \`token(${path})\` instead.\n\n` +
+    `The fallback was removed with the parser that read it. A value that may not name a token is resolved where that ` +
+    `can be answered — \`PatternHelpers.token(path, fallback)\` in a pattern — rather than deferred into a string.`
+  )
 }
 
 /* -----------------------------------------------------------------------------

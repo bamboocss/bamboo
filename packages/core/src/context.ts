@@ -1,6 +1,6 @@
 import { isCssProperty } from '@bamboocss/is-valid-prop'
 import { logger } from '@bamboocss/logger'
-import { compact, flatten, isBoolean, isString, memo, patternFns } from '@bamboocss/shared'
+import { compact, createPatternFns, flatten, isBoolean, isString, memo } from '@bamboocss/shared'
 import { TokenDictionary } from '@bamboocss/token-dictionary'
 import type {
   CascadeLayers,
@@ -119,7 +119,7 @@ export class Context {
       config,
       tokens: this.tokens,
       utility: this.utility,
-      helpers: patternFns,
+      helpers: this.patternHelpers,
     })
 
     this.setupProperties()
@@ -280,6 +280,9 @@ export class Context {
     return new Layers(layers)
   }
 
+  /** The pattern helpers this context answers token lookups with. */
+  patternHelpers = createPatternFns((path, fallback) => this.tokens.view.getVar(path) ?? fallback)
+
   setupCompositions = (theme: Theme): void => {
     const { textStyles, layerStyles, animationStyles } = theme
 
@@ -356,7 +359,7 @@ export class Context {
       browserslist: this.config.browserslist,
       polyfill: this.config.polyfill,
       cssVarRoot: this.config.cssVarRoot!,
-      helpers: patternFns,
+      helpers: this.patternHelpers,
       globalVars: this.globalVars,
       globalFontface: this.globalFontface,
       globalPositionTry: this.globalPositionTry,

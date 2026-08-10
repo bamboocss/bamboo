@@ -15,7 +15,7 @@ export function generatePattern(ctx: Context, filters?: ArtifactFilters) {
 
     const patternConfigFn = stringify(compact({ transform, defaultValues })) ?? ''
 
-    const helperImports = ['getPatternStyles, patternFns, memo']
+    const helperImports = ['getPatternStyles, createPatternFns, memo']
     // depending on the esbuild result, sometimes the transform function couldi include polyfills (e.g. __spreadValues)
     if (patternConfigFn.includes('__spreadValues')) {
       helperImports.push('__spreadValues')
@@ -73,6 +73,17 @@ export function generatePattern(ctx: Context, filters?: ArtifactFilters) {
       js: outdent`
     ${ctx.file.import(helperImports.join(', '), '../helpers')}
     ${ctx.file.import('css', '../css/index')}
+    ${ctx.file.import('token', '../tokens/index')}
+
+    /**
+     * The transform's token lookup, answered by the generated tokens artifact.
+     *
+     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
+     * the build about a token's variable name — both come from the same generated source. The
+     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
+     * paid twice.
+     */
+    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
 
     const ${baseName}Config = ${patternConfigFn
       .replace(`{transform`, `{\ntransform`)
@@ -80,7 +91,7 @@ export function generatePattern(ctx: Context, filters?: ArtifactFilters) {
 
     export const ${styleFnName} = (styles = {}) => {
       const _styles = getPatternStyles(${baseName}Config, styles)
-      return ${baseName}Config.transform(_styles, patternFns)
+      return ${baseName}Config.transform(_styles, patternHelpers)
     }
 
     export const ${baseName} = /* @__PURE__ */ memo((styles) => css(${styleFnName}(styles)))

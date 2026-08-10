@@ -1,6 +1,6 @@
 import type { ParserOptions } from '@bamboocss/core'
 import { BoxNodeMap, box, type BoxNode } from '@bamboocss/extractor'
-import { compact, patternFns } from '@bamboocss/shared'
+import { compact, createPatternFns } from '@bamboocss/shared'
 import type {
   ClassifyReport,
   ComponentReportItem,
@@ -51,6 +51,10 @@ export function classifyProject(ctx: ParserOptions, resultMap: ParserResultMap):
   const byComponentInFilepath = new Map<string, Set<ComponentReportItem['componentIndex']>>()
   const globalMaps = createReportMaps()
   const byFilePathMaps = new Map<string, ReportDerivedMaps>()
+  // The same answers the build gives: a pattern's output becomes a class name, so extraction
+  // has to resolve a token exactly as `Context` does or the two disagree about what was written.
+  const patternHelpers = createPatternFns((path, fallback) => ctx.tokens.view.getVar(path) ?? fallback)
+
   const conditions = new Map(Object.entries(ctx.conditions.values))
 
   const { groupByProp } = getPropertyGroupMap(ctx)
@@ -102,7 +106,7 @@ export function classifyProject(ctx: ParserOptions, resultMap: ParserResultMap):
     const name = item.componentName
     const pattern = ctx.patterns.details.find((p) => p.baseName === name)
     if (!pattern) return
-    const cssObj = pattern.config.transform?.(data || {}, patternFns) ?? {}
+    const cssObj = pattern.config.transform?.(data || {}, patternHelpers) ?? {}
     const newItem: ResultItem = {
       name: 'css',
       type: 'css',

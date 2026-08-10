@@ -106,14 +106,14 @@ const spacer = definePattern({
   properties: {
     size: { type: 'token', value: 'spacing' },
   },
-  transform(props, { map, isCssUnit, isCssVar }) {
+  transform(props, { map, isCssUnit, isCssVar, token }) {
     const { size, ...rest } = props
     return {
       alignSelf: 'stretch',
       justifySelf: 'stretch',
       flex: map(size, (v) => {
         if (v == null) return '1'
-        const val = isCssUnit(v) || isCssVar(v) ? v : `token(spacing.${v}, ${v})`
+        const val = isCssUnit(v) || isCssVar(v) ? v : token(`spacing.${v}`, v)
         return `0 0 ${val}`
       }),
       ...rest,
@@ -169,9 +169,9 @@ const grid = definePattern({
   defaultValues(props) {
     return { gap: props.columnGap || props.rowGap ? undefined : '8px' }
   },
-  transform(props, { map, isCssUnit }) {
+  transform(props, { map, isCssUnit, token }) {
     const { columnGap, rowGap, gap, columns, minChildWidth, ...rest } = props
-    const getValue = (v: string) => (isCssUnit(v) ? v : `token(sizes.${v}, ${v})`)
+    const getValue = (v: string) => (isCssUnit(v) ? v : token(`sizes.${v}`, v))
     return {
       display: 'grid',
       gridTemplateColumns:
@@ -407,9 +407,9 @@ const bleed = definePattern({
     inline: '0',
     block: '0',
   },
-  transform(props, { map, isCssUnit, isCssVar }) {
+  transform(props, { map, isCssUnit, isCssVar, token }) {
     const { inline, block, ...rest } = props
-    const valueFn = (v: string) => (isCssUnit(v) || isCssVar(v) ? v : `token(spacing.${v}, ${v})`)
+    const valueFn = (v: string) => (isCssUnit(v) || isCssVar(v) ? v : token(`spacing.${v}`, v))
     return {
       '--bleed-x': map(inline, valueFn),
       '--bleed-y': map(block, valueFn),

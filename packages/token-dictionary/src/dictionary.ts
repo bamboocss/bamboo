@@ -28,7 +28,9 @@ import {
   assertTokenFormat,
   curlyReferenceMessage,
   expandReferences,
+  fallbackReferenceMessage,
   findCurlyReference,
+  findFallbackReference,
   getReferences,
   isToken,
   mapToJson,
@@ -416,6 +418,11 @@ export class TokenDictionary {
     const stale = findCurlyReference(value)
     if (stale) {
       throw new BambooError('INVALID_TOKEN', curlyReferenceMessage(stale, `the value \`${value}\``))
+    }
+
+    const withFallback = findFallbackReference(value)
+    if (withFallback) {
+      throw new BambooError('INVALID_TOKEN', fallbackReferenceMessage(withFallback, `the value \`${value}\``))
     }
 
     return expandTokenReferences(value, (path) => {

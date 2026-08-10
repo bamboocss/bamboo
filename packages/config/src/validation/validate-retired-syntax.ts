@@ -1,9 +1,9 @@
 import { BambooError, walkObject } from '@bamboocss/shared'
 import type { UserConfig } from '@bamboocss/types'
-import { findCurlyReference, formatPath, isValidToken, serializeTokenValue } from './utils'
+import { findCurlyReference, findFallbackReference, formatPath, isValidToken, serializeTokenValue } from './utils'
 
 /**
- * Token values still written in the retired curly syntax — `{colors.red.300}`.
+ * Token values still written in a retired reference syntax.
  *
  * A hard error, and one that runs ahead of `validation` rather than under it. The rest of
  * `validateConfig` reports opinions about a config that will still build; this reports a spelling
@@ -31,11 +31,16 @@ export function assertNoRetiredSyntax(config: Partial<UserConfig>): void {
         if (!isValidToken(token)) return
 
         const value = serializeTokenValue((token as { value?: unknown }).value ?? token)
-        const stale = findCurlyReference(value)
+        const at = `${label}.${formatPath(path.join('.'))}`
 
-        if (stale) {
-          // The edit for *this* token, rather than an example of one.
-          found.push(`- \`${label}.${formatPath(path.join('.'))}\`: \`${stale}\` → \`token(${stale.slice(1, -1)})\``)
+        // The edit for *this* token, rather than an example of one.
+        const curly = findCurlyReference(value)
+        if (curly) found.push(`- \`${at}\`: \`${curly}\` → \`token(${curly.slice(1, -1)})\``)
+
+        const fallback = findFallbackReference(value)
+        if (fallback) {
+          const path = fallback.slice('token('.length, fallback.lastIndexOf(',')).trim()
+          found.push(`- \`${at}\`: \`${fallback}\` → \`token(${path})\``)
         }
       },
       { stop: isValidToken },
@@ -55,8 +60,8 @@ export function assertNoRetiredSyntax(config: Partial<UserConfig>): void {
 
   throw new BambooError(
     'CONFIG_ERROR',
-    `${found.length} token value(s) use the retired curly reference syntax:\n\n${found.join('\n')}\n\n` +
-      `Curly references were removed so a token is referenced one way. They are not ignored quietly — the text is ` +
-      `emitted into the stylesheet as-is.`,
+    `${found.length} token value(s) use a retired reference syntax:\n\n${found.join('\n')}\n\n` +
+      `\`{colors.red.300}\` and \`token(colors.red.300, fallback)\` were both removed so a token is referenced one ` +
+      `way. Neither is ignored quietly — the text is emitted into the stylesheet as-is.`,
   )
 }

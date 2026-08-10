@@ -13,9 +13,9 @@ const validate = (config: object) => () => validateConfig(config as never)
 
 const curly = (value: unknown) => ({ theme: { tokens: { colors: { bg: { value } } } } })
 
-describe('retired curly reference syntax', () => {
+describe('retired reference syntaxes', () => {
   test('throws for a token value', () => {
-    expect(validate(curly('{colors.primary}'))).toThrow(/retired curly reference syntax/)
+    expect(validate(curly('{colors.primary}'))).toThrow(/retired reference syntax/)
   })
 
   /** The edit for that token, not an example — the same shape `validate-removed` reports. */
@@ -42,7 +42,7 @@ describe('retired curly reference syntax', () => {
    * one of those, so it runs ahead of the opt-out.
    */
   test('throws even under validation: none', () => {
-    expect(validate({ ...curly('{colors.primary}'), validation: 'none' })).toThrow(/retired curly reference syntax/)
+    expect(validate({ ...curly('{colors.primary}'), validation: 'none' })).toThrow(/retired reference syntax/)
   })
 
   /** Collected rather than reported one at a time, so a config is fixed in one pass. */
@@ -67,5 +67,16 @@ describe('retired curly reference syntax', () => {
 
   test('ignores a value that is not a string', () => {
     expect(validate(curly(400))).not.toThrow()
+  })
+})
+
+describe('retired token(path, fallback) form', () => {
+  test('throws, naming the replacement', () => {
+    expect(validate(curly('token(colors.primary, red)'))).toThrow(/token\(colors\.primary\)/)
+  })
+
+  /** The surviving form is untouched, fallback or not. */
+  test('says nothing about a plain reference', () => {
+    expect(validate(curly('token(colors.primary)'))).not.toThrow()
   })
 })

@@ -12,6 +12,14 @@ export type PatternProperty =
 
 export interface PatternHelpers {
   map: (value: any, fn: (value: string) => string | undefined) => any
+  /**
+   * The css variable reference for a token path, or `fallback` when the path names no token.
+   *
+   * `token('spacing.4', '4')` is `var(--spacing-4)` where that token exists and `'4'` where it
+   * does not — so a pattern can accept either a token name or a raw css value without knowing
+   * the theme.
+   */
+  token: (path: string, fallback?: string) => string | undefined
   isCssUnit: (value: any) => boolean
   isCssVar: (value: any) => boolean
   isCssFunction: (value: any) => boolean

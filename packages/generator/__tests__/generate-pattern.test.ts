@@ -33,8 +33,19 @@ test('should generate pattern', () => {
 
     export declare const box: BoxPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
+        "js": "import { getPatternStyles, createPatternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
+    import { token } from '../tokens/index.mjs';
+
+    /**
+     * The transform's token lookup, answered by the generated tokens artifact.
+     *
+     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
+     * the build about a token's variable name — both come from the same generated source. The
+     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
+     * paid twice.
+     */
+    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
 
     const boxConfig = {
     transform(props) {
@@ -43,7 +54,7 @@ test('should generate pattern', () => {
 
     export const getBoxStyle = (styles = {}) => {
       const _styles = getPatternStyles(boxConfig, styles)
-      return boxConfig.transform(_styles, patternFns)
+      return boxConfig.transform(_styles, patternHelpers)
     }
 
     export const box = /* @__PURE__ */ memo((styles) => css(getBoxStyle(styles)))
@@ -77,8 +88,19 @@ test('should generate pattern', () => {
 
     export declare const flex: FlexPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
+        "js": "import { getPatternStyles, createPatternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
+    import { token } from '../tokens/index.mjs';
+
+    /**
+     * The transform's token lookup, answered by the generated tokens artifact.
+     *
+     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
+     * the build about a token's variable name — both come from the same generated source. The
+     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
+     * paid twice.
+     */
+    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
 
     const flexConfig = {
     transform(props) {
@@ -98,7 +120,7 @@ test('should generate pattern', () => {
 
     export const getFlexStyle = (styles = {}) => {
       const _styles = getPatternStyles(flexConfig, styles)
-      return flexConfig.transform(_styles, patternFns)
+      return flexConfig.transform(_styles, patternHelpers)
     }
 
     export const flex = /* @__PURE__ */ memo((styles) => css(getFlexStyle(styles)))
@@ -129,8 +151,19 @@ test('should generate pattern', () => {
 
     export declare const stack: StackPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
+        "js": "import { getPatternStyles, createPatternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
+    import { token } from '../tokens/index.mjs';
+
+    /**
+     * The transform's token lookup, answered by the generated tokens artifact.
+     *
+     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
+     * the build about a token's variable name — both come from the same generated source. The
+     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
+     * paid twice.
+     */
+    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
 
     const stackConfig = {
     transform(props) {
@@ -148,7 +181,7 @@ test('should generate pattern', () => {
 
     export const getStackStyle = (styles = {}) => {
       const _styles = getPatternStyles(stackConfig, styles)
-      return stackConfig.transform(_styles, patternFns)
+      return stackConfig.transform(_styles, patternHelpers)
     }
 
     export const stack = /* @__PURE__ */ memo((styles) => css(getStackStyle(styles)))
@@ -177,8 +210,19 @@ test('should generate pattern', () => {
 
     export declare const vstack: VstackPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
+        "js": "import { getPatternStyles, createPatternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
+    import { token } from '../tokens/index.mjs';
+
+    /**
+     * The transform's token lookup, answered by the generated tokens artifact.
+     *
+     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
+     * the build about a token's variable name — both come from the same generated source. The
+     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
+     * paid twice.
+     */
+    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
 
     const vstackConfig = {
     transform(props) {
@@ -196,7 +240,7 @@ test('should generate pattern', () => {
 
     export const getVstackStyle = (styles = {}) => {
       const _styles = getPatternStyles(vstackConfig, styles)
-      return vstackConfig.transform(_styles, patternFns)
+      return vstackConfig.transform(_styles, patternHelpers)
     }
 
     export const vstack = /* @__PURE__ */ memo((styles) => css(getVstackStyle(styles)))
@@ -225,8 +269,19 @@ test('should generate pattern', () => {
 
     export declare const hstack: HstackPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
+        "js": "import { getPatternStyles, createPatternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
+    import { token } from '../tokens/index.mjs';
+
+    /**
+     * The transform's token lookup, answered by the generated tokens artifact.
+     *
+     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
+     * the build about a token's variable name — both come from the same generated source. The
+     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
+     * paid twice.
+     */
+    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
 
     const hstackConfig = {
     transform(props) {
@@ -244,7 +299,7 @@ test('should generate pattern', () => {
 
     export const getHstackStyle = (styles = {}) => {
       const _styles = getPatternStyles(hstackConfig, styles)
-      return hstackConfig.transform(_styles, patternFns)
+      return hstackConfig.transform(_styles, patternHelpers)
     }
 
     export const hstack = /* @__PURE__ */ memo((styles) => css(getHstackStyle(styles)))
@@ -272,18 +327,29 @@ test('should generate pattern', () => {
 
     export declare const spacer: SpacerPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
+        "js": "import { getPatternStyles, createPatternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
+    import { token } from '../tokens/index.mjs';
+
+    /**
+     * The transform's token lookup, answered by the generated tokens artifact.
+     *
+     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
+     * the build about a token's variable name — both come from the same generated source. The
+     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
+     * paid twice.
+     */
+    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
 
     const spacerConfig = {
-    transform(props, { map, isCssUnit, isCssVar }) {
+    transform(props, { map, isCssUnit, isCssVar, token }) {
       const { size, ...rest } = props;
       return {
         alignSelf: "stretch",
         justifySelf: "stretch",
         flex: map(size, (v) => {
           if (v == null) return "1";
-          const val = isCssUnit(v) || isCssVar(v) ? v : \`token(spacing.\${v}, \${v})\`;
+          const val = isCssUnit(v) || isCssVar(v) ? v : token(\`spacing.\${v}\`, v);
           return \`0 0 \${val}\`;
         }),
         ...rest
@@ -292,7 +358,7 @@ test('should generate pattern', () => {
 
     export const getSpacerStyle = (styles = {}) => {
       const _styles = getPatternStyles(spacerConfig, styles)
-      return spacerConfig.transform(_styles, patternFns)
+      return spacerConfig.transform(_styles, patternHelpers)
     }
 
     export const spacer = /* @__PURE__ */ memo((styles) => css(getSpacerStyle(styles)))
@@ -320,8 +386,19 @@ test('should generate pattern', () => {
 
     export declare const square: SquarePatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
+        "js": "import { getPatternStyles, createPatternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
+    import { token } from '../tokens/index.mjs';
+
+    /**
+     * The transform's token lookup, answered by the generated tokens artifact.
+     *
+     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
+     * the build about a token's variable name — both come from the same generated source. The
+     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
+     * paid twice.
+     */
+    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
 
     const squareConfig = {
     transform(props) {
@@ -339,7 +416,7 @@ test('should generate pattern', () => {
 
     export const getSquareStyle = (styles = {}) => {
       const _styles = getPatternStyles(squareConfig, styles)
-      return squareConfig.transform(_styles, patternFns)
+      return squareConfig.transform(_styles, patternHelpers)
     }
 
     export const square = /* @__PURE__ */ memo((styles) => css(getSquareStyle(styles)))
@@ -367,8 +444,19 @@ test('should generate pattern', () => {
 
     export declare const circle: CirclePatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
+        "js": "import { getPatternStyles, createPatternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
+    import { token } from '../tokens/index.mjs';
+
+    /**
+     * The transform's token lookup, answered by the generated tokens artifact.
+     *
+     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
+     * the build about a token's variable name — both come from the same generated source. The
+     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
+     * paid twice.
+     */
+    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
 
     const circleConfig = {
     transform(props) {
@@ -387,7 +475,7 @@ test('should generate pattern', () => {
 
     export const getCircleStyle = (styles = {}) => {
       const _styles = getPatternStyles(circleConfig, styles)
-      return circleConfig.transform(_styles, patternFns)
+      return circleConfig.transform(_styles, patternHelpers)
     }
 
     export const circle = /* @__PURE__ */ memo((styles) => css(getCircleStyle(styles)))
@@ -415,8 +503,19 @@ test('should generate pattern', () => {
 
     export declare const center: CenterPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
+        "js": "import { getPatternStyles, createPatternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
+    import { token } from '../tokens/index.mjs';
+
+    /**
+     * The transform's token lookup, answered by the generated tokens artifact.
+     *
+     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
+     * the build about a token's variable name — both come from the same generated source. The
+     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
+     * paid twice.
+     */
+    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
 
     const centerConfig = {
     transform(props) {
@@ -431,7 +530,7 @@ test('should generate pattern', () => {
 
     export const getCenterStyle = (styles = {}) => {
       const _styles = getPatternStyles(centerConfig, styles)
-      return centerConfig.transform(_styles, patternFns)
+      return centerConfig.transform(_styles, patternHelpers)
     }
 
     export const center = /* @__PURE__ */ memo((styles) => css(getCenterStyle(styles)))
@@ -459,8 +558,19 @@ test('should generate pattern', () => {
 
     export declare const linkOverlay: LinkOverlayPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
+        "js": "import { getPatternStyles, createPatternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
+    import { token } from '../tokens/index.mjs';
+
+    /**
+     * The transform's token lookup, answered by the generated tokens artifact.
+     *
+     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
+     * the build about a token's variable name — both come from the same generated source. The
+     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
+     * paid twice.
+     */
+    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
 
     const linkOverlayConfig = {
     transform(props) {
@@ -478,7 +588,7 @@ test('should generate pattern', () => {
 
     export const getLinkOverlayStyle = (styles = {}) => {
       const _styles = getPatternStyles(linkOverlayConfig, styles)
-      return linkOverlayConfig.transform(_styles, patternFns)
+      return linkOverlayConfig.transform(_styles, patternHelpers)
     }
 
     export const linkOverlay = /* @__PURE__ */ memo((styles) => css(getLinkOverlayStyle(styles)))
@@ -506,8 +616,19 @@ test('should generate pattern', () => {
 
     export declare const aspectRatio: AspectRatioPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
+        "js": "import { getPatternStyles, createPatternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
+    import { token } from '../tokens/index.mjs';
+
+    /**
+     * The transform's token lookup, answered by the generated tokens artifact.
+     *
+     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
+     * the build about a token's variable name — both come from the same generated source. The
+     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
+     * paid twice.
+     */
+    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
 
     const aspectRatioConfig = {
     transform(props, { map }) {
@@ -539,7 +660,7 @@ test('should generate pattern', () => {
 
     export const getAspectRatioStyle = (styles = {}) => {
       const _styles = getPatternStyles(aspectRatioConfig, styles)
-      return aspectRatioConfig.transform(_styles, patternFns)
+      return aspectRatioConfig.transform(_styles, patternHelpers)
     }
 
     export const aspectRatio = /* @__PURE__ */ memo((styles) => css(getAspectRatioStyle(styles)))
@@ -571,13 +692,24 @@ test('should generate pattern', () => {
 
     export declare const grid: GridPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
+        "js": "import { getPatternStyles, createPatternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
+    import { token } from '../tokens/index.mjs';
+
+    /**
+     * The transform's token lookup, answered by the generated tokens artifact.
+     *
+     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
+     * the build about a token's variable name — both come from the same generated source. The
+     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
+     * paid twice.
+     */
+    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
 
     const gridConfig = {
-    transform(props, { map, isCssUnit }) {
+    transform(props, { map, isCssUnit, token }) {
       const { columnGap, rowGap, gap, columns, minChildWidth, ...rest } = props;
-      const getValue = (v) => isCssUnit(v) ? v : \`token(sizes.\${v}, \${v})\`;
+      const getValue = (v) => isCssUnit(v) ? v : token(\`sizes.\${v}\`, v);
       return {
         display: "grid",
         gridTemplateColumns: columns != null ? map(columns, (v) => \`repeat(\${v}, minmax(0, 1fr))\`) : minChildWidth != null ? map(minChildWidth, (v) => \`repeat(auto-fit, minmax(\${getValue(v)}, 1fr))\`) : void 0,
@@ -593,7 +725,7 @@ test('should generate pattern', () => {
 
     export const getGridStyle = (styles = {}) => {
       const _styles = getPatternStyles(gridConfig, styles)
-      return gridConfig.transform(_styles, patternFns)
+      return gridConfig.transform(_styles, patternHelpers)
     }
 
     export const grid = /* @__PURE__ */ memo((styles) => css(getGridStyle(styles)))
@@ -626,8 +758,19 @@ test('should generate pattern', () => {
 
     export declare const gridItem: GridItemPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
+        "js": "import { getPatternStyles, createPatternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
+    import { token } from '../tokens/index.mjs';
+
+    /**
+     * The transform's token lookup, answered by the generated tokens artifact.
+     *
+     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
+     * the build about a token's variable name — both come from the same generated source. The
+     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
+     * paid twice.
+     */
+    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
 
     const gridItemConfig = {
     transform(props, { map }) {
@@ -646,7 +789,7 @@ test('should generate pattern', () => {
 
     export const getGridItemStyle = (styles = {}) => {
       const _styles = getPatternStyles(gridItemConfig, styles)
-      return gridItemConfig.transform(_styles, patternFns)
+      return gridItemConfig.transform(_styles, patternHelpers)
     }
 
     export const gridItem = /* @__PURE__ */ memo((styles) => css(getGridItemStyle(styles)))
@@ -678,8 +821,19 @@ test('should generate pattern', () => {
 
     export declare const wrap: WrapPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
+        "js": "import { getPatternStyles, createPatternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
+    import { token } from '../tokens/index.mjs';
+
+    /**
+     * The transform's token lookup, answered by the generated tokens artifact.
+     *
+     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
+     * the build about a token's variable name — both come from the same generated source. The
+     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
+     * paid twice.
+     */
+    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
 
     const wrapConfig = {
     transform(props) {
@@ -698,7 +852,7 @@ test('should generate pattern', () => {
 
     export const getWrapStyle = (styles = {}) => {
       const _styles = getPatternStyles(wrapConfig, styles)
-      return wrapConfig.transform(_styles, patternFns)
+      return wrapConfig.transform(_styles, patternHelpers)
     }
 
     export const wrap = /* @__PURE__ */ memo((styles) => css(getWrapStyle(styles)))
@@ -726,8 +880,19 @@ test('should generate pattern', () => {
 
     export declare const container: ContainerPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
+        "js": "import { getPatternStyles, createPatternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
+    import { token } from '../tokens/index.mjs';
+
+    /**
+     * The transform's token lookup, answered by the generated tokens artifact.
+     *
+     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
+     * the build about a token's variable name — both come from the same generated source. The
+     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
+     * paid twice.
+     */
+    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
 
     const containerConfig = {
     transform(props) {
@@ -742,7 +907,7 @@ test('should generate pattern', () => {
 
     export const getContainerStyle = (styles = {}) => {
       const _styles = getPatternStyles(containerConfig, styles)
-      return containerConfig.transform(_styles, patternFns)
+      return containerConfig.transform(_styles, patternHelpers)
     }
 
     export const container = /* @__PURE__ */ memo((styles) => css(getContainerStyle(styles)))
@@ -772,8 +937,19 @@ test('should generate pattern', () => {
 
     export declare const divider: DividerPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
+        "js": "import { getPatternStyles, createPatternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
+    import { token } from '../tokens/index.mjs';
+
+    /**
+     * The transform's token lookup, answered by the generated tokens artifact.
+     *
+     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
+     * the build about a token's variable name — both come from the same generated source. The
+     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
+     * paid twice.
+     */
+    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
 
     const dividerConfig = {
     transform(props, { map }) {
@@ -792,7 +968,7 @@ test('should generate pattern', () => {
 
     export const getDividerStyle = (styles = {}) => {
       const _styles = getPatternStyles(dividerConfig, styles)
-      return dividerConfig.transform(_styles, patternFns)
+      return dividerConfig.transform(_styles, patternHelpers)
     }
 
     export const divider = /* @__PURE__ */ memo((styles) => css(getDividerStyle(styles)))
@@ -823,8 +999,19 @@ test('should generate pattern', () => {
 
     export declare const float: FloatPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
+        "js": "import { getPatternStyles, createPatternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
+    import { token } from '../tokens/index.mjs';
+
+    /**
+     * The transform's token lookup, answered by the generated tokens artifact.
+     *
+     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
+     * the build about a token's variable name — both come from the same generated source. The
+     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
+     * paid twice.
+     */
+    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
 
     const floatConfig = {
     transform(props, { map }) {
@@ -870,7 +1057,7 @@ test('should generate pattern', () => {
 
     export const getFloatStyle = (styles = {}) => {
       const _styles = getPatternStyles(floatConfig, styles)
-      return floatConfig.transform(_styles, patternFns)
+      return floatConfig.transform(_styles, patternHelpers)
     }
 
     export const float = /* @__PURE__ */ memo((styles) => css(getFloatStyle(styles)))
@@ -899,13 +1086,24 @@ test('should generate pattern', () => {
 
     export declare const bleed: BleedPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
+        "js": "import { getPatternStyles, createPatternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
+    import { token } from '../tokens/index.mjs';
+
+    /**
+     * The transform's token lookup, answered by the generated tokens artifact.
+     *
+     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
+     * the build about a token's variable name — both come from the same generated source. The
+     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
+     * paid twice.
+     */
+    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
 
     const bleedConfig = {
-    transform(props, { map, isCssUnit, isCssVar }) {
+    transform(props, { map, isCssUnit, isCssVar, token }) {
       const { inline, block, ...rest } = props;
-      const valueFn = (v) => isCssUnit(v) || isCssVar(v) ? v : \`token(spacing.\${v}, \${v})\`;
+      const valueFn = (v) => isCssUnit(v) || isCssVar(v) ? v : token(\`spacing.\${v}\`, v);
       return {
         "--bleed-x": map(inline, valueFn),
         "--bleed-y": map(block, valueFn),
@@ -918,7 +1116,7 @@ test('should generate pattern', () => {
 
     export const getBleedStyle = (styles = {}) => {
       const _styles = getPatternStyles(bleedConfig, styles)
-      return bleedConfig.transform(_styles, patternFns)
+      return bleedConfig.transform(_styles, patternHelpers)
     }
 
     export const bleed = /* @__PURE__ */ memo((styles) => css(getBleedStyle(styles)))
@@ -946,8 +1144,19 @@ test('should generate pattern', () => {
 
     export declare const visuallyHidden: VisuallyHiddenPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
+        "js": "import { getPatternStyles, createPatternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
+    import { token } from '../tokens/index.mjs';
+
+    /**
+     * The transform's token lookup, answered by the generated tokens artifact.
+     *
+     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
+     * the build about a token's variable name — both come from the same generated source. The
+     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
+     * paid twice.
+     */
+    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
 
     const visuallyHiddenConfig = {
     transform(props) {
@@ -959,7 +1168,7 @@ test('should generate pattern', () => {
 
     export const getVisuallyHiddenStyle = (styles = {}) => {
       const _styles = getPatternStyles(visuallyHiddenConfig, styles)
-      return visuallyHiddenConfig.transform(_styles, patternFns)
+      return visuallyHiddenConfig.transform(_styles, patternHelpers)
     }
 
     export const visuallyHidden = /* @__PURE__ */ memo((styles) => css(getVisuallyHiddenStyle(styles)))
@@ -988,8 +1197,19 @@ test('should generate pattern', () => {
 
     export declare const cq: CqPatternFn;
     ",
-        "js": "import { getPatternStyles, patternFns, memo } from '../helpers.mjs';
+        "js": "import { getPatternStyles, createPatternFns, memo } from '../helpers.mjs';
     import { css } from '../css/index.mjs';
+    import { token } from '../tokens/index.mjs';
+
+    /**
+     * The transform's token lookup, answered by the generated tokens artifact.
+     *
+     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
+     * the build about a token's variable name — both come from the same generated source. The
+     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
+     * paid twice.
+     */
+    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
 
     const cqConfig = {
     transform(props) {
@@ -1004,7 +1224,7 @@ test('should generate pattern', () => {
 
     export const getCqStyle = (styles = {}) => {
       const _styles = getPatternStyles(cqConfig, styles)
-      return cqConfig.transform(_styles, patternFns)
+      return cqConfig.transform(_styles, patternHelpers)
     }
 
     export const cq = /* @__PURE__ */ memo((styles) => css(getCqStyle(styles)))

@@ -173,6 +173,14 @@ describe('color-mix', () => {
     expect(() => css({ content: '"{ a: 1 }"' })).not.toThrow()
   })
 
+  /**
+   * The retired fallback form. A pattern that needs "this token, or this literal" now asks
+   * `PatternHelpers.token()` and emits the answer, so nothing defers the question into a string.
+   */
+  test('a fallback reference fails rather than emitting a literal', () => {
+    expect(() => css({ color: 'token(colors.pink.400, red)' })).toThrow(/retired .*token\(path, fallback\).* form/)
+  })
+
   // below are invalid cases
 
   test('wrong format', () => {

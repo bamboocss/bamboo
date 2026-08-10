@@ -166,60 +166,6 @@ describe('serialize - with token()', () => {
     `)
   })
 
-  test('with fallback', () => {
-    const result = css({
-      html: {
-        color: 'red',
-        border: '2px solid token(colors.red.300, blue)',
-      },
-    })
-
-    expect(result).toMatchInlineSnapshot(`
-      {
-        "html": {
-          "border": "2px solid var(--colors-red-300, blue)",
-          "color": "red",
-        },
-      }
-    `)
-  })
-
-  test('with fallback reference', () => {
-    const result = css({
-      html: {
-        color: 'red',
-        border: '2px solid token(colors.red.300, colors.blue.300)',
-      },
-    })
-
-    expect(result).toMatchInlineSnapshot(`
-      {
-        "html": {
-          "border": "2px solid var(--colors-red-300, var(--colors-blue-300))",
-          "color": "red",
-        },
-      }
-    `)
-  })
-
-  test('with nested fallback reference', () => {
-    const result = css({
-      html: {
-        color: 'red',
-        border: '2px solid token(colors.red.300, token(colors.blue.300, colors.green.300))',
-      },
-    })
-
-    expect(result).toMatchInlineSnapshot(`
-      {
-        "html": {
-          "border": "2px solid var(--colors-red-300, var(--colors-blue-300, var(--colors-green-300)))",
-          "color": "red",
-        },
-      }
-    `)
-  })
-
   test('serialize divide utility', () => {
     const result = css({
       html: {

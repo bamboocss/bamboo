@@ -833,36 +833,36 @@ describe('static-css', () => {
     ).toMatchInlineSnapshot(`
       {
         "css": "@layer utilities {
-        .\\--bleed-x_token\\(spacing\\.20\\,_20\\) {
-          --bleed-x: var(--spacing-20, 20);
+        .\\--bleed-x_var\\(--spacing-20\\) {
+          --bleed-x: var(--spacing-20);
       }
 
-        .\\--bleed-y_token\\(spacing\\.0\\,_0\\) {
+        .\\--bleed-y_0 {
           --bleed-y: 0;
       }
 
-        .\\--bleed-x_token\\(spacing\\.40\\,_40\\) {
-          --bleed-x: var(--spacing-40, 40);
+        .\\--bleed-x_var\\(--spacing-40\\) {
+          --bleed-x: var(--spacing-40);
       }
 
-        .\\--bleed-x_token\\(spacing\\.60\\,_60\\) {
-          --bleed-x: var(--spacing-60, 60);
+        .\\--bleed-x_var\\(--spacing-60\\) {
+          --bleed-x: var(--spacing-60);
       }
 
-        .\\--bleed-x_token\\(spacing\\.auto\\,_auto\\) {
+        .\\--bleed-x_auto {
           --bleed-x: auto;
       }
 
-        .\\--bleed-x_token\\(spacing\\.-20\\,_-20\\) {
-          --bleed-x: calc(var(--spacing-20) * -1, -20);
+        .\\--bleed-x_calc\\(var\\(--spacing-20\\)_\\*_-1\\) {
+          --bleed-x: calc(var(--spacing-20) * -1);
       }
 
-        .\\--bleed-x_token\\(spacing\\.-40\\,_-40\\) {
-          --bleed-x: calc(var(--spacing-40) * -1, -40);
+        .\\--bleed-x_calc\\(var\\(--spacing-40\\)_\\*_-1\\) {
+          --bleed-x: calc(var(--spacing-40) * -1);
       }
 
-        .\\--bleed-x_token\\(spacing\\.-60\\,_-60\\) {
-          --bleed-x: calc(var(--spacing-60) * -1, -60);
+        .\\--bleed-x_calc\\(var\\(--spacing-60\\)_\\*_-1\\) {
+          --bleed-x: calc(var(--spacing-60) * -1);
       }
 
         .\\--thickness_1px {
@@ -901,15 +901,15 @@ describe('static-css', () => {
           --thickness: breakpoint-2xl;
       }
 
-        .flex_0_0_token\\(spacing\\.sm\\,_sm\\) {
+        .flex_0_0_sm {
           flex: 0 0 sm;
       }
 
-        .flex_0_0_token\\(spacing\\.md\\,_md\\) {
+        .flex_0_0_md {
           flex: 0 0 md;
       }
 
-        .flex_0_0_token\\(spacing\\.lg\\,_lg\\) {
+        .flex_0_0_lg {
           flex: 0 0 lg;
       }
 
@@ -1327,17 +1327,17 @@ describe('static-css', () => {
             },
             {
               "alignSelf": "stretch",
-              "flex": "0 0 token(spacing.sm, sm)",
+              "flex": "0 0 sm",
               "justifySelf": "stretch",
             },
             {
               "alignSelf": "stretch",
-              "flex": "0 0 token(spacing.md, md)",
+              "flex": "0 0 md",
               "justifySelf": "stretch",
             },
             {
               "alignSelf": "stretch",
-              "flex": "0 0 token(spacing.lg, lg)",
+              "flex": "0 0 lg",
               "justifySelf": "stretch",
             },
             {
@@ -1368,44 +1368,44 @@ describe('static-css', () => {
               "width": "lg",
             },
             {
-              "--bleed-x": "token(spacing.20, 20)",
-              "--bleed-y": "token(spacing.0, 0)",
+              "--bleed-x": "var(--spacing-20)",
+              "--bleed-y": "0",
               "marginBlock": "calc(var(--bleed-y, 0) * -1)",
               "marginInline": "calc(var(--bleed-x, 0) * -1)",
             },
             {
-              "--bleed-x": "token(spacing.40, 40)",
-              "--bleed-y": "token(spacing.0, 0)",
+              "--bleed-x": "var(--spacing-40)",
+              "--bleed-y": "0",
               "marginBlock": "calc(var(--bleed-y, 0) * -1)",
               "marginInline": "calc(var(--bleed-x, 0) * -1)",
             },
             {
-              "--bleed-x": "token(spacing.60, 60)",
-              "--bleed-y": "token(spacing.0, 0)",
+              "--bleed-x": "var(--spacing-60)",
+              "--bleed-y": "0",
               "marginBlock": "calc(var(--bleed-y, 0) * -1)",
               "marginInline": "calc(var(--bleed-x, 0) * -1)",
             },
             {
-              "--bleed-x": "token(spacing.auto, auto)",
-              "--bleed-y": "token(spacing.0, 0)",
+              "--bleed-x": "auto",
+              "--bleed-y": "0",
               "marginBlock": "calc(var(--bleed-y, 0) * -1)",
               "marginInline": "calc(var(--bleed-x, 0) * -1)",
             },
             {
-              "--bleed-x": "token(spacing.-20, -20)",
-              "--bleed-y": "token(spacing.0, 0)",
+              "--bleed-x": "calc(var(--spacing-20) * -1)",
+              "--bleed-y": "0",
               "marginBlock": "calc(var(--bleed-y, 0) * -1)",
               "marginInline": "calc(var(--bleed-x, 0) * -1)",
             },
             {
-              "--bleed-x": "token(spacing.-40, -40)",
-              "--bleed-y": "token(spacing.0, 0)",
+              "--bleed-x": "calc(var(--spacing-40) * -1)",
+              "--bleed-y": "0",
               "marginBlock": "calc(var(--bleed-y, 0) * -1)",
               "marginInline": "calc(var(--bleed-x, 0) * -1)",
             },
             {
-              "--bleed-x": "token(spacing.-60, -60)",
-              "--bleed-y": "token(spacing.0, 0)",
+              "--bleed-x": "calc(var(--spacing-60) * -1)",
+              "--bleed-y": "0",
               "marginBlock": "calc(var(--bleed-y, 0) * -1)",
               "marginInline": "calc(var(--bleed-x, 0) * -1)",
             },
