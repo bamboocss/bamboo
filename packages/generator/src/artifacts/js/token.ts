@@ -50,12 +50,16 @@ export function generateTokenJs(ctx: Context) {
     js: outdent`
   const tokens = ${JSON.stringify(obj, null, 2)}
 
+  // \`??\`, not \`||\`. The fallback is for a path that names no token, and \`||\` also swallows a
+  // token whose value is legitimately falsy — \`zIndex: { base: { value: 0 } }\` returned the
+  // fallback instead of 0. Nothing in the default preset has one, so this only ever bit a
+  // custom theme.
   export function token(path, fallback) {
-    return tokens[path]?.variable || fallback
+    return tokens[path]?.variable ?? fallback
   }
 
   function tokenValue(path, fallback) {
-    return tokens[path]?.value || fallback
+    return tokens[path]?.value ?? fallback
   }
 
   // \`token.var\` predates \`token()\` returning the reference itself. Kept as the same

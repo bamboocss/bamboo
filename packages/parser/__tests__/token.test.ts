@@ -377,3 +377,88 @@ describe('standalone token calls', () => {
     ).toHaveLength(0)
   })
 })
+
+/**
+ * Token calls inside a style object, where the path is not spelled at the call.
+ *
+ * The top-level fold already followed a constant or a template literal into a token path;
+ * inside a style object the resolution required a string literal, so
+ * `css({ color: token(BRAND) })` produced no declaration at all for that property while
+ * `const c = token(BRAND)` resolved fine. Silently missing css, and the same class as a `.ts`
+ * file mis-parsed as tsx: nothing errors, the rule just never exists.
+ *
+ * The namespaced call is the second half. It asked whether `ds` — the namespace — was a token
+ * function, which it never is, so `ds.token(...)` in a style object resolved to nothing too.
+ */
+describe('token paths inside a style object', () => {
+  const styles = (code: string) => Array.from(cssParser(code).css)[0]?.data
+
+  test('resolves a path held in a constant', () => {
+    expect(
+      styles(`
+        import { token } from '../styled-system/tokens'
+        import { css } from '../styled-system/css'
+
+        const BRAND = 'colors.blue.500'
+        const s = css({ color: token(BRAND) })
+      `),
+    ).toEqual([{ color: 'var(--colors-blue-500)' }])
+  })
+
+  test('resolves a path built as a template literal', () => {
+    expect(
+      styles(`
+        import { token } from '../styled-system/tokens'
+        import { css } from '../styled-system/css'
+
+        const SHADE = '500'
+        const s = css({ color: token(\`colors.blue.\${SHADE}\`) })
+      `),
+    ).toEqual([{ color: 'var(--colors-blue-500)' }])
+  })
+
+  test('resolves .value through a constant too', () => {
+    expect(
+      styles(`
+        import { token } from '../styled-system/tokens'
+        import { css } from '../styled-system/css'
+
+        const SPACE = 'spacing.8'
+        const s = css({ margin: token.value(SPACE) })
+      `),
+    ).toEqual([{ margin: '2rem' }])
+  })
+
+  test('resolves a namespaced call', () => {
+    expect(
+      styles(`
+        import * as ds from '../styled-system/tokens'
+        import { css } from '../styled-system/css'
+
+        const s = css({ color: ds.token('colors.blue.500') })
+      `),
+    ).toEqual([{ color: 'var(--colors-blue-500)' }])
+  })
+
+  test('resolves a namespaced .value call', () => {
+    expect(
+      styles(`
+        import * as ds from '../styled-system/tokens'
+        import { css } from '../styled-system/css'
+
+        const s = css({ margin: ds.token.value('spacing.8') })
+      `),
+    ).toEqual([{ margin: '2rem' }])
+  })
+
+  test('still leaves a genuinely runtime path alone', () => {
+    expect(
+      styles(`
+        import { token } from '../styled-system/tokens'
+        import { css } from '../styled-system/css'
+
+        export const make = (shade) => css({ color: token(\`colors.blue.\${shade}\`) })
+      `),
+    ).toEqual([{}])
+  })
+})

@@ -147,7 +147,7 @@ export function createParser(context: ParserOptions) {
       tokens: context.tokens
         ? {
             view: context.tokens.view,
-            isTokenFn: (fnName) => file.isTokenAlias(fnName),
+            isTokenFn: (fnName) => file.isTokenFn(fnName),
           }
         : undefined,
       components: jsx.isEnabled

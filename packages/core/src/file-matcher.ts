@@ -292,6 +292,24 @@ export class FileMatcher {
   }
 
   /**
+   * `token`, an alias of it, or the namespaced `ns.token`.
+   *
+   * The extractor resolves a token call inside a style object by asking this. It used to ask
+   * only `isTokenAlias`, which knows nothing about namespaces, so `css({ color:
+   * ns.token('colors.red.300') })` resolved to nothing and the property was dropped — while
+   * the same call outside a style object folded fine.
+   */
+  isTokenFn = (fnName: string) => {
+    if (this.tokenAliases.has(fnName)) return true
+
+    const [namespace, identifier] = fnName.split('.')
+    if (!namespace || identifier !== 'token') return false
+
+    const ns = this.namespaces.get(namespace)
+    return Boolean(ns && this.importMap.tokens.some((m) => ns.mod.includes(m)))
+  }
+
+  /**
    * Which half of the token runtime a property-access callee names: `token.var(path)` or
    * `token.value(path)`. `undefined` for anything else, including a bare `token(path)`.
    *

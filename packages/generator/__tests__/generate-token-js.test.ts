@@ -2030,12 +2030,16 @@ test('[dts] should generate package', () => {
       }
     }
 
+    // \`??\`, not \`||\`. The fallback is for a path that names no token, and \`||\` also swallows a
+    // token whose value is legitimately falsy — \`zIndex: { base: { value: 0 } }\` returned the
+    // fallback instead of 0. Nothing in the default preset has one, so this only ever bit a
+    // custom theme.
     export function token(path, fallback) {
-      return tokens[path]?.variable || fallback
+      return tokens[path]?.variable ?? fallback
     }
 
     function tokenValue(path, fallback) {
-      return tokens[path]?.value || fallback
+      return tokens[path]?.value ?? fallback
     }
 
     // \`token.var\` predates \`token()\` returning the reference itself. Kept as the same
@@ -4078,12 +4082,16 @@ test('with formatTokenName', () => {
       }
     }
 
+    // \`??\`, not \`||\`. The fallback is for a path that names no token, and \`||\` also swallows a
+    // token whose value is legitimately falsy — \`zIndex: { base: { value: 0 } }\` returned the
+    // fallback instead of 0. Nothing in the default preset has one, so this only ever bit a
+    // custom theme.
     export function token(path, fallback) {
-      return tokens[path]?.variable || fallback
+      return tokens[path]?.variable ?? fallback
     }
 
     function tokenValue(path, fallback) {
-      return tokens[path]?.value || fallback
+      return tokens[path]?.value ?? fallback
     }
 
     // \`token.var\` predates \`token()\` returning the reference itself. Kept as the same
@@ -4168,12 +4176,16 @@ test('use raw value when possible for semanticTokens', () => {
       }
     }
 
+    // \`??\`, not \`||\`. The fallback is for a path that names no token, and \`||\` also swallows a
+    // token whose value is legitimately falsy — \`zIndex: { base: { value: 0 } }\` returned the
+    // fallback instead of 0. Nothing in the default preset has one, so this only ever bit a
+    // custom theme.
     export function token(path, fallback) {
-      return tokens[path]?.variable || fallback
+      return tokens[path]?.variable ?? fallback
     }
 
     function tokenValue(path, fallback) {
-      return tokens[path]?.value || fallback
+      return tokens[path]?.value ?? fallback
     }
 
     // \`token.var\` predates \`token()\` returning the reference itself. Kept as the same
@@ -4204,7 +4216,7 @@ test('use raw value when possible for semanticTokens', () => {
  */
 test('the generated map agrees with the token view for every token', () => {
   const ctx = createContext()
-  const map = JSON.parse(generateTokenJs(ctx).js.match(/const tokens = ([\s\S]*?)\n\nexport function/)![1]!)
+  const map = JSON.parse(generateTokenJs(ctx).js.match(/const tokens = (\{[\s\S]*?\n\})/)![1]!)
 
   const mismatches: Array<{ name: string; half: string; map: unknown; view: unknown }> = []
 
@@ -4230,7 +4242,7 @@ test('the generated map agrees with the token view for every token', () => {
 /** The shape that broke it, pinned on its own so the failure names itself. */
 test('a negative token keeps its sign on both halves', () => {
   const ctx = createContext()
-  const map = JSON.parse(generateTokenJs(ctx).js.match(/const tokens = ([\s\S]*?)\n\nexport function/)![1]!)
+  const map = JSON.parse(generateTokenJs(ctx).js.match(/const tokens = (\{[\s\S]*?\n\})/)![1]!)
 
   expect(map['spacing.-4']).toEqual({
     value: 'calc(var(--spacing-4) * -1)',

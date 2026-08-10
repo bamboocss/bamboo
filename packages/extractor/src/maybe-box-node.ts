@@ -215,6 +215,10 @@ export function maybeBoxNode(
     // Check if this is a token() call and resolve it to the actual token value
     if (ctx.tokens) {
       const expr = node.getExpression()
+      // The callee up to but not including the method: `token`, an alias like `t`, or the
+      // namespaced `ns.token`. Taking only the innermost identifier missed that last one —
+      // `ns.token('x')` asked whether `ns` was a token function, which it never is, so a
+      // namespaced call inside a style object silently resolved to nothing.
       let fnName = ''
       // `token()` and `token.var()` both resolve to the variable reference; only
       // `token.value()` asks for the literal.
@@ -223,13 +227,13 @@ export function maybeBoxNode(
       if (Node.isIdentifier(expr)) {
         fnName = expr.getText()
       } else if (Node.isPropertyAccessExpression(expr)) {
-        // Check if this is token.var('path'), token.value('path') or just token()
-        const exprName = expr.getExpression()
         const propertyName = expr.getName()
 
-        if (Node.isIdentifier(exprName)) {
-          fnName = exprName.getText()
+        if (propertyName === 'var' || propertyName === 'value') {
           isValueMethod = propertyName === 'value'
+          fnName = expr.getExpression().getText()
+        } else {
+          fnName = expr.getText()
         }
       }
 
@@ -240,11 +244,16 @@ export function maybeBoxNode(
         const args = node.getArguments()
         const tokenPathArg = args[0]
 
-        if (tokenPathArg && Node.isStringLiteral(tokenPathArg)) {
-          const tokenPath = tokenPathArg.getLiteralValue()
+        // Resolved through the same machinery as any other value, rather than required to be
+        // a string literal at the call. The top-level fold already follows a constant and a
+        // template literal into a token path; inside a style object it did not, so
+        // `css({ color: token(BRAND) })` emitted nothing for that property while
+        // `const c = token(BRAND)` folded fine.
+        const tokenPath = tokenPathArg ? literalStringOf(tokenPathArg, stack, ctx) : undefined
+
+        if (tokenPath !== undefined) {
           const fallbackArg = args[1]
-          const fallbackValue =
-            fallbackArg && Node.isStringLiteral(fallbackArg) ? fallbackArg.getLiteralValue() : undefined
+          const fallbackValue = fallbackArg ? literalStringOf(fallbackArg, stack, ctx) : undefined
 
           // `token()` and `token.var()` return css variables (e.g. "var(--colors-gray-400)");
           // only `token.value()` returns the raw value (e.g. "#9ca3af").
@@ -304,6 +313,21 @@ export function maybeBoxNode(
       return cache(box.literal(safeEvaluateNode(node, stack, ctx), node, stack))
     }
   }
+}
+
+/**
+ * An argument's value, when it resolves to a string.
+ *
+ * A string literal is the common case and answered without recursing. Anything else goes back
+ * through `maybeBoxNode`, which is what follows a constant, a template literal or an imported
+ * value to its literal — the same resolution every other extracted value already gets.
+ * Returning `undefined` leaves the call unresolved, exactly as before.
+ */
+function literalStringOf(node: Node, stack: Node[], ctx: BoxContext): string | undefined {
+  if (Node.isStringLiteral(node)) return node.getLiteralValue()
+
+  const resolved = onlyStringLiteral(maybeBoxNode(node, stack, ctx))
+  return resolved && typeof resolved.value === 'string' ? resolved.value : undefined
 }
 
 const onlyStringLiteral = (boxNode: MaybeBoxNodeReturn) => {

@@ -21,10 +21,7 @@ import { createRuntimeToken, createRuntimeTokenValue } from '../src/runtime-css'
  * Counted over every token rather than sampled, so a new category cannot quietly opt out.
  */
 const parseGeneratedMap = (js: string) =>
-  JSON.parse(js.match(/const tokens = ([\s\S]*?)\n\nexport function/)![1]!) as Record<
-    string,
-    { value: unknown; variable: string }
-  >
+  JSON.parse(js.match(/const tokens = (\{[\s\S]*?\n\})/)![1]!) as Record<string, { value: unknown; variable: string }>
 
 describe('fold token table matches the generated runtime', () => {
   const configs: Array<[string, Parameters<typeof createContext>[0]]> = [
