@@ -55,7 +55,7 @@ export default defineConfig({
 
     // Tokens, keyframes and @property rules nothing in the emitted css reaches are dropped
     // by default — worth 36-78% of a new project's stylesheet. Set \`pruneUnusedTokens: false\`
-    // if you read tokens from somewhere the build cannot see them — \`token.var()\` with a
+    // if you read tokens from somewhere the build cannot see them — \`token()\` with a
     // computed path, or a hand-written stylesheet outside \`include\` — or list those under
     // \`staticCss\` to keep them.
 

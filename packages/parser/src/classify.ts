@@ -128,7 +128,7 @@ export function classifyProject(ctx: ParserOptions, resultMap: ParserResultMap):
 
     // A recipe invocation is recorded for the transform's coverage report, not for this one:
     // its argument is a variant selection, and walking it would file `tone: 'a'` as a utility
-    // property with a value. `tokenVar` is here for the same reason and a simpler one — it
+    // property with a value. `tokenValue` is here for the same reason and a simpler one — it
     // lives in the token bucket, and a token call resolves to a value rather than to a set of
     // properties to walk.
     //

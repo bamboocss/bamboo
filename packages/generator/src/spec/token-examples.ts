@@ -38,9 +38,12 @@ export const generateTokenExamples = (token: Token) => {
 
   // `token()` already hands back the reference, so the second example is the other half of
   // the api — the resolved literal — rather than the `token.var()` alias of the first.
-  if (token.extensions.varRef) {
-    tokenFunctionExamples.push(`token.value('${fullTokenName}')`)
-  }
+  //
+  // Unconditional, unlike the `varRef` guard this replaced. That guard offered `token.var()`
+  // only for a token that had a variable to reference, which was the right question for the
+  // alias and says nothing about `.value`: every token answers it, and one without a `varRef`
+  // would still have a literal worth showing.
+  tokenFunctionExamples.push(`token.value('${fullTokenName}')`)
 
   return { functionExamples, tokenFunctionExamples }
 }

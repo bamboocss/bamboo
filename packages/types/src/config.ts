@@ -301,37 +301,36 @@ interface CssgenOptions {
    * the app draws, so an app using none of them carries all of it for nothing. Registrations
    * declared through `globalVars` are yours and are never removed.
    *
-   * It is opt-in because reachability cannot be proven for every reference. `token()` and
-   * `token.var()` calls are read out of the source, as is any literal `var(--x)` written
-   * by hand — and both forms are resolved through a constant or a template literal the
-   * extractor can follow, not only through a path spelled out at the call. Three things
-   * stay invisible: a token named by a path assembled from a value that only exists at
+   * It is opt-in because reachability cannot be proven for every reference. `token()`,
+   * `token.var()` and `token.value()` calls are read out of the source, as is any literal
+   * `var(--x)` written by hand — and each form is resolved through a constant or a template
+   * literal the extractor can follow, not only through a path spelled out at the call. Three
+   * things stay invisible: a token named by a path assembled from a value that only exists at
    * runtime, one referenced only from a stylesheet outside `include`, and one used by a
    * separate package consuming the output as design tokens. Use `staticCss` to keep those.
    *
-   * Only the *second* form of the first case is a risk. `token(key)` is safe for any path,
-   * because javascript receives a literal for a plain token rather than a reference. It is
-   * `token.var(key)` — the form that hands back `var(--x)` — that needs the declaration to
-   * still be there, so that is the one to hold with `staticCss`.
+   * Every form is a risk, which is a change. `token()` used to hand javascript a literal for
+   * a plain token, so a path it could not resolve cost nothing; it now returns `var(--x)` for
+   * *every* token, and so does its `token.var()` alias. Only `token.value()` still returns a
+   * literal, and only for a token carrying no condition. So a path this pass cannot read is a
+   * declaration that has to survive whichever form asked for it.
    *
    * A custom property declared by `globalCss` or `globalVars` is not one of these cases:
    * the declaration ships whether or not anything in the stylesheet reads it, so whatever
    * it references is kept alongside it.
    *
-   * Tokens that javascript receives as a `var()` rather than a literal are always kept, so
-   * that `token()` answers correctly for any path at runtime. That covers virtual tokens
-   * and any token carrying a condition, and it has one cost worth knowing about: a
-   * negative token resolves to `calc(var(--spacing-4) * -1)`, so every token with a
-   * negative counterpart pins its own declaration. Spacing scales generate one per entry,
-   * which keeps the whole scale whether or not the app uses it — on the default preset
-   * that is roughly a third of what survives pruning.
+   * The cost of that is bluntness. Because `token()` can name any token, a project that
+   * reaches for one from javascript keeps *every* token declaration — on the default preset
+   * that is 468 names against the 68 the old, narrower exemption kept, and a token layer of
+   * 442 declarations rather than 2. It used to cover only virtual tokens, tokens carrying a
+   * condition, and the positive counterpart each negative token pins through
+   * `calc(var(--spacing-4) * -1)`.
    *
-   * That exemption is now skipped entirely for a project that never reaches for a token from
+   * The exemption is skipped entirely for a project that never reaches for a token from
    * javascript. The tokens artifact is generated into the project rather than installed, so
    * the import is written in your own source and a scan of `include` finds it — a call, or an
-   * import of any module the artifact could be. On the example apps here that is worth up to
-   * 20% of the stylesheet raw and 13% gzipped, and nothing at all on the one that does call
-   * `token()`, which is the point: a project with a caller keeps every declaration.
+   * import of any module the artifact could be. That is the whole saving, and it is
+   * all-or-nothing: a project with one caller keeps every declaration.
    *
    * The scan reads `include`, which scopes style extraction rather than everything that may
    * import — so a script, a config, or a sibling workspace package that calls `token()` is
