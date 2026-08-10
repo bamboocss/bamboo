@@ -28,7 +28,10 @@ export const generateTokensSpec = (ctx: Context): TokenSpec => {
 
       // Get examples from first token of this type (they'll be the same for all)
       const firstToken = typeTokens[0]
-      const { functionExamples, tokenFunctionExamples } = generateTokenExamples(firstToken)
+      const { functionExamples, tokenFunctionExamples } = generateTokenExamples(
+        firstToken,
+        ctx.tokens.view.get(firstToken.name),
+      )
 
       const values: TokenValue[] = typeTokens.map((token) => ({
         name: token.extensions.prop || token.name,
@@ -67,7 +70,10 @@ export const generateSemanticTokensSpec = (ctx: Context): SemanticTokenSpec => {
 
       // Get examples from first token of this type
       const firstToken = typeTokens[0]
-      const { functionExamples, tokenFunctionExamples } = generateTokenExamples(firstToken)
+      const { functionExamples, tokenFunctionExamples } = generateTokenExamples(
+        firstToken,
+        ctx.tokens.view.get(firstToken.name),
+      )
 
       const values: SemanticTokenValue[] = typeTokens.map((token) => {
         const conditions: Array<{ value: string; condition?: string }> = []

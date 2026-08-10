@@ -54,7 +54,6 @@ describe('generateThemesSpec', () => {
                 ],
                 "tokenFunctionExamples": [
                   "token('colors.red')",
-                  "token.value('colors.red')",
                 ],
                 "type": "colors",
                 "values": [
@@ -133,7 +132,6 @@ describe('generateThemesSpec', () => {
                 ],
                 "tokenFunctionExamples": [
                   "token('colors.primary')",
-                  "token.value('colors.primary')",
                 ],
                 "type": "colors",
                 "values": [
@@ -206,7 +204,6 @@ describe('generateThemesSpec', () => {
           ],
           "tokenFunctionExamples": [
             "token('colors.red')",
-            "token.value('colors.red')",
           ],
           "type": "colors",
           "values": [
@@ -235,7 +232,6 @@ describe('generateThemesSpec', () => {
           ],
           "tokenFunctionExamples": [
             "token('colors.red')",
-            "token.value('colors.red')",
           ],
           "type": "colors",
           "values": [

@@ -31,7 +31,10 @@ const generateThemeTokenGroups = (
       if (!typeTokens.length) return null
 
       const firstToken = typeTokens[0]
-      const { functionExamples, tokenFunctionExamples } = generateTokenExamples(firstToken)
+      const { functionExamples, tokenFunctionExamples } = generateTokenExamples(
+        firstToken,
+        ctx.tokens.view.get(firstToken.name),
+      )
 
       const values: ThemeTokenValue[] = typeTokens.map((token) => {
         const conditions: Array<{ value: string; condition?: string }> = []

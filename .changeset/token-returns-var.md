@@ -24,13 +24,18 @@ typed `string`, with nothing to catch it. Always-a-reference is the predictable 
 to the cascade, so it takes the short name; the literal has to be asked for, which is also the honest signal, since it
 is the form that stops tracking the theme.
 
-`token.value()` keeps the old per-token split rather than always returning a literal: a virtual or conditional token has
-no single literal, so its `var()` is still the only truthful answer.
+`token.value()` accepts only the tokens that _have_ a literal. A virtual or conditional token has no single one and a
+negative token resolves to a `calc()` over its counterpart, so those are a type error at the call — the generated
+`LiteralToken` union is the parameter type — rather than a `var()` handed to the canvas or chart that asked for a value
+precisely because a css variable would not resolve there.
 
 **Migrating.** Rename any call whose result goes somewhere a css variable will not resolve — a `<canvas>` fill, a
 charting library, `<meta name="theme-color">`, or arithmetic on the value — to `token.value()`. Everything else can stay
-as it is and gets better behaviour for free. Nothing throws and no type changes, since both forms return `string`, so
-this is worth grepping for rather than waiting on.
+as it is and gets better behaviour for free.
+
+Two different failure modes to expect. A `token()` call that should now be `token.value()` changes behaviour
+**silently** — both return `string`, nothing throws — so that one is worth grepping for. A `token.value()` call naming a
+conditional, virtual or negative token is a **compile error**, which finds itself.
 
 **Extraction and folding.** `token()`, `token.var()` and `token.value()` are all recognised by the parser and folded at
 build time, including paths built from a constant or template literal the extractor can follow. `token()` is now the

@@ -144,10 +144,13 @@ Using the example above, `token('colors.blue.200')` returns `var(--colors-blue-2
 Prefer `token()`. A variable reference keeps responding to whatever the cascade decides, so a value read through it
 still changes when the theme does.
 
-Reach for `token.value()` only where a CSS variable cannot be resolved — a `<canvas>` fill, a charting library, a
-`<meta name="theme-color">` tag, or anywhere you do arithmetic on the value. It is a snapshot: it stops tracking the
-theme, and for a token that carries a condition there is no single literal to snapshot, so `token.value()` hands back
-the variable anyway.
+Reach for `token.value()` only where a CSS variable cannot be resolved — a `<canvas>` fill, a charting library, or a
+`<meta name="theme-color">` tag. It is a snapshot: it stops tracking the theme.
+
+It also only accepts a token that _has_ a literal. A conditional token has no single value to snapshot, a virtual one
+none of its own, and a negative one resolves to a `calc()` over its counterpart — so `token.value('colors.primary')` is
+a type error rather than a variable reference handed to a canvas that cannot resolve it. Those are what `token()` is
+for.
 
 <Callout type="warning">
   Before Bamboo 2, `token()` returned the raw value for a plain token and the variable reference for a conditional one —

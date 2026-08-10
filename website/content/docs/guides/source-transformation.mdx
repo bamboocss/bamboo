@@ -97,12 +97,12 @@ const chart = { grid: token.value('colors.red.300') } // → '#fca5a5'
 ```
 
 What each folds to is exactly what the runtime would have returned. `token()` is the trivial case — the variable
-reference, for every token — which is what makes it always foldable. `token.value()` is the one with a decision in it: a
-conditional or semantic token has no single literal, so it folds to the variable rather than to either branch.
+reference, for every token — which is what makes it always foldable.
 
-```tsx
-token.value('colors.primary') // → 'var(--colors-primary)', not '#ef4444'
-```
+`token.value()` only accepts a token that _has_ a literal. A conditional or semantic token resolves to a variable rather
+than to either branch, a virtual one has none of its own, and a negative one resolves to a `calc()` over its
+counterpart, so those are a type error at the call rather than a reference handed to something that cannot resolve it.
+`token.var()` is an alias of `token()` and folds identically.
 
 When every `token()` call in a module folds, its import of the generated token map – every token in your project – is
 left unused, and your bundler drops it. The fold does not remove the import statement itself; the generated
@@ -125,13 +125,9 @@ token('colors.red.300', computeFallback()) // ❌ declines – folding would del
 ```
 
 A path the fold cannot resolve to a usable string is reported as `unresolved-token`: the path names no token, or the
-token's value is empty, or it is not a string at all – a numeric `fontWeights` token stays a number, and no string
-literal stands in for that. In the first two cases the runtime's `tokens[path]?.value || fallback` hands the result to
-the fallback, which is exactly what declining preserves.
-
-`token.var()` folds too, to the variable reference – `token.var('colors.red.300')` becomes `"var(--colors-red-300)"`. It
-is the more foldable of the two: `token()` has to pick between a token's literal value and its variable reference
-depending on the token's conditions, while `.var` is the reference for every token.
+resolved value is empty, or it is not a string at all – a numeric `fontWeights` token stays a number, and no string
+literal stands in for that. In those cases the runtime's `tokens[path]?.value ?? fallback` hands the result to the
+fallback, which is exactly what declining preserves.
 
 ## What does not fold
 

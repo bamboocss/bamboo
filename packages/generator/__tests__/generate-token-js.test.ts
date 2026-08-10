@@ -4133,7 +4133,7 @@ test('use raw value when possible for semanticTokens', () => {
   ).toMatchInlineSnapshot(
     `
     {
-      "dts": "import type { Token } from './tokens';
+      "dts": "import type { Token, LiteralToken } from './tokens';
 
     export declare const token: {
       /** The css variable reference — \`var(--colors-red-300)\`. Stays correct across themes. */
@@ -4142,10 +4142,15 @@ test('use raw value when possible for semanticTokens', () => {
       var: (path: Token, fallback?: string) => string
       /**
        * The resolved literal — \`#fca5a5\`. Use where css variables cannot be resolved, such as
-       * canvas or a charting library. A conditional token has no single literal and still
-       * returns its \`var()\`.
+       * a canvas fill or a charting library.
+       *
+       * Restricted to the tokens that have one. A virtual or conditional token resolves to its
+       * \`var()\` because there is no single value to hand back, and a negative token to
+       * \`calc(var(--spacing-4) * -1)\` because it has no declaration of its own — so asking for
+       * a literal that cannot exist is a type error rather than a reference the caller then
+       * hands to a canvas.
        */
-      value: (path: Token, fallback?: string) => string
+      value: (path: LiteralToken, fallback?: string) => string
     }
 
     export * from './tokens';",

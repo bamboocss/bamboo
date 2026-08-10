@@ -293,7 +293,6 @@ describe('generateSemanticTokensSpec', () => {
       expect(colorsGroup.tokenFunctionExamples).toMatchInlineSnapshot(`
         [
           "token('colors.primary')",
-          "token.value('colors.primary')",
         ]
       `)
     }
