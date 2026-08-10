@@ -240,3 +240,52 @@ describe('pruneUnusedTokens: strict', () => {
     expect(blanketKeepFor(barrel, true).blanket).toBe(false)
   })
 })
+
+/**
+ * One walk over the source files, whatever the mode.
+ *
+ * The keep set, the reachability gate and the strict accounting all want the same two copies
+ * of the same files, and each used to fetch them itself — so a strict build opened every file
+ * three times: once to collect references, once to account, and once more for the gate
+ * whenever the accounting declined.
+ *
+ * Counted rather than timed, so it runs in CI and fails on the regression rather than on a
+ * busy machine. A second walk reappearing is exactly the shape that would otherwise go
+ * unnoticed, since nothing about the output changes.
+ */
+describe('pruneTokensForBuild reads each file once', () => {
+  const readsFor = (code: string, pruneUnusedTokens: boolean | 'strict') => {
+    const ctx = createFixtureContext({ pruneUnusedTokens }) as unknown as BambooContext
+    const files = ['app/src/a.tsx', 'app/src/b.tsx', 'app/src/c.tsx']
+
+    for (const file of files) ctx.project.addSourceFile(ctx.runtime.path.abs(ctx.config.cwd, file), code)
+    ctx.getFiles = () => files
+
+    let reads = 0
+    ctx.runtime = {
+      ...ctx.runtime,
+      fs: {
+        ...ctx.runtime.fs,
+        readFileSync: () => {
+          reads++
+          return code
+        },
+      },
+    } as BambooContext['runtime']
+    ctx.pruneTokens = (() => ({ removed: 0, kept: 0 })) as BambooContext['pruneTokens']
+
+    pruneTokensForBuild(ctx, {} as never, [])
+    return { reads, files: files.length }
+  }
+
+  test.each([
+    ['the default', true as const, `${imports}export const a = token('colors.red.300')`],
+    ['strict, everything resolved', 'strict' as const, `${imports}export const a = token('colors.red.300')`],
+    // The path that used to read three times: a decline still consults the gate.
+    ['strict, with a decline', 'strict' as const, `${imports}export const a = (p) => token(p)`],
+  ])('%s', (_label, mode, code) => {
+    const { reads, files } = readsFor(code, mode)
+
+    expect(reads).toBe(files)
+  })
+})

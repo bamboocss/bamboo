@@ -2,7 +2,8 @@ import { logger } from '@bamboocss/logger'
 import type { ParserResult } from '@bamboocss/parser'
 import { cssVarRefs } from '@bamboocss/shared'
 import type { BambooContext } from './create-context'
-import { accountTokenReferences, type DeclinedReference } from './token-accounting'
+import { snapshotTexts, sourceSnapshots } from './source-snapshots'
+import { accountSnapshot, type DeclinedReference, type TokenAccounting } from './token-accounting'
 
 /**
  * `token.var('colors.red.300')` and `token('spacing.4')`, including the whitespace a
@@ -13,6 +14,16 @@ import { accountTokenReferences, type DeclinedReference } from './token-accounti
  * follow, and it covers the callers below that supply no `results` at all.
  */
 const TOKEN_CALL = /\btoken(?:\s*\.\s*(?:var|value))?\s*\(\s*['"`]([^'"`]+)['"`]/g
+
+/**
+ * A token reached from javascript at all — a call of any shape, or an import of the artifact.
+ *
+ * Has to stay a strict superset of `TOKEN_CALL`: it must match wherever that one matches, and
+ * also wherever that one gives up. See `collectTokenReferences` for why the redundancy holds.
+ * No `g` flag, so `test` carries no state between files.
+ */
+const REACHABLE_FROM_JS =
+  /\btoken(\s*\.\s*(?:var|value))?\s*\(|\b(?:from|import|require)\s*\(?\s*['"][^'"]*\/tokens(\/[^'"]*|\.[cm]?[jt]sx?)?['"]/
 
 /**
  * The text of every file `include` covers — as written on disk, and, when they differ, as the
@@ -34,23 +45,7 @@ const TOKEN_CALL = /\btoken(?:\s*\.\s*(?:var|value))?\s*\(\s*['"`]([^'"`]+)['"`]
  * is an order of magnitude more.
  */
 function* sourceTexts(ctx: BambooContext): Generator<string> {
-  for (const file of ctx.getFiles()) {
-    const filePath = ctx.runtime.path.abs(ctx.config.cwd, file)
-
-    let onDisk: string | undefined
-    try {
-      onDisk = ctx.runtime.fs.readFileSync(filePath)
-    } catch {
-      // Removed between the glob and this read, or never on disk at all. Not worth failing
-      // a build over -- whatever the project holds still gets scanned below.
-      onDisk = undefined
-    }
-
-    const parsed = ctx.project.getSourceFile(filePath)?.getFullText()
-
-    if (onDisk != null) yield onDisk
-    if (parsed != null && parsed !== onDisk) yield parsed
-  }
+  for (const snapshot of sourceSnapshots(ctx)) yield* snapshotTexts(snapshot)
 }
 
 /**
@@ -142,25 +137,51 @@ export function pruneTokensForBuild(
     return
   }
 
-  const keep = collectTokenReferences(ctx, results)
+  // `strict` is an assertion, not a cleverer inference: the user has said every token path in
+  // their project resolves at build time. So the accounting runs, whatever it accepts is kept
+  // by name, and whatever it cannot read is *reported* and falls back to the default answer.
+  //
+  // That fallback is what makes this safe to offer. A declined reference leaves the build
+  // exactly where the default would have left it. What it cannot see is a caller outside
+  // `include` — see `accountTokenReferences` — which is the part the user asserted, and the
+  // reason the declines are printed rather than swallowed.
+  const strict = ctx.config.pruneUnusedTokens === 'strict'
 
-  if (ctx.config.pruneUnusedTokens !== 'strict') {
-    ctx.pruneTokens(sheet, keep, tokensReachableFromJs(ctx))
+  // One walk. These three answers all come from the same files, and reading them apart meant
+  // a strict build opened every file three times: once for the reference set, once to account,
+  // and once more for the gate whenever the accounting declined.
+  const paths = new Set<string>()
+  const vars = new Set<string>()
+  const accounting: TokenAccounting = { paths: new Set<string>(), declined: [] }
+  let reachable = false
+
+  // What the extractor understood, including values it resolved through a constant.
+  for (const result of results) {
+    for (const item of result.token) {
+      for (const value of item.data ?? []) {
+        if (typeof value === 'string') paths.add(value)
+      }
+    }
+  }
+
+  for (const snapshot of sourceSnapshots(ctx)) {
+    for (const text of snapshotTexts(snapshot)) {
+      for (const match of text.matchAll(TOKEN_CALL)) paths.add(match[1])
+      for (const name of cssVarRefs(text)) vars.add(name)
+      if (!reachable && REACHABLE_FROM_JS.test(text)) reachable = true
+    }
+
+    if (strict) accountSnapshot(ctx, snapshot, accounting)
+  }
+
+  for (const name of tokenVarsFor(ctx, paths)) vars.add(name)
+
+  if (!strict) {
+    ctx.pruneTokens(sheet, vars, reachable)
     return
   }
 
-  // `strict` is an assertion, not a cleverer inference: the user has said every token path in
-  // their project resolves at build time. So the accounting runs, whatever it accepts is kept
-  // by name, and whatever it cannot read is *reported* and falls back to keeping everything.
-  //
-  // That fallback is what makes this safe to offer. A declined reference leaves the build
-  // exactly where the default would have left it, so turning `strict` on can only prune more
-  // than the default when the accounting succeeded outright. What it cannot see is a caller
-  // outside `include` — see `accountTokenReferences` — which is the part the user asserted and
-  // the reason the declines are printed rather than swallowed.
-  const accounting = accountTokenReferences(ctx)
-
-  for (const name of tokenVarsFor(ctx, accounting.paths)) keep.add(name)
+  for (const name of tokenVarsFor(ctx, accounting.paths)) vars.add(name)
 
   // On a decline, fall back to what the default would have answered rather than to an
   // unconditional keep. Those differ: a project whose only unreadable reference is an import
@@ -168,13 +189,11 @@ export function pruneTokensForBuild(
   // token call at all, so keeping everything would make `strict` ship *more* than the default
   // — the one case where turning it on could cost bytes. Deferring to the same gate makes
   // `strict` default-or-better in every case rather than in most.
-  const blanketKeep = accounting.declined.length > 0 && tokensReachableFromJs(ctx)
-
   if (accounting.declined.length) {
     logger.warn('tokens:strict', formatDeclined(ctx, accounting.declined))
   }
 
-  ctx.pruneTokens(sheet, keep, blanketKeep)
+  ctx.pruneTokens(sheet, vars, accounting.declined.length > 0 && reachable)
 }
 
 /** The custom properties a set of token paths resolves to. */
@@ -331,11 +350,8 @@ export function collectRenderedElements(ctx: BambooContext) {
  * neither reports itself; `pruneUnusedTokens: false` is the way out.
  */
 export function tokensReachableFromJs(ctx: BambooContext) {
-  const pattern =
-    /\btoken(\s*\.\s*(?:var|value))?\s*\(|\b(?:from|import|require)\s*\(?\s*['"][^'"]*\/tokens(\/[^'"]*|\.[cm]?[jt]sx?)?['"]/
-
   for (const content of sourceTexts(ctx)) {
-    if (pattern.test(content)) return true
+    if (REACHABLE_FROM_JS.test(content)) return true
   }
 
   return false

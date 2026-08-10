@@ -1,6 +1,7 @@
 import { resolveTsPathPattern } from '@bamboocss/config/ts-path'
 import { Node, type SourceFile, SyntaxKind } from 'ts-morph'
 import type { BambooContext } from './create-context'
+import { type SourceSnapshot, sourceSnapshots } from './source-snapshots'
 
 /** A reference the accounting could not resolve, and where to find it. */
 export interface DeclinedReference {
@@ -43,22 +44,26 @@ export interface TokenAccounting {
  * swallowed: the build says what it could not account for, instead of quietly deciding.
  */
 export function accountTokenReferences(ctx: BambooContext): TokenAccounting {
-  const paths = new Set<string>()
-  const declined: DeclinedReference[] = []
+  const accounting: TokenAccounting = { paths: new Set<string>(), declined: [] }
 
-  for (const file of ctx.getFiles()) {
-    const filePath = ctx.runtime.path.abs(ctx.config.cwd, file)
+  for (const snapshot of sourceSnapshots(ctx)) {
+    accountSnapshot(ctx, snapshot, accounting)
+  }
 
-    let onDisk: string | undefined
-    try {
-      onDisk = ctx.runtime.fs.readFileSync(filePath)
-    } catch {
-      onDisk = undefined
-    }
+  return accounting
+}
 
-    const sourceFile = ctx.project.getSourceFile(filePath)
-    const parsed = sourceFile?.getFullText()
+/**
+ * One file's contribution, split out so the build can account and scan in a single walk.
+ *
+ * `pruneTokensForBuild` needs the keep set, the reachability answer and this accounting from
+ * the same files; three separate passes read every file three times.
+ */
+export function accountSnapshot(ctx: BambooContext, snapshot: SourceSnapshot, accounting: TokenAccounting) {
+  const { filePath, onDisk, parsed, sourceFile } = snapshot
+  const { paths, declined } = accounting
 
+  {
     // The syntax pass can only speak for a file it reads exactly as the bundler will compile
     // it. `parser:before` fires for every non-json file, and a single-file component is stored
     // *post-transform* — `vueToTsx` keeps only `<script setup>` when both blocks are present,
@@ -70,10 +75,10 @@ export function accountTokenReferences(ctx: BambooContext): TokenAccounting {
       // decline over. Checked here rather than up front because the text is all this branch
       // has — the tree is the wrong copy or missing.
       const mentions = (onDisk?.includes('token') ?? false) || (parsed?.includes('token') ?? false)
-      if (!mentions) continue
+      if (!mentions) return
 
       declined.push({ filePath, line: 1, reason: onDisk == null || parsed == null ? 'unreadable' : 'transformed' })
-      continue
+      return
     }
 
     // Matching text is not the same as a usable tree. `createSourceFile` hands every file to
@@ -89,15 +94,13 @@ export function accountTokenReferences(ctx: BambooContext): TokenAccounting {
     // also declines a project whose `.ts` files merely use generic arrows — is the safe
     // direction, and the report says which file to look at.
     if (parseErrorCount(sourceFile!)) {
-      if (!parsed.includes('token')) continue
+      if (!parsed.includes('token')) return
       declined.push({ filePath, line: 1, reason: 'unparsed' })
-      continue
+      return
     }
 
     accountFile(ctx, sourceFile!, filePath, paths, declined)
   }
-
-  return { paths, declined }
 }
 
 /**

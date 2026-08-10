@@ -7,6 +7,26 @@ import { dirname, extname, isAbsolute, join, relative, resolve, sep } from 'path
 import picomatch from 'picomatch'
 import { globDirname } from './glob-dirname'
 
+/**
+ * What the source glob ignores.
+ *
+ * `**\/*.d.ts` is unconditional. It used to be a *default* that a user's own `exclude`
+ * replaced, so declaration files were scanned by whether the project happened to set that
+ * option at all — excluded for `exclude: []`, included for `exclude: ['**\/*.stories.tsx']`.
+ * Nothing chose that; the default was simply appended when nothing else was there.
+ *
+ * A declaration file carries no runtime code and can emit no styles. It is still read by the
+ * reference scans, which are deliberately over-inclusive, so scanning one could keep a token
+ * named in a doc comment or a reset rule for an element named in a JSDoc example. Those are
+ * spurious keeps rather than a guarantee anyone relied on — and they were never available to
+ * the projects on the other side of the same condition.
+ *
+ * Copied rather than appended to. `opts.exclude` is `ctx.config.exclude` itself, so pushing
+ * onto it edited the user's resolved config in place, and the next call then saw a list it had
+ * mutated.
+ */
+export const globIgnore = (exclude: string[] | undefined) => ['**/*.d.ts', ...(exclude ?? [])]
+
 export const nodeRuntime: Runtime = {
   cwd() {
     return process.cwd()
@@ -34,19 +54,7 @@ export const nodeRuntime: Runtime = {
     glob(opts) {
       if (!opts.include) return []
 
-      // Copied, never appended to. `opts.exclude` is `ctx.config.exclude` itself, so pushing
-      // onto it edited the user's resolved config in place — and since the push was gated on
-      // the list being empty, the second call saw a non-empty one and behaved differently
-      // from the first. `exclude: []`, which the sandboxes here all write, is the shape that
-      // hit it.
-      //
-      // `**/*.d.ts` remains a *default* rather than an always-on ignore: a declaration file
-      // carries no runtime code, but it is still read by the reference scans, so dropping it
-      // for projects that do set `exclude` would change which tokens and reset rules survive.
-      // That is a css-output decision, not a cleanup.
-      const ignore = opts.exclude?.length ? [...opts.exclude] : ['**/*.d.ts']
-
-      return glob.sync(opts.include, { cwd: opts.cwd, ignore, absolute: true })
+      return glob.sync(opts.include, { cwd: opts.cwd, ignore: globIgnore(opts.exclude), absolute: true })
     },
     writeFile: fsExtra.writeFile,
     writeFileSync: fsExtra.writeFileSync,
