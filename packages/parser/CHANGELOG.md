@@ -2379,9 +2379,9 @@
   }
   ```
 
-  We introduced a bug in [v0.34.2](https://github.com/bamboocss/bamboo/blob/main/CHANGELOG.md#0342---2024-03-08) where
+  We introduced a bug in [v0.34.2](https://github.com/gajus/bamboocss/blob/main/CHANGELOG.md#0342---2024-03-08) where
   the `Tabs.Trigger` component was not being matched to the `tabs` slot recipe, due to the
-  [new namespace import feature](https://github.com/bamboocss/bamboo/pull/2371).
+  [new namespace import feature](https://github.com/gajus/bamboocss/pull/2371).
 
 - Updated dependencies [bd0cb07]
   - @bamboocss/types@0.36.1
@@ -3825,7 +3825,7 @@
 - f27146d6: Fix an issue where some JSX components wouldn't get matched to their corresponding recipes/patterns when
   using `Regex` in the `jsx` field of a config, resulting in some style props missing.
 
-  issue: https://github.com/bamboocss/bamboo/issues/1315
+  issue: https://github.com/gajus/bamboocss/issues/1315
 
 - Updated dependencies [be24d1a0]
 - Updated dependencies [4bc515ea]

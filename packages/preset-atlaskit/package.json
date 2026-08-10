@@ -7,7 +7,7 @@
   "author": "Gajus Kuizinas <gajus@gajus.com>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bamboocss/bamboo.git",
+    "url": "git+https://github.com/gajus/bamboocss.git",
     "directory": "packages/preset-atlaskit"
   },
   "files": [

@@ -352,7 +352,7 @@ const addColorPalette: TokenTransformer = {
       colorPaletteTokenKeys.push(remainingPath.slice(i))
     }
 
-    // https://github.com/bamboocss/bamboo/issues/1421
+    // https://github.com/gajus/bamboocss/issues/1421
     if (colorPaletteTokenKeys.length === 0) {
       colorPaletteTokenKeys.push([''])
     }

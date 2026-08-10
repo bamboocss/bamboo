@@ -12,8 +12,8 @@ All packages are versioned equally and managed with [Changeset](https://github.c
 ## Changelogs
 
 There is no hand-written changelog. Changeset writes a `CHANGELOG.md` per package from the changeset files, and the
-Publish workflow cuts a [GitHub release](https://github.com/bamboocss/bamboo/releases) per package from the same
-content. The docs site links to those releases.
+Publish workflow cuts a [GitHub release](https://github.com/gajus/bamboocss/releases) per package from the same content.
+The docs site links to those releases.
 
 A root `CHANGELOG.md` used to be maintained by hand alongside this. It fell three minor versions behind before anyone
 noticed, because nothing in the release path touched it, so it was removed rather than kept limping.
@@ -34,5 +34,5 @@ Before creating a new release, make sure that there are no pending pull requests
 To publish without a qualifying commit — to retry a failed publish, or to re-open a closed Version Packages PR:
 
 ```bash
-gh workflow run release.yaml --repo bamboocss/bamboo --ref main
+gh workflow run release.yaml --repo gajus/bamboocss --ref main
 ```

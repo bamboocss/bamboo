@@ -2422,7 +2422,7 @@
 ### Minor Changes
 
 - fde37d8: Add support for element level css reset via `preflight.level`. Learn more
-  [here](https://github.com/bamboocss/bamboo/discussions/1992).
+  [here](https://github.com/gajus/bamboocss/discussions/1992).
 
   Setting `preflight.level` to `'element'` applies the reset directly to the individual elements that have the scope
   class assigned.
@@ -3126,7 +3126,7 @@
 ### Patch Changes
 
 - 8f4ce97c: Fix `slotRecipes` typings,
-  [the recently added `recipe.staticCss`](https://github.com/bamboocss/bamboo/pull/1765) added to `config.recipes`
+  [the recently added `recipe.staticCss`](https://github.com/gajus/bamboocss/pull/1765) added to `config.recipes`
   weren't added to `config.slotRecipes`
 
 ## 0.22.0
@@ -3240,7 +3240,7 @@
 
 - 61831040: Fix issue where typescript error is shown in recipes when `exactOptionalPropertyTypes` is set.
 
-  > To learn more about this issue, see [this issue](https://github.com/bamboocss/bamboo/issues/1688)
+  > To learn more about this issue, see [this issue](https://github.com/gajus/bamboocss/issues/1688)
 
 - 89f86923: Fix issue where css variables were not supported in layer styles and text styles types.
 
@@ -3335,7 +3335,7 @@
   ```
 
 - 58743bc4: - Fix `ExtendableUtilityConfig` typings after a regression in 0.15.2 (due to
-  https://github.com/bamboocss/bamboo/pull/1410)
+  https://github.com/gajus/bamboocss/pull/1410)
   - Fix `ExtendableTheme` (specifically make the `RecipeConfig` Partial inside the `theme: { extend: { ... } }` object),
     same for slotRecipes
 
@@ -4215,7 +4215,7 @@ export default defineConfig({
 ### Patch Changes
 
 - 8f4ce97c: Fix `slotRecipes` typings,
-  [the recently added `recipe.staticCss`](https://github.com/bamboocss/bamboo/pull/1765) added to `config.recipes`
+  [the recently added `recipe.staticCss`](https://github.com/gajus/bamboocss/pull/1765) added to `config.recipes`
   weren't added to `config.slotRecipes`
 
 ## 0.22.0
@@ -4329,7 +4329,7 @@ export default defineConfig({
 
 - 61831040: Fix issue where typescript error is shown in recipes when `exactOptionalPropertyTypes` is set.
 
-  > To learn more about this issue, see [this issue](https://github.com/bamboocss/bamboo/issues/1688)
+  > To learn more about this issue, see [this issue](https://github.com/gajus/bamboocss/issues/1688)
 
 - 89f86923: Fix issue where css variables were not supported in layer styles and text styles types.
 
@@ -4424,7 +4424,7 @@ export default defineConfig({
   ```
 
 - 58743bc4: - Fix `ExtendableUtilityConfig` typings after a regression in 0.15.2 (due to
-  https://github.com/bamboocss/bamboo/pull/1410)
+  https://github.com/gajus/bamboocss/pull/1410)
   - Fix `ExtendableTheme` (specifically make the `RecipeConfig` Partial inside the `theme: { extend: { ... } }` object),
     same for slotRecipes
 

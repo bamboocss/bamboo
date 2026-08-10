@@ -1523,7 +1523,7 @@
 
 ### Patch Changes
 
-- be24d1a0: Fix issue (https://github.com/bamboocss/bamboo/issues/1365) with the `unbox` fn that removed nullish values,
+- be24d1a0: Fix issue (https://github.com/gajus/bamboocss/issues/1365) with the `unbox` fn that removed nullish values,
   which could be useful for the [Array Syntax](https://bamboocss.com/docs/concepts/responsive-design#the-array-syntax)
 
   ```ts

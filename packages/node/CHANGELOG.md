@@ -4095,7 +4095,7 @@
 
 - dd6811b3: Apply `config.logLevel` from the Bamboo config to the logger in every context.
 
-  Fixes https://github.com/bamboocss/bamboo/issues/1451
+  Fixes https://github.com/gajus/bamboocss/issues/1451
 
 - Updated dependencies [93996aaf]
 - Updated dependencies [12281ff8]
@@ -5698,7 +5698,7 @@ export default defineConfig({
 
 - dd6811b3: Apply `config.logLevel` from the Bamboo config to the logger in every context.
 
-  Fixes https://github.com/bamboocss/bamboo/issues/1451
+  Fixes https://github.com/gajus/bamboocss/issues/1451
 
 - Updated dependencies [93996aaf]
 - Updated dependencies [12281ff8]

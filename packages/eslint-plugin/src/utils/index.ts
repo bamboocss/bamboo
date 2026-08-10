@@ -6,7 +6,7 @@ import { createSyncFn } from 'synckit'
 
 // Rule creator
 export const createRule = ESLintUtils.RuleCreator(
-  (name) => `https://github.com/bamboocss/bamboo/blob/main/packages/eslint-plugin/docs/rules/${name}.md`,
+  (name) => `https://github.com/gajus/bamboocss/blob/main/packages/eslint-plugin/docs/rules/${name}.md`,
 )
 
 // Determine the distribution directory. Under test the plugin is loaded from

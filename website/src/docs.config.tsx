@@ -26,7 +26,7 @@ export const docsConfig: DocsConfig = {
     'Build-time, type-safe, zero-runtime CSS-in-JS. Prune unused tokens, tree-shake the runtime, and fold static styles into plain class strings.',
   url: 'https://bamboocss.com',
   logoUrl: '/',
-  docsRepositoryBase: 'https://github.com/bamboocss/bamboo',
+  docsRepositoryBase: 'https://github.com/gajus/bamboocss',
   gitTimestamp: 'Last updated on',
   navigation: [
     {
@@ -52,7 +52,7 @@ export const docsNavigation: NavItem = {
         { title: 'Browser Support', url: 'browser-support' },
         {
           title: 'Changelog',
-          href: 'https://github.com/bamboocss/bamboo/releases',
+          href: 'https://github.com/gajus/bamboocss/releases',
           external: true,
         },
       ],

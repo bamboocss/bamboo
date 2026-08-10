@@ -110,7 +110,7 @@ function Example() {
 
 ## Contributing
 
-See the [contributing guide](https://github.com/bamboocss/bamboo/blob/main/CONTRIBUTING.md). The docs site lives in
+See the [contributing guide](https://github.com/gajus/bamboocss/blob/main/CONTRIBUTING.md). The docs site lives in
 [`website/content/docs`](./website/content/docs/).
 
 ## Acknowledgement
