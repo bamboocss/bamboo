@@ -1,6 +1,8 @@
+import { logger } from '@bamboocss/logger'
 import type { ParserResult } from '@bamboocss/parser'
 import { cssVarRefs } from '@bamboocss/shared'
 import type { BambooContext } from './create-context'
+import { accountTokenReferences, type DeclinedReference } from './token-accounting'
 
 /**
  * `token.var('colors.red.300')` and `token('spacing.4')`, including the whitespace a
@@ -140,7 +142,84 @@ export function pruneTokensForBuild(
     return
   }
 
-  ctx.pruneTokens(sheet, collectTokenReferences(ctx, results), tokensReachableFromJs(ctx))
+  const keep = collectTokenReferences(ctx, results)
+
+  if (ctx.config.pruneUnusedTokens !== 'strict') {
+    ctx.pruneTokens(sheet, keep, tokensReachableFromJs(ctx))
+    return
+  }
+
+  // `strict` is an assertion, not a cleverer inference: the user has said every token path in
+  // their project resolves at build time. So the accounting runs, whatever it accepts is kept
+  // by name, and whatever it cannot read is *reported* and falls back to keeping everything.
+  //
+  // That fallback is what makes this safe to offer. A declined reference leaves the build
+  // exactly where the default would have left it, so turning `strict` on can only prune more
+  // than the default when the accounting succeeded outright. What it cannot see is a caller
+  // outside `include` — see `accountTokenReferences` — which is the part the user asserted and
+  // the reason the declines are printed rather than swallowed.
+  const accounting = accountTokenReferences(ctx)
+
+  for (const name of tokenVarsFor(ctx, accounting.paths)) keep.add(name)
+
+  // On a decline, fall back to what the default would have answered rather than to an
+  // unconditional keep. Those differ: a project whose only unreadable reference is an import
+  // of a module this pass cannot classify declines here while the default's scan finds no
+  // token call at all, so keeping everything would make `strict` ship *more* than the default
+  // — the one case where turning it on could cost bytes. Deferring to the same gate makes
+  // `strict` default-or-better in every case rather than in most.
+  const blanketKeep = accounting.declined.length > 0 && tokensReachableFromJs(ctx)
+
+  if (accounting.declined.length) {
+    logger.warn('tokens:strict', formatDeclined(ctx, accounting.declined))
+  }
+
+  ctx.pruneTokens(sheet, keep, blanketKeep)
+}
+
+/** The custom properties a set of token paths resolves to. */
+function tokenVarsFor(ctx: BambooContext, paths: Iterable<string>) {
+  const vars = new Set<string>()
+
+  for (const path of paths) {
+    if (!path) continue
+    const ref = ctx.tokens.view.getVar(path)
+    if (!ref) continue
+
+    for (const name of cssVarRefs(ref)) vars.add(name)
+  }
+
+  return vars
+}
+
+/**
+ * Why `strict` could not prune, grouped by file.
+ *
+ * Printed rather than thrown. A decline is not an error — the build falls back to keeping
+ * every declaration, which is what would have happened anyway — it is the answer to "why is my
+ * token layer still this size", which otherwise has no answer at all.
+ */
+function formatDeclined(ctx: BambooContext, declined: DeclinedReference[]) {
+  const byFile = new Map<string, DeclinedReference[]>()
+  for (const entry of declined) {
+    const list = byFile.get(entry.filePath) ?? []
+    list.push(entry)
+    byFile.set(entry.filePath, list)
+  }
+
+  const detail = Array.from(byFile.entries())
+    .map(([filePath, entries]) => {
+      const relative = filePath.startsWith(ctx.config.cwd) ? filePath.slice(ctx.config.cwd.length + 1) : filePath
+      return [`  ${relative}`, ...entries.map((entry) => `    ${entry.line}: ${entry.reason}`)].join('\n')
+    })
+    .join('\n')
+
+  return (
+    `${declined.length} token reference(s) could not be resolved, so every token declaration is kept.\n\n` +
+    `${detail}\n\n` +
+    `Spell the path as a string literal at the call, move it into \`staticCss\`, or set ` +
+    `\`pruneUnusedTokens: true\` to stop asking.`
+  )
 }
 
 /**

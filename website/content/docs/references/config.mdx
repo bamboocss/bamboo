@@ -455,7 +455,7 @@ Whether to allow shorthand properties.
 
 ### pruneUnusedTokens
 
-**Type**: `boolean`
+**Type**: `boolean | 'strict'`
 
 **Default**: `true`
 
@@ -489,17 +489,63 @@ Turning it off does **not** bring back the `@property` rules your utilities regi
 reachability never applied to them, and a preset ships the set it composes from regardless of what you draw.
 
 <Callout type="warning">
-  **Reaching for a token from javascript currently disables token pruning.** `token()` hands back a `var()` for every
-  token, so a path the build cannot resolve could name any of them and every declaration has to be kept. The check is
-  all-or-nothing per project: it looks for a token call or a `/tokens` path segment on a `from`, `import` or `require`
-  specifier anywhere under [`include`](#include), which covers a custom [`outdir`](#outdir), a path alias and the `.js`
-  extension NodeNext requires. Narrowing it to projects whose token paths all resolve statically is planned; until then,
-  an app that imports the tokens artifact keeps its whole token layer.
+  **Reaching for a token from javascript disables token pruning.** `token()` hands back a `var()` for every token, so a
+  path the build cannot resolve could name any of them, and every declaration has to be kept. The check is
+  all-or-nothing per project: a token call or a `/tokens` import anywhere under [`include`](#include) is enough. On the
+  default preset that is 468 declarations kept instead of 68.
 </Callout>
 
-The scan does not see a caller outside `include` – a build script, a config file, a sibling workspace package – nor a
-binding renamed away from `token`, and neither announces itself, so set `pruneUnusedTokens: false` if you are in that
-position.
+#### `'strict'`
+
+Set `pruneUnusedTokens: 'strict'` to assert that every token path in your project is spelled out at the call. Bamboo
+then accounts for each reference individually, keeps by name only what is asked for, and **prints everything it could
+not read**:
+
+```
+⚠ tokens:strict  2 token reference(s) could not be resolved, so every token declaration is kept.
+
+  src/chart.tsx
+    14: unresolved-reference
+  src/theme.ts
+    3: unclassified-import
+```
+
+A reference it cannot read is never pruned — it falls back to whatever the default would have answered for your project.
+So `strict` is never less safe and never larger than the default, and the message tells you why when it cannot prune.
+
+These resolve, and cost nothing:
+
+```ts
+token('colors.red.300') // a string literal
+token.value('spacing.4') // either half
+t('colors.red.300') // `import { token as t }`
+ds.token('colors.red.300') // `import * as ds`
+```
+
+Two things keep `strict` inert rather than wrong, and both are reported. A file whose parsed tree carries syntax errors
+declines — which includes any `.ts` file using a generic arrow (`<T>(x: T) => x`) or an old-style assertion, since
+Bamboo hands every file to the parser as TSX. And a `.vue` or `.svelte` file mentioning `token` anywhere declines,
+because a single-file component is stored post-transform and the tree is not the code that ships.
+
+These are reported and keep the whole layer:
+
+```ts
+token(`colors.${name}`) // built at runtime
+token(KEY) // a constant — resolvable for extraction, not here
+const t = token // the binding escapes
+export { token } from 'styled-system/tokens' // re-exported
+const { token } = require('styled-system/tokens') // not statically bound
+import { token } from '@acme/ui' // a barrel Bamboo cannot classify
+```
+
+<Callout type="warning">
+  `strict` is an assertion, and one thing it cannot check for you: a caller **outside** `include`. That scopes style
+  extraction, not everything that may import — a build script, a config file, or a sibling workspace package calling
+  `token()` is invisible, and pruning against it produces a `var()` with no declaration, which inherits rather than
+  falling back. Check that `include` covers every file that reaches for a token before turning this on. `bamboo init`
+  scaffolds `./src/**` and `./pages/**`; a Next App Router `./app/**`, a Remix `./app/root.tsx`, or plain `.ts` files
+  under a `.tsx`-only glob are the common gaps.
+</Callout>
 
 ### prunePreflight
 

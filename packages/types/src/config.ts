@@ -347,7 +347,7 @@ interface CssgenOptions {
    *
    * @default true
    */
-  pruneUnusedTokens?: boolean
+  pruneUnusedTokens?: boolean | 'strict'
   /**
    * Drop `@keyframes` rules nothing can reach.
    *
