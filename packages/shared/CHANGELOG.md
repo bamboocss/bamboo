@@ -1,5 +1,79 @@
 # @bamboocss/shared
 
+## 1.31.0
+
+### Minor Changes
+
+- 9c32b00: Narrow `styled-system/css` to the authoring API.
+
+  The barrel was four `export *` lines, so every binding its modules happened to export became part of the public API.
+  Seven were plumbing:
+
+  ```text
+  what `import { … } from 'styled-system/css'` offered before:
+
+    css, css.raw, cx, cva, sva, fallback, viewTransition, auditSlotScopes
+    cssLeaf, cvaPick, splitProps           <- written by the source transform, never by hand
+    mergeCss, assignCss, mergeCssUncached  <- internal merge plumbing
+  ```
+
+  The barrel is now a deliberate list. `cssLeaf`, `cvaPick` and `splitProps` are still exported at runtime — the fold
+  adds them to whatever `styled-system/css` import a file already has, so that is the specifier its emitted calls
+  resolve against — but the declaration file omits them. Folded code is rewritten in memory during the bundler's
+  transform and never typechecked, so a declaration bought nothing beyond an autocomplete entry advertising them as API.
+  Each stays typed in the module that defines it.
+
+  **`mergeCss` and `mergeCssUncached` leave the barrel.** They remain at `styled-system/css/merge-css`, which is where
+  `cva` imports them from. `css.raw(...)` is the authoring API for merging style objects and always was the documented
+  one: it is `mergeCss` plus the clone that makes a shared, memoized result safe to hand back, so the uncloned function
+  beside it was a footgun under a second name.
+
+  **`assignCss` is removed.** It had no callers — not in the runtime, the artifacts, the sandboxes or the docs — and no
+  documented purpose.
+
+  The runtime/declaration split was already there and pointing the other way: `css.mjs` re-exported the merge trio while
+  `css.d.ts` never declared it, so `mergeCss` was importable but untyped through the barrel. That is now consistent.
+
+  A test pins the half that nothing else could catch. The barrel is a hand-written list, the emitted calls are never
+  typechecked, and a bundler only _warns_ about an import naming a missing export — so dropping `cvaPick` from the list
+  would leave the fold emitting calls that silently receive `undefined`. The test asserts every name the fold can inject
+  is exported by the barrel's runtime, and that none of them is declared in its types.
+
+- 678bdee: Remove `token(path, fallback)`. A token is referenced one way: `token(path)`.
+
+  The fallback bundled two unrelated behaviours under one spelling — "resolve this, or use the literal if it names no
+  token", answered at build time, and "emit `var(--x, fallback)`", answered by the browser. The call site could not say
+  which it was getting, and the build-time half silently masked a typo'd path, which is the same reason the `fallback`
+  argument was removed from `token.value()`.
+
+  **Patterns resolve tokens directly now.** `PatternHelpers` gains `token(path, fallback)`:
+
+  ```ts
+  // before — deferred into a string for the css pipeline to parse later
+  const val = isCssUnit(v) ? v : `token(spacing.${v}, ${v})`
+
+  // after — answered where it can be answered
+  const val = isCssUnit(v) ? v : token(`spacing.${v}`, v)
+  ```
+
+  Same semantics: `spacer({ size: '4' })` resolves to `var(--spacing-4)`, `spacer({ size: 'auto' })` to `auto`. The
+  build, the extractor and the browser answer identically — the browser through the generated tokens artifact, so it
+  cannot disagree with the build about a variable's name.
+
+  **What this buys.** `expand-token-references.ts` was a 180-line character-state parser, and every line of it existed
+  for the fallback and its nesting. It is now **22 lines and one regex**. That also closes a live bug for free:
+  `token(path)` in a theme or semantic token value was never expanded — it landed in the stylesheet as literal text,
+  with no warning — because the parser's shape forced a reference regex that could not see it.
+
+  **Breaking.** A retired form now fails rather than emitting text: in a token value the build stops and names the token
+  and its replacement; in a style value it throws where it is used.
+
+  `spacer`, `grid` and `bleed` emit `var(--spacing-4)` where they emitted `token(spacing.4, 4)`, so their declarations
+  lose a now-redundant css fallback and the class names derived from those values change. Apps not using those three
+  patterns are byte-identical — verified on an example app.
+
+  Cost: a pattern module now imports the generated tokens artifact, shared with any other `token()` use in the app.
+
 ## 1.30.1
 
 ## 1.30.0
