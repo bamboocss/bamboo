@@ -80,7 +80,6 @@ describe('accepted references record the path they ask for', () => {
 
 describe('unreadable references decline', () => {
   test.each([
-    ['a path built at runtime', `${imports}export const a = (c) => token(\`colors.\${c}\`)`],
     ['a path from a constant', `${imports}const K = 'colors.red.300'\nexport const a = token(K)`],
     ['a path from a parameter', `${imports}export const a = (p) => token(p)`],
     ['a renamed binding', `${imports}const t = token\nexport const a = t('colors.red.300')`],
@@ -293,5 +292,147 @@ describe('pruneTokensForBuild reads each file once', () => {
     const { reads, files } = readsFor(code, mode)
 
     expect(reads).toBe(files)
+  })
+})
+
+/**
+ * A reference bounded by a prefix rather than resolved to a path.
+ *
+ * `` token(`colors.${shade}`) `` cannot say which token it wants, but it can say which it
+ * cannot: whatever it produces begins `colors.`. Declining it kept every declaration in the
+ * project — 468 on the default preset against 68 for the old, narrower exemption — where
+ * bounding it keeps the category and nothing else.
+ *
+ * This is the shape the repo's own docs site uses, and the reason it was worth doing: the
+ * static head was already sitting in the source and was thrown away.
+ */
+describe('a prefix bounds what a dynamic path can reach', () => {
+  test('records the head instead of declining', () => {
+    const { paths, prefixes, declined } = analyse(`${imports}export const a = (s) => token(\`colors.\${s}\`)`)
+
+    expect(declined).toEqual([])
+    expect(paths.size).toBe(0)
+    expect(prefixes).toEqual(new Set(['colors.']))
+  })
+
+  test('an empty head bounds nothing, so it still declines', () => {
+    const { prefixes, declined } = analyse(`${imports}export const a = (s) => token(\`\${s}\`)`)
+
+    expect(prefixes.size).toBe(0)
+    expect(declined.length).toBeGreaterThan(0)
+  })
+
+  test('a further substitution does not loosen the bound', () => {
+    const { prefixes, declined } = analyse(`${imports}export const a = (a, b) => token(\`colors.\${a}.\${b}\`)`)
+
+    expect(declined).toEqual([])
+    expect(prefixes).toEqual(new Set(['colors.']))
+  })
+
+  test('the bound survives the .value half and a namespace', () => {
+    const { prefixes, declined } = analyse(
+      `import * as ds from 'styled-system/tokens'\nexport const a = (s) => ds.token.value(\`spacing.\${s}\`)`,
+    )
+
+    expect(declined).toEqual([])
+    expect(prefixes).toEqual(new Set(['spacing.']))
+  })
+
+  /**
+   * The point of the bound: it keeps a category, not a project. Asserted on the keep set the
+   * build actually hands `pruneTokens`, because that is what decides the stylesheet.
+   */
+  test('keeps the bounded category and drops the rest', () => {
+    const ctx = createFixtureContext({ pruneUnusedTokens: 'strict' }) as unknown as BambooContext
+    const code = `${imports}export const a = (s) => token(\`colors.\${s}\`)`
+    const absolute = ctx.runtime.path.abs(ctx.config.cwd, FILE)
+
+    ctx.project.addSourceFile(absolute, code)
+    ctx.getFiles = () => [FILE]
+    ctx.runtime = { ...ctx.runtime, fs: { ...ctx.runtime.fs, readFileSync: () => code } } as BambooContext['runtime']
+
+    let seen: { keep?: Set<string>; blanket?: boolean } = {}
+    ctx.pruneTokens = ((_sheet: unknown, keep?: Set<string>, blanket?: boolean) => {
+      seen = { keep, blanket }
+      return { removed: 0, kept: 0 }
+    }) as BambooContext['pruneTokens']
+
+    pruneTokensForBuild(ctx, {} as never, [])
+
+    expect(seen.blanket).toBe(false)
+    expect(seen.keep?.has('--colors-red-300')).toBe(true)
+    // A different category the expression cannot reach.
+    expect(seen.keep?.has('--spacing-4')).toBe(false)
+  })
+})
+
+/**
+ * The shapes I had verified by hand and left unpinned, plus the one the bounding exists for.
+ */
+describe('prefix bounding — the cases that were only checked by hand', () => {
+  /**
+   * The real call site. A `string`-typed substitution does not satisfy the generated `Token`
+   * union, so a typed caller writes the assertion — and reading only the outermost node
+   * declined it, which meant the motivating example bounded nothing.
+   */
+  test('an assertion around the template still bounds', () => {
+    const { prefixes, declined } = analyse(
+      `import { Token, token } from 'styled-system/tokens'\nexport const a = (k: string) => token(\`animations.\${k}\` as Token)`,
+    )
+
+    expect(declined).toEqual([])
+    expect(prefixes).toEqual(new Set(['animations.']))
+  })
+
+  test('a type imported beside the value does not decline', () => {
+    const { declined } = analyse(
+      `import { Token, token } from 'styled-system/tokens'\nexport const a = (k: Token) => token(k)`,
+    )
+
+    // Declines for the dynamic path, not for the `Token` import.
+    expect(declined.map((entry) => entry.reason)).toEqual(['unresolved-reference'])
+  })
+
+  /** A binding that is *called* still declines, whatever it is named — a barrel could re-export. */
+  test('a differently-named import used as a value still declines', () => {
+    const { declined } = analyse(
+      `import { somethingElse } from 'styled-system/tokens'\nexport const a = (n) => somethingElse(n)`,
+    )
+
+    expect(declined.map((entry) => entry.reason)).toContain('unsupported-import')
+  })
+
+  /**
+   * A negative token has no declaration of its own — `getVar` gives `calc(var(--spacing-4) *
+   * -1)` — so a bound that matched it while keeping nothing would be the exact
+   * accepted-but-unkept failure this module exists to prevent.
+   */
+  test('a bounded negative token keeps its positive counterpart', () => {
+    const ctx = createFixtureContext({ pruneUnusedTokens: 'strict' }) as unknown as BambooContext
+    const code = `${imports}export const a = (s) => token(\`spacing.\${s}\`)`
+    const absolute = ctx.runtime.path.abs(ctx.config.cwd, FILE)
+
+    ctx.project.addSourceFile(absolute, code)
+    ctx.getFiles = () => [FILE]
+    ctx.runtime = { ...ctx.runtime, fs: { ...ctx.runtime.fs, readFileSync: () => code } } as BambooContext['runtime']
+
+    let keep: Set<string> | undefined
+    ctx.pruneTokens = ((_sheet: unknown, seen?: Set<string>) => {
+      keep = seen
+      return { removed: 0, kept: 0 }
+    }) as BambooContext['pruneTokens']
+
+    pruneTokensForBuild(ctx, {} as never, [])
+
+    expect(keep?.has('--spacing-4')).toBe(true)
+  })
+
+  test('a decline alongside a bound still keeps everything', () => {
+    const { prefixes, declined } = analyse(
+      `${imports}const t = token\nexport const a = (s) => token(\`colors.\${s}\`)\nexport const b = t('spacing.4')`,
+    )
+
+    expect(prefixes.size).toBeGreaterThan(0)
+    expect(declined.length).toBeGreaterThan(0)
   })
 })

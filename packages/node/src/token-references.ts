@@ -152,7 +152,7 @@ export function pruneTokensForBuild(
   // and once more for the gate whenever the accounting declined.
   const paths = new Set<string>()
   const vars = new Set<string>()
-  const accounting: TokenAccounting = { paths: new Set<string>(), declined: [] }
+  const accounting: TokenAccounting = { paths: new Set<string>(), prefixes: new Set<string>(), declined: [] }
   let reachable = false
 
   // What the extractor understood, including values it resolved through a constant.
@@ -182,6 +182,23 @@ export function pruneTokensForBuild(
   }
 
   for (const name of tokenVarsFor(ctx, accounting.paths)) vars.add(name)
+
+  // A reference bounded by a prefix rather than resolved to a path — `` token(`colors.${x}`) ``
+  // — keeps the tokens that prefix can reach and nothing else. Declining it instead kept every
+  // declaration in the project, which is what the whole category costs against.
+  //
+  // Skipped when something else already declined, since the blanket keep below makes every
+  // name here redundant.
+  if (accounting.prefixes.size && !accounting.declined.length) {
+    const prefixes = Array.from(accounting.prefixes)
+    const matched: string[] = []
+
+    for (const token of ctx.tokens.allTokens) {
+      if (prefixes.some((prefix) => token.name.startsWith(prefix))) matched.push(token.name)
+    }
+
+    for (const name of tokenVarsFor(ctx, matched)) vars.add(name)
+  }
 
   // On a decline, fall back to what the default would have answered rather than to an
   // unconditional keep. Those differ: a project whose only unreadable reference is an import

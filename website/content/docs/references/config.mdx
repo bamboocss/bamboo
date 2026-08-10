@@ -527,10 +527,14 @@ declines — which includes any `.ts` file using a generic arrow (`<T>(x: T) => 
 Bamboo hands every file to the parser as TSX. And a `.vue` or `.svelte` file mentioning `token` anywhere declines,
 because a single-file component is stored post-transform and the tree is not the code that ships.
 
+A path built from a template literal is _bounded_ rather than reported: Bamboo cannot tell which token
+``token(`colors.${shade}`)`` wants, but it knows the answer starts with `colors.`, so it keeps that category and prunes
+the rest. An empty head — ``token(`${path}`)`` — bounds nothing and is reported.
+
 These are reported and keep the whole layer:
 
 ```ts
-token(`colors.${name}`) // built at runtime
+token(`${name}`) // built at runtime, with nothing to bound it
 token(KEY) // a constant — resolvable for extraction, not here
 const t = token // the binding escapes
 export { token } from 'styled-system/tokens' // re-exported

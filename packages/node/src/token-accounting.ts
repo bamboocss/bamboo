@@ -13,6 +13,16 @@ export interface DeclinedReference {
 export interface TokenAccounting {
   /** Token paths every accepted reference asks for. Recorded by the code that accepted them. */
   paths: Set<string>
+  /**
+   * Prefixes a reference is bounded by without naming one token.
+   *
+   * A template literal with a static head — `` token(`colors.${shade}`) `` — cannot say which
+   * token it wants, but it can say which it *cannot*: whatever it resolves to begins
+   * `colors.`. Keeping that category is a far smaller answer than keeping every declaration,
+   * which is what declining the reference would have cost, and it is still a superset of
+   * anything the expression can produce.
+   */
+  prefixes: Set<string>
   /** Everything that could not be resolved. Non-empty means the blanket keep has to stay. */
   declined: DeclinedReference[]
 }
@@ -44,7 +54,7 @@ export interface TokenAccounting {
  * swallowed: the build says what it could not account for, instead of quietly deciding.
  */
 export function accountTokenReferences(ctx: BambooContext): TokenAccounting {
-  const accounting: TokenAccounting = { paths: new Set<string>(), declined: [] }
+  const accounting: TokenAccounting = { paths: new Set<string>(), prefixes: new Set<string>(), declined: [] }
 
   for (const snapshot of sourceSnapshots(ctx)) {
     accountSnapshot(ctx, snapshot, accounting)
@@ -61,7 +71,7 @@ export function accountTokenReferences(ctx: BambooContext): TokenAccounting {
  */
 export function accountSnapshot(ctx: BambooContext, snapshot: SourceSnapshot, accounting: TokenAccounting) {
   const { filePath, onDisk, parsed, sourceFile } = snapshot
-  const { paths, declined } = accounting
+  const { paths, prefixes, declined } = accounting
 
   {
     // The syntax pass can only speak for a file it reads exactly as the bundler will compile
@@ -99,7 +109,7 @@ export function accountSnapshot(ctx: BambooContext, snapshot: SourceSnapshot, ac
       return
     }
 
-    accountFile(ctx, sourceFile!, filePath, paths, declined)
+    accountFile(ctx, sourceFile!, filePath, paths, prefixes, declined)
   }
 }
 
@@ -140,6 +150,7 @@ function accountFile(
   sourceFile: SourceFile,
   filePath: string,
   paths: Set<string>,
+  prefixes: Set<string>,
   declined: DeclinedReference[],
 ) {
   const decline = (node: Node, reason: string) => declined.push({ filePath, line: lineOf(node), reason })
@@ -194,10 +205,17 @@ function accountFile(
 
     for (const named of clause.getNamedImports()) {
       if (named.isTypeOnly()) continue
-      // Only `token` produces a `var()`. Anything else exported by the artifact is something
-      // this pass does not model, so it cannot promise the paths it reaches.
+      // Only `token` produces a `var()`. A differently-named import is usually the `Token`
+      // *type* — `import { Token, token }` is the idiomatic spelling, and declining on it meant
+      // the commonest typed usage never bounded anything.
+      //
+      // Usually, not always: the specifier test is substring-based, so a barrel could match it
+      // and re-export `token` under another name, which a call of that name would then reach.
+      // So the question is whether the binding is used as a *value* anywhere, not what it is
+      // called.
       if (nameOf(named.getNameNode()) !== 'token') {
-        decline(named, 'unsupported-import')
+        const local = (named.getAliasNode() ?? named.getNameNode()).getText()
+        if (usedAsValue(sourceFile, local, named)) decline(named, 'unsupported-import')
         continue
       }
       bindings.add((named.getAliasNode() ?? named.getNameNode()).getText())
@@ -257,13 +275,20 @@ function accountFile(
 
     if (Node.isPropertyAssignment(parent) && parent.getNameNode() === identifier) continue
 
-    const path = accountedPath(identifier)
-    if (path === undefined) {
+    const resolved = accountedPath(identifier)
+    if (resolved === undefined) {
       decline(identifier, 'unresolved-reference')
       continue
     }
 
-    paths.add(path)
+    if (resolved.kind === 'binding') continue
+
+    if (resolved.kind === 'prefix') {
+      prefixes.add(resolved.value)
+      continue
+    }
+
+    paths.add(resolved.value)
   }
 }
 
@@ -296,19 +321,27 @@ function usesTokenMember(sourceFile: SourceFile, namespace: string) {
 const nameOf = (node: Node) => (Node.isIdentifier(node) ? String(node.compilerNode.escapedText) : node.getText())
 
 /**
- * The token path one occurrence asks for, or `undefined` if it is not a call this can read.
+ * What one occurrence asks for: an exact path, a prefix it is bounded by, or nothing at all —
+ * the binding site of the import, which is not a use.
+ */
+type ResolvedReference = { kind: 'path' | 'prefix'; value: string } | { kind: 'binding' }
+
+/**
+ * What one occurrence asks for, or `undefined` if it is not a call this can read.
  *
  * Accepts the callee position and nothing else — `token('x')`, `token.value('x')`, and the
  * namespaced spellings of each. An identifier anywhere else is a value
  * escaping somewhere this pass cannot follow: assigned (`const t = token`), passed
  * (`useMemo(() => token)`), spread, or enumerated.
  */
-function accountedPath(identifier: Node): string | undefined {
+function accountedPath(identifier: Node): ResolvedReference | undefined {
   const parent = identifier.getParent()
   if (!parent) return undefined
 
   // The binding site itself, and a type position naming it. Not a use.
-  if (Node.isImportSpecifier(parent) || Node.isNamespaceImport(parent) || Node.isImportClause(parent)) return ''
+  if (Node.isImportSpecifier(parent) || Node.isNamespaceImport(parent) || Node.isImportClause(parent)) {
+    return { kind: 'binding' }
+  }
 
   if (Node.isCallExpression(parent) && parent.getExpression() === identifier) return literalPath(parent)
 
@@ -341,21 +374,78 @@ function accountedPath(identifier: Node): string | undefined {
 }
 
 /**
- * The path a call asks for, when the first argument is a literal.
+ * The path a call asks for, or the prefix it is bounded by.
  *
  * Read through `getLiteralValue()`, never off the source text. The text carries escapes —
  * `token('colors.red.300')` — and a path recorded raw looks up nothing, which
  * would accept a reference and keep no declaration for it. That is the exact failure this
  * module exists to make unrepresentable.
+ *
+ * A template literal with substitutions is not a path, but it is not unbounded either: its
+ * head is a prefix everything it can produce begins with. Declining one cost every token
+ * declaration in the project; bounding it costs the category. The head is the *whole* answer —
+ * `` `colors.${a}.${b}` `` bounds no more tightly than `` `colors.${x}` `` does — and an empty
+ * head bounds nothing at all, so that still declines.
  */
-function literalPath(call: Node): string | undefined {
+function literalPath(call: Node): ResolvedReference | undefined {
   if (!Node.isCallExpression(call)) return undefined
-  const argument = call.getArguments()[0]
+  const argument = unwrapAssertions(call.getArguments()[0])
   if (!argument) return undefined
 
-  if (Node.isStringLiteral(argument)) return argument.getLiteralValue()
+  if (Node.isStringLiteral(argument)) return { kind: 'path', value: argument.getLiteralValue() }
   // A template with no substitutions is a literal in every way that matters here.
-  if (Node.isNoSubstitutionTemplateLiteral(argument)) return argument.getLiteralValue()
+  if (Node.isNoSubstitutionTemplateLiteral(argument)) return { kind: 'path', value: argument.getLiteralValue() }
+
+  if (Node.isTemplateExpression(argument)) {
+    const head = argument.getHead().getLiteralText()
+    return head ? { kind: 'prefix', value: head } : undefined
+  }
 
   return undefined
+}
+
+/**
+ * Whether a binding is read anywhere outside a type position.
+ *
+ * `import { Token, token }` brings in a type beside the value, and a type cannot produce a
+ * `var()` — but a binding that is *called* can, whatever it is named, because a barrel
+ * matching the specifier test could re-export `token` under it.
+ */
+function usedAsValue(sourceFile: SourceFile, name: string, declaration: Node) {
+  return sourceFile.getDescendantsOfKind(SyntaxKind.Identifier).some((identifier) => {
+    if (nameOf(identifier) !== name) return false
+    // The import specifier itself is the binding site, not a read.
+    if (identifier.getFirstAncestor((ancestor) => ancestor === declaration)) return false
+
+    return !identifier.getFirstAncestor((ancestor) => Node.isTypeNode(ancestor))
+  })
+}
+
+/**
+ * Strip the wrappers that carry no runtime meaning.
+ *
+ * `` token(`animations.${name}` as Token) `` is the shape a *typed* caller writes, and has to
+ * be: the generated `Token` type is a union of template literals, so a `string`-typed
+ * substitution does not typecheck without the assertion. Reading only the outermost node
+ * declined exactly the call this bounding exists for — the one in this repository's own
+ * documentation site.
+ *
+ * Each of these evaluates to its inner expression, so unwrapping changes nothing about what
+ * the call receives.
+ */
+function unwrapAssertions(node: Node | undefined): Node | undefined {
+  let current = node
+
+  while (
+    current &&
+    (Node.isAsExpression(current) ||
+      Node.isSatisfiesExpression(current) ||
+      Node.isNonNullExpression(current) ||
+      Node.isParenthesizedExpression(current) ||
+      Node.isTypeAssertion(current))
+  ) {
+    current = current.getExpression()
+  }
+
+  return current
 }
