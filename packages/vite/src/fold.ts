@@ -45,7 +45,7 @@ export type SkipReason =
   | 'no-call-expression' // could not locate the enclosing call to replace
   | 'overlapping' // nested inside another fold
   | 'empty' // resolved to no class names at all
-  | 'unresolved-token' // `token(...)` resolves to no usable string, so its fallback decides
+  | 'unresolved-token' // `token(...)` resolves to no usable string, so the call has to stay
   | 'runtime-binding' // a bamboo import still referenced after the rewrite, whoever left it
 
 export interface FoldedCall {
@@ -334,10 +334,11 @@ const TRAILING_INDEX = /\/index$/
 /**
  * An argument that cannot run anything when it is evaluated.
  *
- * `token(path, fallback)` evaluates both arguments before the call, so a fold that drops
- * the fallback also drops whatever evaluating it would have done. `token('x', compute())`
- * is pathological, but the fold's contract is behaviour preservation and a literal is the
- * cheap way to prove it: no call, no property read, no getter.
+ * `token()` takes one argument, but javascript evaluates every argument a call site passes
+ * before the call — so a fold that drops an extra one also drops whatever evaluating it would
+ * have done. `token('x', compute())` is pathological and no longer type-checks, and the fold's
+ * contract is behaviour preservation regardless: a literal is the cheap way to prove it, since
+ * it means no call, no property read, no getter.
  */
 const isInertArgument = (node: Node): boolean =>
   Node.isStringLiteral(node) ||

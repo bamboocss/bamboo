@@ -410,20 +410,17 @@ export const isColorToken = (value: string | undefined, context: RuleContext<any
 }
 
 export const extractTokens = (value: string) => {
-  // `token(colors.red.300)`, and the path in a fallback form's second argument.
-  const regex = /token\(([^"'(),]+)(?:,\s*([^"'(),]+))?\)/g
+  // `token(colors.red.300)`. The fallback form it also matched is retired, and a value still
+  // carrying one fails the build before a lint rule could have an opinion about its path.
+  const regex = /token\(([^"'(),]+)\)/g
   const matches = []
   let match
 
   while ((match = regex.exec(value)) !== null) {
-    const token = match[1] || match[2]
-
-    if (token) {
-      matches.push(token)
-    }
+    if (match[1]) matches.push(match[1])
   }
 
-  return matches.filter(Boolean)
+  return matches
 }
 
 // Caching invalid tokens to avoid redundant computations

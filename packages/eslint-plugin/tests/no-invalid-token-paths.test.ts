@@ -33,7 +33,7 @@ eslintTester.run(RULE_NAME, rule, {
   
   function App(){
     // \`1\` does not exist in borderWidths, and \`grays\` is not a valid color token. Assuming we're using the default bamboo presets
-    return <div className={css({ _hover: {  border: 'solid token(borderWidths.1) token(colors.grays.100, #F3F4F6)' } })} />;
+    return <div className={css({ _hover: {  border: 'solid token(borderWidths.1) token(colors.grays.100)' } })} />;
   }`,
       errors: [{ messageId: 'noInvalidTokenPaths' }, { messageId: 'noInvalidTokenPaths' }],
     },
