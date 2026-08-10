@@ -128,9 +128,9 @@ for.
 </Callout>
 
 The extractor follows a path built from a constant or a template literal, so `token(KEY)` is seen by the reachability
-analysis behind [`pruneUnusedTokens`](/docs/references/config#pruneunusedtokens) as well as a path spelled out at the
-call. A path assembled from a value that only exists at runtime is not; keep those tokens with `staticCss`, or set
-`pruneUnusedTokens: false`.
+analysis behind [`prune.tokens`](/docs/references/config#prune) as well as a path spelled out at the call. A path
+assembled from a value that only exists at runtime is not; keep those tokens with `staticCss`, or set
+`prune: { tokens: false }`.
 
 ### Styled Components
 

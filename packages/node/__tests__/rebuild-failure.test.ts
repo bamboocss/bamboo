@@ -18,7 +18,7 @@ import type { BambooContext } from '../src/create-context'
  * *wiring* — an emitter discarding a return value — so a test of the extracted helper passes
  * with the wiring deleted, which is the shape of test that let this through the first time.
  *
- * `pruneUnusedTokens: 'strict'` is what made it reachable: the first thing in a rebuild that
+ * `prune: { unresolved: 'error' }` is what made it reachable: the first thing in a rebuild that
  * throws on the user's code rather than on a bug.
  */
 const watched = () => {

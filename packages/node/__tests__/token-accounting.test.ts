@@ -1,11 +1,12 @@
 import { createContext as createFixtureContext } from '@bamboocss/fixture'
 import { describe, expect, test } from 'vitest'
+import type { PruneOptions } from '@bamboocss/types'
 import type { BambooContext } from '../src/create-context'
 import { accountTokenReferences } from '../src/token-accounting'
 import { pruneTokensForBuild } from '../src/token-references'
 
 /**
- * The accounting behind `pruneUnusedTokens: 'strict'`, against a real ts-morph project.
+ * The accounting behind `prune: { unresolved: 'error' }`, against a real ts-morph project.
  *
  * Two properties are under test, and only one of them is about bytes:
  *
@@ -192,8 +193,8 @@ describe('unreadable references decline', () => {
  * `pruneTokens`: `true` means "keep every declaration", which is the default's behaviour and
  * the fallback for anything declined.
  */
-const blanketKeepFor = (code: string, pruneUnusedTokens: boolean | 'strict') => {
-  const ctx = createFixtureContext({ pruneUnusedTokens }) as unknown as BambooContext
+const blanketKeepFor = (code: string, prune: PruneOptions) => {
+  const ctx = createFixtureContext({ prune }) as unknown as BambooContext
   const absolute = ctx.runtime.path.abs(ctx.config.cwd, FILE)
 
   ctx.project.addSourceFile(absolute, code)
@@ -215,7 +216,7 @@ describe('pruneUnusedTokens: strict', () => {
   const dynamicCall = `${imports}export const a = (p) => token(p)`
 
   test('drops the blanket keep when every reference resolves', () => {
-    const { keep, blanket } = blanketKeepFor(staticCall, 'strict')
+    const { keep, blanket } = blanketKeepFor(staticCall, { unresolved: 'error' })
 
     expect(blanket).toBe(false)
     // And the token it does ask for survives by name, which is the half that makes dropping
@@ -226,12 +227,12 @@ describe('pruneUnusedTokens: strict', () => {
   test('throws on a reference that does not resolve', () => {
     // `strict` is an assertion. A reference that breaks it fails the build rather than warning
     // and quietly keeping every declaration, which is the same silence the flag removes.
-    expect(() => blanketKeepFor(dynamicCall, 'strict')).toThrow(/could not be resolved/)
+    expect(() => blanketKeepFor(dynamicCall, { unresolved: 'error' })).toThrow(/could not be resolved/)
   })
 
   test('the default keeps the blanket either way, so strict can only prune more', () => {
-    expect(blanketKeepFor(staticCall, true).blanket).toBe(true)
-    expect(blanketKeepFor(dynamicCall, true).blanket).toBe(true)
+    expect(blanketKeepFor(staticCall, { unresolved: 'off' }).blanket).toBe(true)
+    expect(blanketKeepFor(dynamicCall, { unresolved: 'off' }).blanket).toBe(true)
   })
 
   /**
@@ -241,7 +242,7 @@ describe('pruneUnusedTokens: strict', () => {
    * which is what keeps `strict` usable for whole framework families.
    */
   test('a file it cannot read warns and falls back rather than throwing', () => {
-    const ctx = createFixtureContext({ pruneUnusedTokens: 'strict' }) as unknown as BambooContext
+    const ctx = createFixtureContext({ prune: { unresolved: 'error' } }) as unknown as BambooContext
     const absolute = ctx.runtime.path.abs(ctx.config.cwd, FILE)
 
     // Parsed and on-disk texts differ, which is how a transformed file arrives.
@@ -276,8 +277,8 @@ describe('pruneUnusedTokens: strict', () => {
  * unnoticed, since nothing about the output changes.
  */
 describe('pruneTokensForBuild reads each file once', () => {
-  const readsFor = (code: string, pruneUnusedTokens: boolean | 'strict', onDisk = code) => {
-    const ctx = createFixtureContext({ pruneUnusedTokens }) as unknown as BambooContext
+  const readsFor = (code: string, prune: PruneOptions, onDisk = code) => {
+    const ctx = createFixtureContext({ prune }) as unknown as BambooContext
     const files = ['app/src/a.tsx', 'app/src/b.tsx', 'app/src/c.tsx']
 
     for (const file of files) ctx.project.addSourceFile(ctx.runtime.path.abs(ctx.config.cwd, file), code)
@@ -303,12 +304,17 @@ describe('pruneTokensForBuild reads each file once', () => {
   const resolved = `${imports}export const a = token('colors.red.300')`
 
   test.each([
-    ['the default', true as const, resolved, resolved],
-    ['strict, everything resolved', 'strict' as const, resolved, resolved],
+    ['the default', { unresolved: 'off' } as PruneOptions, resolved, resolved],
+    ['asserting, everything resolved', { unresolved: 'error' } as PruneOptions, resolved, resolved],
     // The path that used to read three times: a decline still consults the gate. A *file*
     // decline, since a reference decline now throws before it gets there — the parsed copy
     // differing from disk is how a transformed component arrives.
-    ['strict, with a file decline', 'strict' as const, resolved, `${imports}export const a = token(RUNTIME)`],
+    [
+      'asserting, with a file decline',
+      { unresolved: 'error' } as PruneOptions,
+      resolved,
+      `${imports}export const a = token(RUNTIME)`,
+    ],
   ])('%s', (_label, mode, code, onDisk) => {
     const { reads, files } = readsFor(code, mode, onDisk)
 
@@ -364,7 +370,7 @@ describe('a prefix bounds what a dynamic path can reach', () => {
    * build actually hands `pruneTokens`, because that is what decides the stylesheet.
    */
   test('keeps the bounded category and drops the rest', () => {
-    const ctx = createFixtureContext({ pruneUnusedTokens: 'strict' }) as unknown as BambooContext
+    const ctx = createFixtureContext({ prune: { unresolved: 'error' } }) as unknown as BambooContext
     const code = `${imports}export const a = (s) => token(\`colors.\${s}\`)`
     const absolute = ctx.runtime.path.abs(ctx.config.cwd, FILE)
 
@@ -429,7 +435,7 @@ describe('prefix bounding — the cases that were only checked by hand', () => {
    * accepted-but-unkept failure this module exists to prevent.
    */
   test('a bounded negative token keeps its positive counterpart', () => {
-    const ctx = createFixtureContext({ pruneUnusedTokens: 'strict' }) as unknown as BambooContext
+    const ctx = createFixtureContext({ prune: { unresolved: 'error' } }) as unknown as BambooContext
     const code = `${imports}export const a = (s) => token(\`spacing.\${s}\`)`
     const absolute = ctx.runtime.path.abs(ctx.config.cwd, FILE)
 
@@ -469,7 +475,7 @@ describe('prefix bounding — the cases that were only checked by hand', () => {
  */
 describe('strict fails only on an unresolved token reference', () => {
   const run = (code: string) => {
-    const ctx = createFixtureContext({ pruneUnusedTokens: 'strict' }) as unknown as BambooContext
+    const ctx = createFixtureContext({ prune: { unresolved: 'error' } }) as unknown as BambooContext
     const absolute = ctx.runtime.path.abs(ctx.config.cwd, FILE)
 
     ctx.project.addSourceFile(absolute, code)
@@ -519,7 +525,7 @@ describe('strict fails only on an unresolved token reference', () => {
   test('a reported decline never keeps more than the default would', () => {
     const barrel = `import { token as t } from '@acme/ui'\nexport const a = (p) => t(p)`
 
-    expect(blanketKeepFor(barrel, 'strict').blanket).toBe(false)
-    expect(blanketKeepFor(barrel, true).blanket).toBe(false)
+    expect(blanketKeepFor(barrel, { unresolved: 'error' }).blanket).toBe(false)
+    expect(blanketKeepFor(barrel, { unresolved: 'off' }).blanket).toBe(false)
   })
 })

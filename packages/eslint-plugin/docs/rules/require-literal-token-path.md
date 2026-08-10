@@ -1,4 +1,4 @@
-# Require a token path the build can resolve, so `pruneUnusedTokens` can drop the declarations nothing asks for (`@bamboocss/require-literal-token-path`)
+# Require a token path the build can resolve, so `prune.tokens` can drop the declarations nothing asks for (`@bamboocss/require-literal-token-path`)
 
 ⚠️ This rule _warns_ in the 🌐 `all` config.
 
@@ -25,12 +25,12 @@ On the default preset that is the difference between one declaration and several
 
 ## Why lint it
 
-The build already knows. `pruneUnusedTokens` reports what it could not account for, and
-[`pruneUnusedTokens: 'strict'`](https://bamboocss.com/docs/references/config#pruneunusedtokens) fails the build on a
-token path it cannot follow.
+The build already knows. `prune.tokens` reports what it could not account for, and
+[`prune: { unresolved: 'error' }`](https://bamboocss.com/docs/references/config#prune) fails the build on a token path
+it cannot follow.
 
 This rule moves the same finding to where the code is written, so it shows up in the editor rather than in a build log —
-and it fires whatever `pruneUnusedTokens` is set to, which is useful before you turn `strict` on.
+and it fires whatever `prune.tokens` is set to, which is useful before you turn `strict` on.
 
 ## The two messages
 
@@ -44,8 +44,8 @@ keeps hundreds.
 ## When not to use it
 
 A project that reaches for tokens dynamically on purpose — a theme browser, a docs site rendering every colour — will
-trip this on every call, and no rewrite helps. Turn it off there and keep `pruneUnusedTokens` at its default, which
-keeps everything and says nothing.
+trip this on every call, and no rewrite helps. Turn it off there and keep `prune.tokens` at its default, which keeps
+everything and says nothing.
 
 It is not in `recommended` for that reason: the dynamic form is a supported way to use tokens, and this rule is about a
 size trade rather than a mistake.

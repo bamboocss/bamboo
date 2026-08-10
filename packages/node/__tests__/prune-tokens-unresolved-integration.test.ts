@@ -1,10 +1,11 @@
 import { createContext as createFixtureContext } from '@bamboocss/fixture'
 import { describe, expect, test } from 'vitest'
+import type { PruneOptions } from '@bamboocss/types'
 import type { BambooContext } from '../src/create-context'
 import { pruneTokensForBuild } from '../src/token-references'
 
 /**
- * `pruneUnusedTokens: 'strict'` end to end, against the real prune and the emitted css.
+ * `prune: { unresolved: 'error' }` end to end, against the real prune and the emitted css.
  *
  * Every other test of this feature stubs `ctx.pruneTokens` and asserts the arguments it was
  * handed. That proves the accounting decided correctly and nothing about what ships — and no
@@ -16,9 +17,9 @@ import { pruneTokensForBuild } from '../src/token-references'
  */
 const FILE = 'app/src/app.tsx'
 
-const buildCss = (source: string, pruneUnusedTokens: boolean | 'strict' = 'strict') => {
+const buildCss = (source: string, prune: PruneOptions = { unresolved: 'error' }) => {
   const ctx = createFixtureContext({
-    pruneUnusedTokens,
+    prune,
     // Stands in for what extraction would contribute, so the sheet has a utility layer.
     staticCss: { css: [{ properties: { color: ['red.300'] } }] },
     // A custom property exported for something outside the stylesheet to read. Nothing in the
@@ -48,7 +49,7 @@ const declarationCount = (css: string) => [...css.matchAll(/(--[a-z0-9-]+)\s*:/g
 
 const imports = "import { token } from 'styled-system/tokens'\n"
 
-describe('pruneUnusedTokens: strict, against the emitted css', () => {
+describe('prune.unresolved, against the emitted css', () => {
   /**
    * The whole point of the flag. Reaching for a token from javascript keeps every declaration
    * under the default; asserting that the paths resolve keeps only what is asked for.
@@ -71,7 +72,7 @@ describe('pruneUnusedTokens: strict, against the emitted css', () => {
 
   test('the default keeps everything for the same source', () => {
     const strict = buildCss(`${imports}export const brand = token('colors.blue.500')`)
-    const relaxed = buildCss(`${imports}export const brand = token('colors.blue.500')`, true)
+    const relaxed = buildCss(`${imports}export const brand = token('colors.blue.500')`, { unresolved: 'off' })
 
     expect(declares(relaxed, '--colors-teal-500')).toBe(true)
     expect(declarationCount(strict)).toBeLessThan(declarationCount(relaxed))
@@ -97,6 +98,31 @@ describe('pruneUnusedTokens: strict, against the emitted css', () => {
 
   test('a path the build cannot follow fails the build', () => {
     expect(() => buildCss(`${imports}export const brand = (p) => token(p)`)).toThrow(/could not be resolved/)
+  })
+
+  /**
+   * `warn` is `error` without the throw: the same accounting runs and the same references are
+   * reported, so a project can read what turning `error` on would reject before a build depends
+   * on the answer.
+   *
+   * Asserted on the emitted css rather than on the log, because the point is that the pruning is
+   * identical — only whether the build stops differs. A `warn` that quietly fell back to the
+   * default's blanket keep would look fine in the log and ship a different stylesheet.
+   */
+  test('warn reports the same reference without failing, and prunes the same way', () => {
+    const source = `${imports}export const brand = token('colors.blue.500')`
+
+    const warned = buildCss(source, { unresolved: 'warn' })
+    const errored = buildCss(source, { unresolved: 'error' })
+
+    expect(warned).toBe(errored)
+  })
+
+  test('warn does not throw on the path error rejects', () => {
+    const source = `${imports}export const brand = (p) => token(p)`
+
+    expect(() => buildCss(source, { unresolved: 'warn' })).not.toThrow()
+    expect(() => buildCss(source, { unresolved: 'error' })).toThrow(/could not be resolved/)
   })
 
   /**

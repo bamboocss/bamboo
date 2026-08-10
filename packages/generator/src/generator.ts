@@ -100,14 +100,14 @@ export class Generator extends Context {
    * `keep` carries references this cannot see for itself; see `collectTokenReferences`.
    */
   pruneTokens = (sheet: Stylesheet, keep?: Set<string>, tokensReachableFromJs = true) => {
-    // `pruneUnusedTokens` governs the token declarations only. The `@property` rules a
+    // `prune.tokens` governs the token declarations only. The `@property` rules a
     // utility registers are pruned either way: the reason that flag exists is that a token
     // can be reached by a name this pass never sees -- `token()` with a path assembled
     // at runtime -- and a registration has no such surface. Nothing hands one to javascript,
     // and it is not part of the token api, so "does the finished stylesheet mention it"
     // is the whole question. Opting out of token pruning should not mean carrying a
     // preset's entire filter and gradient set for nothing.
-    const pruneVars = this.config.pruneUnusedTokens ?? true
+    const pruneVars = this.config.prune?.tokens ?? true
 
     const layers = sheet.layers
 
@@ -156,7 +156,7 @@ export class Generator extends Context {
    * losing its reset rather than anything that reports itself.
    */
   prunePreflight = (sheet: Stylesheet, rendered: Set<string>) => {
-    if (!this.config.prunePreflight) return
+    if (!this.config.prune?.preflight) return
 
     // A scoped reset writes the scope onto every selector, so the pass has to be told what
     // to strip. Without it nothing reports an element and the whole pass is a silent no-op.
@@ -181,7 +181,7 @@ export class Generator extends Context {
    * `keep` carries names this cannot see for itself; see `collectKeyframeReferences`.
    */
   pruneKeyframes = (sheet: Stylesheet, keep?: Set<string>) => {
-    if (!this.config.pruneUnusedKeyframes) return
+    if (!this.config.prune?.keyframes) return
 
     const layers = sheet.layers
     const keyframeNames = new Set(Object.keys(this.config.theme?.keyframes ?? {}))

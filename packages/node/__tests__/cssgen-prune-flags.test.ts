@@ -4,23 +4,25 @@ import { cssgen } from '../src/cssgen'
 import { pruneTokensForBuild } from '../src/token-references'
 
 /**
- * `pruneUnusedTokens` and `pruneUnusedKeyframes` are independent switches.
+ * `prune.tokens` and `prune.keyframes` are independent switches.
  *
  * Both prune passes gather their reference set by reading every source file, so both sit
  * behind a flag. Sharing one gate is the easy mistake, and it fails silently in the
- * direction users notice least: setting `pruneUnusedKeyframes: false` produces no error,
+ * direction users notice least: setting `prune: { keyframes: false }` produces no error,
  * no warning, and keyframes vanish anyway. The generator-level tests cannot catch it —
  * they call `ctx.pruneKeyframes` directly, below this wiring.
  *
  * This context is hand-built rather than a real one, so it does not pick up the defaults
- * `Context` applies. Each case states both flags for that reason; `defaults` in
- * `packages/core/src/context.ts` is what makes them `true` in a real build.
+ * `Context` applies. It merges `prune` per key exactly as `defaults` in
+ * `packages/core/src/context.ts` does, so a case states only the flag it is about — and so
+ * that a nested object spread over a default cannot quietly drop its siblings here while the
+ * real build merges them.
  */
 const createContext = (config: Config) => {
   const calls: string[] = []
 
   const ctx = {
-    config: { cwd: '/app', pruneUnusedTokens: true, pruneUnusedKeyframes: true, ...config },
+    config: { cwd: '/app', ...config, prune: { tokens: true, keyframes: true, ...config.prune } },
     createSheet: () => ({}),
     parseFiles: () => ({ files: [], results: [] }),
     messages: { buildComplete: () => '', cssArtifactComplete: () => '' },
@@ -58,24 +60,24 @@ describe('cssgen prune flags', () => {
   })
 
   test('disabling both still drops the @property registrations', async () => {
-    expect(await run({ pruneUnusedTokens: false, pruneUnusedKeyframes: false })).toEqual(['properties'])
+    expect(await run({ prune: { tokens: false, keyframes: false } })).toEqual(['properties'])
   })
 
   test('pruneUnusedKeyframes alone still prunes keyframes', async () => {
-    expect(await run({ pruneUnusedTokens: false, pruneUnusedKeyframes: true })).toEqual(['properties', 'keyframes'])
+    expect(await run({ prune: { tokens: false, keyframes: true } })).toEqual(['properties', 'keyframes'])
   })
 
   test('pruneUnusedTokens alone does not prune keyframes', async () => {
-    expect(await run({ pruneUnusedTokens: true, pruneUnusedKeyframes: false })).toEqual(['tokens'])
+    expect(await run({ prune: { tokens: true, keyframes: false } })).toEqual(['tokens'])
   })
 
   test('minimal skips both, since it omits the token layer entirely', async () => {
-    expect(await run({ pruneUnusedTokens: true, pruneUnusedKeyframes: true }, { minimal: true })).toEqual([])
+    expect(await run({ prune: { tokens: true, keyframes: true } }, { minimal: true })).toEqual([])
   })
 
   test('prunePreflight is a third independent switch', async () => {
-    expect(await run({ prunePreflight: true })).toEqual(['tokens', 'preflight', 'keyframes'])
-    expect(await run({ prunePreflight: true, pruneUnusedTokens: false, pruneUnusedKeyframes: false })).toEqual([
+    expect(await run({ prune: { preflight: true } })).toEqual(['tokens', 'preflight', 'keyframes'])
+    expect(await run({ prune: { preflight: true, tokens: false, keyframes: false } })).toEqual([
       'properties',
       'preflight',
     ])
@@ -93,7 +95,7 @@ describe('cssgen prune flags', () => {
  */
 describe('cssgen --type', () => {
   test('prunes the reset it emits', async () => {
-    expect(await run({ prunePreflight: true }, { type: 'preflight' })).toEqual(['append:preflight', 'preflight'])
+    expect(await run({ prune: { preflight: true } }, { type: 'preflight' })).toEqual(['append:preflight', 'preflight'])
   })
 
   test('leaves it alone when the flag is off', async () => {
@@ -103,7 +105,7 @@ describe('cssgen --type', () => {
   test.each(['tokens', 'keyframes', 'static', 'global'] as const)(
     'never prunes for --type %s, which would see a partial sheet',
     async (type) => {
-      expect(await run({ prunePreflight: true, pruneUnusedTokens: true }, { type })).toEqual([`append:${type}`])
+      expect(await run({ prune: { preflight: true, tokens: true } }, { type })).toEqual([`append:${type}`])
     },
   )
 })
@@ -113,7 +115,7 @@ describe('cssgen --type', () => {
  *
  * `pruneTokensForBuild` exists because this conditional was written out three times — in
  * `cssgen`, `builder` and twice in `generate` — and one copy lost its `else`. A watch rebuild
- * with `pruneUnusedTokens: false` then skipped `pruneTokens` altogether and kept `@property`
+ * with `prune: { tokens: false }` then skipped `pruneTokens` altogether and kept `@property`
  * registrations that a full build of the same source strips, so the stylesheet you developed
  * against differed from the one you shipped. Two of the copies carried a comment pointing at
  * the third for the reasoning, which is what made the gap read as deliberate.
@@ -130,10 +132,10 @@ describe('pruneTokensForBuild', () => {
   }
 
   test('prunes tokens when the flag is on', () => {
-    expect(run({ pruneUnusedTokens: true })).toEqual(['tokens'])
+    expect(run({ prune: { tokens: true } })).toEqual(['tokens'])
   })
 
   test('still prunes the @property registrations when the flag is off', () => {
-    expect(run({ pruneUnusedTokens: false })).toEqual(['properties'])
+    expect(run({ prune: { tokens: false } })).toEqual(['properties'])
   })
 })

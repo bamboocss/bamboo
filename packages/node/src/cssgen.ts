@@ -28,13 +28,13 @@ export const cssgen = async (ctx: BambooContext, options: CssGenOptions) => {
 
     // The token and keyframe passes cannot run here: both decide reachability by reading
     // the finished stylesheet, and this branch emits one artifact, so everything would look
-    // unreachable. `prunePreflight` reads the source instead of the sheet, so a partial one
+    // unreachable. `prune.preflight` reads the source instead of the sheet, so a partial one
     // costs it nothing -- and without this the `reset.css` from `cssgen preflight` differs
     // from the one `cssgen --splitting` writes for the same project.
     //
     // Note this branch never calls `parseFiles`, which `collectRenderedElements` does not
     // need: it reads the files itself rather than anything parsing leaves behind.
-    if (type === 'preflight' && ctx.config.prunePreflight) {
+    if (type === 'preflight' && ctx.config.prune?.preflight) {
       ctx.prunePreflight(sheet, collectRenderedElements(ctx))
     }
 
@@ -65,11 +65,11 @@ export const cssgen = async (ctx: BambooContext, options: CssGenOptions) => {
       pruneTokensForBuild(ctx, sheet, results)
     }
 
-    if (!minimal && ctx.config.prunePreflight) {
+    if (!minimal && ctx.config.prune?.preflight) {
       ctx.prunePreflight(sheet, collectRenderedElements(ctx))
     }
 
-    if (!minimal && ctx.config.pruneUnusedKeyframes) {
+    if (!minimal && ctx.config.prune?.keyframes) {
       ctx.pruneKeyframes(sheet, collectKeyframeReferences(ctx, keyframeNames(ctx)))
     }
 

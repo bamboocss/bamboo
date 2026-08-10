@@ -28,11 +28,11 @@ async function build(ctx: BambooContext, artifactIds?: ArtifactId[]) {
   // Gathering the references reads every source file, so each stays behind its own flag.
   pruneTokensForBuild(ctx, sheet, parsed.results)
 
-  if (ctx.config.prunePreflight) {
+  if (ctx.config.prune?.preflight) {
     ctx.prunePreflight(sheet, collectRenderedElements(ctx))
   }
 
-  if (ctx.config.pruneUnusedKeyframes) {
+  if (ctx.config.prune?.keyframes) {
     ctx.pruneKeyframes(sheet, collectKeyframeReferences(ctx, keyframeNames(ctx)))
   }
 
@@ -90,11 +90,11 @@ export async function generate(config: Config, configPath?: string) {
       // time on each change.
       pruneTokensForBuild(ctx, sheet, [])
 
-      if (ctx.config.prunePreflight) {
+      if (ctx.config.prune?.preflight) {
         ctx.prunePreflight(sheet, collectRenderedElements(ctx))
       }
 
-      if (ctx.config.pruneUnusedKeyframes) {
+      if (ctx.config.prune?.keyframes) {
         ctx.pruneKeyframes(sheet, collectKeyframeReferences(ctx, keyframeNames(ctx)))
       }
 

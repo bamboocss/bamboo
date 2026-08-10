@@ -103,7 +103,7 @@ const CASES: Record<string, Config> = {
  */
 describe('themes injected at runtime', () => {
   const config: Config = {
-    pruneUnusedTokens: true,
+    prune: { tokens: true },
     staticCss: { css: [{ properties: { color: ['red.300'] } }] },
     themes: { pink: { tokens: { colors: { primary: { value: 'token(colors.pink.500)' } } } } },
   }
@@ -136,8 +136,8 @@ describe('themes injected at runtime', () => {
  * stays consistent.
  */
 describe.each(Object.entries(CASES))('references javascript is handed: %s', (_name, config) => {
-  const before = buildWithContext({ ...config, pruneUnusedTokens: false })
-  const after = buildWithContext({ ...config, pruneUnusedTokens: true })
+  const before = buildWithContext({ ...config, prune: { tokens: false } })
+  const after = buildWithContext({ ...config, prune: { tokens: true } })
 
   test('keeps every declaration token() resolves to', () => {
     const declaredBefore = declarations(before.css)
@@ -162,9 +162,9 @@ describe.each(Object.entries(CASES))('references javascript is handed: %s', (_na
  * keep passing however this one behaved.
  */
 describe.each(Object.entries(CASES))('with nothing reaching for a token from javascript: %s', (_name, config) => {
-  const unpruned = build({ ...config, pruneUnusedTokens: false })
-  const ungated = buildWithContext({ ...config, pruneUnusedTokens: true }, true)
-  const gated = buildWithContext({ ...config, pruneUnusedTokens: true }, false)
+  const unpruned = build({ ...config, prune: { tokens: false } })
+  const ungated = buildWithContext({ ...config, prune: { tokens: true } }, true)
+  const gated = buildWithContext({ ...config, prune: { tokens: true } }, false)
 
   test('introduces no reference the stylesheet cannot resolve', () => {
     // Some are dangling before pruning too — the reset names `--global-*` properties for the
@@ -188,16 +188,16 @@ describe.each(Object.entries(CASES))('with nothing reaching for a token from jav
  */
 describe.each(Object.entries(CASES))('the gate is not a no-op: %s', (_name, config) => {
   test('removes declarations the ungated path keeps', () => {
-    const ungated = buildWithContext({ ...config, pruneUnusedTokens: true }, true)
-    const gated = buildWithContext({ ...config, pruneUnusedTokens: true }, false)
+    const ungated = buildWithContext({ ...config, prune: { tokens: true } }, true)
+    const gated = buildWithContext({ ...config, prune: { tokens: true } }, false)
 
     expect(declarations(gated.css).size).toBeLessThan(declarations(ungated.css).size)
   })
 })
 
 describe.each(Object.entries(CASES))('pruning invariants: %s', (_name, config) => {
-  const before = build({ ...config, pruneUnusedTokens: false })
-  const after = build({ ...config, pruneUnusedTokens: true })
+  const before = build({ ...config, prune: { tokens: false } })
+  const after = build({ ...config, prune: { tokens: true } })
 
   test('introduces no reference without a declaration', () => {
     const introduced = dangling(after).filter((name) => !dangling(before).includes(name))

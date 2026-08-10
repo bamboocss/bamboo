@@ -288,11 +288,11 @@ These are documented in full elsewhere, and none of them are required to get a m
 
 - [Source transformation](/docs/guides/source-transformation) – `@bamboocss/vite` folds statically-resolvable `css()`
   and pattern calls into plain class strings at build time, so they cost nothing at runtime.
-- [`pruneUnusedTokens`](/docs/references/config#pruneunusedtokens) – drops token CSS variables nothing can reach, which
-  is usually the largest single saving in render-blocking CSS. On by default.
-- [`prunePreflight`](/docs/references/config#prunepreflight) – drops the parts of the reset that style elements your
-  source never renders, which is most of what is left once the tokens have gone. Off by default, and the one pruning
-  option that cannot be proven from the build.
+- [`prune.tokens`](/docs/references/config#prune) – drops token CSS variables nothing can reach, which is usually the
+  largest single saving in render-blocking CSS. On by default.
+- [`prune.preflight`](/docs/references/config#prune) – drops the parts of the reset that style elements your source
+  never renders, which is most of what is left once the tokens have gone. Off by default, and the one pruning option
+  that cannot be proven from the build.
 - [Spec files](/docs/theming/spec) – generate a machine-readable description of your design system.
 - [MCP server](/docs/ai/mcp-server) and [llms.txt](/docs/ai/llms-txt) – expose your design system to AI tooling.
 

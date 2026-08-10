@@ -290,111 +290,9 @@ interface CssgenOptions {
    */
   minify?: boolean
   /**
-   * Whether to drop token css variables that nothing in the generated css can reach.
-   *
-   * The token layer declares every token in the theme, and an app typically uses a small
-   * fraction of them, so this is usually the largest single saving in render-blocking css.
-   *
-   * The same walk also drops an `@property` registration for a custom property the finished
-   * stylesheet neither declares nor reads. A preset registers what its utilities compose —
-   * filters, gradients, transforms, transitions — and ships the whole set regardless of what
-   * the app draws, so an app using none of them carries all of it for nothing. Registrations
-   * declared through `globalVars` are yours and are never removed.
-   *
-   * It is opt-in because reachability cannot be proven for every reference. `token()`,
-   * `token()` and `token.value()` calls are read out of the source, as is any literal
-   * `var(--x)` written by hand — and each form is resolved through a constant or a template
-   * literal the extractor can follow, not only through a path spelled out at the call. Three
-   * things stay invisible: a token named by a path assembled from a value that only exists at
-   * runtime, one referenced only from a stylesheet outside `include`, and one used by a
-   * separate package consuming the output as design tokens. Use `staticCss` to keep those.
-   *
-   * Both forms are a risk, which is a change. `token()` used to hand javascript a literal for
-   * a plain token, so a path it could not resolve cost nothing; it now returns `var(--x)` for
-   * *every* token. Only `token.value()` returns a literal, and only for a token that has one.
-   * So a path this pass cannot read is a declaration that has to survive whichever form asked
-   * for it.
-   *
-   * A custom property declared by `globalCss` or `globalVars` is not one of these cases:
-   * the declaration ships whether or not anything in the stylesheet reads it, so whatever
-   * it references is kept alongside it.
-   *
-   * The cost of that is bluntness. Because `token()` can name any token, a project that
-   * reaches for one from javascript keeps *every* token declaration — on the default preset
-   * that is 468 names against the 68 the old, narrower exemption kept, and a token layer of
-   * 442 declarations rather than 2. It used to cover only virtual tokens, tokens carrying a
-   * condition, and the positive counterpart each negative token pins through
-   * `calc(var(--spacing-4) * -1)`.
-   *
-   * The exemption is skipped entirely for a project that never reaches for a token from
-   * javascript. The tokens artifact is generated into the project rather than installed, so
-   * the import is written in your own source and a scan of `include` finds it — a call, or an
-   * import of any module the artifact could be. That is the whole saving, and it is
-   * all-or-nothing: a project with one caller keeps every declaration.
-   *
-   * The scan reads `include`, which scopes style extraction rather than everything that may
-   * import — so a script, a config, or a sibling workspace package that calls `token()` is
-   * not covered, nor is a binding renamed away from `token`, as in `const t = token`. Both
-   * are rare and neither reports itself: the declaration goes and the call returns a `var()`
-   * nothing declares. Setting this to `false` keeps every declaration if you are in that
-   * position.
-   *
-   * Setting this to `false` keeps every token declaration, but still drops the `@property`
-   * registrations. Those are not tokens — nothing hands one to javascript and none appear
-   * in the `token()` surface — so the reachability problem above does not apply to them,
-   * and opting out of token pruning should not mean shipping a preset's whole filter and
-   * gradient set for nothing.
-   *
-   * @default true
+   * What to drop from the generated stylesheet. See `PruneOptions`.
    */
-  pruneUnusedTokens?: boolean | 'strict'
-  /**
-   * Drop `@keyframes` rules nothing can reach.
-   *
-   * A preset declares every animation it offers and an app uses a handful, so the rest
-   * are dead weight in the stylesheet that blocks first paint. Only keyframes the theme
-   * declares are ever removed — one emitted by `globalCss` is left alone.
-   *
-   * A name is kept when any declaration in the generated css names it, and when it
-   * appears anywhere under `include`, which covers an animation assembled at runtime or
-   * applied through an inline `style` rather than through bamboo. That textual fallback
-   * is deliberately over-inclusive: keeping an unused keyframe costs bytes, dropping a
-   * used one breaks the animation.
-   *
-   * @default true
-   */
-  pruneUnusedKeyframes?: boolean
-  /**
-   * Whether to drop the parts of the reset that style elements your source never renders.
-   *
-   * Two thirds of the reset is bound to specific elements — 41 of them, covering `table`,
-   * `pre`, `kbd`, `optgroup` and the rest of the long tail. The reset is a fixed size, so it
-   * dominates a small stylesheet: a third of one sandbox's css here and four fifths of
-   * another's, of which 13% and 34% respectively is for elements those projects never render.
-   *
-   * A selector list loses only the parts naming unrendered elements, so a rule shared between
-   * `button` and `::file-selector-button` keeps the half that still applies. `html` and `body`
-   * are never removed.
-   *
-   * Off by default, and it cannot be made safe by default. Unlike the token and keyframe
-   * passes there is nothing to prove this against: an element rendered by a dependency's
-   * component, by `dangerouslySetInnerHTML`, or by markdown is invisible to a scan of your own
-   * source. What you get wrong is an element quietly losing its reset — no error, no warning.
-   * Reach for it when you control the markup and have measured that it pays.
-   *
-   * The blind spot to check first is your own entry template. The scan reads `include`, and
-   * `include` conventionally covers components rather than markup — a glob rooted at `./src`
-   * does not match `index.html`, so an element appearing only there is dropped. Add the
-   * template to `include` to cover it — the scan reads any file listed, not only ones the
-   * parser understands, and reads it from disk rather than from the build's parsed copy, so
-   * a single-file component's markup survives the transform to tsx.
-   *
-   * A scoped reset is handled: `preflight: { scope: '.app' }` writes `.app table`, and the
-   * scope is stripped before an element is read out. `bamboo cssgen preflight` prunes too.
-   *
-   * @default false
-   */
-  prunePreflight?: boolean
+  prune?: PruneOptions
   /**
    * The root selector for the css variables.
    * @default ':where(:root, :host)'
@@ -483,6 +381,143 @@ export interface BambooPlugin extends HooksOptions {
 
 export interface PluginsOptions {
   plugins?: BambooPlugin[]
+}
+
+/**
+ * What to drop from the generated stylesheet, and how strictly to account for it.
+ *
+ * These were three top-level options — `prune.tokens`, `prune.keyframes` and
+ * `prune.preflight` — which disagreed with each other on all three of naming, default and
+ * value type. Grouping them is what makes one default reading of "prune" possible.
+ */
+export interface PruneOptions {
+  /**
+   * Whether to drop token css variables that nothing in the generated css can reach.
+   *
+   * The token layer declares every token in the theme, and an app typically uses a small
+   * fraction of them, so this is usually the largest single saving in render-blocking css.
+   *
+   * The same walk also drops an `@property` registration for a custom property the finished
+   * stylesheet neither declares nor reads. A preset registers what its utilities compose —
+   * filters, gradients, transforms, transitions — and ships the whole set regardless of what
+   * the app draws, so an app using none of them carries all of it for nothing. Registrations
+   * declared through `globalVars` are yours and are never removed.
+   *
+   * It is opt-in because reachability cannot be proven for every reference. `token()`,
+   * `token()` and `token.value()` calls are read out of the source, as is any literal
+   * `var(--x)` written by hand — and each form is resolved through a constant or a template
+   * literal the extractor can follow, not only through a path spelled out at the call. Three
+   * things stay invisible: a token named by a path assembled from a value that only exists at
+   * runtime, one referenced only from a stylesheet outside `include`, and one used by a
+   * separate package consuming the output as design tokens. Use `staticCss` to keep those.
+   *
+   * Both forms are a risk, which is a change. `token()` used to hand javascript a literal for
+   * a plain token, so a path it could not resolve cost nothing; it now returns `var(--x)` for
+   * *every* token. Only `token.value()` returns a literal, and only for a token that has one.
+   * So a path this pass cannot read is a declaration that has to survive whichever form asked
+   * for it.
+   *
+   * A custom property declared by `globalCss` or `globalVars` is not one of these cases:
+   * the declaration ships whether or not anything in the stylesheet reads it, so whatever
+   * it references is kept alongside it.
+   *
+   * The cost of that is bluntness. Because `token()` can name any token, a project that
+   * reaches for one from javascript keeps *every* token declaration — on the default preset
+   * that is 468 names against the 68 the old, narrower exemption kept, and a token layer of
+   * 442 declarations rather than 2. It used to cover only virtual tokens, tokens carrying a
+   * condition, and the positive counterpart each negative token pins through
+   * `calc(var(--spacing-4) * -1)`.
+   *
+   * The exemption is skipped entirely for a project that never reaches for a token from
+   * javascript. The tokens artifact is generated into the project rather than installed, so
+   * the import is written in your own source and a scan of `include` finds it — a call, or an
+   * import of any module the artifact could be. That is the whole saving, and it is
+   * all-or-nothing: a project with one caller keeps every declaration.
+   *
+   * The scan reads `include`, which scopes style extraction rather than everything that may
+   * import — so a script, a config, or a sibling workspace package that calls `token()` is
+   * not covered, nor is a binding renamed away from `token`, as in `const t = token`. Both
+   * are rare and neither reports itself: the declaration goes and the call returns a `var()`
+   * nothing declares. Setting this to `false` keeps every declaration if you are in that
+   * position.
+   *
+   * Setting this to `false` keeps every token declaration, but still drops the `@property`
+   * registrations. Those are not tokens — nothing hands one to javascript and none appear
+   * in the `token()` surface — so the reachability problem above does not apply to them,
+   * and opting out of token pruning should not mean shipping a preset's whole filter and
+   * gradient set for nothing.
+   *
+   * @default true
+   */
+  tokens?: boolean
+  /**
+   * Drop `@keyframes` rules nothing can reach.
+   *
+   * A preset declares every animation it offers and an app uses a handful, so the rest
+   * are dead weight in the stylesheet that blocks first paint. Only keyframes the theme
+   * declares are ever removed — one emitted by `globalCss` is left alone.
+   *
+   * A name is kept when any declaration in the generated css names it, and when it
+   * appears anywhere under `include`, which covers an animation assembled at runtime or
+   * applied through an inline `style` rather than through bamboo. That textual fallback
+   * is deliberately over-inclusive: keeping an unused keyframe costs bytes, dropping a
+   * used one breaks the animation.
+   *
+   * @default true
+   */
+  keyframes?: boolean
+  /**
+   * Whether to drop the parts of the reset that style elements your source never renders.
+   *
+   * Two thirds of the reset is bound to specific elements — 41 of them, covering `table`,
+   * `pre`, `kbd`, `optgroup` and the rest of the long tail. The reset is a fixed size, so it
+   * dominates a small stylesheet: a third of one sandbox's css here and four fifths of
+   * another's, of which 13% and 34% respectively is for elements those projects never render.
+   *
+   * A selector list loses only the parts naming unrendered elements, so a rule shared between
+   * `button` and `::file-selector-button` keeps the half that still applies. `html` and `body`
+   * are never removed.
+   *
+   * Off by default, and it cannot be made safe by default. Unlike the token and keyframe
+   * passes there is nothing to prove this against: an element rendered by a dependency's
+   * component, by `dangerouslySetInnerHTML`, or by markdown is invisible to a scan of your own
+   * source. What you get wrong is an element quietly losing its reset — no error, no warning.
+   * Reach for it when you control the markup and have measured that it pays.
+   *
+   * The blind spot to check first is your own entry template. The scan reads `include`, and
+   * `include` conventionally covers components rather than markup — a glob rooted at `./src`
+   * does not match `index.html`, so an element appearing only there is dropped. Add the
+   * template to `include` to cover it — the scan reads any file listed, not only ones the
+   * parser understands, and reads it from disk rather than from the build's parsed copy, so
+   * a single-file component's markup survives the transform to tsx.
+   *
+   * A scoped reset is handled: `preflight: { scope: '.app' }` writes `.app table`, and the
+   * scope is stripped before an element is read out. `bamboo cssgen preflight` prunes too.
+   *
+   * @default false
+   */
+  preflight?: boolean
+  /**
+   * What to do about a token reference the build cannot read.
+   *
+   * A path spelled at the call resolves; one assembled at runtime does not, and an
+   * unreadable path is why `tokens` has to keep every declaration rather than the few a
+   * project asks for. This says how loudly to say so.
+   *
+   * - `off` prunes on what the css reaches and says nothing.
+   * - `warn` runs the accounting pass and reports what it could not follow, so you can see
+   *   what `error` would reject without a build failing.
+   * - `error` asserts that every token path resolves, and fails the build where one does
+   *   not. Under it the keeps are computed from accounted references rather than blanket,
+   *   which is what makes pruning worth asserting for.
+   *
+   * Named for what it checks rather than `strict`, which already means something unrelated
+   * here: `strictTokens` and `strictPropertyValues` narrow generated *typescript*, and
+   * neither implies nor is implied by this.
+   *
+   * @default 'off'
+   */
+  unresolved?: 'off' | 'warn' | 'error'
 }
 
 export interface Config

@@ -26,18 +26,18 @@ const declares = (css: string, name: string) => new RegExp(`@keyframes\\s+${name
 describe('pruneKeyframes', () => {
   /** The escape hatch has to be exact: disabling it produces the css it produced before. */
   test('keeps every keyframe when disabled', () => {
-    const css = buildCss({ pruneUnusedKeyframes: false })
+    const css = buildCss({ prune: { keyframes: false } })
 
     expect(declares(css, 'fade-in')).toBe(true)
     expect(declares(css, 'spin')).toBe(true)
   })
 
   test('prunes by default, without being asked', () => {
-    expect(buildCss()).toBe(buildCss({ pruneUnusedKeyframes: true }))
+    expect(buildCss()).toBe(buildCss({ prune: { keyframes: true } }))
   })
 
   test('drops keyframes the css cannot reach once enabled', () => {
-    const css = buildCss({ pruneUnusedKeyframes: true })
+    const css = buildCss({ prune: { keyframes: true } })
 
     expect(declares(css, 'fade-in')).toBe(false)
     expect(declares(css, 'spin')).toBe(false)
@@ -45,7 +45,7 @@ describe('pruneKeyframes', () => {
 
   test('keeps one reached through a static style', () => {
     const css = buildCss({
-      pruneUnusedKeyframes: true,
+      prune: { keyframes: true },
       staticCss: { css: [{ properties: { animation: ['fade-in 1s ease-out'] } }] },
     })
 
@@ -54,15 +54,15 @@ describe('pruneKeyframes', () => {
   })
 
   test('keeps one named only in the keep set', () => {
-    const css = buildCss({ pruneUnusedKeyframes: true }, new Set(['spin']))
+    const css = buildCss({ prune: { keyframes: true } }, new Set(['spin']))
 
     expect(declares(css, 'spin')).toBe(true)
     expect(declares(css, 'fade-in')).toBe(false)
   })
 
   test('enabling it only ever removes, never adds or rewrites', () => {
-    const before = buildCss({ pruneUnusedKeyframes: false })
-    const after = buildCss({ pruneUnusedKeyframes: true })
+    const before = buildCss({ prune: { keyframes: false } })
+    const after = buildCss({ prune: { keyframes: true } })
 
     expect(after.length).toBeLessThan(before.length)
 
@@ -75,14 +75,14 @@ describe('pruneKeyframes', () => {
   })
 
   test('leaves the token layer alone', () => {
-    const withPrune = buildCss({ pruneUnusedKeyframes: true })
+    const withPrune = buildCss({ prune: { keyframes: true } })
 
     // Token declarations are `pruneTokens`' business; this pass must not touch them.
     expect(withPrune).toContain('--colors-red-300')
   })
 
   test('a project with no keyframes is unaffected', () => {
-    const ctx = createGeneratorContext({ pruneUnusedKeyframes: true })
+    const ctx = createGeneratorContext({ prune: { keyframes: true } })
     const sheet = ctx.createSheet()
     ctx.appendLayerParams(sheet)
     ctx.appendBaselineCss(sheet)
@@ -99,7 +99,7 @@ describe('themes', () => {
    */
   const themed = (prune: boolean) => {
     const ctx = createGeneratorContext({
-      pruneUnusedKeyframes: prune,
+      prune: { keyframes: prune },
       theme: {
         extend: {
           keyframes: KEYFRAMES,

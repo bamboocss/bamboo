@@ -53,8 +53,8 @@ Whether to opt-out of the defaults config presets: [`@bamboocss/preset-base`, `@
 **Default**: `false`
 
 Whether to enable css reset styles. See also [Global styles](/docs/concepts/global-styles) for how reset interacts with
-global variables and layering, and [`prunePreflight`](#prunepreflight) for dropping the parts of the reset that style
-elements your source never renders.
+global variables and layering, and [`prune.preflight`](#prune) for dropping the parts of the reset that style elements
+your source never renders.
 
 Enable preflight:
 
@@ -453,11 +453,22 @@ Whether to allow shorthand properties.
 | `true`  | `css({ bgColor: 'gainsboro', p: '10px 15px' })` |
 | `false` | longhand only – `backgroundColor`, `padding`    |
 
-### pruneUnusedTokens
+### prune
 
-**Type**: `boolean | 'strict'`
+**Type**: `{ tokens?: boolean; keyframes?: boolean; preflight?: boolean; unresolved?: 'off' | 'warn' | 'error' }`
 
-**Default**: `true`
+**Default**: `{ tokens: true, keyframes: true, preflight: false, unresolved: 'off' }`
+
+What to drop from the generated stylesheet. Each key is an independent switch, and setting one keeps the defaults for
+the rest.
+
+```json
+{
+  "prune": { "tokens": true, "keyframes": true, "preflight": false, "unresolved": "off" }
+}
+```
+
+#### prune.tokens
 
 Whether to drop token css variables that nothing in the generated css can reach.
 
@@ -467,7 +478,7 @@ size of your app. Across the example apps in this repository it is worth 10–67
 
 ```json
 {
-  "pruneUnusedTokens": false
+  "prune": { "tokens": false }
 }
 ```
 
@@ -495,14 +506,17 @@ reachability never applied to them, and a preset ships the set it composes from 
   default preset that is 468 declarations kept instead of 68.
 </Callout>
 
-#### `'strict'`
+#### prune.unresolved
 
-Set `pruneUnusedTokens: 'strict'` to assert that every token path in your project is spelled out at the call. Bamboo
+What to do about a token reference the build cannot read. `'off'` (the default) prunes on what the css reaches and says
+nothing; `'warn'` reports; `'error'` fails the build.
+
+Set `prune: { unresolved: 'error' }` to assert that every token path in your project is spelled out at the call. Bamboo
 then accounts for each reference individually, keeps by name only what is asked for, and **prints everything it could
 not read**:
 
 ```
-⚠ tokens:strict  2 token reference(s) could not be resolved, so every token declaration is kept.
+⚠ tokens:unresolved  2 token reference(s) could not be resolved, so every token declaration is kept.
 
   src/chart.tsx
     14: unresolved-reference
@@ -510,8 +524,11 @@ not read**:
     3: unclassified-import
 ```
 
+Reach for `'warn'` first: it runs the same accounting and prints the same references, so you can see what `'error'`
+would reject before a build depends on it.
+
 A reference it cannot read is never pruned — it falls back to whatever the default would have answered for your project.
-So `strict` is never less safe and never larger than the default, and the message tells you why when it cannot prune.
+So asserting is never less safe and never larger than the default, and the message tells you why when it cannot prune.
 
 These resolve, and cost nothing:
 
@@ -551,11 +568,7 @@ import { token } from '@acme/ui' // a barrel Bamboo cannot classify
   under a `.tsx`-only glob are the common gaps.
 </Callout>
 
-### prunePreflight
-
-**Type**: `boolean`
-
-**Default**: `false`
+#### prune.preflight
 
 Whether to drop the parts of the reset that style elements your source never renders.
 
@@ -565,7 +578,7 @@ utilities layer does.
 
 ```json
 {
-  "prunePreflight": true
+  "prune": { "preflight": true }
 }
 ```
 
@@ -609,21 +622,17 @@ A [scoped reset](#preflight) is handled – `preflight: { scope: '.app' }` write
 before the element is read out. `bamboo cssgen preflight` prunes as well, so the `reset.css` it writes matches the one a
 full build produces.
 
-### pruneUnusedKeyframes
-
-**Type**: `boolean`
-
-**Default**: `true`
+#### prune.keyframes
 
 Whether to drop `@keyframes` rules nothing in the generated css can reach.
 
 A preset declares every animation it offers and an app uses a handful; the rest sit in the same render-blocking
-stylesheet. Like [`pruneUnusedTokens`](#pruneunusedtokens), the saving scales with the size of your design system rather
-than the size of your app. The two are independent – either can be switched off without the other.
+stylesheet. Like [`prune.tokens`](#prune), the saving scales with the size of your design system rather than the size of
+your app. The two are independent – either can be switched off without the other.
 
 ```json
 {
-  "pruneUnusedKeyframes": false
+  "prune": { "keyframes": false }
 }
 ```
 

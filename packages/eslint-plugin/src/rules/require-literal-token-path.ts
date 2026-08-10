@@ -185,12 +185,12 @@ const rule = createRule({
   meta: {
     docs: {
       description:
-        'Require a token path the build can resolve, so `pruneUnusedTokens` can drop the declarations nothing asks for.',
+        'Require a token path the build can resolve, so `prune.tokens` can drop the declarations nothing asks for.',
     },
     messages: {
       /**
        * The build keeps every token declaration for this, because the path could name any of
-       * them. Under `pruneUnusedTokens: 'strict'` it is an error rather than a size cost.
+       * them. Under `prune: { unresolved: 'error' }` it is an error rather than a size cost.
        */
       opaqueTokenPath:
         'Token path cannot be resolved at build time, so every token declaration is kept. Spell the path at the call, or give a template a static prefix.',

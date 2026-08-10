@@ -39,9 +39,16 @@ const defaults = (config: UserConfig): UserConfig => ({
   cssVarRoot: ':where(:root, :host)',
   outExtension: 'mjs',
   shorthands: true,
-  pruneUnusedTokens: true,
-  pruneUnusedKeyframes: true,
   ...config,
+  // Merged per key rather than spread, so `prune: { preflight: true }` keeps the other
+  // defaults instead of turning token and keyframe pruning off by omission.
+  prune: {
+    tokens: true,
+    keyframes: true,
+    preflight: false,
+    unresolved: 'off',
+    ...config.prune,
+  },
   layers: {
     reset: 'reset',
     base: 'base',

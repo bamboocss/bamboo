@@ -5,7 +5,7 @@ import { eslintTester } from '../test-utils'
 /**
  * A token path the build cannot resolve costs the whole token layer, because `token()` returns
  * a variable reference for *any* token and an unreadable path could name any of them. Under
- * `pruneUnusedTokens: 'strict'` it fails the build outright.
+ * `prune: { unresolved: 'error' }` it fails the build outright.
  *
  * The rule reports it where it is written, rather than as a build message about a file. A
  * template with a static head is reported separately and more mildly: the build bounds it to

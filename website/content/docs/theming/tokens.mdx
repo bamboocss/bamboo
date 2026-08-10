@@ -429,9 +429,8 @@ This will generate a CSS file similar to the following:
 }
 ```
 
-Only the tokens your generated CSS can reach are declared there.
-[`pruneUnusedTokens`](/docs/references/config#pruneunusedtokens) defaults to `true`, and the gap is usually wide — the
-`vite-ts` example in this repository ships 480 tokens in `tokens/index.mjs` and declares 45 of them in `styles.css`. Set
-it to `false` to declare every token.
+Only the tokens your generated CSS can reach are declared there. [`prune.tokens`](/docs/references/config#prune)
+defaults to `true`, and the gap is usually wide — the `vite-ts` example in this repository ships 480 tokens in
+`tokens/index.mjs` and declares 45 of them in `styles.css`. Set it to `false` to declare every token.
 
 You can also define type-safe CSS variables using [globalVars](/docs/concepts/writing-styles#property-conflicts).

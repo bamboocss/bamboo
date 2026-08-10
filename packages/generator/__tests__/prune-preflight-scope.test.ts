@@ -2,7 +2,7 @@ import { createGeneratorContext } from '@bamboocss/fixture'
 import { describe, expect, test } from 'vitest'
 
 /**
- * `prunePreflight` against the reset the generator actually emits, rather than against a
+ * `prune.preflight` against the reset the generator actually emits, rather than against a
  * hand-written stylesheet.
  *
  * The unit tests in `core` feed it selector strings, so all of them keep passing if
@@ -22,7 +22,7 @@ import { describe, expect, test } from 'vitest'
  * of letting a list quietly assert half as much.
  */
 const prune = (preflight: unknown) => {
-  const ctx: any = createGeneratorContext({ preflight, prunePreflight: true } as any)
+  const ctx: any = createGeneratorContext({ preflight, prune: { preflight: true } } as any)
   const sheet = ctx.createSheet()
 
   ctx.appendCssOfType('preflight', sheet)

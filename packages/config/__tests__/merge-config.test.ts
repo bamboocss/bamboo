@@ -1164,3 +1164,28 @@ describe('mergeConfigs / staticCss', () => {
     `)
   })
 })
+
+/**
+ * `prune` is an object, and `mergeConfigs` deep-merges only the options it names — everything
+ * else is shallow-assigned, so an unnamed object replaces rather than merges.
+ *
+ * That distinction did not exist when this was three top-level booleans: they merged without
+ * help. Nesting them introduced a way for a preset's setting to disappear because an app set a
+ * *different* key, which nothing about the output would have revealed.
+ */
+describe('prune', () => {
+  test('keeps a preset key the config does not mention', () => {
+    const merged = mergeConfigs([
+      { prune: { tokens: false, keyframes: false } },
+      { prune: { preflight: true } },
+    ] as never)
+
+    expect((merged as { prune: object }).prune).toEqual({ tokens: false, keyframes: false, preflight: true })
+  })
+
+  test('the config wins on a key they both set', () => {
+    const merged = mergeConfigs([{ prune: { tokens: false } }, { prune: { tokens: true } }] as never)
+
+    expect((merged as { prune: object }).prune).toEqual({ tokens: true })
+  })
+})

@@ -91,6 +91,11 @@ export function mergeConfigs(configs: ExtendableConfig[]) {
       globalFontface: mergeExtensions(reversed.map((config) => config.globalFontface ?? {})),
       globalPositionTry: mergeExtensions(reversed.map((config) => config.globalPositionTry ?? {})),
       staticCss: mergeExtensions(reversed.map((config) => config.staticCss ?? {})),
+      // Listed here because everything not named is shallow-assigned, and `prune` is an object.
+      // Left off, a config setting one key replaces a preset's whole object — so a preset that
+      // turns keyframe pruning off would be silently re-enabled by an app setting `preflight`.
+      // The three flags this replaced were top-level booleans and merged without help.
+      prune: mergeExtensions(reversed.map((config) => config.prune ?? {})),
       themes: mergeExtensions(reversed.map((config) => config.themes ?? {})),
       hooks: mergeHooks(pluginHooks),
     },

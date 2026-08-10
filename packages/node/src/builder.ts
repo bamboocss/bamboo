@@ -271,11 +271,11 @@ export class Builder {
     // the source scan alone; re-parsing here would encode every style a second time.
     pruneTokensForBuild(ctx, sheet, [])
 
-    if (ctx.config.prunePreflight) {
+    if (ctx.config.prune?.preflight) {
       ctx.prunePreflight(sheet, collectRenderedElements(ctx))
     }
 
-    if (ctx.config.pruneUnusedKeyframes) {
+    if (ctx.config.prune?.keyframes) {
       ctx.pruneKeyframes(sheet, collectKeyframeReferences(ctx, keyframeNames(ctx)))
     }
 

@@ -206,7 +206,7 @@ describe('collectRenderedElements', () => {
    * entry template is reachable by listing it. That matters more than it sounds: `index.html`
    * and `app.html` are where `<table>`, `<noscript>` and the rest of a page's static markup
    * usually live, and the conventional `./src/**` glob does not cover them -- so by default
-   * `prunePreflight` drops the reset for every element that appears only there.
+   * `prune.preflight` drops the reset for every element that appears only there.
    */
   test('reads a non-source file, so an html entry can be listed in include', () => {
     expect(collectElements({ 'index.html': `<body><table><td>x</td></table></body>` })).toEqual(
@@ -217,7 +217,7 @@ describe('collectRenderedElements', () => {
   /**
    * The limitation, pinned so it stays a known one. Nothing outside `include` is read, and
    * an element that only ever appears there loses its reset with no error and no warning.
-   * This is why `prunePreflight` is opt-in and cannot be made a default.
+   * This is why `prune.preflight` is opt-in and cannot be made a default.
    */
   test('does not see markup that include does not cover', () => {
     const ctx = createContext({ 'a.tsx': `<div />` })

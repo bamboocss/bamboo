@@ -29,7 +29,7 @@ const STRING_LITERAL = /'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*
 
 /**
  * Whether a token is reached from javascript at all — a call of any shape, or an import of the
- * artifact. Being true keeps every token declaration, so the whole of `pruneUnusedTokens` rests
+ * artifact. Being true keeps every token declaration, so the whole of `prune.tokens` rests
  * on it.
  *
  * The awkward part is that a token reference inside a css value is now spelled `token(…)` too,
@@ -145,7 +145,7 @@ export function collectTokenReferences(ctx: BambooContext, results: ParserResult
  * The token prune, as all three build paths need to run it.
  *
  * One function because it was three copies of one conditional, and the `false` branch went
- * missing from a copy: a watch rebuild with `pruneUnusedTokens: false` skipped `pruneTokens`
+ * missing from a copy: a watch rebuild with `prune: { tokens: false }` skipped `pruneTokens`
  * altogether, so it kept `@property` registrations that a full build of the same source
  * strips. The other two copies carried a comment pointing at that file for the reasoning,
  * which is how a missing branch reads as intentional.
@@ -160,20 +160,26 @@ export function pruneTokensForBuild(
   sheet: Parameters<BambooContext['pruneTokens']>[0],
   results: ParserResult[],
 ) {
-  if (!ctx.config.pruneUnusedTokens) {
+  if (!ctx.config.prune?.tokens) {
     ctx.pruneTokens(sheet)
     return
   }
 
-  // `strict` is an assertion, not a cleverer inference: the user has said every token path in
-  // their project resolves at build time. So the accounting runs, whatever it accepts is kept
-  // by name, and whatever it cannot read is *reported* and falls back to the default answer.
+  // `unresolved` is an assertion, not a cleverer inference: the user has said every token path
+  // in their project resolves at build time. So the accounting runs, whatever it accepts is
+  // kept by name, and whatever it cannot read is *reported* and falls back to the default
+  // answer.
   //
   // That fallback is what makes this safe to offer. A declined reference leaves the build
   // exactly where the default would have left it. What it cannot see is a caller outside
   // `include` — see `accountTokenReferences` — which is the part the user asserted, and the
   // reason the declines are printed rather than swallowed.
-  const strict = ctx.config.pruneUnusedTokens === 'strict'
+  //
+  // `warn` runs all of it and throws none of it, so a project can read what `error` would
+  // reject before a build depends on the answer. The pruning is identical either way — only
+  // whether an unreadable path stops the build differs.
+  const unresolved = ctx.config.prune?.unresolved ?? 'off'
+  const accounts = unresolved !== 'off'
 
   // One walk. These three answers all come from the same files, and reading them apart meant
   // a strict build opened every file three times: once for the reference set, once to account,
@@ -199,12 +205,12 @@ export function pruneTokensForBuild(
       if (!reachable && reachableFromJs(text)) reachable = true
     }
 
-    if (strict) accountSnapshot(ctx, snapshot, accounting)
+    if (accounts) accountSnapshot(ctx, snapshot, accounting)
   }
 
   for (const name of tokenVarsFor(ctx, paths)) vars.add(name)
 
-  if (!strict) {
+  if (!accounts) {
     ctx.pruneTokens(sheet, vars, reachable)
     return
   }
@@ -245,21 +251,23 @@ export function pruneTokensForBuild(
   const reported = accounting.declined.filter((entry) => !failsStrict(entry))
 
   // Thrown before the report, so a build that is about to fail does not first announce what it
-  // kept.
+  // kept. Under `warn` the same references are printed and the build carries on, which is the
+  // only difference between the two modes.
   if (failing.length) {
-    throw new BambooError(
-      'TOKEN_REFERENCE_UNRESOLVED',
+    const message =
       `${failing.length} token reference(s) could not be resolved.\n\n${formatDeclined(ctx, failing)}\n\n` +
-        `\`pruneUnusedTokens: 'strict'\` asserts that every token path resolves at build time, so this is ` +
-        `an error rather than a silent fallback. Spell the path as a string literal at the call, give a ` +
-        `template a static prefix so it can be bounded, move the token into \`staticCss\`, or set ` +
-        `\`pruneUnusedTokens: true\` to stop asserting.`,
-    )
+      `\`prune.unresolved\` asserts that every token path resolves at build time. Spell the path as a ` +
+      `string literal at the call, give a template a static prefix so it can be bounded, move the token ` +
+      `into \`staticCss\`, or set \`prune: { unresolved: 'off' }\` to stop asserting.`
+
+    if (unresolved === 'error') throw new BambooError('TOKEN_REFERENCE_UNRESOLVED', message)
+
+    logger.warn('tokens:unresolved', message)
   }
 
   if (reported.length) {
     logger.warn(
-      'tokens:strict',
+      'tokens:unresolved',
       `${reported.length} reference(s) could not be accounted for, so every token declaration is kept.\n\n` +
         `${formatDeclined(ctx, reported)}\n\n` +
         `These are shapes the build cannot follow rather than paths you can respell — a component stored ` +
@@ -356,7 +364,7 @@ export const keyframeNames = (ctx: BambooContext) => Object.keys(ctx.config.them
  *
  * Lowercase-initial only, so a JSX component (`<Button />`) is not mistaken for an element.
  * That cuts the other way too — a component rendering `<button>` inside a dependency is
- * invisible here, which is why `prunePreflight` is opt-in.
+ * invisible here, which is why `prune.preflight` is opt-in.
  *
  * The commoner blind spot is nearer than a dependency: this reads `include`, and `include`
  * conventionally covers components rather than markup. An entry template — `index.html`,
@@ -411,7 +419,7 @@ export function collectRenderedElements(ctx: BambooContext) {
  * away from `token`, as in `const t = token`. Also unseen is a caller outside `include`,
  * which scopes style extraction rather than everything that may import — a script, a config,
  * or a sibling workspace package. Both prune declarations the running app then asks for, and
- * neither reports itself; `pruneUnusedTokens: false` is the way out.
+ * neither reports itself; `prune: { tokens: false }` is the way out.
  */
 export function tokensReachableFromJs(ctx: BambooContext) {
   for (const content of sourceTexts(ctx)) {

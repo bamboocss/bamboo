@@ -7,6 +7,7 @@ import { validateBreakpoints } from './validation/validate-breakpoints'
 import { validateConditions } from './validation/validate-condition'
 import { validatePatterns } from './validation/validate-patterns'
 import { validateRecipes } from './validation/validate-recipes'
+import { validateRemovedOptions } from './validation/validate-removed'
 import { validateTokens } from './validation/validate-tokens'
 
 /**
@@ -18,6 +19,7 @@ import { validateTokens } from './validation/validate-tokens'
  * - Check for missing tokens references
  * - Check for conditions selectors (must contain '&')
  * - Check for breakpoints units (must be the same)
+ * - Check for options that have been removed, which are otherwise ignored in silence
  */
 export const validateConfig = (config: Partial<UserConfig>) => {
   if (config.validation === 'none') return
@@ -27,6 +29,8 @@ export const validateConfig = (config: Partial<UserConfig>) => {
   const addError = (scope: string, message: string) => {
     warnings.add(`[${scope}] ` + message)
   }
+
+  validateRemovedOptions(config, addError)
 
   validateBreakpoints(config.theme?.breakpoints, addError)
 

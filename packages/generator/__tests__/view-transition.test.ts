@@ -40,7 +40,7 @@ const declaresToken = (css: string, name: string) => new RegExp(`\\${name}\\s*:`
 
 describe('view transition pruning', () => {
   test('keeps a keyframe only a transition names', () => {
-    const css = buildCss({ old: { animationName: 'fade-in' } }, { pruneUnusedKeyframes: true })
+    const css = buildCss({ old: { animationName: 'fade-in' } }, { prune: { keyframes: true } })
 
     expect(declaresKeyframe(css, 'fade-in')).toBe(true)
     // The control: the other keyframe is genuinely unreachable and still goes.
@@ -48,20 +48,20 @@ describe('view transition pruning', () => {
   })
 
   test('keeps a keyframe named through the animation shorthand', () => {
-    const css = buildCss({ group: { animation: 'fade-in 1s ease-out' } }, { pruneUnusedKeyframes: true })
+    const css = buildCss({ group: { animation: 'fade-in 1s ease-out' } }, { prune: { keyframes: true } })
 
     expect(declaresKeyframe(css, 'fade-in')).toBe(true)
   })
 
   test('keeps a token only a transition references', () => {
-    const css = buildCss({ group: { bg: 'red.300' } }, { pruneUnusedTokens: true })
+    const css = buildCss({ group: { bg: 'red.300' } }, { prune: { tokens: true } })
 
     expect(declaresToken(css, '--colors-red-300')).toBe(true)
     expect(declaresToken(css, '--colors-pink-500')).toBe(false)
   })
 
   test('keeps a token referenced from inside a condition', () => {
-    const css = buildCss({ group: { _motionReduce: { bg: 'red.300' } } }, { pruneUnusedTokens: true })
+    const css = buildCss({ group: { _motionReduce: { bg: 'red.300' } } }, { prune: { tokens: true } })
 
     expect(declaresToken(css, '--colors-red-300')).toBe(true)
   })

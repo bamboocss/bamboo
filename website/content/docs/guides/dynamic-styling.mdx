@@ -147,8 +147,8 @@ canvasContext.fillStyle = token.value('colors.red.300') // '#fca5a5'
 <Callout type="warning">
   A runtime path defeats the build's reachability analysis. `token()` hands back a variable for **any** token, so a path
   Bamboo cannot resolve at build time means every token declaration has to be kept — see
-  [`pruneUnusedTokens`](/docs/references/config#pruneunusedtokens). Prefer a path spelled out at the call, or one built
-  from a constant the extractor can follow.
+  [`prune.tokens`](/docs/references/config#prune). Prefer a path spelled out at the call, or one built from a constant
+  the extractor can follow.
 </Callout>
 
 ## Property Renaming
