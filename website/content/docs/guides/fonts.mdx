@@ -124,10 +124,20 @@ Then alias the font names to css variables.
 }
 ```
 
+Declared this way the family name means nothing to Bamboo, which is why the steps below alias it to a variable and then
+to a `fonts` token — the token is what `fontFamily` ends up accepting. [Global Font Face](#global-font-face) skips that
+by registering the name for you.
+
 ### Global Font Face
 
 You can also define global font face in your bamboo config. A family takes one face or an array of them, and each face's
 `src` takes one source or an array of them.
+
+This is the option to reach for rather than writing `@font-face` into [`globalCss`](/docs/references/config#globalcss).
+Both emit the same rule, but a family declared here is also registered as a value `fontFamily` accepts — so
+`css({ fontFamily: 'Fira' })` autocompletes and typechecks without a token. Written as a raw `@font-face` in
+`globalCss`, the name is a string Bamboo has never seen, and under
+[`strictPropertyValues`](/docs/references/config#strictpropertyvalues) it is a type error.
 
 ```js
 export default defineConfig({

@@ -690,6 +690,19 @@ The global styles for your project.
 }
 ```
 
+At-rules work here too, so `@font-face` written directly in `globalCss` does emit. Prefer
+[`globalFontface`](#globalfontface) for fonts anyway: it emits the same rule **and** registers the family name as a
+value `fontFamily` accepts. Declared through `globalCss`, the name is a string Bamboo has never heard of — no
+autocomplete, and under [`strictTokens`](#stricttokens) a type error.
+
+```ts
+// fontFamily accepts Tokens["fonts"] | "Roboto"
+globalFontface: { Roboto: { src: "url(/fonts/roboto.woff2) format('woff2')" } }
+
+// fontFamily accepts Tokens["fonts"] only — the @font-face still ships
+globalCss: { '@font-face': { fontFamily: 'Roboto', src: "url(/fonts/roboto.woff2) format('woff2')" } }
+```
+
 ### globalVars
 
 **Type**: `Extendable<GlobalVarsDefinition>`
@@ -885,6 +898,10 @@ Global font face definitions.
   }
 }
 ```
+
+Each key becomes a value `fontFamily` accepts, alongside your `fonts` tokens — so `css({ fontFamily: 'Inter' })`
+autocompletes and typechecks. That is the reason to declare a face here rather than as a raw `@font-face` in
+[`globalCss`](#globalcss), which emits the same rule but leaves the family name unregistered.
 
 Check out the [Custom Fonts](/docs/guides/fonts#global-font-face) guide for more information on how to use the
 `globalFontface` option.
