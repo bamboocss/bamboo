@@ -6,9 +6,8 @@ import { BambooContext } from './create-context'
 import {
   collectKeyframeReferences,
   collectRenderedElements,
-  collectTokenReferences,
   keyframeNames,
-  tokensReachableFromJs,
+  pruneTokensForBuild,
 } from './token-references'
 
 async function build(ctx: BambooContext, artifactIds?: ArtifactId[]) {
@@ -27,13 +26,7 @@ async function build(ctx: BambooContext, artifactIds?: ArtifactId[]) {
   ctx.appendParserCss(sheet)
 
   // Gathering the references reads every source file, so each stays behind its own flag.
-  // Opting out still prunes the `@property` registrations, which need no reference scan —
-  // nothing outside the stylesheet can reach one.
-  if (ctx.config.pruneUnusedTokens) {
-    ctx.pruneTokens(sheet, collectTokenReferences(ctx, parsed.results), tokensReachableFromJs(ctx))
-  } else {
-    ctx.pruneTokens(sheet)
-  }
+  pruneTokensForBuild(ctx, sheet, parsed.results)
 
   if (ctx.config.prunePreflight) {
     ctx.prunePreflight(sheet, collectRenderedElements(ctx))
@@ -95,9 +88,7 @@ export async function generate(config: Config, configPath?: string) {
       // once its last reference is gone. Parser results are deliberately not gathered
       // here: `parseFiles` would encode every style into the running encoder a second
       // time on each change.
-      if (ctx.config.pruneUnusedTokens) {
-        ctx.pruneTokens(sheet, collectTokenReferences(ctx, []), tokensReachableFromJs(ctx))
-      }
+      pruneTokensForBuild(ctx, sheet, [])
 
       if (ctx.config.prunePreflight) {
         ctx.prunePreflight(sheet, collectRenderedElements(ctx))

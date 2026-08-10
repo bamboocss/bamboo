@@ -117,6 +117,33 @@ export function collectTokenReferences(ctx: BambooContext, results: ParserResult
 }
 
 /**
+ * The token prune, as all three build paths need to run it.
+ *
+ * One function because it was three copies of one conditional, and the `false` branch went
+ * missing from a copy: a watch rebuild with `pruneUnusedTokens: false` skipped `pruneTokens`
+ * altogether, so it kept `@property` registrations that a full build of the same source
+ * strips. The other two copies carried a comment pointing at that file for the reasoning,
+ * which is how a missing branch reads as intentional.
+ *
+ * Opting out still drops the registrations. Those are not tokens — nothing hands one to
+ * javascript, and none appear in the `token()` surface — so the reachability problem the flag
+ * exists for does not apply to them, and opting out of token pruning should not mean shipping
+ * a preset's whole filter and gradient set for nothing.
+ */
+export function pruneTokensForBuild(
+  ctx: BambooContext,
+  sheet: Parameters<BambooContext['pruneTokens']>[0],
+  results: ParserResult[],
+) {
+  if (!ctx.config.pruneUnusedTokens) {
+    ctx.pruneTokens(sheet)
+    return
+  }
+
+  ctx.pruneTokens(sheet, collectTokenReferences(ctx, results), tokensReachableFromJs(ctx))
+}
+
+/**
  * Collect keyframe names that reading the generated css cannot reveal.
  *
  * A keyframe reached through `css({ animation: 'fade-in 1s' })` lands in the stylesheet

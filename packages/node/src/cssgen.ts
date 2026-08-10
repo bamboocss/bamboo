@@ -4,9 +4,8 @@ import type { BambooContext } from './create-context'
 import {
   collectKeyframeReferences,
   collectRenderedElements,
-  collectTokenReferences,
   keyframeNames,
-  tokensReachableFromJs,
+  pruneTokensForBuild,
 } from './token-references'
 
 export interface CssGenOptions {
@@ -62,11 +61,8 @@ export const cssgen = async (ctx: BambooContext, options: CssGenOptions) => {
     // Only now does the sheet hold everything that could reference a token. `minimal`
     // omits the token layer altogether, so there is nothing to prune. Gathering the
     // references reads every source file, so each stays behind its own flag.
-    // Opting out still prunes the `@property` registrations; see `generate.ts`.
-    if (!minimal && ctx.config.pruneUnusedTokens) {
-      ctx.pruneTokens(sheet, collectTokenReferences(ctx, results), tokensReachableFromJs(ctx))
-    } else if (!minimal) {
-      ctx.pruneTokens(sheet)
+    if (!minimal) {
+      pruneTokensForBuild(ctx, sheet, results)
     }
 
     if (!minimal && ctx.config.prunePreflight) {

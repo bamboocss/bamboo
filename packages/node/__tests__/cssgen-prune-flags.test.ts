@@ -1,6 +1,7 @@
 import type { Config } from '@bamboocss/types'
 import { describe, expect, test } from 'vitest'
 import { cssgen } from '../src/cssgen'
+import { pruneTokensForBuild } from '../src/token-references'
 
 /**
  * `pruneUnusedTokens` and `pruneUnusedKeyframes` are independent switches.
@@ -105,4 +106,34 @@ describe('cssgen --type', () => {
       expect(await run({ prunePreflight: true, pruneUnusedTokens: true }, { type })).toEqual([`append:${type}`])
     },
   )
+})
+
+/**
+ * The `false` branch, checked directly rather than through one entrypoint.
+ *
+ * `pruneTokensForBuild` exists because this conditional was written out three times — in
+ * `cssgen`, `builder` and twice in `generate` — and one copy lost its `else`. A watch rebuild
+ * with `pruneUnusedTokens: false` then skipped `pruneTokens` altogether and kept `@property`
+ * registrations that a full build of the same source strips, so the stylesheet you developed
+ * against differed from the one you shipped. Two of the copies carried a comment pointing at
+ * the third for the reasoning, which is what made the gap read as deliberate.
+ *
+ * The flag cases above go through `cssgen`; these go straight at the shared helper, since the
+ * watch path that actually broke is inside a `chokidar` callback and is not reachable from a
+ * test without standing up a watcher.
+ */
+describe('pruneTokensForBuild', () => {
+  const run = (config: Config) => {
+    const { ctx, calls } = createContext(config)
+    pruneTokensForBuild(ctx, {} as never, [])
+    return calls
+  }
+
+  test('prunes tokens when the flag is on', () => {
+    expect(run({ pruneUnusedTokens: true })).toEqual(['tokens'])
+  })
+
+  test('still prunes the @property registrations when the flag is off', () => {
+    expect(run({ pruneUnusedTokens: false })).toEqual(['properties'])
+  })
 })

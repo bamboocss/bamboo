@@ -12,9 +12,8 @@ import { parseDependency } from './parse-dependency'
 import {
   collectKeyframeReferences,
   collectRenderedElements,
-  collectTokenReferences,
   keyframeNames,
-  tokensReachableFromJs,
+  pruneTokensForBuild,
 } from './token-references'
 
 const fileModifiedMap = new Map<string, number>()
@@ -270,12 +269,7 @@ export class Builder {
     // `extract` has already run, so this sheet carries the utilities and recipes too.
     // Parser results are not retained across that call, so the reference set comes from
     // the source scan alone; re-parsing here would encode every style a second time.
-    // Opting out still prunes the `@property` registrations; see `generate.ts`.
-    if (ctx.config.pruneUnusedTokens) {
-      ctx.pruneTokens(sheet, collectTokenReferences(ctx, []), tokensReachableFromJs(ctx))
-    } else {
-      ctx.pruneTokens(sheet)
-    }
+    pruneTokensForBuild(ctx, sheet, [])
 
     if (ctx.config.prunePreflight) {
       ctx.prunePreflight(sheet, collectRenderedElements(ctx))

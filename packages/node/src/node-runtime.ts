@@ -34,10 +34,17 @@ export const nodeRuntime: Runtime = {
     glob(opts) {
       if (!opts.include) return []
 
-      const ignore = opts.exclude ?? []
-      if (!ignore.length) {
-        ignore.push('**/*.d.ts')
-      }
+      // Copied, never appended to. `opts.exclude` is `ctx.config.exclude` itself, so pushing
+      // onto it edited the user's resolved config in place — and since the push was gated on
+      // the list being empty, the second call saw a non-empty one and behaved differently
+      // from the first. `exclude: []`, which the sandboxes here all write, is the shape that
+      // hit it.
+      //
+      // `**/*.d.ts` remains a *default* rather than an always-on ignore: a declaration file
+      // carries no runtime code, but it is still read by the reference scans, so dropping it
+      // for projects that do set `exclude` would change which tokens and reset rules survive.
+      // That is a css-output decision, not a cleanup.
+      const ignore = opts.exclude?.length ? [...opts.exclude] : ['**/*.d.ts']
 
       return glob.sync(opts.include, { cwd: opts.cwd, ignore, absolute: true })
     },
