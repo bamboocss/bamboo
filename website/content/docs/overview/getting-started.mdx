@@ -1,21 +1,35 @@
 ---
 title: Get started with Bamboo
-description: Build-time, type-safe, zero-runtime CSS-in-JS
+description: Bamboo is build-time, type-safe CSS-in-JS — the scaffolding comes down before you ship.
 ---
+
+## Why Bamboo?
+
+Bamboo CSS is a fork of [Panda CSS](https://panda-css.com/) with a smaller API and leaner output. `css`, `cva`, `sva`,
+`cx`, patterns and recipes carry over, so [migrating](/docs/migration/panda) is mostly a rename.
+
+No JSX factory, no template literals, no style props: every class name comes from a call the compiler can see, so a
+production build can [fold it into the string it would have returned](/docs/guides/source-transformation):
+
+```tsx
+// you write
+<div className={css({ fontSize: 'lg', fontWeight: 'bold' })}>Title</div>
+
+// the bundle gets
+<div className="fs_lg fw_bold">Title</div>
+```
+
+A few things behave differently beyond the smaller surface — see
+[why we forked](/docs/overview/why-bamboo#why-we-forked-panda-css) and
+[what changed](/docs/overview/faq#how-is-bamboo-css-different-from-panda-css).
+
+## How it works
 
 Bamboo scans your JavaScript and TypeScript for style function calls, and generates atomic CSS for the call sites it
 finds. It runs as a CLI or a PostCSS plugin.
 
 You author styles as plain objects. Tokens, recipes and variants are generated from your config as types, so the editor
 autocompletes them and the compiler checks them.
-
-## How is this different from Panda CSS?
-
-Bamboo CSS is a fork of [Panda CSS](https://panda-css.com/). `css`, `cva`, `sva`, `cx`, the pattern functions, recipes
-and the config shape all carry over, so [migrating](/docs/migration/panda) is largely a rename — but the API is smaller
-(no JSX factory, no template literals) and a few things behave differently. See
-[why we forked](/docs/overview/why-bamboo#why-we-forked-panda-css) and
-[what changed](/docs/overview/faq#how-is-bamboo-css-different-from-panda-css).
 
 ## Features
 
