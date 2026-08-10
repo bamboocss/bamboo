@@ -21,6 +21,17 @@ production build can
 <div className="fs_lg fw_bold">Title</div>
 ```
 
+A style that varies does not put the call back. Both branches are known, so each resolves at build time and only the
+choice is left behind:
+
+```tsx
+// you write
+css({ fontSize: 'lg', fontWeight: active ? 'bold' : 'normal' })
+
+// the bundle gets
+cx('fs_lg', active ? 'fw_bold' : 'fw_normal')
+```
+
 ## Features
 
 - ⚡️ Write style objects, extract them at build time

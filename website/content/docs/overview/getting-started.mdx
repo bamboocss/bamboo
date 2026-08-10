@@ -19,6 +19,21 @@ production build can [fold it into the string it would have returned](/docs/guid
 <div className="fs_lg fw_bold">Title</div>
 ```
 
+A style that varies does not put the call back. Both branches are known, so each resolves at build time and only the
+choice is left behind:
+
+```tsx
+// you write
+css({ fontSize: 'lg', fontWeight: active ? 'bold' : 'normal' })
+
+// the bundle gets
+cx('fs_lg', active ? 'fw_bold' : 'fw_normal')
+```
+
+Even a value the build cannot see lowers: `css({ color: tone })` becomes `cssLeaf('c_', 'color', tone)`, which builds
+the class from the prefix already known here. See
+[partly static calls](/docs/guides/source-transformation#partly-static-calls) for where the line falls.
+
 A few things behave differently beyond the smaller surface — see
 [why we forked](/docs/overview/why-bamboo#why-we-forked-panda-css) and
 [what changed](/docs/overview/faq#how-is-bamboo-css-different-from-panda-css).
