@@ -16197,12 +16197,14 @@ describe('generate property types', () => {
             return utils.omit(config, ['utilities', 'theme.tokens', 'theme.semanticTokens'])
           },
         },
-        globalVars: {
-          '--random-color': 'red',
-          '--button-color': {
-            syntax: '<color>',
-            inherits: false,
-            initialValue: 'blue',
+        global: {
+          vars: {
+            '--random-color': 'red',
+            '--button-color': {
+              syntax: '<color>',
+              inherits: false,
+              initialValue: 'blue',
+            },
           },
         },
       }),

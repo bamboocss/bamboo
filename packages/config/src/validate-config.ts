@@ -28,15 +28,35 @@ export const validateConfig = (config: Partial<UserConfig>) => {
   // it is output that is already broken. See `validate-retired-syntax`.
   assertNoRetiredSyntax(config)
 
-  if (config.validation === 'none') return
-
   const warnings = new Set<string>()
 
   const addError = (scope: string, message: string) => {
     warnings.add(`[${scope}] ` + message)
   }
 
+  // Also ahead of the opt-out, and for the same reason. An unknown key is otherwise ignored in
+  // silence, so a removed option under `validation: 'off'` means the build reverts to the
+  // default and says nothing — the upgrade this check exists to prevent. It used to sit below
+  // the bail, which made one severity setting switch off the whole migration path.
   validateRemovedOptions(config, addError)
+
+  const report = () => {
+    if (!warnings.size) return
+
+    const errors = `⚠️ Invalid config:\n${Array.from(warnings)
+      .map((err) => '- ' + err)
+      .join('\n')}\n`
+
+    if (config.validation === 'error') {
+      throw new BambooError('CONFIG_ERROR', errors)
+    }
+
+    logger.warn('config', errors)
+
+    return warnings
+  }
+
+  if (config.validation === 'off') return report()
 
   validateBreakpoints(config.theme?.breakpoints, addError)
 
@@ -65,17 +85,5 @@ export const validateConfig = (config: Partial<UserConfig>) => {
 
   validateArtifactNames(artifacts, addError)
 
-  if (warnings.size) {
-    const errors = `⚠️ Invalid config:\n${Array.from(warnings)
-      .map((err) => '- ' + err)
-      .join('\n')}\n`
-
-    if (config.validation === 'error') {
-      throw new BambooError('CONFIG_ERROR', errors)
-    }
-
-    logger.warn('config', errors)
-
-    return warnings
-  }
+  return report()
 }

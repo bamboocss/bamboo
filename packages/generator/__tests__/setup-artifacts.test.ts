@@ -74,8 +74,6 @@ describe('setup-artifacts', () => {
     expect(generator.getArtifacts(['patterns']).map(formatArtifact)).toMatchInlineSnapshot(`
       [
         [
-          "patterns/box.mjs",
-          "patterns/box.d.ts",
           "patterns/flex.mjs",
           "patterns/flex.d.ts",
           "patterns/stack.mjs",
@@ -110,20 +108,21 @@ describe('setup-artifacts', () => {
           "patterns/float.d.ts",
           "patterns/bleed.mjs",
           "patterns/bleed.d.ts",
-          "patterns/visually-hidden.mjs",
-          "patterns/visually-hidden.d.ts",
           "patterns/cq.mjs",
           "patterns/cq.d.ts",
         ],
       ]
     `)
 
-    expect(generator.getArtifacts(['patterns.box']).map(formatArtifact)).toMatchInlineSnapshot('[]')
-    expect(generator.getArtifacts(['patterns', 'patterns.box']).map(formatArtifact)).toMatchInlineSnapshot(`
+    // A pattern id on its own selects no artifact; paired with `patterns` it narrows that
+    // artifact to the one pattern. Named for a pattern that exists — pointed at a removed one,
+    // both assertions pass vacuously and stop testing the narrowing at all.
+    expect(generator.getArtifacts(['patterns.center']).map(formatArtifact)).toMatchInlineSnapshot('[]')
+    expect(generator.getArtifacts(['patterns', 'patterns.center']).map(formatArtifact)).toMatchInlineSnapshot(`
       [
         [
-          "patterns/box.mjs",
-          "patterns/box.d.ts",
+          "patterns/center.mjs",
+          "patterns/center.d.ts",
         ],
       ]
     `)
@@ -213,8 +212,6 @@ describe('setup-artifacts', () => {
           "patterns/index.d.ts",
         ],
         [
-          "patterns/box.mjs",
-          "patterns/box.d.ts",
           "patterns/flex.mjs",
           "patterns/flex.d.ts",
           "patterns/stack.mjs",
@@ -249,8 +246,6 @@ describe('setup-artifacts', () => {
           "patterns/float.d.ts",
           "patterns/bleed.mjs",
           "patterns/bleed.d.ts",
-          "patterns/visually-hidden.mjs",
-          "patterns/visually-hidden.d.ts",
           "patterns/cq.mjs",
           "patterns/cq.d.ts",
         ],

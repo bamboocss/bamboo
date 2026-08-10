@@ -34,7 +34,7 @@ export default defineConfig({
 
 ## Removing default utilities
 
-Use the `eject: true` property to remove all the default utilities.
+Set `presets: []` to remove all the default utilities. `presets` is the complete list, so an empty one loads nothing.
 
 Bamboo doesn't automatically know which tokens are valid for which CSS properties, so it is necessary to tell Bamboo
 that my tokens from the "colors" category are valid for the CSS property "color".
@@ -42,7 +42,7 @@ that my tokens from the "colors" category are valid for the CSS property "color"
 ```js
 export default defineConfig({
   // ...
-  eject: true,
+  presets: [],
   utilities: {
     color: {
       values: 'colors',

@@ -58,30 +58,32 @@ export default defineConfig({
     },
   },
 
-  globalCss: {
-    html: {
-      lineHeight: 1.5,
-      textRendering: 'optimizeLegibility',
-      MozOsxFontSmoothing: 'grayscale',
-      WebkitFontSmoothing: 'antialiased',
-      WebkitTextSizeAdjust: '100%',
-      height: '100%',
-    },
-    body: {
-      fontFamily: 'var(--font-inter), sans-serif',
-      display: 'flex',
-      flexDirection: 'column',
-      minHeight: 'full',
-      height: 'fit-content',
-      maxHeight: '100%',
-      _dark: {
-        colorScheme: 'dark',
-        bg: '#282828',
+  global: {
+    css: {
+      html: {
+        lineHeight: 1.5,
+        textRendering: 'optimizeLegibility',
+        MozOsxFontSmoothing: 'grayscale',
+        WebkitFontSmoothing: 'antialiased',
+        WebkitTextSizeAdjust: '100%',
+        height: '100%',
       },
-    },
-    '*, *::before, *::after': {
-      borderColor: 'border.default',
-      borderStyle: 'solid',
+      body: {
+        fontFamily: 'var(--font-inter), sans-serif',
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 'full',
+        height: 'fit-content',
+        maxHeight: '100%',
+        _dark: {
+          colorScheme: 'dark',
+          bg: '#282828',
+        },
+      },
+      '*, *::before, *::after': {
+        borderColor: 'border.default',
+        borderStyle: 'solid',
+      },
     },
   },
 })

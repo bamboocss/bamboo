@@ -4,7 +4,7 @@ import { describe, expect, test } from 'vitest'
 import { bamboocss } from '../src/plugin'
 
 /**
- * `strict` exists because fold coverage is not a percentage you can act on.
+ * `failOnUnfolded` exists because fold coverage is not a percentage you can act on.
  *
  * The fold's payoff is that a bundle where every `css()` call folded stops importing
  * `styled-system/css`, and the engine behind it drops out. One survivor keeps the whole
@@ -16,8 +16,8 @@ const cwd = join(dirname(fileURLToPath(import.meta.url)), '../../../sandbox/code
 const hookOf = <T>(hook: T | { handler: T } | undefined): T | undefined =>
   typeof hook === 'function' ? hook : (hook as { handler: T } | undefined)?.handler
 
-const run = async (code: string, file: string, strict: boolean) => {
-  const plugin = bamboocss({ transform: true, cwd, reportSummary: false, strict }).find(
+const run = async (code: string, file: string, failOnUnfolded: boolean) => {
+  const plugin = bamboocss({ transform: true, cwd, reportSummary: false, failOnUnfolded }).find(
     (p) => p.name === 'bamboocss:fold',
   )!
 
@@ -28,7 +28,7 @@ const run = async (code: string, file: string, strict: boolean) => {
 
 const src = (body: string) => `import { css } from 'styled-system/css'\n${body}\n`
 
-describe('strict', () => {
+describe('failOnUnfolded', () => {
   test('fails on a call the build could not resolve', async () => {
     const end = await run(src(`export const f = (p) => css({ ...p, color: 'red.300' })`), 'src/strict-spread.tsx', true)
 
@@ -70,7 +70,7 @@ describe('strict', () => {
 
   /**
    * A `cva` definition returns a function and can never collapse to a class string, so
-   * failing on it would make `strict` unusable for anyone writing recipes. It keeps the
+   * failing on it would make `failOnUnfolded` unusable for anyone writing recipes. It keeps the
    * recipe runtime, which is a different and much smaller module than the css engine — see
    * the option's own documentation.
    */
@@ -105,13 +105,13 @@ describe('strict', () => {
   /**
    * The ledger only holds calls something recognised, so a guarantee built on it is worth
    * what the recogniser is — and these are the shapes nothing recognises. Each folds nothing,
-   * reports nothing, and keeps the module live; before this they passed `strict` outright.
+   * reports nothing, and keeps the module live; before this they passed `failOnUnfolded` outright.
    */
   describe('a binding the rewrite left behind', () => {
     /**
      * A module whose only bamboo usage is a bare reference. Nothing records it, so the ledger
      * is empty and so is the parser result — which meant the module was skipped before the
-     * fold ever saw it, and `strict` passed on a file that plainly keeps the engine.
+     * fold ever saw it, and `failOnUnfolded` passed on a file that plainly keeps the engine.
      */
     test('a binding passed on rather than called', async () => {
       const end = await run(
@@ -159,7 +159,7 @@ export const f = (p) => css({ color: 'red.300' }, p)
       expect(end).not.toThrow(/runtime-binding/)
     }, 60_000)
 
-    test('is off when strict is off', async () => {
+    test('is off when failOnUnfolded is off', async () => {
       const end = await run(
         `import { css } from 'styled-system/css'
 export const pass = css

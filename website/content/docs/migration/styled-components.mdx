@@ -249,7 +249,7 @@ const GlobalStyle = createGlobalStyle`
 `
 ```
 
-In Bamboo, you can use the `globalCss` key of the `bamboo.config.ts` file to define global styles. This will
+In Bamboo, you can use the `global.css` key of the `bamboo.config.ts` file to define global styles. This will
 automatically add styles to the project via PostCSS.
 
 ```tsx
@@ -257,10 +257,12 @@ automatically add styles to the project via PostCSS.
 import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
-  globalCss: {
-    body: {
-      margin: 0,
-      padding: 0,
+  global: {
+    css: {
+      body: {
+        margin: 0,
+        padding: 0,
+      },
     },
   },
 })

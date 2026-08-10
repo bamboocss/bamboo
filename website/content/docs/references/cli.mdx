@@ -75,7 +75,6 @@ pnpm bamboo "./src/components/**"
 | `--exclude, -e <files>` | Files to exclude from the extract process                                       | [`config`](/docs/references/config)                               |
 | `--clean`               | Whether to clean the output directory before emitting                           | [`config.clean`](/docs/references/config#clean)                   |
 | `--hash`                | Whether to hash the output classnames                                           | [`config.hash`](/docs/references/config#hash)                     |
-| `--lightningcss`        | Use `lightningcss` instead of `postcss` for css optimization                    | [`config.lightningcss`](/docs/references/config#lightningcss)     |
 | `--polyfill`            | Polyfill CSS @layers at-rules for older browsers                                | [`config.polyfill`](/docs/references/config#polyfill)             |
 | `--emitTokensOnly`      | Whether to only emit the `tokens` directory                                     | [`config.emitTokensOnly`](/docs/references/config#emittokensonly) |
 
@@ -165,17 +164,16 @@ The main `styles.css` file contains the `@layer` declarations and imports all th
 Import `styles.css` for everything, or any of the files above on its own — the per-layer, per-recipe and per-theme files
 are all importable directly.
 
-| Flag                   | Description                                                                            | Related                                                       |
-| ---------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| `--outfile, -o [file]` | Output file for extracted css, default to './styled-system/styles.css'                 | -                                                             |
-| `--minify, -m`         | Whether to minify the generated CSS                                                    | [`config.minify`](/docs/references/config#minify)             |
-| `--clean`              | Whether to clean the output directory before emitting                                  | [`config.clean`](/docs/references/config#clean)               |
-| `--watch, -w`          | Whether to watch for changes in the project                                            | [`config.watch`](/docs/references/config#watch)               |
-| `--minimal`            | Skip generating CSS for theme tokens, preflight, keyframes, static and global css      | -                                                             |
-| `--splitting`          | Emit CSS as separate files per layer (reset, global, tokens, utilities) and per recipe | -                                                             |
-| `--poll, -p`           | Whether to poll for file changes                                                       | [`config.poll`](/docs/references/config#poll)                 |
-| `--lightningcss`       | Use `lightningcss` instead of `postcss` for css optimization                           | [`config.lightningcss`](/docs/references/config#lightningcss) |
-| `--polyfill`           | Polyfill CSS @layers at-rules for older browsers                                       | [`config.polyfill`](/docs/references/config#polyfill)         |
+| Flag                   | Description                                                                            | Related                                               |
+| ---------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `--outfile, -o [file]` | Output file for extracted css, default to './styled-system/styles.css'                 | -                                                     |
+| `--minify, -m`         | Whether to minify the generated CSS                                                    | [`config.minify`](/docs/references/config#minify)     |
+| `--clean`              | Whether to clean the output directory before emitting                                  | [`config.clean`](/docs/references/config#clean)       |
+| `--watch, -w`          | Whether to watch for changes in the project                                            | [`config.watch`](/docs/references/config#watch)       |
+| `--minimal`            | Skip generating CSS for theme tokens, preflight, keyframes, static and global css      | -                                                     |
+| `--splitting`          | Emit CSS as separate files per layer (reset, global, tokens, utilities) and per recipe | -                                                     |
+| `--poll, -p`           | Whether to poll for file changes                                                       | [`config.poll`](/docs/references/config#poll)         |
+| `--polyfill`           | Polyfill CSS @layers at-rules for older browsers                                       | [`config.polyfill`](/docs/references/config#polyfill) |
 
 ## spec
 

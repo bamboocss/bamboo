@@ -71,9 +71,28 @@ export interface Theme {
    * The color palette configuration for your project.
    */
   colorPalette?: ColorPaletteOptions
+  /**
+   * Alternate token sets, selectable at runtime.
+   *
+   * Was a top-level `themes`, one character from `theme` and impossible for TypeScript to
+   * tell apart — both spellings were valid keys, so the typo resolved to a different
+   * feature rather than to an error. A variant is part of the theme, so it lives in it.
+   */
+  variants?: ThemeVariantsMap
 }
 
-interface PartialTheme extends Omit<Theme, 'recipes' | 'slotRecipes'> {
+export interface ThemeVariant extends Pick<Theme, 'tokens' | 'semanticTokens'> {}
+
+export interface ThemeVariantsMap {
+  [name: string]: ThemeVariant
+}
+
+interface ExtendableThemeVariantsMap {
+  [name: string]: ThemeVariantsMap | ThemeVariant | undefined
+  extend?: ThemeVariantsMap | undefined
+}
+
+interface PartialTheme extends Omit<Theme, 'recipes' | 'slotRecipes' | 'variants'> {
   /**
    * Multi-variant style definitions for your project.
    * Useful for defining component styles.
@@ -87,8 +106,13 @@ interface PartialTheme extends Omit<Theme, 'recipes' | 'slotRecipes'> {
    * The color palette configuration for your project.
    */
   colorPalette?: Partial<ColorPaletteOptions>
+  /**
+   * Alternate token sets, selectable at runtime.
+   */
+  variants?: ExtendableThemeVariantsMap
 }
 
-export interface ExtendableTheme extends Theme {
+export interface ExtendableTheme extends Omit<Theme, 'variants'> {
+  variants?: ExtendableThemeVariantsMap
   extend?: PartialTheme | undefined
 }

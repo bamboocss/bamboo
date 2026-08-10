@@ -8,6 +8,11 @@ export interface LogEntry {
 
 export interface LoggerInterface {
   level: 'debug' | 'info' | 'warn' | 'error' | 'silent'
+  /**
+   * Comma-separated globs over the namespaced log type. Non-empty shows only matching types,
+   * at debug level, whatever `level` is set to.
+   */
+  filter: string
   print(data: any): void
   onLog?: (entry: LogEntry) => void
   warn: (type: string, data: any) => void

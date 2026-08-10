@@ -66,13 +66,15 @@ export default defineConfig({
     },
   },
   // strictTokens: true,
-  globalVars: {
-    extend: {
-      '--some-color': 'red',
-      '--button-color': {
-        syntax: '<color>',
-        inherits: false,
-        initialValue: 'blue',
+  global: {
+    vars: {
+      extend: {
+        '--some-color': 'red',
+        '--button-color': {
+          syntax: '<color>',
+          inherits: false,
+          initialValue: 'blue',
+        },
       },
     },
   },

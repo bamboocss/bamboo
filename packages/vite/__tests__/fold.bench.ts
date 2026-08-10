@@ -81,7 +81,7 @@ export const guessed${index} = (e: boolean) => css({ padding: '${index % 8}', co
  */
 const JSX_MODULE = `
 import { css } from 'styled-system/css'
-import { box, hstack, stack } from 'styled-system/patterns'
+import { center, hstack, stack } from 'styled-system/patterns'
 
 export const View = ({ tone, rest }) => (
   <div className={css({ padding: '4', backgroundColor: 'gray.100' })}>
@@ -94,7 +94,7 @@ export const View = ({ tone, rest }) => (
     <div className={css({ color: tone })}>dynamic</div>
     <div className={css({ color: 'green.300', ...rest })}>spread</div>
     <div className={stack({ gap: '4' })}>
-      <div className={box({ padding: '2', backgroundColor: 'white' })}>box</div>
+      <div className={center({ padding: '2', backgroundColor: 'white' })}>center</div>
       <div className={hstack({ gap: '1', color: 'gray.700' })}>hstack</div>
     </div>
   </div>

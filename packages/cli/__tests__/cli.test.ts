@@ -130,10 +130,6 @@ describe('CLI', () => {
     const stylesCssExists = await fs.access(path.resolve(paths.styledSystem, 'styles.css'))
     expect(stylesCssExists).toBeUndefined()
 
-    // Check that using `lightningcss` is fine
-    const output2 = runCommand(cmd + ' --lightningcss', { cwd: testsCwd })
-    expect(output2.includes('Successfully extracted css')).toBe(true)
-
     // Check that `--outfile` is fine
     const output3 = runCommand(cmd + ' --outfile="./styles.css"', { cwd: testsCwd })
     expect(output3.includes('Successfully extracted css')).toBe(true)

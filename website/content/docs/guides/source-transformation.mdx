@@ -410,7 +410,7 @@ it is that a bundle where _every_ `css()` call folded stops importing `styled-sy
 drops out. One survivor keeps the whole thing. `strict` fails the build instead:
 
 ```ts
-bamboocss({ transform: true, strict: true })
+bamboocss({ transform: true, failOnUnfolded: true })
 ```
 
 ```txt

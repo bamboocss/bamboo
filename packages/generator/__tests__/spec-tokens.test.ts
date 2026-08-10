@@ -5,7 +5,7 @@ import { generateSemanticTokensSpec, generateTokensSpec } from '../src/spec/toke
 describe('generateTokensSpec', () => {
   test('should generate tokens spec with various token categories', () => {
     const ctx = createContext({
-      eject: true,
+      presets: [],
       theme: {
         tokens: {
           colors: {
@@ -164,7 +164,7 @@ describe('generateTokensSpec', () => {
 
   test('should filter out semantic, virtual, and conditional tokens', () => {
     const ctx = createContext({
-      eject: true,
+      presets: [],
       theme: {
         tokens: {
           colors: {
@@ -192,7 +192,7 @@ describe('generateTokensSpec', () => {
 
   test('should return empty data for contexts without tokens', () => {
     const ctx = createContext({
-      eject: true,
+      presets: [],
       theme: {
         tokens: {},
       },
@@ -207,7 +207,7 @@ describe('generateTokensSpec', () => {
 describe('generateSemanticTokensSpec', () => {
   test('should generate semantic tokens spec with conditions', () => {
     const ctx = createContext({
-      eject: true,
+      presets: [],
       theme: {
         tokens: {
           colors: {
@@ -340,7 +340,7 @@ describe('generateSemanticTokensSpec', () => {
 
   test('should handle nested conditions', () => {
     const ctx = createContext({
-      eject: true,
+      presets: [],
       theme: {
         tokens: {
           colors: {
@@ -371,7 +371,7 @@ describe('generateSemanticTokensSpec', () => {
 
   test('should handle deprecated semantic tokens', () => {
     const ctx = createContext({
-      eject: true,
+      presets: [],
       theme: {
         tokens: {
           colors: {
@@ -394,7 +394,7 @@ describe('generateSemanticTokensSpec', () => {
 
   test('should filter out non-semantic tokens', () => {
     const ctx = createContext({
-      eject: true,
+      presets: [],
       theme: {
         tokens: {
           colors: {
@@ -420,7 +420,7 @@ describe('generateSemanticTokensSpec', () => {
 
   test('should return empty data when no semantic tokens exist', () => {
     const ctx = createContext({
-      eject: true,
+      presets: [],
       theme: {
         tokens: {
           colors: {

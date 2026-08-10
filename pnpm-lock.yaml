@@ -466,9 +466,6 @@ importers:
       '@bamboocss/parser':
         specifier: workspace:*
         version: link:../parser
-      '@bamboocss/plugin-lightningcss':
-        specifier: workspace:*
-        version: link:../plugin-lightningcss
       '@bamboocss/plugin-svelte':
         specifier: workspace:*
         version: link:../plugin-svelte

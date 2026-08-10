@@ -143,7 +143,7 @@ export interface FoldOptions {
    *
    * This asks what the guarantee actually claims: after the rewrite, is anything from a
    * bamboo module still referenced? Off by default because it costs an identifier walk, and
-   * only `strict` needs an answer it can fail a build on.
+   * only `failOnUnfolded` needs an answer it can fail a build on.
    */
   reportSurvivors?: boolean
   /**
@@ -188,7 +188,7 @@ const UNFOLDABLE_TYPES = new Set(['cva', 'sva'])
  *
  * `overlapping` is handled by the enclosing fold, and `not-imported` is somebody else's
  * function of the same name — neither leaves a call of ours. `not-foldable` is a `cva`/`sva`
- * definition, which keeps the recipe runtime rather than the css engine; see `strict`.
+ * definition, which keeps the recipe runtime rather than the css engine; see `failOnUnfolded`.
  */
 export const SURVIVES_TO_RUNTIME = new Set<SkipReason>([
   'dynamic',
@@ -301,7 +301,7 @@ const isValueReference = (identifier: Node): boolean => {
  *
  * `cva` and `sva` are there for the reason `SURVIVES_TO_RUNTIME` omits `not-foldable`: a
  * recipe *definition* cannot fold to a class string and never could, and what it keeps is the
- * recipe runtime rather than the css engine — which `strict` accepts. Their unfoldable
+ * recipe runtime rather than the css engine — which `failOnUnfolded` accepts. Their unfoldable
  * invocations are reported separately, as `recipe-call`.
  */
 const PERMITTED_BINDINGS = new Set(['cx', 'cva', 'sva', RECIPE_PICK_HELPER, SPLIT_PROPS_HELPER, LEAF_HELPER])
@@ -1662,7 +1662,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
    * Deliberately not driven by `parserResult`: that is the recogniser, and the point here is
    * to catch what it did not see. A namespace import called as `s.cva(...)`, a default
    * import, a specifier that resolved to nothing — each leaves a live reference and no ledger
-   * entry at all, which is how `strict` came to pass a build that still shipped the engine.
+   * entry at all, which is how `failOnUnfolded` came to pass a build that still shipped the engine.
    *
    * The helpers the fold itself writes are excluded: `cx`, `cvaPick`, `splitProps` and the
    * leaf helper live in `cx` and pull no engine, so a reference to one is the fold working

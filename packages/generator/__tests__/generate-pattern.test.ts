@@ -19,55 +19,6 @@ test('should generate pattern', () => {
     import type { DistributiveOmit } from '../types/system-types';
     import type { Tokens } from '../tokens/index';
 
-    export interface BoxProperties {
-       
-    }
-
-    interface BoxStyles extends BoxProperties, DistributiveOmit<SystemStyleObject, keyof BoxProperties > {}
-
-    interface BoxPatternFn {
-      (styles?: BoxStyles): string
-      raw: (styles?: BoxStyles) => SystemStyleObject
-    }
-
-
-    export declare const box: BoxPatternFn;
-    ",
-        "js": "import { getPatternStyles, createPatternFns, memo } from '../helpers.mjs';
-    import { css } from '../css/index.mjs';
-    import { token } from '../tokens/index.mjs';
-
-    /**
-     * The transform's token lookup, answered by the generated tokens artifact.
-     *
-     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
-     * the build about a token's variable name — both come from the same generated source. The
-     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
-     * paid twice.
-     */
-    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
-
-    const boxConfig = {
-    transform(props) {
-      return props;
-    }}
-
-    export const getBoxStyle = (styles = {}) => {
-      const _styles = getPatternStyles(boxConfig, styles)
-      return boxConfig.transform(_styles, patternHelpers)
-    }
-
-    export const box = /* @__PURE__ */ memo((styles) => css(getBoxStyle(styles)))
-    box.raw = getBoxStyle",
-        "name": "box",
-      },
-      {
-        "dts": "import type { SystemStyleObject, ConditionalValue } from '../types/index';
-    import type { Properties } from '../types/csstype';
-    import type { SystemProperties } from '../types/style-props';
-    import type { DistributiveOmit } from '../types/system-types';
-    import type { Tokens } from '../tokens/index';
-
     export interface FlexProperties {
        align?: SystemProperties["alignItems"]
     	justify?: SystemProperties["justifyContent"]
@@ -1122,58 +1073,6 @@ test('should generate pattern', () => {
     export const bleed = /* @__PURE__ */ memo((styles) => css(getBleedStyle(styles)))
     bleed.raw = getBleedStyle",
         "name": "bleed",
-      },
-      {
-        "dts": "import type { SystemStyleObject, ConditionalValue } from '../types/index';
-    import type { Properties } from '../types/csstype';
-    import type { SystemProperties } from '../types/style-props';
-    import type { DistributiveOmit } from '../types/system-types';
-    import type { Tokens } from '../tokens/index';
-
-    export interface VisuallyHiddenProperties {
-       
-    }
-
-    interface VisuallyHiddenStyles extends VisuallyHiddenProperties, DistributiveOmit<SystemStyleObject, keyof VisuallyHiddenProperties > {}
-
-    interface VisuallyHiddenPatternFn {
-      (styles?: VisuallyHiddenStyles): string
-      raw: (styles?: VisuallyHiddenStyles) => SystemStyleObject
-    }
-
-
-    export declare const visuallyHidden: VisuallyHiddenPatternFn;
-    ",
-        "js": "import { getPatternStyles, createPatternFns, memo } from '../helpers.mjs';
-    import { css } from '../css/index.mjs';
-    import { token } from '../tokens/index.mjs';
-
-    /**
-     * The transform's token lookup, answered by the generated tokens artifact.
-     *
-     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
-     * the build about a token's variable name — both come from the same generated source. The
-     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
-     * paid twice.
-     */
-    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
-
-    const visuallyHiddenConfig = {
-    transform(props) {
-      return {
-        srOnly: true,
-        ...props
-      };
-    }}
-
-    export const getVisuallyHiddenStyle = (styles = {}) => {
-      const _styles = getPatternStyles(visuallyHiddenConfig, styles)
-      return visuallyHiddenConfig.transform(_styles, patternHelpers)
-    }
-
-    export const visuallyHidden = /* @__PURE__ */ memo((styles) => css(getVisuallyHiddenStyle(styles)))
-    visuallyHidden.raw = getVisuallyHiddenStyle",
-        "name": "visually-hidden",
       },
       {
         "dts": "import type { SystemStyleObject, ConditionalValue } from '../types/index';

@@ -1,4 +1,5 @@
 import { defineConfig } from '@bamboocss/dev'
+import { defaultPresets } from '@bamboocss/dev/presets'
 import codegenPreset from './preset'
 
 const dasherize = (token) =>
@@ -8,7 +9,7 @@ const dasherize = (token) =>
     .replace(/^-+|-+$/g, '')
 
 export default defineConfig({
-  presets: ['@bamboocss/dev/presets', codegenPreset],
+  presets: [...defaultPresets, codegenPreset],
   // Whether to use css reset
   preflight: true,
 

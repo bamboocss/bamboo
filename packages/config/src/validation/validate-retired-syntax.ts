@@ -8,7 +8,7 @@ import { findCurlyReference, findFallbackReference, formatPath, isValidToken, se
  * A hard error, and one that runs ahead of `validation` rather than under it. The rest of
  * `validateConfig` reports opinions about a config that will still build; this reports a spelling
  * that no longer means anything, whose output is broken either way — in a token value the text is
- * emitted into the stylesheet as-is, and nothing downstream reports it. `validation: 'none'` is an
+ * emitted into the stylesheet as-is, and nothing downstream reports it. `validation: 'off'` is an
  * opt-out of opinions, not of that.
  *
  * Safe to throw on because the spelling was never available for anything else: until it was
@@ -50,10 +50,9 @@ export function assertNoRetiredSyntax(config: Partial<UserConfig>): void {
   collect(config.theme?.tokens, 'theme.tokens')
   collect(config.theme?.semanticTokens, 'theme.semanticTokens')
 
-  // `themes` is a top-level option, not part of `theme`.
-  for (const [name, variant] of Object.entries(config.themes ?? {})) {
-    collect(variant?.tokens, `themes.${name}.tokens`)
-    collect(variant?.semanticTokens, `themes.${name}.semanticTokens`)
+  for (const [name, variant] of Object.entries(config.theme?.variants ?? {})) {
+    collect(variant?.tokens, `theme.variants.${name}.tokens`)
+    collect(variant?.semanticTokens, `theme.variants.${name}.semanticTokens`)
   }
 
   if (!found.length) return

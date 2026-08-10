@@ -59,10 +59,10 @@ export default defineConfig({
 The available keys for a preset are:
 
 - [`conditions`](/docs/concepts/conditional-styles)
-- [`globalCss`](/docs/concepts/writing-styles#global-styles)
-- [`globalFontface`](/docs/guides/fonts#global-font-face)
-- [`globalPositionTry`](/docs/references/config#globalpositiontry)
-- [`globalVars`](/docs/concepts/global-styles#custom-global-variables-globalvars)
+- [`global.css`](/docs/concepts/writing-styles#global-styles)
+- [`global.fontface`](/docs/guides/fonts#global-font-face)
+- [`global.positionTry`](/docs/references/config#globalpositiontry)
+- [`global.vars`](/docs/concepts/global-styles#custom-global-variables-globalvars)
 - [`patterns`](/docs/concepts/patterns)
 - [`presets`](#creating-a-preset) — a preset may itself nest presets
 - [`staticCss`](/docs/guides/static)
@@ -109,7 +109,7 @@ export default defineConfig({
 
 ![Visual helper](/stately-presets-merging.png)
 
-- `@bamboocss/preset-base`: ALWAYS included if NOT using `eject: true`
+- `@bamboocss/preset-base`: included by `defaultPresets`, which is what an unset `presets` loads
 
 - `@bamboocss/preset-bamboo`: only included by default if you haven't specified the `presets` config option, otherwise
   you'll have to include that preset by yourself like so:

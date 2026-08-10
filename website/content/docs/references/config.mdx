@@ -32,18 +32,16 @@ as a set of overrides and extensions.
 }
 ```
 
-### eject
+`presets` is the complete list: what you write is what is loaded. Leaving it unset loads `defaultPresets` (the two
+above); setting it to `[]` loads nothing, which is what the removed `eject: true` meant. To add a preset without
+restating the defaults:
 
-**Type**: `boolean`
+```ts
+import { defaultPresets } from '@bamboocss/dev/presets'
 
-**Default**: `false`
-
-Whether to opt-out of the defaults config presets: [`@bamboocss/preset-base`, `@bamboocss/preset-bamboo`]
-
-```json
-{
-  "eject": true
-}
+export default defineConfig({
+  presets: [...defaultPresets, myPreset],
+})
 ```
 
 ### preflight
@@ -392,31 +390,30 @@ If set to `true` and `outExtension` is set to `mjs`, the generated typescript `.
 }
 ```
 
-### lightningcss
+### plugins (lightningcss)
 
-**Type**: `boolean`
+Use LightningCSS by installing `@bamboocss/plugin-lightningcss` and listing it:
 
-**Default**: `false`
+```ts
+import { pluginLightningcss } from '@bamboocss/plugin-lightningcss'
 
-Whether to use `lightningcss` instead of `postcss` for css optimization.
-
-Setting it injects `@bamboocss/plugin-lightningcss` ahead of any plugins you configure, so the optimizer runs before
-your own hooks.
-
-```json
-{
-  "lightningcss": true
-}
+export default defineConfig({
+  plugins: [pluginLightningcss()],
+})
 ```
+
+There was a `lightningcss: boolean` option whose only job was to push that plugin into this list. Naming the plugin from
+inside `@bamboocss/node` made it a static import, so every project installed a native binary whether or not the flag was
+ever set — the package is separate precisely so that cost is opt-in.
 
 ### browserslist
 
 **Type**: `string[]`
 
-**Default**: unset – when [`lightningcss`](#lightningcss) is on and this is not set, it is filled in from the
-browserslist config found in your project.
+**Default**: unset – `@bamboocss/plugin-lightningcss` fills it in from the browserslist config found in your project
+when you do not set it.
 
-Browserslist query to target specific browsers. Only used when `lightningcss` is set to `true`.
+Browserslist query to target specific browsers. Only used by the LightningCSS optimizer.
 
 ```json
 {
@@ -455,16 +452,18 @@ Whether to allow shorthand properties.
 
 ### prune
 
-**Type**: `{ tokens?: boolean; keyframes?: boolean; preflight?: boolean; unresolved?: 'off' | 'warn' | 'error' }`
+**Type**:
+`{ tokens?: 'off' | 'reachable' | 'accounted'; unresolvedPath?: 'off' | 'warn' | 'error'; propertyRegistrations?: boolean; keyframes?: boolean; preflight?: boolean }`
 
-**Default**: `{ tokens: true, keyframes: true, preflight: false, unresolved: 'off' }`
+**Default**:
+`{ tokens: 'reachable', unresolvedPath: 'warn', propertyRegistrations: true, keyframes: true, preflight: false }`
 
 What to drop from the generated stylesheet. Each key is an independent switch, and setting one keeps the defaults for
 the rest.
 
 ```json
 {
-  "prune": { "tokens": true, "keyframes": true, "preflight": false, "unresolved": "off" }
+  "prune": { "tokens": "reachable", "keyframes": true, "preflight": false }
 }
 ```
 
@@ -511,9 +510,9 @@ reachability never applied to them, and a preset ships the set it composes from 
 What to do about a token reference the build cannot read. `'off'` (the default) prunes on what the css reaches and says
 nothing; `'warn'` reports; `'error'` fails the build.
 
-Set `prune: { unresolved: 'error' }` to assert that every token path in your project is spelled out at the call. Bamboo
-then accounts for each reference individually, keeps by name only what is asked for, and **prints everything it could
-not read**:
+Set `prune: { tokens: 'accounted', unresolvedPath: 'error' }` to assert that every token path in your project is spelled
+out at the call. Bamboo then accounts for each reference individually, keeps by name only what is asked for, and
+**prints everything it could not read**:
 
 ```
 ⚠ tokens:unresolved  2 token reference(s) could not be resolved, so every token declaration is kept.
@@ -636,7 +635,7 @@ your app. The two are independent – either can be switched off without the oth
 }
 ```
 
-Only keyframes your theme declares are ever removed, so one emitted by [`globalCss`](#globalcss) is left alone. A name
+Only keyframes your theme declares are ever removed, so one emitted by [`global.css`](#globalcss) is left alone. A name
 is kept when an animation property in the generated css names it, when a theme names it, when it is named by a custom
 property that is itself reachable, or when it appears anywhere under [`include`](#include).
 
@@ -671,7 +670,7 @@ The css selectors or media queries shortcuts.
 }
 ```
 
-### globalCss
+### global.css
 
 **Type**: `Extendable<GlobalStyleObject>`
 
@@ -681,33 +680,39 @@ The global styles for your project.
 
 ```json
 {
-  "globalCss": {
-    "html, body": {
-      "margin": 0,
-      "padding": 0
+  "global": {
+    "css": {
+      "html, body": {
+        "margin": 0,
+        "padding": 0
+      }
     }
   }
 }
 ```
 
-At-rules work here too, so `@font-face` written directly in `globalCss` does emit. Prefer
-[`globalFontface`](#globalfontface) for fonts anyway: it emits the same rule **and** registers the family name as a
-value `fontFamily` accepts. Declared through `globalCss`, the name is a string Bamboo has never heard of — no
+At-rules work here too, so `@font-face` written directly in `global.css` does emit. Prefer
+[`global.fontface`](#globalfontface) for fonts anyway: it emits the same rule **and** registers the family name as a
+value `fontFamily` accepts. Declared through `global.css`, the name is a string Bamboo has never heard of — no
 autocomplete, and under [`strictTokens`](#stricttokens) a type error.
 
 ```ts
 // fontFamily accepts Tokens["fonts"] | "Roboto"
-globalFontface: { Roboto: { src: "url(/fonts/roboto.woff2) format('woff2')" } }
+global: {
+  fontface:   { Roboto: { src: "url(/fonts/roboto.woff2) format('woff2')" } },
+}
 
 // fontFamily accepts Tokens["fonts"] only — the @font-face still ships
-globalCss: { '@font-face': { fontFamily: 'Roboto', src: "url(/fonts/roboto.woff2) format('woff2')" } }
+global: {
+  css:   { '@font-face': { fontFamily: 'Roboto', src: "url(/fonts/roboto.woff2) format('woff2')" } },
+}
 ```
 
-Same for [`globalPositionTry`](#globalpositiontry), which registers its names as values `positionTryFallbacks` and
+Same for [`global.positionTry`](#globalpositiontry), which registers its names as values `positionTryFallbacks` and
 `positionTry` accept, and adds the leading `--` those require. Written here you have to remember the `--`, and
 `@position-try flip` is invalid css that ships silently and never fires.
 
-### globalVars
+### global.vars
 
 **Type**: `Extendable<GlobalVarsDefinition>`
 
@@ -744,7 +749,7 @@ The theme configuration for your project.
 }
 ```
 
-### themes
+### theme.variants
 
 **Type**: `Extendable<ThemeVariantsMap>`
 
@@ -754,20 +759,22 @@ The theme variants configuration for your project.
 
 ```json
 {
-  "themes": {
-    "primary": {
-      "tokens": {
-        "colors": {
-          "text": { "value": "red" }
-        }
-      },
-      "semanticTokens": {
-        "colors": {
-          "muted": { "value": "token(colors.red.200)" },
-          "body": {
-            "value": {
-              "base": "token(colors.red.600)",
-              "_osDark": "token(colors.red.400)"
+  "theme": {
+    "variants": {
+      "primary": {
+        "tokens": {
+          "colors": {
+            "text": { "value": "red" }
+          }
+        },
+        "semanticTokens": {
+          "colors": {
+            "muted": { "value": "token(colors.red.200)" },
+            "body": {
+              "value": {
+                "base": "token(colors.red.600)",
+                "_osDark": "token(colors.red.400)"
+              }
             }
           }
         }
@@ -878,7 +885,7 @@ Only use valid CSS values for properties that do have a predefined list of value
 have config tokens, such as `display`, `content`, `willChange`, etc.
 [Learn more.](/docs/concepts/writing-styles#type-safety)
 
-### globalFontface
+### global.fontface
 
 **Type**: `GlobalFontfaceDefinition`
 
@@ -888,16 +895,18 @@ Global font face definitions.
 
 ```json
 {
-  "globalFontface": {
-    "Inter": {
-      "src": "url(/fonts/inter.woff2) format('woff2')",
-      "fontWeight": "400",
-      "fontStyle": "normal"
-    },
-    "Roboto": {
-      "src": "url(/fonts/roboto.woff2) format('woff2')",
-      "fontWeight": "400",
-      "fontStyle": "normal"
+  "global": {
+    "fontface": {
+      "Inter": {
+        "src": "url(/fonts/inter.woff2) format('woff2')",
+        "fontWeight": "400",
+        "fontStyle": "normal"
+      },
+      "Roboto": {
+        "src": "url(/fonts/roboto.woff2) format('woff2')",
+        "fontWeight": "400",
+        "fontStyle": "normal"
+      }
     }
   }
 }
@@ -905,12 +914,12 @@ Global font face definitions.
 
 Each key becomes a value `fontFamily` accepts, alongside your `fonts` tokens — so `css({ fontFamily: 'Inter' })`
 autocompletes and typechecks. That is the reason to declare a face here rather than as a raw `@font-face` in
-[`globalCss`](#globalcss), which emits the same rule but leaves the family name unregistered.
+[`global.css`](#globalcss), which emits the same rule but leaves the family name unregistered.
 
 Check out the [Custom Fonts](/docs/guides/fonts#global-font-face) guide for more information on how to use the
-`globalFontface` option.
+`global.fontface` option.
 
-### globalPositionTry
+### global.positionTry
 
 **Type**: `Extendable<GlobalPositionTry>`
 
@@ -922,7 +931,7 @@ positioning. Each key emits one `@position-try` rule, and a key without a leadin
 
 Each name is also registered as a value `positionTryFallbacks` and `positionTry` accept, so
 `css({ positionTryFallbacks: '--bottom-scrollable' })` autocompletes and — under [`strictTokens`](#stricttokens) —
-typechecks. That is the reason to declare one here rather than as a raw `@position-try` in [`globalCss`](#globalcss),
+typechecks. That is the reason to declare one here rather than as a raw `@position-try` in [`global.css`](#globalcss),
 which emits the same rule but leaves the name unknown.
 
 ```json
@@ -948,13 +957,13 @@ The log level for the built-in logger.
 
 ### validation
 
-**Type**: `'none' | 'warn' | 'error'`
+**Type**: `'off' | 'warn' | 'error'`
 
 **Default**: `warn`
 
-The validation strictness to use when validating the config.
+What to do when the config does not validate.
 
-- When set to 'none', no validation will be performed.
+- When set to 'off', no validation will be performed.
 - When set to 'warn', warnings will be logged when validation fails.
 - When set to 'error', errors will be thrown when validation fails.
 

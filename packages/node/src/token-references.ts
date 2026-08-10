@@ -160,26 +160,28 @@ export function pruneTokensForBuild(
   sheet: Parameters<BambooContext['pruneTokens']>[0],
   results: ParserResult[],
 ) {
-  if (!ctx.config.prune?.tokens) {
+  const strategy = ctx.config.prune?.tokens ?? 'reachable'
+
+  if (strategy === 'off') {
     ctx.pruneTokens(sheet)
     return
   }
 
-  // `unresolved` is an assertion, not a cleverer inference: the user has said every token path
+  // `accounted` is an assertion, not a cleverer inference: the user has said every token path
   // in their project resolves at build time. So the accounting runs, whatever it accepts is
-  // kept by name, and whatever it cannot read is *reported* and falls back to the default
-  // answer.
+  // kept by name, and whatever it cannot read is *reported* and falls back to `reachable`.
   //
   // That fallback is what makes this safe to offer. A declined reference leaves the build
-  // exactly where the default would have left it. What it cannot see is a caller outside
+  // exactly where `reachable` would have left it. What it cannot see is a caller outside
   // `include` — see `accountTokenReferences` — which is the part the user asserted, and the
   // reason the declines are printed rather than swallowed.
   //
-  // `warn` runs all of it and throws none of it, so a project can read what `error` would
-  // reject before a build depends on the answer. The pruning is identical either way — only
-  // whether an unreadable path stops the build differs.
-  const unresolved = ctx.config.prune?.unresolved ?? 'off'
-  const accounts = unresolved !== 'off'
+  // `unresolvedPath` decides how loudly, and nothing else: the keeps are identical across all
+  // three of its values. It used to be `prune.unresolved`, whose `'off'` also switched the
+  // accounting pass off — one value meaning both "do not account" and "do not report", which
+  // left "account, and stay quiet" unsayable.
+  const accounts = strategy === 'accounted'
+  const unresolved = accounts ? (ctx.config.prune?.unresolvedPath ?? 'warn') : 'off'
 
   // One walk. These three answers all come from the same files, and reading them apart meant
   // a strict build opened every file three times: once for the reference set, once to account,
@@ -237,10 +239,10 @@ export function pruneTokensForBuild(
   // On a decline, fall back to what the default would have answered rather than to an
   // unconditional keep. Those differ: a project whose only unreadable reference is an import
   // of a module this pass cannot classify declines here while the default's scan finds no
-  // token call at all, so keeping everything would make `strict` ship *more* than the default
+  // token call at all, so keeping everything would make `prune.tokens: 'accounted'` ship *more* than `reachable`
   // — the one case where turning it on could cost bytes. Deferring to the same gate makes
-  // `strict` default-or-better in every case rather than in most.
-  // `strict` is an assertion, so a token reference that breaks it fails the build rather than
+  // `prune.tokens: 'accounted'` default-or-better in every case rather than in most.
+  // `prune.tokens: 'accounted'` is an assertion, so a token reference that breaks it fails the build rather than
   // warning and carrying on. Warning was the wrong shape for that one: the user asked for the
   // token layer to be pruned, did not get it, and nothing stopped to say so.
   //
@@ -256,16 +258,17 @@ export function pruneTokensForBuild(
   if (failing.length) {
     const message =
       `${failing.length} token reference(s) could not be resolved.\n\n${formatDeclined(ctx, failing)}\n\n` +
-      `\`prune.unresolved\` asserts that every token path resolves at build time. Spell the path as a ` +
-      `string literal at the call, give a template a static prefix so it can be bounded, move the token ` +
-      `into \`staticCss\`, or set \`prune: { unresolved: 'off' }\` to stop asserting.`
+      `\`prune.tokens: 'accounted'\` asserts that every token path resolves at build time. Spell the path ` +
+      `as a string literal at the call, give a template a static prefix so it can be bounded, move the ` +
+      `token into \`staticCss\`, set \`prune: { unresolvedPath: 'warn' }\` to keep the assertion without ` +
+      `failing, or \`prune: { tokens: 'reachable' }\` to stop asserting.`
 
     if (unresolved === 'error') throw new BambooError('TOKEN_REFERENCE_UNRESOLVED', message)
 
     logger.warn('tokens:unresolved', message)
   }
 
-  if (reported.length) {
+  if (reported.length && unresolved !== 'off') {
     logger.warn(
       'tokens:unresolved',
       `${reported.length} reference(s) could not be accounted for, so every token declaration is kept.\n\n` +
@@ -404,10 +407,14 @@ export function collectRenderedElements(ctx: BambooContext) {
  * So the import test is any module specifier with a `/tokens` path segment, rather than the
  * literal `styled-system/tokens` it used to be. `outdir` is configurable, so the artifact is
  * only at `styled-system/` by default, and the literal missed `outdir: 'design-system'`, a
- * tsconfig path alias, and `styled-system/tokens/index.mjs` -- which is the only spelling
- * NodeNext accepts, the artifact being a directory. It is still anchored to `from`, `import`
- * or `require`, because without that anchor a route or a url (`fetch('/api/tokens')`) reads
- * as an import and quietly switches the whole optimisation off.
+ * tsconfig path alias, and `styled-system/tokens/index.mjs`. It is still anchored to `from`,
+ * `import` or `require`, because without that anchor a route or a url (`fetch('/api/tokens')`)
+ * reads as an import and quietly switches the whole optimisation off.
+ *
+ * That last spelling used to be the only one NodeNext accepted, the artifact being a directory
+ * and the generated `package.json` declaring no `exports`. It declares one now, so
+ * `styled-system/tokens` resolves there too — but both spellings still have to be seen here,
+ * because the map keeps the explicit one working and projects have it written down.
  *
  * The call test allows whitespace around the dot for the same reason `TOKEN_CALL` does. It
  * did not, which broke the alignment the note on `collectTokenReferences` rests on: a

@@ -5,7 +5,7 @@ import { generateThemesSpec } from '../src/spec/themes'
 describe('generateThemesSpec', () => {
   test('should return undefined when no themes are configured', () => {
     const ctx = createContext({
-      eject: true,
+      presets: [],
       theme: {
         tokens: {
           colors: { red: { value: '#ff0000' } },
@@ -18,7 +18,7 @@ describe('generateThemesSpec', () => {
 
   test('should generate spec for themes with tokens', () => {
     const ctx = createContext({
-      eject: true,
+      presets: [],
       theme: {
         tokens: {
           colors: {
@@ -26,13 +26,13 @@ describe('generateThemesSpec', () => {
             blue: { value: '#0000ff' },
           },
         },
-      },
-      themes: {
-        dark: {
-          tokens: {
-            colors: {
-              red: { value: '#cc0000' },
-              blue: { value: '#0000cc' },
+        variants: {
+          dark: {
+            tokens: {
+              colors: {
+                red: { value: '#cc0000' },
+                blue: { value: '#0000cc' },
+              },
             },
           },
         },
@@ -93,7 +93,7 @@ describe('generateThemesSpec', () => {
 
   test('should generate spec for themes with semantic tokens', () => {
     const ctx = createContext({
-      eject: true,
+      presets: [],
       theme: {
         tokens: {
           colors: {
@@ -106,12 +106,12 @@ describe('generateThemesSpec', () => {
             primary: { value: 'token(colors.blue)' },
           },
         },
-      },
-      themes: {
-        dark: {
-          semanticTokens: {
-            colors: {
-              primary: { value: 'token(colors.red)' },
+        variants: {
+          dark: {
+            semanticTokens: {
+              colors: {
+                primary: { value: 'token(colors.red)' },
+              },
             },
           },
         },
@@ -160,7 +160,7 @@ describe('generateThemesSpec', () => {
 
   test('should generate spec for multiple themes', () => {
     const ctx = createContext({
-      eject: true,
+      presets: [],
       theme: {
         tokens: {
           colors: {
@@ -168,19 +168,19 @@ describe('generateThemesSpec', () => {
             blue: { value: '#0000ff' },
           },
         },
-      },
-      themes: {
-        dark: {
-          tokens: {
-            colors: {
-              red: { value: '#cc0000' },
+        variants: {
+          dark: {
+            tokens: {
+              colors: {
+                red: { value: '#cc0000' },
+              },
             },
           },
-        },
-        brand: {
-          tokens: {
-            colors: {
-              red: { value: '#ee0000' },
+          brand: {
+            tokens: {
+              colors: {
+                red: { value: '#ee0000' },
+              },
             },
           },
         },
@@ -255,7 +255,7 @@ describe('generateThemesSpec', () => {
 
   test('should generate spec with both tokens and semantic tokens in a theme', () => {
     const ctx = createContext({
-      eject: true,
+      presets: [],
       theme: {
         tokens: {
           colors: {
@@ -268,17 +268,17 @@ describe('generateThemesSpec', () => {
             primary: { value: 'token(colors.blue)' },
           },
         },
-      },
-      themes: {
-        dark: {
-          tokens: {
-            colors: {
-              red: { value: '#cc0000' },
+        variants: {
+          dark: {
+            tokens: {
+              colors: {
+                red: { value: '#cc0000' },
+              },
             },
-          },
-          semanticTokens: {
-            colors: {
-              primary: { value: 'token(colors.red)' },
+            semanticTokens: {
+              colors: {
+                primary: { value: 'token(colors.red)' },
+              },
             },
           },
         },
@@ -309,19 +309,19 @@ describe('generateThemesSpec', () => {
 
   test('should be included in getSpec output', () => {
     const ctx = createContext({
-      eject: true,
+      presets: [],
       theme: {
         tokens: {
           colors: {
             red: { value: '#ff0000' },
           },
         },
-      },
-      themes: {
-        dark: {
-          tokens: {
-            colors: {
-              red: { value: '#cc0000' },
+        variants: {
+          dark: {
+            tokens: {
+              colors: {
+                red: { value: '#cc0000' },
+              },
             },
           },
         },

@@ -5,7 +5,7 @@ import type { BambooContext } from '../src/create-context'
 import { pruneTokensForBuild } from '../src/token-references'
 
 /**
- * `prune: { unresolved: 'error' }` end to end, against the real prune and the emitted css.
+ * `prune: { tokens: 'accounted', unresolvedPath: 'error' }` end to end, against the real prune and the emitted css.
  *
  * Every other test of this feature stubs `ctx.pruneTokens` and asserts the arguments it was
  * handed. That proves the accounting decided correctly and nothing about what ships — and no
@@ -17,7 +17,7 @@ import { pruneTokensForBuild } from '../src/token-references'
  */
 const FILE = 'app/src/app.tsx'
 
-const buildCss = (source: string, prune: PruneOptions = { unresolved: 'error' }) => {
+const buildCss = (source: string, prune: PruneOptions = { tokens: 'accounted', unresolvedPath: 'error' }) => {
   const ctx = createFixtureContext({
     prune,
     // Stands in for what extraction would contribute, so the sheet has a utility layer.
@@ -27,7 +27,7 @@ const buildCss = (source: string, prune: PruneOptions = { unresolved: 'error' })
     // that stranded one, and the only way the dangling check below can fail at all. Without
     // it every `var()` in the sheet is a *direct* reference, which `pruneTokenVars` roots by
     // construction and which therefore cannot dangle however badly the pass is broken.
-    globalCss: { ':root': { '--brand': 'token(colors.pink.500)' } },
+    global: { css: { ':root': { '--brand': 'token(colors.pink.500)' } } },
   }) as unknown as BambooContext
 
   const absolute = ctx.runtime.path.abs(ctx.config.cwd, FILE)
@@ -72,7 +72,7 @@ describe('prune.unresolved, against the emitted css', () => {
 
   test('the default keeps everything for the same source', () => {
     const strict = buildCss(`${imports}export const brand = token('colors.blue.500')`)
-    const relaxed = buildCss(`${imports}export const brand = token('colors.blue.500')`, { unresolved: 'off' })
+    const relaxed = buildCss(`${imports}export const brand = token('colors.blue.500')`, { tokens: 'reachable' })
 
     expect(declares(relaxed, '--colors-teal-500')).toBe(true)
     expect(declarationCount(strict)).toBeLessThan(declarationCount(relaxed))
@@ -112,8 +112,8 @@ describe('prune.unresolved, against the emitted css', () => {
   test('warn reports the same reference without failing, and prunes the same way', () => {
     const source = `${imports}export const brand = token('colors.blue.500')`
 
-    const warned = buildCss(source, { unresolved: 'warn' })
-    const errored = buildCss(source, { unresolved: 'error' })
+    const warned = buildCss(source, { tokens: 'accounted', unresolvedPath: 'warn' })
+    const errored = buildCss(source, { tokens: 'accounted', unresolvedPath: 'error' })
 
     expect(warned).toBe(errored)
   })
@@ -121,8 +121,8 @@ describe('prune.unresolved, against the emitted css', () => {
   test('warn does not throw on the path error rejects', () => {
     const source = `${imports}export const brand = (p) => token(p)`
 
-    expect(() => buildCss(source, { unresolved: 'warn' })).not.toThrow()
-    expect(() => buildCss(source, { unresolved: 'error' })).toThrow(/could not be resolved/)
+    expect(() => buildCss(source, { tokens: 'accounted', unresolvedPath: 'warn' })).not.toThrow()
+    expect(() => buildCss(source, { tokens: 'accounted', unresolvedPath: 'error' })).toThrow(/could not be resolved/)
   })
 
   /**

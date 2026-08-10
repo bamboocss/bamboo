@@ -24,6 +24,40 @@ export interface Patterns {
   [pattern: string]: PatternConfig
 }
 
+/**
+ * Everything emitted at the document level rather than against a class.
+ *
+ * These were four top-level keys — `globalCss`, `globalFontface`, `globalPositionTry` and
+ * `globalVars`. Grouping them is not only tidier: `globalVars` was the one of the four that
+ * `PresetCore` never listed, so it kept its `extend` wrapper in the *resolved* config while
+ * its three siblings lost theirs. One key cannot disagree with itself that way.
+ */
+export interface GlobalCore {
+  /**
+   * The global styles for your project.
+   */
+  css: GlobalStyleObject
+  /**
+   * The global fontface for your project.
+   */
+  fontface?: GlobalFontface
+  /**
+   * The global custom position try fallback option
+   */
+  positionTry?: GlobalPositionTry
+  /**
+   * The css variables for your project.
+   */
+  vars?: GlobalVarsDefinition
+}
+
+interface ExtendableGlobal {
+  css?: ExtendableGlobalStyleObject
+  fontface?: ExtendableGlobalFontface
+  positionTry?: ExtendableGlobalPositionTry
+  vars?: ExtendableGlobalVars
+}
+
 export interface PresetCore {
   /**
    * The css selectors or media queries shortcuts.
@@ -31,17 +65,9 @@ export interface PresetCore {
    */
   conditions: Conditions
   /**
-   * The global styles for your project.
+   * Styles, fontfaces, position-try fallbacks and css variables emitted at the document level.
    */
-  globalCss: GlobalStyleObject
-  /**
-   * The global fontface for your project.
-   */
-  globalFontface?: GlobalFontface
-  /**
-   * The global custom position try fallback option
-   */
-  globalPositionTry?: GlobalPositionTry
+  global: GlobalCore
   /**
    * Used to generate css utility classes for your project.
    */
@@ -58,10 +84,6 @@ export interface PresetCore {
    * Common styling or layout patterns for your project.
    */
   patterns: Record<string, PatternConfig>
-  /**
-   * Multiple themes for your project.
-   */
-  themes?: ThemeVariantsMap
 }
 
 interface ExtendablePatterns {
@@ -125,17 +147,6 @@ interface ExtendableGlobalPositionTry {
   extend?: GlobalPositionTry | undefined
 }
 
-export interface ThemeVariant extends Pick<Theme, 'tokens' | 'semanticTokens'> {}
-
-export interface ThemeVariantsMap {
-  [name: string]: ThemeVariant
-}
-
-interface ExtendableThemeVariantsMap {
-  [name: string]: ThemeVariantsMap | ThemeVariant | undefined
-  extend?: ThemeVariantsMap | undefined
-}
-
 export interface ExtendableOptions {
   /**
    * The css selectors or media queries shortcuts.
@@ -143,17 +154,9 @@ export interface ExtendableOptions {
    */
   conditions?: ExtendableConditions
   /**
-   * The global styles for your project.
+   * Styles, fontfaces, position-try fallbacks and css variables emitted at the document level.
    */
-  globalCss?: ExtendableGlobalStyleObject
-  /**
-   * The global fontface for your project.
-   */
-  globalFontface?: ExtendableGlobalFontface
-  /**
-   * The global custom position try fallback option
-   */
-  globalPositionTry?: ExtendableGlobalPositionTry
+  global?: ExtendableGlobal
   /**
    * Used to generate css utility classes for your project.
    */
@@ -170,14 +173,6 @@ export interface ExtendableOptions {
    * Common styling or layout patterns for your project.
    */
   patterns?: ExtendablePatterns
-  /**
-   * The css variables for your project.
-   */
-  globalVars?: ExtendableGlobalVars
-  /**
-   * The theme variants for your project.
-   */
-  themes?: ExtendableThemeVariantsMap
 }
 
 export interface ImportMapInput {
@@ -257,6 +252,19 @@ interface FileSystemOptions {
    * @default 'info'
    */
   logLevel?: 'debug' | 'info' | 'warn' | 'error' | 'silent'
+  /**
+   * Show only the log types matching this pattern, at debug level.
+   *
+   * Log types are namespaced — `vite:transform`, `tokens:unresolved`, `prune:tokens`,
+   * `config` — so `'prune:*'` follows one subsystem without raising `logLevel` and
+   * un-silencing everything else.
+   *
+   * The matcher already existed and was reachable only through the `BAMBOO_DEBUG`
+   * environment variable, which put it out of reach of a checked-in config.
+   *
+   * @example 'vite:*, prune:tokens'
+   */
+  logFilter?: string
 }
 
 interface CssgenOptions {
@@ -299,11 +307,6 @@ interface CssgenOptions {
    */
   cssVarRoot?: string
   /**
-   * Whether to use `lightningcss` instead of `postcss` for css optimization.
-   * @default false
-   */
-  lightningcss?: boolean
-  /**
    * Browserslist query to target specific browsers.
    * @see https://www.npmjs.com/package/browserslist
    */
@@ -332,7 +335,7 @@ interface CodegenOptions {
    * This is useful if want to shorten the class names or css variables.
    * @default false
    */
-  hash?: boolean | { cssVar: boolean; className: boolean }
+  hash?: boolean | { cssVar?: boolean; className?: boolean }
   /**
    * Change generated typescript definitions to be more strict for property having a token or utility.
    */
@@ -357,8 +360,21 @@ interface CodegenOptions {
    */
   outExtension?: 'mjs' | 'js'
   /**
-   * Whether to force consistent type extensions for generated typescript .d.ts files.
-   * If set to `true` and `outExtension` is set to `mjs`, the generated typescript .d.ts files will have the extension `.d.mts`.
+   * Emit `.d.mts` declarations beside `.mjs`, and import them by their `.mjs` specifier.
+   *
+   * Off by default, which looks like the wrong default and is not. `moduleResolution:
+   * bundler` — Vite, Next, and most of what consumes this — resolves a directory import
+   * like `styled-system/css` by probing `index.ts`, `index.tsx`, `index.d.ts`, `index.js`.
+   * That list has no `.d.mts` in it, so turning this on makes every such import fail with
+   * `TS2307: Cannot find module`. It is for `node16`/`nodenext` consumers, who need the
+   * extensions to agree and who import by full specifier anyway.
+   *
+   * So this is a real fork in resolution behaviour rather than a flag with a correct
+   * setting, which is why it survived an attempt to delete it: making it unconditional
+   * broke every bundler-mode project in this repo.
+   *
+   * Only meaningful when `outExtension` is `mjs`.
+   *
    * @default false
    */
   forceConsistentTypeExtension?: boolean
@@ -366,7 +382,20 @@ interface CodegenOptions {
 
 interface PresetOptions {
   /**
-   * Used to create reusable config presets for your project or team.
+   * The complete list of presets, in order. Reusable across a project or team.
+   *
+   * Authoritative: what you write is what is loaded. Import `defaultPresets` to keep the
+   * defaults alongside your own.
+   *
+   * ```ts
+   * import { defaultPresets } from '@bamboocss/dev/presets'
+   * presets: [...defaultPresets, myPreset]
+   * ```
+   *
+   * Leaving it unset loads `defaultPresets`. Setting it to `[]` loads nothing — which is
+   * what the removed `eject: true` meant. Previously neither was true of a config that
+   * merely *listed* a preset: doing so kept `@bamboocss/preset-base` and silently dropped
+   * `@bamboocss/preset-bamboo`, so `presets` was neither additive nor replacing.
    */
   presets?: (string | Preset | Promise<Preset>)[]
 }
@@ -384,78 +413,95 @@ export interface PluginsOptions {
 }
 
 /**
- * What to drop from the generated stylesheet, and how strictly to account for it.
+ * What to drop from the generated stylesheet, and how to account for it.
  *
- * These were three top-level options — `prune.tokens`, `prune.keyframes` and
- * `prune.preflight` — which disagreed with each other on all three of naming, default and
+ * These were three top-level options — `pruneUnusedTokens`, `pruneUnusedKeyframes` and
+ * `prunePreflight` — which disagreed with each other on all three of naming, default and
  * value type. Grouping them is what makes one default reading of "prune" possible.
  */
 export interface PruneOptions {
   /**
-   * Whether to drop token css variables that nothing in the generated css can reach.
+   * How to decide which token css variables to keep.
    *
    * The token layer declares every token in the theme, and an app typically uses a small
    * fraction of them, so this is usually the largest single saving in render-blocking css.
    *
-   * The same walk also drops an `@property` registration for a custom property the finished
-   * stylesheet neither declares nor reads. A preset registers what its utilities compose —
-   * filters, gradients, transforms, transitions — and ships the whole set regardless of what
-   * the app draws, so an app using none of them carries all of it for nothing. Registrations
-   * declared through `globalVars` are yours and are never removed.
+   * - `off` keeps every token declaration.
+   * - `reachable` keeps what the generated css reaches. Because `token()` can name any
+   *   token, a project that calls it from javascript *anywhere* keeps every declaration —
+   *   on the default preset that is 468 names against the 68 a narrower exemption kept, and
+   *   a token layer of 442 declarations rather than 2. The exemption is skipped entirely for
+   *   a project that never reaches for a token from javascript, so the saving is
+   *   all-or-nothing: one caller keeps every declaration.
+   * - `accounted` reads the token paths out of your source and keeps only those. `token()`
+   *   and `token.value()` calls are resolved through a constant or a template literal the
+   *   extractor can follow, not only through a path spelled at the call, as is any literal
+   *   `var(--x)` written by hand.
    *
-   * It is opt-in because reachability cannot be proven for every reference. `token()`,
-   * `token()` and `token.value()` calls are read out of the source, as is any literal
-   * `var(--x)` written by hand — and each form is resolved through a constant or a template
-   * literal the extractor can follow, not only through a path spelled out at the call. Three
-   * things stay invisible: a token named by a path assembled from a value that only exists at
-   * runtime, one referenced only from a stylesheet outside `include`, and one used by a
-   * separate package consuming the output as design tokens. Use `staticCss` to keep those.
+   * Under `accounted`, a path the build cannot follow makes the keep set fall back to
+   * `reachable`'s blanket keep rather than silently dropping a declaration — which is why
+   * `unresolvedPath` exists, and why setting it to `error` is what makes `accounted` worth
+   * asking for: it guarantees you are shipping the exact set rather than the fallback.
    *
-   * Both forms are a risk, which is a change. `token()` used to hand javascript a literal for
-   * a plain token, so a path it could not resolve cost nothing; it now returns `var(--x)` for
-   * *every* token. Only `token.value()` returns a literal, and only for a token that has one.
-   * So a path this pass cannot read is a declaration that has to survive whichever form asked
-   * for it.
-   *
-   * A custom property declared by `globalCss` or `globalVars` is not one of these cases:
-   * the declaration ships whether or not anything in the stylesheet reads it, so whatever
-   * it references is kept alongside it.
-   *
-   * The cost of that is bluntness. Because `token()` can name any token, a project that
-   * reaches for one from javascript keeps *every* token declaration — on the default preset
-   * that is 468 names against the 68 the old, narrower exemption kept, and a token layer of
-   * 442 declarations rather than 2. It used to cover only virtual tokens, tokens carrying a
-   * condition, and the positive counterpart each negative token pins through
-   * `calc(var(--spacing-4) * -1)`.
-   *
-   * The exemption is skipped entirely for a project that never reaches for a token from
-   * javascript. The tokens artifact is generated into the project rather than installed, so
-   * the import is written in your own source and a scan of `include` finds it — a call, or an
-   * import of any module the artifact could be. That is the whole saving, and it is
-   * all-or-nothing: a project with one caller keeps every declaration.
-   *
-   * The scan reads `include`, which scopes style extraction rather than everything that may
+   * Three things stay invisible to `accounted`: a token named by a path assembled from a
+   * value that only exists at runtime, one referenced only from a stylesheet outside
+   * `include`, and one used by a separate package consuming the output as design tokens. The
+   * scan reads `include`, which scopes style extraction rather than everything that may
    * import — so a script, a config, or a sibling workspace package that calls `token()` is
-   * not covered, nor is a binding renamed away from `token`, as in `const t = token`. Both
-   * are rare and neither reports itself: the declaration goes and the call returns a `var()`
-   * nothing declares. Setting this to `false` keeps every declaration if you are in that
-   * position.
+   * not covered, nor is a binding renamed away from `token`, as in `const t = token`. Use
+   * `staticCss` to keep those.
    *
-   * Setting this to `false` keeps every token declaration, but still drops the `@property`
-   * registrations. Those are not tokens — nothing hands one to javascript and none appear
-   * in the `token()` surface — so the reachability problem above does not apply to them,
-   * and opting out of token pruning should not mean shipping a preset's whole filter and
-   * gradient set for nothing.
+   * A custom property declared by `global.css` or `global.vars` is not one of these cases:
+   * the declaration ships whether or not anything in the stylesheet reads it, so whatever it
+   * references is kept alongside it.
+   *
+   * @default 'reachable'
+   */
+  tokens?: 'off' | 'reachable' | 'accounted'
+  /**
+   * What to do about a token path `accounted` cannot follow.
+   *
+   * A path spelled at the call resolves; one assembled at runtime does not. An unfollowable
+   * path is what forces `accounted` back onto the blanket keep, so this decides whether that
+   * happens quietly, loudly, or not at all.
+   *
+   * - `off` falls back and says nothing.
+   * - `warn` falls back and reports what it could not follow.
+   * - `error` fails the build, so the fallback can never ship unnoticed.
+   *
+   * Inert under `tokens: 'off'` and `tokens: 'reachable'`, which run no accounting pass.
+   *
+   * Named for what it checks rather than `strict`, which already means something unrelated
+   * here: `strictTokens` and `strictPropertyValues` narrow generated *typescript*, and
+   * neither implies nor is implied by this.
+   *
+   * @default 'warn'
+   */
+  unresolvedPath?: 'off' | 'warn' | 'error'
+  /**
+   * Drop an `@property` registration the finished stylesheet neither declares nor reads.
+   *
+   * A preset registers what its utilities compose — filters, gradients, transforms,
+   * transitions — and ships the whole set regardless of what the app draws, so an app using
+   * none of them carries all of it for nothing.
+   *
+   * Its own flag rather than a side effect of `tokens`, which is what it used to be: the
+   * registrations were dropped even under the old `tokens: false`, so an option documented
+   * as keeping every token declaration quietly removed something else. These are not tokens
+   * — nothing hands one to javascript and none appear in the `token()` surface — so the
+   * reachability problem that makes `tokens` cautious does not apply to them.
+   *
+   * Registrations declared through `global.vars` are yours and are never removed.
    *
    * @default true
    */
-  tokens?: boolean
+  propertyRegistrations?: boolean
   /**
    * Drop `@keyframes` rules nothing can reach.
    *
    * A preset declares every animation it offers and an app uses a handful, so the rest
    * are dead weight in the stylesheet that blocks first paint. Only keyframes the theme
-   * declares are ever removed — one emitted by `globalCss` is left alone.
+   * declares are ever removed — one emitted by `global.css` is left alone.
    *
    * A name is kept when any declaration in the generated css names it, and when it
    * appears anywhere under `include`, which covers an animation assembled at runtime or
@@ -497,27 +543,6 @@ export interface PruneOptions {
    * @default false
    */
   preflight?: boolean
-  /**
-   * What to do about a token reference the build cannot read.
-   *
-   * A path spelled at the call resolves; one assembled at runtime does not, and an
-   * unreadable path is why `tokens` has to keep every declaration rather than the few a
-   * project asks for. This says how loudly to say so.
-   *
-   * - `off` prunes on what the css reaches and says nothing.
-   * - `warn` runs the accounting pass and reports what it could not follow, so you can see
-   *   what `error` would reject without a build failing.
-   * - `error` asserts that every token path resolves, and fails the build where one does
-   *   not. Under it the keeps are computed from accounted references rather than blanket,
-   *   which is what makes pruning worth asserting for.
-   *
-   * Named for what it checks rather than `strict`, which already means something unrelated
-   * here: `strictTokens` and `strictPropertyValues` narrow generated *typescript*, and
-   * neither implies nor is implied by this.
-   *
-   * @default 'off'
-   */
-  unresolved?: 'off' | 'warn' | 'error'
 }
 
 export interface Config
@@ -530,19 +555,20 @@ export interface Config
     HooksOptions,
     PluginsOptions {
   /**
-   * Whether to opt-out of the defaults config presets: [`@bamboocss/preset-base`, `@bamboocss/preset-bamboo`]
-   * @default 'false'
-   */
-  eject?: boolean
-  /**
-   * The validation strictness to use when validating the config.
-   * - When set to 'none', no validation will be performed.
-   * - When set to 'warn', warnings will be logged when validation fails.
-   * - When set to 'error', errors will be thrown when validation fails.
+   * What to do when the config does not validate.
+   *
+   * - `off` performs no validation.
+   * - `warn` logs what failed.
+   * - `error` throws.
+   *
+   * A retired spelling is checked ahead of this and is not silenceable by it — that is
+   * output which is already broken rather than an opinion about a config that still
+   * builds. Neither is a removed option: `off` used to switch off the one mechanism that
+   * tells an upgrader their setting is no longer read.
    *
    * @default 'warn'
    */
-  validation?: 'none' | 'warn' | 'error'
+  validation?: 'off' | 'warn' | 'error'
 }
 
 export interface Preset extends ExtendableOptions, PresetOptions {
@@ -591,8 +617,10 @@ export interface PrefixOptions {
 type ReqConf = Required<UserConfig>
 
 export type ConfigPath = Exclude<
-  | Exclude<NonNullable<Keys<ReqConf>>, 'theme'>
+  | Exclude<NonNullable<Keys<ReqConf>>, 'theme' | 'global' | 'prune'>
   | PathIn<ReqConf, 'theme'>
+  | PathIn<ReqConf, 'global'>
+  | PathIn<ReqConf, 'prune'>
   | PathIn<ReqConf, 'patterns'>
   | PathIn<ReqConf, 'staticCss'>
   | (string & {}),

@@ -45,7 +45,7 @@ export default defineConfig({
       },
     },
   },
+  forceConsistentTypeExtension: true,
   outdir: 'styled-system',
   outExtension: 'js',
-  forceConsistentTypeExtension: true,
 })

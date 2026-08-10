@@ -91,7 +91,7 @@ export function generateTokenCss(ctx: Context, sheet: Stylesheet) {
 
   // Skip theme tokens if they're not explicitly listed in the `staticCss.themes` array
   if (allowed) {
-    const keys = Object.keys(config.themes ?? {})
+    const keys = Object.keys(config.theme?.variants ?? {})
     themeVariants = allowed.includes('*') ? keys : keys.filter((key) => allowed.includes(key))
   }
 

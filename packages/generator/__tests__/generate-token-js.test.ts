@@ -4096,7 +4096,7 @@ test('use raw value when possible for semanticTokens', () => {
   expect(
     generateTokenJs(
       createContext({
-        eject: true,
+        presets: [],
         theme: {
           tokens: {},
           semanticTokens: {

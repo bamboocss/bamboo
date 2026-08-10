@@ -54,14 +54,14 @@ describe('view transition pruning', () => {
   })
 
   test('keeps a token only a transition references', () => {
-    const css = buildCss({ group: { bg: 'red.300' } }, { prune: { tokens: true } })
+    const css = buildCss({ group: { bg: 'red.300' } }, { prune: { tokens: 'reachable' } })
 
     expect(declaresToken(css, '--colors-red-300')).toBe(true)
     expect(declaresToken(css, '--colors-pink-500')).toBe(false)
   })
 
   test('keeps a token referenced from inside a condition', () => {
-    const css = buildCss({ group: { _motionReduce: { bg: 'red.300' } } }, { prune: { tokens: true } })
+    const css = buildCss({ group: { _motionReduce: { bg: 'red.300' } } }, { prune: { tokens: 'reachable' } })
 
     expect(declaresToken(css, '--colors-red-300')).toBe(true)
   })

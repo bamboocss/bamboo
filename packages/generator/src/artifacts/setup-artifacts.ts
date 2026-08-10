@@ -301,7 +301,7 @@ function setupCssIndex(ctx: Context): Artifact {
 }
 
 function setupThemes(ctx: Context): Artifact | undefined {
-  const { themes } = ctx.config
+  const themes = ctx.config.theme?.variants
   if (!themes) return
 
   const files = generateThemes(ctx)

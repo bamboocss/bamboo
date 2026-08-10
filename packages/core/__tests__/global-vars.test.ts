@@ -4,7 +4,7 @@ import { describe, expect, test } from 'vitest'
 
 function globalVars(vars?: GlobalVarsDefinition) {
   const ctx = createGeneratorContext({
-    globalVars: vars,
+    global: { vars },
   })
   const sheet = ctx.createSheet()
   sheet.processGlobalCss({})

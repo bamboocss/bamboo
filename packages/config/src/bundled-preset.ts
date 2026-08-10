@@ -15,4 +15,12 @@ export const getBundledPreset = (preset: unknown) => {
   return typeof preset === 'string' && isBundledPreset(preset) ? bundledPresets[preset] : undefined
 }
 
+/**
+ * What `presets` loads when a config does not list any.
+ *
+ * Exported so a config that adds a preset can keep them without restating them:
+ * `presets: [...defaultPresets, myPreset]`. Spread it — the array is shared.
+ */
+export const defaultPresets = [presetBase, presetBamboo]
+
 export { presetBase, presetBamboo }

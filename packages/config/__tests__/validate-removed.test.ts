@@ -14,13 +14,13 @@ const messagesFor = (config: object) => Array.from(validateConfig(config as neve
 describe('removed config options', () => {
   test('names the replacement rather than reporting an unknown key', () => {
     expect(messagesFor({ pruneUnusedTokens: 'strict' })).toEqual([
-      expect.stringContaining(`prune: { unresolved: 'error' }`),
+      expect.stringContaining(`prune: { tokens: 'accounted', unresolvedPath: 'error' }`),
     ])
   })
 
   /** The value carries over, so the message is the edit rather than a description of one. */
   test.each([
-    [{ pruneUnusedTokens: false }, 'prune: { tokens: false }'],
+    [{ pruneUnusedTokens: false }, "prune: { tokens: 'off' }"],
     [{ pruneUnusedKeyframes: false }, 'prune: { keyframes: false }'],
     [{ prunePreflight: true }, 'prune: { preflight: true }'],
   ])('%o reports its replacement', (config, expected) => {
@@ -32,7 +32,23 @@ describe('removed config options', () => {
   })
 
   test('says nothing about the option that replaced them', () => {
-    expect(messagesFor({ prune: { tokens: false, unresolved: 'error' } })).toEqual([])
+    expect(messagesFor({ prune: { tokens: 'off', unresolvedPath: 'error' } })).toEqual([])
+  })
+
+  /** The nested rename, which the top-level scan cannot see. */
+  test('reports `prune.unresolved`, which moved and split', () => {
+    expect(messagesFor({ prune: { unresolved: 'error' } })).toEqual([
+      expect.stringContaining(`prune: { tokens: 'accounted', unresolvedPath: 'error' }`),
+    ])
+  })
+
+  /** A value change rather than a key removal, so nothing else would notice it either. */
+  test('reports the boolean `prune.tokens` took before it became a strategy', () => {
+    expect(messagesFor({ prune: { tokens: true } })).toEqual([expect.stringContaining("'reachable'")])
+  })
+
+  test("reports `validation: 'none'`, which is now 'off'", () => {
+    expect(messagesFor({ validation: 'none' })).toEqual([expect.stringContaining(`validation: 'off'`)])
   })
 
   /**
@@ -41,7 +57,7 @@ describe('removed config options', () => {
    */
   test('throws under validation: error', () => {
     expect(() => validateConfig({ pruneUnusedTokens: 'strict', validation: 'error' } as never)).toThrow(
-      /prune: \{ unresolved: 'error' \}/,
+      /prune: \{ tokens: 'accounted', unresolvedPath: 'error' \}/,
     )
   })
 })

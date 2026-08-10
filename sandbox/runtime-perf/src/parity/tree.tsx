@@ -1,5 +1,5 @@
 import { css, cx } from '../../styled-system/css'
-import { box, hstack, stack } from '../../styled-system/patterns'
+import { hstack, stack } from '../../styled-system/patterns'
 
 /**
  * A tree covering both halves of the fold: shapes that collapse to an intrinsic tag,
@@ -68,7 +68,7 @@ export const Tree = ({ tone, rest, flag }: { tone: string; rest: Record<string, 
 
     {/* folds: a pattern call site resolves to its class string */}
     <div className={stack({ gap: 'sm' })}>
-      <div className={box({ padding: 'xs', backgroundColor: 'white' })} id="boxed">
+      <div className={css({ padding: 'xs', backgroundColor: 'white' })} id="boxed">
         box
       </div>
       <div className={hstack({ gap: 'xxs', color: 'gray700' })}>hstack</div>

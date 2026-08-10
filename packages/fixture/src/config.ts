@@ -60,10 +60,7 @@ const textStyles = {
   },
 }
 
-export const fixturePreset: Omit<
-  PresetCore,
-  'globalCss' | 'staticCss' | 'globalVars' | 'globalFontface' | 'globalPositionTry'
-> = {
+export const fixturePreset: Omit<PresetCore, 'global' | 'staticCss'> = {
   ...presetBase,
   conditions,
   theme: {

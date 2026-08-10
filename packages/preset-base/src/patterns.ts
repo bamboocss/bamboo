@@ -4,12 +4,6 @@ function definePattern<T extends PatternConfig>(config: T) {
   return config
 }
 
-const box = definePattern({
-  transform(props) {
-    return props
-  },
-})
-
 const flex = definePattern({
   properties: {
     align: { type: 'property', value: 'alignItems' },
@@ -266,7 +260,7 @@ const aspectRatio = definePattern({
   properties: {
     ratio: { type: 'number' },
   },
-  blocklist: ['aspectRatio'],
+  cssProps: { except: ['aspectRatio'] },
   transform(props, { map }) {
     const { ratio = 4 / 3, ...rest } = props
     return {
@@ -420,15 +414,6 @@ const bleed = definePattern({
   },
 })
 
-const visuallyHidden = definePattern({
-  transform(props) {
-    return {
-      srOnly: true,
-      ...props,
-    }
-  },
-})
-
 const cq = definePattern({
   properties: {
     name: { type: 'token', value: 'containerNames', property: 'containerName' },
@@ -448,7 +433,6 @@ const cq = definePattern({
 })
 
 export const patterns = {
-  box,
   flex,
   stack,
   vstack,
@@ -466,6 +450,5 @@ export const patterns = {
   divider,
   float,
   bleed,
-  visuallyHidden,
   cq,
 }

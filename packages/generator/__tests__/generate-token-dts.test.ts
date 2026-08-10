@@ -149,7 +149,7 @@ test('[dts] formatTokenName', () => {
 test('[dts] negative tokens', () => {
   const tokens = generateTokenTypes(
     createContext({
-      eject: true,
+      presets: [],
       theme: {
         tokens: {
           spacing: {

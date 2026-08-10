@@ -4,12 +4,12 @@ import type { Context } from './context'
 export class FileEngine {
   constructor(private context: Pick<Context, 'config'>) {}
 
-  private get forceConsistentTypeExtension() {
-    return this.context.config.forceConsistentTypeExtension || false
-  }
-
   private get outExtension() {
     return this.context.config.outExtension
+  }
+
+  private get forceConsistentTypeExtension() {
+    return this.context.config.forceConsistentTypeExtension || false
   }
 
   ext(file: string): string {
@@ -21,8 +21,21 @@ export class FileEngine {
     return `${file}.${dts}`
   }
 
+  /**
+   * The specifier a declaration file *imports* by, which is a different question from the
+   * name it is written under — but not an independent one.
+   *
+   * Under the flag the file beside this one is `x.d.mts`, and the specifier has to be
+   * `./x.mjs`: TypeScript maps that to `x.d.mts`, whereas `./x.d.mts` is only legal under
+   * `allowImportingTsExtensions` and a bare `./x` is probed as `.ts`/`.d.ts`/`.js` and never
+   * finds it. This used to emit the `.d.mts` form, so the flag shipped imports that only
+   * resolved where the extension was permitted.
+   *
+   * Without the flag, declarations are `.d.ts` and a bare specifier resolves as it always
+   * has.
+   */
   private __extDts(file: string): string {
-    return this.forceConsistentTypeExtension ? this.extDts(file) : file
+    return this.forceConsistentTypeExtension ? this.ext(file) : file
   }
 
   import(mod: string, file: string): string {

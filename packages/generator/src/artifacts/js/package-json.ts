@@ -40,11 +40,78 @@ export function generatePackageJson(ctx: Context) {
           type: 'module',
           private: true,
           sideEffects: ['*.css', '**/*.css'],
+          exports: generatePackageExports(ctx),
         },
         null,
         2,
       ) + '\n',
   }
+}
+
+/**
+ * The entry points this output offers, and — where it is resolved as a package — the only
+ * paths into it.
+ *
+ * Two things this buys, and one it does not.
+ *
+ * It makes the entry points resolve under `node16`/`nodenext`. Without a map, those modes do
+ * no directory-index lookup, so `styled-system/tokens` does not resolve at all and the
+ * artifact has to be spelled `styled-system/tokens/index.mjs` — a workaround
+ * `token-references.ts` still has to recognise because people write it. Declaring `./tokens`
+ * is what makes the ordinary spelling work.
+ *
+ * It states the boundary. `css/merge-css`, `css/utilities`, `tokens/tokens` and `helpers`
+ * exist to be imported by the modules beside them, not by an app; a relative import inside
+ * the package is unaffected by this map, an external one now fails.
+ *
+ * What it does not do is enforce that against the common setup. The generated directory
+ * usually lives in the project and is reached through a `paths` alias —
+ * `"styled-system/*": ["./styled-system/*"]` — and a `paths` mapping resolves straight to the
+ * filesystem, so no `exports` map is consulted. There is nothing this file can do about that;
+ * the enforcement lands where the output is consumed as a real package, which is the
+ * component-library layout `emit-pkg` produces.
+ *
+ * `./types` carries no runtime target because the directory holds only declarations. A type
+ * import resolves; a value import fails, which is the truth about it.
+ */
+export function generatePackageExports(ctx: Context, base?: string) {
+  const path = (...parts: string[]) => ['.', base, ...parts].filter(Boolean).join('/')
+
+  const entry = (dir: string) => ({
+    types: path(ctx.file.extDts(`${dir}/index`)),
+    default: path(ctx.file.ext(`${dir}/index`)),
+  })
+
+  const exports: Record<string, unknown> = {}
+
+  const add = (dir: string) => {
+    const target = entry(dir)
+    exports[`./${dir}`] = target
+    // The spelling `node16` used to require, kept working so upgrading to a map that makes it
+    // unnecessary does not also make it an error.
+    exports[`./${ctx.file.ext(`${dir}/index`)}`] = target
+  }
+
+  add('css')
+  add('tokens')
+
+  if (!ctx.patterns.isEmpty()) add('patterns')
+  if (!ctx.recipes.isEmpty()) add('recipes')
+  if (ctx.config.theme?.variants) add('themes')
+
+  exports['./types'] = { types: path(ctx.file.extDts('types/index')) }
+
+  // Emitted at the root, and under `cssgen --splitting` as `styles/<layer>.css` with a
+  // directory per recipe below that.
+  exports['./styles.css'] = path('styles.css')
+  exports['./styles/*'] = path('styles/*')
+
+  // `bamboo spec` writes these, and they are read as data rather than imported as modules.
+  exports['./specs/*'] = path('specs/*')
+
+  exports['./package.json'] = path('package.json')
+
+  return exports
 }
 
 /**

@@ -389,13 +389,13 @@ export function classifyProject(ctx: ParserOptions, resultMap: ParserResultMap):
   })
 
   // process global css
-  Object.values(ctx.config.globalCss ?? {}).forEach((styleObject) => {
+  Object.values(ctx.config.global?.css ?? {}).forEach((styleObject) => {
     if (!styleObject) return
     processMap({
       // @ts-expect-error
       map: box.objectToMap(styleObject, null, []),
       current: [],
-      filepath: '@config/globalCss',
+      filepath: '@config/global.css',
       skipRange: true,
       localMaps: createReportMaps(),
       componentReportItem: {

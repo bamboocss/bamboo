@@ -63,8 +63,16 @@ export const useBambooContext = (userConfig: Config | null): Generator & { error
       // in event of error (invalid token format), use previous generator
       let hooks = config?.hooks ?? {}
 
-      // Inject lightningcss-wasm plugin when lightningcss is enabled
-      if (config?.lightningcss) {
+      // Swap in the WASM build when the config asks for lightningcss.
+      //
+      // Read off `plugins` rather than a `lightningcss: true` flag, which no longer exists —
+      // the flag's only job was to push `pluginLightningcss()` into this list, and naming the
+      // plugin statically is what made a native binary a dependency of every install. Matched
+      // by name because the real plugin cannot run here: it binds the native module, and the
+      // playground is a browser.
+      const wantsLightningcss = config?.plugins?.some((plugin) => plugin?.name?.includes('lightningcss'))
+
+      if (wantsLightningcss) {
         const plugin = pluginLightningcssWasm()
         hooks = mergeHooks([plugin, { name: '__resolved__', hooks }])
       }

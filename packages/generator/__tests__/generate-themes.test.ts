@@ -5,39 +5,41 @@ import { generateThemes, generateThemesIndex } from '../src/artifacts/js/themes'
 describe('generate themes', () => {
   test('generateThemes', () => {
     const ctx = createContext({
-      themes: {
-        default: {
-          tokens: {
-            colors: {
-              primary: { value: 'blue' },
-            },
-          },
-          semanticTokens: {
-            colors: {
-              simple: {
-                value: 'token(colors.red.600)',
+      theme: {
+        variants: {
+          default: {
+            tokens: {
+              colors: {
+                primary: { value: 'blue' },
               },
-              text: {
-                value: {
-                  base: 'token(colors.blue.600)',
-                  _osDark: 'token(colors.blue.400)',
+            },
+            semanticTokens: {
+              colors: {
+                simple: {
+                  value: 'token(colors.red.600)',
+                },
+                text: {
+                  value: {
+                    base: 'token(colors.blue.600)',
+                    _osDark: 'token(colors.blue.400)',
+                  },
                 },
               },
             },
           },
-        },
-        pink: {
-          tokens: {
-            colors: {
-              primary: { value: 'pink' },
+          pink: {
+            tokens: {
+              colors: {
+                primary: { value: 'pink' },
+              },
             },
-          },
-          semanticTokens: {
-            colors: {
-              text: {
-                value: {
-                  base: 'token(colors.pink.600)',
-                  _osDark: 'token(colors.pink.400)',
+            semanticTokens: {
+              colors: {
+                text: {
+                  value: {
+                    base: 'token(colors.pink.600)',
+                    _osDark: 'token(colors.pink.400)',
+                  },
                 },
               },
             },

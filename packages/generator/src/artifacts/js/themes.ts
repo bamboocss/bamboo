@@ -27,7 +27,7 @@ export function getThemeCss(ctx: Context, themeName: string): string {
 }
 
 export function generateThemes(ctx: Context) {
-  const { themes } = ctx.config
+  const themes = ctx.config.theme?.variants
   if (!themes) return
 
   return Object.entries(themes).map(([name, _themeVariant]) => ({
@@ -45,7 +45,7 @@ export function generateThemes(ctx: Context) {
 }
 
 export function generateThemesIndex(ctx: Context, files: ReturnType<typeof generateThemes>) {
-  const { themes } = ctx.config
+  const themes = ctx.config.theme?.variants
   if (!themes) return
   if (!files) return
 

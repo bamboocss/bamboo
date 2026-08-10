@@ -5,7 +5,7 @@ import { generateColorPaletteSpec } from '../src/spec/color-palette'
 describe('color palette spec generation', () => {
   test('should generate color palette spec with numeric shades', () => {
     const ctx = createContext({
-      eject: true,
+      presets: [],
       theme: {
         tokens: {
           colors: {
@@ -49,7 +49,7 @@ describe('color palette spec generation', () => {
 
   test('should generate color palette spec with non-numeric tokens', () => {
     const ctx = createContext({
-      eject: true,
+      presets: [],
       theme: {
         tokens: {
           colors: {
@@ -88,7 +88,7 @@ describe('color palette spec generation', () => {
 
   test('should generate color palette spec with mixed token types', () => {
     const ctx = createContext({
-      eject: true,
+      presets: [],
       theme: {
         tokens: {
           colors: {
@@ -129,7 +129,7 @@ describe('color palette spec generation', () => {
 
   test('should handle single token in color palette', () => {
     const ctx = createContext({
-      eject: true,
+      presets: [],
       theme: {
         tokens: {
           colors: {
@@ -158,7 +158,7 @@ describe('color palette spec generation', () => {
 
   test('should handle color palette with no virtual tokens', () => {
     const ctx = createContext({
-      eject: true,
+      presets: [],
       theme: {
         tokens: {
           colors: {
@@ -191,7 +191,7 @@ describe('color palette spec generation', () => {
 
   test('should handle disabled color palette', () => {
     const ctx = createContext({
-      eject: true,
+      presets: [],
       theme: {
         colorPalette: {
           enabled: false,
@@ -210,7 +210,7 @@ describe('color palette spec generation', () => {
 
   test('should handle deeply nested color tokens', () => {
     const ctx = createContext({
-      eject: true,
+      presets: [],
       theme: {
         tokens: {
           colors: {

@@ -1,7 +1,7 @@
 import { logger } from '@bamboocss/logger'
 import { BAMBOO_CONFIG_NAME, omit, parseJson, pick, stringifyJson, traverse } from '@bamboocss/shared'
-import type { LoadConfigResult, UserConfig } from '@bamboocss/types'
-import { getBundledPreset, presetBase, presetBamboo } from './bundled-preset'
+import type { LoadConfigResult, Preset, UserConfig } from '@bamboocss/types'
+import { defaultPresets, getBundledPreset } from './bundled-preset'
 import { getResolvedConfig } from './get-resolved-config'
 import { mergeHooks } from './merge-hooks'
 import type { BundleConfigResult } from './types'
@@ -14,28 +14,52 @@ const hookUtils = {
 }
 
 /**
- * Resolve the final config (including presets)
- * @bamboocss/preset-base: ALWAYS included if NOT using eject: true
- * @bamboocss/preset-bamboo: only included by default if no presets
+ * The one way this rename can break a config without saying so.
+ *
+ * `presets` still exists and still takes a list, so nothing in `validate-removed` notices
+ * that its meaning changed. A config that listed `[myPreset]` used to get `preset-base`
+ * underneath it and now does not — and what `preset-base` carries is the utility table, so
+ * the failure is every class name silently changing (`c_red_300` becomes `color_red_300`)
+ * rather than an error. That is the shape this codebase treats as the worst upgrade there
+ * is, so it gets a message.
+ *
+ * Skipped for an empty list, which is a deliberate eject and the replacement for
+ * `eject: true`. Drop this a release or two after the rename.
+ */
+function warnIfBaseDropped(listed: unknown[] | undefined, resolved: Preset[]) {
+  if (!listed?.length) return
+  if (resolved.some((preset) => preset?.name === '@bamboocss/preset-base')) return
+
+  logger.warn(
+    'config',
+    `\`presets\` is now the complete list, and this one does not include \`@bamboocss/preset-base\` — ` +
+      `so its utilities, conditions and patterns are not loaded, and generated class names change. ` +
+      `Listing a preset used to keep \`preset-base\` underneath it.\n\n` +
+      `  import { defaultPresets } from '@bamboocss/dev/presets'\n` +
+      `  presets: [...defaultPresets, yourPreset]\n\n` +
+      `If dropping it is deliberate, this is the intended behaviour and the warning goes away once ` +
+      `\`preset-base\` is listed explicitly.`,
+  )
+}
+
+/**
+ * Resolve the final config (including presets).
+ *
+ * `presets` is authoritative: what the config lists is what is loaded, and an unset
+ * `presets` loads `defaultPresets`. There is no implicit preset a listed one sits on top
+ * of — `eject` used to control that, badly. Under it, listing any preset kept
+ * `@bamboocss/preset-base` and silently dropped `@bamboocss/preset-bamboo`, so `presets`
+ * was neither additive nor replacing, and `presets: []` meant "base only" rather than
+ * "none". Both of those had to be discovered by reading this function.
  */
 export async function resolveConfig(result: BundleConfigResult, cwd: string): Promise<LoadConfigResult> {
-  const presets = new Set<any>()
+  const listed = result.config.presets
 
-  if (!result.config.eject) {
-    presets.add(presetBase)
-  }
+  result.config.presets = listed
+    ? Array.from(new Set(listed.map((preset: any) => getBundledPreset(preset) ?? preset)))
+    : [...defaultPresets]
 
-  if (result.config.presets) {
-    //
-    result.config.presets.forEach((preset: any) => {
-      presets.add(getBundledPreset(preset) ?? preset)
-    })
-    //
-  } else if (!result.config.eject) {
-    presets.add(presetBamboo)
-  }
-
-  result.config.presets = Array.from(presets)
+  warnIfBaseDropped(listed, result.config.presets as Preset[])
 
   // Get hooks from user config and plugins to use during preset resolution
   const userConfig = result.config
@@ -52,6 +76,10 @@ export async function resolveConfig(result: BundleConfigResult, cwd: string): Pr
 
   if (mergedConfig.logLevel) {
     logger.level = mergedConfig.logLevel
+  }
+
+  if (mergedConfig.logFilter) {
+    logger.filter = mergedConfig.logFilter
   }
 
   validateConfig(mergedConfig as UserConfig)

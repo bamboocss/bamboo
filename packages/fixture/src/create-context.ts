@@ -30,14 +30,26 @@ export const fixtureDefaults = {
   deserialize: () => parseJson(stringifyJson(config)),
 } as LoadConfigResult
 
+/**
+ * Whether a test wants a context with none of the fixture defaults.
+ *
+ * Spelled `presets: []` because that is what it means to a real config now — the list is
+ * authoritative, so an empty one loads nothing. It used to be `eject: true`, an option
+ * whose whole job was to change what a *different* option meant.
+ */
+const isBare = (userConfig?: Config) => userConfig?.presets?.length === 0
+
 export const createGeneratorContext = (userConfig?: Config) => {
-  const resolvedConfig = mergeConfigs([userConfig?.eject ? {} : fixtureDefaults.config, userConfig ?? {}]) as UserConfig
+  const resolvedConfig = mergeConfigs([
+    isBare(userConfig) ? {} : fixtureDefaults.config,
+    userConfig ?? {},
+  ]) as UserConfig
 
   return new Generator({ ...fixtureDefaults, config: resolvedConfig })
 }
 
 export const createContext = (userConfig?: Config & Pick<Partial<LoadConfigResult>, 'tsconfig' | 'tsOptions'>) => {
-  let resolvedConfig = mergeConfigs([userConfig?.eject ? {} : fixtureDefaults.config, userConfig ?? {}]) as UserConfig
+  let resolvedConfig = mergeConfigs([isBare(userConfig) ? {} : fixtureDefaults.config, userConfig ?? {}]) as UserConfig
 
   const hooks = userConfig?.hooks ?? {}
 

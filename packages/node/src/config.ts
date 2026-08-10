@@ -1,9 +1,7 @@
 import { loadConfig, mergeHooks } from '@bamboocss/config'
 import type { Config, BambooPlugin } from '@bamboocss/types'
-import { pluginLightningcss } from '@bamboocss/plugin-lightningcss'
 import { pluginSvelte } from '@bamboocss/plugin-svelte'
 import { pluginVue } from '@bamboocss/plugin-vue'
-import browserslist from 'browserslist'
 import { BambooContext } from './create-context'
 import { loadTsConfig } from './load-tsconfig'
 
@@ -11,16 +9,17 @@ const RESOLVED_HOOKS_NAME = '__resolved__'
 
 /**
  * Built-in plugins that are auto-injected when using the CLI or PostCSS plugin.
- * These provide Vue/Svelte file support and LightningCSS optimization.
+ * These provide Vue/Svelte single-file-component support.
+ *
+ * LightningCSS is not among them any more. It was reached through a `lightningcss: true`
+ * config flag whose only job was to push `pluginLightningcss()` into this list — a second
+ * way to say something `plugins` already said, and the expensive one: naming the plugin
+ * here meant a static import, which made `@bamboocss/plugin-lightningcss` a hard dependency
+ * of this package, which put a native binary in every install whether or not the flag was
+ * ever set. List the plugin yourself to use it.
  */
-function getAutoPlugins(config: Config): BambooPlugin[] {
-  const plugins: BambooPlugin[] = [pluginVue(), pluginSvelte()]
-
-  if (config.lightningcss) {
-    plugins.push(pluginLightningcss())
-  }
-
-  return plugins
+function getAutoPlugins(): BambooPlugin[] {
+  return [pluginVue(), pluginSvelte()]
 }
 
 /**
@@ -41,13 +40,8 @@ export async function loadConfigAndCreateContext(options: { cwd?: string; config
     conf.config.cwd = options.cwd
   }
 
-  if (conf.config.lightningcss && !conf.config.browserslist) {
-    conf.config.browserslist ||= browserslist.findConfig(cwd)?.defaults
-  }
-
-  // Auto-inject built-in plugins (vue, svelte, lightningcss)
   // Auto plugins run first, then the already-resolved user hooks run after
-  const autoPlugins = getAutoPlugins(conf.config)
+  const autoPlugins = getAutoPlugins()
 
   // conf.hooks is already properly merged from user plugins + inline hooks by resolveConfig.
   // Prepend auto-plugins before it — don't re-process user plugins to avoid double-execution.

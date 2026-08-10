@@ -38,7 +38,6 @@ describe('preset:resolved hook', () => {
 
     expect(capturedPresets).toMatchInlineSnapshot(`
       [
-        "@bamboocss/preset-base",
         "design-system-preset",
       ]
     `)

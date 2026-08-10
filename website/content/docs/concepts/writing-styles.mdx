@@ -214,7 +214,7 @@ For example, to create a hover style, you can use the `_hover` pseudo prop.
 
 ## Global styles
 
-Global styles are useful for applying additional global resets or font faces. Use the `globalCss` property in the
+Global styles are useful for applying additional global resets or font faces. Use the `global.css` property in the
 `bamboo.config.ts` file to define global styles.
 
 Global styles are inserted at the top of the stylesheet and are scoped to the `@layer base` cascade layer.
@@ -532,7 +532,7 @@ css({
 })
 ```
 
-`fallback(...)` works anywhere a value does – conditions, breakpoints, `globalCss`, recipes and patterns. Adding
+`fallback(...)` works anywhere a value does – conditions, breakpoints, `global.css`, recipes and patterns. Adding
 `!important` marks every candidate, not just the winning one.
 
 ### What it can't do
@@ -658,7 +658,7 @@ The styles generated at build time will look like this:
 
 ## Global vars
 
-You can use the `globalVars` property to define global
+You can use the `global.vars` property to define global
 [CSS variables](https://developer.mozilla.org/en-US/docs/Web/CSS/--*) or custom CSS
 [`@property`](https://developer.mozilla.org/en-US/docs/Web/CSS/@property) definitions.
 
@@ -674,19 +674,21 @@ import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   // ...
-  globalVars: {
-    '--popper-reference-width': '4px',
-    // you can also generate a CSS @property
-    '--button-color': {
-      syntax: '<color>',
-      inherits: false,
-      initialValue: 'blue',
+  global: {
+    vars: {
+      '--popper-reference-width': '4px',
+      // you can also generate a CSS @property
+      '--button-color': {
+        syntax: '<color>',
+        inherits: false,
+        initialValue: 'blue',
+      },
     },
   },
 })
 ```
 
-> Note: Keys defined in `globalVars` will be available as a value for _every_ utilities, as they're not bound to token
+> Note: Keys defined in `global.vars` will be available as a value for _every_ utilities, as they're not bound to token
 > categories.
 
 ```ts

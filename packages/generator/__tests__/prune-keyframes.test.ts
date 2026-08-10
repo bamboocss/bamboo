@@ -105,9 +105,9 @@ describe('themes', () => {
           keyframes: KEYFRAMES,
           tokens: { animations: { enter: { value: 'fade-in 1s ease-out' } } },
         },
-      },
-      themes: {
-        dark: { tokens: { animations: { enter: { value: 'spin 1s linear' } } } },
+        variants: {
+          dark: { tokens: { animations: { enter: { value: 'spin 1s linear' } } } },
+        },
       },
       staticCss: { css: [{ properties: { animation: ['enter'] } }] },
     } as never)

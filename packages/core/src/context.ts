@@ -43,10 +43,11 @@ const defaults = (config: UserConfig): UserConfig => ({
   // Merged per key rather than spread, so `prune: { preflight: true }` keeps the other
   // defaults instead of turning token and keyframe pruning off by omission.
   prune: {
-    tokens: true,
+    tokens: 'reachable',
+    unresolvedPath: 'warn',
+    propertyRegistrations: true,
     keyframes: true,
     preflight: false,
-    unresolved: 'off',
     ...config.prune,
   },
   layers: {
@@ -91,7 +92,7 @@ export class Context {
     const theme = config.theme ?? {}
     conf.config = config
 
-    this.tokens = this.createTokenDictionary(theme, config.themes)
+    this.tokens = this.createTokenDictionary(theme, theme.variants)
     this.hooks['tokens:created']?.({
       configure: (opts) => {
         if (opts.formatTokenName) {
@@ -145,8 +146,8 @@ export class Context {
     // Relies on this.encoder, this.decoder
     this.setupCompositions(theme)
     this.registerAnimationName(theme)
-    this.registerFontFamily(config.globalFontface)
-    this.registerPositionTryFallbacks(config.globalPositionTry)
+    this.registerFontFamily(config.global?.fontface)
+    this.registerPositionTryFallbacks(config.global?.positionTry)
 
     this.recipes.save(this.baseSheetContext)
 
@@ -180,16 +181,16 @@ export class Context {
     })
 
     this.globalVars = new GlobalVars({
-      globalVars: this.config.globalVars as GlobalVarsDefinition,
+      globalVars: this.config.global?.vars as GlobalVarsDefinition,
       cssVarRoot: this.config.cssVarRoot!,
     })
 
     this.globalFontface = new GlobalFontface({
-      globalFontface: this.config.globalFontface,
+      globalFontface: this.config.global?.fontface,
     })
 
     this.globalPositionTry = new GlobalPositionTry({
-      globalPositionTry: this.config.globalPositionTry,
+      globalPositionTry: this.config.global?.positionTry,
     })
 
     this.messages = getMessages({
@@ -272,7 +273,7 @@ export class Context {
       containerNames: config.theme?.containerNames,
       containerSizes: config.theme?.containerSizes,
       breakpoints: config.theme?.breakpoints,
-      themes: config.themes,
+      themes: config.theme?.variants,
     })
   }
 

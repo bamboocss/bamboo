@@ -6,7 +6,7 @@ const tick = colors.green().bold('✔️')
 
 export const artifactsGenerated = (ctx: Pick<Context, 'config' | 'recipes' | 'patterns' | 'tokens' | 'jsx'>) => {
   const {
-    config: { outdir, themes },
+    config: { outdir, theme },
     recipes,
     patterns,
     tokens,
@@ -29,7 +29,7 @@ export const artifactsGenerated = (ctx: Pick<Context, 'config' | 'recipes' | 'pa
         outdent`
       ${tick} ${quote(outdir, '/recipes')}: functions to create multi-variant styles
       `,
-      themes &&
+      theme?.variants &&
         outdent`
     ${tick} ${quote(outdir, '/themes')}: theme variants for your design system
     `,

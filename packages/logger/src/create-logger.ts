@@ -13,7 +13,16 @@ export const createLogger = (conf: LoggerConfig = {}): LoggerInterface => {
   let onLog = conf.onLog
   let level: LogLevel = conf.isDebug ? 'debug' : (conf.level ?? 'info')
 
-  const filter = conf.filter !== '*' ? (conf.filter?.split(/[\s,]+/) ?? []) : []
+  /**
+   * Which log *types* to show, as globs over the namespaced type — `vite:transform`,
+   * `tokens:unresolved`, `prune:tokens`, `config`. A non-empty filter forces the effective
+   * level to debug for the types it matches, so it answers "which subsystem" without
+   * `logLevel` having to answer "how loud" for everything at once.
+   *
+   * Settable, because it arrives from the config, which is resolved after this logger is
+   * constructed — the same reason `level` is.
+   */
+  let filter = parseFilter(conf.filter)
 
   const getLevel = () => (filter.length ? 'debug' : level)
 
@@ -67,6 +76,12 @@ export const createLogger = (conf: LoggerConfig = {}): LoggerInterface => {
     set level(newLevel: LogLevel) {
       level = newLevel
     },
+    get filter() {
+      return filter.join(',')
+    },
+    set filter(value: string) {
+      filter = parseFilter(value)
+    },
     set onLog(fn: (entry: LogEntry) => void) {
       onLog = fn
     },
@@ -83,6 +98,9 @@ export const createLogger = (conf: LoggerConfig = {}): LoggerInterface => {
     isDebug: Boolean(conf.isDebug),
   }
 }
+
+/** `'*'` is "everything", which is what an empty filter already means. */
+const parseFilter = (value: string | undefined) => (value !== '*' ? (value?.split(/[\s,]+/).filter(Boolean) ?? []) : [])
 
 const matches = (filters: string[], value: string) => filters.some((search) => isMatch(value, search))
 

@@ -43,7 +43,6 @@
     "@bamboocss/generator": "workspace:*",
     "@bamboocss/logger": "workspace:*",
     "@bamboocss/parser": "workspace:*",
-    "@bamboocss/plugin-lightningcss": "workspace:*",
     "@bamboocss/plugin-svelte": "workspace:*",
     "@bamboocss/plugin-vue": "workspace:*",
     "@bamboocss/reporter": "workspace:*",

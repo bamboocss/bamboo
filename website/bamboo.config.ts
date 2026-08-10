@@ -46,5 +46,7 @@ export default defineConfig({
       keyframes,
     },
   },
-  globalCss,
+  global: {
+    css: globalCss,
+  },
 })

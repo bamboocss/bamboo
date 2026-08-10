@@ -89,9 +89,11 @@ You can set a global focus ring color by defining the CSS custom property:
 import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
-  globalCss: {
-    html: {
-      '--global-color-focus-ring': '#3b82f6',
+  global: {
+    css: {
+      html: {
+        '--global-color-focus-ring': '#3b82f6',
+      },
     },
   },
 })

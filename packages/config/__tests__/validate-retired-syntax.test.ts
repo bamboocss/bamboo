@@ -32,17 +32,17 @@ describe('retired reference syntaxes', () => {
 
   /** `themes` is a top-level option rather than part of `theme`, and is walked separately. */
   test('throws for a theme variant', () => {
-    const config = { themes: { dark: { tokens: { colors: { bg: { value: '{colors.black}' } } } } } }
+    const config = { theme: { variants: { dark: { tokens: { colors: { bg: { value: '{colors.black}' } } } } } } }
 
-    expect(validate(config)).toThrow(/themes\.dark\.tokens\.colors\.bg/)
+    expect(validate(config)).toThrow(/theme\.variants\.dark\.tokens\.colors\.bg/)
   })
 
   /**
-   * `validation: 'none'` opts out of opinions about a config that will still build. This is not
+   * `validation: 'off'` opts out of opinions about a config that will still build. This is not
    * one of those, so it runs ahead of the opt-out.
    */
-  test('throws even under validation: none', () => {
-    expect(validate({ ...curly('{colors.primary}'), validation: 'none' })).toThrow(/retired reference syntax/)
+  test('throws even under validation: off', () => {
+    expect(validate({ ...curly('{colors.primary}'), validation: 'off' })).toThrow(/retired reference syntax/)
   })
 
   /** Collected rather than reported one at a time, so a config is fixed in one pass. */

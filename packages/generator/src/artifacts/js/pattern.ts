@@ -11,7 +11,7 @@ export function generatePattern(ctx: Context, filters?: ArtifactFilters) {
 
   return details.map((pattern) => {
     const { baseName, config, dashName, upperName, styleFnName, blocklistType } = pattern
-    const { properties, transform, strict, description, defaultValues, deprecated } = config
+    const { properties, transform, cssProps, description, defaultValues, deprecated } = config
 
     const patternConfigFn = stringify(compact({ transform, defaultValues })) ?? ''
 
@@ -43,10 +43,12 @@ export function generatePattern(ctx: Context, filters?: ArtifactFilters) {
            .join('\n\t')}
       }
 
-      ${
-        strict
-          ? outdent`
-          interface ${upperName}Styles extends ${upperName}Properties {}
+      ${outdent`
+          interface ${upperName}Styles extends ${upperName}Properties${
+            cssProps === 'none'
+              ? ''
+              : `, DistributiveOmit<SystemStyleObject, keyof ${upperName}Properties ${blocklistType}>`
+          } {}
 
           interface ${upperName}PatternFn {
             (styles?: ${upperName}Styles): string
@@ -55,19 +57,7 @@ export function generatePattern(ctx: Context, filters?: ArtifactFilters) {
 
           ${ctx.file.jsDocComment(description, { deprecated })}
           export declare const ${baseName}: ${upperName}PatternFn;
-          `
-          : outdent`
-          interface ${upperName}Styles extends ${upperName}Properties, DistributiveOmit<SystemStyleObject, keyof ${upperName}Properties ${blocklistType}> {}
-
-          interface ${upperName}PatternFn {
-            (styles?: ${upperName}Styles): string
-            raw: (styles?: ${upperName}Styles) => SystemStyleObject
-          }
-
-          ${ctx.file.jsDocComment(description, { deprecated })}
-          export declare const ${baseName}: ${upperName}PatternFn;
-          `
-      }
+          `}
 
      `,
       js: outdent`

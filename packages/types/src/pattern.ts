@@ -57,13 +57,21 @@ export interface PatternConfig<T extends PatternProperties = PatternProperties> 
    */
   deprecated?: boolean | string
   /**
-   * Whether to only generate types for the specified properties.
-   * This will disallow css properties
+   * Which css properties this pattern accepts alongside its own `properties`.
+   *
+   * - `all` accepts any css property.
+   * - `none` accepts only the pattern's declared `properties`.
+   * - `{ except }` accepts any css property but the ones listed.
+   *
+   * One option because these were two — `strict: true` for "none" and an `@experimental`
+   * `blocklist` for "all but these" — and the pair had an unrepresentable combination that
+   * silently did nothing: the blocklist is applied only to the type that lists css
+   * properties, which `strict: true` does not emit, so setting both dropped the blocklist.
+   *
+   * Types only. Nothing strips a blocked property at runtime — one passed anyway reaches
+   * `transform` and emits css.
+   *
+   * @default 'all'
    */
-  strict?: boolean
-  /**
-   * @experimental
-   * Disallow certain css properties for this pattern
-   */
-  blocklist?: LiteralUnion<CssProperty>[]
+  cssProps?: 'all' | 'none' | { except: LiteralUnion<CssProperty>[] }
 }

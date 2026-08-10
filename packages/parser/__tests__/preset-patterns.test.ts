@@ -2,43 +2,6 @@ import { describe, expect, test } from 'vitest'
 import { parseAndExtract } from './fixture'
 
 describe('preset patterns', () => {
-  // stack vstack hstack spacer circle absoluteCenter grid gridItem wrap container center aspectRatio
-  test('box', () => {
-    const code = `
-      import { box } from "styled-system/patterns"
-
-      function Button() {
-        return (
-          <div>
-              <div className={box({ color: "blue.100" })}>Click me</div>
-          </div>
-        )
-      }
-     `
-    const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "color": "blue.100",
-            },
-          ],
-          "name": "box",
-          "type": "pattern",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .c_blue\\.100 {
-          color: var(--colors-blue-100);
-      }
-      }"
-    `)
-  })
-
   test('flex', () => {
     const code = `
       import { flex } from "styled-system/patterns"

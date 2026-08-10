@@ -103,14 +103,16 @@ export default defineConfig({
       },
     },
   },
-  globalCss: {
-    '*': {
-      fontFamily: 'Inter',
-      margin: '0',
-    },
-    a: {
-      color: 'inherit',
-      textDecoration: 'none',
+  global: {
+    css: {
+      '*': {
+        fontFamily: 'Inter',
+        margin: '0',
+      },
+      a: {
+        color: 'inherit',
+        textDecoration: 'none',
+      },
     },
   },
 })

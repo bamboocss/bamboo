@@ -1,5 +1,5 @@
 import { css, cva } from 'styled-system/css'
-import { box, stack } from 'styled-system/patterns'
+import { stack } from 'styled-system/patterns'
 import { btn } from 'styled-system/recipes'
 import { token } from 'styled-system/tokens'
 
@@ -26,7 +26,7 @@ const notice = cva({
 
 export const App = () => {
   return (
-    <div className={box({ p: '4', spaceY: '4', colorPalette: 'blue', bg: token('colors.colorPalette.500') })}>
+    <div className={css({ p: '4', spaceY: '4', colorPalette: 'blue', bg: token('colors.colorPalette.500') })}>
       <div className={notice()}>Styled</div>
       <div className={css({ bg: 'pink', color: 'green' })}>Unstyled + css</div>
       <div className={notice({ size: 'lg' })}>Styled + variants (font-size: 3xl)</div>

@@ -8,7 +8,7 @@ Bamboo groups global styles into reset and base layers so you can control defaul
 ## Layers overview
 
 - **@layer reset**: Preflight/reset styles, enabled with `preflight`.
-- **@layer base**: Your additional global styles via `globalCss`.
+- **@layer base**: Your additional global styles via `global.css`.
 
 > See also: [Cascade layers](/docs/concepts/cascade-layers)
 
@@ -36,7 +36,7 @@ export default defineConfig({
 
 ## Exposed global CSS variables
 
-These variables are used by the reset and defaults. Set them in `globalCss`:
+These variables are used by the reset and defaults. Set them in `global.css`:
 
 - `--global-font-body`
 - `--global-font-mono`
@@ -47,21 +47,23 @@ These variables are used by the reset and defaults. Set them in `globalCss`:
 
 ## Setting global styles (base)
 
-Use `globalCss` to define additional global styles and set variables.
+Use `global.css` to define additional global styles and set variables.
 
 ```ts filename="bamboo.config.ts"
 import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   // ...
-  globalCss: {
-    html: {
-      '--global-font-body': 'Inter, sans-serif',
-      '--global-font-mono': 'Mononoki Nerd Font, monospace',
-      '--global-color-border': 'colors.gray.400',
-      '--global-color-placeholder': 'rgba(0,0,0,0.5)',
-      '--global-color-selection': 'rgba(0,115,255,0.3)',
-      '--global-color-focus-ring': 'colors.blue.400',
+  global: {
+    css: {
+      html: {
+        '--global-font-body': 'Inter, sans-serif',
+        '--global-font-mono': 'Mononoki Nerd Font, monospace',
+        '--global-color-border': 'colors.gray.400',
+        '--global-color-placeholder': 'rgba(0,0,0,0.5)',
+        '--global-color-selection': 'rgba(0,115,255,0.3)',
+        '--global-color-focus-ring': 'colors.blue.400',
+      },
     },
   },
 })
@@ -86,7 +88,7 @@ You can set variables on `:root`, a `.dark` class, or via media queries.
 }
 ```
 
-## Custom global variables (`globalVars`)
+## Custom global variables (`global.vars`)
 
 Define additional global CSS variables or `@property` entries.
 
@@ -94,17 +96,19 @@ Define additional global CSS variables or `@property` entries.
 import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
-  globalVars: {
-    '--button-color': {
-      syntax: '<color>',
-      inherits: false,
-      initialValue: 'blue',
+  global: {
+    vars: {
+      '--button-color': {
+        syntax: '<color>',
+        inherits: false,
+        initialValue: 'blue',
+      },
     },
   },
 })
 ```
 
-> Keys from `globalVars` are suggestable in style objects and generated near your tokens at `cssVarRoot`.
+> Keys from `global.vars` are suggestable in style objects and generated near your tokens at `cssVarRoot`.
 
 ## Troubleshooting
 

@@ -17,6 +17,20 @@ interface PatternOptions {
   helpers: PatternHelpers
 }
 
+/**
+ * The union appended to the css-property half of a pattern's generated props.
+ *
+ * `cssProps: 'none'` emits no such half at all — the caller drops it — so only the
+ * `{ except }` form has anything to say here. That is the combination the old
+ * `strict` + `blocklist` pair got wrong: both set, and the blocklist went nowhere.
+ */
+const blockedCssProps = (pattern: PatternConfig | undefined) => {
+  const cssProps = pattern?.cssProps
+  if (!cssProps || typeof cssProps === 'string') return ''
+
+  return cssProps.except.length ? `| '${cssProps.except.join("' | '")}'` : ''
+}
+
 export class Patterns {
   patterns: Record<string, PatternConfig>
   details: PatternNode[]
@@ -43,7 +57,7 @@ export class Patterns {
     return {
       ...names,
       props: Object.keys(pattern?.properties ?? {}),
-      blocklistType: pattern?.blocklist ? `| '${pattern.blocklist.join("' | '")}'` : '',
+      blocklistType: blockedCssProps(pattern),
       config: pattern,
       type: 'pattern' as const,
     }

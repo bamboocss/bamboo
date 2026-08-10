@@ -7,6 +7,7 @@ import {
   cssgen,
   debug,
   generate,
+  generatePackageExports,
   loadConfigAndCreateContext,
   setLogStream,
   setupConfig,
@@ -178,7 +179,6 @@ export async function main() {
     .option('-c, --config <path>', 'Path to bamboo config file')
     .option('-w, --watch', 'Watch files and rebuild')
     .option('--minimal', 'Do not include CSS generation for theme tokens, preflight, keyframes, static and global css')
-    .option('--lightningcss', 'Use `lightningcss` instead of `postcss` for css optimization.')
     .option('--polyfill', 'Polyfill CSS @layers at-rules for older browsers.')
     .option('-p, --poll', 'Use polling instead of filesystem events when watching')
     .option('-o, --outfile [file]', "Output file for extracted css, default to './styled-system/styles.css'")
@@ -273,7 +273,6 @@ export async function main() {
     .option('-e, --exclude <files>', 'Exclude files', { default: [] })
     .option('--clean', 'Clean output directory')
     .option('--hash', 'Hash the generated classnames to make them shorter')
-    .option('--lightningcss', 'Use `lightningcss` instead of `postcss` for css optimization.')
     .option('--polyfill', 'Polyfill CSS @layers at-rules for older browsers.')
     .option('--emitTokensOnly', 'Whether to only emit the `tokens` directory')
     .option('--cpu-prof', 'Generates a `.cpuprofile` to help debug performance issues')
@@ -503,37 +502,14 @@ export async function main() {
       const pkgPath = resolve(cwd, outdir, 'package.json')
       const exists = ctx.runtime.fs.existsSync(pkgPath)
 
-      const exports = [] as any[]
-
-      const createDir = (...dir: string[]) => {
-        return ['.', base, ...dir].filter(Boolean).join('/')
-      }
-
-      const createEntry = (dir: string) => ({
-        types: ctx.file.extDts(createDir(dir, 'index')),
-        require: ctx.file.ext(createDir(dir, 'index')),
-        import: ctx.file.ext(createDir(dir, 'index')),
-      })
-
-      exports.push(
-        ['./css', createEntry('css')],
-        ['./tokens', createEntry('tokens')],
-        ['./types', createEntry('types')],
-      )
-
-      if (!ctx.patterns.isEmpty()) {
-        exports.push(['./patterns', createEntry('patterns')])
-      }
-
-      if (!ctx.recipes.isEmpty()) {
-        exports.push(['./recipes', createEntry('recipes')])
-      }
-
-      if (ctx.config.themes) {
-        exports.push(['./themes', createEntry('themes')])
-      }
-
-      const stylesDir = createDir('styles.css')
+      /**
+       * The same map codegen writes into the outdir, re-derived here with the package's
+       * `base` prefix. Shared rather than restated so the entry list has one definition —
+       * this copy had drifted: it advertised a `require` condition pointing at `.mjs`, for
+       * output that is ESM under every setting, and it listed `./types` as a runtime entry
+       * for a directory holding only declarations.
+       */
+      const generated = generatePackageExports(ctx, base)
 
       const identity = {
         name: outdir,
@@ -574,8 +550,7 @@ export async function main() {
 
       content.exports = {
         ...content.exports,
-        ...Object.fromEntries(exports),
-        './styles.css': stylesDir,
+        ...generated,
       }
 
       await ctx.runtime.fs.writeFile(pkgPath, JSON.stringify(content, null, 2) + '\n')

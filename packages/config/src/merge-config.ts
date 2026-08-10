@@ -70,6 +70,49 @@ const compact = (obj: any) => {
 const tokenKeys = ['description', 'extensions', 'type', 'value', 'deprecated']
 
 /**
+ * Options whose scalar form is shorthand for setting every member of their object form.
+ *
+ * `hash: true` says both `cssVar` and `className`; `prefix: 'bb'` says both; `preflight: true`
+ * says "on, with the defaults". Expanding them is what lets the object forms compose: a preset
+ * that sets `prefix.className` and an app that sets `prefix.cssVar` should end up with both,
+ * and before this the app's object replaced the preset's wholesale — silently, since the two
+ * name different members. `hash`'s members are optional, so writing the partial form that
+ * triggered it is the natural thing to do.
+ *
+ * `preflight: false` has no object form — there is no member meaning "off" — so it stays a
+ * scalar and wins outright when it is the value the winning config states.
+ */
+const SCALAR_SHORTHANDS: Record<string, (value: any) => any> = {
+  hash: (value) => (typeof value === 'boolean' ? { cssVar: value, className: value } : value),
+  prefix: (value) => (typeof value === 'string' ? { cssVar: value, className: value } : value),
+  preflight: (value) => (value === true ? {} : value),
+}
+
+/**
+ * Merge one of those, winner-first per member.
+ *
+ * `records` arrives in precedence order — the user's config, then each preset — which is the
+ * order `assign` wants, since it only fills keys the target does not already have.
+ */
+function mergeScalarShorthand(key: string, records: ExtendableConfig[]) {
+  const normalize = SCALAR_SHORTHANDS[key]!
+  const values = records.map((record) => (record as Dict)[key]).filter((value) => value !== undefined)
+
+  if (!values.length) return undefined
+  if (values[0] === false) return false
+
+  const objects = values.map(normalize).filter((value) => value !== null && typeof value === 'object')
+  if (!objects.length) return values[0]
+
+  const merged = objects.reduce((acc, object) => assign(acc, object), {} as Dict)
+
+  // `preflight: true` normalizes to `{}` — an object with nothing to contribute. If that is all
+  // there was, hand back the scalar: the empty object would be dropped by the `compact` below
+  // and the option would be lost rather than merged.
+  return isEmptyObject(merged) ? values[0] : merged
+}
+
+/**
  * Merge all configs into a single config
  */
 export function mergeConfigs(configs: ExtendableConfig[]) {
@@ -80,23 +123,44 @@ export function mergeConfigs(configs: ExtendableConfig[]) {
   }
 
   const reversed = Array.from(configs).reverse()
+
+  const theme: Dict = mergeExtensions(reversed.map((config) => config.theme ?? {}))
+
+  // `theme.variants` carries an `extend` of its own, and `mergeExtensions` only unwraps the
+  // level it is handed — so merging `theme` leaves a nested `extend` sitting there as literal
+  // data. Merged explicitly against the source configs instead. Was a top-level `themes`,
+  // which got this for free by being its own key.
+  const themeVariants = mergeExtensions(reversed.map((config) => (config.theme as Dict | undefined)?.variants ?? {}))
+  if (isEmptyObject(themeVariants)) delete theme.variants
+  else theme.variants = themeVariants
+
+  // Every object-valued key has to be named here, because everything not named is
+  // shallow-assigned. Left off, a config setting one sub-key replaces a preset's whole object
+  // — so a preset that turns keyframe pruning off would be silently re-enabled by an app
+  // setting `preflight`, and a preset's `global.vars` would vanish behind an app's
+  // `global.css`.
+  const global = compact({
+    css: mergeExtensions(reversed.map((config) => config.global?.css ?? {})),
+    vars: mergeExtensions(reversed.map((config) => config.global?.vars ?? {})),
+    fontface: mergeExtensions(reversed.map((config) => config.global?.fontface ?? {})),
+    positionTry: mergeExtensions(reversed.map((config) => config.global?.positionTry ?? {})),
+  })
+
+  // Not compacted here, though the result is compacted below. Dropping a key whose merged
+  // value is `undefined` before `assign` runs would let `assign` copy the raw value straight
+  // off a config, which is exactly the merge being bypassed.
   const mergedResult = assign(
     {
       conditions: mergeExtensions(reversed.map((config) => config.conditions ?? {})),
-      theme: mergeExtensions(reversed.map((config) => config.theme ?? {})),
+      theme,
       patterns: mergeExtensions(reversed.map((config) => config.patterns ?? {})),
       utilities: mergeExtensions(reversed.map((config) => config.utilities ?? {})),
-      globalCss: mergeExtensions(reversed.map((config) => config.globalCss ?? {})),
-      globalVars: mergeExtensions(reversed.map((config) => config.globalVars ?? {})),
-      globalFontface: mergeExtensions(reversed.map((config) => config.globalFontface ?? {})),
-      globalPositionTry: mergeExtensions(reversed.map((config) => config.globalPositionTry ?? {})),
+      global,
       staticCss: mergeExtensions(reversed.map((config) => config.staticCss ?? {})),
-      // Listed here because everything not named is shallow-assigned, and `prune` is an object.
-      // Left off, a config setting one key replaces a preset's whole object — so a preset that
-      // turns keyframe pruning off would be silently re-enabled by an app setting `preflight`.
-      // The three flags this replaced were top-level booleans and merged without help.
       prune: mergeExtensions(reversed.map((config) => config.prune ?? {})),
-      themes: mergeExtensions(reversed.map((config) => config.themes ?? {})),
+      hash: mergeScalarShorthand('hash', reversed),
+      prefix: mergeScalarShorthand('prefix', reversed),
+      preflight: mergeScalarShorthand('preflight', reversed),
       hooks: mergeHooks(pluginHooks),
     },
     ...reversed,

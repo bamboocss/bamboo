@@ -6,13 +6,6 @@ export default defineConfig({
   include: ['./app/routes/**/*.{tsx,jsx}', './app/components/**/*.{tsx,jsx}'],
   exclude: [],
   outdir: 'styled-system',
-  globalFontface: {
-    Dosis: {
-      src: "url(/Dosis-VariableFont_wght.ttf) format('truetype')",
-      fontWeight: '100 800',
-      fontDisplay: 'swap',
-    },
-  },
   theme: {
     semanticTokens: {
       colors: {
@@ -51,14 +44,23 @@ export default defineConfig({
       },
     },
   },
-  globalCss: {
-    '*': {
-      fontFamily: 'Inter',
-      margin: '0',
+  global: {
+    css: {
+      '*': {
+        fontFamily: 'Inter',
+        margin: '0',
+      },
+      a: {
+        color: 'inherit',
+        textDecoration: 'none',
+      },
     },
-    a: {
-      color: 'inherit',
-      textDecoration: 'none',
+    fontface: {
+      Dosis: {
+        src: "url(/Dosis-VariableFont_wght.ttf) format('truetype')",
+        fontWeight: '100 800',
+        fontDisplay: 'swap',
+      },
     },
   },
 })

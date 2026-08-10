@@ -6,7 +6,7 @@ import { accountTokenReferences } from '../src/token-accounting'
 import { pruneTokensForBuild } from '../src/token-references'
 
 /**
- * The accounting behind `prune: { unresolved: 'error' }`, against a real ts-morph project.
+ * The accounting behind `prune: { tokens: 'accounted', unresolvedPath: 'error' }`, against a real ts-morph project.
  *
  * Two properties are under test, and only one of them is about bytes:
  *
@@ -216,7 +216,7 @@ describe('pruneUnusedTokens: strict', () => {
   const dynamicCall = `${imports}export const a = (p) => token(p)`
 
   test('drops the blanket keep when every reference resolves', () => {
-    const { keep, blanket } = blanketKeepFor(staticCall, { unresolved: 'error' })
+    const { keep, blanket } = blanketKeepFor(staticCall, { tokens: 'accounted', unresolvedPath: 'error' })
 
     expect(blanket).toBe(false)
     // And the token it does ask for survives by name, which is the half that makes dropping
@@ -227,12 +227,14 @@ describe('pruneUnusedTokens: strict', () => {
   test('throws on a reference that does not resolve', () => {
     // `strict` is an assertion. A reference that breaks it fails the build rather than warning
     // and quietly keeping every declaration, which is the same silence the flag removes.
-    expect(() => blanketKeepFor(dynamicCall, { unresolved: 'error' })).toThrow(/could not be resolved/)
+    expect(() => blanketKeepFor(dynamicCall, { tokens: 'accounted', unresolvedPath: 'error' })).toThrow(
+      /could not be resolved/,
+    )
   })
 
   test('the default keeps the blanket either way, so strict can only prune more', () => {
-    expect(blanketKeepFor(staticCall, { unresolved: 'off' }).blanket).toBe(true)
-    expect(blanketKeepFor(dynamicCall, { unresolved: 'off' }).blanket).toBe(true)
+    expect(blanketKeepFor(staticCall, { tokens: 'reachable' }).blanket).toBe(true)
+    expect(blanketKeepFor(dynamicCall, { tokens: 'reachable' }).blanket).toBe(true)
   })
 
   /**
@@ -242,7 +244,9 @@ describe('pruneUnusedTokens: strict', () => {
    * which is what keeps `strict` usable for whole framework families.
    */
   test('a file it cannot read warns and falls back rather than throwing', () => {
-    const ctx = createFixtureContext({ prune: { unresolved: 'error' } }) as unknown as BambooContext
+    const ctx = createFixtureContext({
+      prune: { tokens: 'accounted', unresolvedPath: 'error' },
+    }) as unknown as BambooContext
     const absolute = ctx.runtime.path.abs(ctx.config.cwd, FILE)
 
     // Parsed and on-disk texts differ, which is how a transformed file arrives.
@@ -304,14 +308,19 @@ describe('pruneTokensForBuild reads each file once', () => {
   const resolved = `${imports}export const a = token('colors.red.300')`
 
   test.each([
-    ['the default', { unresolved: 'off' } as PruneOptions, resolved, resolved],
-    ['asserting, everything resolved', { unresolved: 'error' } as PruneOptions, resolved, resolved],
+    ['the default', { tokens: 'reachable' } as PruneOptions, resolved, resolved],
+    [
+      'asserting, everything resolved',
+      { tokens: 'accounted', unresolvedPath: 'error' } as PruneOptions,
+      resolved,
+      resolved,
+    ],
     // The path that used to read three times: a decline still consults the gate. A *file*
     // decline, since a reference decline now throws before it gets there — the parsed copy
     // differing from disk is how a transformed component arrives.
     [
       'asserting, with a file decline',
-      { unresolved: 'error' } as PruneOptions,
+      { tokens: 'accounted', unresolvedPath: 'error' } as PruneOptions,
       resolved,
       `${imports}export const a = token(RUNTIME)`,
     ],
@@ -370,7 +379,9 @@ describe('a prefix bounds what a dynamic path can reach', () => {
    * build actually hands `pruneTokens`, because that is what decides the stylesheet.
    */
   test('keeps the bounded category and drops the rest', () => {
-    const ctx = createFixtureContext({ prune: { unresolved: 'error' } }) as unknown as BambooContext
+    const ctx = createFixtureContext({
+      prune: { tokens: 'accounted', unresolvedPath: 'error' },
+    }) as unknown as BambooContext
     const code = `${imports}export const a = (s) => token(\`colors.\${s}\`)`
     const absolute = ctx.runtime.path.abs(ctx.config.cwd, FILE)
 
@@ -435,7 +446,9 @@ describe('prefix bounding — the cases that were only checked by hand', () => {
    * accepted-but-unkept failure this module exists to prevent.
    */
   test('a bounded negative token keeps its positive counterpart', () => {
-    const ctx = createFixtureContext({ prune: { unresolved: 'error' } }) as unknown as BambooContext
+    const ctx = createFixtureContext({
+      prune: { tokens: 'accounted', unresolvedPath: 'error' },
+    }) as unknown as BambooContext
     const code = `${imports}export const a = (s) => token(\`spacing.\${s}\`)`
     const absolute = ctx.runtime.path.abs(ctx.config.cwd, FILE)
 
@@ -475,7 +488,9 @@ describe('prefix bounding — the cases that were only checked by hand', () => {
  */
 describe('strict fails only on an unresolved token reference', () => {
   const run = (code: string) => {
-    const ctx = createFixtureContext({ prune: { unresolved: 'error' } }) as unknown as BambooContext
+    const ctx = createFixtureContext({
+      prune: { tokens: 'accounted', unresolvedPath: 'error' },
+    }) as unknown as BambooContext
     const absolute = ctx.runtime.path.abs(ctx.config.cwd, FILE)
 
     ctx.project.addSourceFile(absolute, code)
@@ -525,7 +540,7 @@ describe('strict fails only on an unresolved token reference', () => {
   test('a reported decline never keeps more than the default would', () => {
     const barrel = `import { token as t } from '@acme/ui'\nexport const a = (p) => t(p)`
 
-    expect(blanketKeepFor(barrel, { unresolved: 'error' }).blanket).toBe(false)
-    expect(blanketKeepFor(barrel, { unresolved: 'off' }).blanket).toBe(false)
+    expect(blanketKeepFor(barrel, { tokens: 'accounted', unresolvedPath: 'error' }).blanket).toBe(false)
+    expect(blanketKeepFor(barrel, { tokens: 'reachable' }).blanket).toBe(false)
   })
 })

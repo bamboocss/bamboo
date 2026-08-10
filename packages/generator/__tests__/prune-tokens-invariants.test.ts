@@ -61,9 +61,9 @@ const CASES: Record<string, Config> = {
   hashed: { hash: true },
   prefixed: { prefix: 'bb' },
   'custom var root': { cssVarRoot: ':where(html)' },
-  themed: { themes: { pink: { tokens: { colors: { primary: { value: '#f0f' } } } } } },
+  themed: { theme: { variants: { pink: { tokens: { colors: { primary: { value: '#f0f' } } } } } } },
   'themed via staticCss': {
-    themes: { pink: { tokens: { colors: { primary: { value: '#f0f' } } } } },
+    theme: { variants: { pink: { tokens: { colors: { primary: { value: '#f0f' } } } } } },
     staticCss: { themes: ['*'], css: [{ properties: { color: ['red.300'] } }] },
   },
   'color palette': {
@@ -82,11 +82,11 @@ const CASES: Record<string, Config> = {
   // Exporting a token for something outside the stylesheet to read. Nothing in the sheet
   // references `--brand`, which is the point of declaring it — so the colour behind it has
   // to be kept by the declaration itself rather than by a reference to it.
-  'globalCss custom property': {
-    globalCss: { ':root': { '--brand': 'token(colors.blue.500)' } },
+  'global.css custom property': {
+    global: { css: { ':root': { '--brand': 'token(colors.blue.500)' } } },
   },
-  'globalVars custom property': {
-    globalVars: { '--accent': 'var(--colors-orange-500)' },
+  'global.vars custom property': {
+    global: { vars: { '--accent': 'var(--colors-orange-500)' } },
   },
   // A palette declared but never read. The rule survives — its properties are virtual, so
   // pruning does not own them — and its targets are held by the blanket keeps rather than
@@ -103,9 +103,9 @@ const CASES: Record<string, Config> = {
  */
 describe('themes injected at runtime', () => {
   const config: Config = {
-    prune: { tokens: true },
+    prune: { tokens: 'reachable' },
     staticCss: { css: [{ properties: { color: ['red.300'] } }] },
-    themes: { pink: { tokens: { colors: { primary: { value: 'token(colors.pink.500)' } } } } },
+    theme: { variants: { pink: { tokens: { colors: { primary: { value: 'token(colors.pink.500)' } } } } } },
   }
 
   test.each([true, false])('keeps what a theme artifact references (reachable=%s)', (reachable) => {
@@ -136,8 +136,8 @@ describe('themes injected at runtime', () => {
  * stays consistent.
  */
 describe.each(Object.entries(CASES))('references javascript is handed: %s', (_name, config) => {
-  const before = buildWithContext({ ...config, prune: { tokens: false } })
-  const after = buildWithContext({ ...config, prune: { tokens: true } })
+  const before = buildWithContext({ ...config, prune: { tokens: 'off' } })
+  const after = buildWithContext({ ...config, prune: { tokens: 'reachable' } })
 
   test('keeps every declaration token() resolves to', () => {
     const declaredBefore = declarations(before.css)
@@ -162,9 +162,9 @@ describe.each(Object.entries(CASES))('references javascript is handed: %s', (_na
  * keep passing however this one behaved.
  */
 describe.each(Object.entries(CASES))('with nothing reaching for a token from javascript: %s', (_name, config) => {
-  const unpruned = build({ ...config, prune: { tokens: false } })
-  const ungated = buildWithContext({ ...config, prune: { tokens: true } }, true)
-  const gated = buildWithContext({ ...config, prune: { tokens: true } }, false)
+  const unpruned = build({ ...config, prune: { tokens: 'off' } })
+  const ungated = buildWithContext({ ...config, prune: { tokens: 'reachable' } }, true)
+  const gated = buildWithContext({ ...config, prune: { tokens: 'reachable' } }, false)
 
   test('introduces no reference the stylesheet cannot resolve', () => {
     // Some are dangling before pruning too — the reset names `--global-*` properties for the
@@ -188,16 +188,16 @@ describe.each(Object.entries(CASES))('with nothing reaching for a token from jav
  */
 describe.each(Object.entries(CASES))('the gate is not a no-op: %s', (_name, config) => {
   test('removes declarations the ungated path keeps', () => {
-    const ungated = buildWithContext({ ...config, prune: { tokens: true } }, true)
-    const gated = buildWithContext({ ...config, prune: { tokens: true } }, false)
+    const ungated = buildWithContext({ ...config, prune: { tokens: 'reachable' } }, true)
+    const gated = buildWithContext({ ...config, prune: { tokens: 'reachable' } }, false)
 
     expect(declarations(gated.css).size).toBeLessThan(declarations(ungated.css).size)
   })
 })
 
 describe.each(Object.entries(CASES))('pruning invariants: %s', (_name, config) => {
-  const before = build({ ...config, prune: { tokens: false } })
-  const after = build({ ...config, prune: { tokens: true } })
+  const before = build({ ...config, prune: { tokens: 'off' } })
+  const after = build({ ...config, prune: { tokens: 'reachable' } })
 
   test('introduces no reference without a declaration', () => {
     const introduced = dangling(after).filter((name) => !dangling(before).includes(name))

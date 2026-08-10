@@ -4,8 +4,8 @@ import { describe, expect, test } from 'vitest'
 /**
  * A declared `@position-try` name becomes a value the properties that take one accept.
  *
- * The same trade `globalFontface` makes for `fontFamily`, and the reason to prefer either over
- * writing the at-rule into `globalCss`: both spellings emit the rule, only this one leaves the
+ * The same trade `global.fontface` makes for `fontFamily`, and the reason to prefer either over
+ * writing the at-rule into `global.css`: both spellings emit the rule, only this one leaves the
  * name known to the generated types.
  */
 const typesFor = (config: object, property: string) => {
@@ -15,9 +15,9 @@ const typesFor = (config: object, property: string) => {
   return [...(map.get(property) ?? [])]
 }
 
-const config = { globalPositionTry: { flip: { top: 'auto' }, '--slide': { left: 'auto' } } }
+const config = { global: { positionTry: { flip: { top: 'auto' }, '--slide': { left: 'auto' } } } }
 
-describe('globalPositionTry registers its names', () => {
+describe('global.positionTry registers its names', () => {
   /** Dashed, because that is what the property takes — `position-try-fallbacks: flip` is invalid. */
   test.each(['positionTryFallbacks', 'positionTry'])('%s accepts the declared idents', (property) => {
     expect(typesFor(config, property)).toEqual(['"--flip"', '"--slide"'])

@@ -5,7 +5,7 @@ import { generateConditionsSpec } from '../src/spec/conditions'
 describe('generateConditionsSpec', () => {
   test('renders multi-block (object) conditions as semicolon-separated paths, not JSON', () => {
     const ctx = createContext({
-      eject: true,
+      presets: [],
       conditions: {
         hoverActive: {
           '@media (hover: hover)': { '&:is(:hover, [data-hover])': '@slot' },
@@ -26,7 +26,7 @@ describe('generateConditionsSpec', () => {
 
   test('renders string and array conditions unchanged', () => {
     const ctx = createContext({
-      eject: true,
+      presets: [],
       conditions: {
         hover: '&:hover',
         anyHover: ['@media (hover: hover)', '&:hover'],

@@ -22,9 +22,9 @@ export type DeclineReason =
   | 'unresolved-reference'
 
 /**
- * The one decline `strict` fails the build on.
+ * The one decline `prune.tokens: 'accounted'` fails the build on.
  *
- * `strict` asserts that every token path resolves, and this is the reason that says otherwise:
+ * `prune.tokens: 'accounted'` asserts that every token path resolves, and this is the reason that says otherwise:
  * a token binding used in a way the build cannot follow — a path built at runtime, a binding
  * assigned away, a namespace enumerated. It is about the author's *token usage*, and it has a
  * fix at the call site.
@@ -86,9 +86,13 @@ export interface TokenAccounting {
  *   deliberately small.
  *
  * What it cannot see is a caller *outside* `include`, which scopes style extraction rather
- * than everything that may import. That is why this only runs under `pruneUnusedTokens:
- * 'strict'`, where the user has asserted otherwise, and why `declined` is reported rather than
- * swallowed: the build says what it could not account for, instead of quietly deciding.
+ * than everything that may import. That is why this only runs under `prune.tokens:
+ * 'accounted'`, where the user has asserted otherwise, and why `declined` is reported rather
+ * than swallowed: the build says what it could not account for, instead of quietly deciding.
+ *
+ * The name in that sentence was `pruneUnusedTokens: 'strict'` for a while after the option
+ * stopped existing, which is the hazard of documenting a flag by a word three other flags
+ * also used.
  */
 export function accountTokenReferences(ctx: BambooContext): TokenAccounting {
   const accounting: TokenAccounting = { paths: new Set<string>(), prefixes: new Set<string>(), declined: [] }

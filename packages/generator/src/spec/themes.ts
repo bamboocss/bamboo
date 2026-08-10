@@ -66,7 +66,7 @@ const generateThemeTokenGroups = (
 }
 
 export const generateThemesSpec = (ctx: Context): ThemesSpec | undefined => {
-  const themes = ctx.config.themes
+  const themes = ctx.config.theme?.variants
   if (!themes || Object.keys(themes).length === 0) return undefined
 
   const data: ThemeSpecDefinition[] = Object.keys(themes).map((themeName) => {

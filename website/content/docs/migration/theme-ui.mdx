@@ -252,19 +252,21 @@ export default (props) => (
 )
 ```
 
-In Bamboo, global styles are defined in the top-level `globalCss` property of the bamboo config — not under `theme`.
+In Bamboo, global styles are defined in the top-level `global.css` property of the bamboo config — not under `theme`.
 
 ```js
 // bamboo.config.js
 import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
-  globalCss: {
-    button: {
-      m: 0,
-      bg: 'primary',
-      color: 'background',
-      border: 0,
+  global: {
+    css: {
+      button: {
+        m: 0,
+        bg: 'primary',
+        color: 'background',
+        border: 0,
+      },
     },
   },
 })

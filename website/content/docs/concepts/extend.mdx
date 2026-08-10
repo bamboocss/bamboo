@@ -126,7 +126,7 @@ const { stack, ...bambooBasePresetPatterns } = bambooBasePreset.patterns
 
 export default defineConfig({
   presets: ['@bamboocss/preset-bamboo'], // 👈 we still want the tokens, breakpoints and textStyles from this preset
-  eject: true,
+  presets: [],
   patterns: {
     extend: {
       ...bambooBasePresetPatterns,
@@ -136,8 +136,9 @@ export default defineConfig({
 })
 ```
 
-> ⚠️ `eject: true` is required in that second case: without it `@bamboocss/preset-base` is resolved anyway and puts
-> `stack` back. See [which presets are included](/docs/customization/presets#which-bamboo-presets-will-be-included-).
+> ⚠️ `presets: []` is required in that second case: with anything else listed, `@bamboocss/preset-base` is loaded only
+> if you list it, and it puts `stack` back. See
+> [which presets are included](/docs/customization/presets#which-bamboo-presets-will-be-included-).
 
 ## Minimal setup
 

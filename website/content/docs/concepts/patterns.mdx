@@ -10,21 +10,9 @@ Pattern properties can be overridden as needed, just like in the `css` function.
 
 ## Predefined Patterns
 
-### Box
-
-The Box pattern does not contain any additional styles — it is the equivalent of the `css` function.
-
-```tsx
-import { box } from '../styled-system/patterns'
-
-function App() {
-  return (
-    <div className={box({ color: 'blue.300' })}>
-      <div>Cool !</div>
-    </div>
-  )
-}
-```
+> Two patterns were removed because each was a second spelling of something the system already had. `box(styles)` had no
+> styles of its own and was exactly `css(styles)`; `visuallyHidden()` was `css({ srOnly: true })`, wrapping a utility.
+> Use the `css` form for both.
 
 ### Container
 
@@ -388,23 +376,6 @@ function App() {
       <div className={spacer()} />
       <div>Menu</div>
     </div>
-  )
-}
-```
-
-### Visually Hidden
-
-The Visually Hidden pattern is used to hide an element visually, but keep it accessible to screen readers.
-
-```tsx
-import { visuallyHidden } from '../styled-system/patterns'
-
-export function Checkbox() {
-  return (
-    <label>
-      <input type="checkbox" className={visuallyHidden()} />
-      <span>Checkbox</span>
-    </label>
   )
 }
 ```

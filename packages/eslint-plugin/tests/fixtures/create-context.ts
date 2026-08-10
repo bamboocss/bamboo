@@ -7,14 +7,16 @@ import type { LoadConfigResult, UserConfig } from '@bamboocss/types'
 
 const sandboxConfig = defineConfig({
   exclude: [],
-  globalCss: {
-    '*': {
-      fontFamily: 'Inter',
-      margin: '0',
-    },
-    a: {
-      color: 'inherit',
-      textDecoration: 'none',
+  global: {
+    css: {
+      '*': {
+        fontFamily: 'Inter',
+        margin: '0',
+      },
+      a: {
+        color: 'inherit',
+        textDecoration: 'none',
+      },
     },
   },
   include: ['./src/**/*.{tsx,jsx}', './pages/**/*.{jsx,tsx}'],

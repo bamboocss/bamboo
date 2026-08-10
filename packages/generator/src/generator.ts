@@ -100,14 +100,18 @@ export class Generator extends Context {
    * `keep` carries references this cannot see for itself; see `collectTokenReferences`.
    */
   pruneTokens = (sheet: Stylesheet, keep?: Set<string>, tokensReachableFromJs = true) => {
-    // `prune.tokens` governs the token declarations only. The `@property` rules a
-    // utility registers are pruned either way: the reason that flag exists is that a token
-    // can be reached by a name this pass never sees -- `token()` with a path assembled
-    // at runtime -- and a registration has no such surface. Nothing hands one to javascript,
-    // and it is not part of the token api, so "does the finished stylesheet mention it"
-    // is the whole question. Opting out of token pruning should not mean carrying a
-    // preset's entire filter and gradient set for nothing.
-    const pruneVars = this.config.prune?.tokens ?? true
+    // `prune.tokens` governs the token declarations; `prune.propertyRegistrations` governs
+    // the `@property` rules a utility registers. Two flags because they answer to different
+    // evidence: a token can be reached by a name this pass never sees -- `token()` with a
+    // path assembled at runtime -- and a registration has no such surface. Nothing hands one
+    // to javascript, and it is not part of the token api, so "does the finished stylesheet
+    // mention it" is the whole question.
+    //
+    // They were one flag, and the registrations were dropped even when it was off -- so an
+    // option documented as keeping every token declaration quietly removed something else,
+    // and there was no way at all to keep them.
+    const pruneVars = (this.config.prune?.tokens ?? 'reachable') !== 'off'
+    const pruneRegistrations = this.config.prune?.propertyRegistrations ?? true
 
     const layers = sheet.layers
 
@@ -133,9 +137,9 @@ export class Generator extends Context {
         ...this.getThemeTokenVars(),
         ...(keep ?? []),
       ]),
-      // `@property` rules land in `base`, alongside `globalCss`. Only the ones a utility
-      // registered are offered — a user's own, written through `globalVars`, are not.
-      registeredProperties: new Set(this.utility.customProperties.keys()),
+      // `@property` rules land in `base`, alongside `global.css`. Only the ones a utility
+      // registered are offered — a user's own, written through `global.vars`, are not.
+      registeredProperties: pruneRegistrations ? new Set(this.utility.customProperties.keys()) : new Set<string>(),
       propertyTarget: layers.base,
     })
 
@@ -220,7 +224,7 @@ export class Generator extends Context {
    */
   private getThemeKeyframeNames = (keyframeNames: Set<string>) => {
     const names = new Set<string>()
-    const themes = this.config.themes
+    const themes = this.config.theme?.variants
     if (!themes || !keyframeNames.size) return names
 
     for (const themeName of Object.keys(themes)) {
@@ -256,7 +260,7 @@ export class Generator extends Context {
    */
   private getThemeTokenVars = () => {
     const names = new Set<string>()
-    const themes = this.config.themes
+    const themes = this.config.theme?.variants
     if (!themes) return names
 
     for (const themeName of Object.keys(themes)) {
@@ -403,8 +407,8 @@ export class Generator extends Context {
 
     // Theme artifacts (not auto-imported in styles.css)
     const themes: SplitCssArtifact[] = []
-    if (this.config.themes) {
-      for (const themeName of Object.keys(this.config.themes)) {
+    if (this.config.theme?.variants) {
+      for (const themeName of Object.keys(this.config.theme?.variants)) {
         const css = getThemeCss(this, themeName)
         if (css.trim()) {
           themes.push({

@@ -296,7 +296,7 @@ describe('DiffEngine affecteds', () => {
   test('add first theme.recipe (from zero recipes)', () => {
     // Start with a config that has NO recipes (eject to skip preset recipes, but provide theme object with tokens to keep theme from being removed)
     const emptyConfig = (): Config => ({
-      eject: true,
+      presets: [],
       outdir: 'styled-system',
       cwd: '',
       theme: {

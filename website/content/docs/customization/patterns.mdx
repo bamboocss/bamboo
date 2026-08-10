@@ -15,8 +15,8 @@ A pattern accepts the following parameters:
   property.
 - `transform` - The function that accepts the properties and a set of [helpers](#transform-helpers), and returns a css
   object.
-- `blocklist` - The list of properties that are not allowed to be used in the pattern. Can be used to ensure strict
-  typings when using the pattern.
+- `cssProps` - Which css properties the pattern accepts beside its own: `'all'`, `'none'`, or `{ except: [...] }`. Can
+  be used to ensure strict typings when using the pattern.
 - `strict` - Whether to only generate types for the specified properties. This will disallow css properties.
 
 ## Transform helpers
@@ -67,7 +67,7 @@ const config = {
           hideScrollbar: { type: 'boolean' },
         },
         // disallow the `overflow` property (in TypeScript)
-        blocklist: ['overflow'],
+        cssProps: { except: ['overflow'] },
         transform(props) {
           const { direction, hideScrollbar, ...rest } = props
           return {

@@ -68,9 +68,13 @@ export interface BambooVitePluginOptions {
    * writing recipes — and recipes keep their own much smaller runtime by design. What this
    * guarantees is narrower and checkable: nothing still calls `css()`.
    *
+   * Named for what it checks. It was `strict`, which meant nothing in common with
+   * `strictTokens` or a pattern's old `strict` — three unrelated options sharing a word, to
+   * the point that comments in this repo used a bare "strict" for all three.
+   *
    * @default false
    */
-  strict?: boolean
+  failOnUnfolded?: boolean
 }
 
 const DEFAULT_EXTENSIONS = /\.(?:[cm]?[jt]sx?)$/
@@ -148,13 +152,13 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
     cwd,
     reportSkipped = false,
     reportSummary = true,
-    strict = false,
+    failOnUnfolded = false,
   } = options
 
   /** Totals across the build, for the summary. */
   const totals = { folded: 0, files: 0, filesWithFolds: 0, skipped: new Map<string, number>() }
 
-  /** Under `strict`, every call that would still reach the runtime. */
+  /** Under `failOnUnfolded`, every call that would still reach the runtime. */
   const survivors: Array<{ file: string; line: number; name: string; reason: SkipReason }> = []
 
   /**
@@ -263,10 +267,10 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
       try {
         const sourceFile = ctx.project.addSourceFile(filePath, code)
         const parserResult = ctx.project.parseSourceFile(filePath)
-        // Under `strict` an empty result is not proof of nothing to say: a module whose only
+        // Under `failOnUnfolded` an empty result is not proof of nothing to say: a module whose only
         // bamboo usage is a shape the parser does not recognise produces exactly that, and
         // skipping it here is what let those modules pass a build they should have failed.
-        if (!parserResult || (parserResult.isEmpty() && !strict)) return null
+        if (!parserResult || (parserResult.isEmpty() && !failOnUnfolded)) return null
 
         result = foldSource({
           ctx,
@@ -280,8 +284,8 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
           // build would make the fold depend on discovery order.
           parseModule: (path) => ctx?.project.parseSourceFile(path),
           recipeConfigCache,
-          // Only `strict` acts on it, and it costs an identifier walk.
-          reportSurvivors: strict,
+          // Only `failOnUnfolded` acts on it, and it costs an identifier walk.
+          reportSurvivors: failOnUnfolded,
           sourceFile,
         })
       } catch (error) {
@@ -296,7 +300,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
         totals.skipped.set(entry.reason, (totals.skipped.get(entry.reason) ?? 0) + 1)
       }
 
-      if (strict) {
+      if (failOnUnfolded) {
         for (const entry of result.skipped) {
           if (!SURVIVES_TO_RUNTIME.has(entry.reason)) continue
           survivors.push({ file: filePath, line: lineAt(code, entry.start), name: entry.name, reason: entry.reason })
@@ -337,7 +341,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
     },
 
     buildEnd() {
-      if (strict && survivors.length) {
+      if (failOnUnfolded && survivors.length) {
         // Grouped by file, because the fix is usually per-module: one component taking a
         // prop keeps the engine for the whole bundle.
         const byFile = new Map<string, typeof survivors>()
@@ -359,11 +363,11 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
           .join('\n')
 
         throw new Error(
-          `bamboocss: ${survivors.length} call(s) could not be folded, and \`strict\` is on.\n\n` +
+          `bamboocss: ${survivors.length} call(s) could not be folded, and \`failOnUnfolded\` is on.\n\n` +
             `${detail}\n\n` +
             `Each one keeps \`styled-system/css\` in the bundle, so the engine cannot be dropped ` +
             `however many other calls folded. Make the values static, move the variation into a ` +
-            `\`cva\` variant, or generate them with \`staticCss\` — or set \`strict: false\` to ` +
+            `\`cva\` variant, or generate them with \`staticCss\` — or set \`failOnUnfolded: false\` to ` +
             `accept the runtime.`,
         )
       }

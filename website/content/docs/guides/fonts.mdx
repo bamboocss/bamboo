@@ -133,29 +133,31 @@ by registering the name for you.
 You can also define global font face in your bamboo config. A family takes one face or an array of them, and each face's
 `src` takes one source or an array of them.
 
-This is the option to reach for rather than writing `@font-face` into [`globalCss`](/docs/references/config#globalcss).
+This is the option to reach for rather than writing `@font-face` into [`global.css`](/docs/references/config#globalcss).
 Both emit the same rule, but a family declared here is also registered as a value `fontFamily` accepts — so
 `css({ fontFamily: 'Fira' })` autocompletes and typechecks without a token. Written as a raw `@font-face` in
-`globalCss`, the name is a string Bamboo has never seen, and under
+`global.css`, the name is a string Bamboo has never seen, and under
 [`strictPropertyValues`](/docs/references/config#strictpropertyvalues) it is a type error.
 
 ```js
 export default defineConfig({
-  globalFontface: {
-    Fira: [
-      {
-        src: ['url(/fonts/fira.woff2) format("woff2")', 'url(/fonts/fira.woff) format("woff")'],
-        fontWeight: 400,
-        fontStyle: 'normal',
-        fontDisplay: 'swap',
-      },
-      {
-        src: 'url(/fonts/fira-bold.woff2) format("woff2")',
-        fontWeight: 700,
-        fontStyle: 'normal',
-        fontDisplay: 'swap',
-      },
-    ],
+  global: {
+    fontface: {
+      Fira: [
+        {
+          src: ['url(/fonts/fira.woff2) format("woff2")', 'url(/fonts/fira.woff) format("woff")'],
+          fontWeight: 400,
+          fontStyle: 'normal',
+          fontDisplay: 'swap',
+        },
+        {
+          src: 'url(/fonts/fira-bold.woff2) format("woff2")',
+          fontWeight: 700,
+          fontStyle: 'normal',
+          fontDisplay: 'swap',
+        },
+      ],
+    },
   },
 })
 ```
@@ -172,8 +174,10 @@ You can also use [globalVars](/docs/concepts/writing-styles#global-vars) in your
 
 ```js
 export default defineConfig({
-  globalVars: {
-    '--font-fira-code': 'Fira Code Variable, monospace',
+  global: {
+    vars: {
+      '--font-fira-code': 'Fira Code Variable, monospace',
+    },
   },
 })
 ```

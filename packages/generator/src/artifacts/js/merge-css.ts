@@ -18,7 +18,7 @@ import { outdent } from 'outdent'
  * Separating them costs about 402 B gzipped in a bundle that still calls `css()` at runtime,
  * because the two halves share every property name and each now spells the list. That is the
  * trade, and it is the right way round: a `css()` call surviving to runtime already costs
- * 1,684 B for the engine behind it, and `strict` exists to drive that count to zero.
+ * 1,684 B for the engine behind it, and `failOnUnfolded` exists to drive that count to zero.
  *
  * Nothing here reaches the `styled-system/css` barrel. `css.raw(...)` is the authoring API
  * for merging style objects, and it is `mergeCss` plus the defensive clone that makes a

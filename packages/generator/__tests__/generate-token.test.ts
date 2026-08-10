@@ -13,7 +13,7 @@ const tokenCss = (config?: Config) => {
 describe('generator', () => {
   test('shadow tokens', () => {
     const css = tokenCss({
-      eject: true,
+      presets: [],
       theme: {
         tokens: {
           colors: {
@@ -48,7 +48,7 @@ describe('generator', () => {
 
   test('shadow tokens - composite', () => {
     const css = tokenCss({
-      eject: true,
+      presets: [],
       theme: {
         tokens: {
           spacing: {
@@ -807,7 +807,7 @@ describe('generator', () => {
 
   test('assets svg', () => {
     const css = tokenCss({
-      eject: true,
+      presets: [],
       theme: {
         tokens: {
           assets: {
@@ -833,7 +833,7 @@ describe('generator', () => {
 
   test('color-mix', () => {
     const css = tokenCss({
-      eject: true,
+      presets: [],
       theme: {
         tokens: {
           colors: {
@@ -870,7 +870,7 @@ describe('generator', () => {
 
   test('color-mix in semanticTokens conditions', () => {
     const css = tokenCss({
-      eject: true,
+      presets: [],
       conditions: {
         light: '.light &',
         dark: '.dark &',
@@ -921,7 +921,7 @@ describe('generator', () => {
 
   test('themes - no staticCss', () => {
     const css = tokenCss({
-      eject: true,
+      presets: [],
       conditions: {
         osDark: '@media (prefers-color-scheme: dark)',
       },
@@ -941,28 +941,28 @@ describe('generator', () => {
             },
           },
         },
-      },
-      // alternative theme variants
-      themes: {
-        primary: {
-          tokens: {
-            colors: {
-              text: { value: 'red' },
+        variants: {
+          primary: {
+            tokens: {
+              colors: {
+                text: { value: 'red' },
+              },
             },
-          },
-          semanticTokens: {
-            colors: {
-              muted: { value: 'token(colors.red.200)' },
-              body: {
-                value: {
-                  base: 'token(colors.red.600)',
-                  _osDark: 'token(colors.red.400)',
+            semanticTokens: {
+              colors: {
+                muted: { value: 'token(colors.red.200)' },
+                body: {
+                  value: {
+                    base: 'token(colors.red.600)',
+                    _osDark: 'token(colors.red.400)',
+                  },
                 },
               },
             },
           },
         },
       },
+      // alternative theme variants
     })
 
     expect(css).toMatchInlineSnapshot(`
@@ -978,7 +978,7 @@ describe('generator', () => {
 
   test('themes - staticCss with name', () => {
     const css = tokenCss({
-      eject: true,
+      presets: [],
       conditions: {
         osDark: '@media (prefers-color-scheme: dark)',
       },
@@ -998,28 +998,28 @@ describe('generator', () => {
             },
           },
         },
-      },
-      // alternative theme variants
-      themes: {
-        primary: {
-          tokens: {
-            colors: {
-              text: { value: 'red' },
+        variants: {
+          primary: {
+            tokens: {
+              colors: {
+                text: { value: 'red' },
+              },
             },
-          },
-          semanticTokens: {
-            colors: {
-              muted: { value: 'token(colors.red.200)' },
-              body: {
-                value: {
-                  base: 'token(colors.red.600)',
-                  _osDark: 'token(colors.red.400)',
+            semanticTokens: {
+              colors: {
+                muted: { value: 'token(colors.red.200)' },
+                body: {
+                  value: {
+                    base: 'token(colors.red.600)',
+                    _osDark: 'token(colors.red.400)',
+                  },
                 },
               },
             },
           },
         },
       },
+      // alternative theme variants
       staticCss: {
         // only generate the red in addition to the main one
         themes: ['primary'],
@@ -1053,7 +1053,7 @@ describe('generator', () => {
 
   test('themes - staticCss with multiple themes ', () => {
     const css = tokenCss({
-      eject: true,
+      presets: [],
       conditions: {
         osDark: '@media (prefers-color-scheme: dark)',
       },
@@ -1073,46 +1073,46 @@ describe('generator', () => {
             },
           },
         },
+        variants: {
+          primary: {
+            tokens: {
+              colors: {
+                text: { value: 'red' },
+              },
+            },
+            semanticTokens: {
+              colors: {
+                muted: { value: 'token(colors.red.200)' },
+                body: {
+                  value: {
+                    base: 'token(colors.red.600)',
+                    _osDark: 'token(colors.red.400)',
+                  },
+                },
+              },
+            },
+          },
+          'primary-legacy': {
+            tokens: {
+              colors: {
+                text: { value: 'blue' },
+              },
+            },
+            semanticTokens: {
+              colors: {
+                muted: { value: 'token(colors.blue.200)' },
+                body: {
+                  value: {
+                    base: 'token(colors.blue.600)',
+                    _osDark: 'token(colors.blue.400)',
+                  },
+                },
+              },
+            },
+          },
+        },
       },
       // alternative theme variants
-      themes: {
-        primary: {
-          tokens: {
-            colors: {
-              text: { value: 'red' },
-            },
-          },
-          semanticTokens: {
-            colors: {
-              muted: { value: 'token(colors.red.200)' },
-              body: {
-                value: {
-                  base: 'token(colors.red.600)',
-                  _osDark: 'token(colors.red.400)',
-                },
-              },
-            },
-          },
-        },
-        'primary-legacy': {
-          tokens: {
-            colors: {
-              text: { value: 'blue' },
-            },
-          },
-          semanticTokens: {
-            colors: {
-              muted: { value: 'token(colors.blue.200)' },
-              body: {
-                value: {
-                  base: 'token(colors.blue.600)',
-                  _osDark: 'token(colors.blue.400)',
-                },
-              },
-            },
-          },
-        },
-      },
       staticCss: {
         // only generate the red in addition to the main one
         themes: ['primary'],
@@ -1146,7 +1146,7 @@ describe('generator', () => {
 
   test('themes - staticCss with *', () => {
     const css = tokenCss({
-      eject: true,
+      presets: [],
       conditions: {
         osDark: '@media (prefers-color-scheme: dark)',
       },
@@ -1166,28 +1166,28 @@ describe('generator', () => {
             },
           },
         },
-      },
-      // alternative theme variants
-      themes: {
-        primary: {
-          tokens: {
-            colors: {
-              text: { value: 'red' },
+        variants: {
+          primary: {
+            tokens: {
+              colors: {
+                text: { value: 'red' },
+              },
             },
-          },
-          semanticTokens: {
-            colors: {
-              muted: { value: 'token(colors.red.200)' },
-              body: {
-                value: {
-                  base: 'token(colors.red.600)',
-                  _osDark: 'token(colors.red.400)',
+            semanticTokens: {
+              colors: {
+                muted: { value: 'token(colors.red.200)' },
+                body: {
+                  value: {
+                    base: 'token(colors.red.600)',
+                    _osDark: 'token(colors.red.400)',
+                  },
                 },
               },
             },
           },
         },
       },
+      // alternative theme variants
       staticCss: {
         // only generate the red in addition to the main one
         themes: ['*'],
@@ -1221,7 +1221,7 @@ describe('generator', () => {
 
   test('border widths', () => {
     const css = tokenCss({
-      eject: true,
+      presets: [],
       theme: {
         tokens: {
           borderWidths: {
@@ -1254,7 +1254,7 @@ describe('generator', () => {
 
   test('semantic tokens emit one rule per @slot path for multi-block conditions', () => {
     const css = tokenCss({
-      eject: true,
+      presets: [],
       conditions: {
         hoverActive: {
           '@media (hover: hover)': { '&:is(:hover, [data-hover])': '@slot' },
@@ -1310,7 +1310,7 @@ describe('generator', () => {
 
   test('multi-block stacked under a parent-nesting condition produces cartesian rules', () => {
     const css = tokenCss({
-      eject: true,
+      presets: [],
       conditions: {
         dark: '.dark &',
         hoverActive: {
@@ -1367,7 +1367,7 @@ describe('generator', () => {
 
   test('two stacked multi-block conditions produce N×M rules', () => {
     const css = tokenCss({
-      eject: true,
+      presets: [],
       conditions: {
         hoverActive: {
           '@media (hover: hover)': { '&:is(:hover, [data-hover])': '@slot' },
@@ -1445,7 +1445,7 @@ describe('generator', () => {
 
   test('selector-only multi-block (darkTheme matches data-theme=dark or data-dark-theme) emits one rule per attr', () => {
     const css = tokenCss({
-      eject: true,
+      presets: [],
       conditions: {
         darkTheme: {
           '&[data-theme="dark"]': '@slot',
@@ -1488,7 +1488,7 @@ describe('generator', () => {
 
   test('conditional semantic tokens keep their selector', () => {
     const config: Config = {
-      eject: true,
+      presets: [],
       conditions: {
         osDark: '@media (prefers-color-scheme: dark)',
         dark: '.dark &',
