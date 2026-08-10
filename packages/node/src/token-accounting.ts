@@ -3,11 +3,48 @@ import { Node, type SourceFile, SyntaxKind } from 'ts-morph'
 import type { BambooContext } from './create-context'
 import { type SourceSnapshot, sourceSnapshots } from './source-snapshots'
 
+/**
+ * Every reason the accounting can decline, as a union so the split below is exhaustive.
+ *
+ * `reason: string` let a newly added reason default silently into the failing half, with no
+ * compiler help. That is the wrong direction for a decision that fails builds.
+ */
+export type DeclineReason =
+  | 'unreadable'
+  | 'transformed'
+  | 'unparsed'
+  | 're-exported'
+  | 'import-equals'
+  | 'require'
+  | 'dynamic-import'
+  | 'unclassified-import'
+  | 'unsupported-import'
+  | 'unresolved-reference'
+
+/**
+ * The one decline `strict` fails the build on.
+ *
+ * `strict` asserts that every token path resolves, and this is the reason that says otherwise:
+ * a token binding used in a way the build cannot follow — a path built at runtime, a binding
+ * assigned away, a namespace enumerated. It is about the author's *token usage*, and it has a
+ * fix at the call site.
+ *
+ * Nothing else may throw, because nothing else is necessarily about tokens at all. The other
+ * reasons were written under a premise this would break: declining was free, so every branch
+ * that could not prove a shape declined, and the accepted set was kept deliberately small.
+ * `import(`./pages/${name}`)` declines as `dynamic-import` because the specifier is not a
+ * literal and *could* be the artifact; `import lexer = require('./tokenizer')` declines because
+ * the statement contains the substring `token`. Both are routine code with nothing to do with
+ * design tokens, and failing a build over them would be indefensible. They keep every
+ * declaration, which is what they always did, and say so.
+ */
+export const failsStrict = (entry: DeclinedReference) => entry.reason === 'unresolved-reference'
+
 /** A reference the accounting could not resolve, and where to find it. */
 export interface DeclinedReference {
   filePath: string
   line: number
-  reason: string
+  reason: DeclineReason
 }
 
 export interface TokenAccounting {
@@ -91,18 +128,15 @@ export function accountSnapshot(ctx: BambooContext, snapshot: SourceSnapshot, ac
       return
     }
 
-    // Matching text is not the same as a usable tree. `createSourceFile` hands every file to
-    // ts-morph as `ScriptKind.TSX` (`packages/parser/src/project.ts`), so a construct that is
-    // valid TypeScript and invalid TSX — a generic arrow `<T>(x: T) => x`, an old-style
-    // assertion `<HTMLElement>node` — parses into a `JsxElement` that swallows the rest of the
-    // file. The bytes are identical, so the comparison above sees nothing wrong, while every
-    // call below the offending line has simply ceased to exist: a `.ts` file with a dynamic
-    // `token(k)` under a generic arrow reported no calls and no declines at all.
+    // Matching text is not the same as a usable tree. A file whose parse produced syntax
+    // errors gives an ast that silently stops early — a construct valid in one script kind and
+    // not another parses as a `JsxElement` whose children swallow the rest of the file. The
+    // bytes are identical, so the comparison above sees nothing wrong, while every call below
+    // the offending line has ceased to exist.
     //
-    // Syntax diagnostics separate the two exactly: zero for healthy TS and TSX, non-zero for
-    // both shapes above and for a raw single-file component. That the check is coarse — it
-    // also declines a project whose `.ts` files merely use generic arrows — is the safe
-    // direction, and the report says which file to look at.
+    // Syntax diagnostics separate the two exactly: zero for a healthy file, non-zero for one
+    // the parser could not read as written. That the check is coarse is the safe direction, and
+    // the report says which file to look at.
     if (parseErrorCount(sourceFile!)) {
       if (!parsed.includes('token')) return
       declined.push({ filePath, line: 1, reason: 'unparsed' })
@@ -153,7 +187,7 @@ function accountFile(
   prefixes: Set<string>,
   declined: DeclinedReference[],
 ) {
-  const decline = (node: Node, reason: string) => declined.push({ filePath, line: lineOf(node), reason })
+  const decline = (node: Node, reason: DeclineReason) => declined.push({ filePath, line: lineOf(node), reason })
 
   /** Local names bound to the artifact: the `token` export, and any namespace of it. */
   const bindings = new Set<string>()
@@ -338,8 +372,16 @@ function accountedPath(identifier: Node): ResolvedReference | undefined {
   const parent = identifier.getParent()
   if (!parent) return undefined
 
-  // The binding site itself, and a type position naming it. Not a use.
-  if (Node.isImportSpecifier(parent) || Node.isNamespaceImport(parent) || Node.isImportClause(parent)) {
+  // A binding site rather than a use. `ExportSpecifier` belongs here too: `export { token }
+  // from '…'` is declined as `re-exported` by the statement walk, with the reason that
+  // actually describes it — leaving it to fall through here reported it a second time as an
+  // unresolved *reference*, which is the one reason that fails the build.
+  if (
+    Node.isImportSpecifier(parent) ||
+    Node.isNamespaceImport(parent) ||
+    Node.isImportClause(parent) ||
+    Node.isExportSpecifier(parent)
+  ) {
     return { kind: 'binding' }
   }
 

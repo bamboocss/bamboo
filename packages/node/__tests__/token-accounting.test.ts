@@ -192,25 +192,25 @@ describe('unreadable references decline', () => {
  * `pruneTokens`: `true` means "keep every declaration", which is the default's behaviour and
  * the fallback for anything declined.
  */
+const blanketKeepFor = (code: string, pruneUnusedTokens: boolean | 'strict') => {
+  const ctx = createFixtureContext({ pruneUnusedTokens }) as unknown as BambooContext
+  const absolute = ctx.runtime.path.abs(ctx.config.cwd, FILE)
+
+  ctx.project.addSourceFile(absolute, code)
+  ctx.getFiles = () => [FILE]
+  ctx.runtime = { ...ctx.runtime, fs: { ...ctx.runtime.fs, readFileSync: () => code } } as BambooContext['runtime']
+
+  let seen: { keep?: Set<string>; blanket?: boolean } = {}
+  ctx.pruneTokens = ((_sheet: unknown, keep?: Set<string>, blanket?: boolean) => {
+    seen = { keep, blanket }
+    return { removed: 0, kept: 0 }
+  }) as BambooContext['pruneTokens']
+
+  pruneTokensForBuild(ctx, {} as never, [])
+  return seen
+}
+
 describe('pruneUnusedTokens: strict', () => {
-  const blanketKeepFor = (code: string, pruneUnusedTokens: boolean | 'strict') => {
-    const ctx = createFixtureContext({ pruneUnusedTokens }) as unknown as BambooContext
-    const absolute = ctx.runtime.path.abs(ctx.config.cwd, FILE)
-
-    ctx.project.addSourceFile(absolute, code)
-    ctx.getFiles = () => [FILE]
-    ctx.runtime = { ...ctx.runtime, fs: { ...ctx.runtime.fs, readFileSync: () => code } } as BambooContext['runtime']
-
-    let seen: { keep?: Set<string>; blanket?: boolean } = {}
-    ctx.pruneTokens = ((_sheet: unknown, keep?: Set<string>, blanket?: boolean) => {
-      seen = { keep, blanket }
-      return { removed: 0, kept: 0 }
-    }) as BambooContext['pruneTokens']
-
-    pruneTokensForBuild(ctx, {} as never, [])
-    return seen
-  }
-
   const staticCall = `${imports}export const a = token('colors.red.300')`
   const dynamicCall = `${imports}export const a = (p) => token(p)`
 
@@ -223,8 +223,10 @@ describe('pruneUnusedTokens: strict', () => {
     expect(keep?.has('--colors-red-300')).toBe(true)
   })
 
-  test('keeps the blanket when a reference does not resolve', () => {
-    expect(blanketKeepFor(dynamicCall, 'strict').blanket).toBe(true)
+  test('throws on a reference that does not resolve', () => {
+    // `strict` is an assertion. A reference that breaks it fails the build rather than warning
+    // and quietly keeping every declaration, which is the same silence the flag removes.
+    expect(() => blanketKeepFor(dynamicCall, 'strict')).toThrow(/could not be resolved/)
   })
 
   test('the default keeps the blanket either way, so strict can only prune more', () => {
@@ -233,16 +235,31 @@ describe('pruneUnusedTokens: strict', () => {
   })
 
   /**
-   * A decline defers to the default's own gate rather than keeping everything outright. The
-   * two differ here: this file declines — the import cannot be classified — while the default's
-   * text scan finds no token call, so an unconditional keep would make `strict` ship *more*
-   * than the default. That is the one case where enabling it could have cost bytes.
+   * A file the pass cannot read does *not* throw — a single-file component is stored
+   * post-transform and a `.ts` file using a generic arrow parses as tsx, and neither is
+   * something the author wrote wrongly. Those warn and fall back to the default's own gate,
+   * which is what keeps `strict` usable for whole framework families.
    */
-  test('a decline falls back to the default answer, never past it', () => {
-    const barrel = `import { token as t } from '@acme/ui'\nexport const a = (p) => t(p)`
+  test('a file it cannot read warns and falls back rather than throwing', () => {
+    const ctx = createFixtureContext({ pruneUnusedTokens: 'strict' }) as unknown as BambooContext
+    const absolute = ctx.runtime.path.abs(ctx.config.cwd, FILE)
 
-    expect(blanketKeepFor(barrel, 'strict').blanket).toBe(false)
-    expect(blanketKeepFor(barrel, true).blanket).toBe(false)
+    // Parsed and on-disk texts differ, which is how a transformed file arrives.
+    ctx.project.addSourceFile(absolute, `${imports}export const a = token('colors.red.300')`)
+    ctx.getFiles = () => [FILE]
+    ctx.runtime = {
+      ...ctx.runtime,
+      fs: { ...ctx.runtime.fs, readFileSync: () => `${imports}export const a = token(RUNTIME)` },
+    } as BambooContext['runtime']
+
+    let blanket: boolean | undefined
+    ctx.pruneTokens = ((_sheet: unknown, _keep?: Set<string>, seen?: boolean) => {
+      blanket = seen
+      return { removed: 0, kept: 0 }
+    }) as BambooContext['pruneTokens']
+
+    expect(() => pruneTokensForBuild(ctx, {} as never, [])).not.toThrow()
+    expect(blanket).toBe(true)
   })
 })
 
@@ -259,7 +276,7 @@ describe('pruneUnusedTokens: strict', () => {
  * unnoticed, since nothing about the output changes.
  */
 describe('pruneTokensForBuild reads each file once', () => {
-  const readsFor = (code: string, pruneUnusedTokens: boolean | 'strict') => {
+  const readsFor = (code: string, pruneUnusedTokens: boolean | 'strict', onDisk = code) => {
     const ctx = createFixtureContext({ pruneUnusedTokens }) as unknown as BambooContext
     const files = ['app/src/a.tsx', 'app/src/b.tsx', 'app/src/c.tsx']
 
@@ -273,7 +290,7 @@ describe('pruneTokensForBuild reads each file once', () => {
         ...ctx.runtime.fs,
         readFileSync: () => {
           reads++
-          return code
+          return onDisk
         },
       },
     } as BambooContext['runtime']
@@ -283,13 +300,17 @@ describe('pruneTokensForBuild reads each file once', () => {
     return { reads, files: files.length }
   }
 
+  const resolved = `${imports}export const a = token('colors.red.300')`
+
   test.each([
-    ['the default', true as const, `${imports}export const a = token('colors.red.300')`],
-    ['strict, everything resolved', 'strict' as const, `${imports}export const a = token('colors.red.300')`],
-    // The path that used to read three times: a decline still consults the gate.
-    ['strict, with a decline', 'strict' as const, `${imports}export const a = (p) => token(p)`],
-  ])('%s', (_label, mode, code) => {
-    const { reads, files } = readsFor(code, mode)
+    ['the default', true as const, resolved, resolved],
+    ['strict, everything resolved', 'strict' as const, resolved, resolved],
+    // The path that used to read three times: a decline still consults the gate. A *file*
+    // decline, since a reference decline now throws before it gets there — the parsed copy
+    // differing from disk is how a transformed component arrives.
+    ['strict, with a file decline', 'strict' as const, resolved, `${imports}export const a = token(RUNTIME)`],
+  ])('%s', (_label, mode, code, onDisk) => {
+    const { reads, files } = readsFor(code, mode, onDisk)
 
     expect(reads).toBe(files)
   })
@@ -434,5 +455,71 @@ describe('prefix bounding — the cases that were only checked by hand', () => {
 
     expect(prefixes.size).toBeGreaterThan(0)
     expect(declined.length).toBeGreaterThan(0)
+  })
+})
+
+/**
+ * Which declines fail the build, and which only report.
+ *
+ * The split is the whole design of `strict`-as-an-error, and moving a reason across it fails
+ * no other test. Only `unresolved-reference` throws: it is the one that says a *token* path
+ * could not be followed. Everything else was written under a premise this would break —
+ * declining was free, so every branch that could not prove a shape declined — and several of
+ * those shapes are ordinary code with nothing to do with tokens.
+ */
+describe('strict fails only on an unresolved token reference', () => {
+  const run = (code: string) => {
+    const ctx = createFixtureContext({ pruneUnusedTokens: 'strict' }) as unknown as BambooContext
+    const absolute = ctx.runtime.path.abs(ctx.config.cwd, FILE)
+
+    ctx.project.addSourceFile(absolute, code)
+    ctx.getFiles = () => [FILE]
+    ctx.runtime = { ...ctx.runtime, fs: { ...ctx.runtime.fs, readFileSync: () => code } } as BambooContext['runtime']
+    ctx.pruneTokens = (() => ({ removed: 0, kept: 0 })) as BambooContext['pruneTokens']
+
+    return () => pruneTokensForBuild(ctx, {} as never, [])
+  }
+
+  test('a dynamic token path fails the build', () => {
+    expect(run(`${imports}export const a = (p) => token(p)`)).toThrow(/could not be resolved/)
+  })
+
+  test('the error carries a code a caller can match on', () => {
+    try {
+      run(`${imports}export const a = (p) => token(p)`)()
+      throw new Error('expected a throw')
+    } catch (error) {
+      expect((error as { code?: string }).code).toBe('ERR_BAMBOO_TOKEN_REFERENCE_UNRESOLVED')
+    }
+  })
+
+  /**
+   * Routine code that happens to trip a decline. Under the old premise these were free; failing
+   * a build over a route-splitting `import()` would be indefensible.
+   */
+  test.each([
+    ['a dynamic import of anything', 'export const load = (n) => import(`./pages/${n}.tsx`)'],
+    [
+      'an import-equals whose path merely contains "token"',
+      `import lexer = require('./tokenizer')\nexport const a = lexer`,
+    ],
+    [
+      'a barrel that cannot be classified',
+      `import { token as t } from '@acme/ui'\nexport const a = t('colors.red.300')`,
+    ],
+    ['a re-export of the artifact', `export { token } from 'styled-system/tokens'`],
+  ])('%s reports rather than failing', (_label, code) => {
+    expect(run(code)).not.toThrow()
+  })
+
+  /**
+   * The property the old fallback guaranteed, restored: for anything that only reports, strict
+   * defers to the default's own gate rather than keeping more than it would have.
+   */
+  test('a reported decline never keeps more than the default would', () => {
+    const barrel = `import { token as t } from '@acme/ui'\nexport const a = (p) => t(p)`
+
+    expect(blanketKeepFor(barrel, 'strict').blanket).toBe(false)
+    expect(blanketKeepFor(barrel, true).blanket).toBe(false)
   })
 })

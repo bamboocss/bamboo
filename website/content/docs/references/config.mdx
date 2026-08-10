@@ -523,9 +523,9 @@ ds.token('colors.red.300') // `import * as ds`
 ```
 
 Two things keep `strict` inert rather than wrong, and both are reported. A file whose parsed tree carries syntax errors
-declines — which includes any `.ts` file using a generic arrow (`<T>(x: T) => x`) or an old-style assertion, since
-Bamboo hands every file to the parser as TSX. And a `.vue` or `.svelte` file mentioning `token` anywhere declines,
-because a single-file component is stored post-transform and the tree is not the code that ships.
+declines — a `.js` file using TypeScript-only syntax, or one a `parser:before` hook rewrote. And a `.vue` or `.svelte`
+file mentioning `token` anywhere declines, because a single-file component is stored post-transform and the tree is not
+the code that ships.
 
 A path built from a template literal is _bounded_ rather than reported: Bamboo cannot tell which token
 ``token(`colors.${shade}`)`` wants, but it knows the answer starts with `colors.`, so it keeps that category and prunes

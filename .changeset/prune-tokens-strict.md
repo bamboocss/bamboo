@@ -22,13 +22,13 @@ Bamboo accounts for each reference, keeps by name only what is asked for, and pr
     3: unclassified-import
 ```
 
-A reference it cannot read is never pruned — it falls back to whatever the default would have answered for that project.
-So `strict` is never less safe and never larger than the default, and it says why when it cannot prune.
+A reference it cannot read is never pruned — it falls back to whatever the default would have answered for that project,
+so `strict` is never less safe and never larger than the default. A token path it cannot _follow_ fails the build; see
+the note on `TOKEN_REFERENCE_UNRESOLVED` in this release.
 
-Two things keep it inert rather than wrong: any file whose parsed tree carries syntax errors declines, which includes
-every `.ts` file using a generic arrow (`<T>(x: T) => x`) or an old-style assertion, since Bamboo hands every file to
-the parser as TSX; and a `.vue` or `.svelte` file mentioning `token` anywhere declines, because a single-file component
-is stored post-transform and the tree is not the code that ships.
+Two things keep it inert rather than wrong: any file whose parsed tree carries syntax errors declines, and a `.vue` or
+`.svelte` file mentioning `token` anywhere declines, because a single-file component is stored post-transform and the
+tree is not the code that ships.
 
 What resolves: a string literal path, either half (`token`, `token.value`), an aliased import, a namespace import. What
 is reported: a path built at runtime or from a constant, a binding that escapes (`const t = token`), a re-export, a

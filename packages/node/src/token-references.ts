@@ -1,9 +1,9 @@
 import { logger } from '@bamboocss/logger'
 import type { ParserResult } from '@bamboocss/parser'
-import { cssVarRefs } from '@bamboocss/shared'
+import { BambooError, cssVarRefs } from '@bamboocss/shared'
 import type { BambooContext } from './create-context'
 import { snapshotTexts, sourceSnapshots } from './source-snapshots'
-import { accountSnapshot, type DeclinedReference, type TokenAccounting } from './token-accounting'
+import { accountSnapshot, type DeclinedReference, failsStrict, type TokenAccounting } from './token-accounting'
 
 /**
  * `token('spacing.4')` and `token.value('colors.red.300')`, including the whitespace a
@@ -206,8 +206,38 @@ export function pruneTokensForBuild(
   // token call at all, so keeping everything would make `strict` ship *more* than the default
   // — the one case where turning it on could cost bytes. Deferring to the same gate makes
   // `strict` default-or-better in every case rather than in most.
-  if (accounting.declined.length) {
-    logger.warn('tokens:strict', formatDeclined(ctx, accounting.declined))
+  // `strict` is an assertion, so a token reference that breaks it fails the build rather than
+  // warning and carrying on. Warning was the wrong shape for that one: the user asked for the
+  // token layer to be pruned, did not get it, and nothing stopped to say so.
+  //
+  // Only that one. Every other decline reports and keeps everything, exactly as before — see
+  // `failsStrict` for why, and why widening it would fail builds over `import()` calls with
+  // nothing to do with tokens.
+  const failing = accounting.declined.filter(failsStrict)
+  const reported = accounting.declined.filter((entry) => !failsStrict(entry))
+
+  // Thrown before the report, so a build that is about to fail does not first announce what it
+  // kept.
+  if (failing.length) {
+    throw new BambooError(
+      'TOKEN_REFERENCE_UNRESOLVED',
+      `${failing.length} token reference(s) could not be resolved.\n\n${formatDeclined(ctx, failing)}\n\n` +
+        `\`pruneUnusedTokens: 'strict'\` asserts that every token path resolves at build time, so this is ` +
+        `an error rather than a silent fallback. Spell the path as a string literal at the call, give a ` +
+        `template a static prefix so it can be bounded, move the token into \`staticCss\`, or set ` +
+        `\`pruneUnusedTokens: true\` to stop asserting.`,
+    )
+  }
+
+  if (reported.length) {
+    logger.warn(
+      'tokens:strict',
+      `${reported.length} reference(s) could not be accounted for, so every token declaration is kept.\n\n` +
+        `${formatDeclined(ctx, reported)}\n\n` +
+        `These are shapes the build cannot follow rather than paths you can respell — a component stored ` +
+        `post-transform, a file it could not parse, a barrel it cannot classify, a dynamic \`import()\`. ` +
+        `Narrow \`include\`, or accept the keeps.`,
+    )
   }
 
   ctx.pruneTokens(sheet, vars, accounting.declined.length > 0 && reachable)
@@ -228,13 +258,7 @@ function tokenVarsFor(ctx: BambooContext, paths: Iterable<string>) {
   return vars
 }
 
-/**
- * Why `strict` could not prune, grouped by file.
- *
- * Printed rather than thrown. A decline is not an error — the build falls back to keeping
- * every declaration, which is what would have happened anyway — it is the answer to "why is my
- * token layer still this size", which otherwise has no answer at all.
- */
+/** Where to look, grouped by file. The surrounding text differs by whether this throws. */
 function formatDeclined(ctx: BambooContext, declined: DeclinedReference[]) {
   const byFile = new Map<string, DeclinedReference[]>()
   for (const entry of declined) {
@@ -250,12 +274,7 @@ function formatDeclined(ctx: BambooContext, declined: DeclinedReference[]) {
     })
     .join('\n')
 
-  return (
-    `${declined.length} token reference(s) could not be resolved, so every token declaration is kept.\n\n` +
-    `${detail}\n\n` +
-    `Spell the path as a string literal at the call, move it into \`staticCss\`, or set ` +
-    `\`pruneUnusedTokens: true\` to stop asking.`
-  )
+  return detail
 }
 
 /**

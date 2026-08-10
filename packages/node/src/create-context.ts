@@ -271,7 +271,7 @@ export class BambooContext extends Generator {
       'change',
       debounce(async (file) => {
         logger.info('ctx:change', 'config changed, rebuilding...')
-        await cb(file)
+        await reportRebuildFailure(() => cb(file))
       }),
     )
   }
@@ -295,8 +295,29 @@ export class BambooContext extends Generator {
       'all',
       debounce(async (event, file) => {
         logger.info(`file:${event}`, file)
-        await cb(event, file)
+        await reportRebuildFailure(() => cb(event, file))
       }),
     )
+  }
+}
+
+/**
+ * Report a failed rebuild as a failed rebuild.
+ *
+ * Chokidar is an `EventEmitter`, so it discards whatever a listener returns, and the debounce
+ * wrapper attaches no rejection handler — a throw from inside a rebuild became a dangling
+ * promise. `node-runtime.ts` then catches it as `Unhandled rejection`, which labels a config
+ * error as an internal crash, leaves the exit code at 0, and is suppressed entirely at
+ * `logLevel: 'silent'`. The initial build is caught by the CLI and prints properly; only
+ * rebuilds of the identical source were silent, which is the worse half of the asymmetry.
+ *
+ * Caught rather than rethrown: a watcher's job is to survive a bad intermediate state and
+ * rebuild when the next edit fixes it. What it must not do is claim success.
+ */
+async function reportRebuildFailure(run: () => void | Promise<void>) {
+  try {
+    await run()
+  } catch (error) {
+    logger.error('ctx:rebuild', error instanceof Error ? error.message : String(error))
   }
 }
