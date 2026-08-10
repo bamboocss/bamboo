@@ -6,7 +6,7 @@ import type { Dict } from '@bamboocss/types'
 export const easings = transformOpenPropsObj(
   Easings,
   (key) => key.replace('--ease-', ''),
-  (value) => value.replace(/var\(--ease-([^)]+)\)/g, '{easings.$1}'),
+  (value) => value.replace(/var\(--ease-([^)]+)\)/g, 'token(easings.$1)'),
 )
 
 const _keyframes = Object.entries(Animations).filter(([key]) => key.includes('@'))
@@ -24,7 +24,7 @@ export const animations = Object.entries(Animations)
   .reduce(
     (acc, [key, value]) =>
       Object.assign({}, acc, {
-        [key.replace('--animation-', '')]: { value: value.replace(/var\(--ease-([^)]+)\)/g, '{easings.$1}') },
+        [key.replace('--animation-', '')]: { value: value.replace(/var\(--ease-([^)]+)\)/g, 'token(easings.$1)') },
       }),
     {} as Dict,
   )

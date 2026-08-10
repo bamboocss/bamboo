@@ -15,15 +15,43 @@ import { accountSnapshot, type DeclinedReference, failsStrict, type TokenAccount
  */
 const TOKEN_CALL = /\btoken(?:\s*\.\s*value)?\s*\(\s*['"`]([^'"`]+)['"`]/g
 
+/** An import of the generated tokens artifact, under any of the spellings that reach it. */
+const TOKEN_IMPORT = /\b(?:from|import|require)\s*\(?\s*['"][^'"]*\/tokens(\/[^'"]*|\.[cm]?[jt]sx?)?['"]/
+
+/** A call to `token()` or `token.value()`, whatever the argument is — or is not. */
+const TOKEN_CALLEE = /\btoken(\s*\.\s*value)?\s*\(/
+
+/** The same, but only where the argument is a string literal — the shape `TOKEN_CALL` resolves. */
+const TOKEN_CALL_LITERAL = /\btoken(?:\s*\.\s*value)?\s*\(\s*['"`]/
+
+/** String literals, contents and all. */
+const STRING_LITERAL = /'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`/g
+
 /**
- * A token reached from javascript at all — a call of any shape, or an import of the artifact.
+ * Whether a token is reached from javascript at all — a call of any shape, or an import of the
+ * artifact. Being true keeps every token declaration, so the whole of `pruneUnusedTokens` rests
+ * on it.
  *
- * Has to stay a strict superset of `TOKEN_CALL`: it must match wherever that one matches, and
- * also wherever that one gives up. See `collectTokenReferences` for why the redundancy holds.
- * No `g` flag, so `test` carries no state between files.
+ * The awkward part is that a token reference inside a css value is now spelled `token(…)` too,
+ * and it must *not* count: `css({ border: '1px solid token(colors.red.300)' })` reaches a token
+ * from a stylesheet, where the css scan already accounts for it, not from javascript. Reading it
+ * as a call turned pruning off wholesale — measured at 3.2x the stylesheet on a sandbox, since
+ * "keep everything" is what the gate means. It was only ever latent before, because `{…}` was
+ * the spelling the docs used and it looked nothing like a call.
+ *
+ * So a `token(` that survives blanking every string literal is a real call, and one that does
+ * not was written inside a string. The literal-argument test comes first and on the raw text,
+ * which is what keeps this a superset of `TOKEN_CALL` as the coupling in `collectTokenReferences`
+ * requires: a resolvable call embedded in a template literal — a fixture holding source code —
+ * still counts, even though blanking would hide it.
+ *
+ * No `g` flag on the tests, so `test` carries no state between files.
  */
-const REACHABLE_FROM_JS =
-  /\btoken(\s*\.\s*value)?\s*\(|\b(?:from|import|require)\s*\(?\s*['"][^'"]*\/tokens(\/[^'"]*|\.[cm]?[jt]sx?)?['"]/
+const reachableFromJs = (text: string) => {
+  if (TOKEN_IMPORT.test(text) || TOKEN_CALL_LITERAL.test(text)) return true
+  // Blanking is the expensive half, so it only runs where there is a call-shape to disambiguate.
+  return TOKEN_CALLEE.test(text) && TOKEN_CALLEE.test(text.replace(STRING_LITERAL, "''"))
+}
 
 /**
  * The text of every file `include` covers — as written on disk, and, when they differ, as the
@@ -168,7 +196,7 @@ export function pruneTokensForBuild(
     for (const text of snapshotTexts(snapshot)) {
       for (const match of text.matchAll(TOKEN_CALL)) paths.add(match[1])
       for (const name of cssVarRefs(text)) vars.add(name)
-      if (!reachable && REACHABLE_FROM_JS.test(text)) reachable = true
+      if (!reachable && reachableFromJs(text)) reachable = true
     }
 
     if (strict) accountSnapshot(ctx, snapshot, accounting)
@@ -387,7 +415,7 @@ export function collectRenderedElements(ctx: BambooContext) {
  */
 export function tokensReachableFromJs(ctx: BambooContext) {
   for (const content of sourceTexts(ctx)) {
-    if (REACHABLE_FROM_JS.test(content)) return true
+    if (reachableFromJs(content)) return true
   }
 
   return false

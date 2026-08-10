@@ -6,8 +6,8 @@ test('resolve aliases', () => {
     tokens: {
       colors: {
         pink: { value: '#ff00ff' },
-        border: { value: '{colors.pink}' },
-        disabled: { value: '{colors.border}' },
+        border: { value: 'token(colors.pink)' },
+        disabled: { value: 'token(colors.border)' },
       },
     },
   })
@@ -43,7 +43,7 @@ test('resolve aliases', () => {
           "prop": "border",
         },
         "name": "colors.border",
-        "originalValue": "{colors.pink}",
+        "originalValue": "token(colors.pink)",
         "path": [
           "colors",
           "border",
@@ -60,7 +60,7 @@ test('resolve aliases', () => {
           "prop": "disabled",
         },
         "name": "colors.disabled",
-        "originalValue": "{colors.border}",
+        "originalValue": "token(colors.border)",
         "path": [
           "colors",
           "disabled",

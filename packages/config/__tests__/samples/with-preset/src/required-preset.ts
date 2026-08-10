@@ -7,10 +7,10 @@ export const requiredPreset = definePreset({
       semanticTokens: defineSemanticTokens({
         colors: {
           muted: {
-            value: { base: '{colors.gray.500}', _dark: '{colors.gray.400}' },
+            value: { base: 'token(colors.gray.500)', _dark: 'token(colors.gray.400)' },
           },
           subtle: {
-            value: { base: '{colors.gray.400}', _dark: '{colors.gray.500}' },
+            value: { base: 'token(colors.gray.400)', _dark: 'token(colors.gray.500)' },
           },
         },
       }),

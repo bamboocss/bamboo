@@ -19,13 +19,13 @@ export const MultiThemes = () => {
       >
         swap theme
       </button>
-      <div id="abc" className={css({ p: '4', my: '4', border: '1px dashed {colors.blue.300}' })}>
+      <div id="abc" className={css({ p: '4', my: '4', border: '1px dashed token(colors.blue.300)' })}>
         <span>inside of container</span>
         <ThemeExample />
         <ThemeExample name="primary" />
         <ThemeExample name="secondary" />
       </div>
-      <div className={css({ p: '4', my: '4', border: '1px dashed {colors.green.300}' })}>
+      <div className={css({ p: '4', my: '4', border: '1px dashed token(colors.green.300)' })}>
         <span>outside of container</span>
         <ThemeExample />
         <ThemeExample name="primary" />

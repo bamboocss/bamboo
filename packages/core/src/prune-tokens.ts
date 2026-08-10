@@ -72,7 +72,7 @@ export function pruneTokenVars(options: PruneOptions) {
    * to remove — so whatever they reference has to survive alongside them.
    *
    * The rule is simply that a declaration which ships must not be left pointing at a
-   * definition that does not. `globalCss`/`globalVars` declaring `--brand: {colors.blue.500}`
+   * definition that does not. `globalCss`/`globalVars` declaring `--brand: token(colors.blue.500)`
    * is the shape that stranded one: nothing inside the stylesheet references `--brand` —
    * exporting a value for something outside it to read is the whole point of declaring it —
    * so the colour behind it looked unreachable and was removed.

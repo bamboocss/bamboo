@@ -12,20 +12,20 @@ test('transform / border', () => {
         thick: { value: '2px' },
       },
       borders: {
-        sm: { value: '1px solid {colors.red}' },
-        md: { value: { width: 2, style: 'solid', color: '{colors.red}' } },
+        sm: { value: '1px solid token(colors.red)' },
+        md: { value: { width: 2, style: 'solid', color: 'token(colors.red)' } },
         lg: { value: { width: '2px', style: 'solid', color: 'pink' } },
         xl: { value: { width: '2', style: 'dashed', color: 'green' } },
-        brand: { value: { width: '{borderWidths.thick}', color: '#fff', style: 'solid' } },
+        brand: { value: { width: 'token(borderWidths.thick)', color: '#fff', style: 'solid' } },
       },
     },
     semanticTokens: {
       borders: {
         controlBorder: {
-          value: { base: '{borders.sm}', '@hover': '{borders.md}' },
+          value: { base: 'token(borders.sm)', '@hover': 'token(borders.md)' },
         },
         dividerBorder: {
-          value: '{borders.controlBorder}',
+          value: 'token(borders.controlBorder)',
         },
       },
     },
@@ -87,7 +87,7 @@ test('transform / border', () => {
           "varRef": "var(--borders-sm)",
         },
         "name": "borders.sm",
-        "originalValue": "1px solid {colors.red}",
+        "originalValue": "1px solid token(colors.red)",
         "path": [
           "borders",
           "sm",
@@ -106,7 +106,7 @@ test('transform / border', () => {
           "varRef": "var(--borders-md)",
         },
         "name": "borders.md",
-        "originalValue": "2px solid {colors.red}",
+        "originalValue": "2px solid token(colors.red)",
         "path": [
           "borders",
           "md",
@@ -163,7 +163,7 @@ test('transform / border', () => {
           "varRef": "var(--borders-brand)",
         },
         "name": "borders.brand",
-        "originalValue": "{borderWidths.thick} solid #fff",
+        "originalValue": "token(borderWidths.thick) solid #fff",
         "path": [
           "borders",
           "brand",
@@ -183,14 +183,14 @@ test('transform / border', () => {
           },
           "prop": "controlBorder",
           "rawValue": {
-            "@hover": "{borders.md}",
-            "base": "{borders.sm}",
+            "@hover": "token(borders.md)",
+            "base": "token(borders.sm)",
           },
           "var": "--borders-control-border",
           "varRef": "var(--borders-control-border)",
         },
         "name": "borders.controlBorder",
-        "originalValue": "{borders.sm}",
+        "originalValue": "token(borders.sm)",
         "path": [
           "borders",
           "controlBorder",
@@ -209,13 +209,13 @@ test('transform / border', () => {
           },
           "prop": "dividerBorder",
           "rawValue": {
-            "base": "{borders.controlBorder}",
+            "base": "token(borders.controlBorder)",
           },
           "var": "--borders-divider-border",
           "varRef": "var(--borders-divider-border)",
         },
         "name": "borders.dividerBorder",
-        "originalValue": "{borders.controlBorder}",
+        "originalValue": "token(borders.controlBorder)",
         "path": [
           "borders",
           "dividerBorder",
@@ -235,14 +235,14 @@ test('transform / border', () => {
           },
           "prop": "controlBorder",
           "rawValue": {
-            "@hover": "{borders.md}",
-            "base": "{borders.sm}",
+            "@hover": "token(borders.md)",
+            "base": "token(borders.sm)",
           },
           "var": "--borders-control-border",
           "varRef": "var(--borders-control-border)",
         },
         "name": "borders.controlBorder",
-        "originalValue": "{borders.sm}",
+        "originalValue": "token(borders.sm)",
         "path": [
           "borders",
           "controlBorder",

@@ -69,7 +69,7 @@ test('with semantic spacing', () => {
     semanticTokens: {
       spacing: {
         gutter: {
-          value: { base: '{spacing.sm}', '@small': '0.5rem' },
+          value: { base: 'token(spacing.sm)', '@small': '0.5rem' },
         },
       },
     },
@@ -106,16 +106,16 @@ test('with semantic spacing', () => {
           "condition": "base",
           "conditions": {
             "@small": "0.5rem",
-            "base": "{spacing.sm}",
+            "base": "token(spacing.sm)",
           },
           "prop": "gutter",
           "rawValue": {
             "@small": "0.5rem",
-            "base": "{spacing.sm}",
+            "base": "token(spacing.sm)",
           },
         },
         "name": "spacing.gutter",
-        "originalValue": "{spacing.sm}",
+        "originalValue": "token(spacing.sm)",
         "path": [
           "spacing",
           "gutter",
@@ -153,7 +153,7 @@ test('with semantic spacing', () => {
           "condition": "base",
           "conditions": {
             "@small": "0.5rem",
-            "base": "{spacing.sm}",
+            "base": "token(spacing.sm)",
           },
           "isNegative": true,
           "originalPath": [
@@ -163,11 +163,11 @@ test('with semantic spacing', () => {
           "prop": "-gutter",
           "rawValue": {
             "@small": "0.5rem",
-            "base": "{spacing.sm}",
+            "base": "token(spacing.sm)",
           },
         },
         "name": "spacing.-gutter",
-        "originalValue": "{spacing.sm}",
+        "originalValue": "token(spacing.sm)",
         "path": [
           "spacing",
           "-gutter",
@@ -183,16 +183,16 @@ test('with semantic spacing', () => {
           "condition": "@small",
           "conditions": {
             "@small": "0.5rem",
-            "base": "{spacing.sm}",
+            "base": "token(spacing.sm)",
           },
           "prop": "gutter",
           "rawValue": {
             "@small": "0.5rem",
-            "base": "{spacing.sm}",
+            "base": "token(spacing.sm)",
           },
         },
         "name": "spacing.gutter",
-        "originalValue": "{spacing.sm}",
+        "originalValue": "token(spacing.sm)",
         "path": [
           "spacing",
           "gutter",
@@ -208,7 +208,7 @@ test('with semantic spacing', () => {
           "condition": "@small",
           "conditions": {
             "@small": "0.5rem",
-            "base": "{spacing.sm}",
+            "base": "token(spacing.sm)",
           },
           "isNegative": true,
           "originalPath": [
@@ -218,7 +218,7 @@ test('with semantic spacing', () => {
           "prop": "-gutter",
           "rawValue": {
             "@small": "0.5rem",
-            "base": "{spacing.sm}",
+            "base": "token(spacing.sm)",
           },
         },
         "name": "spacing.-gutter",
@@ -243,7 +243,7 @@ test('with semantic spacing', () => {
     },
     semanticTokens: {
       spacing: {
-        nested: { value: { base: '{spacing.sm}', sm: '50px' } },
+        nested: { value: { base: 'token(spacing.sm)', sm: '50px' } },
       },
     },
   })
@@ -278,17 +278,17 @@ test('with semantic spacing', () => {
           "category": "spacing",
           "condition": "base",
           "conditions": {
-            "base": "{spacing.sm}",
+            "base": "token(spacing.sm)",
             "sm": "50px",
           },
           "prop": "nested",
           "rawValue": {
-            "base": "{spacing.sm}",
+            "base": "token(spacing.sm)",
             "sm": "50px",
           },
         },
         "name": "spacing.nested",
-        "originalValue": "{spacing.sm}",
+        "originalValue": "token(spacing.sm)",
         "path": [
           "spacing",
           "nested",
@@ -325,7 +325,7 @@ test('with semantic spacing', () => {
           "category": "spacing",
           "condition": "base",
           "conditions": {
-            "base": "{spacing.sm}",
+            "base": "token(spacing.sm)",
             "sm": "50px",
           },
           "isNegative": true,
@@ -335,12 +335,12 @@ test('with semantic spacing', () => {
           ],
           "prop": "-nested",
           "rawValue": {
-            "base": "{spacing.sm}",
+            "base": "token(spacing.sm)",
             "sm": "50px",
           },
         },
         "name": "spacing.-nested",
-        "originalValue": "{spacing.sm}",
+        "originalValue": "token(spacing.sm)",
         "path": [
           "spacing",
           "-nested",
@@ -355,17 +355,17 @@ test('with semantic spacing', () => {
           "category": "spacing",
           "condition": "sm",
           "conditions": {
-            "base": "{spacing.sm}",
+            "base": "token(spacing.sm)",
             "sm": "50px",
           },
           "prop": "nested",
           "rawValue": {
-            "base": "{spacing.sm}",
+            "base": "token(spacing.sm)",
             "sm": "50px",
           },
         },
         "name": "spacing.nested",
-        "originalValue": "{spacing.sm}",
+        "originalValue": "token(spacing.sm)",
         "path": [
           "spacing",
           "nested",
@@ -380,7 +380,7 @@ test('with semantic spacing', () => {
           "category": "spacing",
           "condition": "sm",
           "conditions": {
-            "base": "{spacing.sm}",
+            "base": "token(spacing.sm)",
             "sm": "50px",
           },
           "isNegative": true,
@@ -390,7 +390,7 @@ test('with semantic spacing', () => {
           ],
           "prop": "-nested",
           "rawValue": {
-            "base": "{spacing.sm}",
+            "base": "token(spacing.sm)",
             "sm": "50px",
           },
         },

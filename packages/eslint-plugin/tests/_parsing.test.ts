@@ -138,7 +138,7 @@ import { css } from './bamboo/css';\n\n`
 
 const valids4 = [
   'const styles = css({ bg: "token(colors.red.300) 50%" })',
-  'const styles = css({ border: "solid 1px {colors.red.300}" })',
+  'const styles = css({ border: "solid 1px token(colors.red.300)" })',
 ]
 
 const invalids4 = [
@@ -168,7 +168,7 @@ eslintTester.run(RULE_NAME4, rule4 as any, {
 const imports5 = `import { css } from './bamboo/css';\n\n`
 
 const valids5 = [
-  'const className = css`\n  font-size: {fontSizes.md};`',
+  'const className = css`\n  font-size: token(fontSizes.md);`',
   `const className = css\`\n  
     @media (min-width: token(breakpoints.lg)) {
       grid-template-columns: auto 450px;
@@ -177,7 +177,7 @@ const valids5 = [
 ]
 
 const invalids5: Array<{ code: string; errors?: number }> = [
-  { code: 'const className = css`\n  font-size: {fontSizes.emd};`' },
+  { code: 'const className = css`\n  font-size: token(fontSizes.emd);`' },
 ]
 
 eslintTester.run(RULE_NAME5, rule5 as any, {

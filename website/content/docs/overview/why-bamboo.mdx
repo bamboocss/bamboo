@@ -77,9 +77,9 @@ export default defineConfig({
     },
     semanticTokens: {
       colors: {
-        primary: { value: '{colors.gray50}' },
+        primary: { value: 'token(colors.gray50)' },
         success: {
-          value: { _light: '{colors.green500}', _dark: '{colors.green200}' },
+          value: { _light: 'token(colors.green500)', _dark: 'token(colors.green200)' },
         },
       },
     },

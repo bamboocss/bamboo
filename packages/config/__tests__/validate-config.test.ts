@@ -33,10 +33,10 @@ describe('validateConfig', () => {
         },
         semanticTokens: {
           colors: {
-            bg: { value: '{colors.primary}' },
+            bg: { value: 'token(colors.primary)' },
           },
           fontSizes: {
-            main: { value: '{fontSizes.md}' },
+            main: { value: 'token(fontSizes.md)' },
           },
         },
       },
@@ -75,10 +75,10 @@ describe('validateConfig', () => {
         },
         semanticTokens: {
           colors: {
-            bg: { value: '{colors.primary}' },
+            bg: { value: 'token(colors.primary)' },
           },
           fontSizes: {
-            main: { value: '{fontSizes.md}' },
+            main: { value: 'token(fontSizes.md)' },
           },
         },
       },
@@ -123,10 +123,10 @@ describe('validateConfig', () => {
         },
         semanticTokens: {
           colors: {
-            bg: { value: '{colors.primary}' },
+            bg: { value: 'token(colors.primary)' },
           },
           fontSizes: {
-            main: { value: '{fontSizes.md}' },
+            main: { value: 'token(fontSizes.md)' },
           },
         },
       },
@@ -174,39 +174,39 @@ describe('validateConfig', () => {
         },
         semanticTokens: {
           colors: {
-            bg: { value: '{colors.secondary}' },
-            primary: { value: '{colors.bg}' }, // clashing name (already exists in tokens)
+            bg: { value: 'token(colors.secondary)' },
+            primary: { value: 'token(colors.bg)' }, // clashing name (already exists in tokens)
             another: {
               group: {
                 ok: {
-                  value: '{colors.group.with.nested}',
+                  value: 'token(colors.group.with.nested)',
                 },
                 stillok: {
                   value: {
                     base: 'blue',
                     _hover: 'green',
-                    _active: '{colors.doesntexist}', // invalid missing reference
+                    _active: 'token(colors.doesntexist)', // invalid missing reference
                   },
                 },
                 // @ts-expect-error  should be an object with { value }
-                invalid: '{colors.group.with.invalid}',
+                invalid: 'token(colors.group.with.invalid)',
                 recursive: {
-                  value: '{colors.another.circular}', // invalid circular reference
+                  value: 'token(colors.another.circular)', // invalid circular reference
                 },
                 missing: {
-                  value: '{colors.missing}', // invalid missing reference
+                  value: 'token(colors.missing)', // invalid missing reference
                 },
               },
               self: {
-                value: '{colors.another.self}', // invalid self reference
+                value: 'token(colors.another.self)', // invalid self reference
               },
               circular: {
-                value: '{colors.another.group.recursive}', // invalid circular reference
+                value: 'token(colors.another.group.recursive)', // invalid circular reference
               },
             },
           },
           fontSizes: {
-            main: { value: '{fontSizes.md2}' }, // invalid reference
+            main: { value: 'token(fontSizes.md2)' }, // invalid reference
           },
         },
         recipes: {
@@ -366,7 +366,7 @@ describe('validateConfig', () => {
         semanticTokens: {
           colors: {
             // @ts-expect-error should be an object with { value }
-            invalid: '{colors.group.with.invalid}',
+            invalid: 'token(colors.group.with.invalid)',
           },
         },
       },
@@ -390,7 +390,7 @@ describe('validateConfig', () => {
               group: {
                 stillok: {
                   value: {
-                    _active: '{colors.doesntexist}', // invalid missing reference
+                    _active: 'token(colors.doesntexist)', // invalid missing reference
                   },
                 },
               },
@@ -416,11 +416,11 @@ describe('validateConfig', () => {
           colors: {
             another: {
               circular: {
-                value: '{colors.another.group.recursive}',
+                value: 'token(colors.another.group.recursive)',
               },
               group: {
                 recursive: {
-                  value: '{colors.another.circular}',
+                  value: 'token(colors.another.circular)',
                 },
               },
             },
@@ -446,7 +446,7 @@ describe('validateConfig', () => {
           colors: {
             another: {
               self: {
-                value: '{colors.another.self}', // invalid self reference
+                value: 'token(colors.another.self)', // invalid self reference
               },
             },
           },
@@ -474,7 +474,7 @@ describe('validateConfig', () => {
         },
         semanticTokens: {
           colors: {
-            primary: { value: '{colors.bg}' }, // clashing name
+            primary: { value: 'token(colors.bg)' }, // clashing name
           },
         },
       },
@@ -541,14 +541,14 @@ describe('validateConfig', () => {
         semanticTokens: {
           colors: {
             // @ts-expect-error
-            primary: '{colors.bbb}',
+            primary: 'token(colors.bbb)',
             secondary: { value: '#fff', description: 'welcome', extensions: { something: 'Alex' } },
-            bbb: { value: '{colors.primary}' },
+            bbb: { value: 'token(colors.primary)' },
             // valid: { value: { base: 'red', _dark: 'blue' }, extensions: { something: 'Alex' } },
             group: {
               nested: {
                 something: {
-                  value: { base: '{colors.red}', _dark: 'blue' },
+                  value: { base: 'token(colors.red)', _dark: 'blue' },
                 },
               },
             },
@@ -561,7 +561,7 @@ describe('validateConfig', () => {
       `
       [Error: ⚠️ Invalid config:
       - [tokens] Token must contain 'value': \`theme.semanticTokens.colors.primary\`
-      - [tokens] Unknown token reference: \`colors.primary\` used in \`{colors.bbb}\`
+      - [tokens] Unknown token reference: \`colors.primary\` used in \`token(colors.bbb)\`
       - [tokens] Missing token: \`colors.red\` used in \`theme.semanticTokens.colors.group.nested.something\`
       ]
     `,
@@ -579,8 +579,8 @@ describe('validateConfig', () => {
               DEFAULT: { value: '#ff3333' },
               lighter: { value: '#ff6666' },
             },
-            background: { value: '{colors.primary}' }, // <-- ⚠️ wrong warning
-            background2: { value: '{colors.primary.lighter}' }, // <-- no warning, correct
+            background: { value: 'token(colors.primary)' }, // <-- ⚠️ wrong warning
+            background2: { value: 'token(colors.primary.lighter)' }, // <-- no warning, correct
           },
         },
       },
@@ -605,7 +605,7 @@ describe('validateConfig', () => {
           colors: {
             primary: {
               // should probably not wrap twice in value
-              value: { value: '{colors.red.300}' },
+              value: { value: 'token(colors.red.300)' },
             },
           },
         },
@@ -665,7 +665,7 @@ describe('validateConfig', () => {
                 bg: {
                   DEFAULT: {
                     value: {
-                      base: '{colors.primary}',
+                      base: 'token(colors.primary)',
                       _dark: 'white',
                     },
                   },
@@ -702,8 +702,8 @@ describe('validateConfig', () => {
             secondary: {
               value: {
                 base: 'red',
-                _light: '{colors.blue.500/32}', // <-- wasn't working as expected
-                _dark: '{colors.green.500/half}',
+                _light: 'token(colors.blue.500/32)', // <-- wasn't working as expected
+                _dark: 'token(colors.green.500/half)',
               },
             },
           },
@@ -721,7 +721,7 @@ describe('validateConfig', () => {
         tokens: {
           shadows: {
             strong: {
-              value: '2px 4px 16px 0px {colors.gray.934/16}, 0px 2px 4px 0px {colors.gray.34/8}',
+              value: '2px 4px 16px 0px token(colors.gray.934/16), 0px 2px 4px 0px token(colors.gray.34/8)',
             },
           },
         },
@@ -748,7 +748,7 @@ describe('validateConfig', () => {
                 offsetY: 4,
                 blur: 16,
                 spread: 0,
-                color: '{colors.gray.100/16}',
+                color: 'token(colors.gray.100/16)',
               },
             },
           },
@@ -773,7 +773,7 @@ describe('validateConfig', () => {
               value: {
                 width: 1,
                 style: 'solid',
-                color: '{colors.gray.100}',
+                color: 'token(colors.gray.100)',
               },
             },
           },
@@ -785,14 +785,14 @@ describe('validateConfig', () => {
                   offsetY: 4,
                   blur: 16,
                   spread: 0,
-                  color: '{colors.gray.100/16}',
+                  color: 'token(colors.gray.100/16)',
                 },
                 {
                   offsetX: 0,
                   offsetY: 2,
                   blur: 4,
                   spread: 0,
-                  color: '{colors.gray.300/8}',
+                  color: 'token(colors.gray.300/8)',
                 },
               ],
             },

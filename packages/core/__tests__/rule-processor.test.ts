@@ -86,7 +86,6 @@ describe('rule processor', () => {
     const result = css(
       {
         margin: '$2',
-        p: '{$spacing-2}',
         mx: 'token($spacing-2)',
         my: '-$2',
         color: '$blue-300',
@@ -104,7 +103,6 @@ describe('rule processor', () => {
     expect(result.className).toMatchInlineSnapshot(`
       [
         "m_\\$2",
-        "p_\\{\\$spacing-2\\}",
         "mx_token\\(\\$spacing-2\\)",
         "my_-\\$2",
         "c_\\$blue-300",
@@ -114,10 +112,6 @@ describe('rule processor', () => {
       "@layer utilities {
         .m_\\$2 {
           margin: var(--spacing-2);
-      }
-
-        .p_\\{\\$spacing-2\\} {
-          padding: var(--spacing-2);
       }
 
         .mx_token\\(\\$spacing-2\\) {

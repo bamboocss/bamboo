@@ -175,7 +175,7 @@ describe('generateTokensSpec', () => {
         semanticTokens: {
           colors: {
             primary: {
-              value: { base: '{colors.blue}', _dark: '{colors.red}' },
+              value: { base: 'token(colors.blue)', _dark: 'token(colors.red)' },
             },
           },
         },
@@ -221,10 +221,10 @@ describe('generateSemanticTokensSpec', () => {
         },
         semanticTokens: {
           colors: {
-            primary: { value: '{colors.blue}' },
-            background: { value: '{colors.gray.50}' },
+            primary: { value: 'token(colors.blue)' },
+            background: { value: 'token(colors.gray.50)' },
             text: {
-              value: '{colors.gray.900}',
+              value: 'token(colors.gray.900)',
               description: 'Text color that adapts to theme',
             },
           },
@@ -253,7 +253,7 @@ describe('generateSemanticTokensSpec', () => {
             "values": [
               {
                 "condition": "base",
-                "value": "{colors.blue}",
+                "value": "token(colors.blue)",
               },
             ],
           },
@@ -265,7 +265,7 @@ describe('generateSemanticTokensSpec', () => {
             "values": [
               {
                 "condition": "base",
-                "value": "{colors.gray.50}",
+                "value": "token(colors.gray.50)",
               },
             ],
           },
@@ -277,7 +277,7 @@ describe('generateSemanticTokensSpec', () => {
             "values": [
               {
                 "condition": "base",
-                "value": "{colors.gray.900}",
+                "value": "token(colors.gray.900)",
               },
             ],
           },
@@ -350,7 +350,7 @@ describe('generateSemanticTokensSpec', () => {
         },
         semanticTokens: {
           colors: {
-            interactive: { value: '{colors.blue}' },
+            interactive: { value: 'token(colors.blue)' },
           },
         },
       },
@@ -363,7 +363,7 @@ describe('generateSemanticTokensSpec', () => {
       [
         {
           "condition": "base",
-          "value": "{colors.blue}",
+          "value": "token(colors.blue)",
         },
       ]
     `)
@@ -380,7 +380,7 @@ describe('generateSemanticTokensSpec', () => {
         },
         semanticTokens: {
           colors: {
-            oldPrimary: { value: '{colors.blue}' },
+            oldPrimary: { value: 'token(colors.blue)' },
           },
         },
       },
@@ -404,7 +404,7 @@ describe('generateSemanticTokensSpec', () => {
         },
         semanticTokens: {
           colors: {
-            primary: { value: '{colors.blue}' },
+            primary: { value: 'token(colors.blue)' },
           },
         },
       },

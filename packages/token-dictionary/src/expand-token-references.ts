@@ -1,7 +1,7 @@
 import { esc } from '@bamboocss/shared'
 
 /**
- * Recursively parse a string to extract Bamboo token references (curly or with the `token` function syntax)
+ * Recursively parse a string to extract Bamboo token references, written `token(path)`.
  * Allows nested token references, e.g. `token(colors.xxx.yyy, token(colors.aaa.bbb, blue))`
  * Properly ignore CSS vars in fallback syntax, e.g. `token(colors.xxx.yyy, var(--some-var, var(--can-be-nested, blue)))`
  */
@@ -17,24 +17,6 @@ export const expandTokenReferences = (str: string, resolve: (path: string) => st
 
   while (index < str.length) {
     const char = str[index]
-
-    // Starting a curly bracket token reference
-    // `{colors.xxx.yyy}`
-    if (char === '{') {
-      const endIndex = str.indexOf('}', index)
-      // Invalid string, a curly bracket was not closed
-      if (endIndex === -1) {
-        break
-      }
-
-      // Jump to the end of the curly bracket
-      // Add the resolved token (CSS var) to the expanded string
-      const path = str.slice(index + 1, endIndex)
-      const resolved = resolve(path)
-      expanded += resolved ?? path
-      index = endIndex + 1
-      continue
-    }
 
     if (state === 'token') {
       // Found a token ref fallback

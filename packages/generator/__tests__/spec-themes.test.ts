@@ -103,7 +103,7 @@ describe('generateThemesSpec', () => {
         },
         semanticTokens: {
           colors: {
-            primary: { value: '{colors.blue}' },
+            primary: { value: 'token(colors.blue)' },
           },
         },
       },
@@ -111,7 +111,7 @@ describe('generateThemesSpec', () => {
         dark: {
           semanticTokens: {
             colors: {
-              primary: { value: '{colors.red}' },
+              primary: { value: 'token(colors.red)' },
             },
           },
         },
@@ -143,7 +143,7 @@ describe('generateThemesSpec', () => {
                     "values": [
                       {
                         "condition": "dark",
-                        "value": "{colors.red}",
+                        "value": "token(colors.red)",
                       },
                     ],
                   },
@@ -265,7 +265,7 @@ describe('generateThemesSpec', () => {
         },
         semanticTokens: {
           colors: {
-            primary: { value: '{colors.blue}' },
+            primary: { value: 'token(colors.blue)' },
           },
         },
       },
@@ -278,7 +278,7 @@ describe('generateThemesSpec', () => {
           },
           semanticTokens: {
             colors: {
-              primary: { value: '{colors.red}' },
+              primary: { value: 'token(colors.red)' },
             },
           },
         },

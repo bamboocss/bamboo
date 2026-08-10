@@ -1,10 +1,17 @@
 import { isObject, isString } from '@bamboocss/shared'
 
-const REFERENCE_REGEX = /({([^}]*)})/g
-const curlyBracketRegex = /[{}]/g
+/**
+ * A reference to another token: `token(colors.red.300)`.
+ *
+ * Deliberately a copy of the regex in `@bamboocss/token-dictionary`, which this package does not
+ * depend on. The two must agree: validation is what reports a missing or circular reference, so a
+ * spelling only the dictionary understands is one this never checks — which is silence, not an
+ * error, and exactly what a spelling change here is most likely to cause.
+ */
+const REFERENCE_REGEX = /token\(([^(),]+)\)/g
 
 export const isValidToken = (token: unknown) => isObject(token) && Object.hasOwnProperty.call(token, 'value')
-export const isTokenReference = (value: unknown) => typeof value === 'string' && REFERENCE_REGEX.test(value)
+export const isTokenReference = (value: unknown) => typeof value === 'string' && getReferences(value).length > 0
 
 export const formatPath = (path: string) => path
 export const SEP = '.'
@@ -12,14 +19,7 @@ export const SEP = '.'
 export function getReferences(value: string) {
   if (typeof value !== 'string') return []
 
-  const matches = value.match(REFERENCE_REGEX)
-  if (!matches) return []
-
-  return matches
-    .map((match) => match.replace(curlyBracketRegex, ''))
-    .map((value) => {
-      return value.trim().split('/')[0]
-    })
+  return [...value.matchAll(REFERENCE_REGEX)].map((match) => match[1]!.trim().split('/')[0]!).filter(Boolean)
 }
 
 export const serializeTokenValue = (value: any): string => {

@@ -9,7 +9,7 @@ test('transform / shadow', () => {
         red: { value: '#ff0000' },
       },
       shadows: {
-        sm: { value: { offsetX: 4, offsetY: 10, blur: 4, spread: 0, color: '{colors.red}' } },
+        sm: { value: { offsetX: 4, offsetY: 10, blur: 4, spread: 0, color: 'token(colors.red)' } },
         md: { value: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' },
       },
     },
@@ -48,7 +48,7 @@ test('transform / shadow', () => {
           "prop": "sm",
         },
         "name": "shadows.sm",
-        "originalValue": "4px 10px 4px 0px {colors.red}",
+        "originalValue": "4px 10px 4px 0px token(colors.red)",
         "path": [
           "shadows",
           "sm",

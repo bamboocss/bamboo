@@ -6,7 +6,7 @@ import type { TokenTransformer } from './dictionary'
 import { isCompositeBorder, isCompositeGradient, isCompositeShadow } from './is-composite'
 import { svgToDataUri } from './mini-svg-uri'
 import type { Token } from './token'
-import { expandReferences, getReferences, hasReference } from './utils'
+import { expandReferences, getReferences, hasReference, replaceReference } from './utils'
 
 function toUnit(v: string | number) {
   return isCssUnit(v) || hasReference(v.toString()) ? v : `${v}px`
@@ -202,7 +202,7 @@ export const addConditionalCssVariables: TokenTransformer = {
     if (!modifier) {
       refs.forEach((ref) => {
         const variable = dictionary.formatCssVar(ref.split('.'), { prefix, hash }).ref
-        token.value = token.value.replaceAll(`{${ref}}`, variable)
+        token.value = replaceReference(token.value, ref, variable)
       })
     } else {
       const tokenFn = (name: string) => {

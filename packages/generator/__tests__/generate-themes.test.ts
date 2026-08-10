@@ -15,12 +15,12 @@ describe('generate themes', () => {
           semanticTokens: {
             colors: {
               simple: {
-                value: '{colors.red.600}',
+                value: 'token(colors.red.600)',
               },
               text: {
                 value: {
-                  base: '{colors.blue.600}',
-                  _osDark: '{colors.blue.400}',
+                  base: 'token(colors.blue.600)',
+                  _osDark: 'token(colors.blue.400)',
                 },
               },
             },
@@ -36,8 +36,8 @@ describe('generate themes', () => {
             colors: {
               text: {
                 value: {
-                  base: '{colors.pink.600}',
-                  _osDark: '{colors.pink.400}',
+                  base: 'token(colors.pink.600)',
+                  _osDark: 'token(colors.pink.400)',
                 },
               },
             },

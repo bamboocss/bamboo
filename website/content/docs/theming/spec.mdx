@@ -133,8 +133,8 @@ modes (e.g., light/dark).
         {
           "name": "bg",
           "values": [
-            { "value": "{colors.white}", "condition": "base" },
-            { "value": "{colors.dark}", "condition": "dark" }
+            { "value": "token(colors.white)", "condition": "base" },
+            { "value": "token(colors.dark)", "condition": "dark" }
           ],
           "cssVar": "var(--colors-bg)"
         }
@@ -150,7 +150,7 @@ Each semantic token in the `values` array includes:
 
 - **name**: the semantic token key (e.g., `bg`, `fg.muted`, `accent`)
 - **values**: an array of conditional mappings, each with:
-  - **value**: the resolved token reference (e.g., `{colors.white}`)
+  - **value**: the resolved token reference (e.g., `token(colors.white)`)
   - **condition**: the condition name (e.g., `base`, `dark`)
 - **cssVar**: the generated CSS custom property
 - **tokenFunctionExamples**: examples of how to use the token in the `token` function

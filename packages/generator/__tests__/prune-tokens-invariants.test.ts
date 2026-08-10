@@ -72,7 +72,9 @@ const CASES: Record<string, Config> = {
   conditional: {
     theme: {
       extend: {
-        semanticTokens: { colors: { fg: { value: { base: '{colors.red.300}', _osDark: '{colors.red.500}' } } } },
+        semanticTokens: {
+          colors: { fg: { value: { base: 'token(colors.red.300)', _osDark: 'token(colors.red.500)' } } },
+        },
       },
     },
     staticCss: { css: [{ properties: { color: ['fg'] } }] },
@@ -81,7 +83,7 @@ const CASES: Record<string, Config> = {
   // references `--brand`, which is the point of declaring it — so the colour behind it has
   // to be kept by the declaration itself rather than by a reference to it.
   'globalCss custom property': {
-    globalCss: { ':root': { '--brand': '{colors.blue.500}' } },
+    globalCss: { ':root': { '--brand': 'token(colors.blue.500)' } },
   },
   'globalVars custom property': {
     globalVars: { '--accent': 'var(--colors-orange-500)' },
@@ -103,7 +105,7 @@ describe('themes injected at runtime', () => {
   const config: Config = {
     pruneUnusedTokens: true,
     staticCss: { css: [{ properties: { color: ['red.300'] } }] },
-    themes: { pink: { tokens: { colors: { primary: { value: '{colors.pink.500}' } } } } },
+    themes: { pink: { tokens: { colors: { primary: { value: 'token(colors.pink.500)' } } } } },
   }
 
   test.each([true, false])('keeps what a theme artifact references (reachable=%s)', (reachable) => {

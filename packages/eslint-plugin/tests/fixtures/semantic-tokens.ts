@@ -17,13 +17,13 @@ export const semanticTokens: SemanticTokens = {
     },
     complex: {
       value: {
-        _dark: { _highContrast: '{colors.red.700}' },
-        base: '{colors.red.800}',
+        _dark: { _highContrast: 'token(colors.red.700)' },
+        base: 'token(colors.red.800)',
       },
     },
-    primary: { value: { _dark: '{colors.red.400}', base: '{colors.red.500}' } },
+    primary: { value: { _dark: 'token(colors.red.400)', base: 'token(colors.red.500)' } },
     secondary: {
-      value: { _dark: '{colors.red.700}', base: '{colors.red.800}' },
+      value: { _dark: 'token(colors.red.700)', base: 'token(colors.red.800)' },
     },
     surface: {
       value: {
@@ -33,6 +33,6 @@ export const semanticTokens: SemanticTokens = {
     },
   },
   spacing: {
-    gutter: { value: { base: '{spacing.4}', lg: '{spacing.5}' } },
+    gutter: { value: { base: 'token(spacing.4)', lg: 'token(spacing.5)' } },
   },
 }

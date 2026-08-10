@@ -12,7 +12,7 @@ describe('serialize', () => {
     const result = css({
       html: {
         color: 'red',
-        border: '2px solid {colors.red.200}',
+        border: '2px solid token(colors.red.200)',
       },
     })
 
@@ -29,8 +29,8 @@ describe('serialize', () => {
   test('skip non-existent', () => {
     const result = css({
       html: {
-        border: '2px solid {colors.red.xxx}',
-        bg: '{colors.xxx}',
+        border: '2px solid token(colors.red.xxx)',
+        bg: 'token(colors.xxx)',
       },
     })
 
@@ -47,7 +47,7 @@ describe('serialize', () => {
   test('in media query', () => {
     const result = css({
       html: {
-        '@container (min-width: {sizes.4xl})': {
+        '@container (min-width: token(sizes.4xl))': {
           color: 'green',
         },
       },
@@ -67,9 +67,9 @@ describe('serialize', () => {
   test('expand multiple references', () => {
     const result = css({
       html: {
-        padding: '{spacing.3} {spacing.5}',
+        padding: 'token(spacing.3) token(spacing.5)',
         _hover: {
-          padding: '{spacing.7}',
+          padding: 'token(spacing.7)',
         },
       },
     })
@@ -130,7 +130,7 @@ describe('serialize - with token()', () => {
     const result = css({
       html: {
         border: '2px solid token(colors.red.xxx)',
-        bg: '{colors.xxx}',
+        bg: 'token(colors.xxx)',
       },
     })
 

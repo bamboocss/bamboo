@@ -25,7 +25,7 @@ export default defineConfig({
         colors: {
           fg: {
             default: {
-              value: { base: '{colors.black/87}', _dark: '{colors.white}' },
+              value: { base: 'token(colors.black/87)', _dark: 'token(colors.white)' },
             },
           },
         },

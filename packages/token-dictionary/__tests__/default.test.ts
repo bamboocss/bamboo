@@ -13,7 +13,7 @@ test('tokens / with default', () => {
     },
     semanticTokens: {
       colors: {
-        error: { value: '{colors.red}' },
+        error: { value: 'token(colors.red)' },
       },
     },
   })

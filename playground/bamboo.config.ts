@@ -47,8 +47,8 @@ export default defineConfig({
             },
             complementary: {
               value: {
-                base: '{colors.black}',
-                _dark: '{colors.white}',
+                base: 'token(colors.black)',
+                _dark: 'token(colors.white)',
               },
             },
           },

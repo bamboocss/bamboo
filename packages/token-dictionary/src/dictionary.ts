@@ -24,7 +24,7 @@ import { isCompositeTokenValue } from './is-composite'
 import { middlewares } from './middleware'
 import { Token, type TokenExtensions } from './token'
 import { transforms, type ColorPaletteExtensions } from './transform'
-import { assertTokenFormat, expandReferences, getReferences, isToken, mapToJson } from './utils'
+import { assertTokenFormat, expandReferences, getReferences, isToken, mapToJson, referenceOf } from './utils'
 import { expandTokenReferences } from './expand-token-references'
 
 type EnforcePhase = 'pre' | 'post'
@@ -439,15 +439,20 @@ export class TokenDictionary {
     while (stack.length) {
       const next = stack.pop()!
 
-      if (next.startsWith('{')) {
-        stack.push(this.resolveReference(next))
+      if (next.startsWith('token(')) {
+        const resolved = this.resolveReference(next)
+        // A reference that resolves to itself would loop forever. The curly predecessor could
+        // not: `{}` was a match with an empty path, where `token()` and an unclosed `token(x`
+        // are both shapes the reference regex declines, so they come back unchanged.
+        if (resolved === next) return next
+        stack.push(resolved)
         continue
       }
 
       if (next.startsWith('var(')) {
         const ref = this.view.nameByVar.get(next)
         if (ref) {
-          stack.push(this.resolveReference(`{${ref}}`))
+          stack.push(this.resolveReference(referenceOf(ref)))
           continue
         }
       }

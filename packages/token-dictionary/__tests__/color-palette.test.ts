@@ -1603,13 +1603,13 @@ test('should generate virtual palette with DEFAULT value', () => {
         bg: {
           primary: {
             DEFAULT: {
-              value: '{colors.red.500}',
+              value: 'token(colors.red.500)',
             },
             base: {
-              value: '{colors.green.500}',
+              value: 'token(colors.green.500)',
             },
             hover: {
-              value: '{colors.yellow.300}',
+              value: 'token(colors.yellow.300)',
             },
           },
         },
@@ -1769,13 +1769,13 @@ test('should handle semantic tokens with colorPalette configuration', () => {
     semanticTokens: {
       colors: {
         primary: {
-          value: '{colors.blue.500}',
+          value: 'token(colors.blue.500)',
         },
         secondary: {
-          value: '{colors.red.500}',
+          value: 'token(colors.red.500)',
         },
         accent: {
-          value: '{colors.green.500}',
+          value: 'token(colors.green.500)',
         },
       },
     },

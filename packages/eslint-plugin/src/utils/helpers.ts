@@ -410,20 +410,16 @@ export const isColorToken = (value: string | undefined, context: RuleContext<any
 }
 
 export const extractTokens = (value: string) => {
-  const regex = /token\(([^"'(),]+)(?:,\s*([^"'(),]+))?\)|\{([^\n\r{}]+)\}/g
+  // `token(colors.red.300)`, and the path in a fallback form's second argument.
+  const regex = /token\(([^"'(),]+)(?:,\s*([^"'(),]+))?\)/g
   const matches = []
   let match
 
   while ((match = regex.exec(value)) !== null) {
-    const tokenFromFirstSyntax = match[1] || match[2] || match[3]
-    const tokensFromSecondSyntax = match[4] && match[4].match(/(\w+\.\w+(\.\w+)?)/g)
+    const token = match[1] || match[2]
 
-    if (tokenFromFirstSyntax) {
-      matches.push(tokenFromFirstSyntax)
-    }
-
-    if (tokensFromSecondSyntax) {
-      matches.push(...tokensFromSecondSyntax)
+    if (token) {
+      matches.push(token)
     }
   }
 

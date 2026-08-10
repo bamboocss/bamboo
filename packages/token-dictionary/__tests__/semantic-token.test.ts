@@ -11,7 +11,7 @@ test('semantic tokens / duplicate token references with special characters', () 
     semanticTokens: {
       shadows: {
         controlAccent: {
-          value: '0 {sizes.0.5} {sizes.0.5} rgba(92, 225, 113, 0.25)',
+          value: '0 token(sizes.0.5) token(sizes.0.5) rgba(92, 225, 113, 0.25)',
         },
       },
     },

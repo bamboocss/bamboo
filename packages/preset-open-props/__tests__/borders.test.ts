@@ -58,22 +58,22 @@ describe('Open Prop preset transforms', () => {
           "value": "49% 51% 48% 52% / 57% 44% 56% 43%",
         },
         "conditional-1": {
-          "value": "clamp(0px, calc(100vw - 100%) * 1e5, {radii.1})",
+          "value": "clamp(0px, calc(100vw - 100%) * 1e5, token(radii.1))",
         },
         "conditional-2": {
-          "value": "clamp(0px, calc(100vw - 100%) * 1e5, {radii.2})",
+          "value": "clamp(0px, calc(100vw - 100%) * 1e5, token(radii.2))",
         },
         "conditional-3": {
-          "value": "clamp(0px, calc(100vw - 100%) * 1e5, {radii.3})",
+          "value": "clamp(0px, calc(100vw - 100%) * 1e5, token(radii.3))",
         },
         "conditional-4": {
-          "value": "clamp(0px, calc(100vw - 100%) * 1e5, {radii.4})",
+          "value": "clamp(0px, calc(100vw - 100%) * 1e5, token(radii.4))",
         },
         "conditional-5": {
-          "value": "clamp(0px, calc(100vw - 100%) * 1e5, {radii.5})",
+          "value": "clamp(0px, calc(100vw - 100%) * 1e5, token(radii.5))",
         },
         "conditional-6": {
-          "value": "clamp(0px, calc(100vw - 100%) * 1e5, {radii.6})",
+          "value": "clamp(0px, calc(100vw - 100%) * 1e5, token(radii.6))",
         },
         "drawn-1": {
           "value": "255px 15px 225px 15px / 15px 225px 15px 255px",

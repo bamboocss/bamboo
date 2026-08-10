@@ -354,6 +354,32 @@ describe('tokensReachableFromJs', () => {
   })
 
   /**
+   * A token referenced from a css *value* is not javascript reaching a token, and must not turn
+   * the gate on — the css scan already accounts for it, and turning the gate on keeps every
+   * declaration in the stylesheet.
+   *
+   * This is the whole gate's most expensive failure mode and it was live: once `token(…)` became
+   * the only spelling for a reference, the documented way to write a composite value tripped a
+   * scan looking for a call. Measured at 3.2x the stylesheet on `sandbox/waku-ts` — 246 colour
+   * declarations where 11 are used. Nothing else in the suite noticed, because every other test
+   * of this gate feeds it javascript.
+   */
+  test('is false for a token referenced inside a css value', () => {
+    expect(reachable({ 'a.tsx': `css({ border: '1px solid token(colors.red.300)' })` })).toBe(false)
+    expect(reachable({ 'a.tsx': `css({ padding: 'token(spacing.3) token(spacing.5)' })` })).toBe(false)
+  })
+
+  /**
+   * The other side of that line, and why the css case cannot simply blank every string: a real
+   * call still counts when it is written inside one. Source held in a template literal is what a
+   * fixture or a codegen test looks like, and `collectTokenReferences` resolves the path out of
+   * it — so the gate has to match there too, or the coupling asserted below stops holding.
+   */
+  test('is true for a resolvable call embedded in a template literal', () => {
+    expect(reachable({ 'a.tsx': 'const source = `token("spacing.4")`' })).toBe(true)
+  })
+
+  /**
    * The same property asserted as a coupling rather than an example, because it is what the
    * callers passing no parser results rest on and it has already been broken once: this file
    * allowed whitespace around the `.` of `token.value` and the gate did not, so a formatter

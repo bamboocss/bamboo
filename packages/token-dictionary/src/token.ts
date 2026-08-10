@@ -1,6 +1,6 @@
 import { isBaseCondition, toHash, walkObject } from '@bamboocss/shared'
 import { isCompositeTokenValue } from './is-composite'
-import { getReferences, hasReference } from './utils'
+import { getReferences, hasReference, replaceReference } from './utils'
 
 interface ExtensionData {
   category?: string
@@ -86,7 +86,7 @@ export class Token {
 
   /**
    * Whether the token has a reference in its value.
-   * e.g. {color.gray.100}
+   * e.g. token(color.gray.100)
    */
   get hasReference() {
     return !!this.extensions?.references
@@ -101,7 +101,7 @@ export class Token {
 
   /**
    * Returns the token value with the references expanded.
-   * e.g. {color.gray.100} => var(--colors-gray-100)
+   * e.g. token(color.gray.100) => var(--colors-gray-100)
    *
    */
   expandReferences(): string {
@@ -117,7 +117,7 @@ export class Token {
         return valueStr
       }
       const value = referenceToken.expandReferences()
-      return valueStr.replaceAll(`{${key}}`, value)
+      return replaceReference(valueStr, key, value)
     }, this.value)
 
     delete this.extensions.references

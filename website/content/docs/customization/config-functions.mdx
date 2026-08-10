@@ -39,7 +39,7 @@ export const buttonRecipe = defineRecipe({
   variants: {
     visual: {
       funky: { bg: 'red.200', color: 'white' },
-      edgy: { border: '1px solid {colors.red.500}' },
+      edgy: { border: '1px solid token(colors.red.500)' },
     },
   },
   defaultVariants: {
@@ -344,7 +344,7 @@ export const buttonRecipe = defineRecipe({
         ...buttonVisualStyles,
       },
       edgy: {
-        border: '1px solid {colors.red.500}',
+        border: '1px solid token(colors.red.500)',
         ...buttonVisualStyles,
       },
     },
@@ -381,7 +381,7 @@ const theme = {
   semanticTokens: defineSemanticTokens({
     colors: {
       primary: {
-        value: { _light: '{colors.blue.400}', _dark: '{colors.blue.200}' },
+        value: { _light: 'token(colors.blue.400)', _dark: 'token(colors.blue.200)' },
       },
     },
   }),

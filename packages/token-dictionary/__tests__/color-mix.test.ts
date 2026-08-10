@@ -6,8 +6,8 @@ test('color-mix', () => {
     tokens: {
       colors: {
         pink: { value: '#ff00ff' },
-        border: { value: '{colors.pink/30}' },
-        ref: { value: '{colors.border/40}' },
+        border: { value: 'token(colors.pink/30)' },
+        ref: { value: 'token(colors.border/40)' },
       },
       opacity: {
         half: { value: 0.5 },
@@ -17,13 +17,13 @@ test('color-mix', () => {
 
   dictionary.init()
 
-  expect(dictionary.expandReferenceInValue('{colors.pink/30}')).toMatchInlineSnapshot(
+  expect(dictionary.expandReferenceInValue('token(colors.pink/30)')).toMatchInlineSnapshot(
     `"color-mix(in srgb, var(--colors-pink) 30%, transparent)"`,
   )
-  expect(dictionary.expandReferenceInValue('{colors.border/40}')).toMatchInlineSnapshot(
+  expect(dictionary.expandReferenceInValue('token(colors.border/40)')).toMatchInlineSnapshot(
     `"color-mix(in srgb, var(--colors-border) 40%, transparent)"`,
   )
-  expect(dictionary.expandReferenceInValue('{colors.border/half}')).toMatchInlineSnapshot(
+  expect(dictionary.expandReferenceInValue('token(colors.border/half)')).toMatchInlineSnapshot(
     `"color-mix(in srgb, var(--colors-border) 50%, transparent)"`,
   )
 
@@ -51,7 +51,7 @@ test('color-mix with semanticTokens', () => {
       colors: {
         fg: {
           default: {
-            value: { base: '{colors.black/87}', _dark: '{colors.white}' },
+            value: { base: 'token(colors.black/87)', _dark: 'token(colors.white)' },
           },
         },
       },
@@ -60,7 +60,7 @@ test('color-mix with semanticTokens', () => {
 
   dictionary.init()
 
-  expect(dictionary.expandReferenceInValue('{colors.black/87}')).toMatchInlineSnapshot(
+  expect(dictionary.expandReferenceInValue('token(colors.black/87)')).toMatchInlineSnapshot(
     `"color-mix(in srgb, var(--colors-black) 87%, transparent)"`,
   )
 

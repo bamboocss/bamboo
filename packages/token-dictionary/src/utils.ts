@@ -7,23 +7,36 @@ import type { Token } from '@bamboocss/types'
  * -----------------------------------------------------------------------------*/
 
 /**
- * Regex for matching a tokenized reference.
+ * A reference to another token inside a string value: `token(colors.red.300)`.
+ *
+ * The comma exclusion keeps a fallback form — `token(spacing.4, 4)` — out of this pass
+ * deliberately: only `expandTokenReferences` can resolve one, and matching it here would report a
+ * reference where none is substitutable.
  */
-const REFERENCE_REGEX = /({([^}]*)})/g
-const curlyBracketRegex = /[{}]/g
+const REFERENCE_REGEX = /token\(([^(),]+)\)/g
+
+/**
+ * How a reference to `key` is spelled, for a caller building one rather than reading one.
+ *
+ * The one place that knows, so retiring a spelling is an edit here rather than a search for
+ * string concatenation across three packages.
+ */
+export const referenceOf = (key: string) => `token(${key})`
+
+/** Replaces every reference to `key`, so a caller need not spell one itself. */
+export const replaceReference = (value: string, key: string, replacement: string) =>
+  value.replaceAll(referenceOf(key), replacement)
 
 /**
  * Returns all references in a string
  *
  * @example
  *
- * `{colors.red.300} {sizes.sm}` => ['colors.red.300', 'sizes.sm']
+ * `token(colors.red.300) token(sizes.sm)` => ['colors.red.300', 'sizes.sm']
  */
 export function getReferences(value: string) {
   if (typeof value !== 'string') return []
-  const matches = value.match(REFERENCE_REGEX)
-  if (!matches) return []
-  return matches.map((match) => match.replace(curlyBracketRegex, '')).map((value) => value.trim())
+  return [...value.matchAll(REFERENCE_REGEX)].map((match) => match[1]!.trim()).filter(Boolean)
 }
 
 export const hasReference = (value: string) => getReferences(value).length > 0
@@ -51,7 +64,7 @@ export function expandReferences(value: string, fn: (key: string) => string) {
     }
     const expandedValue = resolved ?? esc(key)
 
-    return valueStr.replaceAll(`{${key}}`, expandedValue)
+    return replaceReference(valueStr, key, expandedValue)
   }, value)
 
   if (!expanded.includes(`token(`)) return expanded

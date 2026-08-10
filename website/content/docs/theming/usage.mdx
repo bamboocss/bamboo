@@ -24,72 +24,40 @@ const App = () => (
 
 ## Composite values
 
-Some CSS properties like `border`, `box-shadow` allow you to specify multiple properties in its value. Bamboo allows you
-to reference tokens in these composite values by using either the `token()` string function (similar to the JS
-equivalent) or the token reference syntax `{path.to.token}` (similar to the semantic tokens equivalent).
+Some CSS properties like `border`, `box-shadow` allow you to specify multiple properties in its value. Reference a token
+inside one with `token(path.to.token)` — the same spelling used for semantic token values.
 
-The `token()` function is useful when you need to provide a fallback value. The token reference syntax is useful when
-you don't need a fallback value or prefer using a more concise syntax.
+```js
+import { css } from '../styled-system/css'
 
-<Tabs items={['token', 'reference syntax']}>
-  {/* <!-- prettier-ignore-start --> */}
-  <Tab>
-    ```js
-    import { css } from '../styled-system/css'
+const className = css({ border: '1px solid token(colors.red.400)' })
+```
 
-    const className = css({ border: '1px solid token(colors.red.400)' })
-    ```
+A second argument is a fallback, used when the path names no token:
 
-    You can also provide a fallback value.
+```js
+import { css } from '../styled-system/css'
 
-    ```js
-    import { css } from '../styled-system/css'
-
-    const className = css({ border: '1px solid token(colors.red.400, red)' })
-    ```
-
-  </Tab>
-  <Tab>
-    ```js
-    import { css } from '../styled-system/css'
-
-    const className = css({ border: '1px solid {colors.red.400}' })
-    ```
-
-  </Tab>
-  {/* <!-- prettier-ignore-end --> */}
-</Tabs>
+const className = css({ border: '1px solid token(colors.red.400, red)' })
+```
 
 You can also use it in media queries or any other CSS at-rule.
 
-<Tabs items={['token', 'reference syntax']}>
-  {/* <!-- prettier-ignore-start --> */}
-  <Tab>
-    ```js
-    import { css } from '../styled-system/css'
+```js
+import { css } from '../styled-system/css'
 
-    const className = css({
-      '@media screen and (min-width: token(sizes.4xl))': {
-        color: 'green.400'
-      }
-    })
-    ```
+const className = css({
+  '@media screen and (min-width: token(sizes.4xl))': {
+    color: 'green.400',
+  },
+})
+```
 
-  </Tab>
-  <Tab>
-    ```js
-    import { css } from '../styled-system/css'
-
-    const className = css({
-      '@media screen and (min-width: {sizes.4xl})': {
-        color: 'green.400'
-      }
-    })
-    ```
-
-  </Tab>
-  {/* <!-- prettier-ignore-end --> */}
-</Tabs>
+<Callout type="info">
+  Earlier versions also accepted a curly form, `{'{colors.red.400}'}`, which meant exactly the same thing. It has been
+  removed so there is one way to write a reference. The curly form no longer resolves — it is left in the value as
+  literal text rather than reported, so search for it when upgrading.
+</Callout>
 
 ## Vanilla JS
 

@@ -18,15 +18,15 @@ describe('generator', () => {
         tokens: {
           colors: {
             primary: { value: '#f9a4d6' },
-            secondary: { value: '{colors.primary/20}' },
+            secondary: { value: 'token(colors.primary/20)' },
           },
           shadows: {
-            test: { value: '0 4px 20px 0 {colors.primary/30}' },
-            test2: { value: { blur: 2, spread: 2, color: '{colors.primary/20}', offsetX: 0, offsetY: 0 } },
+            test: { value: '0 4px 20px 0 token(colors.primary/30)' },
+            test2: { value: { blur: 2, spread: 2, color: 'token(colors.primary/20)', offsetX: 0, offsetY: 0 } },
           },
           borders: {
-            test: { value: '2px solid {colors.primary/40}' },
-            test2: { value: { width: '1px', style: 'solid', color: '{colors.primary/40}' } },
+            test: { value: '2px solid token(colors.primary/40)' },
+            test2: { value: { width: '1px', style: 'solid', color: 'token(colors.primary/40)' } },
           },
         },
       },
@@ -60,11 +60,11 @@ describe('generator', () => {
           shadows: {
             sm: {
               value: {
-                offsetX: '{spacing.3}',
-                offsetY: '{spacing.3}',
+                offsetX: 'token(spacing.3)',
+                offsetY: 'token(spacing.3)',
                 blur: '1rem',
-                spread: '{spacing.3}',
-                color: '{colors.red}',
+                spread: 'token(spacing.3)',
+                color: 'token(colors.red)',
               },
             },
           },
@@ -687,27 +687,27 @@ describe('generator', () => {
               value: '#ef4444',
             },
             semanticRed: {
-              value: '{colors.danger}',
+              value: 'token(colors.danger)',
             },
           },
           borders: {
             red: {
-              value: '1px solid {colors.red}',
+              value: '1px solid token(colors.red)',
             },
             semanticRed: {
-              value: '{borders.danger}',
+              value: 'token(borders.danger)',
             },
           },
         },
         semanticTokens: {
           colors: {
             danger: {
-              value: '{colors.red}',
+              value: 'token(colors.red)',
             },
           },
           borders: {
             danger: {
-              value: '{borders.red}',
+              value: 'token(borders.red)',
             },
           },
         },
@@ -743,14 +743,14 @@ describe('generator', () => {
                 offsetY: 0,
                 blur: 0,
                 spread: 4,
-                color: '{colors.testPink}',
+                color: 'token(colors.testPink)',
               },
             },
           },
         },
         semanticTokens: {
           colors: {
-            testPink: { value: '{colors.pink.900}' },
+            testPink: { value: 'token(colors.pink.900)' },
           },
           shadows: {
             testBrokenShadow: {
@@ -759,7 +759,7 @@ describe('generator', () => {
                 offsetY: 0,
                 blur: 0,
                 spread: 4,
-                color: '{colors.testPink}',
+                color: 'token(colors.testPink)',
               },
             },
             complexShadow: {
@@ -769,14 +769,14 @@ describe('generator', () => {
                   offsetY: 0,
                   blur: 0,
                   spread: 4,
-                  color: '{colors.testPink}',
+                  color: 'token(colors.testPink)',
                 },
                 _dark: {
                   offsetX: 2,
                   offsetY: 8,
                   blur: 30,
                   spread: 4,
-                  color: '{colors.testPink}',
+                  color: 'token(colors.testPink)',
                 },
               },
             },
@@ -838,8 +838,8 @@ describe('generator', () => {
         tokens: {
           colors: {
             pink: { value: '#ff00ff' },
-            border: { value: '{colors.pink/30}' },
-            ref: { value: '{colors.border/40}' },
+            border: { value: 'token(colors.pink/30)' },
+            ref: { value: 'token(colors.border/40)' },
           },
           opacity: {
             half: { value: 0.5 },
@@ -848,7 +848,7 @@ describe('generator', () => {
         semanticTokens: {
           colors: {
             primary: {
-              value: '{colors.blue.300/70}',
+              value: 'token(colors.blue.300/70)',
             },
           },
         },
@@ -890,8 +890,8 @@ describe('generator', () => {
             secondary: {
               value: {
                 base: 'red',
-                _light: '{colors.blue.500/32}',
-                _dark: '{colors.green.500/half}',
+                _light: 'token(colors.blue.500/32)',
+                _dark: 'token(colors.green.500/half)',
               },
             },
           },
@@ -935,8 +935,8 @@ describe('generator', () => {
           colors: {
             body: {
               value: {
-                base: '{colors.blue.600}',
-                _osDark: '{colors.blue.400}',
+                base: 'token(colors.blue.600)',
+                _osDark: 'token(colors.blue.400)',
               },
             },
           },
@@ -952,11 +952,11 @@ describe('generator', () => {
           },
           semanticTokens: {
             colors: {
-              muted: { value: '{colors.red.200}' },
+              muted: { value: 'token(colors.red.200)' },
               body: {
                 value: {
-                  base: '{colors.red.600}',
-                  _osDark: '{colors.red.400}',
+                  base: 'token(colors.red.600)',
+                  _osDark: 'token(colors.red.400)',
                 },
               },
             },
@@ -992,8 +992,8 @@ describe('generator', () => {
           colors: {
             body: {
               value: {
-                base: '{colors.blue.600}',
-                _osDark: '{colors.blue.400}',
+                base: 'token(colors.blue.600)',
+                _osDark: 'token(colors.blue.400)',
               },
             },
           },
@@ -1009,11 +1009,11 @@ describe('generator', () => {
           },
           semanticTokens: {
             colors: {
-              muted: { value: '{colors.red.200}' },
+              muted: { value: 'token(colors.red.200)' },
               body: {
                 value: {
-                  base: '{colors.red.600}',
-                  _osDark: '{colors.red.400}',
+                  base: 'token(colors.red.600)',
+                  _osDark: 'token(colors.red.400)',
                 },
               },
             },
@@ -1067,8 +1067,8 @@ describe('generator', () => {
           colors: {
             body: {
               value: {
-                base: '{colors.blue.600}',
-                _osDark: '{colors.blue.400}',
+                base: 'token(colors.blue.600)',
+                _osDark: 'token(colors.blue.400)',
               },
             },
           },
@@ -1084,11 +1084,11 @@ describe('generator', () => {
           },
           semanticTokens: {
             colors: {
-              muted: { value: '{colors.red.200}' },
+              muted: { value: 'token(colors.red.200)' },
               body: {
                 value: {
-                  base: '{colors.red.600}',
-                  _osDark: '{colors.red.400}',
+                  base: 'token(colors.red.600)',
+                  _osDark: 'token(colors.red.400)',
                 },
               },
             },
@@ -1102,11 +1102,11 @@ describe('generator', () => {
           },
           semanticTokens: {
             colors: {
-              muted: { value: '{colors.blue.200}' },
+              muted: { value: 'token(colors.blue.200)' },
               body: {
                 value: {
-                  base: '{colors.blue.600}',
-                  _osDark: '{colors.blue.400}',
+                  base: 'token(colors.blue.600)',
+                  _osDark: 'token(colors.blue.400)',
                 },
               },
             },
@@ -1160,8 +1160,8 @@ describe('generator', () => {
           colors: {
             body: {
               value: {
-                base: '{colors.blue.600}',
-                _osDark: '{colors.blue.400}',
+                base: 'token(colors.blue.600)',
+                _osDark: 'token(colors.blue.400)',
               },
             },
           },
@@ -1177,11 +1177,11 @@ describe('generator', () => {
           },
           semanticTokens: {
             colors: {
-              muted: { value: '{colors.red.200}' },
+              muted: { value: 'token(colors.red.200)' },
               body: {
                 value: {
-                  base: '{colors.red.600}',
-                  _osDark: '{colors.red.400}',
+                  base: 'token(colors.red.600)',
+                  _osDark: 'token(colors.red.400)',
                 },
               },
             },
@@ -1230,10 +1230,10 @@ describe('generator', () => {
           },
           borders: {
             netural: {
-              value: { width: '{borderWidths.sm}', color: 'blue', style: 'solid' },
+              value: { width: 'token(borderWidths.sm)', color: 'blue', style: 'solid' },
             },
             success: {
-              value: { width: '{borderWidths.md}', color: 'green', style: 'solid' },
+              value: { width: 'token(borderWidths.md)', color: 'green', style: 'solid' },
             },
           },
         },
@@ -1275,8 +1275,8 @@ describe('generator', () => {
           colors: {
             accent: {
               value: {
-                base: '{colors.red.500}',
-                _hoverActive: '{colors.blue.500}',
+                base: 'token(colors.red.500)',
+                _hoverActive: 'token(colors.blue.500)',
               },
             },
           },
@@ -1330,9 +1330,9 @@ describe('generator', () => {
           colors: {
             accent: {
               value: {
-                base: '{colors.red.500}',
+                base: 'token(colors.red.500)',
                 _dark: {
-                  _hoverActive: '{colors.zinc.700}',
+                  _hoverActive: 'token(colors.zinc.700)',
                 },
               },
             },
@@ -1389,9 +1389,9 @@ describe('generator', () => {
           colors: {
             accent: {
               value: {
-                base: '{colors.red.500}',
+                base: 'token(colors.red.500)',
                 _hoverActive: {
-                  _lightDark: '{colors.blue.500}',
+                  _lightDark: 'token(colors.blue.500)',
                 },
               },
             },
@@ -1462,8 +1462,8 @@ describe('generator', () => {
           colors: {
             surface: {
               value: {
-                base: '{colors.zinc.50}',
-                _darkTheme: '{colors.zinc.700}',
+                base: 'token(colors.zinc.50)',
+                _darkTheme: 'token(colors.zinc.700)',
               },
             },
           },

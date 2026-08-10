@@ -2,9 +2,9 @@ import type { SemanticTokens } from '@bamboocss/types'
 
 export const semanticTokens: SemanticTokens = {
   colors: {
-    primary: { value: { base: '{colors.red.500}', _dark: '{colors.red.400}' } },
-    secondary: { value: { base: '{colors.red.800}', _dark: '{colors.red.700}' } },
-    complex: { value: { base: '{colors.red.800}', _dark: { _highContrast: '{colors.red.700}' } } },
+    primary: { value: { base: 'token(colors.red.500)', _dark: 'token(colors.red.400)' } },
+    secondary: { value: { base: 'token(colors.red.800)', _dark: 'token(colors.red.700)' } },
+    complex: { value: { base: 'token(colors.red.800)', _dark: { _highContrast: 'token(colors.red.700)' } } },
     surface: {
       value: {
         _materialTheme: { base: '#m-b', _dark: '#m-d' },
@@ -26,6 +26,6 @@ export const semanticTokens: SemanticTokens = {
     },
   },
   spacing: {
-    gutter: { value: { base: '{spacing.4}', lg: '{spacing.5}' } },
+    gutter: { value: { base: 'token(spacing.4)', lg: 'token(spacing.5)' } },
   },
 }

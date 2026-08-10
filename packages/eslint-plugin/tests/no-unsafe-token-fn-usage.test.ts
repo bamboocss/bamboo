@@ -59,7 +59,7 @@ eslintTester.run(RULE_NAME, rule, {
     import { css } from './bamboo/css';
   
     function App(){
-      return <div className={css({ margin: '[{sizes.4}]' })} />;
+      return <div className={css({ margin: '[token(sizes.4)]' })} />;
     }`,
       errors: [
         {
@@ -102,7 +102,7 @@ eslintTester.run(RULE_NAME, rule, {
   import { css } from './bamboo/css';
   
   function App(){
-    return <div className={css({ _hover: {  border: 'solid 1px {colors.blue.400}' } })} />;
+    return <div className={css({ _hover: {  border: 'solid 1px token(colors.blue.400)' } })} />;
   }`,
     },
   ],

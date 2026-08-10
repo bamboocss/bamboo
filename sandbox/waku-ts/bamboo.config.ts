@@ -16,11 +16,11 @@ export default defineConfig({
       },
       semanticTokens: {
         colors: {
-          muted: { value: '{colors.red.200}' },
+          muted: { value: 'token(colors.red.200)' },
           body: {
             value: {
-              base: '{colors.red.600}',
-              _osDark: '{colors.red.400}',
+              base: 'token(colors.red.600)',
+              _osDark: 'token(colors.red.400)',
             },
           },
         },
@@ -34,11 +34,11 @@ export default defineConfig({
       },
       semanticTokens: {
         colors: {
-          muted: { value: '{colors.blue.200}' },
+          muted: { value: 'token(colors.blue.200)' },
           body: {
             value: {
-              base: '{colors.blue.600}',
-              _osDark: '{colors.blue.400}',
+              base: 'token(colors.blue.600)',
+              _osDark: 'token(colors.blue.400)',
             },
           },
         },

@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest'
 import { TokenDictionary } from '../src/dictionary'
 
-test('expand references in value - curly ref', () => {
+test('expand references in value', () => {
   const dictionary = new TokenDictionary({
     tokens: {
       colors: {
@@ -20,7 +20,7 @@ test('expand references in value - curly ref', () => {
 
   dictionary.init()
 
-  expect(dictionary.expandReferenceInValue('{colors.red.300}')).toMatchInlineSnapshot(`"var(--colors-red-300)"`)
+  expect(dictionary.expandReferenceInValue('token(colors.red.300)')).toMatchInlineSnapshot(`"var(--colors-red-300)"`)
 })
 
 test('expand references in value - token fn', () => {
@@ -259,7 +259,7 @@ test('expand references in value - token fn with deeply nested ref fallback', ()
   )
 })
 
-test('expand references in value - duplicate curly ref with special characters', () => {
+test('expand references in value - duplicate ref with special characters', () => {
   const dictionary = new TokenDictionary({
     tokens: {
       sizes: {
@@ -270,7 +270,7 @@ test('expand references in value - duplicate curly ref with special characters',
 
   dictionary.init()
 
-  expect(dictionary.expandReferenceInValue('0 {sizes.0.5} {sizes.0.5} rgba(92, 225, 113, 0.25)')).toMatchInlineSnapshot(
-    `"0 var(--sizes-0\\.5) var(--sizes-0\\.5) rgba(92, 225, 113, 0.25)"`,
-  )
+  expect(
+    dictionary.expandReferenceInValue('0 token(sizes.0.5) token(sizes.0.5) rgba(92, 225, 113, 0.25)'),
+  ).toMatchInlineSnapshot(`"0 var(--sizes-0\\.5) var(--sizes-0\\.5) rgba(92, 225, 113, 0.25)"`)
 })

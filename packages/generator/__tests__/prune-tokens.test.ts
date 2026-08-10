@@ -103,7 +103,7 @@ describe('pruneTokens', () => {
         extend: {
           semanticTokens: {
             colors: {
-              unreferenced: { value: { base: '{colors.gray.600}', _osDark: '{colors.gray.400}' } },
+              unreferenced: { value: { base: 'token(colors.gray.600)', _osDark: 'token(colors.gray.400)' } },
             },
           },
         },

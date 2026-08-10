@@ -26,7 +26,7 @@ const buildCss = (source: string, pruneUnusedTokens: boolean | 'strict' = 'stric
     // that stranded one, and the only way the dangling check below can fail at all. Without
     // it every `var()` in the sheet is a *direct* reference, which `pruneTokenVars` roots by
     // construction and which therefore cannot dangle however badly the pass is broken.
-    globalCss: { ':root': { '--brand': '{colors.pink.500}' } },
+    globalCss: { ':root': { '--brand': 'token(colors.pink.500)' } },
   }) as unknown as BambooContext
 
   const absolute = ctx.runtime.path.abs(ctx.config.cwd, FILE)

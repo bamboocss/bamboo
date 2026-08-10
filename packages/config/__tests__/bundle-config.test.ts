@@ -115,15 +115,15 @@ describe('bundle config', () => {
                       "inverted": {
                         "default": {
                           "value": {
-                            "_dark": "{colors.black}",
+                            "_dark": "token(colors.black)",
                             "base": "white",
                           },
                         },
                       },
                       "placeholder": {
                         "value": {
-                          "_dark": "{colors.gray.400}",
-                          "base": "{colors.gray.600}",
+                          "_dark": "token(colors.gray.400)",
+                          "base": "token(colors.gray.600)",
                         },
                       },
                     },
@@ -140,14 +140,14 @@ describe('bundle config', () => {
                       "colors": {
                         "muted": {
                           "value": {
-                            "_dark": "{colors.gray.400}",
-                            "base": "{colors.gray.500}",
+                            "_dark": "token(colors.gray.400)",
+                            "base": "token(colors.gray.500)",
                           },
                         },
                         "subtle": {
                           "value": {
-                            "_dark": "{colors.gray.500}",
-                            "base": "{colors.gray.400}",
+                            "_dark": "token(colors.gray.500)",
+                            "base": "token(colors.gray.400)",
                           },
                         },
                       },

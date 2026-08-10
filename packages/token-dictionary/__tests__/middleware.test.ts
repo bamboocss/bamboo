@@ -70,7 +70,7 @@ test('negative tokens', () => {
     },
     semanticTokens: {
       spacing: {
-        lg: { value: '{spacing.1}' },
+        lg: { value: 'token(spacing.1)' },
       },
     },
   })
@@ -105,15 +105,15 @@ test('negative tokens', () => {
           "category": "spacing",
           "condition": "base",
           "conditions": {
-            "base": "{spacing.1}",
+            "base": "token(spacing.1)",
           },
           "prop": "lg",
           "rawValue": {
-            "base": "{spacing.1}",
+            "base": "token(spacing.1)",
           },
         },
         "name": "spacing.lg",
-        "originalValue": "{spacing.1}",
+        "originalValue": "token(spacing.1)",
         "path": [
           "spacing",
           "lg",
@@ -150,7 +150,7 @@ test('negative tokens', () => {
           "category": "spacing",
           "condition": "base",
           "conditions": {
-            "base": "{spacing.1}",
+            "base": "token(spacing.1)",
           },
           "isNegative": true,
           "originalPath": [
@@ -159,11 +159,11 @@ test('negative tokens', () => {
           ],
           "prop": "-lg",
           "rawValue": {
-            "base": "{spacing.1}",
+            "base": "token(spacing.1)",
           },
         },
         "name": "spacing.-lg",
-        "originalValue": "{spacing.1}",
+        "originalValue": "token(spacing.1)",
         "path": [
           "spacing",
           "-lg",

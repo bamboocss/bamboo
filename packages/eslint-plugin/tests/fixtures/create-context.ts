@@ -96,10 +96,10 @@ const sandboxConfig = defineConfig({
       semanticTokens: {
         colors: {
           bg: {
-            value: { _osDark: '{colors.gray.400}', base: '{colors.gray.600}' },
+            value: { _osDark: 'token(colors.gray.400)', base: 'token(colors.gray.600)' },
           },
           text: {
-            value: { _osDark: '{colors.gray.400}', base: '{colors.gray.600}' },
+            value: { _osDark: 'token(colors.gray.400)', base: 'token(colors.gray.600)' },
           },
         },
       },

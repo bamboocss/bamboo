@@ -6,12 +6,12 @@ description: Bamboo provides utilities for customizing outlines.
 Bamboo provides utilities for customizing outlines.
 
 ```jsx
-<div className={css({ outline: '2px solid {colors.blue.500}', outlineOffset: '4' })} />
+<div className={css({ outline: '2px solid token(colors.blue.500)', outlineOffset: '4' })} />
 <div className={css({ ringWidth: '2px', ringColor: 'blue.500' })} /> // shorthands
 ```
 
 A bare token name only resolves when it is the whole value. Inside a compound value such as `outline`, reference the
-token explicitly with `{colors.blue.500}`.
+token explicitly with `token(colors.blue.500)`.
 
 | Prop                           | CSS Property     | Token Category |
 | ------------------------------ | ---------------- | -------------- |

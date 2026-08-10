@@ -59,7 +59,7 @@ describe('LiteralToken', () => {
       theme: {
         extend: {
           semanticTokens: {
-            colors: { brand: { value: { base: '{colors.red.500}', _dark: '{colors.red.400}' } } },
+            colors: { brand: { value: { base: 'token(colors.red.500)', _dark: 'token(colors.red.400)' } } },
           },
         },
       },

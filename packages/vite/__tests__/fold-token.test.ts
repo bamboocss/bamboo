@@ -50,7 +50,7 @@ describe('fold: token()', () => {
       export const brand = token('colors.primary')
     `)
 
-    // `colors.primary` is `{ base: '{colors.red.500}', _dark: '{colors.red.400}' }`. Both
+    // `colors.primary` is `{ base: 'token(colors.red.500)', _dark: 'token(colors.red.400)' }`. Both
     // branch values would be wrong here: the token has to stay a variable so the cascade
     // keeps choosing between them.
     expect(result.folded).toHaveLength(1)

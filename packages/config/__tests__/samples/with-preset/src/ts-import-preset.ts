@@ -7,10 +7,10 @@ export const tsImportPreset = definePreset({
       semanticTokens: defineSemanticTokens({
         colors: {
           placeholder: {
-            value: { base: '{colors.gray.600}', _dark: '{colors.gray.400}' },
+            value: { base: 'token(colors.gray.600)', _dark: 'token(colors.gray.400)' },
           },
           inverted: {
-            default: { value: { base: 'white', _dark: '{colors.black}' } },
+            default: { value: { base: 'white', _dark: 'token(colors.black)' } },
           },
         },
       }),

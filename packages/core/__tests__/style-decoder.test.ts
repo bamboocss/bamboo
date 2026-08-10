@@ -42,22 +42,22 @@ const sva = (styles: Dict) => {
 describe('style decoder', () => {
   test('should resolve references', () => {
     const result = css({
-      border: '2px solid {colors.red.300}',
+      border: '2px solid token(colors.red.300)',
     })
 
     expect(result).toMatchInlineSnapshot(`
       Set {
         {
-          "className": "bd_2px_solid_\\{colors\\.red\\.300\\}",
+          "className": "bd_2px_solid_token\\(colors\\.red\\.300\\)",
           "conditions": undefined,
           "entry": {
             "prop": "border",
-            "value": "2px solid {colors.red.300}",
+            "value": "2px solid token(colors.red.300)",
           },
-          "hash": "border]___[value:2px solid {colors.red.300}",
+          "hash": "border]___[value:2px solid token(colors.red.300)",
           "layer": undefined,
           "result": {
-            ".bd_2px_solid_\\{colors\\.red\\.300\\}": {
+            ".bd_2px_solid_token\\(colors\\.red\\.300\\)": {
               "border": "2px solid var(--colors-red-300)",
             },
           },

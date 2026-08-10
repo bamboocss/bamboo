@@ -710,8 +710,8 @@ The theme configuration for your project.
     },
     "semanticTokens": {
       "colors": {
-        "danger": { "value": "{colors.red}" },
-        "success": { "value": "{colors.green}" }
+        "danger": { "value": "token(colors.red)" },
+        "success": { "value": "token(colors.green)" }
       }
     }
   }
@@ -737,11 +737,11 @@ The theme variants configuration for your project.
       },
       "semanticTokens": {
         "colors": {
-          "muted": { "value": "{colors.red.200}" },
+          "muted": { "value": "token(colors.red.200)" },
           "body": {
             "value": {
-              "base": "{colors.red.600}",
-              "_osDark": "{colors.red.400}"
+              "base": "token(colors.red.600)",
+              "_osDark": "token(colors.red.400)"
             }
           }
         }

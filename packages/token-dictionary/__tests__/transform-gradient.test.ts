@@ -15,7 +15,7 @@ test('transform / gradient', () => {
             placement: 'to top',
             stops: [
               { color: '#ff0000', position: 0 },
-              { color: '{colors.pink}', position: 100 },
+              { color: 'token(colors.pink)', position: 100 },
             ],
           },
         },
@@ -56,7 +56,7 @@ test('transform / gradient', () => {
           "prop": "primary",
         },
         "name": "gradients.primary",
-        "originalValue": "linear-gradient(to top, #ff0000 0px, {colors.pink} 100px)",
+        "originalValue": "linear-gradient(to top, #ff0000 0px, token(colors.pink) 100px)",
         "path": [
           "gradients",
           "primary",

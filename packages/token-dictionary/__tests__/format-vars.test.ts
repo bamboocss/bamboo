@@ -18,7 +18,7 @@ test('format / json flat', () => {
     semanticTokens: {
       colors: {
         brand: {
-          value: { base: '{colors.red}', dark: '{colors.blue}' },
+          value: { base: 'token(colors.red)', dark: 'token(colors.blue)' },
         },
       },
     },

@@ -80,19 +80,19 @@ describe('Open Prop preset transforms', () => {
           "value": "cubic-bezier(.215,.61,.355,1)",
         },
         "elastic-1": {
-          "value": "{easings.elastic-out-1}",
+          "value": "token(easings.elastic-out-1)",
         },
         "elastic-2": {
-          "value": "{easings.elastic-out-2}",
+          "value": "token(easings.elastic-out-2)",
         },
         "elastic-3": {
-          "value": "{easings.elastic-out-3}",
+          "value": "token(easings.elastic-out-3)",
         },
         "elastic-4": {
-          "value": "{easings.elastic-out-4}",
+          "value": "token(easings.elastic-out-4)",
         },
         "elastic-5": {
-          "value": "{easings.elastic-out-5}",
+          "value": "token(easings.elastic-out-5)",
         },
         "elastic-in-1": {
           "value": "cubic-bezier(.5, -0.25, .75, 1)",
@@ -268,19 +268,19 @@ describe('Open Prop preset transforms', () => {
         )",
         },
         "squish-1": {
-          "value": "{easings.elastic-in-out-1}",
+          "value": "token(easings.elastic-in-out-1)",
         },
         "squish-2": {
-          "value": "{easings.elastic-in-out-2}",
+          "value": "token(easings.elastic-in-out-2)",
         },
         "squish-3": {
-          "value": "{easings.elastic-in-out-3}",
+          "value": "token(easings.elastic-in-out-3)",
         },
         "squish-4": {
-          "value": "{easings.elastic-in-out-4}",
+          "value": "token(easings.elastic-in-out-4)",
         },
         "squish-5": {
-          "value": "{easings.elastic-in-out-5}",
+          "value": "token(easings.elastic-in-out-5)",
         },
         "step-1": {
           "value": "steps(2)",
@@ -513,70 +513,70 @@ describe('Open Prop preset transforms', () => {
     expect(animations).toMatchInlineSnapshot(`
       {
         "blink": {
-          "value": "blink 1s {easings.out-3} infinite",
+          "value": "blink 1s token(easings.out-3) infinite",
         },
         "bounce": {
-          "value": "bounce 2s {easings.squish-2} infinite",
+          "value": "bounce 2s token(easings.squish-2) infinite",
         },
         "fade-in": {
-          "value": "fade-in .5s {easings.3}",
+          "value": "fade-in .5s token(easings.3)",
         },
         "fade-in-bloom": {
-          "value": "fade-in-bloom 2s {easings.3}",
+          "value": "fade-in-bloom 2s token(easings.3)",
         },
         "fade-out": {
-          "value": "fade-out .5s {easings.3}",
+          "value": "fade-out .5s token(easings.3)",
         },
         "fade-out-bloom": {
-          "value": "fade-out-bloom 2s {easings.3}",
+          "value": "fade-out-bloom 2s token(easings.3)",
         },
         "float": {
-          "value": "float 3s {easings.in-out-3} infinite",
+          "value": "float 3s token(easings.in-out-3) infinite",
         },
         "ping": {
-          "value": "ping 5s {easings.out-3} infinite",
+          "value": "ping 5s token(easings.out-3) infinite",
         },
         "pulse": {
-          "value": "pulse 2s {easings.out-3} infinite",
+          "value": "pulse 2s token(easings.out-3) infinite",
         },
         "scale-down": {
-          "value": "scale-down .5s {easings.3}",
+          "value": "scale-down .5s token(easings.3)",
         },
         "scale-up": {
-          "value": "scale-up .5s {easings.3}",
+          "value": "scale-up .5s token(easings.3)",
         },
         "shake-x": {
-          "value": "shake-x .75s {easings.out-5}",
+          "value": "shake-x .75s token(easings.out-5)",
         },
         "shake-y": {
-          "value": "shake-y .75s {easings.out-5}",
+          "value": "shake-y .75s token(easings.out-5)",
         },
         "shake-z": {
-          "value": "shake-z 1s {easings.in-out-3}",
+          "value": "shake-z 1s token(easings.in-out-3)",
         },
         "slide-in-down": {
-          "value": "slide-in-down .5s {easings.3}",
+          "value": "slide-in-down .5s token(easings.3)",
         },
         "slide-in-left": {
-          "value": "slide-in-left .5s {easings.3}",
+          "value": "slide-in-left .5s token(easings.3)",
         },
         "slide-in-right": {
-          "value": "slide-in-right .5s {easings.3}",
+          "value": "slide-in-right .5s token(easings.3)",
         },
         "slide-in-up": {
-          "value": "slide-in-up .5s {easings.3}",
+          "value": "slide-in-up .5s token(easings.3)",
         },
         "slide-out-down": {
-          "value": "slide-out-down .5s {easings.3}",
+          "value": "slide-out-down .5s token(easings.3)",
         },
         "slide-out-left": {
-          "value": "slide-out-left .5s {easings.3}",
+          "value": "slide-out-left .5s token(easings.3)",
         },
         "slide-out-right": {
-          "value": "slide-out-right .5s {easings.3}",
+          "value": "slide-out-right .5s token(easings.3)",
         },
         "slide-out-up": {
-          "value": "slide-out-up .5s {easings.3}",
+          "value": "slide-out-up .5s token(easings.3)",
         },
         "spin": {
           "value": "spin 2s linear infinite",
@@ -587,12 +587,12 @@ describe('Open Prop preset transforms', () => {
       {
         "fade-in-bloom": {
           "value": {
-            "_dark": "fade-in-bloom-dark 2s {easings.3}",
+            "_dark": "fade-in-bloom-dark 2s token(easings.3)",
           },
         },
         "fade-out-bloom": {
           "value": {
-            "_dark": "fade-out-bloom-dark 2s {easings.3}",
+            "_dark": "fade-out-bloom-dark 2s token(easings.3)",
           },
         },
       }

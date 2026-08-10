@@ -33,7 +33,7 @@ export default defineConfig({
   theme: {
     semanticTokens: {
       colors: {
-        text: { value: { base: '{colors.gray.600}', _osDark: '{colors.gray.400}' } },
+        text: { value: { base: 'token(colors.gray.600)', _osDark: 'token(colors.gray.400)' } },
       },
     },
     recipes: {

@@ -149,17 +149,25 @@ describe('color-mix', () => {
     `)
   })
 
-  test('in token reference with curly brackets', () => {
+  /**
+   * The retired curly spelling, which used to mean the same as the `token()` above.
+   *
+   * Pinned as *inert* rather than deleted: a half-removal that still resolved `{…}` somewhere
+   * would leave two ways to say one thing, which is the whole reason it went. It stays a literal
+   * — no `color-mix`, no `var()` — and the declaration is dropped, since `{…}` is not a css
+   * value.
+   *
+   * Worth being plain that this is quiet, not loud: nothing warns, and the same value in a
+   * *theme* token emits the literal text into the stylesheet. An upgrade diagnostic for the old
+   * spelling is a real gap, tracked separately rather than pretended away here.
+   */
+  test('a curly reference is no longer a reference', () => {
     expect(css({ color: '{colors.pink.400/30}' })).toMatchInlineSnapshot(`
       {
         "className": [
           "c_\\{colors\\.pink\\.400\\/30\\}",
         ],
-        "css": "@layer utilities {
-        .c_\\{colors\\.pink\\.400\\/30\\} {
-          color: color-mix(in srgb, var(--colors-pink-400) 30%, transparent);
-      }
-      }",
+        "css": "",
       }
     `)
   })

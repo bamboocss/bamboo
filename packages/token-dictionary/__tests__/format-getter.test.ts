@@ -18,7 +18,7 @@ test('format / getter', () => {
     semanticTokens: {
       colors: {
         brand: {
-          value: { base: '{colors.red}', dark: '#blue' },
+          value: { base: 'token(colors.red)', dark: '#blue' },
         },
       },
     },

@@ -53,13 +53,14 @@ describe('gradient utilities', () => {
   })
 
   test('bgGradient with token references', () => {
-    expect(css({ bgGradient: 'linear-gradient({colors.red.200}, {colors.blue.300})' })).toMatchInlineSnapshot(`
+    expect(css({ bgGradient: 'linear-gradient(token(colors.red.200), token(colors.blue.300))' }))
+      .toMatchInlineSnapshot(`
       {
         "className": [
-          "bg-grad_linear-gradient\\(\\{colors\\.red\\.200\\}\\,_\\{colors\\.blue\\.300\\}\\)",
+          "bg-grad_linear-gradient\\(token\\(colors\\.red\\.200\\)\\,_token\\(colors\\.blue\\.300\\)\\)",
         ],
         "css": "@layer utilities {
-        .bg-grad_linear-gradient\\(\\{colors\\.red\\.200\\}\\,_\\{colors\\.blue\\.300\\}\\) {
+        .bg-grad_linear-gradient\\(token\\(colors\\.red\\.200\\)\\,_token\\(colors\\.blue\\.300\\)\\) {
           background-image: linear-gradient(var(--colors-red-200), var(--colors-blue-300));
       }
       }",
@@ -68,13 +69,14 @@ describe('gradient utilities', () => {
   })
 
   test('textGradient with token references', () => {
-    expect(css({ textGradient: 'linear-gradient({colors.red.200}, {colors.blue.300})' })).toMatchInlineSnapshot(`
+    expect(css({ textGradient: 'linear-gradient(token(colors.red.200), token(colors.blue.300))' }))
+      .toMatchInlineSnapshot(`
       {
         "className": [
-          "txt-grad_linear-gradient\\(\\{colors\\.red\\.200\\}\\,_\\{colors\\.blue\\.300\\}\\)",
+          "txt-grad_linear-gradient\\(token\\(colors\\.red\\.200\\)\\,_token\\(colors\\.blue\\.300\\)\\)",
         ],
         "css": "@layer utilities {
-        .txt-grad_linear-gradient\\(\\{colors\\.red\\.200\\}\\,_\\{colors\\.blue\\.300\\}\\) {
+        .txt-grad_linear-gradient\\(token\\(colors\\.red\\.200\\)\\,_token\\(colors\\.blue\\.300\\)\\) {
           background-image: linear-gradient(var(--colors-red-200), var(--colors-blue-300));
           -webkit-background-clip: text;
           color: transparent;

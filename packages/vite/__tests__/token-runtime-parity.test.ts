@@ -33,8 +33,8 @@ describe('fold token table matches the generated runtime', () => {
           extend: {
             tokens: { spacing: { gutter: { value: '2rem' } } },
             semanticTokens: {
-              spacing: { inset: { value: { base: '{spacing.4}', _dark: '{spacing.8}' } } },
-              colors: { primary: { value: { base: '{colors.red.500}', _dark: '{colors.red.400}' } } },
+              spacing: { inset: { value: { base: 'token(spacing.4)', _dark: 'token(spacing.8)' } } },
+              colors: { primary: { value: { base: 'token(colors.red.500)', _dark: 'token(colors.red.400)' } } },
             },
           },
         },
