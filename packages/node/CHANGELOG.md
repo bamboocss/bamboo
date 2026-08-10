@@ -1,5 +1,24 @@
 # @bamboocss/node
 
+## 1.28.1
+
+### Patch Changes
+
+- Updated dependencies [31749e1]
+- Updated dependencies [be39dac]
+  - @bamboocss/types@1.28.1
+  - @bamboocss/core@1.28.1
+  - @bamboocss/parser@1.28.1
+  - @bamboocss/config@1.28.1
+  - @bamboocss/generator@1.28.1
+  - @bamboocss/logger@1.28.1
+  - @bamboocss/plugin-lightningcss@1.28.1
+  - @bamboocss/plugin-svelte@1.28.1
+  - @bamboocss/plugin-vue@1.28.1
+  - @bamboocss/reporter@1.28.1
+  - @bamboocss/token-dictionary@1.28.1
+  - @bamboocss/shared@1.28.1
+
 ## 1.28.0
 
 ### Patch Changes

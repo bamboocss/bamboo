@@ -1,5 +1,13 @@
 # @bamboocss/preset-bamboo
 
+## 1.28.1
+
+### Patch Changes
+
+- Updated dependencies [31749e1]
+- Updated dependencies [be39dac]
+  - @bamboocss/types@1.28.1
+
 ## 1.28.0
 
 ### Patch Changes
