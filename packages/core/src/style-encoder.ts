@@ -290,7 +290,7 @@ export class StyleEncoder {
     })
   }
 
-  processConfigSlotRecipe = (recipeName: string, variants: Record<string, any>) => {
+  processConfigSlotRecipe = (recipeName: string, variants: Record<string, any>, unresolved?: Set<string>) => {
     const config = this.context.recipes.getConfig(recipeName)
     if (!config || !Recipes.isSlotRecipeConfig(config)) return
 
@@ -300,6 +300,10 @@ export class StyleEncoder {
     // process variants
     const computedVariants = Object.assign({}, config.defaultVariants, variants)
     this.hashVariants(recipeName, computedVariants, { recipe: recipeName, variants: true })
+
+    // See `processConfigRecipe`: a slot recipe names a class per slot, so an axis the call site
+    // left dynamic leaves *every* slot short rather than one.
+    this.hashUnresolvedVariants(recipeName, config.variants, unresolved, { recipe: recipeName, variants: true })
 
     // process compound variants
     if (!config.compoundVariants || this.compound_variants.has(recipeName)) return
@@ -384,7 +388,7 @@ export class StyleEncoder {
     this.hashStyleObject(base_set, config.base, { recipe: recipeName })
   }
 
-  processConfigRecipe = (recipeName: string, variants: Record<string, any>) => {
+  processConfigRecipe = (recipeName: string, variants: Record<string, any>, unresolved?: Set<string>) => {
     const config = this.context.recipes.getConfig(recipeName)
     if (!config) return
 
@@ -395,17 +399,54 @@ export class StyleEncoder {
     const computedVariants = Object.assign({}, config.defaultVariants, variants)
     this.hashVariants(recipeName, computedVariants, { recipe: recipeName, variants: true })
 
+    // An axis the call site did not name statically — `button({ size: props.size })`. The
+    // selection carries no value for it, so the loop above emits only the default's rule and
+    // the runtime then asks for `button--size_sm`, which nothing backs. A class on an element
+    // with no rule behind it is silently unstyled, which is the failure the comment on
+    // `hashInlineRecipe` describes and which the inline path avoids by emitting every declared
+    // value. This does the same, for the axes that need it.
+    //
+    // Narrower than the inline rule, deliberately: only an axis some call site left dynamic is
+    // enumerated, so a project whose recipe calls are all static emits exactly what it did
+    // before.
+    this.hashUnresolvedVariants(recipeName, config.variants, unresolved, { recipe: recipeName, variants: true })
+
     // process compound variants
     if (!config.compoundVariants || this.compound_variants.has(recipeName)) return
     this.compound_variants.add(recipeName)
     this.hashCompoundVariants(recipeName, config.compoundVariants as Array<Record<string, any>>)
   }
 
-  processRecipe = (recipeName: string, variants: Record<string, any>) => {
+  /**
+   * `unresolved` names the variant axes the call site passed but the build could not read.
+   * Absent from the selection is indistinguishable from never passed — `button({ size })` and
+   * `button()` both arrive as `{}` — so the parser has to say which it was.
+   */
+  processRecipe = (recipeName: string, variants: Record<string, any>, unresolved?: Set<string>) => {
     if (this.context.recipes.isSlotRecipe(recipeName)) {
-      this.processConfigSlotRecipe(recipeName, variants)
+      this.processConfigSlotRecipe(recipeName, variants, unresolved)
     } else {
-      this.processConfigRecipe(recipeName, variants)
+      this.processConfigRecipe(recipeName, variants, unresolved)
+    }
+  }
+
+  /** Every value a dynamic axis can take, so no call site can name a class with no rule. */
+  private hashUnresolvedVariants = (
+    recipeName: string,
+    variants: Record<string, Record<string, any>> | undefined,
+    unresolved: Set<string> | undefined,
+    baseEntry: Partial<Omit<StyleEntry, 'prop' | 'value' | 'cond'>>,
+  ) => {
+    if (!unresolved?.size || !variants) return
+
+    for (const key of unresolved) {
+      // `hasOwn`, so a key of `toString` or `__proto__` does not reach `Object.prototype` and
+      // enumerate nothing.
+      if (!Object.hasOwn(variants, key)) continue
+
+      for (const value of Object.keys(variants[key] ?? {})) {
+        this.hashVariants(recipeName, { [key]: value }, baseEntry)
+      }
     }
   }
 

@@ -1,4 +1,5 @@
 import type { ParserOptions } from '@bamboocss/core'
+import { box } from '@bamboocss/extractor'
 import { BambooError, getOrCreateSet } from '@bamboocss/shared'
 import type { ParserResultInterface, ResultItem } from '@bamboocss/types'
 import { findUnresolvedRecipeStyles, findUnresolvedStyles, type UnresolvedStyle } from './unresolved-styles'
@@ -173,6 +174,26 @@ export class ParserResult implements ParserResultInterface {
     result.data.forEach((obj) => this.encoder.processPattern(name, obj))
   }
 
+  /**
+   * The variant axes a call site passed and the build could not read.
+   *
+   * `button({ size })` with a dynamic `size` and `button()` both unbox to `{}`, so the encoder
+   * cannot tell "you named an axis I could not resolve" from "you named nothing" — and the
+   * difference decides whether a class it is about to emit has a rule behind it. The box still
+   * holds the distinction: the key is present, carrying an `unresolvable`.
+   */
+  private unresolvedVariants(result: ResultItem) {
+    const boxNode = result.box
+    if (!boxNode || !box.isMap(boxNode)) return undefined
+
+    const keys = new Set<string>()
+    for (const [key, value] of boxNode.value.entries()) {
+      if (box.isUnresolvable(value)) keys.add(key)
+    }
+
+    return keys.size ? keys : undefined
+  }
+
   setRecipe(recipeName: string, result: ResultItem) {
     const set = getOrCreateSet(this.recipe, recipeName)
     set.add(this.append(Object.assign({ type: 'recipe' }, result)))
@@ -184,16 +205,18 @@ export class ParserResult implements ParserResultInterface {
     if (!recipeConfig) return
 
     const recipe = result
+    const unresolved = this.unresolvedVariants(result)
+
     // treat recipe jsx like regular recipe + atomic
     if (result.type) {
       recipe.data.forEach((data) => {
         const [recipeProps, styleProps] = recipes.splitProps(recipeName, data)
         encoder.processStyleProps(styleProps)
-        encoder.processRecipe(recipeName, recipeProps)
+        encoder.processRecipe(recipeName, recipeProps, unresolved)
       })
     } else {
       recipe.data.forEach((data) => {
-        encoder.processRecipe(recipeName, data)
+        encoder.processRecipe(recipeName, data, unresolved)
       })
     }
   }

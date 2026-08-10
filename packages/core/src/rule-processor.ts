@@ -91,11 +91,16 @@ export class RuleProcessor {
     }
   }
 
-  recipe(name: string, variants: Record<string, any> = {}): RecipeVariantsRule | undefined {
+  recipe(
+    name: string,
+    variants: Record<string, any> = {},
+    /** Axes a call site named but the build could not read; see `processRecipe`. */
+    unresolved?: Set<string>,
+  ): RecipeVariantsRule | undefined {
     const { encoder, decoder } = this
     this.getParamsOrThrow()
 
-    const scope = encoder.withScope(() => encoder.processRecipe(name, variants))
+    const scope = encoder.withScope(() => encoder.processRecipe(name, variants, unresolved))
     decoder.collect(encoder)
 
     return {
