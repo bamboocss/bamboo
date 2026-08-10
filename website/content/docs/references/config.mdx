@@ -703,6 +703,9 @@ globalFontface: { Roboto: { src: "url(/fonts/roboto.woff2) format('woff2')" } }
 globalCss: { '@font-face': { fontFamily: 'Roboto', src: "url(/fonts/roboto.woff2) format('woff2')" } }
 ```
 
+Same for [`globalPositionTry`](#globalpositiontry), which adds the leading `--` a `@position-try` name requires. Written
+here you have to remember it, and `@position-try flip` is invalid css that ships silently and never fires.
+
 ### globalVars
 
 **Type**: `Extendable<GlobalVarsDefinition>`
@@ -914,7 +917,8 @@ Check out the [Custom Fonts](/docs/guides/fonts#global-font-face) guide for more
 
 Named [`@position-try`](https://developer.mozilla.org/en-US/docs/Web/CSS/@position-try) fallbacks for anchor
 positioning. Each key emits one `@position-try` rule, and a key without a leading `--` gets one added, so
-`bottom-scrollable` below becomes `--bottom-scrollable`.
+`bottom-scrollable` below becomes `--bottom-scrollable` — which is why this is worth preferring over writing
+`@position-try` into [`globalCss`](#globalcss), where a missing `--` is invalid css that ships silently.
 
 ```json
 {
