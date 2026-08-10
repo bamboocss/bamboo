@@ -484,9 +484,6 @@ importers:
       '@bamboocss/types':
         specifier: workspace:*
         version: link:../types
-      browserslist:
-        specifier: 4.28.7
-        version: 4.28.7
       chokidar:
         specifier: 5.0.0
         version: 5.0.0

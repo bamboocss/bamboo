@@ -49,7 +49,6 @@
     "@bamboocss/shared": "workspace:*",
     "@bamboocss/token-dictionary": "workspace:*",
     "@bamboocss/types": "workspace:*",
-    "browserslist": "4.28.7",
     "chokidar": "5.0.0",
     "fast-glob": "3.3.3",
     "fs-extra": "11.3.2",

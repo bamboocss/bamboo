@@ -7,7 +7,7 @@
     "packages/cli": {
       "entry": ["src/cli-default.ts!"],
       "project": ["src/**/*.ts"],
-      "ignoreDependencies": ["@bamboocss/preset-base", "@bamboocss/token-dictionary"]
+      "ignoreDependencies": ["@bamboocss/token-dictionary"]
     },
     "packages/config": {
       "project": ["src/**/*.ts"],
@@ -39,14 +39,7 @@
     },
     "packages/node": {
       "project": ["src/**/*.ts"],
-      "ignoreDependencies": [
-        "@bamboocss/token-dictionary",
-        "lodash.merge",
-        "pkg-types",
-        "pluralize",
-        "ts-morph",
-        "ts-pattern"
-      ]
+      "ignoreDependencies": ["@bamboocss/token-dictionary", "lodash.merge", "pkg-types", "pluralize", "ts-pattern"]
     },
     "packages/parser": {
       "project": ["src/**/*.ts"]
