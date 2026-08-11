@@ -516,7 +516,7 @@ export const keyframeNames = (ctx: BambooContext) => Object.keys(ctx.config.them
  *
  * Lowercase-initial only, so a JSX component (`<Button />`) is not mistaken for an element.
  * That cuts the other way too — a component rendering `<button>` inside a dependency is
- * invisible here, which is why `prune.preflight` is opt-in.
+ * invisible here, which is why `preflight.prune` is opt-in.
  *
  * The commoner blind spot is nearer than a dependency: this reads `include`, and `include`
  * conventionally covers components rather than markup. An entry template — `index.html`,

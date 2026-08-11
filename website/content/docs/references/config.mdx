@@ -46,13 +46,13 @@ export default defineConfig({
 
 ### preflight
 
-**Type**: `boolean` | `{ scope: string; level?: 'element' | 'parent' }`
+**Type**: `boolean` | `{ scope?: string; level?: 'element' | 'parent'; prune?: boolean }`
 
 **Default**: `false`
 
 Whether to enable css reset styles. See also [Global styles](/docs/concepts/global-styles) for how reset interacts with
-global variables and layering, and [`prune.preflight`](#prune) for dropping the parts of the reset that style elements
-your source never renders.
+global variables and layering, and [`preflight.prune`](#preflightprune) for dropping the parts of the reset that style
+elements your source never renders.
 
 Enable preflight:
 
@@ -90,6 +90,60 @@ The resulting `reset` css would look like this:
 
 Setting `level: 'element'` (defaults to `parent`) puts the scope on the element instead – `button.extension` rather than
 `.extension button` – so only elements carrying the scope class are reset.
+
+#### preflight.prune
+
+Whether to drop the parts of the reset that style elements your source never renders.
+
+Two thirds of the reset is bound to specific elements – 41 of them, covering `table`, `pre`, `kbd`, `optgroup` and the
+rest of the long tail. The reset is a fixed size, so it dominates a small stylesheet rather than amortising like the
+utilities layer does.
+
+```json
+{
+  "preflight": { "prune": true }
+}
+```
+
+Measured on the example apps in this repository:
+
+| app     |    raw |   gzip | brotli |
+| ------- | -----: | -----: | -----: |
+| vite-ts | -13.2% | -14.8% | -14.2% |
+| svelte  | -33.9% | -29.1% | -29.3% |
+
+Unlike most CSS size work, this holds up under compression, because it emits less rather than spelling the same thing
+differently.
+
+A selector list loses only the parts naming unrendered elements, so a rule shared between `button` and
+`::file-selector-button` keeps the half that still applies. A rule goes only when every part does. `html` and `body` are
+never removed, and a selector naming no element at all – `*`, `::backdrop`, `[hidden]`, a class – is always kept, since
+nothing about it says which element it reaches.
+
+<Callout type="warning">
+  This one cannot be made safe by default, and it is the only pruning option here that cannot. The token and keyframe
+  passes have something to prove reachability against; this has a textual scan of your own source and nothing else. An
+  element rendered by a dependency's component, by `dangerouslySetInnerHTML`, or by markdown is invisible to it. What
+  you get wrong is an element quietly losing its reset – no error, no warning, just a `<table>` that has its browser
+  default border spacing back. Reach for it when you control the markup, and check the result.
+</Callout>
+
+**Check your entry template first.** The scan reads the files [`include`](#include) covers, and `include` conventionally
+covers components rather than markup: `./src/**/*.tsx` does not match `index.html`, where `<noscript>`, a static
+`<table>` and the rest of a page's hand-written markup usually live. Name the template – or any other markup outside
+`include`, such as an email template or a server-rendered layout – alongside your components; the scan reads any file
+`include` covers, not only ones the parser understands:
+
+```ts
+include: ['./src/**/*.{ts,tsx}', './index.html']
+```
+
+Each file is read from disk rather than from the parsed copy the build holds, so a `.svelte` or `.vue` file keeps the
+markup its transform to TSX would have dropped.
+
+A [scoped reset](#preflight) is handled – `preflight: { scope: '.app' }` writes `.app table`, and the scope is stripped
+before the element is read out. `bamboo cssgen preflight` prunes as well, so the `reset.css` it writes matches the one a
+full build produces.
 
 ### emitTokensOnly
 
@@ -453,17 +507,17 @@ Whether to allow shorthand properties.
 ### prune
 
 **Type**:
-`{ tokens?: 'off' | 'reachable' | 'accounted'; keepTokens?: string[]; unresolvedPath?: 'off' | 'warn' | 'error'; propertyRegistrations?: boolean; keyframes?: boolean; preflight?: boolean }`
+`{ tokens?: 'off' | 'reachable' | 'accounted'; keepTokens?: string[]; unresolvedPath?: 'off' | 'warn' | 'error'; propertyRegistrations?: boolean; keyframes?: boolean }`
 
-**Default**:
-`{ tokens: 'reachable', unresolvedPath: 'warn', propertyRegistrations: true, keyframes: true, preflight: false }`
+**Default**: `{ tokens: 'reachable', unresolvedPath: 'warn', propertyRegistrations: true, keyframes: true }`
 
 What to drop from the generated stylesheet. Each key is an independent switch, and setting one keeps the defaults for
-the rest.
+the rest. The reset is not here — it is pruned by [`preflight.prune`](#preflightprune), alongside the option that emits
+it and the `scope` that pruning has to strip.
 
 ```json
 {
-  "prune": { "tokens": "reachable", "keyframes": true, "preflight": false }
+  "prune": { "tokens": "reachable", "keyframes": true }
 }
 ```
 
@@ -634,60 +688,6 @@ import { token } from '@acme/ui' // a barrel Bamboo cannot classify
   scaffolds `./src/**` and `./pages/**`; a Next App Router `./app/**`, a Remix `./app/root.tsx`, or plain `.ts` files
   under a `.tsx`-only glob are the common gaps.
 </Callout>
-
-#### prune.preflight
-
-Whether to drop the parts of the reset that style elements your source never renders.
-
-Two thirds of the reset is bound to specific elements – 41 of them, covering `table`, `pre`, `kbd`, `optgroup` and the
-rest of the long tail. The reset is a fixed size, so it dominates a small stylesheet rather than amortising like the
-utilities layer does.
-
-```json
-{
-  "prune": { "preflight": true }
-}
-```
-
-Measured on the example apps in this repository:
-
-| app     |    raw |   gzip | brotli |
-| ------- | -----: | -----: | -----: |
-| vite-ts | -13.2% | -14.8% | -14.2% |
-| svelte  | -33.9% | -29.1% | -29.3% |
-
-Unlike most CSS size work, this holds up under compression, because it emits less rather than spelling the same thing
-differently.
-
-A selector list loses only the parts naming unrendered elements, so a rule shared between `button` and
-`::file-selector-button` keeps the half that still applies. A rule goes only when every part does. `html` and `body` are
-never removed, and a selector naming no element at all – `*`, `::backdrop`, `[hidden]`, a class – is always kept, since
-nothing about it says which element it reaches.
-
-<Callout type="warning">
-  This one cannot be made safe by default, and it is the only pruning option here that cannot. The token and keyframe
-  passes have something to prove reachability against; this has a textual scan of your own source and nothing else. An
-  element rendered by a dependency's component, by `dangerouslySetInnerHTML`, or by markdown is invisible to it. What
-  you get wrong is an element quietly losing its reset – no error, no warning, just a `<table>` that has its browser
-  default border spacing back. Reach for it when you control the markup, and check the result.
-</Callout>
-
-**Check your entry template first.** The scan reads the files [`include`](#include) covers, and `include` conventionally
-covers components rather than markup: `./src/**/*.tsx` does not match `index.html`, where `<noscript>`, a static
-`<table>` and the rest of a page's hand-written markup usually live. Name the template – or any other markup outside
-`include`, such as an email template or a server-rendered layout – alongside your components; the scan reads any file
-`include` covers, not only ones the parser understands:
-
-```ts
-include: ['./src/**/*.{ts,tsx}', './index.html']
-```
-
-Each file is read from disk rather than from the parsed copy the build holds, so a `.svelte` or `.vue` file keeps the
-markup its transform to TSX would have dropped.
-
-A [scoped reset](#preflight) is handled – `preflight: { scope: '.app' }` writes `.app table`, and the scope is stripped
-before the element is read out. `bamboo cssgen preflight` prunes as well, so the `reset.css` it writes matches the one a
-full build produces.
 
 #### prune.keyframes
 

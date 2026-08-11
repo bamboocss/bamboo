@@ -322,10 +322,10 @@ These compile unchanged and do something else, so they are worth checking on mig
 
 Both are on by default; set either to `false` to opt out.
 
-- [`prune.preflight`](/docs/references/config#prune) drops the parts of the reset that style elements your source never
-  renders. The reset is a fixed size, so it dominates a small stylesheet – a third of one sandbox's CSS here and four
-  fifths of another's. Worth a further 13% to 38%, and unlike most CSS size work it holds up under compression, because
-  it emits less rather than spelling the same thing differently.
+- [`preflight.prune`](/docs/references/config#preflightprune) drops the parts of the reset that style elements your
+  source never renders. The reset is a fixed size, so it dominates a small stylesheet – a third of one sandbox's CSS
+  here and four fifths of another's. Worth a further 13% to 38%, and unlike most CSS size work it holds up under
+  compression, because it emits less rather than spelling the same thing differently.
 
 This one is off by default and cannot be made safe by default: it has a textual scan of your own source and nothing
 else, so an element rendered by a dependency, by `dangerouslySetInnerHTML`, or by markdown is invisible to it.

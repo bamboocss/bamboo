@@ -1,3 +1,4 @@
+import { prunesPreflight } from '@bamboocss/core'
 import { logger } from '@bamboocss/logger'
 import type { CssArtifactType } from '@bamboocss/types'
 import type { BambooContext } from './create-context'
@@ -27,13 +28,13 @@ export const cssgen = async (ctx: BambooContext, options: CssGenOptions) => {
 
     // The token and keyframe passes cannot run here: both decide reachability by reading
     // the finished stylesheet, and this branch emits one artifact, so everything would look
-    // unreachable. `prune.preflight` reads the source instead of the sheet, so a partial one
+    // unreachable. `preflight.prune` reads the source instead of the sheet, so a partial one
     // costs it nothing -- and without this the `reset.css` from `cssgen preflight` differs
     // from the one `cssgen --splitting` writes for the same project.
     //
     // Note this branch never calls `parseFiles`, which `collectRenderedElements` does not
     // need: it reads the files itself rather than anything parsing leaves behind.
-    if (type === 'preflight' && ctx.config.prune?.preflight) {
+    if (type === 'preflight' && prunesPreflight(ctx.config.preflight)) {
       ctx.prunePreflight(sheet, collectRenderedElements(ctx))
     }
 
@@ -59,7 +60,7 @@ export const cssgen = async (ctx: BambooContext, options: CssGenOptions) => {
     // references reads every source file, so each pass stays behind its own flag.
     pruneTokensForBuild(ctx, sheet, results)
 
-    if (ctx.config.prune?.preflight) {
+    if (prunesPreflight(ctx.config.preflight)) {
       ctx.prunePreflight(sheet, collectRenderedElements(ctx))
     }
 

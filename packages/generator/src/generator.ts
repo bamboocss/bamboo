@@ -2,12 +2,13 @@ import {
   Context,
   pruneKeyframes,
   prunePreflight,
+  prunesPreflight,
   pruneTokenVars,
   type StyleDecoder,
   type Stylesheet,
 } from '@bamboocss/core'
 import { logger } from '@bamboocss/logger'
-import { cssVarRefs, dashCase, BambooError } from '@bamboocss/shared'
+import { cssVarRefs, dashCase, isObject, BambooError } from '@bamboocss/shared'
 import type { ArtifactId, CssArtifactType, LoadConfigResult, SpecFile, SpecType, SpecTypeMap } from '@bamboocss/types'
 import { match } from 'ts-pattern'
 import { generateArtifacts } from './artifacts'
@@ -158,12 +159,12 @@ export class Generator extends Context {
    * losing its reset rather than anything that reports itself.
    */
   prunePreflight = (sheet: Stylesheet, rendered: Set<string>) => {
-    if (!this.config.prune?.preflight) return
+    const { preflight } = this.config
+    if (!prunesPreflight(preflight)) return
 
     // A scoped reset writes the scope onto every selector, so the pass has to be told what
     // to strip. Without it nothing reports an element and the whole pass is a silent no-op.
-    const { preflight } = this.config
-    const scope = typeof preflight === 'object' && preflight ? preflight.scope : undefined
+    const scope = isObject(preflight) ? preflight.scope : undefined
 
     const result = prunePreflight({ target: sheet.layers.reset, rendered, scope })
 

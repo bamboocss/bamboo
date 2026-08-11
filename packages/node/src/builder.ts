@@ -1,4 +1,5 @@
 import { findConfig, getConfigDependencies } from '@bamboocss/config'
+import { prunesPreflight } from '@bamboocss/core'
 import { logger } from '@bamboocss/logger'
 import { BambooError, uniq } from '@bamboocss/shared'
 import type { DiffConfigResult } from '@bamboocss/types'
@@ -282,7 +283,7 @@ export class Builder {
     // the source scan alone; re-parsing here would encode every style a second time.
     pruneTokensForBuild(ctx, sheet, [])
 
-    if (ctx.config.prune?.preflight) {
+    if (prunesPreflight(ctx.config.preflight)) {
       ctx.prunePreflight(sheet, collectRenderedElements(ctx))
     }
 

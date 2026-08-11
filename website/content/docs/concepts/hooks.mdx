@@ -185,7 +185,7 @@ export default defineConfig({
   Do not use this to strip unused tokens or keyframes. [`prune.tokens`](/docs/references/config#prune) and
   [`prune.keyframes`](/docs/references/config#prune) already do it, are on by default, and are safe in a way a scan of
   the finished CSS cannot be — they keep the declarations `token()` and `token.value()` resolve to at runtime, which
-  nothing in the stylesheet refers to. [`prune.preflight`](/docs/references/config#prune) covers the reset.
+  nothing in the stylesheet refers to. [`preflight.prune`](/docs/references/config#preflightprune) covers the reset.
 </Callout>
 
 ## Sharing hooks

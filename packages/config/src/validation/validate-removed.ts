@@ -21,7 +21,7 @@ const REMOVED: Record<string, (value: unknown) => string> = {
   pruneUnusedKeyframes: (value) =>
     `\`pruneUnusedKeyframes\` is now \`prune: { keyframes: ${value === false ? 'false' : 'true'} }\`.`,
   prunePreflight: (value) =>
-    `\`prunePreflight\` is now \`prune: { preflight: ${value === false ? 'false' : 'true'} }\`.`,
+    `\`prunePreflight\` is now \`preflight: { prune: ${value === false ? 'false' : 'true'} }\`.`,
 
   globalCss: () => `\`globalCss\` is now \`global: { css }\`.`,
   globalFontface: () => `\`globalFontface\` is now \`global: { fontface }\`.`,
@@ -58,6 +58,8 @@ const COMPOSITION_MOVED = (old: string, prop: string) => () =>
 
 const REMOVED_NESTED: Record<string, Record<string, (value: unknown) => string>> = {
   prune: {
+    preflight: (value) =>
+      `\`prune.preflight\` is now \`preflight: { prune: ${value === false ? 'false' : 'true'} }\`. It was a second key named \`preflight\` one level away from the one that emits the reset, so a config asked for a reset in one place and reshaped it in another — and pruning a scoped reset already had to read \`preflight.scope\` to work at all.`,
     unresolved: (value) =>
       `\`prune.unresolved\` is now \`prune.unresolvedPath\`, and the accounting pass it used to switch on is now \`prune.tokens: 'accounted'\` — write \`prune: { tokens: 'accounted', unresolvedPath: '${value === 'error' ? 'error' : 'warn'}' }\`. They are separate because \`'off'\` used to mean two things at once: no accounting, and no report.`,
   },

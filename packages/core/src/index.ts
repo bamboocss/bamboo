@@ -17,7 +17,7 @@ export {
 export { expandNestedCss, optimizeCss } from './optimize'
 export { Patterns, type PatternNode } from './patterns'
 export { pruneKeyframes } from './prune-keyframes'
-export { prunePreflight } from './prune-preflight'
+export { prunePreflight, prunesPreflight } from './prune-preflight'
 export { pruneTokenVars } from './prune-tokens'
 export { Recipes } from './recipes'
 export { RuleProcessor } from './rule-processor'

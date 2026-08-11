@@ -1177,10 +1177,14 @@ describe('prune', () => {
   test('keeps a preset key the config does not mention', () => {
     const merged = mergeConfigs([
       { prune: { tokens: false, keyframes: false } },
-      { prune: { preflight: true } },
+      { prune: { propertyRegistrations: true } },
     ] as never)
 
-    expect((merged as { prune: object }).prune).toEqual({ tokens: false, keyframes: false, preflight: true })
+    expect((merged as { prune: object }).prune).toEqual({
+      tokens: false,
+      keyframes: false,
+      propertyRegistrations: true,
+    })
   })
 
   test('the config wins on a key they both set', () => {

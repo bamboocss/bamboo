@@ -2,7 +2,7 @@ import { createGeneratorContext } from '@bamboocss/fixture'
 import { describe, expect, test } from 'vitest'
 
 /**
- * `prune.preflight` against the reset the generator actually emits, rather than against a
+ * `preflight.prune` against the reset the generator actually emits, rather than against a
  * hand-written stylesheet.
  *
  * The unit tests in `core` feed it selector strings, so all of them keep passing if
@@ -21,8 +21,8 @@ import { describe, expect, test } from 'vitest'
  * is two parts to remove rather than one. Stating the multiplier keeps that visible instead
  * of letting a list quietly assert half as much.
  */
-const prune = (preflight: unknown) => {
-  const ctx: any = createGeneratorContext({ preflight, prune: { preflight: true } } as any)
+const prune = (preflight: object) => {
+  const ctx: any = createGeneratorContext({ preflight: { ...preflight, prune: true } } as any)
   const sheet = ctx.createSheet()
 
   ctx.appendCssOfType('preflight', sheet)
@@ -31,7 +31,7 @@ const prune = (preflight: unknown) => {
 }
 
 describe('prunePreflight against the emitted reset', () => {
-  const baseline = prune(true)
+  const baseline = prune({})
 
   test('removes something to begin with, or the parity below proves nothing', () => {
     expect(baseline.removedRules).toBeGreaterThan(0)

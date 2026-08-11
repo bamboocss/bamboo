@@ -1,3 +1,4 @@
+import { prunesPreflight } from '@bamboocss/core'
 import { logger } from '@bamboocss/logger'
 import type { ArtifactId, Config } from '@bamboocss/types'
 import { codegen } from './codegen'
@@ -28,7 +29,7 @@ async function build(ctx: BambooContext, artifactIds?: ArtifactId[]) {
   // Gathering the references reads every source file, so each stays behind its own flag.
   pruneTokensForBuild(ctx, sheet, parsed.results)
 
-  if (ctx.config.prune?.preflight) {
+  if (prunesPreflight(ctx.config.preflight)) {
     ctx.prunePreflight(sheet, collectRenderedElements(ctx))
   }
 
@@ -90,7 +91,7 @@ export async function generate(config: Config, configPath?: string) {
       // time on each change.
       pruneTokensForBuild(ctx, sheet, [])
 
-      if (ctx.config.prune?.preflight) {
+      if (prunesPreflight(ctx.config.preflight)) {
         ctx.prunePreflight(sheet, collectRenderedElements(ctx))
       }
 

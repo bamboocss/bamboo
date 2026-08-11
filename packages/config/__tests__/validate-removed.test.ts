@@ -48,7 +48,7 @@ describe('removed config options', () => {
   test.each([
     [{ pruneUnusedTokens: false }, "prune: { tokens: 'off' }"],
     [{ pruneUnusedKeyframes: false }, 'prune: { keyframes: false }'],
-    [{ prunePreflight: true }, 'prune: { preflight: true }'],
+    [{ prunePreflight: true }, 'preflight: { prune: true }'],
   ])('%o reports its replacement', (config, expected) => {
     expect(errorFor(config)).toContain(expected)
   })
@@ -66,6 +66,19 @@ describe('removed config options', () => {
     expect(errorFor({ prune: { unresolved: 'error' } })).toContain(
       `prune: { tokens: 'accounted', unresolvedPath: 'error' }`,
     )
+  })
+
+  /**
+   * `prune.preflight` is the one a config is most likely to still be carrying, and the one
+   * whose silence would be least visible: the reset keeps being emitted either way, just
+   * unpruned, so nothing about the output says the setting stopped being read.
+   */
+  test('reports `prune.preflight`, which moved onto `preflight`', () => {
+    expect(errorFor({ prune: { preflight: true } })).toContain('preflight: { prune: true }')
+  })
+
+  test('says nothing about the option that replaced it', () => {
+    expect(errorFor({ preflight: { scope: '.app', prune: true } })).toBeUndefined()
   })
 
   /** A value change rather than a key removal, so nothing else would notice it either. */
@@ -103,7 +116,7 @@ describe('removed config options', () => {
       theme: { breakpoints: { sm: '640px', md: '48em' } },
     })
 
-    expect(message).toContain('prune: { preflight: true }')
+    expect(message).toContain('preflight: { prune: true }')
     expect(message).not.toContain('breakpoints')
   })
 })

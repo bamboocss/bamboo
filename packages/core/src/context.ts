@@ -40,14 +40,13 @@ const defaults = (config: UserConfig): UserConfig => ({
   outExtension: 'mjs',
   shorthands: true,
   ...config,
-  // Merged per key rather than spread, so `prune: { preflight: true }` keeps the other
+  // Merged per key rather than spread, so `prune: { keyframes: false }` keeps the other
   // defaults instead of turning token and keyframe pruning off by omission.
   prune: {
     tokens: 'reachable',
     unresolvedPath: 'warn',
     propertyRegistrations: true,
     keyframes: true,
-    preflight: false,
     ...config.prune,
   },
   layers: {

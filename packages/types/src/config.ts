@@ -267,12 +267,65 @@ interface FileSystemOptions {
   logFilter?: string
 }
 
-interface CssgenOptions {
+export interface PreflightOptions {
   /**
-   * Whether to include css reset styles in the generated css.
+   * A selector the reset is confined to, so it does not style the whole document.
+   */
+  scope?: string
+  /**
+   * Where the scope is written. `parent` gives `.app table`, `element` gives `table.app`.
+   * @default 'parent'
+   */
+  level?: 'element' | 'parent'
+  /**
+   * Whether to drop the parts of the reset that style elements your source never renders.
+   *
+   * Two thirds of the reset is bound to specific elements — 41 of them, covering `table`,
+   * `pre`, `kbd`, `optgroup` and the rest of the long tail. The reset is a fixed size, so it
+   * dominates a small stylesheet: a third of one sandbox's css here and four fifths of
+   * another's, of which 13% and 34% respectively is for elements those projects never render.
+   *
+   * A selector list loses only the parts naming unrendered elements, so a rule shared between
+   * `button` and `::file-selector-button` keeps the half that still applies. `html` and `body`
+   * are never removed.
+   *
+   * Off by default, and it cannot be made safe by default. Unlike the token and keyframe
+   * passes there is nothing to prove this against: an element rendered by a dependency's
+   * component, by `dangerouslySetInnerHTML`, or by markdown is invisible to a scan of your own
+   * source. What you get wrong is an element quietly losing its reset — no error, no warning.
+   * Reach for it when you control the markup and have measured that it pays.
+   *
+   * The blind spot to check first is your own entry template. The scan reads `include`, and
+   * `include` conventionally covers components rather than markup — a glob rooted at `./src`
+   * does not match `index.html`, so an element appearing only there is dropped. Add the
+   * template to `include` to cover it — the scan reads any file listed, not only ones the
+   * parser understands, and reads it from disk rather than from the build's parsed copy, so
+   * a single-file component's markup survives the transform to tsx.
+   *
+   * A scoped reset is handled: `preflight: { scope: '.app', prune: true }` writes `.app table`,
+   * and the scope is stripped before an element is read out. `bamboo cssgen preflight` prunes
+   * too.
+   *
    * @default false
    */
-  preflight?: boolean | { scope: string; level?: 'element' | 'parent' }
+  prune?: boolean
+}
+
+interface CssgenOptions {
+  /**
+   * Whether to include css reset styles in the generated css, and how.
+   *
+   * `true` is shorthand for `{}` — on, with the defaults. `false` is the only form that means
+   * off, so it has no object spelling.
+   *
+   * `prune` used to be `prune.preflight`, a second key of the same name one level away, so a
+   * config could ask for a reset in one place and reshape it in another. It lives here because
+   * everything it needs is here: pruning a scoped reset means stripping `scope` before an
+   * element can be read out of a selector.
+   *
+   * @default false
+   */
+  preflight?: boolean | PreflightOptions
   /**
    * The namespace prefix for the generated css classes and css variables.
    * @default ''
@@ -571,37 +624,6 @@ export interface PruneOptions {
    * @default true
    */
   keyframes?: boolean
-  /**
-   * Whether to drop the parts of the reset that style elements your source never renders.
-   *
-   * Two thirds of the reset is bound to specific elements — 41 of them, covering `table`,
-   * `pre`, `kbd`, `optgroup` and the rest of the long tail. The reset is a fixed size, so it
-   * dominates a small stylesheet: a third of one sandbox's css here and four fifths of
-   * another's, of which 13% and 34% respectively is for elements those projects never render.
-   *
-   * A selector list loses only the parts naming unrendered elements, so a rule shared between
-   * `button` and `::file-selector-button` keeps the half that still applies. `html` and `body`
-   * are never removed.
-   *
-   * Off by default, and it cannot be made safe by default. Unlike the token and keyframe
-   * passes there is nothing to prove this against: an element rendered by a dependency's
-   * component, by `dangerouslySetInnerHTML`, or by markdown is invisible to a scan of your own
-   * source. What you get wrong is an element quietly losing its reset — no error, no warning.
-   * Reach for it when you control the markup and have measured that it pays.
-   *
-   * The blind spot to check first is your own entry template. The scan reads `include`, and
-   * `include` conventionally covers components rather than markup — a glob rooted at `./src`
-   * does not match `index.html`, so an element appearing only there is dropped. Add the
-   * template to `include` to cover it — the scan reads any file listed, not only ones the
-   * parser understands, and reads it from disk rather than from the build's parsed copy, so
-   * a single-file component's markup survives the transform to tsx.
-   *
-   * A scoped reset is handled: `preflight: { scope: '.app' }` writes `.app table`, and the
-   * scope is stripped before an element is read out. `bamboo cssgen preflight` prunes too.
-   *
-   * @default false
-   */
-  preflight?: boolean
 }
 
 export interface Config

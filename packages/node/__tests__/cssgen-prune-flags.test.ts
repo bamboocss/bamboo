@@ -71,9 +71,9 @@ describe('cssgen prune flags', () => {
     expect(await run({ prune: { tokens: 'reachable', keyframes: false } })).toEqual(['tokens'])
   })
 
-  test('prunePreflight is a third independent switch', async () => {
-    expect(await run({ prune: { preflight: true } })).toEqual(['tokens', 'preflight', 'keyframes'])
-    expect(await run({ prune: { preflight: true, tokens: 'off', keyframes: false } })).toEqual([
+  test('preflight.prune is a third independent switch', async () => {
+    expect(await run({ preflight: { prune: true } })).toEqual(['tokens', 'preflight', 'keyframes'])
+    expect(await run({ preflight: { prune: true }, prune: { tokens: 'off', keyframes: false } })).toEqual([
       'properties',
       'preflight',
     ])
@@ -91,7 +91,7 @@ describe('cssgen prune flags', () => {
  */
 describe('cssgen --type', () => {
   test('prunes the reset it emits', async () => {
-    expect(await run({ prune: { preflight: true } }, { type: 'preflight' })).toEqual(['append:preflight', 'preflight'])
+    expect(await run({ preflight: { prune: true } }, { type: 'preflight' })).toEqual(['append:preflight', 'preflight'])
   })
 
   test('leaves it alone when the flag is off', async () => {
@@ -101,7 +101,9 @@ describe('cssgen --type', () => {
   test.each(['tokens', 'keyframes', 'static', 'global'] as const)(
     'never prunes for --type %s, which would see a partial sheet',
     async (type) => {
-      expect(await run({ prune: { preflight: true, tokens: 'reachable' } }, { type })).toEqual([`append:${type}`])
+      expect(await run({ preflight: { prune: true }, prune: { tokens: 'reachable' } }, { type })).toEqual([
+        `append:${type}`,
+      ])
     },
   )
 })

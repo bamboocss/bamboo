@@ -1,3 +1,5 @@
+import { isObject } from '@bamboocss/shared'
+import type { Config } from '@bamboocss/types'
 import type { Container, Rule } from 'postcss'
 
 /**
@@ -52,6 +54,17 @@ function unscope(part: string, scopes: string[]): string {
     if (part.endsWith(scope)) return part.slice(0, -scope.length).trim()
   }
   return part
+}
+
+/**
+ * Whether `preflight` asks for the reset to be pruned.
+ *
+ * One accessor rather than the check written out at each of the six call sites: `preflight`
+ * is `boolean | PreflightOptions`, so every one of them would otherwise have to remember
+ * that `true` means "on with the defaults" and therefore *not* pruned.
+ */
+export function prunesPreflight(preflight: Config['preflight']): boolean {
+  return isObject(preflight) && preflight.prune === true
 }
 
 export interface PrunePreflightOptions {
