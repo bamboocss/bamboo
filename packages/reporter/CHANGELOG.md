@@ -1,5 +1,48 @@
 # @bamboocss/reporter
 
+## 1.32.0
+
+### Minor Changes
+
+- 1cc1860: Remove `variantKeys` from a recipe, leaving `variantMap` as the one way to ask what variants it has.
+
+  The two were never independent — `variantKeys` was `Object.keys(variantMap)`, computed once and stored beside it. Ask
+  the map:
+
+  ```ts
+  Object.keys(button.variantMap) // was button.variantKeys
+  button.variantMap.size //         unchanged
+  ```
+
+  `splitVariantProps` is unaffected, and remains the way to pull variant props out of a props object without naming
+  them.
+
+  Internally `RecipeNode` carried the same fact three times — `variantKeys`, `variantKeyMap`, and `props`, the last two
+  being the map and a second copy of the keys. Only `variantKeyMap` remains. That type is exported from
+  `@bamboocss/core`, so a plugin reading `node.props` or `node.variantKeys` reads `Object.keys(node.variantKeyMap)`
+  instead.
+
+  `variantMap` keeps its name rather than becoming `variants`: on the config that word already means the style
+  definitions, and a `button.variants` that answered `{ size: ['sm', 'md'] }` instead of the objects you wrote would be
+  a worse kind of ambiguity than the one being removed.
+
+### Patch Changes
+
+- Updated dependencies [c29044f]
+- Updated dependencies [b0ed6dc]
+- Updated dependencies [8a66bb9]
+- Updated dependencies [2b84dfa]
+- Updated dependencies [da792cc]
+- Updated dependencies [1cc1860]
+- Updated dependencies [c29044f]
+- Updated dependencies [f3a8b0d]
+- Updated dependencies [c29044f]
+  - @bamboocss/shared@1.32.0
+  - @bamboocss/types@1.32.0
+  - @bamboocss/generator@1.32.0
+  - @bamboocss/core@1.32.0
+  - @bamboocss/logger@1.32.0
+
 ## 1.31.0
 
 ### Patch Changes

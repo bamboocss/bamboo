@@ -1,5 +1,174 @@
 # @bamboocss/generator
 
+## 1.32.0
+
+### Minor Changes
+
+- 8a66bb9: Remove the responsive array syntax, so a responsive value has one spelling.
+
+  `fontWeight: ['medium', undefined, undefined, 'bold']` used to mean one value per breakpoint. Write the condition
+  object instead:
+
+  ```ts
+  css({ fontWeight: { base: 'medium', lg: 'bold' } })
+  ```
+
+  The array form was the worse of the two on its own terms — positional, so skipping a breakpoint needed `undefined`
+  padding, and inserting a breakpoint re-pointed every value after it. But the reason it had to go is that CSS already
+  writes lists as arrays, so a font stack written the obvious way
+
+  ```ts
+  css({ fontFamily: ['Inter', 'sans-serif'] })
+  ```
+
+  compiled to `Inter` at base and `sans-serif` at `sm`, with no error and nothing in the type to suggest it.
+
+  An array in a style value is now an error naming the property it was written on, rather than a silent
+  reinterpretation. The type no longer admits one either: `ConditionalValue` drops its array member, and `CssProperties`
+  is built from csstype's `Properties` rather than `PropertiesFallback` — that array meant repeated declarations, which
+  `fallback()` already expresses and which the runtime never implemented.
+
+  A pattern property takes the same conditional value, so `grid({ columns: [2, 3, 4] })` becomes
+  `grid({ columns: { base: 2, sm: 3, md: 4 } })`.
+
+  The generated runtime no longer carries the breakpoint key list into `css`, `cva` and `mergeCss` — it existed only to
+  expand these arrays.
+
+- 2b84dfa: Remove the array argument from `css()` and `css.raw()`, leaving one way to pass a list of styles.
+
+  `css([a, b])` meant `css(a, b)` — the runtime flattened one level before merging. Spread instead, which is what you
+  already write when the operands are named:
+
+  ```ts
+  css(...styles) // was css(styles)
+  css(a, b) //      was css([a, b])
+  ```
+
+  The declared type also carried the single-object overload twice, verbatim, so the emitted `styled-system/css/css.d.ts`
+  advertised four signatures where the variadic one covers every call. It is now one:
+
+  ```ts
+  (...styles: Styles[]): string
+  ```
+
+  An array argument throws rather than being ignored, at build time where the file is known and at runtime otherwise.
+  That matters more than it sounds: an array and a style object disagree about what indices mean. The parser flattened
+  one before encoding precisely because hashing it instead read `[{ color }, { padding }]` as a responsive array and
+  emitted the padding at the `sm` breakpoint — and merely dropping the flatten would have returned no class at all,
+  silently.
+
+  Removing it also takes the `flat()` out of every merge and the `some(Array.isArray)` scan out of every extracted
+  `css()` call, both of which every call paid to serve a shape that was never documented.
+
+- da792cc: Replace `textStyles`, `layerStyles` and `animationStyles` with one `theme.mixins`.
+
+  The three were one mechanism wearing three names: one registration, one cascade layer, and a `{ description?, value }`
+  shape they all shared. They differed only in which css properties the value was allowed to set — a partition that was
+  arbitrary at the edges (`color` was legal in a text style _and_ a layer style; `transform` in a layer style but
+  `transformOrigin` only in an animation style) and costly in the middle, since a bundle wanting a font _and_ a border
+  had to be split across two keys and applied twice.
+
+  ```ts
+  // before
+  export default defineConfig({
+    theme: { textStyles, layerStyles, animationStyles },
+  })
+  css({ textStyle: 'body' })
+  css({ layerStyle: 'card' })
+
+  // after
+  export default defineConfig({ theme: { mixins } })
+  css({ mixin: 'body' })
+  css({ mixin: 'card' })
+  ```
+
+  - `defineTextStyles`, `defineLayerStyles` and `defineAnimationStyles` become `defineMixins`.
+  - The `text-styles.json`, `layer-styles.json` and `animation-styles.json` specs become `mixins.json`, and the MCP
+    tools `get_text_styles`, `get_layer_styles` and `get_animation_styles` become `get_mixins`.
+  - Setting a property that does not exist is still an error. `Mixin` is built on the same property set `css()` uses
+    rather than on `SystemStyleObject`, whose index signature would accept a typo — which is what the three allowlists
+    were really protecting, and why one of them shipped `hypens` for as long as it did.
+  - One namespace now holds every mixin, so prefix them by purpose — `text.body`, `layer.card` — if the flat list gets
+    long. Nesting already supports this, and `DEFAULT` gives each group a bare name.
+
+  A config still setting one of the three old keys fails with the replacement named, rather than reverting to the
+  default in silence.
+
+- 1cc1860: Remove `variantKeys` from a recipe, leaving `variantMap` as the one way to ask what variants it has.
+
+  The two were never independent — `variantKeys` was `Object.keys(variantMap)`, computed once and stored beside it. Ask
+  the map:
+
+  ```ts
+  Object.keys(button.variantMap) // was button.variantKeys
+  button.variantMap.size //         unchanged
+  ```
+
+  `splitVariantProps` is unaffected, and remains the way to pull variant props out of a props object without naming
+  them.
+
+  Internally `RecipeNode` carried the same fact three times — `variantKeys`, `variantKeyMap`, and `props`, the last two
+  being the map and a second copy of the keys. Only `variantKeyMap` remains. That type is exported from
+  `@bamboocss/core`, so a plugin reading `node.props` or `node.variantKeys` reads `Object.keys(node.variantKeyMap)`
+  instead.
+
+  `variantMap` keeps its name rather than becoming `variants`: on the config that word already means the style
+  definitions, and a `button.variants` that answered `{ size: ['sm', 'md'] }` instead of the objects you wrote would be
+  a worse kind of ambiguity than the one being removed.
+
+- f3a8b0d: Remove `defineParts`, leaving one way to model a multi-part component.
+
+  A slot recipe is that way. Where you wanted the other thing `defineParts` offered — a single class on the root that
+  reaches its children, so there is nothing to bind — that was never an API, only an object whose keys are selectors:
+
+  ```ts
+  defineRecipe({
+    className: 'checkbox',
+    base: {
+      '& [data-part="root"]': {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '2',
+      },
+      '& [data-part="control"]': { borderWidth: '1px', borderRadius: 'sm' },
+    },
+  })
+  ```
+
+  `defineParts` only keyed that object by part name instead. It earned its place when the selectors came from a Zag or
+  Ark `anatomy` and were tedious to spell out — `&[data-scope="card"][data-part="root"], & [data-scope=…]` per part.
+  That case is still real, and still a few lines that belong in your codebase rather than in the framework:
+
+  ```ts
+  const toParts =
+    <T extends Record<string, { selector: string }>>(anatomy: T) =>
+    (config: Partial<Record<keyof T, SystemStyleObject>>): SystemStyleObject =>
+      Object.fromEntries(Object.entries(config).map(([part, styles]) => [anatomy[part].selector, styles]))
+  ```
+
+  The `Part` and `Parts` types go with it, as does the `defineParts` declaration in the generated `styled-system/types`.
+
+  `no-config-function-in-source` also picks up `defineMixins` and drops `defineLayerStyles` and `defineTextStyles`,
+  which the preceding mixins change had left behind — writing `defineMixins` in a source file was not being flagged.
+
+### Patch Changes
+
+- Updated dependencies [c29044f]
+- Updated dependencies [b0ed6dc]
+- Updated dependencies [8a66bb9]
+- Updated dependencies [2b84dfa]
+- Updated dependencies [da792cc]
+- Updated dependencies [1cc1860]
+- Updated dependencies [c29044f]
+- Updated dependencies [f3a8b0d]
+- Updated dependencies [c29044f]
+  - @bamboocss/shared@1.32.0
+  - @bamboocss/types@1.32.0
+  - @bamboocss/core@1.32.0
+  - @bamboocss/token-dictionary@1.32.0
+  - @bamboocss/logger@1.32.0
+  - @bamboocss/is-valid-prop@1.32.0
+
 ## 1.31.0
 
 ### Minor Changes

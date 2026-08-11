@@ -1,5 +1,140 @@
 # @bamboocss/config
 
+## 1.32.0
+
+### Minor Changes
+
+- b0ed6dc: Remove the top-level `hooks` config option, so a hook has one place to live.
+
+  Hooks were registrable two ways — through `plugins`, or through a bare `hooks` key on the config, which was treated as
+  a nameless plugin appended after all the others. Write a plugin:
+
+  ```ts
+  export default defineConfig({
+    plugins: [
+      {
+        name: 'my-app',
+        hooks: {
+          'tokens:created': ({ configure }) => configure({ formatTokenName: (path) => '$' + path.join('-') }),
+        },
+      },
+    ],
+  })
+  ```
+
+  One mechanism with two spellings also meant an ordering rule you had to know — "plugins in sequence, then the config's
+  own last" — and a diagnostic layer that had a name to print for one spelling and nothing for the other. Ordering is
+  now just the order of the array, and every hook belongs to something named.
+
+  A config still setting `hooks` fails naming the replacement, like any other removed option, rather than reverting to
+  the default in silence.
+
+  Internally the merged hooks no longer travel on the config object. They were written onto it by `mergeConfigs` and
+  read back off in `resolveConfig`, which is what made a `hooks` key ambiguous between "what you wrote" and "what
+  resolution produced"; `plugins` is the only source, so `resolveConfig` merges them once and keeps them on
+  `LoadConfigResult`. `createContext` from `@bamboocss/fixture` reads hooks from `plugins` for the same reason.
+
+- da792cc: Replace `textStyles`, `layerStyles` and `animationStyles` with one `theme.mixins`.
+
+  The three were one mechanism wearing three names: one registration, one cascade layer, and a `{ description?, value }`
+  shape they all shared. They differed only in which css properties the value was allowed to set — a partition that was
+  arbitrary at the edges (`color` was legal in a text style _and_ a layer style; `transform` in a layer style but
+  `transformOrigin` only in an animation style) and costly in the middle, since a bundle wanting a font _and_ a border
+  had to be split across two keys and applied twice.
+
+  ```ts
+  // before
+  export default defineConfig({
+    theme: { textStyles, layerStyles, animationStyles },
+  })
+  css({ textStyle: 'body' })
+  css({ layerStyle: 'card' })
+
+  // after
+  export default defineConfig({ theme: { mixins } })
+  css({ mixin: 'body' })
+  css({ mixin: 'card' })
+  ```
+
+  - `defineTextStyles`, `defineLayerStyles` and `defineAnimationStyles` become `defineMixins`.
+  - The `text-styles.json`, `layer-styles.json` and `animation-styles.json` specs become `mixins.json`, and the MCP
+    tools `get_text_styles`, `get_layer_styles` and `get_animation_styles` become `get_mixins`.
+  - Setting a property that does not exist is still an error. `Mixin` is built on the same property set `css()` uses
+    rather than on `SystemStyleObject`, whose index signature would accept a typo — which is what the three allowlists
+    were really protecting, and why one of them shipped `hypens` for as long as it did.
+  - One namespace now holds every mixin, so prefix them by purpose — `text.body`, `layer.card` — if the flat list gets
+    long. Nesting already supports this, and `DEFAULT` gives each group a bare name.
+
+  A config still setting one of the three old keys fails with the replacement named, rather than reverting to the
+  default in silence.
+
+- b2b4173: Rebuild the themes artifact when a theme variant changes, and carry the original errors on a failed
+  extraction.
+
+  **`theme.variants` rebuilt nothing.** The watch rebuild decides which artifacts to regenerate by matching the changed
+  config path against a per-artifact list, and the themes artifact still watched `themes` — the option's name before it
+  became `theme.variants`. `ConfigPath` ends in `(string & {})`, so the stale path typechecked and simply stopped
+  matching.
+
+  Nothing reported it. The diff saw the change, no matcher claimed it, and the affected set came back empty — which is
+  not "rebuild everything": `getMatchingArtifacts` filters on `ids.includes(...)`, and an empty list includes nothing.
+  So editing or adding a theme variant regenerated no artifact at all and kept serving the previous `theme-*.json`.
+  `eject` was stale in the same list, left by the same round of renames.
+
+  A test now checks every watched path against the removed-option table, so an option that is renamed and not updated
+  here fails at the commit that renames it rather than silently detaching an artifact from its trigger.
+
+  **`ERR_BAMBOO_EXTRACT_FAILED` carries its causes.** The aggregate named every file it could not extract but kept only
+  their messages, so a caller acting on the failure could not tell a retired token spelling from a syntax error. It now
+  sets `cause` to an `AggregateError` of the originals — always, one file or six, so reading `cause.errors` never has to
+  test how many there were first.
+
+- c29044f: Throw on a config option that no longer exists, instead of warning about it.
+
+  ```
+  ERR_BAMBOO_CONFIG_ERROR: 2 config option(s) no longer exist:
+
+  - [config] `pruneUnusedTokens` is now `prune: { tokens: 'reachable' }`.
+  - [config] `themes` is now `theme.variants`.
+  ```
+
+  Removed-option detection reported every key by name with its replacement, and then warned. A warning is not a signal
+  anything acts on: these removals ship in **minor** versions, so a warning is precisely what an automated dependency
+  upgrade merges without a person ever reading it — while the option itself is silent in every other way. There is no
+  schema walk, so a key that no longer exists is otherwise ignored outright, the build reverts to the default, and any
+  assertion the option asked for stops being enforced.
+
+  This is separate from unknown-key tolerance, which is unchanged. An unknown key may be forward-compatible — a setting
+  for a version not installed yet. A _removed_ key can only point backwards: it is proof the config predates the version
+  reading it.
+
+  Not governed by `validation`, in either direction, for the same reason a retired token spelling is not. That option
+  grades opinions about a config that still builds; this is evidence the config is not the one being read. Every
+  occurrence is collected before throwing, so a config is fixed in one pass, and the checks run ahead of the ordinary
+  findings — a config that predates the version is why the rest disagrees.
+
+  Found one in this repository: `sandbox/waku-ts` still set `themes`, so the app's theme variants were never generated
+  while it imported `getTheme` and `injectTheme` from them.
+
+### Patch Changes
+
+- Updated dependencies [c29044f]
+- Updated dependencies [b0ed6dc]
+- Updated dependencies [8a66bb9]
+- Updated dependencies [2b84dfa]
+- Updated dependencies [aecf2b1]
+- Updated dependencies [da792cc]
+- Updated dependencies [1cc1860]
+- Updated dependencies [c29044f]
+- Updated dependencies [f3a8b0d]
+- Updated dependencies [1243f93]
+- Updated dependencies [c29044f]
+  - @bamboocss/shared@1.32.0
+  - @bamboocss/types@1.32.0
+  - @bamboocss/preset-base@1.32.0
+  - @bamboocss/preset-bamboo@1.32.0
+  - @bamboocss/logger@1.32.0
+
 ## 1.31.0
 
 ### Minor Changes

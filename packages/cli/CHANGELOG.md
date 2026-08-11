@@ -1,5 +1,122 @@
 # @bamboocss/dev
 
+## 1.32.0
+
+### Minor Changes
+
+- 591a0f1: Remove `cssgen --minimal`, leaving the artifact type as the one way to say what `cssgen` emits.
+
+  `cssgen <type>` names one of `preflight`, `tokens`, `static`, `global` or `keyframes`. `--minimal` answered the same
+  question from the other side — everything _except_ those five — so which flag you reached for depended on which side
+  of the set you were standing on.
+
+  To ship only the css your source uses, generate everything and import the part you want. `--splitting` writes each
+  layer as its own file:
+
+  ```bash
+  bamboo cssgen --splitting
+  ```
+
+  ```
+  styled-system/styles/utilities.css   # what --minimal emitted
+  styled-system/styles/recipes.css
+  ```
+
+  That costs the generation of the layers you then do not import, which is build time rather than shipped bytes.
+
+- da792cc: Replace `textStyles`, `layerStyles` and `animationStyles` with one `theme.mixins`.
+
+  The three were one mechanism wearing three names: one registration, one cascade layer, and a `{ description?, value }`
+  shape they all shared. They differed only in which css properties the value was allowed to set — a partition that was
+  arbitrary at the edges (`color` was legal in a text style _and_ a layer style; `transform` in a layer style but
+  `transformOrigin` only in an animation style) and costly in the middle, since a bundle wanting a font _and_ a border
+  had to be split across two keys and applied twice.
+
+  ```ts
+  // before
+  export default defineConfig({
+    theme: { textStyles, layerStyles, animationStyles },
+  })
+  css({ textStyle: 'body' })
+  css({ layerStyle: 'card' })
+
+  // after
+  export default defineConfig({ theme: { mixins } })
+  css({ mixin: 'body' })
+  css({ mixin: 'card' })
+  ```
+
+  - `defineTextStyles`, `defineLayerStyles` and `defineAnimationStyles` become `defineMixins`.
+  - The `text-styles.json`, `layer-styles.json` and `animation-styles.json` specs become `mixins.json`, and the MCP
+    tools `get_text_styles`, `get_layer_styles` and `get_animation_styles` become `get_mixins`.
+  - Setting a property that does not exist is still an error. `Mixin` is built on the same property set `css()` uses
+    rather than on `SystemStyleObject`, whose index signature would accept a typo — which is what the three allowlists
+    were really protecting, and why one of them shipped `hypens` for as long as it did.
+  - One namespace now holds every mixin, so prefix them by purpose — `text.body`, `layer.card` — if the flat list gets
+    long. Nesting already supports this, and `DEFAULT` gives each group a bare name.
+
+  A config still setting one of the three old keys fails with the replacement named, rather than reverting to the
+  default in silence.
+
+- f3a8b0d: Remove `defineParts`, leaving one way to model a multi-part component.
+
+  A slot recipe is that way. Where you wanted the other thing `defineParts` offered — a single class on the root that
+  reaches its children, so there is nothing to bind — that was never an API, only an object whose keys are selectors:
+
+  ```ts
+  defineRecipe({
+    className: 'checkbox',
+    base: {
+      '& [data-part="root"]': {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '2',
+      },
+      '& [data-part="control"]': { borderWidth: '1px', borderRadius: 'sm' },
+    },
+  })
+  ```
+
+  `defineParts` only keyed that object by part name instead. It earned its place when the selectors came from a Zag or
+  Ark `anatomy` and were tedious to spell out — `&[data-scope="card"][data-part="root"], & [data-scope=…]` per part.
+  That case is still real, and still a few lines that belong in your codebase rather than in the framework:
+
+  ```ts
+  const toParts =
+    <T extends Record<string, { selector: string }>>(anatomy: T) =>
+    (config: Partial<Record<keyof T, SystemStyleObject>>): SystemStyleObject =>
+      Object.fromEntries(Object.entries(config).map(([part, styles]) => [anatomy[part].selector, styles]))
+  ```
+
+  The `Part` and `Parts` types go with it, as does the `defineParts` declaration in the generated `styled-system/types`.
+
+  `no-config-function-in-source` also picks up `defineMixins` and drops `defineLayerStyles` and `defineTextStyles`,
+  which the preceding mixins change had left behind — writing `defineMixins` in a source file was not being flagged.
+
+### Patch Changes
+
+- Updated dependencies [c29044f]
+- Updated dependencies [b0ed6dc]
+- Updated dependencies [8a66bb9]
+- Updated dependencies [2b84dfa]
+- Updated dependencies [591a0f1]
+- Updated dependencies [aecf2b1]
+- Updated dependencies [da792cc]
+- Updated dependencies [1cc1860]
+- Updated dependencies [c29044f]
+- Updated dependencies [b2b4173]
+- Updated dependencies [f3a8b0d]
+- Updated dependencies [1243f93]
+- Updated dependencies [c29044f]
+  - @bamboocss/node@1.32.0
+  - @bamboocss/shared@1.32.0
+  - @bamboocss/types@1.32.0
+  - @bamboocss/preset-base@1.32.0
+  - @bamboocss/preset-bamboo@1.32.0
+  - @bamboocss/postcss@1.32.0
+  - @bamboocss/token-dictionary@1.32.0
+  - @bamboocss/logger@1.32.0
+
 ## 1.31.0
 
 ### Minor Changes
