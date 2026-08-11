@@ -96,7 +96,6 @@ function setupGeneratedTypes(ctx: Context): Artifact {
       { file: ctx.file.extDts('composition'), code: gen.composition },
       { file: ctx.file.extDts('recipe'), code: gen.recipe },
       { file: ctx.file.extDts('pattern'), code: gen.pattern },
-      { file: ctx.file.extDts('parts'), code: gen.parts },
     ],
   }
 }

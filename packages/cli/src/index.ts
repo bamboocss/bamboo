@@ -1,4 +1,3 @@
-import { BambooError } from '@bamboocss/shared'
 import type {
   CompositionStyles,
   Config,
@@ -8,7 +7,6 @@ import type {
   HooksApiInterface,
   Mixins,
   BambooPlugin,
-  Parts,
   PatternConfig,
   PatternProperties,
   Preset,
@@ -39,23 +37,6 @@ export function defineSlotRecipe<S extends string, T extends SlotRecipeVariantRe
   config: SlotRecipeConfig<S, T>,
 ) {
   return config as SlotRecipeConfig
-}
-
-export function defineParts<T extends Parts>(parts: T) {
-  return function (config: Partial<Record<keyof T, SystemStyleObject>>): Partial<Record<keyof T, SystemStyleObject>> {
-    return Object.fromEntries(
-      Object.entries(config).map(([key, value]) => {
-        const part = parts[key]
-        if (part == null) {
-          throw new BambooError(
-            'NOT_FOUND',
-            `Part "${key}" does not exist in the anatomy. Available parts: ${Object.keys(parts).join(', ')}`,
-          )
-        }
-        return [part.selector, value]
-      }),
-    ) as any
-  }
 }
 
 export function definePattern<T extends PatternConfig>(config: T) {

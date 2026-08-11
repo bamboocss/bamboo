@@ -39,7 +39,6 @@ describe('bundle config', () => {
           },
         },
         "dependencies": [
-          "packages/shared/dist/index.mjs",
           "packages/cli/dist/index.mjs",
           "packages/config/__tests__/samples/with-tsconfig-paths/src/theme/tokens.ts",
           "packages/config/__tests__/samples/with-tsconfig-paths/bamboo.config.ts",
@@ -78,7 +77,6 @@ describe('bundle config', () => {
           },
         },
         "dependencies": [
-          "packages/shared/dist/index.mjs",
           "packages/cli/dist/index.mjs",
           "packages/config/__tests__/samples/nested-files/src/theme/colors.ts",
           "packages/config/__tests__/samples/nested-files/src/theme/tokens.ts",
@@ -170,7 +168,6 @@ describe('bundle config', () => {
           },
         },
         "dependencies": [
-          "packages/shared/dist/index.mjs",
           "packages/cli/dist/index.mjs",
           "packages/config/__tests__/samples/with-preset/src/ts-import-preset.ts",
           "packages/config/__tests__/samples/with-preset/src/required-preset.ts",
@@ -213,7 +210,6 @@ describe('bundle config', () => {
           },
         },
         "dependencies": [
-          "packages/shared/dist/index.mjs",
           "packages/cli/dist/index.mjs",
           "packages/config/__tests__/samples/common/tokens.ts",
           "packages/config/__tests__/samples/ts/bamboo.config.ts",
@@ -255,7 +251,6 @@ describe('bundle config', () => {
           },
         },
         "dependencies": [
-          "packages/shared/dist/index.mjs",
           "packages/cli/dist/index.mjs",
           "packages/config/__tests__/samples/common/tokens.ts",
           "packages/config/__tests__/samples/cts/bamboo.config.cts",
@@ -297,7 +292,6 @@ describe('bundle config', () => {
           },
         },
         "dependencies": [
-          "packages/shared/dist/index.mjs",
           "packages/cli/dist/index.mjs",
           "packages/config/__tests__/samples/common/tokens.ts",
           "packages/config/__tests__/samples/mts/bamboo.config.mts",
@@ -339,7 +333,6 @@ describe('bundle config', () => {
           },
         },
         "dependencies": [
-          "packages/shared/dist/index.mjs",
           "packages/cli/dist/index.mjs",
           "packages/config/__tests__/samples/common/tokens.ts",
           "packages/config/__tests__/samples/js/bamboo.config.js",
@@ -381,7 +374,6 @@ describe('bundle config', () => {
           },
         },
         "dependencies": [
-          "packages/shared/dist/index.cjs",
           "packages/cli/dist/index.cjs",
           "packages/config/__tests__/samples/common/tokens.ts",
           "packages/config/__tests__/samples/cjs/bamboo.config.cjs",
@@ -423,7 +415,6 @@ describe('bundle config', () => {
           },
         },
         "dependencies": [
-          "packages/shared/dist/index.mjs",
           "packages/cli/dist/index.mjs",
           "packages/config/__tests__/samples/common/tokens.ts",
           "packages/config/__tests__/samples/mjs/bamboo.config.mjs",

@@ -17,7 +17,6 @@ export const generateTypesEntry = (ctx: Context) => {
     // @ts-nocheck
     import type * as Bamboo from '@bamboocss/dev'
     ${ctx.file.importType('RecipeVariantRecord, RecipeConfig, SlotRecipeVariantRecord, SlotRecipeConfig', './recipe')}
-    ${ctx.file.importType('Parts', './parts')}
     ${ctx.file.importType('PatternConfig, PatternProperties', './pattern')}
     ${ctx.file.importType('GlobalStyleObject, SystemStyleObject', './system-types')}
     ${ctx.file.importType('CompositionStyles', './composition')}
@@ -29,7 +28,6 @@ export const generateTypesEntry = (ctx: Context) => {
       export function defineGlobalStyles(definition: GlobalStyleObject): Bamboo.GlobalStyleObject
       export function defineMixins(definition: CompositionStyles['mixins']): Bamboo.Mixins
       export function definePattern<T extends PatternProperties>(config: PatternConfig<T>): Bamboo.PatternConfig
-      export function defineParts<T extends Parts>(parts: T): (config: Partial<Record<keyof T, SystemStyleObject>>) => Partial<Record<keyof T, SystemStyleObject>>
     }
     `,
     index: outdent`

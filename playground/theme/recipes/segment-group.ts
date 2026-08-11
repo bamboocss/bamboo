@@ -1,7 +1,8 @@
-import { defineParts, defineRecipe } from '@bamboocss/dev'
+import { defineRecipe } from '@bamboocss/dev'
+import { toParts } from '../parts'
 import { segmentGroupAnatomy } from '@ark-ui/react/segment-group'
 
-const parts = defineParts(segmentGroupAnatomy.build())
+const parts = toParts(segmentGroupAnatomy.build())
 
 export const segmentGroup = defineRecipe({
   className: 'segmentGroup',

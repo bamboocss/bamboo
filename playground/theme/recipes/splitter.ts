@@ -1,7 +1,8 @@
-import { defineParts, defineRecipe } from '@bamboocss/dev'
+import { defineRecipe } from '@bamboocss/dev'
+import { toParts } from '../parts'
 import { splitterAnatomy } from '@ark-ui/react/splitter'
 
-const parts = defineParts(splitterAnatomy.build())
+const parts = toParts(splitterAnatomy.build())
 
 export const splitter = defineRecipe({
   className: 'splitter',

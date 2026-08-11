@@ -5,7 +5,6 @@ import {
   RecipeConfig,
   SlotRecipeVariantRecord,
   SlotRecipeConfig,
-  Parts,
   SystemStyleObject,
   PatternConfig,
   Preset,
@@ -49,9 +48,6 @@ declare function defineRecipe<T extends RecipeVariantRecord>(config: RecipeConfi
 declare function defineSlotRecipe<S extends string, T extends SlotRecipeVariantRecord<S>>(
   config: SlotRecipeConfig<S, T>,
 ): SlotRecipeConfig
-declare function defineParts<T extends Parts>(
-  parts: T,
-): (config: Partial<Record<keyof T, SystemStyleObject>>) => Partial<Record<keyof T, SystemStyleObject>>
 declare function definePattern<T extends PatternConfig>(config: T): PatternConfig
 declare function definePreset(preset: Preset): Preset
 declare function defineKeyframes(keyframes: CssKeyframes): CssKeyframes
@@ -84,7 +80,6 @@ export {
   defineGlobalStyles,
   defineKeyframes,
   defineLayerStyles,
-  defineParts,
   definePattern,
   definePlugin,
   definePreset,

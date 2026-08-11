@@ -147,7 +147,6 @@ describe('setup-artifacts', () => {
           "types/composition.d.ts",
           "types/recipe.d.ts",
           "types/pattern.d.ts",
-          "types/parts.d.ts",
         ],
         [
           "types/system-types.d.ts",

@@ -1,7 +1,8 @@
-import { defineParts, defineRecipe } from '@bamboocss/dev'
+import { defineRecipe } from '@bamboocss/dev'
+import { toParts } from '../parts'
 import { menuAnatomy } from '@ark-ui/react/menu'
 
-const parts = defineParts(menuAnatomy.build())
+const parts = toParts(menuAnatomy.build())
 
 const itemStyle = {
   alignItems: 'center',

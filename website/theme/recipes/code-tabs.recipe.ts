@@ -1,7 +1,8 @@
 import { tabsAnatomy } from '@ark-ui/react/tabs'
-import { defineParts, defineRecipe } from '@bamboocss/dev'
+import { defineRecipe } from '@bamboocss/dev'
+import { toParts } from '../parts'
 
-const parts = defineParts(tabsAnatomy.build())
+const parts = toParts(tabsAnatomy.build())
 
 export const codeTabsRecipe = defineRecipe({
   className: 'codeTabs',

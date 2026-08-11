@@ -14201,12 +14201,6 @@ export type ConfigPath = Exclude<
   | (string & {}),
   undefined
 >
-export interface Part {
-  selector: string
-}
-export interface Parts {
-  [key: string]: Part
-}
 export type ReportItemType =
   | 'css'
   | 'cva'

@@ -575,42 +575,35 @@ type CheckboxProps = CheckboxVariants & {
 }
 ```
 
-### `defineParts`
+## One class that reaches its parts
 
-It can be useful when you want to have the equivalent of a slot recipe without needing to split the class names bindings
-and instead just having a className that handles children on 1 DOM element.
+A slot recipe hands you one class per slot, which you bind to each element. Sometimes you want the opposite: a single
+class on the root that styles its children by selector, so there is nothing to bind. This pairs well with
+[ZagJs](https://zagjs.com/) and [Ark-UI](https://ark-ui.com/), which already mark their parts with `data-part`.
 
-It pairs well with [ZagJs](https://zagjs.com/) and [Ark-UI](https://ark-ui.com/)
-
-Let's refactor the previous example to use parts instead of slots:
+That needs no separate API — it is a regular recipe whose keys are selectors:
 
 ```ts
-import { defineParts, defineRecipe } from '@bamboocss/dev'
-
-const parts = defineParts({
-  root: { selector: '& [data-part="root"]' },
-  control: { selector: '& [data-part="control"]' },
-  label: { selector: '& [data-part="label"]' },
-})
+import { defineRecipe } from '@bamboocss/dev'
 
 export const checkboxRecipe = defineRecipe({
   className: 'checkbox',
   description: 'A checkbox style',
-  base: parts({
-    root: { display: 'flex', alignItems: 'center', gap: '2' },
-    control: { borderWidth: '1px', borderRadius: 'sm' },
-    label: { marginStart: '2' },
-  }),
+  base: {
+    '& [data-part="root"]': { display: 'flex', alignItems: 'center', gap: '2' },
+    '& [data-part="control"]': { borderWidth: '1px', borderRadius: 'sm' },
+    '& [data-part="label"]': { marginStart: '2' },
+  },
   variants: {
     size: {
-      sm: parts({
-        control: { width: '8', height: '8' },
-        label: { fontSize: 'sm' },
-      }),
-      md: parts({
-        control: { width: '10', height: '10' },
-        label: { fontSize: 'md' },
-      }),
+      sm: {
+        '& [data-part="control"]': { width: '8', height: '8' },
+        '& [data-part="label"]': { fontSize: 'sm' },
+      },
+      md: {
+        '& [data-part="control"]': { width: '10', height: '10' },
+        '& [data-part="label"]': { fontSize: 'md' },
+      },
     },
   },
   defaultVariants: {
@@ -618,3 +611,19 @@ export const checkboxRecipe = defineRecipe({
   },
 })
 ```
+
+<Callout type="info">
+  A `defineParts` helper used to key these objects by part name instead of by selector. It was removed: bamboo models a
+  multi-part component one way, as a slot recipe, and the selector form above needs no API at all.
+
+Zag and Ark generate their selectors, so if you build parts from an `anatomy` rather than writing them out, keep a
+helper of your own next to the recipe — it is a few lines and it belongs to your codebase, not to the framework:
+
+```ts
+const toParts =
+  <T extends Record<string, { selector: string }>>(anatomy: T) =>
+  (config: Partial<Record<keyof T, SystemStyleObject>>): SystemStyleObject =>
+    Object.fromEntries(Object.entries(config).map(([part, styles]) => [anatomy[part].selector, styles]))
+```
+
+</Callout>

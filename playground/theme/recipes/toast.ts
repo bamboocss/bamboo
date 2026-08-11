@@ -1,7 +1,8 @@
 import { toastAnatomy } from '@ark-ui/react/toast'
-import { defineParts, defineRecipe } from '@bamboocss/dev'
+import { defineRecipe } from '@bamboocss/dev'
+import { toParts } from '../parts'
 
-const parts = defineParts({
+const parts = toParts({
   ...toastAnatomy.build(),
   content: { selector: '& [data-part="content"]' },
   ellipse: { selector: '& [data-part="ellipse"]' },

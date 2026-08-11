@@ -1,5 +1,6 @@
 import { createAnatomy } from '@ark-ui/react/anatomy'
-import { defineParts, defineRecipe } from '@bamboocss/dev'
+import { defineRecipe } from '@bamboocss/dev'
+import { toParts } from '../parts'
 
 const anatomy = createAnatomy('navbar', [
   'root',
@@ -15,7 +16,7 @@ const anatomy = createAnatomy('navbar', [
   'mobileMenu',
 ])
 
-const parts = defineParts(anatomy.build())
+const parts = toParts(anatomy.build())
 
 export const navbarRecipe = defineRecipe({
   className: 'navbar',
