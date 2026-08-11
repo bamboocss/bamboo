@@ -3,12 +3,14 @@ import { esc } from '@bamboocss/shared'
 import type { Config } from '@bamboocss/types'
 import { foldSource, type FoldResult, type ForeignRecipes } from '../src/fold'
 import { createRuntimeCss } from '../src/runtime-css'
+import { createStaticStyleSetCompiler } from '../src/style-set'
 
 export const FILE_PATH = 'app/src/test.tsx'
 
 export const createFoldFixture = (userConfig?: Parameters<typeof createContext>[0]) => {
   const ctx = createContext(userConfig)
   const runtimeCss = createRuntimeCss(ctx)
+  const styleCompiler = createStaticStyleSetCompiler(ctx, runtimeCss)
 
   const fold = (code: string, filePath = FILE_PATH, reportSurvivors = false): FoldResult => {
     const sourceFile = ctx.project.addSourceFile(filePath, code)
@@ -29,6 +31,24 @@ export const createFoldFixture = (userConfig?: Parameters<typeof createContext>[
   /** What `strict` would see: the fold with its output-based survivor check on. */
   const foldStrict = (code: string, filePath = FILE_PATH): FoldResult => fold(code, filePath, true)
 
+  /** Fold recipes to globally shared utility atoms, as the strict production compiler does. */
+  const foldStyleSets = (code: string, filePath = FILE_PATH, maxRecipeStates?: number): FoldResult => {
+    const sourceFile = ctx.project.addSourceFile(filePath, code)
+    const parserResult = ctx.project.parseSourceFile(filePath)
+    if (!parserResult) return { code, map: null, folded: [], skipped: [], dependencies: [] }
+    return foldSource({
+      ctx,
+      code,
+      parserResult,
+      filePath,
+      runtimeCss,
+      styleCompiler,
+      maxRecipeStates,
+      parseModule: (path) => ctx.project.parseSourceFile(path),
+      sourceFile,
+    })
+  }
+
   /** Add the modules an entry imports before folding it. */
   const addFiles = (files: Record<string, string>) => {
     for (const [path, source] of Object.entries(files)) {
@@ -39,6 +59,14 @@ export const createFoldFixture = (userConfig?: Parameters<typeof createContext>[
 
   /** CSS for everything parsed through this fixture so far. */
   const getCss = () => {
+    const sheet = ctx.createSheet()
+    ctx.appendParserCss(sheet)
+    return ctx.getCss(sheet)
+  }
+
+  /** CSS backing the classes emitted by `foldStyleSets`. */
+  const getStyleSetCss = () => {
+    ctx.encoder.atomizeObservedRecipes()
     const sheet = ctx.createSheet()
     ctx.appendParserCss(sheet)
     return ctx.getCss(sheet)
@@ -66,7 +94,7 @@ export const createFoldFixture = (userConfig?: Parameters<typeof createContext>[
     })
   }
 
-  return { ctx, fold, foldStrict, foldWithCache, addFiles, getCss, runtimeCss }
+  return { ctx, fold, foldStrict, foldStyleSets, foldWithCache, addFiles, getCss, getStyleSetCss, runtimeCss }
 }
 
 /**

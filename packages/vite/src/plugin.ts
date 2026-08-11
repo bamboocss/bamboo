@@ -4,9 +4,15 @@ import { logger } from '@bamboocss/logger'
 import { truncateList } from '@bamboocss/shared'
 import { loadConfigAndCreateContext } from '@bamboocss/node'
 import type { Plugin } from 'vite'
-import { bamboocssCss } from './css'
+import { bamboocssCss, VIRTUAL_CSS_ID } from './css'
 import { foldSource, SURVIVES_TO_RUNTIME, type ForeignRecipes, type SkipReason, type SkippedCall } from './fold'
 import { createRuntimeCss, type RuntimeCss } from './runtime-css'
+import { createStaticStyleSetCompiler, type StaticStyleSetCompiler } from './style-set'
+import {
+  createStaticCompilationSession,
+  resetStaticCompilationSession,
+  type DenseClassNameMode,
+} from './static-session'
 
 export interface BambooVitePluginOptions {
   /**
@@ -76,6 +82,27 @@ export interface BambooVitePluginOptions {
    * @default false
    */
   failOnUnfolded?: boolean
+  /**
+   * Compile `css()`, `cva()` and config recipe calls through one symbolic style-set pool.
+   *
+   * Recipe and utility declarations are composed before class allocation, then emitted as
+   * globally shared atoms. Because the legacy recipe layer is omitted, a call that cannot be
+   * compiled is a build error rather than a runtime fallback.
+   *
+   * @default false
+   */
+  staticComposition?: boolean
+  /**
+   * Compact atom names in static-composition builds. `true`/`stable` is deterministic across
+   * client and SSR builds. `local` uses the shortest names and is safe only when one build
+   * produces both HTML and CSS. @default true
+   */
+  denseClassNames?: DenseClassNameMode
+  /**
+   * Maximum complete selections compiled for one runtime `cva`/`sva` call. This bounds
+   * build time and memory for the exact compound-variant decision table. @default 65536
+   */
+  maxRecipeStates?: number
 }
 
 const DEFAULT_EXTENSIONS = /\.(?:[cm]?[jt]sx?)$/
@@ -154,13 +181,31 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
     reportSkipped = false,
     reportSummary = true,
     failOnUnfolded = false,
+    staticComposition = false,
+    denseClassNames = true,
+    maxRecipeStates,
   } = options
+
+  if (staticComposition && !transform) {
+    throw new Error('bamboocss: `staticComposition` requires the build transform; remove `transform: false`.')
+  }
+  if (maxRecipeStates !== undefined && (!Number.isSafeInteger(maxRecipeStates) || maxRecipeStates < 1)) {
+    throw new Error('bamboocss: `maxRecipeStates` must be a positive safe integer.')
+  }
 
   /** Totals across the build, for the summary. */
   const totals = { folded: 0, files: 0, filesWithFolds: 0, skipped: new Map<string, number>() }
+  const staticSession = staticComposition ? createStaticCompilationSession(denseClassNames) : undefined
 
   /** Under `failOnUnfolded`, every call that would still reach the runtime. */
   const survivors: Array<{ file: string; line: number; name: string; reason: SkipReason }> = []
+  const survivorKeys = new Set<string>()
+  const addSurvivor = (entry: (typeof survivors)[number]) => {
+    const key = `${entry.file}:${entry.line}:${entry.name}:${entry.reason}`
+    if (survivorKeys.has(key)) return
+    survivorKeys.add(key)
+    survivors.push(entry)
+  }
 
   /**
    * Recipe configs read out of modules other than the one being transformed.
@@ -172,13 +217,18 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
 
   let ctx: Awaited<ReturnType<typeof loadConfigAndCreateContext>> | undefined
   let runtimeCss: RuntimeCss | undefined
+  let styleCompiler: StaticStyleSetCompiler | undefined
   let setup: Promise<void> | undefined
 
   const ensureContext = async () => {
     if (!setup) {
       setup = loadConfigAndCreateContext({ configPath, cwd }).then((loaded) => {
         ctx = loaded
-        runtimeCss = createRuntimeCss(loaded)
+        const semanticCss = createRuntimeCss(loaded)
+        runtimeCss = staticSession
+          ? (...styles: Parameters<RuntimeCss>) => staticSession.allocateClassString(semanticCss(...styles))
+          : semanticCss
+        styleCompiler = staticComposition ? createStaticStyleSetCompiler(loaded, runtimeCss) : undefined
       })
     }
     await setup
@@ -203,7 +253,9 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
       totals.filesWithFolds = 0
       totals.skipped.clear()
       survivors.length = 0
+      survivorKeys.clear()
       recipeConfigCache.clear()
+      if (staticSession) resetStaticCompilationSession(staticSession)
 
       await ensureContext()
     },
@@ -271,7 +323,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
         // Under `failOnUnfolded` an empty result is not proof of nothing to say: a module whose only
         // bamboo usage is a shape the parser does not recognise produces exactly that, and
         // skipping it here is what let those modules pass a build they should have failed.
-        if (!parserResult || (parserResult.isEmpty() && !failOnUnfolded)) return null
+        if (!parserResult || (parserResult.isEmpty() && !failOnUnfolded && !staticComposition)) return null
 
         result = foldSource({
           ctx,
@@ -279,6 +331,8 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
           parserResult,
           filePath,
           runtimeCss,
+          styleCompiler,
+          maxRecipeStates,
           partial,
           // On demand rather than from a registry built at `buildStart`: a consumer is
           // transformed before the module it imports, so anything accumulated during the
@@ -286,7 +340,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
           parseModule: (path) => ctx?.project.parseSourceFile(path),
           recipeConfigCache,
           // Only `failOnUnfolded` acts on it, and it costs an identifier walk.
-          reportSurvivors: failOnUnfolded,
+          reportSurvivors: failOnUnfolded || staticComposition,
           sourceFile,
         })
       } catch (error) {
@@ -300,8 +354,8 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
         totals.files++
         totals.skipped.set('fold-failed', (totals.skipped.get('fold-failed') ?? 0) + 1)
 
-        if (failOnUnfolded) {
-          survivors.push({ file: filePath, line: 1, name: 'fold', reason: 'fold-failed' })
+        if (failOnUnfolded || staticComposition) {
+          addSurvivor({ file: filePath, line: 1, name: 'fold', reason: 'fold-failed' })
         }
 
         return null
@@ -314,10 +368,19 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
         totals.skipped.set(entry.reason, (totals.skipped.get(entry.reason) ?? 0) + 1)
       }
 
+      if (staticSession) {
+        if (result.folded.some((entry) => entry.kind === 'class' || entry.kind === 'slots')) {
+          staticSession.transformedFiles.add(resolve(filePath))
+        }
+        for (const entry of result.folded) {
+          for (const className of entry.classNames) staticSession.markClassUsed(className)
+        }
+      }
+
       if (failOnUnfolded) {
         for (const entry of result.skipped) {
           if (!SURVIVES_TO_RUNTIME.has(entry.reason)) continue
-          survivors.push({ file: filePath, line: lineAt(code, entry.start), name: entry.name, reason: entry.reason })
+          addSurvivor({ file: filePath, line: lineAt(code, entry.start), name: entry.name, reason: entry.reason })
         }
 
         // A lowered leaf counts too, and this is the shape that would otherwise slip
@@ -331,7 +394,28 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
         // the engine, which is the outcome this option exists to make reachable: with the
         // fallback on, `failOnUnfolded` can only pass an app with no dynamic styling at all.
         if ((ctx.config.leafFallback ?? true) && result.code.includes('cssLeaf(')) {
-          survivors.push({
+          addSurvivor({
+            file: filePath,
+            line: lineAt(result.code, result.code.indexOf('cssLeaf(')),
+            name: 'cssLeaf',
+            reason: 'lowered-leaf' as SkipReason,
+          })
+        }
+      }
+
+      if (staticComposition) {
+        for (const entry of result.skipped) {
+          if (entry.reason === 'not-foldable' || entry.reason === 'not-imported' || entry.reason === 'overlapping') {
+            continue
+          }
+          addSurvivor({ file: filePath, line: lineAt(code, entry.start), name: entry.name, reason: entry.reason })
+        }
+
+        // A StyleSet build promises finite, build-known class selection. Even with the
+        // engine fallback disabled, `cssLeaf` still manufactures a class from a runtime
+        // value and keeps per-render styling logic.
+        if (result.code.includes('cssLeaf(')) {
+          addSurvivor({
             file: filePath,
             line: lineAt(result.code, result.code.indexOf('cssLeaf(')),
             name: 'cssLeaf',
@@ -360,7 +444,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
     },
 
     buildEnd() {
-      if (failOnUnfolded && survivors.length) {
+      if ((failOnUnfolded || staticComposition) && survivors.length) {
         // Grouped by file, because the fix is usually per-module: one component taking a
         // prop keeps the engine for the whole bundle.
         const byFile = new Map<string, typeof survivors>()
@@ -391,18 +475,52 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
         const threw = survivors.some((entry) => entry.reason === 'fold-failed')
 
         throw new Error(
-          `bamboocss: ${survivors.length} call(s) could not be folded, and \`failOnUnfolded\` is on.\n\n` +
+          `bamboocss: ${survivors.length} call(s) could not be folded` +
+            (failOnUnfolded ? `, and \`failOnUnfolded\` is on` : ` for static composition`) +
+            `.\n\n` +
             `${detail}\n\n` +
             (threw
               ? `\`fold-failed\` is a module the fold threw on — see the error logged for it above. ` +
                 `Nothing was established about its calls either way, so it cannot support the ` +
                 `guarantee this option makes.\n\n`
               : '') +
-            `Each one keeps \`styled-system/css\` in the bundle, so the engine cannot be dropped ` +
-            `however many other calls folded. Make the values static, move the variation into a ` +
-            `\`cva\` variant, or generate them with \`staticCss\` — or set \`failOnUnfolded: false\` to ` +
-            `accept the runtime.`,
+            (staticComposition
+              ? `Static composition removes the recipe layer, so every Bamboo style value must be resolved ` +
+                `before emission. Make these values static or disable \`staticComposition\` to retain the ` +
+                `legacy runtime and cascade layers.`
+              : `Each one keeps \`styled-system/css\` in the bundle, so the engine cannot be dropped ` +
+                `however many other calls folded. Make the values static, move the variation into a ` +
+                `\`cva\` variant, or generate them with \`staticCss\` — or set \`failOnUnfolded: false\` to ` +
+                `accept the runtime.`),
         )
+      }
+
+      // The symbolic compiler names classes from Vite's live module graph, while CSS is
+      // extracted from Bamboo's configured `include`. A strict build must prove those two
+      // graphs agree: otherwise a perfectly folded class can have no rule behind it.
+      // `getModuleInfo` distinguishes a real Rollup build from unit harnesses that call the
+      // hook directly without the companion CSS plugin.
+      if (staticSession && typeof this.getModuleInfo === 'function') {
+        if (!staticSession.cssLoaded) {
+          throw new Error(
+            `bamboocss: static composition produced class values, but ${JSON.stringify(VIRTUAL_CSS_ID)} ` +
+              `was not imported. Import it once from the application entry so the compiled rules are emitted.`,
+          )
+        }
+
+        const outsideExtraction = [...staticSession.transformedFiles].filter(
+          (file) => !staticSession.extractedFiles.has(file),
+        )
+        if (outsideExtraction.length) {
+          throw new Error(
+            `bamboocss: ${outsideExtraction.length} statically compiled module(s) are outside the CSS extraction graph:\n\n` +
+              `${truncateList(
+                outsideExtraction.map((file) => `  ${file}`),
+                { unit: 'file', separator: '\n' },
+              )}\n\n` +
+              `Add them to \`include\` in bamboo.config, or no CSS rule can back their emitted classes.`,
+          )
+        }
       }
 
       if (!transform || !reportSummary) return
@@ -427,5 +545,5 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
 
   // The css plugin first: it owns the extraction the fold's context reads from, and vite
   // preserves array order within one `enforce` bucket.
-  return [bamboocssCss({ configPath, cwd }), fold]
+  return [bamboocssCss({ configPath, cwd, staticComposition, session: staticSession }), fold]
 }

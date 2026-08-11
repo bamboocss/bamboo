@@ -1,5 +1,6 @@
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { describe, expect, test } from 'vitest'
 import { bamboocssCss, VIRTUAL_CSS_ID } from '../src/css'
 
@@ -16,8 +17,10 @@ const cwd = join(dirname(fileURLToPath(import.meta.url)), '../../../sandbox/code
 const hookOf = <T>(hook: T | { handler: T } | undefined): T | undefined =>
   typeof hook === 'function' ? hook : (hook as { handler: T } | undefined)?.handler
 
-const load = async (id: string) => {
-  const plugin = bamboocssCss({ cwd })
+const load = async (id: string, options: Parameters<typeof bamboocssCss>[0] = {}) => {
+  const plugin = bamboocssCss({ cwd, ...options })
+  const resolvedConfig = hookOf(plugin.configResolved)
+  await resolvedConfig?.call({} as never, { command: 'build' } as never)
   const resolved = hookOf(plugin.resolveId)!.call({} as never, id, undefined, {} as never)
   if (typeof resolved !== 'string') return null
 
@@ -62,5 +65,62 @@ describe('the virtual stylesheet', () => {
     // stay stale for the rest of the session.
     expect(result!.watched.length).toBeGreaterThan(0)
     expect(result!.watched.some((file) => file.endsWith('.tsx'))).toBe(true)
+  }, 60_000)
+
+  test('static composition emits recipe declarations as atoms and omits recipe rules', async () => {
+    const fixtureDir = join(cwd, 'src/__static-composition-css-test')
+    const fixture = join(fixtureDir, 'styles.ts')
+    mkdirSync(fixtureDir, { recursive: true })
+    writeFileSync(
+      fixture,
+      `
+        import { css, cva } from '../../styled-system/css'
+        const box = cva({ base: { width: '[123.4567px]' } })
+        export const recipe = box()
+        export const utility = css({ width: '[123.4567px]' })
+      `,
+    )
+
+    try {
+      const legacy = (await load(VIRTUAL_CSS_ID))!.css
+      const compiled = (await load(VIRTUAL_CSS_ID, { staticComposition: true }))!.css
+
+      // The same declaration is physically present once for the recipe class and once for
+      // the utility in the legacy sheet, but only once in the shared atom pool.
+      expect(legacy.match(/width:\s*123\.4567px/g)).toHaveLength(2)
+      expect(compiled.match(/width:\s*123\.4567px/g)).toHaveLength(1)
+      expect(legacy).toMatch(/@layer recipes\{/)
+      expect(compiled).not.toMatch(/@layer recipes\{/)
+      expect(compiled).toMatch(/@layer utilities\{/)
+    } finally {
+      rmSync(fixtureDir, { recursive: true, force: true })
+    }
+  }, 60_000)
+
+  test('static composition keeps the recipe sheet in dev where source is not folded', async () => {
+    const fixtureDir = join(cwd, 'src/__static-composition-dev-test')
+    const fixture = join(fixtureDir, 'styles.ts')
+    mkdirSync(fixtureDir, { recursive: true })
+    writeFileSync(
+      fixture,
+      `import { cva } from '../../styled-system/css'\nexport const box = cva({ base: { width: '[456.789px]' } })\n`,
+    )
+
+    try {
+      const plugin = bamboocssCss({ cwd, staticComposition: true })
+      const resolvedConfig = hookOf(plugin.configResolved)
+      await resolvedConfig?.call({} as never, { command: 'serve' } as never)
+      const resolved = hookOf(plugin.resolveId)!.call({} as never, VIRTUAL_CSS_ID, undefined, {} as never)
+      const css = await hookOf(plugin.load)!.call(
+        { addWatchFile() {} } as never,
+        resolved as string,
+        undefined as never,
+      )
+
+      expect(css).toMatch(/@layer recipes\{/)
+      expect(css).toContain('width: 456.789px')
+    } finally {
+      rmSync(fixtureDir, { recursive: true, force: true })
+    }
   }, 60_000)
 })

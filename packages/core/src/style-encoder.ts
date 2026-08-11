@@ -72,6 +72,11 @@ export class StyleEncoder {
   recipes = new Map<string, Set<string>>()
   recipes_base = new Map<string, Set<string>>()
 
+  /** Recipes observed by extraction, including an inline recipe with only a base. */
+  private observedRecipes = new Set<string>()
+  /** Recipes whose authored declarations have already been interned as utility atoms. */
+  private atomizedRecipes = new Set<string>()
+
   /**
    * Bag class -> the slot styles behind it.
    *
@@ -418,6 +423,7 @@ export class StyleEncoder {
    * `button()` both arrive as `{}` — so the parser has to say which it was.
    */
   processRecipe = (recipeName: string, variants: Record<string, any>, unresolved?: Set<string>) => {
+    this.observedRecipes.add(recipeName)
     if (this.context.recipes.isSlotRecipe(recipeName)) {
       this.processConfigSlotRecipe(recipeName, variants, unresolved)
     } else {
@@ -476,6 +482,7 @@ export class StyleEncoder {
    */
   processAtomicRecipe = (recipe: Pick<RecipeDefinition, 'base' | 'variants' | 'compoundVariants' | 'className'>) => {
     const name = getRecipeIdentity(recipe)
+    this.observedRecipes.add(name)
     this.context.recipes.registerInline(name, recipe as RecipeConfig)
     this.hashInlineRecipe(name, recipe)
   }
@@ -521,6 +528,7 @@ export class StyleEncoder {
     // set here gave the two sides different names, and an `sva` that omits `slots` rendered
     // with no styles at all.
     const name = getRecipeIdentity(recipe, 'sva')
+    this.observedRecipes.add(name)
     this.context.recipes.registerInline(name, withSlots as never)
 
     // Base is per slot, so each gets its own `name__slot` rule. Variants are hashed against
@@ -536,6 +544,50 @@ export class StyleEncoder {
       },
       withSlots.slots,
     )
+  }
+
+  /**
+   * Intern every declaration of every observed recipe in the ordinary atomic pool.
+   *
+   * This is the emission half of static style-set compilation. The Vite fold resolves a
+   * recipe selection to authored styles and asks the ordinary `css()` compiler for classes;
+   * those classes need rules even though the source declared the styles through `cva`/`sva`.
+   * Recipe identity is deliberately absent from the hashes written here, so a declaration
+   * already reached through `css()` is reused rather than emitted again.
+   *
+   * Kept explicit rather than run during normal extraction: the legacy runtime still returns
+   * recipe-specific classes and needs the recipe layer. A strict static build calls this once
+   * after extraction, when it is also prepared to erase that layer.
+   */
+  atomizeObservedRecipes = () => {
+    const atomize = (value: unknown) => {
+      if (!value || typeof value !== 'object' || Array.isArray(value)) return
+      this.hashStyleObject(this.atomic, value as StyleResultObject)
+    }
+
+    for (const name of this.observedRecipes) {
+      if (this.atomizedRecipes.has(name)) continue
+      const config = this.context.recipes.getConfig(name)
+      if (!config) continue
+
+      const slots = Recipes.isSlotRecipeConfig(config) ? config.slots : undefined
+      const take = (value: unknown) => {
+        if (!slots) {
+          atomize(value)
+          return
+        }
+        if (!value || typeof value !== 'object' || Array.isArray(value)) return
+        for (const slot of slots) atomize((value as Dict)[slot])
+      }
+
+      take(config.base)
+      for (const values of Object.values(config.variants ?? {})) {
+        for (const value of Object.values(values ?? {})) take(value)
+      }
+      for (const compound of config.compoundVariants ?? []) take((compound as { css?: unknown })?.css)
+
+      this.atomizedRecipes.add(name)
+    }
   }
 
   getConfigRecipeHash = (recipeName: string) => {

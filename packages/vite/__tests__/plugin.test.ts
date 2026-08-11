@@ -65,6 +65,16 @@ describe('plugin contract', () => {
     await expect(callTransform(plugins({ transform: false }).fold, SOURCE, '/app/src/a.tsx')).resolves.toBeNull()
   })
 
+  test('static composition cannot disable the transform that makes its stylesheet safe', () => {
+    expect(() => plugins({ transform: false, staticComposition: true })).toThrow('requires the build transform')
+  })
+
+  test('recipe state limits must be positive safe integers', () => {
+    expect(() => plugins({ maxRecipeStates: 0 })).toThrow('positive safe integer')
+    expect(() => plugins({ maxRecipeStates: 1.5 })).toThrow('positive safe integer')
+    expect(() => plugins({ maxRecipeStates: 1 })).not.toThrow()
+  })
+
   test('buildStart does not load config when the transform is off', async () => {
     const hook = plugins({ transform: false }).fold.buildStart
     const handler = typeof hook === 'function' ? hook : hook?.handler
@@ -173,6 +183,148 @@ describe('fold toggles', () => {
   test('partial: false declines a call the split would have folded', async () => {
     expect(await fold({}, PARTIAL, 'src/toggle-partial-on.tsx')).toContain('c_red.300')
     expect(await fold({ partial: false }, PARTIAL, 'src/toggle-partial-off.tsx')).toBeNull()
+  })
+
+  test('static composition merges recipe and css styles before class allocation', async () => {
+    const source = `
+      import { css, cva, cx } from 'styled-system/css'
+      const badge = cva({ base: { display: 'flex', color: 'red.300' } })
+      export const cls = cx(badge(), css({ display: 'flex', color: 'blue.500' }))
+    `
+
+    const code = await fold({ staticComposition: true, denseClassNames: false }, source, 'src/static-composition.tsx')
+    expect(code).toContain('"d_flex c_blue.500"')
+    expect(code).not.toContain('cx(badge()')
+  })
+
+  test('static composition lowers a finite dynamic recipe to a StyleSet lookup', async () => {
+    const plugin = plugins({
+      transform: true,
+      cwd,
+      reportSummary: false,
+      staticComposition: true,
+    }).fold
+    const buildStart = typeof plugin.buildStart === 'function' ? plugin.buildStart : plugin.buildStart?.handler
+    const buildEnd = typeof plugin.buildEnd === 'function' ? plugin.buildEnd : plugin.buildEnd?.handler
+
+    await buildStart?.call({} as never, {} as never)
+    const result = await callTransform(
+      plugin,
+      `
+        import { cva } from 'styled-system/css'
+        const badge = cva({ variants: { tone: { quiet: { color: 'gray.500' } } } })
+        export const className = (tone) => badge({ tone })
+      `,
+      join(cwd, 'src/static-composition-dynamic.tsx'),
+    )
+
+    expect(result?.code).toContain('cvaMap([tone]')
+    await expect(Promise.resolve().then(() => buildEnd?.call({} as never, undefined as never))).resolves.toBeUndefined()
+  })
+
+  test('static composition merges cx styles into every runtime StyleSet leaf', async () => {
+    const plugin = plugins({
+      transform: true,
+      cwd,
+      reportSummary: false,
+      staticComposition: true,
+      denseClassNames: false,
+    }).fold
+    const buildStart = typeof plugin.buildStart === 'function' ? plugin.buildStart : plugin.buildStart?.handler
+    const buildEnd = typeof plugin.buildEnd === 'function' ? plugin.buildEnd : plugin.buildEnd?.handler
+
+    await buildStart?.call({} as never, {} as never)
+    const result = await callTransform(
+      plugin,
+      `
+        import { css, cva, cx } from 'styled-system/css'
+        const badge = cva({ variants: { tone: { quiet: { color: 'gray.500' } } } })
+        export const className = (tone) => cx(badge({ tone }), css({ color: 'blue.500' }))
+      `,
+      join(cwd, 'src/static-composition-dynamic-cx.tsx'),
+    )
+
+    expect(result?.code).toContain('cvaMap([tone]')
+    expect(result?.code).toContain('c_blue.500')
+    await expect(Promise.resolve().then(() => buildEnd?.call({} as never, undefined as never))).resolves.toBeUndefined()
+  })
+
+  test('static composition uses compact stable atom names by default', async () => {
+    const code = await fold(
+      { staticComposition: true },
+      `import { css } from 'styled-system/css'\nexport const className = css({ display: 'flex', color: 'blue.500' })`,
+      'src/static-composition-dense.tsx',
+    )
+
+    expect(code).toMatch(/"_[A-Za-z]+ _[A-Za-z]+"/)
+    expect(code).not.toContain('d_flex')
+    expect(code).not.toContain('c_blue.500')
+  })
+
+  test('local dense naming is available for a single HTML-and-CSS build', async () => {
+    const code = await fold(
+      { staticComposition: true, denseClassNames: 'local' },
+      `import { css } from 'styled-system/css'\nexport const className = css({ display: 'flex', color: 'blue.500' })`,
+      'src/static-composition-local-dense.tsx',
+    )
+
+    expect(code).toContain('"_a _b"')
+  })
+
+  test('static composition rejects cx arguments whose provenance cannot be analyzed', async () => {
+    const plugin = plugins({ transform: true, cwd, reportSummary: false, staticComposition: true }).fold
+    const buildStart = typeof plugin.buildStart === 'function' ? plugin.buildStart : plugin.buildStart?.handler
+    const buildEnd = typeof plugin.buildEnd === 'function' ? plugin.buildEnd : plugin.buildEnd?.handler
+
+    await buildStart?.call({} as never, {} as never)
+    await callTransform(
+      plugin,
+      `import { cx } from 'styled-system/css'\nexport const className = (external) => cx(external, 'selected')`,
+      join(cwd, 'src/static-composition-dynamic-cx.tsx'),
+    )
+
+    await expect(Promise.resolve().then(() => buildEnd?.call({} as never, undefined as never))).rejects.toThrow(
+      'cx() — dynamic',
+    )
+  })
+
+  test('static composition rejects a runtime css value', async () => {
+    const plugin = plugins({ transform: true, cwd, reportSummary: false, staticComposition: true }).fold
+    const buildStart = typeof plugin.buildStart === 'function' ? plugin.buildStart : plugin.buildStart?.handler
+    const buildEnd = typeof plugin.buildEnd === 'function' ? plugin.buildEnd : plugin.buildEnd?.handler
+
+    await buildStart?.call({} as never, {} as never)
+    await callTransform(
+      plugin,
+      `import { css } from 'styled-system/css'\nexport const className = (tone) => css({ color: tone })`,
+      join(cwd, 'src/static-composition-leaf.tsx'),
+    )
+
+    await expect(Promise.resolve().then(() => buildEnd?.call({} as never, undefined as never))).rejects.toThrow(
+      'css() — dynamic',
+    )
+  })
+
+  test('static composition rejects reflective reads of an inline recipe', async () => {
+    const plugin = plugins({ transform: true, cwd, reportSummary: false, staticComposition: true }).fold
+    const buildStart = typeof plugin.buildStart === 'function' ? plugin.buildStart : plugin.buildStart?.handler
+    const buildEnd = typeof plugin.buildEnd === 'function' ? plugin.buildEnd : plugin.buildEnd?.handler
+
+    await buildStart?.call({} as never, {} as never)
+    await callTransform(
+      plugin,
+      `
+        import { cva } from 'styled-system/css'
+        const badge = cva({ base: { color: 'red.300' } })
+        export const className = badge()
+        export const raw = badge.raw()
+      `,
+      join(cwd, 'src/static-composition-reflective-recipe.tsx'),
+    )
+
+    await expect(Promise.resolve().then(() => buildEnd?.call({} as never, undefined as never))).rejects.toThrow(
+      'badge — runtime-binding',
+    )
   })
 })
 

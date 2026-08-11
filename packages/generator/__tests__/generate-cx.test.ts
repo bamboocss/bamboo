@@ -5,20 +5,50 @@ import { generateCx } from '../src/artifacts/js/cx'
 
 type Cx = (...args: unknown[]) => string
 type CvaPick = (value: unknown, classNameByValue: Record<string, string>, fallback?: string) => string
+type CvaMap = (
+  values: unknown[],
+  nodes: Array<[unknown, unknown, unknown[]]>,
+  leaves: unknown[],
+  root: number,
+) => unknown
 
 /**
  * Evaluate the emitted artifact rather than a copy of it. These ship to the browser as this
  * exact string, and a test that reimplemented them would be free to drift from them.
  */
-const compile = (): { cx: Cx; cvaPick: CvaPick } => {
+const compile = (): { cx: Cx; cvaMap: CvaMap; cvaPick: CvaPick } => {
   const { js } = generateCx(createGeneratorContext())
   // `splitProps` is re-exported from helpers, so the import is dropped rather than resolved —
   // nothing here exercises it, and the two functions defined in this module are the point.
-  const body = js.replace(/^import[^\n]*\n/m, '').replace(/export\s*\{[^}]*\}/, 'return { cx, cvaPick }')
-  return new Function(body)() as { cx: Cx; cvaPick: CvaPick }
+  const body = js.replace(/^import[^\n]*\n/m, '').replace(/export\s*\{[^}]*\}/, 'return { cx, cvaMap, cvaPick }')
+  return new Function(body)() as { cx: Cx; cvaMap: CvaMap; cvaPick: CvaPick }
 }
 
-const { cx, cvaPick } = compile()
+const { cx, cvaMap, cvaPick } = compile()
+
+describe('generated cvaMap', () => {
+  // root 1 -> tone, then node 0 -> size. A miss and null take edge 0;
+  // undefined takes edge 1, preserving a distinct default state.
+  const nodes: Array<[unknown, unknown, unknown[]]> = [
+    [~0, ~1, ['sm', ~2, '__proto__', ~3]],
+    [~4, 0, ['quiet', ~5]],
+  ]
+  const leaves = ['miss-size', 'default-size', 'small', 'proto', 'miss-tone', 'quiet-tone']
+
+  test('walks declared, absent, and missing states without prototype lookups', () => {
+    expect(cvaMap(['quiet', 'sm'], nodes, leaves, 1)).toBe('quiet-tone')
+    expect(cvaMap([undefined, 'sm'], nodes, leaves, 1)).toBe('small')
+    expect(cvaMap([undefined, undefined], nodes, leaves, 1)).toBe('default-size')
+    expect(cvaMap([undefined, '__proto__'], nodes, leaves, 1)).toBe('proto')
+    expect(cvaMap([undefined, 'unknown'], nodes, leaves, 1)).toBe('miss-size')
+    expect(cvaMap([undefined, null], nodes, leaves, 1)).toBe('miss-size')
+  })
+
+  test('can return a whole slot object from one selector evaluation', () => {
+    const slots = { root: 'd_flex', label: 'c_gray' }
+    expect(cvaMap(['quiet'], [[~0, ~0, ['quiet', ~1]]], ['', slots], 0)).toEqual(slots)
+  })
+})
 
 /**
  * The helper the fold emits for a variant chosen at runtime.

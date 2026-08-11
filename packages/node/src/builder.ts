@@ -284,11 +284,26 @@ export class Builder {
    *
    * `extract` has to have run first: this reads the encoder rather than filling it.
    */
-  toCss = ({ layerParams = false }: { layerParams?: boolean } = {}) => {
+  toCss = ({
+    layerParams = false,
+    includeRecipes = true,
+  }: { layerParams?: boolean; includeRecipes?: boolean } = {}) => {
     const ctx = this.getContextOrThrow()
     const sheet = ctx.createSheet()
     if (layerParams) ctx.appendLayerParams(sheet)
     ctx.appendBaselineCss(sheet)
+
+    // A strict static-style build lowers every recipe selection to ordinary shared atoms.
+    // Its encoder has already interned those atoms before this method is called, so retaining
+    // the legacy recipe rules would ship both representations. Clear all four staging layers
+    // before reachability scans: tokens referenced only by removed recipe rules should leave
+    // with them, while the atomized utility rules keep the declarations they actually use.
+    if (!includeRecipes) {
+      sheet.layers.recipes.removeAll()
+      sheet.layers.recipes_base.removeAll()
+      sheet.layers.recipes_slots.removeAll()
+      sheet.layers.recipes_slots_base.removeAll()
+    }
 
     // `extract` has already run, so this sheet carries the utilities and recipes too.
     // Parser results are not retained across that call, so the reference set comes from

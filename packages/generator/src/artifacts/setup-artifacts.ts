@@ -277,7 +277,7 @@ function setupCssIndex(ctx: Context): Artifact {
   // nothing but an autocomplete entry advertising them as API. Each stays fully typed in
   // the module that defines it, for anyone deep-importing on purpose.
   ${ctx.file.reExport('cssLeaf', './css')}
-  ${ctx.file.reExport('cvaPick, splitProps', './cx')}
+  ${ctx.file.reExport('cvaMap, cvaPick, splitProps', './cx')}
  `,
     dts: outdent`
   ${ctx.file.reExportDts('css, fallback, viewTransition', './css')}

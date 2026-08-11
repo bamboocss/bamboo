@@ -170,19 +170,22 @@ export const title = css({ fontSize: 'lg', fontWeight: 'bold' })
 export const title = 'fs_lg fw_bold'
 ```
 
-| option          | default | what it does                                                                |
-| --------------- | ------- | --------------------------------------------------------------------------- |
-| `transform`     | `true`  | Fold statically-resolvable calls. Build only – it never runs in `vite dev`. |
-| `partial`       | `true`  | Split a partly-static call so the resolvable half still becomes a literal.  |
-| `strict`        | `false` | Fail the build when any `css()` or pattern call is left for the runtime.    |
-| `reportSummary` | `true`  | Print a coverage summary when the build finishes.                           |
-| `reportSkipped` | `false` | Report every call site that did not fold, and why, per file.                |
-| `configPath`    | –       | Path to `bamboo.config.ts`. Resolved the way the CLI resolves it.           |
-| `cwd`           | –       | Directory the config is resolved from.                                      |
+| option              | default | what it does                                                                             |
+| ------------------- | ------- | ---------------------------------------------------------------------------------------- |
+| `transform`         | `true`  | Fold statically-resolvable calls. Build only – it never runs in `vite dev`.              |
+| `partial`           | `true`  | Split a partly-static call so the resolvable half still becomes a literal.               |
+| `failOnUnfolded`    | `false` | Fail when a `css()` or pattern call keeps the style engine in the bundle.                |
+| `staticComposition` | `false` | Compile `css`, recipes, and analyzable `cx` calls into one tree-shaken global atom pool. |
+| `denseClassNames`   | `true`  | Use stable compact atom names; use `'local'` for the shortest single-build names.        |
+| `maxRecipeStates`   | `65536` | Bound exact build-time enumeration for a recipe with several runtime variant axes.       |
+| `reportSummary`     | `true`  | Print a coverage summary when the build finishes.                                        |
+| `reportSkipped`     | `false` | Report every call site that did not fold, and why, per file.                             |
+| `configPath`        | –       | Path to `bamboo.config.ts`. Resolved the way the CLI resolves it.                        |
+| `cwd`               | –       | Directory the config is resolved from.                                                   |
 
 Calls that cannot be resolved at build time are left alone and keep working as they do today. See
-[Source Transformation](/docs/guides/source-transformation) for exactly what folds, what does not, and what `strict`
-checks.
+[Source Transformation](/docs/guides/source-transformation) for exactly what folds, what does not, and what each strict
+build contract checks.
 
 ## Alternative: emit CSS from PostCSS
 

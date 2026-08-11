@@ -55,6 +55,17 @@ const declaration = outdent`
    ): string
 
    /**
+    * Select a complete build-precompiled recipe StyleSet from a reduced decision table.
+    * Written by the source transform, not by hand.
+    */
+   export declare function cvaMap(
+     values: unknown[],
+     nodes: Array<[unknown, unknown, unknown[]]>,
+     leaves: unknown[],
+     root: number,
+   ): unknown
+
+   /**
     * Split a props object into the listed keys and everything else.
     *
     * Re-exported here so the build has one module to reach for when it lowers a recipe: this
@@ -100,7 +111,39 @@ export function generateCx(ctx: Context) {
     return Object.hasOwn(classNameByValue, value) ? classNameByValue[value] : ''
   }
 
-  export { cx, cvaPick, splitProps }
+  // Each node is [miss, undefined, [key, child, key, child, ...]]. Children are either
+  // another non-negative node index or a negative leaf reference. Arrays avoid object-literal
+  // \`__proto__\` semantics, while string coercion matches a recipe's property lookup.
+  const cvaMap = (values, nodes, leaves, root) => {
+    let current = root
+    for (let i = 0; i < values.length && current >= 0; i++) {
+      const node = nodes[current]
+      if (!node) return ''
+
+      const value = values[i]
+      if (value === undefined) {
+        current = node[1]
+        continue
+      }
+      if (value === null) {
+        current = node[0]
+        continue
+      }
+
+      const key = String(value)
+      const entries = node[2]
+      let next = node[0]
+      for (let j = 0; j < entries.length; j += 2) {
+        if (entries[j] !== key) continue
+        next = entries[j + 1]
+        break
+      }
+      current = next
+    }
+    return current < 0 ? (leaves[~current] ?? '') : ''
+  }
+
+  export { cx, cvaMap, cvaPick, splitProps }
 `,
     dts: declaration,
   }

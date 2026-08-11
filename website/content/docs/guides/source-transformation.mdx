@@ -18,7 +18,8 @@ export const title = css({ fontSize: 'lg', fontWeight: 'bold' })
 export const title = 'fs_lg fw_bold'
 ```
 
-The CSS is unchanged. Only the JavaScript changes.
+The default fold leaves CSS unchanged. The opt-in [static composition](#static-composition) compiler changes both sides
+so recipes and utilities can share declarations globally.
 
 ## Setup
 
@@ -44,6 +45,63 @@ export default defineConfig({
   dev and in build. A PostCSS setup for Bamboo is not required alongside it – see [Vite](/docs/installation/vite) for
   the import and the ambient declaration.
 </Callout>
+
+## Static composition
+
+The normal extractor preserves recipe identity: two recipes that both contain `display: 'flex'` need different classes
+because their runtime selects by recipe class. `staticComposition` changes that representation instead of trying to
+minify it after the fact:
+
+```ts filename="vite.config.ts"
+bamboocss({
+  staticComposition: true,
+})
+```
+
+Every analyzable style value first becomes a symbolic style set. Bamboo composes those sets with later-wins semantics,
+then allocates ordinary global utility atoms. Recipe name and source file are not part of an atom's identity:
+
+```tsx
+const layout = cva({ base: { display: 'flex', color: 'red.300' } })
+
+layout() // display:flex and color:red
+css({ display: 'flex' }) // reuses the same display:flex atom
+cx(layout(), css({ color: 'blue.500' })) // allocates only display:flex and color:blue
+```
+
+The production stylesheet omits the legacy recipe layers. Unreachable source-graph atoms are removed, while
+`staticCss.css` remains an explicit safelist. Development keeps the legacy runtime and layers so hot updates stay fast.
+Because reachability is only complete after Rollup has expanded its ordinary `[hash]`, Bamboo adds a final `.b-<hash>`
+segment to changed CSS assets and rewrites Vite's HTML, manifest, and chunk references to that cache-safe name.
+
+This is a strict build contract, not a best-effort optimization. The build fails if a Bamboo value can still manufacture
+unknown CSS at runtime, if an `cx()` argument's provenance cannot be analyzed, if a recipe binding is used reflectively,
+if `virtual:bamboo.css` is not imported, or if a compiled Vite module is outside `include`. A silent fallback would need
+the recipe layer back and would give up the cross-recipe deduplication the mode exists to provide. The mode currently
+rejects `polyfill: true`, because flattening cascade layers removes the boundary used to distinguish compiler-owned
+utility selectors from authored selectors during reachability pruning.
+
+Runtime `cva` and `sva` selections are supported when their state space is finite. Bamboo compiles each complete result
+into a reduced decision table, preserving defaults, misses, compound variants, slots, and declaration precedence without
+shipping the recipe config. `maxRecipeStates` bounds the exact Cartesian analysis before it can consume unbounded build
+time or memory; make more axes static, split the recipe, or raise the limit deliberately.
+
+`denseClassNames: true` (the default in this mode) hashes each semantic atom to a compact deterministic name, so
+separate SSR and client builds agree. `denseClassNames: 'local'` assigns `_a`, `_b`, and so on; it is smaller, but only
+safe when one build produces both the markup and CSS. Set it to `false` to retain readable semantic atom names.
+
+On a synthetic fixture with 200 declaration-heavy recipes, 180 static call sites, and 20 runtime selections, the local
+name mode changed the production artifacts as follows:
+
+| artifact                     | legacy gzip | static gzip | change |
+| ---------------------------- | ----------: | ----------: | -----: |
+| JavaScript                   |     4,345 B |     2,248 B |   -48% |
+| CSS                          |     8,663 B |     1,643 B |   -81% |
+| rendered class strings proxy |     2,559 B |       568 B |   -78% |
+
+Warm builds moved from a 236 ms median to 262 ms (+11%) on that fixture. The result depends on repetition, call-site
+reachability, minification, and whether stable or local names are used; it is a direction and a regression fixture, not
+a promise for every application.
 
 ## What folds
 

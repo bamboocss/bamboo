@@ -40,6 +40,7 @@
     "dev": "pnpm build-fast --watch"
   },
   "dependencies": {
+    "@ampproject/remapping": "2.3.0",
     "@bamboocss/config": "workspace:*",
     "@bamboocss/core": "workspace:*",
     "@bamboocss/extractor": "workspace:*",
@@ -48,6 +49,8 @@
     "@bamboocss/shared": "workspace:*",
     "@bamboocss/types": "workspace:*",
     "magic-string": "0.30.21",
+    "postcss": "8.5.26",
+    "postcss-selector-parser": "7.1.5",
     "ts-morph": "28.0.0"
   },
   "devDependencies": {

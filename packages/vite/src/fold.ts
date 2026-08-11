@@ -10,8 +10,10 @@ import {
   collectRecipeConfigs,
   ensureRecipeHelperImport,
   lowerRecipeCall,
+  RECIPE_MAP_HELPER,
   RECIPE_PICK_HELPER,
   SPLIT_PROPS_HELPER,
+  type DynamicStyleMap,
   type RecipeEntry,
 } from './fold-recipe'
 import {
@@ -30,6 +32,7 @@ import {
   createRuntimeTokenValue,
   type RuntimeCss,
 } from './runtime-css'
+import type { StaticStyleSetCompiler, StyleSetRecipeConfig } from './style-set'
 
 /**
  * Why a call site was left alone. Surfaced through `panda`-style diagnostics so a
@@ -59,7 +62,7 @@ export interface FoldedCall {
    * not interchangeable, and a consumer that checks folded classes against the emitted
    * stylesheet has to skip the latter — there is no rule named after a variable reference.
    */
-  kind: 'class' | 'value'
+  kind: 'class' | 'slots' | 'value'
   /** The class string resolved outright, empty when the whole call lowered to ternaries. */
   className: string
   /**
@@ -105,6 +108,10 @@ export interface FoldOptions {
   filePath: string
   /** Reuse one runtime `css` across files in a build. */
   runtimeCss?: RuntimeCss
+  /** Compile recipes to the same symbolic/atomic representation as `css()`. */
+  styleCompiler?: StaticStyleSetCompiler
+  /** Maximum finite recipe selections the static compiler may enumerate for one call. */
+  maxRecipeStates?: number
   /**
    * Split a `css()` call that is only partly static, keeping the dynamic half at runtime.
    * On by default.
@@ -310,7 +317,15 @@ const isValueReference = (identifier: Node): boolean => {
  * recipe runtime rather than the css engine — which `failOnUnfolded` accepts. Their unfoldable
  * invocations are reported separately, as `recipe-call`.
  */
-const PERMITTED_BINDINGS = new Set(['cx', 'cva', 'sva', RECIPE_PICK_HELPER, SPLIT_PROPS_HELPER, LEAF_HELPER])
+const PERMITTED_BINDINGS = new Set([
+  'cx',
+  'cva',
+  'sva',
+  RECIPE_PICK_HELPER,
+  RECIPE_MAP_HELPER,
+  SPLIT_PROPS_HELPER,
+  LEAF_HELPER,
+])
 
 /** Where an imported recipe was declared, as the parser recorded it on the call. */
 type RecipeOrigin = NonNullable<ResultItem['origin']>
@@ -695,6 +710,8 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     parserResult,
     partial: partial_ = true,
     runtimeCss = createRuntimeCss(ctx),
+    styleCompiler,
+    maxRecipeStates,
     parseModule,
     recipeConfigCache,
     reportSurvivors,
@@ -982,7 +999,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
         const result = parseModule(origin.filePath)
         if (!result) return undefined
 
-        const collected = collectRecipeConfigs(result)
+        const collected = collectRecipeConfigs(result, Boolean(styleCompiler))
         const declaring = [...collected.values()]
           .find((entry) => entry.box)
           ?.box?.getNode?.()
@@ -1030,11 +1047,25 @@ export const foldSource = (options: FoldOptions): FoldResult => {
 
   interface Candidate {
     item: ResultItem
+    /** Symbolic declarations this candidate contributes, before class allocation. */
+    styleSet?: Dict
+    /** Name reported for a compiler-created enclosing candidate such as semantic `cx`. */
+    displayName?: string
+    /** Source boxes subsumed by an enclosing candidate, retained for watch dependencies. */
+    sourceBoxes?: Array<ResultItem['box']>
     /** The call to replace. */
     call?: Node
     className?: string
     /** Every class literal emitted, when that is more than `className` — see FoldedCall. */
     classNames?: string[]
+    /** A finite runtime recipe lookup, intentionally unallocated until semantic `cx()`. */
+    styleMap?: DynamicStyleMap
+    /** Local name of the generated map helper, when the import was aliased. */
+    mapHelperName?: string
+    /** Set once an enclosing semantic composition owns this candidate. */
+    subsumed?: boolean
+    /** The replacement evaluates to a slot-name → class-string object. */
+    outputKind?: 'slots'
     /** Replacement text for a partially folded call, in place of a bare class string. */
     replacement?: string
     /**
@@ -1239,7 +1270,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
             continue
           }
 
-          recipeConfigs ??= collectRecipeConfigs(parserResult)
+          recipeConfigs ??= collectRecipeConfigs(parserResult, Boolean(styleCompiler))
           // Declared elsewhere and imported here. Resolved lazily and only for a name the
           // local pass did not claim, so a file whose recipes are all its own pays nothing.
           if (!recipeConfigs.has(name) && item.origin) {
@@ -1258,17 +1289,46 @@ export const foldSource = (options: FoldOptions): FoldResult => {
           // it. `badge({ tone: trace() })` has a knowable class *and* a call in its selection —
           // the same trade `token()`'s fallback and the constant-slot fold already decline.
           const entry = recipeConfigs.get(name)
+          let inlineSlot: string | undefined
+          let inlineEnd = end
+          if (styleCompiler && Array.isArray(entry?.config.slots)) {
+            const parent = call.getParent()
+            if (Node.isPropertyAccessExpression(parent) && parent.getExpression() === call) {
+              const accessed = parent.getName()
+              if (entry.config.slots.includes(accessed)) {
+                inlineSlot = accessed
+                inlineEnd = parent.getEnd()
+              }
+            } else if (Node.isElementAccessExpression(parent) && parent.getExpression() === call) {
+              const argument = parent.getArgumentExpression()
+              const accessed =
+                argument && (Node.isStringLiteral(argument) || Node.isNoSubstitutionTemplateLiteral(argument))
+                  ? argument.getLiteralValue()
+                  : undefined
+              if (typeof accessed === 'string' && entry.config.slots.includes(accessed)) {
+                inlineSlot = accessed
+                inlineEnd = parent.getEnd()
+              }
+            }
+          }
           // Inertness is decided per property rather than for the whole argument: lowering
           // keeps an expression by making it the helper's argument, so a call inside one still
           // runs. Only a property being resolved to a literal, or dropped, would delete it —
           // and `lowerRecipeCall` is what knows which of those is about to happen.
-          const lowered = lowerRecipeCall(call, entry, ctx, isInertExpression, resolvedSelection)
+          const lowered = lowerRecipeCall(
+            call,
+            entry,
+            ctx,
+            isInertExpression,
+            resolvedSelection,
+            styleCompiler,
+            inlineSlot,
+            maxRecipeStates,
+          )
 
-          if (lowered.kind === 'expression') {
-            // The helper has to be callable here by whatever name this file gives it, and
-            // adding an import is only safe against the module bamboo generates.
+          if (lowered.kind === 'dynamic-style') {
             const helper = ensureRecipeHelperImport(
-              RECIPE_PICK_HELPER,
+              RECIPE_MAP_HELPER,
               call,
               isBambooCssModule,
               isGeneratedCssModule,
@@ -1283,15 +1343,88 @@ export const foldSource = (options: FoldOptions): FoldResult => {
                 call,
                 node: call,
                 start,
-                end,
+                end: inlineEnd,
+                className: '',
+                classNames: [],
+                styleMap: lowered.map,
+                mapHelperName: helper.name,
+                insert: helper.insert,
+                configBox: entry?.box,
+                outputKind: lowered.map.outputKind === 'slots' ? 'slots' : undefined,
+              })
+              continue
+            }
+
+            skipped.push({ name, reason: 'recipe-call', start, end })
+            continue
+          }
+
+          if (lowered.kind === 'expression') {
+            // The helper has to be callable here by whatever name this file gives it, and
+            // adding an import is only safe against the module bamboo generates.
+            const helper = ensureRecipeHelperImport(
+              lowered.helper,
+              call,
+              isBambooCssModule,
+              isGeneratedCssModule,
+              isShadowed,
+              helperModules.get(name),
+            )
+
+            if (helper) {
+              tally.lowered++
+              candidates.push({
+                item,
+                call,
+                node: call,
+                start,
+                end: inlineEnd,
                 replacement:
-                  helper.name === RECIPE_PICK_HELPER
+                  helper.name === lowered.helper
                     ? lowered.expression
-                    : lowered.expression.replaceAll(`${RECIPE_PICK_HELPER}(`, `${helper.name}(`),
+                    : lowered.expression.replaceAll(`${lowered.helper}(`, `${helper!.name}(`),
                 className: lowered.staticClasses,
                 classNames: lowered.classNames,
                 insert: helper.insert,
                 configBox: entry?.box,
+              })
+              continue
+            }
+
+            skipped.push({ name, reason: 'recipe-call', start, end })
+            continue
+          }
+
+          if (lowered.kind === 'slots') {
+            const helper = lowered.helper
+              ? ensureRecipeHelperImport(
+                  lowered.helper,
+                  call,
+                  isBambooCssModule,
+                  isGeneratedCssModule,
+                  isShadowed,
+                  helperModules.get(name),
+                )
+              : undefined
+
+            if (!lowered.helper || helper) {
+              tally.lowered++
+              const replacement =
+                lowered.helper && helper && helper.name !== lowered.helper
+                  ? lowered.expression.replaceAll(`${lowered.helper}(`, `${helper.name}(`)
+                  : lowered.expression
+              candidates.push({
+                item,
+                call,
+                node: call,
+                start,
+                end: inlineEnd,
+                replacement,
+                className: '',
+                classNames: lowered.classNames,
+                insert: helper?.insert,
+                configBox: entry?.box,
+                outputKind: 'slots',
               })
               continue
             }
@@ -1310,10 +1443,11 @@ export const foldSource = (options: FoldOptions): FoldResult => {
               call,
               node: call,
               start,
-              end,
+              end: inlineEnd,
               replacement: JSON.stringify(lowered.className),
               className: lowered.className,
               classNames: lowered.className.split(' ').filter(Boolean),
+              styleSet: lowered.styles,
               // The *definition's* node, not just the call's. A config imported from another
               // module is what the class name is hashed from, so editing it has to
               // re-transform this one or the literal here goes stale against a renamed rule.
@@ -1389,6 +1523,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     // constant class and a call in its props; folding past it drops the call. Same doctrine
     // as `token()`'s fallback argument above.
     if (
+      !styleCompiler &&
       slot &&
       isConstantSlot(name, slot) &&
       Node.isCallExpression(call) &&
@@ -1424,6 +1559,229 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     }
 
     candidates.push({ item, call, node: call, start, end: foldEnd, slot })
+  }
+
+  /**
+   * Resolve every fully static candidate to symbolic declarations before allocating a class.
+   *
+   * The normal fold can wait until the rewrite loop to compute a class string. Semantic
+   * composition cannot: an enclosing `cx()` needs the declarations of its arguments so it can
+   * discard overridden values before any string exists.
+   */
+  if (styleCompiler) {
+    for (const candidate of candidates) {
+      if (candidate.styleSet || candidate.value !== undefined || candidate.replacement) continue
+
+      const { item } = candidate
+      if (item.type === 'css') {
+        candidate.styleSet = styleCompiler.compose(...(item.data as Dict[]))
+        continue
+      }
+
+      if (item.type === 'pattern') {
+        candidate.styleSet = styleCompiler.compose(
+          ...item.data.map((entry) => ctx.patterns.transform(item.name ?? '', entry as Dict)),
+        )
+        continue
+      }
+
+      if (item.type === 'recipe') {
+        const config = ctx.recipes.getConfig(item.name ?? '') as StyleSetRecipeConfig | undefined
+        const selection = candidate.constantSlot ? {} : item.data.length === 1 ? (item.data[0] as Dict) : undefined
+        candidate.styleSet =
+          config && selection ? styleCompiler.resolveRecipe(config, selection, candidate.slot) : undefined
+      }
+    }
+
+    const sourceFile = ownSourceFile ?? candidates[0]?.node.getSourceFile()
+    if (sourceFile) {
+      const cxBindings = new Set<string>()
+      for (const declaration of sourceFile.getImportDeclarations()) {
+        if (declaration.isTypeOnly() || !isBambooCssModule(declaration.getModuleSpecifierValue())) continue
+        for (const named of declaration.getNamedImports()) {
+          if (named.isTypeOnly() || named.getNameNode().getText() !== 'cx') continue
+          cxBindings.add((named.getAliasNode() ?? named.getNameNode()).getText())
+        }
+      }
+
+      const byRange = new Map(candidates.map((candidate) => [`${candidate.start}:${candidate.end}`, candidate]))
+
+      for (const call of sourceFile.getDescendantsOfKind(SyntaxKind.CallExpression)) {
+        const callee = call.getExpression()
+        if (!Node.isIdentifier(callee) || !cxBindings.has(callee.getText()) || isShadowed(call, callee.getText())) {
+          continue
+        }
+
+        const matched: Candidate[] = []
+        const parts: Array<
+          | { kind: 'style'; candidate: Candidate }
+          | { kind: 'dynamic'; candidate: Candidate }
+          | { kind: 'class'; value: string }
+        > = []
+        const dynamic: Candidate[] = []
+        let supported = true
+
+        const take = (arg: Node): boolean => {
+          const candidate = byRange.get(`${arg.getStart()}:${arg.getEnd()}`)
+          if (candidate?.styleMap?.outputKind === 'class') {
+            dynamic.push(candidate)
+            parts.push({ kind: 'dynamic', candidate })
+            return true
+          }
+          if (candidate?.styleSet) {
+            matched.push(candidate)
+            parts.push({ kind: 'style', candidate })
+            return true
+          }
+
+          if (Node.isStringLiteral(arg) || Node.isNoSubstitutionTemplateLiteral(arg)) {
+            parts.push({ kind: 'class', value: arg.getLiteralValue() })
+            return true
+          }
+
+          if (Node.isArrayLiteralExpression(arg)) {
+            for (const element of arg.getElements()) {
+              if (Node.isSpreadElement(element) || !take(element)) return false
+            }
+            return true
+          }
+
+          // Values the runtime `cx` ignores and whose evaluation is inert.
+          if (
+            arg.getKind() === SyntaxKind.FalseKeyword ||
+            arg.getKind() === SyntaxKind.TrueKeyword ||
+            Node.isNumericLiteral(arg) ||
+            arg.getKind() === SyntaxKind.NullKeyword ||
+            (Node.isIdentifier(arg) && arg.getText() === 'undefined')
+          ) {
+            return true
+          }
+
+          return false
+        }
+
+        for (const arg of call.getArguments()) {
+          if (take(arg)) continue
+          supported = false
+          break
+        }
+
+        if (dynamic.length > 1) {
+          skipped.push({ name: 'cx', reason: 'dynamic', start: call.getStart(), end: call.getEnd() })
+          continue
+        }
+
+        if (!supported) {
+          skipped.push({ name: 'cx', reason: 'dynamic', start: call.getStart(), end: call.getEnd() })
+          continue
+        }
+
+        if (dynamic.length === 1 && matched.length > 0) {
+          const dynamicCandidate = dynamic[0]!
+          const styleParts = parts.filter(
+            (part): part is { kind: 'style' | 'dynamic'; candidate: Candidate } => part.kind !== 'class',
+          )
+          const dynamicIndex = styleParts.findIndex((part) => part.kind === 'dynamic')
+          const before = styleParts
+            .slice(0, dynamicIndex)
+            .filter((part) => part.kind === 'style')
+            .map((part) => part.candidate.styleSet!)
+          const after = styleParts
+            .slice(dynamicIndex + 1)
+            .filter((part) => part.kind === 'style')
+            .map((part) => part.candidate.styleSet!)
+          const compiled = dynamicCandidate.styleMap!.compile(before, after)
+          const expression =
+            dynamicCandidate.mapHelperName && dynamicCandidate.mapHelperName !== RECIPE_MAP_HELPER
+              ? compiled.expression.replaceAll(`${RECIPE_MAP_HELPER}(`, `${dynamicCandidate.mapHelperName}(`)
+              : compiled.expression
+
+          const arguments_: string[] = []
+          let wroteCompiled = false
+          for (const part of parts) {
+            if (part.kind === 'class') {
+              if (part.value) arguments_.push(JSON.stringify(part.value))
+              continue
+            }
+            if (!wroteCompiled) {
+              arguments_.push(expression)
+              wroteCompiled = true
+            }
+          }
+
+          dynamicCandidate.subsumed = true
+          const first = styleParts[0]!.candidate
+          candidates.push({
+            ...first,
+            call,
+            node: call,
+            start: call.getStart(),
+            end: call.getEnd(),
+            displayName: 'cx',
+            replacement: arguments_.length === 1 ? arguments_[0] : `${callee.getText()}(${arguments_.join(', ')})`,
+            className: '',
+            classNames: [
+              ...compiled.classNames,
+              ...parts.filter((part) => part.kind === 'class').flatMap((part) => part.value.split(' ')),
+            ].filter(Boolean),
+            styleSet: undefined,
+            styleMap: undefined,
+            outputKind: undefined,
+            insert: dynamicCandidate.insert,
+            sourceBoxes: styleParts
+              .flatMap((part) => [part.candidate.item.box, part.candidate.configBox])
+              .filter(Boolean),
+          })
+          continue
+        }
+
+        if (matched.length === 0) continue
+
+        const merged = styleCompiler.compose(...matched.map((candidate) => candidate.styleSet!))
+        const compiled = styleCompiler.className(merged)
+        const classParts: string[] = []
+        let wroteCompiled = false
+        for (const part of parts) {
+          if (part.kind === 'class') {
+            if (part.value) classParts.push(part.value)
+            continue
+          }
+          if (!wroteCompiled && compiled) {
+            classParts.push(compiled)
+            wroteCompiled = true
+          }
+        }
+
+        const first = matched[0]!
+        candidates.push({
+          ...first,
+          call,
+          node: call,
+          start: call.getStart(),
+          end: call.getEnd(),
+          displayName: 'cx',
+          replacement: JSON.stringify(classParts.join(' ')),
+          className: classParts.join(' '),
+          classNames: classParts.flatMap((part) => part.split(' ')).filter(Boolean),
+          styleSet: merged,
+          sourceBoxes: matched.flatMap((candidate) => [candidate.item.box, candidate.configBox]).filter(Boolean),
+        })
+      }
+    }
+
+    // Runtime maps are allocated only after semantic `cx()` has had a chance to merge every
+    // leaf. This prevents the uncomposed intermediate atoms from entering the stylesheet.
+    for (const candidate of candidates) {
+      if (!candidate.styleMap || candidate.subsumed || candidate.replacement) continue
+      const compiled = candidate.styleMap.compile()
+      candidate.replacement =
+        candidate.mapHelperName && candidate.mapHelperName !== RECIPE_MAP_HELPER
+          ? compiled.expression.replaceAll(`${RECIPE_MAP_HELPER}(`, `${candidate.mapHelperName}(`)
+          : compiled.expression
+      candidate.className = compiled.staticClasses
+      candidate.classNames = compiled.classNames
+      candidate.outputKind = compiled.outputKind === 'slots' ? 'slots' : undefined
+    }
   }
 
   /**
@@ -1483,7 +1841,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
 
   for (const candidate of candidates) {
     const { item, start, end } = candidate
-    const name = item.name ?? item.type ?? ''
+    const name = candidate.displayName ?? item.name ?? item.type ?? ''
 
     const ranges: Array<[number, number]> = [[start, end]]
 
@@ -1509,7 +1867,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       applied.push(...ranges)
       folded.push({
         name,
-        kind: 'class',
+        kind: candidate.outputKind ?? 'class',
         className: candidate.className!,
         // Filtered, because an element or call whose classes are all built at runtime
         // resolves no literal — `classNames` is what a consumer checks for CSS behind it,
@@ -1520,6 +1878,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       })
       collectSourceFiles(item.box, dependencyScan)
       if (candidate.configBox) collectSourceFiles(candidate.configBox, dependencyScan)
+      for (const box of candidate.sourceBoxes ?? []) collectSourceFiles(box, dependencyScan)
       continue
     }
 
@@ -1530,16 +1889,28 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       } else if (item.type === 'recipe') {
         // A recipe call takes one variant object; anything else is not a shape the
         // generated recipe function accepts.
-        const resolved = candidate.constantSlot
-          ? runtimeRecipe(name, {}, candidate.slot)
-          : item.data.length === 1
-            ? runtimeRecipe(name, item.data[0] as Dict, candidate.slot)
-            : undefined
-        if (resolved == null) {
-          skipped.push({ name, reason: 'unsupported-kind', start, end })
-          continue
+        if (styleCompiler) {
+          const config = ctx.recipes.getConfig(name) as StyleSetRecipeConfig | undefined
+          const selection = candidate.constantSlot ? {} : item.data.length === 1 ? (item.data[0] as Dict) : undefined
+          const styles =
+            config && selection ? styleCompiler.resolveRecipe(config, selection, candidate.slot) : undefined
+          if (!styles) {
+            skipped.push({ name, reason: 'unsupported-kind', start, end })
+            continue
+          }
+          className = styleCompiler.className(styles)
+        } else {
+          const resolved = candidate.constantSlot
+            ? runtimeRecipe(name, {}, candidate.slot)
+            : item.data.length === 1
+              ? runtimeRecipe(name, item.data[0] as Dict, candidate.slot)
+              : undefined
+          if (resolved == null) {
+            skipped.push({ name, reason: 'unsupported-kind', start, end })
+            continue
+          }
+          className = resolved
         }
-        className = resolved
       } else {
         className = runtimeCss(...(item.data as Dict[]))
       }
@@ -1679,6 +2050,34 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     // through, and this reports offsets against *this* module's text.
     const sourceFile = ownSourceFile ?? candidates[0]?.node.getSourceFile()
     if (!sourceFile) return
+
+    // Inline recipe bindings are local variables, so the import scan below cannot see reads
+    // such as `badge.raw`, `badge.config`, `badge.merge(...)`, or a bare re-export. Follow the
+    // declaration's symbol references and require every value read to sit inside a range the
+    // compiler actually replaced. Otherwise a static build could remove the recipe layer
+    // while silently retaining an API whose result still depends on it.
+    recipeConfigs ??= collectRecipeConfigs(parserResult, Boolean(styleCompiler))
+    for (const [binding, entry] of recipeConfigs) {
+      if (entry === AMBIGUOUS) continue
+      const definition = entry.box?.getNode?.()
+      if (!definition || definition.getSourceFile() !== sourceFile) continue
+      const declaration = definition.getFirstAncestorByKind(SyntaxKind.VariableDeclaration)
+      const nameNode = declaration?.getNameNode()
+      if (!nameNode || !Node.isIdentifier(nameNode)) continue
+
+      const declined = skipped
+        .filter((item) => SURVIVES_TO_RUNTIME.has(item.reason) && item.end > item.start)
+        .some((item) =>
+          nameNode.findReferencesAsNodes().some((ref) => ref.getStart() >= item.start && ref.getStart() < item.end),
+        )
+
+      if (declined) continue
+      const survivor = nameNode
+        .findReferencesAsNodes()
+        .find((ref) => !applied.some(([from, to]) => ref.getStart() >= from && ref.getStart() < to))
+      if (!survivor) continue
+      skipped.push({ name: binding, reason: 'runtime-binding', start: survivor.getStart(), end: survivor.getEnd() })
+    }
 
     const bambooModules = [
       ...cssModules,
