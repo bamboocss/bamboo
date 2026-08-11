@@ -1,5 +1,100 @@
 # @bamboocss/shared
 
+## 1.32.0
+
+### Minor Changes
+
+- c29044f: Fail the build when a file cannot be extracted, instead of logging it and exiting 0.
+
+  ```
+  error during build:
+  [bamboocss:css] Could not load virtual:bamboo.css: 1 file(s) could not be extracted:
+
+  src/Timeline.tsx
+    `{colors.brand.purple/35}` in the value `0 0 0 2px {colors.brand.purple/35}` is the retired
+    token reference syntax. Write `token(colors.brand.purple/35)` instead.
+
+  Nothing emits a rule for a file the build could not read, so every style in these is absent from
+  the stylesheet and the classes their components ask for have nothing behind them.
+  ```
+
+  Extraction caught, logged, and carried on. The file's styles never reach the encoder, so every rule it would have
+  contributed is simply gone — one retired token spelling in one component dropped that component's css and left a green
+  build behind it. Three error-level lines, exit 0, and `built` printed at the end.
+
+  **The two integrations disagreed about the same source.** `bamboo cssgen` exited 1 on a file it could not extract,
+  because it went through the one entry point that let the throw out; every bundler build went through the one that
+  caught it. CI running a build passed what CI running `cssgen` rejected. Both now go through the same path, so the
+  question is settled once rather than per integration.
+
+  Every broken file is named in one error rather than the first one aborting the pass, and a failure is keyed by file so
+  it survives the incremental passes that skip an unchanged one — otherwise a rebuild of identical, still-broken source
+  came back green. It is dropped once the file parses, is deleted, or leaves `include`, since a context outlives
+  rebuilds and all three of those are fixes. A watch rebuild still reports and keeps watching; only a build fails.
+
+  **`failOnUnfolded` counts a module the fold threw on.** A throw in the vite transform was caught and the module
+  returned unchanged, which is safe — its runtime call still works — but it landed in neither the folded column nor the
+  declined one. The coverage summary reported 100% over the files that did not throw, and the survivor check saw a file
+  that was never there, so the option's whole guarantee held vacuously over it. It now reports as `fold-failed`. Unknown
+  counts as survives: the claim is that _nothing_ still calls `css()`, and a module nobody could look at cannot support
+  it. Without `failOnUnfolded` it stays a logged error and a declined module, as before.
+
+- 8a66bb9: Remove the responsive array syntax, so a responsive value has one spelling.
+
+  `fontWeight: ['medium', undefined, undefined, 'bold']` used to mean one value per breakpoint. Write the condition
+  object instead:
+
+  ```ts
+  css({ fontWeight: { base: 'medium', lg: 'bold' } })
+  ```
+
+  The array form was the worse of the two on its own terms — positional, so skipping a breakpoint needed `undefined`
+  padding, and inserting a breakpoint re-pointed every value after it. But the reason it had to go is that CSS already
+  writes lists as arrays, so a font stack written the obvious way
+
+  ```ts
+  css({ fontFamily: ['Inter', 'sans-serif'] })
+  ```
+
+  compiled to `Inter` at base and `sans-serif` at `sm`, with no error and nothing in the type to suggest it.
+
+  An array in a style value is now an error naming the property it was written on, rather than a silent
+  reinterpretation. The type no longer admits one either: `ConditionalValue` drops its array member, and `CssProperties`
+  is built from csstype's `Properties` rather than `PropertiesFallback` — that array meant repeated declarations, which
+  `fallback()` already expresses and which the runtime never implemented.
+
+  A pattern property takes the same conditional value, so `grid({ columns: [2, 3, 4] })` becomes
+  `grid({ columns: { base: 2, sm: 3, md: 4 } })`.
+
+  The generated runtime no longer carries the breakpoint key list into `css`, `cva` and `mergeCss` — it existed only to
+  expand these arrays.
+
+- 2b84dfa: Remove the array argument from `css()` and `css.raw()`, leaving one way to pass a list of styles.
+
+  `css([a, b])` meant `css(a, b)` — the runtime flattened one level before merging. Spread instead, which is what you
+  already write when the operands are named:
+
+  ```ts
+  css(...styles) // was css(styles)
+  css(a, b) //      was css([a, b])
+  ```
+
+  The declared type also carried the single-object overload twice, verbatim, so the emitted `styled-system/css/css.d.ts`
+  advertised four signatures where the variadic one covers every call. It is now one:
+
+  ```ts
+  (...styles: Styles[]): string
+  ```
+
+  An array argument throws rather than being ignored, at build time where the file is known and at runtime otherwise.
+  That matters more than it sounds: an array and a style object disagree about what indices mean. The parser flattened
+  one before encoding precisely because hashing it instead read `[{ color }, { padding }]` as a responsive array and
+  emitted the padding at the `sm` breakpoint — and merely dropping the flatten would have returned no class at all,
+  silently.
+
+  Removing it also takes the `flat()` out of every merge and the `some(Array.isArray)` scan out of every extracted
+  `css()` call, both of which every call paid to serve a shape that was never documented.
+
 ## 1.31.0
 
 ### Minor Changes

@@ -1,5 +1,95 @@
 # @bamboocss/vite
 
+## 1.32.0
+
+### Minor Changes
+
+- c29044f: Fail the build when a file cannot be extracted, instead of logging it and exiting 0.
+
+  ```
+  error during build:
+  [bamboocss:css] Could not load virtual:bamboo.css: 1 file(s) could not be extracted:
+
+  src/Timeline.tsx
+    `{colors.brand.purple/35}` in the value `0 0 0 2px {colors.brand.purple/35}` is the retired
+    token reference syntax. Write `token(colors.brand.purple/35)` instead.
+
+  Nothing emits a rule for a file the build could not read, so every style in these is absent from
+  the stylesheet and the classes their components ask for have nothing behind them.
+  ```
+
+  Extraction caught, logged, and carried on. The file's styles never reach the encoder, so every rule it would have
+  contributed is simply gone — one retired token spelling in one component dropped that component's css and left a green
+  build behind it. Three error-level lines, exit 0, and `built` printed at the end.
+
+  **The two integrations disagreed about the same source.** `bamboo cssgen` exited 1 on a file it could not extract,
+  because it went through the one entry point that let the throw out; every bundler build went through the one that
+  caught it. CI running a build passed what CI running `cssgen` rejected. Both now go through the same path, so the
+  question is settled once rather than per integration.
+
+  Every broken file is named in one error rather than the first one aborting the pass, and a failure is keyed by file so
+  it survives the incremental passes that skip an unchanged one — otherwise a rebuild of identical, still-broken source
+  came back green. It is dropped once the file parses, is deleted, or leaves `include`, since a context outlives
+  rebuilds and all three of those are fixes. A watch rebuild still reports and keeps watching; only a build fails.
+
+  **`failOnUnfolded` counts a module the fold threw on.** A throw in the vite transform was caught and the module
+  returned unchanged, which is safe — its runtime call still works — but it landed in neither the folded column nor the
+  declined one. The coverage summary reported 100% over the files that did not throw, and the survivor check saw a file
+  that was never there, so the option's whole guarantee held vacuously over it. It now reports as `fold-failed`. Unknown
+  counts as survives: the claim is that _nothing_ still calls `css()`, and a module nobody could look at cannot support
+  it. Without `failOnUnfolded` it stays a logged error and a declined module, as before.
+
+- 8a66bb9: Remove the responsive array syntax, so a responsive value has one spelling.
+
+  `fontWeight: ['medium', undefined, undefined, 'bold']` used to mean one value per breakpoint. Write the condition
+  object instead:
+
+  ```ts
+  css({ fontWeight: { base: 'medium', lg: 'bold' } })
+  ```
+
+  The array form was the worse of the two on its own terms — positional, so skipping a breakpoint needed `undefined`
+  padding, and inserting a breakpoint re-pointed every value after it. But the reason it had to go is that CSS already
+  writes lists as arrays, so a font stack written the obvious way
+
+  ```ts
+  css({ fontFamily: ['Inter', 'sans-serif'] })
+  ```
+
+  compiled to `Inter` at base and `sans-serif` at `sm`, with no error and nothing in the type to suggest it.
+
+  An array in a style value is now an error naming the property it was written on, rather than a silent
+  reinterpretation. The type no longer admits one either: `ConditionalValue` drops its array member, and `CssProperties`
+  is built from csstype's `Properties` rather than `PropertiesFallback` — that array meant repeated declarations, which
+  `fallback()` already expresses and which the runtime never implemented.
+
+  A pattern property takes the same conditional value, so `grid({ columns: [2, 3, 4] })` becomes
+  `grid({ columns: { base: 2, sm: 3, md: 4 } })`.
+
+  The generated runtime no longer carries the breakpoint key list into `css`, `cva` and `mergeCss` — it existed only to
+  expand these arrays.
+
+### Patch Changes
+
+- Updated dependencies [c29044f]
+- Updated dependencies [b0ed6dc]
+- Updated dependencies [8a66bb9]
+- Updated dependencies [2b84dfa]
+- Updated dependencies [591a0f1]
+- Updated dependencies [da792cc]
+- Updated dependencies [1cc1860]
+- Updated dependencies [c29044f]
+- Updated dependencies [b2b4173]
+- Updated dependencies [f3a8b0d]
+- Updated dependencies [c29044f]
+  - @bamboocss/node@1.32.0
+  - @bamboocss/shared@1.32.0
+  - @bamboocss/config@1.32.0
+  - @bamboocss/types@1.32.0
+  - @bamboocss/core@1.32.0
+  - @bamboocss/extractor@1.32.0
+  - @bamboocss/logger@1.32.0
+
 ## 1.31.0
 
 ### Minor Changes

@@ -1,5 +1,76 @@
 # @bamboocss/preset-base
 
+## 1.32.0
+
+### Minor Changes
+
+- aecf2b1: Collapse the pattern set from 18 to 12, removing the ones that were another pattern with defaults frozen.
+
+  `stack`, `hstack`, `vstack` and `wrap` were all `flex`. Write the default you want instead — and note the 8px gap they
+  applied for you is now yours to choose:
+
+  ```ts
+  flex({ direction: 'column', gap: '8px' }) // was stack()
+  flex({ align: 'center', gap: '8px' }) // was hstack()
+  flex({ direction: 'column', align: 'center', gap: '8px' }) // was vstack()
+  flex({ wrap: 'wrap', gap: '8px' }) // was wrap()
+  ```
+
+  `square` and `circle` were `center` with a size, which `center` now takes:
+
+  ```ts
+  center({ size: '12' }) // was square({ size: '12' })
+  center({ size: '12', borderRadius: 'full' }) // was circle({ size: '12' })
+  ```
+
+  `cq` renamed two props onto `containerType` and `containerName` and defaulted the first. `containerName` is already a
+  utility typed against the `containerNames` theme key, so write the declarations:
+
+  ```ts
+  css({ containerType: 'inline-size', containerName: 'sidebar' }) // was cq({ name: 'sidebar' })
+  ```
+
+  `center` gains `size`, which sets `width` and `height` together and pins `flex: 0 0 auto` so a flex parent cannot
+  shrink the result. An unsized `center` is unchanged.
+
+- 1243f93: Remove the `hideFrom` and `hideBelow` utilities, leaving the breakpoint conditions as the one way to hide by
+  width.
+
+  Both set `display: none` inside a media query the conditions already express, so the migration is the declaration
+  itself:
+
+  ```ts
+  css({ md: { display: 'none' } }) //     was css({ hideFrom: 'md' })
+  css({ mdDown: { display: 'none' } }) // was css({ hideBelow: 'md' })
+  ```
+
+  The emitted media queries are unchanged — `(width >= 48rem)` and `(width < 48rem)` — only the class name differs, and
+  `packages/core/__tests__/atomic-rule.test.ts` now asserts the condition form against the queries the utilities used to
+  produce.
+
+  A width no breakpoint names was the one thing the utilities took that a condition does not, and an arbitrary at-rule
+  covers it:
+
+  ```ts
+  css({ '@media (width < 800px)': { display: 'none' } })
+  ```
+
+  That case is also why they are worth removing rather than keeping as sugar: the two spellings had already drifted
+  apart there. `hideBelow` resolved a raw value to an inclusive `max-width` and a breakpoint token to an exclusive
+  range, so `hideBelow="800px"` and an `800px` breakpoint disagreed at exactly 800px. One spelling cannot disagree with
+  itself.
+
+### Patch Changes
+
+- Updated dependencies [b0ed6dc]
+- Updated dependencies [8a66bb9]
+- Updated dependencies [da792cc]
+- Updated dependencies [1cc1860]
+- Updated dependencies [c29044f]
+- Updated dependencies [f3a8b0d]
+- Updated dependencies [c29044f]
+  - @bamboocss/types@1.32.0
+
 ## 1.31.0
 
 ### Minor Changes
