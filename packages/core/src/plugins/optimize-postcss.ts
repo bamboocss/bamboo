@@ -1,9 +1,9 @@
 import postcss, { Container } from 'postcss'
-import discardEmpty from 'postcss-discard-empty'
 import minifySelectors from 'postcss-minify-selectors'
 import nested from 'postcss-nested'
 import normalizeWhiteSpace from 'postcss-normalize-whitespace'
 import { dedupeNodes } from './dedupe-nodes'
+import { discardEmpty } from './discard-empty'
 import { mergeRules } from './merge-rules'
 import prettify from './prettify'
 

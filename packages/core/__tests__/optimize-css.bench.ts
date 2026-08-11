@@ -48,9 +48,42 @@ const flat = (count: number) => {
   return `@layer utilities{${rules.join('')}}`
 }
 
+/**
+ * A large sibling group, half of it empty shells, which is what the *removal* pass actually
+ * receives. `mergeRules` runs immediately before `discardEmpty` and leaves empty `@media`
+ * blocks rather than empty rules -- `mergeParents` lifts a rule out of its enclosing at-rule
+ * and never removes the shell, while every path that empties a rule removes it. A 663 kB sheet
+ * arrives here with 6,005 shells and zero empty rules.
+ *
+ * Neither case above reaches that path. Both are well-formed throughout, so the removal pass
+ * walks them and removes nothing, and a plugin costing removals x siblings contributes nothing
+ * to their readings. That is how a quadratic removal pass survived a bench file written to
+ * catch exactly this shape of bug, and it is the reason for the sizes: the cost is a product,
+ * so it only separates from the control once the group is large.
+ *
+ * `full` is the size-matched control for each -- the same sibling count and the same
+ * declarations with nothing empty in it, so the removal pass walks an identical tree and
+ * removes nothing. Anything that moves both readings together is `nested`, `dedupeNodes` or
+ * `mergeRules`, not this.
+ */
+const shells = (count: number, empty: boolean) => {
+  const blocks: string[] = []
+
+  for (let i = 0; i < count; i++) {
+    const body = `.h${i}{color:rgb(${i % 255} 0 0);padding-inline:${i}px}`
+    blocks.push(empty && i % 2 ? `@media (min-width:${i}px){}` : `@media (min-width:${i}px){${body}}`)
+  }
+
+  return `@layer utilities{${blocks.join('')}}`
+}
+
 const SMALL = conditions(500)
 const LARGE = conditions(5_000)
 const CONTROL = flat(5_000)
+const HOLLOW = shells(8_000, true)
+const HOLLOW_FULL = shells(8_000, false)
+const HOLLOW_LARGE = shells(32_000, true)
+const HOLLOW_LARGE_FULL = shells(32_000, false)
 
 // Whichever bench runs first pays for module init of the whole postcss pipeline, so one
 // warmup iteration is not enough to keep the first reading comparable to the rest.
@@ -63,4 +96,12 @@ describe('optimizeCss', () => {
 
   // The control: same declaration count, no sibling group to scan.
   bench('5,000 flat rules', () => void optimizeCss(CONTROL), opts)
+
+  // The removal pass, each against a size-matched control with nothing to remove. `32,000` is
+  // where a per-removal sibling scan separates from a single-pass one by an order of magnitude
+  // rather than by a factor; read the pair, never the hollowed reading on its own.
+  bench('8,000 at-rule siblings, half empty', () => void optimizeCss(HOLLOW), opts)
+  bench('8,000 at-rule siblings, none empty (control)', () => void optimizeCss(HOLLOW_FULL), opts)
+  bench('32,000 at-rule siblings, half empty', () => void optimizeCss(HOLLOW_LARGE), opts)
+  bench('32,000 at-rule siblings, none empty (control)', () => void optimizeCss(HOLLOW_LARGE_FULL), opts)
 })

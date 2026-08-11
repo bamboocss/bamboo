@@ -110,8 +110,6 @@ importers:
         specifier: 7.3.1
         version: 7.3.1
 
-  packages/cli/__tests__/samples/styled-system: {}
-
   packages/config:
     dependencies:
       '@bamboocss/logger':
@@ -248,9 +246,6 @@ importers:
       postcss:
         specifier: 8.5.26
         version: 8.5.26
-      postcss-discard-empty:
-        specifier: 8.0.2
-        version: 8.0.2(postcss@8.5.26)
       postcss-minify-selectors:
         specifier: 8.0.3
         version: 8.0.3(postcss@8.5.26)
@@ -271,6 +266,9 @@ importers:
         specifier: 4.6.9
         version: 4.6.9
       postcss-discard-duplicates:
+        specifier: 8.0.2
+        version: 8.0.2(postcss@8.5.26)
+      postcss-discard-empty:
         specifier: 8.0.2
         version: 8.0.2(postcss@8.5.26)
 
