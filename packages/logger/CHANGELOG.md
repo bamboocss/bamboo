@@ -1,5 +1,15 @@
 # @bamboocss/logger
 
+## 1.34.0
+
+### Patch Changes
+
+- Updated dependencies [e66c5f8]
+- Updated dependencies [10bf63d]
+- Updated dependencies [c49ab36]
+- Updated dependencies [c527ea7]
+  - @bamboocss/types@1.34.0
+
 ## 1.33.0
 
 ### Patch Changes

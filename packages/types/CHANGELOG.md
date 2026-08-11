@@ -1,5 +1,128 @@
 # @bamboocss/types
 
+## 1.34.0
+
+### Minor Changes
+
+- c49ab36: Add `leafFallback`, which is what makes zero runtime reachable for an app that has any dynamic styling.
+
+  The fold's payoff is not the per-call CPU it saves — it is that a bundle where everything lowered stops importing
+  `styled-system/css`, and the engine drops out. One reference keeps the whole thing, and there is exactly one:
+  `cssLeaf` falls back to `css({ [prop]: value })` for a value that turns out to be a condition object or a responsive
+  array, which no class-name concatenation describes.
+
+  That fallback is reachable only for a value the fold could not see the shape of, and it costs everything. On
+  `sandbox/runtime-perf`, one dynamic leaf:
+
+  |                                | raw      | gzip    | top-level bindings |
+  | ------------------------------ | -------- | ------- | ------------------ |
+  | `leafFallback: true` (default) | 22,154 B | 7,542 B | 39                 |
+  | `leafFallback: false`          | 2,094 B  | 1,077 B | 10                 |
+
+  7.0x on gzip, because the reference pulls in `createCss`, the merge, the utility and shorthand tables and the
+  conditions — for a branch that fires only when the value is not a scalar.
+
+  Setting `leafFallback: false` removes it. The generated `cssLeaf` then throws for the two shapes `leafClass` declines,
+  naming the property, rather than returning a class with no rule behind it. What you are asserting is that **a style
+  value that varies at runtime is a scalar** — write conditions and responsive values as literals at the call site,
+  where the fold reads them and resolves each branch.
+
+  `failOnUnfolded` in `@bamboocss/vite` follows: a lowered leaf is reported as `lowered-leaf` because of that reference,
+  so with the fallback off it is no longer a survivor. This is the part that matters — with the fallback on,
+  `failOnUnfolded` can only pass an app with _no dynamic styling at all_, which is a far narrower target than it sounds.
+  Together the two options move it to "an app whose dynamic values are scalars", which is most of them.
+
+  The option narrows what counts as surviving; it does not weaken the guarantee. A spread the build cannot see is still
+  a real `css()` in the output and still fails.
+
+  Default unchanged, so nothing moves unless you ask for it.
+
+- c527ea7: Add `unresolvedToken`, so a style value naming a token that does not exist can fail the build.
+
+  ```ts
+  export default defineConfig({
+    unresolvedToken: 'error', // 'off' | 'warn' | 'error', default 'warn'
+  })
+  ```
+
+  ```
+  error: 2 style value(s) name a token that does not exist:
+
+  - `background: accent.default`. Check the path against your `colors` tokens.
+  - `color: brand.foreground`. Check the path against your `colors` tokens.
+  ```
+
+  Token resolution falls back to the value it was given, so an unknown path is emitted as written and
+  `background: 'accent.default'` ships as `background: accent.default`. That parses, so the stylesheet is valid and no
+  build step objects — the browser drops the declaration at compute time and the style is simply absent. It had warned
+  on every build for months behind a dead site-wide `::selection` rule and a `_selected` state that rendered identically
+  to unselected, and there was no way to escalate it: `validation` grades the config rather than the source,
+  `strictTokens` narrows generated typescript, and `prune.unresolvedPath` is about a `token()` call the prune scan
+  cannot follow — a question about pruning coverage, asked of a token that usually exists.
+
+  The default stays `warn`, which is exactly what it did before, because the test is a _shape_: a dotted value against
+  the set of values the property enumerates. That is right about a mistyped token and cannot be certain about a literal,
+  so escalating is a choice a project makes once it knows its own source is clean. A property that enumerates nothing is
+  never reported, and `[accent.default]` marks a value as literal.
+
+  **Under `error` the check reads the decoded stylesheet, not the transforms that built it.** The decoder memoizes each
+  atom by hash, so on the second build of the same source `transform` is never re-entered — a check that accumulated
+  findings as transforms ran would either keep one past the edit that fixed it, or clear its record and then pass a
+  build whose source is still broken. Asking the sheet instead makes the question stateless and matches what is actually
+  being written: extraction is additive within a watch process, so a value you have already fixed is reported for
+  exactly as long as its rule is still in the file.
+
+### Patch Changes
+
+- e66c5f8: Delete artifacts codegen no longer generates, instead of leaving them on disk.
+
+  Codegen was write-only. An artifact that stopped being produced stayed where it was: dropping a pattern from the
+  config rewrote `patterns/index.mjs` without it and left `patterns/stack.mjs` beside it. Importing through the barrel
+  then failed loudly, which is fine — a deep import resolved, ran, returned a class name and emitted no css. A stale
+  artifact is worse than a missing one, because it answers.
+
+  `--clean` was the only sweep, and it empties the whole directory rather than reconciling it.
+
+  Bounded twice over, because the cost of being wrong is a deleted file rather than a stale one. Only the directories a
+  codegen actually wrote to are read, so a directory bamboo does not generate into is never touched. Within them, only
+  files carrying an extension this codegen wrote _there_ are eligible: `patterns/` received `.mjs` and `.d.ts` files, so
+  a leftover `stack.mjs` is stale, while a `.gitignore`, a `README.md` or a `styles.css` is not the kind of thing bamboo
+  puts there and is none of its business. Subdirectories are left alone.
+
+  Reasoning from what was written, rather than from a list of known exceptions. A denylist has to name every file
+  someone might legitimately keep in an output directory, and the failure mode when it misses one is silent deletion —
+  it missed the `.gitignore` that ships inside a generated directory.
+
+  Skipped for a partial codegen and for a `codegen:prepare` hook that replaced the artifact list — neither can say what
+  a directory should contain, and reading a filtered list as the whole truth would delete every artifact it held back.
+
+- 10bf63d: Keep a `@keyframes` for as long as the token declaration naming it ships.
+
+  ```css
+  --animations-drawer-in-right: slide-in-right 400ms ease-out; /* shipped */
+  /* @keyframes slide-in-right — deleted */
+  ```
+
+  `pruneTokenVars` roots reachability at what the css references _plus_ what reaches a token from outside it: a
+  `token()` call, a `prune.keepTokens` pattern, a theme artifact injected at runtime, a `globalCss` export.
+  `pruneKeyframes` asked the same question of the same sheet a moment later and re-derived it from the css alone, which
+  can see none of those. So a token one pass kept had its keyframe deleted by the other, leaving a declaration pointing
+  at a definition that is not there. The stylesheet is valid, the build exits 0, and the animation simply never plays —
+  the failure only a diff of the output finds.
+
+  The token pass now hands its answer to the keyframe pass rather than each computing its own. A keyframe is dropped
+  only when the declarations naming it were dropped too, so the pass keeps its saving: on the default preset an app that
+  uses no animations still ships none of them, and its css is byte-identical to before.
+
+  **It was reported as depending on whether `include` covers `outdir`, which is a second route to it rather than the
+  cause.** `collectKeyframeReferences` scans source text for each declared name, and the generated token artifact
+  contains `slide-in-right 400ms` verbatim — so a project whose `include` reaches its own output was keeping its
+  keyframes by accident, and excluding `outdir` took the accident away. That overlap is no longer load-bearing for
+  keyframes.
+
+  Under `prune: { tokens: 'off' }` every keyframe a declaration names is now kept. Nothing is removable there, and `off`
+  is the setting chosen precisely because something outside the stylesheet reads those declarations.
+
 ## 1.33.0
 
 ### Minor Changes

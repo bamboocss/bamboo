@@ -1,5 +1,157 @@
 # @bamboocss/node
 
+## 1.34.0
+
+### Minor Changes
+
+- c527ea7: Fail the build on a call to a binding the pattern or recipe entrypoint no longer exports.
+
+  ```
+  error: 1 call(s) name a binding that does not exist:
+
+  src/modal.tsx
+    `stack` is not a pattern — `../styled-system/patterns` does not export it.
+
+  Both entrypoints are generated from your config, so what they export moves when it does — a pattern
+  dropped from a preset, a recipe renamed. The call survives that as a binding to nothing: nothing
+  extracts it, so every rule it would have contributed is absent from the stylesheet and the classes
+  their components ask for have nothing behind them.
+  ```
+
+  Both entrypoints are generated from the config, so what they export moves when it does. The import survives that as a
+  binding to nothing — `isValidPattern` declines it, so it never reaches `patternAliases`, `matchFn` declines every call
+  of it, and the extractor records nothing. The call site is still there and still asks for a class.
+
+  Removing one pattern took eleven selectors out of a release this way, along with every modal's spacing and width.
+  Codegen printed four ticks and exited 0; it was found by diffing selector sets before and after. That is the outcome
+  `assertExtracted` already fails on, reached from the other direction, so it now reports the same way — every file
+  named in one pass, dropped once the file is fixed, deleted, or leaves `include`, and surviving the incremental passes
+  that skip an unchanged file.
+
+  **Reported per call, not per import.** Both entrypoints export types beside their functions — `FlexProperties` from
+  `patterns`, `ButtonVariantProps` from `recipes` — and neither is a pattern or a recipe, so an import-only test reports
+  every file that types a prop. TypeScript lets those be written without the `type` keyword and elides them either way,
+  so the keyword is not a filter this can rely on. A type is never called, which is. A binding nobody calls is left
+  alone for the same reason: nothing asked it for a class, so no rule is missing.
+
+  Not governed by a severity option, unlike `unresolvedToken`. That one infers a mistake from a value's shape and can be
+  wrong about a literal; this is read off the entrypoint's own export list.
+
+### Patch Changes
+
+- c49ab36: Cap the diagnostic lists, and group a dead call by the binding rather than by the file.
+
+  A build error's job is to name the mistake, and every list in one was joined whole. A pattern dropped from a preset
+  and called across an app produced **400 identical blocks and 1,221 lines of stderr** carrying one line of information,
+  with the paragraph explaining the failure scrolled off the top. The same error is now six lines:
+
+  ```txt
+  ERR_BAMBOO_DEAD_IMPORT: 400 call(s) name a binding that does not exist:
+
+  `stack` is not a pattern — `../styled-system/patterns` does not export it.
+    400 file(s): src/comp-0.tsx, src/comp-1.tsx, src/comp-10.tsx, src/comp-100.tsx, src/comp-101.tsx, … and 395 more
+
+  Both entrypoints are generated from your config, so what they export moves when it does — …
+  ```
+
+  Grouping is by the binding because that is the unit of the mistake; two distinct dead bindings stay two findings.
+  Files within a group are deduplicated, since one module can call the same one twice.
+
+  The other three unbounded lists are capped rather than grouped, each carrying a distinct message with nothing to
+  collapse: files that could not be extracted, unresolved token values (25, being one line each), and the
+  `failOnUnfolded` survivor list. In every case the count is of what was withheld, and a list that fits is joined
+  exactly as before.
+
+  `truncateList` and `groupBy` are exported from `@bamboocss/shared`.
+
+- e66c5f8: Delete artifacts codegen no longer generates, instead of leaving them on disk.
+
+  Codegen was write-only. An artifact that stopped being produced stayed where it was: dropping a pattern from the
+  config rewrote `patterns/index.mjs` without it and left `patterns/stack.mjs` beside it. Importing through the barrel
+  then failed loudly, which is fine — a deep import resolved, ran, returned a class name and emitted no css. A stale
+  artifact is worse than a missing one, because it answers.
+
+  `--clean` was the only sweep, and it empties the whole directory rather than reconciling it.
+
+  Bounded twice over, because the cost of being wrong is a deleted file rather than a stale one. Only the directories a
+  codegen actually wrote to are read, so a directory bamboo does not generate into is never touched. Within them, only
+  files carrying an extension this codegen wrote _there_ are eligible: `patterns/` received `.mjs` and `.d.ts` files, so
+  a leftover `stack.mjs` is stale, while a `.gitignore`, a `README.md` or a `styles.css` is not the kind of thing bamboo
+  puts there and is none of its business. Subdirectories are left alone.
+
+  Reasoning from what was written, rather than from a list of known exceptions. A denylist has to name every file
+  someone might legitimately keep in an output directory, and the failure mode when it misses one is silent deletion —
+  it missed the `.gitignore` that ships inside a generated directory.
+
+  Skipped for a partial codegen and for a `codegen:prepare` hook that replaced the artifact list — neither can say what
+  a directory should contain, and reading a filtered list as the whole truth would delete every artifact it held back.
+
+- 10bf63d: Keep a `@keyframes` for as long as the token declaration naming it ships.
+
+  ```css
+  --animations-drawer-in-right: slide-in-right 400ms ease-out; /* shipped */
+  /* @keyframes slide-in-right — deleted */
+  ```
+
+  `pruneTokenVars` roots reachability at what the css references _plus_ what reaches a token from outside it: a
+  `token()` call, a `prune.keepTokens` pattern, a theme artifact injected at runtime, a `globalCss` export.
+  `pruneKeyframes` asked the same question of the same sheet a moment later and re-derived it from the css alone, which
+  can see none of those. So a token one pass kept had its keyframe deleted by the other, leaving a declaration pointing
+  at a definition that is not there. The stylesheet is valid, the build exits 0, and the animation simply never plays —
+  the failure only a diff of the output finds.
+
+  The token pass now hands its answer to the keyframe pass rather than each computing its own. A keyframe is dropped
+  only when the declarations naming it were dropped too, so the pass keeps its saving: on the default preset an app that
+  uses no animations still ships none of them, and its css is byte-identical to before.
+
+  **It was reported as depending on whether `include` covers `outdir`, which is a second route to it rather than the
+  cause.** `collectKeyframeReferences` scans source text for each declared name, and the generated token artifact
+  contains `slide-in-right 400ms` verbatim — so a project whose `include` reaches its own output was keeping its
+  keyframes by accident, and excluding `outdir` took the accident away. That overlap is no longer load-bearing for
+  keyframes.
+
+  Under `prune: { tokens: 'off' }` every keyframe a declaration names is now kept. Nothing is removable there, and `off`
+  is the setting chosen precisely because something outside the stylesheet reads those declarations.
+
+- 09d4203: Stop reporting unresolved styles in files bamboo generated.
+
+  ```
+  warn [css] styled-system/css/css.mjs:48:36 — an object spread or computed key leaves the
+  build unable to tell which properties this call sets.
+  ```
+
+  `include` conventionally covers a source tree that `outdir` sits inside — `./src/**` and `src/styled-system` — so the
+  build routinely parses its own output. The generated `css.mjs` defines `cssLeaf` as `css({ [prop]: value })`, a
+  computed key and so unenumerable by construction, and that warned on every build of every such project. There was no
+  edit that would silence it: the file is regenerated from bamboo's own template.
+
+  That is worse than noise. It sits in the same channel as the losses that do matter and have fixes — an unresolvable
+  value, a recipe whose hash the browser will not agree with — and a line that is always there teaches everyone reading
+  the log to skip the channel.
+
+  Suppressed at the report rather than by dropping the directory from the scan, because that overlap is load-bearing
+  elsewhere: the token and keyframe reference scans read whatever `include` covers. Authored source is reported exactly
+  as before.
+
+- Updated dependencies [c49ab36]
+- Updated dependencies [e66c5f8]
+- Updated dependencies [c527ea7]
+- Updated dependencies [10bf63d]
+- Updated dependencies [c49ab36]
+- Updated dependencies [c49ab36]
+- Updated dependencies [c527ea7]
+  - @bamboocss/shared@1.34.0
+  - @bamboocss/generator@1.34.0
+  - @bamboocss/types@1.34.0
+  - @bamboocss/core@1.34.0
+  - @bamboocss/parser@1.34.0
+  - @bamboocss/config@1.34.0
+  - @bamboocss/reporter@1.34.0
+  - @bamboocss/token-dictionary@1.34.0
+  - @bamboocss/logger@1.34.0
+  - @bamboocss/plugin-svelte@1.34.0
+  - @bamboocss/plugin-vue@1.34.0
+
 ## 1.33.0
 
 ### Minor Changes

@@ -1,5 +1,150 @@
 # @bamboocss/core
 
+## 1.34.0
+
+### Minor Changes
+
+- c527ea7: Fail the build on a call to a binding the pattern or recipe entrypoint no longer exports.
+
+  ```
+  error: 1 call(s) name a binding that does not exist:
+
+  src/modal.tsx
+    `stack` is not a pattern — `../styled-system/patterns` does not export it.
+
+  Both entrypoints are generated from your config, so what they export moves when it does — a pattern
+  dropped from a preset, a recipe renamed. The call survives that as a binding to nothing: nothing
+  extracts it, so every rule it would have contributed is absent from the stylesheet and the classes
+  their components ask for have nothing behind them.
+  ```
+
+  Both entrypoints are generated from the config, so what they export moves when it does. The import survives that as a
+  binding to nothing — `isValidPattern` declines it, so it never reaches `patternAliases`, `matchFn` declines every call
+  of it, and the extractor records nothing. The call site is still there and still asks for a class.
+
+  Removing one pattern took eleven selectors out of a release this way, along with every modal's spacing and width.
+  Codegen printed four ticks and exited 0; it was found by diffing selector sets before and after. That is the outcome
+  `assertExtracted` already fails on, reached from the other direction, so it now reports the same way — every file
+  named in one pass, dropped once the file is fixed, deleted, or leaves `include`, and surviving the incremental passes
+  that skip an unchanged file.
+
+  **Reported per call, not per import.** Both entrypoints export types beside their functions — `FlexProperties` from
+  `patterns`, `ButtonVariantProps` from `recipes` — and neither is a pattern or a recipe, so an import-only test reports
+  every file that types a prop. TypeScript lets those be written without the `type` keyword and elides them either way,
+  so the keyword is not a filter this can rely on. A type is never called, which is. A binding nobody calls is left
+  alone for the same reason: nothing asked it for a class, so no rule is missing.
+
+  Not governed by a severity option, unlike `unresolvedToken`. That one infers a mistake from a value's shape and can be
+  wrong about a literal; this is read off the entrypoint's own export list.
+
+- c527ea7: Add `unresolvedToken`, so a style value naming a token that does not exist can fail the build.
+
+  ```ts
+  export default defineConfig({
+    unresolvedToken: 'error', // 'off' | 'warn' | 'error', default 'warn'
+  })
+  ```
+
+  ```
+  error: 2 style value(s) name a token that does not exist:
+
+  - `background: accent.default`. Check the path against your `colors` tokens.
+  - `color: brand.foreground`. Check the path against your `colors` tokens.
+  ```
+
+  Token resolution falls back to the value it was given, so an unknown path is emitted as written and
+  `background: 'accent.default'` ships as `background: accent.default`. That parses, so the stylesheet is valid and no
+  build step objects — the browser drops the declaration at compute time and the style is simply absent. It had warned
+  on every build for months behind a dead site-wide `::selection` rule and a `_selected` state that rendered identically
+  to unselected, and there was no way to escalate it: `validation` grades the config rather than the source,
+  `strictTokens` narrows generated typescript, and `prune.unresolvedPath` is about a `token()` call the prune scan
+  cannot follow — a question about pruning coverage, asked of a token that usually exists.
+
+  The default stays `warn`, which is exactly what it did before, because the test is a _shape_: a dotted value against
+  the set of values the property enumerates. That is right about a mistyped token and cannot be certain about a literal,
+  so escalating is a choice a project makes once it knows its own source is clean. A property that enumerates nothing is
+  never reported, and `[accent.default]` marks a value as literal.
+
+  **Under `error` the check reads the decoded stylesheet, not the transforms that built it.** The decoder memoizes each
+  atom by hash, so on the second build of the same source `transform` is never re-entered — a check that accumulated
+  findings as transforms ran would either keep one past the edit that fixed it, or clear its record and then pass a
+  build whose source is still broken. Asking the sheet instead makes the question stateless and matches what is actually
+  being written: extraction is additive within a watch process, so a value you have already fixed is reported for
+  exactly as long as its rule is still in the file.
+
+### Patch Changes
+
+- 10bf63d: Keep a `@keyframes` for as long as the token declaration naming it ships.
+
+  ```css
+  --animations-drawer-in-right: slide-in-right 400ms ease-out; /* shipped */
+  /* @keyframes slide-in-right — deleted */
+  ```
+
+  `pruneTokenVars` roots reachability at what the css references _plus_ what reaches a token from outside it: a
+  `token()` call, a `prune.keepTokens` pattern, a theme artifact injected at runtime, a `globalCss` export.
+  `pruneKeyframes` asked the same question of the same sheet a moment later and re-derived it from the css alone, which
+  can see none of those. So a token one pass kept had its keyframe deleted by the other, leaving a declaration pointing
+  at a definition that is not there. The stylesheet is valid, the build exits 0, and the animation simply never plays —
+  the failure only a diff of the output finds.
+
+  The token pass now hands its answer to the keyframe pass rather than each computing its own. A keyframe is dropped
+  only when the declarations naming it were dropped too, so the pass keeps its saving: on the default preset an app that
+  uses no animations still ships none of them, and its css is byte-identical to before.
+
+  **It was reported as depending on whether `include` covers `outdir`, which is a second route to it rather than the
+  cause.** `collectKeyframeReferences` scans source text for each declared name, and the generated token artifact
+  contains `slide-in-right 400ms` verbatim — so a project whose `include` reaches its own output was keeping its
+  keyframes by accident, and excluding `outdir` took the accident away. That overlap is no longer load-bearing for
+  keyframes.
+
+  Under `prune: { tokens: 'off' }` every keyframe a declaration names is now kept. Nothing is removable there, and `off`
+  is the setting chosen precisely because something outside the stylesheet reads those declarations.
+
+- c49ab36: Resolve the path under a token modifier, and stop paying five templates per token to describe one.
+
+  `unresolvedToken` tested the value as written, so a path wearing `!important` or a `/opacity` modifier failed the
+  shape test on the modifier's own punctuation and was reported as fine. `color: red.3000!` shipped a declaration the
+  browser drops with nothing said about it. The normalization existed, but it lived in `assertNoUnresolvedTokens` rather
+  than in the shared predicate — so `unresolvedToken: 'error'` could see through `!` while `'warn'` could not, and
+  neither could see through `/`. It moves into `isUnresolvedTokenValue`, where both modes read it:
+  - `accent.default!`, `accent.default !important` and `accent.default/50` all resolve as `accent.default`, and report
+    once between them rather than not at all.
+  - The opacity modifier is stripped only for a property drawing on `colors`, so a slash stays part of the value in
+    `font: 12px/1.5 serif` or `gridArea: 1 / 2 / 3 / 4`.
+  - A resolvable path wearing a modifier is still fine, which is the half that would break first.
+
+  With the build seeing those forms, the generated types no longer have to spell each one out.
+  `WithColorOpacityModifier` and the per-token `WithImportant` are replaced by a single `WithModifier<T>` covering `/`,
+  `!` and ` !` as one open-ended tail.
+
+  A template literal distributes over a union in every placeholder, so `` `${T}` `` against a 258-token colour palette
+  is 258 members and `` `${T}${Important}` `` was four times that. Between them the two modifier forms were 5N of a
+  ~1,560-member union for `color` alone. Folding them to 3N is **14.5% off `tsc`** — 7.09s against 8.29s over 4,000 call
+  sites, with a control repeat agreeing to 3.5%.
+
+  What that gives up is the tail: `red.300!nonsense` typechecks now, where five exact templates rejected it. The build
+  still reports it, so the diagnostic moves rather than disappears, and only for a value nobody writes on purpose.
+
+  CSS output is unchanged — this grades reports and types, not what is emitted.
+
+  One thing worth knowing before tidying the generated types: the `& { __modifier?: true }` and
+  `& { __important?: true }` brands look like dead weight and nothing reads them, but they are what stops TypeScript
+  attempting subtype reduction across the union these expand into. Removing them costs **12.8x** on `tsc` — 87.2s
+  against 6.8s on the same fixture. There is now a comment saying so at the definition.
+
+- Updated dependencies [c49ab36]
+- Updated dependencies [e66c5f8]
+- Updated dependencies [c527ea7]
+- Updated dependencies [10bf63d]
+- Updated dependencies [c49ab36]
+- Updated dependencies [c527ea7]
+  - @bamboocss/shared@1.34.0
+  - @bamboocss/types@1.34.0
+  - @bamboocss/token-dictionary@1.34.0
+  - @bamboocss/logger@1.34.0
+  - @bamboocss/is-valid-prop@1.34.0
+
 ## 1.33.0
 
 ### Minor Changes
