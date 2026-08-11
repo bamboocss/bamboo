@@ -483,7 +483,8 @@ const globalStyles = globalCss({
 globalStyles()
 ```
 
-In Bamboo, you define the global styles in the `bamboo.config.ts` using the `global.css` function.
+In Bamboo, you define the global styles in the `bamboo.config.ts` under `global.css`, using the `defineGlobalStyles`
+helper.
 
 > The styles are injected automatically under the `base` cascade layer via PostCSS
 
@@ -496,7 +497,7 @@ const globalCss = defineGlobalStyles({
 
 export default defineConfig({
   // ...
-  globalCss,
+  global: { css: globalCss },
 })
 ```
 

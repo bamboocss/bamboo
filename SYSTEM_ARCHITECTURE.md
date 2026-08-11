@@ -57,7 +57,7 @@ bamboo/
   - **Context**: Central orchestration class that manages all engines
   - **Utility**: CSS utility generation and processing
   - **Recipes**: Component recipe/variant system (like Stitches)
-  - **Patterns**: Layout pattern generation (stack, flex, grid, etc.)
+  - **Patterns**: Layout pattern generation (flex, grid, container, etc.)
   - **Conditions**: Responsive/conditional style handling (breakpoints, pseudo-classes)
   - **Stylesheet**: CSS generation and optimization
   - **StyleEncoder/StyleDecoder**: Style serialization and deserialization
@@ -105,7 +105,6 @@ bamboo/
   artifacts/
   ├── css/           # CSS generation (tokens, reset, static, global, keyframes)
   ├── js/            # JavaScript utility functions
-  ├── jsx/           # JSX factory functions (React, Solid, Vue, Preact, Qwik)
   ├── types/         # TypeScript type definitions
   └── generated/     # Generated helper files
   ```
@@ -114,7 +113,10 @@ bamboo/
   - Type definition generation for autocomplete
   - CSS utility classes
   - Pattern and recipe types/functions
-  - Framework-specific JSX factories
+
+There is no `jsx/` artifact directory. The JSX factory was removed, so `styled-system/jsx` is not generated and there
+are no framework-specific factories to emit — a class name comes from a call the compiler can see, or from `staticCss`,
+which pre-generates rules with no call site.
 
 ### 3. Configuration & Setup
 
@@ -196,6 +198,30 @@ bamboo/
 
 - **Purpose**: User-friendly error and warning messages
 
+#### `@bamboocss/vite` (packages/vite)
+
+- **Purpose**: Vite plugin — emits the stylesheet and folds static `css()`, pattern and recipe calls into plain class
+  strings at build time
+- **Key responsibilities**: the build-time fold, `failOnUnfolded` coverage reporting, virtual `virtual:bamboo.css`
+
+#### `@bamboocss/mcp` (packages/mcp)
+
+- **Purpose**: MCP server exposing tokens, recipes, patterns and usage reports to AI assistants
+
+#### `@bamboocss/eslint-plugin` (packages/eslint-plugin)
+
+- **Purpose**: Lint rules (e.g. `no-dynamic-styling`, `no-config-function-in-source`, `require-literal-token-path`)
+
+#### `@bamboocss/plugin-*` (packages/plugin-lightningcss, plugin-vue, plugin-svelte)
+
+- **Purpose**: Optional plugins. `vue` and `svelte` are auto-injected for their file types; `lightningcss` is installed
+  and listed by the user.
+
+#### `@bamboocss/fixture` (packages/fixture)
+
+- **Purpose**: Shared test fixtures and context factories (`createContext`, `createRuleProcessor`). Private — not
+  published to npm.
+
 ## System Flow
 
 ### 1. Initialization Flow (`bamboo init`)
@@ -249,8 +275,7 @@ Generator (packages/generator)
     ├─→ Generate artifacts
     │   ├─→ CSS files (tokens, utilities, reset)
     │   ├─→ JS files (css, cva, sva, patterns)
-    │   ├─→ TypeScript types
-    │   └─→ Framework JSX factories
+    │   └─→ TypeScript types
     ↓
 Builder.write() - Write files to styled-system
     ↓
@@ -286,33 +311,35 @@ Source file (e.g., App.tsx)
 ts-morph creates SourceFile
     ↓
 getImportDeclarations() - Find bamboo imports
-    ├─→ css(), cva(), styled(), token(), etc.
+    ├─→ css(), cva(), sva(), token(), viewTransition(), etc.
     ↓
 extract() from @bamboocss/extractor
     ├─→ Scan for function calls
     │   └─→ Match against ImportMap
-    ├─→ Scan for JSX elements
-    │   ├─→ Match styled.div, bamboo.div
-    │   └─→ Match JSX props (if jsxStyleProps enabled)
     ↓
 For each match:
     ├─→ box() - Wrap AST node
     ├─→ Evaluate statically (with token resolution if needed)
     └─→ unbox() - Extract value
     ↓
-Parser switch statement (packages/parser/src/parser.ts:123-334)
+Parser match statement (packages/parser/src/parser.ts:311-391)
     ├─→ .when(imports.matchers.css.match) - Handle css/cva/sva
     ├─→ .when(imports.matchers.tokens.match) - Handle token() calls
     ├─→ .when(file.isValidPattern) - Handle pattern functions
     ├─→ .when(file.isValidRecipe) - Handle recipe functions
-    └─→ .when(jsx.isJsxFactory) - Handle JSX factory calls
+    └─→ .when(file.isViewTransitionFn) - Handle viewTransition() calls
+    ↓
+JSX recipe components (parser.ts:393, when `jsx.isEnabled`)
+    └─→ jsx.isJsxTagRecipe(tag) - a recipe component the project wrote itself, whose
+        variant props are only visible at the call site. Driven by a recipe's `jsx` key,
+        not by a styled factory.
     ↓
 ParserResult
-    ├─→ set('css', ...) - Store CSS styles
+    ├─→ set('css' | 'cva' | 'sva', ...) - dispatches to setCss/setCva/setSva
     ├─→ setToken(...) - Store token references
     ├─→ setPattern(...) - Store pattern usage
     ├─→ setRecipe(...) - Store recipe usage
-    ├─→ setJsx(...) - Store JSX component styles
+    ├─→ setViewTransition(...) - Store view transition names
     ↓
 StyleEncoder - Encode to atomic classes
     ├─→ Store in StyleDecoder
@@ -347,9 +374,6 @@ generateArtifacts() dispatches to:
     │   ├─→ sva.mjs - Slot variants
     │   ├─→ patterns/*.mjs - Layout patterns
     │   └─→ recipes/*.mjs - Recipe functions
-    ├─→ JSX Artifacts (framework-specific)
-    │   ├─→ styled.mjs - styled('div') API
-    │   └─→ factory.mjs - JSX factory
     └─→ Type Artifacts
         ├─→ style-props.d.ts
         ├─→ pattern.d.ts
@@ -476,12 +500,16 @@ This dual-mode system exists because:
 
 - **Atomic CSS**: Each unique style gets one class
 - **Layer ordering**: Uses `@layer` for predictable cascade
-- **PostCSS pipeline**:
-  - `postcss-nested` - Unwrap nested rules
-  - `postcss-merge-rules` - Merge duplicate selectors
-  - `postcss-discard-duplicates` - Remove duplicate rules
-  - `postcss-minify-selectors` - Optimize selectors
-  - `lightningcss` - Fast minification and vendor prefixing
+- **PostCSS pipeline** (the default; `packages/core/src/optimize.ts` dispatches, the plugin order lives in
+  `packages/core/src/plugins/optimize-postcss.ts`):
+  - `nested()` - Unwrap nested rules
+  - `dedupeNodes()` - Remove duplicate rules (local, not `postcss-discard-duplicates`)
+  - `mergeRules()` - Merge duplicate selectors (inlined as `packages/core/src/plugins/merge-rules.ts`, so core does not
+    depend on browserslist or caniuse-api)
+  - `discardEmpty()` - Drop empty rules
+  - then `normalizeWhiteSpace()` + `minifySelectors()` under `minify`, else `prettify()`
+- **LightningCSS** - an opt-in _alternative_ to that pipeline, not a stage in it. Install
+  `@bamboocss/plugin-lightningcss` and list `pluginLightningcss()` in `plugins`; it answers the `css:optimize` hook.
 
 ### Code Splitting
 
@@ -498,7 +526,7 @@ This dual-mode system exists because:
 css({ color: 'red.500' }) // Autocomplete for 'red.500'
 
 // Pattern props
-stack({ gap: '4' }) // Autocomplete for spacing tokens
+flex({ gap: '4' }) // Autocomplete for spacing tokens
 
 // Recipe variants
 button({ size: 'lg', variant: 'solid' }) // Autocomplete variants
@@ -522,23 +550,18 @@ TypeScript provides autocomplete
 
 ## Framework Integration
 
-### JSX Factory Pattern
+### One Authoring API Across Frameworks
 
-Each framework gets a custom JSX factory:
+There is no JSX factory and no style props. Every framework authors styles the same way — a `css()`, pattern or recipe
+call whose result is a class string — so nothing framework-specific is generated:
 
-```typescript
-// React
-import { styled } from './styled-system/jsx'
-<styled.div color="red.500" />
-
-// Solid
-import { styled } from './styled-system/jsx/solid'
-<styled.div color="red.500" />
-
-// Vue
-import { styled } from './styled-system/jsx/vue'
-<styled.div :color="'red.500'" />
+```tsx
+import { css } from './styled-system/css'
+;<div className={css({ color: 'red.500' })} />
 ```
+
+That is what makes the build-time fold possible: the call is visible to the compiler, so `@bamboocss/vite` can replace
+it with the string it would have returned. See `packages/vite` and the source-transformation guide.
 
 ### Framework-Specific Parsing
 
@@ -551,16 +574,32 @@ import { styled } from './styled-system/jsx/vue'
 
 ### Hooks API
 
-Bamboo provides a hookable API for extensibility:
+Bamboo provides a hookable API for extensibility. Hooks register through `plugins` only — there is no top-level `hooks`
+config option, and setting one is a hard error:
 
 ```typescript
-hooks: {
-  'tokens:created': (args) => { /* Modify tokens */ },
-  'parser:before': (args) => { /* Pre-parsing */ },
-  'parser:after': (args) => { /* Post-parsing */ },
-  'cssgen:done': (args) => { /* Post-CSS generation */ },
-  'codegen:prepare': (args) => { /* Pre-codegen */ },
-}
+plugins: [
+  {
+    name: 'my-app',
+    hooks: {
+      'tokens:created': (args) => {
+        /* Modify tokens */
+      },
+      'parser:before': (args) => {
+        /* Pre-parsing */
+      },
+      'parser:after': (args) => {
+        /* Post-parsing */
+      },
+      'cssgen:done': (args) => {
+        /* Post-CSS generation */
+      },
+      'codegen:prepare': (args) => {
+        /* Pre-codegen */
+      },
+    },
+  },
+]
 ```
 
 ### Plugin Architecture

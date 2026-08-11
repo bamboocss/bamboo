@@ -24,7 +24,7 @@ with workspace support.
   /types/          # Type definitions (config options live here)
   /vite/           # Vite plugin, including the build-time fold
   /postcss/        # PostCSS plugin
-  /plugin-*/       # Built-in plugins (lightningcss, vue, svelte)
+  /plugin-*/       # vue and svelte are auto-injected; lightningcss is opt-in
   /preset-*/       # Design system presets (base, bamboo, atlaskit, open-props)
   /eslint-plugin/  # Lint rules
   /fixture/        # Shared test fixtures and utilities
@@ -242,10 +242,13 @@ pnpm update <package> --ignore-scripts
 ### Dependency Strategy
 
 - **PostCSS ecosystem**: Coordinate updates across all PostCSS plugins to avoid CSS output changes
-- **browserslist**: Updates affect `postcss-merge-rules` behavior - test thoroughly
-- **lightningcss**: Used optionally via the `config.lightningcss` flag, which auto-injects
-  `@bamboocss/plugin-lightningcss` (that package owns the `lightningcss` dependency, not core); depends on browserslist
-  for targets
+- **browserslist**: Only reaches LightningCSS now. `merge-rules` was inlined
+  (`packages/core/src/plugins/merge-rules.ts`) specifically to shed the browserslist and caniuse-api dependencies, and
+  the PostCSS path pins a hardcoded `BASELINE` so a consuming project's browserslist cannot shift CSS output
+- **lightningcss**: Opt-in only. The user installs `@bamboocss/plugin-lightningcss` and lists `pluginLightningcss()` in
+  `plugins` (that package owns the `lightningcss` dependency, not core); depends on browserslist for targets. The
+  `config.lightningcss` flag is removed and now throws — it forced a static import, so every project carried the native
+  binary whether or not it was on
 - **Node.js packages**: Core packages (`@bamboocss/core`, `@bamboocss/node`, etc.) must stay in sync
 
 ## Common Workflows
@@ -301,7 +304,7 @@ Brief description of the change and its impact.
 ### Configuration Flow
 
 1. User config → `packages/config/` → Config resolution
-2. Config hooks → `packages/types/src/config.ts`
+2. Config hooks → `packages/types/src/hooks.ts` (registered through `plugins`; the top-level `hooks` key is removed)
 3. Context creation → `packages/node/src/` → `BambooContext`
 4. Code generation → `packages/generator/`
 
@@ -309,9 +312,10 @@ Brief description of the change and its impact.
 
 1. Style objects → `packages/core/src/rule-processor.ts`
 2. CSS generation → `packages/core/src/stylesheet.ts`
-3. Optimization → `packages/core/src/optimize.ts` (the PostCSS path lives here)
-   - LightningCSS path: `packages/plugin-lightningcss/src/optimize-lightningcss.ts`, auto-injected by
-     `packages/node/src/config.ts` when `config.lightningcss` is set
+3. Optimization → `packages/core/src/optimize.ts` dispatches; the PostCSS plugin order lives in
+   `packages/core/src/plugins/optimize-postcss.ts`
+   - LightningCSS path: `packages/plugin-lightningcss/src/optimize-lightningcss.ts`, reached through the `css:optimize`
+     hook when the user lists `pluginLightningcss()` in `plugins`
 
 ### Test Fixtures
 
@@ -328,7 +332,7 @@ Brief description of the change and its impact.
 - Compare expected vs received CSS output carefully
 - Look for media query ordering, selector merging, or whitespace changes
 - Identify which dependency update caused the change
-- Common culprits: `postcss-merge-rules`, `postcss-nested`, `browserslist`
+- Common culprits: the inlined `merge-rules`, `postcss-nested`, `postcss-minify-selectors`
 
 **Build failures:**
 
@@ -373,9 +377,9 @@ Brief description of the change and its impact.
   ├─ browserslist (browser targets)
   └─ postcss-* plugins (optimization)
 
-@bamboocss/plugin-lightningcss     # not a core dependency — auto-injected by
-  ├─ lightningcss                  # packages/node/src/config.ts when
-  └─ browserslist                  # `config.lightningcss` is set
+@bamboocss/plugin-lightningcss     # not a core dependency — installed and
+  ├─ lightningcss                  # listed in `plugins` by the user
+  └─ browserslist
 ```
 
 ## Useful References

@@ -14,7 +14,7 @@ Everything below is exported from `@bamboocss/node`.
 ### Context
 
 - `loadConfigAndCreateContext({ cwd?, config?, configPath? })` – resolve the config file, merge presets and inline
-  overrides, auto-inject the built-in plugins (`vue`, `svelte`, `lightningcss`), and return a `BambooContext`.
+  overrides, auto-inject the built-in plugins (`vue`, `svelte`), and return a `BambooContext`.
 - `BambooContext` – the resolved config plus everything derived from it: tokens, utilities, conditions, recipes,
   patterns, the `ts-morph` project, the output engine and the diff engine.
 - `Builder` – the incremental driver the bundler plugins use. It owns context setup, tracks which files and config

@@ -38,8 +38,8 @@ cx('fs_lg', active ? 'fw_bold' : 'fw_normal')
 - 🪶 [Optional zero runtime](https://bamboocss.com/docs/guides/source-transformation) – fold static `css()`, pattern and
   recipe calls into plain class strings at build time
 - ✨ Modern CSS output – cascade layers `@layer`, css variables and more
-- ✂️ Prune [unused tokens](https://bamboocss.com/docs/references/config#pruneunusedtokens) and
-  [keyframes](https://bamboocss.com/docs/references/config#pruneunusedkeyframes) – ship only what your app uses
+- ✂️ Prune [unused tokens](https://bamboocss.com/docs/references/config#prunetokens) and
+  [keyframes](https://bamboocss.com/docs/references/config#prunekeyframes) – ship only what your app uses
 - 🎯 [Predictable overrides](https://bamboocss.com/docs/concepts/cascade-layers) – precedence is decided by cascade
   layer, so a component written with `cva`/`sva` lands in `recipes` and a consumer's `css()` in `utilities` wins
 - 🛟 [Fallback values](https://bamboocss.com/docs/concepts/writing-styles#fallback-values) – `fallback(100dvh, 100vh)`
@@ -88,12 +88,12 @@ Start using bamboo
 
 ```jsx
 import { css } from '../styled-system/css'
-import { stack, vstack, hstack } from '../styled-system/patterns'
+import { flex } from '../styled-system/patterns'
 
 function Example() {
   return (
     <div>
-      <div className={hstack({ gap: '30px', color: 'pink.300' })}>Box 1</div>
+      <div className={flex({ align: 'center', gap: '30px', color: 'pink.300' })}>Box 1</div>
       <div className={css({ fontSize: 'lg', color: 'red.400' })}>Box 2</div>
     </div>
   )

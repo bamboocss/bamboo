@@ -15,7 +15,8 @@ The `extend` keyword allows you to extend the following parts of Bamboo:
 - [recipes](/docs/concepts/recipes) (included in theme)
 - [patterns](/docs/customization/patterns)
 - [utilities](/docs/customization/utilities)
-- [globalCss](/docs/concepts/writing-styles#global-styles)
+- [global.css](/docs/concepts/global-styles), and the other `global.*` keys (`vars`, `fontface`, `positionTry`) —
+  `extend` sits on each sub-key, not on `global` itself
 - [staticCss](/docs/guides/static)
 
 > These keys are all allowed in [presets](/docs/customization/presets).
