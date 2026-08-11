@@ -59,6 +59,11 @@ export const nodeRuntime: Runtime = {
     writeFile: fsExtra.writeFile,
     writeFileSync: fsExtra.writeFileSync,
     readDirSync: fsExtra.readdirSync,
+    isDirSync(path: string) {
+      // `statSync` throws on a path that is not there, and every caller here would answer
+      // that the same way.
+      return fsExtra.statSync(path, { throwIfNoEntry: false })?.isDirectory() ?? false
+    },
     rmDirSync: fsExtra.emptyDirSync,
     rmFileSync: fsExtra.removeSync,
     ensureDirSync(path: string) {

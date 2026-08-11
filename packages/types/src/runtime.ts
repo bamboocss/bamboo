@@ -19,6 +19,8 @@ export interface WatchOptions extends InputOptions {
 interface FileSystem {
   readDirSync(dir: string): string[]
   existsSync(fileLike: string): boolean
+  /** False for a path that does not exist, so a caller never has to test twice. */
+  isDirSync(path: string): boolean
   glob(opts: InputOptions): string[]
   readFileSync(filePath: string): string
   rmDirSync(dirPath: string): void
