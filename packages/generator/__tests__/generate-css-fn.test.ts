@@ -10,20 +10,11 @@ describe('generate css-fn', () => {
 
       type Styles = SystemStyleObject | undefined | null | false
 
-      interface CssRawFunction {
-        (styles: Styles): SystemStyleObject
-        (styles: Styles[]): SystemStyleObject
-        (...styles: Array<Styles | Styles[]>): SystemStyleObject
-        (styles: Styles): SystemStyleObject
-      }
-
       interface CssFunction {
-        (styles: Styles): string
-        (styles: Styles[]): string
-        (...styles: Array<Styles | Styles[]>): string
-        (styles: Styles): string
+        /** Spread a list you built — \`css(...styles)\`. An array argument is an error. */
+        (...styles: Styles[]): string
 
-        raw: CssRawFunction
+        raw: (...styles: Styles[]) => SystemStyleObject
       }
 
       export declare const css: CssFunction;
@@ -154,20 +145,11 @@ describe('generate css-fn', () => {
 
       type Styles = SystemStyleObject | undefined | null | false
 
-      interface CssRawFunction {
-        (styles: Styles): SystemStyleObject
-        (styles: Styles[]): SystemStyleObject
-        (...styles: Array<Styles | Styles[]>): SystemStyleObject
-        (styles: Styles): SystemStyleObject
-      }
-
       interface CssFunction {
-        (styles: Styles): string
-        (styles: Styles[]): string
-        (...styles: Array<Styles | Styles[]>): string
-        (styles: Styles): string
+        /** Spread a list you built — \`css(...styles)\`. An array argument is an error. */
+        (...styles: Styles[]): string
 
-        raw: CssRawFunction
+        raw: (...styles: Styles[]) => SystemStyleObject
       }
 
       export declare const css: CssFunction;

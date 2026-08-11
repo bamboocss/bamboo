@@ -43,22 +43,20 @@ export const buildCss = (grouped = false) => {
 /**
  * Show the runtime every argument shape once, before anything is timed.
  *
- * A canary rather than a warmup. `flatHashOrNull` in `memo.ts` sends arrays to the string
- * key precisely so its `for...in` loop only ever walks a plain object, which keeps V8 from
- * specializing those call sites against two element kinds — see the comment there for what
- * that cost when it did not. With that in place this call changes no reading here, and it is
- * meant to stay that way.
+ * A canary rather than a warmup: showing every shape once means a deopt shows up as every
+ * bench in the file slowing down together, instead of only the ones declared after whichever
+ * bench first passed the offending shape. That asymmetry once made this file report one bench
+ * as 9.4x slower than another when the two were at parity.
  *
- * What it buys is that a reintroduced deopt shows up as every bench in the file slowing down
- * together, instead of only the ones declared after whichever bench first passes an array.
- * That asymmetry once made this file report one bench as 9.4x slower than another when the
- * two were at parity — it simply ran after `composed css([a, [b, c]])`.
+ * The shape that caused it was an array argument — `css([a, [b, c]])` — which mixed element
+ * kinds at these call sites. `css()` no longer accepts one, so it is no longer warmed here.
+ * `flatHashOrNull` in `memo.ts` still routes arrays to the string key for the same reason,
+ * since other memoized functions can still be handed one.
  */
 const warmArgumentShapes = () => {
   const throwaway = buildCss()
   throwaway({ color: 'red' })
   throwaway({ color: 'red' }, { padding: '2px' })
-  throwaway([{ color: 'blue' }, [{ padding: '8px' }]])
   throwaway({ color: 'red', _hover: { color: 'blue' } })
 }
 

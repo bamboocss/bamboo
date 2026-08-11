@@ -34,8 +34,8 @@ describe('css() runtime', () => {
     for (let i = 0; i < ITERATIONS; i++) css({ color: 'red' }, { padding: '2px' })
   })
 
-  bench(`composed css([a, [b, c]]) x${ITERATIONS}`, () => {
-    for (let i = 0; i < ITERATIONS; i++) css([l1, [l2, { margin: '2px' }]])
+  bench(`composed css(a, b, c) x${ITERATIONS}`, () => {
+    for (let i = 0; i < ITERATIONS; i++) css(l1, l2, { margin: '2px' })
   })
 
   bench(`pattern stack() x${ITERATIONS}`, () => {

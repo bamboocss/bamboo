@@ -117,16 +117,18 @@ describe('multi-argument ordering', () => {
     expect(result.folded[0]!.className).toBe(runtimeCss({ color: 'red.300' }, { padding: '2' }, { color: 'green.300' }))
   })
 
-  test('array argument folds like the runtime flattens it', () => {
-    const { fold, runtimeCss } = createFoldFixture()
+  // `css([a, b])` was a second spelling of `css(a, b)` and is now rejected. It is caught
+  // during extraction rather than folded to something, so the build names the file instead
+  // of emitting a rule per array index.
+  test('array argument is rejected rather than folded', () => {
+    const { fold } = createFoldFixture()
 
-    const result = fold(`
+    expect(() =>
+      fold(`
       import { css } from 'styled-system/css'
       export const cls = css([{ color: 'red.300' }, { padding: '2' }])
-    `)
-
-    expect(result.folded).toHaveLength(1)
-    expect(result.folded[0]!.className).toBe(runtimeCss([{ color: 'red.300' }, { padding: '2' }] as never))
+    `),
+    ).toThrowError('An array is not a style argument.')
   })
 })
 

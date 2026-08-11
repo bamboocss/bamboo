@@ -98,9 +98,9 @@ const flatHashOrNull = (args: readonly any[]): number | null => {
     //     objects and arrays interleaved         7.02ms   <- before
     //     objects only, after an array was seen  6.74ms   <- and it never recovers
     //
-    // An app calling both `css({...})` and `css([...])` — or any pattern, which merges
-    // through the same path — was paying that ~8x on every call, process-wide and
-    // permanently, including on instances built afterwards.
+    // An app interleaving array and object arguments was paying that ~8x on every call,
+    // process-wide and permanently, including on instances built afterwards. `css()` no
+    // longer takes an array, but this is generic — `cx` and the pattern fns reach it too.
     if (Array.isArray(obj)) return null
     // `for...in` walks the prototype chain while the wrapped function reads own keys, so
     // anything carrying a custom prototype goes to the string key, which sees exactly what

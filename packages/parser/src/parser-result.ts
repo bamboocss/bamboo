@@ -67,16 +67,21 @@ export class ParserResult implements ParserResultInterface {
 
     const encoder = this.encoder
 
-    // `css([a, b])` arrives as a single entry holding an array, and `mergeCss` flattens it
-    // before merging. Hashing the array itself instead reads its indices as a responsive
-    // array — `css([{ color }, { padding }])` emitted the padding at the `sm` breakpoint.
-    // Flattened here so every path below sees the operands the runtime sees.
+    // `css([a, b])` used to arrive as a single entry holding an array, flattened here to match
+    // what `mergeCss` did. Both are gone: one spelling of a call is the point, and every
+    // `css()` in the codebase was paying a `flatMap` to serve a shape almost nothing wrote.
     //
-    // Tested for before flattening: array arguments are rare, and `flatMap` allocates a
-    // second array for every `css()` call in the codebase to serve them.
-    const data = (
-      result.data.some(Array.isArray) ? result.data.flatMap((obj) => (Array.isArray(obj) ? obj : [obj])) : result.data
-    ) as Record<string, any>[]
+    // Caught here rather than left to the runtime because the two disagree about what an
+    // array is. `walkObject` would read its indices as property names and emit a rule per
+    // index — junk classes, no error. This runs inside the per-file parse, so the failure
+    // names the file it came from.
+    if (result.data.some(Array.isArray)) {
+      throw new BambooError('INVALID_STYLE_ARGUMENT', 'An array is not a style argument.', {
+        hint: 'Spread it instead, e.g. css(...styles) rather than css(styles).',
+      })
+    }
+
+    const data = result.data as Record<string, any>[]
 
     // Only the surprising half is reported. A spread the build could not read looks static
     // and is not — that is worth interrupting for. A value it could not evaluate is the

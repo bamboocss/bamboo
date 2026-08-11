@@ -114,13 +114,11 @@ describe('css', () => {
     expect(className).toMatchInlineSnapshot('"fs_lg sm:fs_xs"')
   })
 
-  test('merging styles with array item', () => {
-    const className = css({ fontSize: 'sm', bgColor: 'red.500' }, [
-      { backgroundColor: 'red.600' },
-      { fontSize: '12px' },
-    ])
-
-    expect(className).toMatchInlineSnapshot(`"fs_12px bg-c_red.600"`)
+  // Was a second spelling of `css(a, b, c)`, flattened one level before merging.
+  test('rejects an array argument', () => {
+    expect(() =>
+      css({ fontSize: 'sm', bgColor: 'red.500' }, [{ backgroundColor: 'red.600' }, { fontSize: '12px' }] as never),
+    ).toThrowError('An array is not a style argument.')
   })
 })
 
@@ -347,17 +345,9 @@ describe('css.raw', () => {
     `)
   })
 
-  test('merging styles with array item', () => {
-    const styles = css.raw({ fontSize: 'sm', bgColor: 'red.500' }, [
-      { backgroundColor: 'red.600' },
-      { fontSize: '12px' },
-    ])
-
-    expect(styles).toMatchInlineSnapshot(`
-      {
-        "backgroundColor": "red.600",
-        "fontSize": "12px",
-      }
-    `)
+  test('rejects an array argument', () => {
+    expect(() =>
+      css.raw({ fontSize: 'sm', bgColor: 'red.500' }, [{ backgroundColor: 'red.600' }, { fontSize: '12px' }] as never),
+    ).toThrowError('An array is not a style argument.')
   })
 })

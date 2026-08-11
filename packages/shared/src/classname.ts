@@ -1,5 +1,6 @@
 import { isObject } from './assert'
 import { filterBaseConditions } from './condition'
+import { BambooError } from './error'
 import { toHash } from './hash'
 import { isImportant, sanitize, withoutImportant } from './important'
 import { memo } from './memo'
@@ -135,8 +136,26 @@ function hasDefinedValue(style: StyleObject) {
   return false
 }
 
+/**
+ * An array is not a style argument.
+ *
+ * `css([a, b])` used to mean `css(a, b)`, flattened here one level. Two spellings of one
+ * call is the redundancy; the array one also cost a `flat()` allocation on every merge to
+ * serve a shape almost nothing wrote, and read as a responsive array everywhere that had
+ * not been taught to flatten it first.
+ *
+ * It throws rather than being filtered out as a non-object, which is what dropping the
+ * `flat()` alone would have done — silently returning no class at all.
+ */
 function compactStyles(...styles: StyleObject[]) {
-  return styles.flat().filter((style) => isObject(style) && hasDefinedValue(style))
+  return styles.filter((style) => {
+    if (Array.isArray(style)) {
+      throw new BambooError('INVALID_STYLE_ARGUMENT', 'An array is not a style argument.', {
+        hint: 'Spread it instead, e.g. css(...styles) rather than css(styles).',
+      })
+    }
+    return isObject(style) && hasDefinedValue(style)
+  })
 }
 
 export function createMergeCss(context: CreateCssContext) {
