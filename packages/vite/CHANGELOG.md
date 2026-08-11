@@ -1,5 +1,85 @@
 # @bamboocss/vite
 
+## 1.34.0
+
+### Minor Changes
+
+- c49ab36: Add `leafFallback`, which is what makes zero runtime reachable for an app that has any dynamic styling.
+
+  The fold's payoff is not the per-call CPU it saves — it is that a bundle where everything lowered stops importing
+  `styled-system/css`, and the engine drops out. One reference keeps the whole thing, and there is exactly one:
+  `cssLeaf` falls back to `css({ [prop]: value })` for a value that turns out to be a condition object or a responsive
+  array, which no class-name concatenation describes.
+
+  That fallback is reachable only for a value the fold could not see the shape of, and it costs everything. On
+  `sandbox/runtime-perf`, one dynamic leaf:
+
+  |                                | raw      | gzip    | top-level bindings |
+  | ------------------------------ | -------- | ------- | ------------------ |
+  | `leafFallback: true` (default) | 22,154 B | 7,542 B | 39                 |
+  | `leafFallback: false`          | 2,094 B  | 1,077 B | 10                 |
+
+  7.0x on gzip, because the reference pulls in `createCss`, the merge, the utility and shorthand tables and the
+  conditions — for a branch that fires only when the value is not a scalar.
+
+  Setting `leafFallback: false` removes it. The generated `cssLeaf` then throws for the two shapes `leafClass` declines,
+  naming the property, rather than returning a class with no rule behind it. What you are asserting is that **a style
+  value that varies at runtime is a scalar** — write conditions and responsive values as literals at the call site,
+  where the fold reads them and resolves each branch.
+
+  `failOnUnfolded` in `@bamboocss/vite` follows: a lowered leaf is reported as `lowered-leaf` because of that reference,
+  so with the fallback off it is no longer a survivor. This is the part that matters — with the fallback on,
+  `failOnUnfolded` can only pass an app with _no dynamic styling at all_, which is a far narrower target than it sounds.
+  Together the two options move it to "an app whose dynamic values are scalars", which is most of them.
+
+  The option narrows what counts as surviving; it does not weaken the guarantee. A spread the build cannot see is still
+  a real `css()` in the output and still fails.
+
+  Default unchanged, so nothing moves unless you ask for it.
+
+### Patch Changes
+
+- c49ab36: Cap the diagnostic lists, and group a dead call by the binding rather than by the file.
+
+  A build error's job is to name the mistake, and every list in one was joined whole. A pattern dropped from a preset
+  and called across an app produced **400 identical blocks and 1,221 lines of stderr** carrying one line of information,
+  with the paragraph explaining the failure scrolled off the top. The same error is now six lines:
+
+  ```txt
+  ERR_BAMBOO_DEAD_IMPORT: 400 call(s) name a binding that does not exist:
+
+  `stack` is not a pattern — `../styled-system/patterns` does not export it.
+    400 file(s): src/comp-0.tsx, src/comp-1.tsx, src/comp-10.tsx, src/comp-100.tsx, src/comp-101.tsx, … and 395 more
+
+  Both entrypoints are generated from your config, so what they export moves when it does — …
+  ```
+
+  Grouping is by the binding because that is the unit of the mistake; two distinct dead bindings stay two findings.
+  Files within a group are deduplicated, since one module can call the same one twice.
+
+  The other three unbounded lists are capped rather than grouped, each carrying a distinct message with nothing to
+  collapse: files that could not be extracted, unresolved token values (25, being one line each), and the
+  `failOnUnfolded` survivor list. In every case the count is of what was withheld, and a list that fits is joined
+  exactly as before.
+
+  `truncateList` and `groupBy` are exported from `@bamboocss/shared`.
+
+- Updated dependencies [c49ab36]
+- Updated dependencies [e66c5f8]
+- Updated dependencies [c527ea7]
+- Updated dependencies [10bf63d]
+- Updated dependencies [c49ab36]
+- Updated dependencies [09d4203]
+- Updated dependencies [c49ab36]
+- Updated dependencies [c527ea7]
+  - @bamboocss/shared@1.34.0
+  - @bamboocss/node@1.34.0
+  - @bamboocss/types@1.34.0
+  - @bamboocss/core@1.34.0
+  - @bamboocss/config@1.34.0
+  - @bamboocss/extractor@1.34.0
+  - @bamboocss/logger@1.34.0
+
 ## 1.33.0
 
 ### Patch Changes
