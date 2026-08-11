@@ -408,6 +408,34 @@ interface CodegenOptions {
    */
   shorthands?: boolean
   /**
+   * Whether a lowered style leaf falls back to `css()` for a value that is not a scalar.
+   *
+   * Only the build-time fold calls the helper this governs. `css({ color: tone })` lowers to
+   * `cssLeaf('c_', 'color', tone)`, which builds the class by concatenation — and hands the
+   * value to `css()` when it turns out to be a condition object or a responsive array, which
+   * no concatenation describes.
+   *
+   * That fallback is the single edge keeping the css engine in a bundle. It is reachable only
+   * for a value the fold could not see the shape of, and it costs the whole prize: on
+   * `sandbox/runtime-perf`, one dynamic leaf takes a module from **923 B to 7,542 B gzipped**,
+   * because the reference pulls in `createCss`, the merge, the utility and shorthand tables
+   * and the conditions. Turned off, the same module keeps 10 top-level bindings instead of 39.
+   *
+   * Turning it off asserts something about your source: **a style value that varies at runtime
+   * is a scalar** — a string, a number, a boolean, or nothing. Write conditions and responsive
+   * values as literals at the call site, where the fold reads them and resolves each branch,
+   * rather than assembling them into a variable. A value that breaks the assertion throws,
+   * naming the property, instead of silently producing a class with no rule behind it.
+   *
+   * Pairs with `failOnUnfolded` in `@bamboocss/vite`: with the fallback off a lowered leaf no
+   * longer keeps the engine, so that option stops reporting one as a survivor. Together they
+   * are what makes zero runtime reachable for an app that has any dynamic styling at all —
+   * before this, it required an app with none.
+   *
+   * @default true
+   */
+  leafFallback?: boolean
+  /**
    * File extension for generated javascript files.
    * @default 'mjs'
    */

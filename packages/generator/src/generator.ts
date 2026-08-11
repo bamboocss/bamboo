@@ -8,7 +8,7 @@ import {
   type Stylesheet,
 } from '@bamboocss/core'
 import { logger } from '@bamboocss/logger'
-import { cssVarRefs, dashCase, isObject, withoutImportant, BambooError } from '@bamboocss/shared'
+import { cssVarRefs, dashCase, isObject, truncateList, BambooError } from '@bamboocss/shared'
 import type { ArtifactId, CssArtifactType, LoadConfigResult, SpecFile, SpecType, SpecTypeMap } from '@bamboocss/types'
 import { match } from 'ts-pattern'
 import { generateArtifacts } from './artifacts'
@@ -392,11 +392,12 @@ export class Generator extends Context {
       const { prop, value } = atom.entry
       if (typeof value !== 'string' || typeof prop !== 'string') continue
 
-      // The same normalization the decoder applies before handing a value to `transform`, so
-      // `color: red.300!` is judged as `red.300` rather than failing the shape test and
-      // slipping through.
-      const bare = withoutImportant(value)
-      if (!this.utility.isUnresolvedTokenValue(prop, bare)) continue
+      if (!this.utility.isUnresolvedTokenValue(prop, value)) continue
+
+      // The path the value names, with `!important` and a `/opacity` modifier stripped. The
+      // predicate above normalizes the same way — this asks for the result of it, rather than
+      // repeating the rule and letting the two drift.
+      const bare = this.utility.bareTokenPath(prop, value)
 
       // One finding per mistake: the same typo under `base`, `_hover` and two breakpoints is
       // four atoms and one thing to fix.
@@ -405,12 +406,15 @@ export class Generator extends Context {
 
     if (!found.size) return
 
-    const detail = Array.from(found.values())
-      .map(({ prop, value, category }) => {
+    // One line each, so the cap is generous relative to the block-shaped lists elsewhere: a
+    // theme rename can leave a few dozen of these and seeing the shape of them is the point.
+    const detail = truncateList(
+      Array.from(found.values(), ({ prop, value, category }) => {
         const where = category ? ` Check the path against your \`${category}\` tokens.` : ''
         return `- \`${prop}: ${value}\`.${where}`
-      })
-      .join('\n')
+      }),
+      { limit: 25, unit: 'value', separator: '\n' },
+    )
 
     throw new BambooError(
       'UNRESOLVED_TOKEN',

@@ -95,12 +95,12 @@ describe('generate css-fn', () => {
 
       // Emitted for the source transform, which rewrites a single dynamic style leaf into a
       // call to this rather than leaving a \`css()\` behind. \`prefix\` is the class up to the
-      // value, resolved at build time; \`prop\` is only used for the shapes \`leafClass\`
-      // declines, which have to run the real thing.
+      // value, resolved at build time; \`prop\` names the property for the shapes \`leafClass\`
+      // declines.
       export const cssLeaf = (prefix, prop, value) => {
-        const className = leafClass(prefix, value)
-        return className === undefined ? css({ [prop]: value }) : className
-      }
+            const className = leafClass(prefix, value)
+            return className === undefined ? css({ [prop]: value }) : className
+          }
 
       // Sugar for the string form, so the feature has an import to discover, a signature to
       // hover and a name the editor can complete. The extractor evaluates the call, so the
@@ -235,12 +235,12 @@ describe('generate css-fn', () => {
 
       // Emitted for the source transform, which rewrites a single dynamic style leaf into a
       // call to this rather than leaving a \`css()\` behind. \`prefix\` is the class up to the
-      // value, resolved at build time; \`prop\` is only used for the shapes \`leafClass\`
-      // declines, which have to run the real thing.
+      // value, resolved at build time; \`prop\` names the property for the shapes \`leafClass\`
+      // declines.
       export const cssLeaf = (prefix, prop, value) => {
-        const className = leafClass(prefix, value)
-        return className === undefined ? css({ [prop]: value }) : className
-      }
+            const className = leafClass(prefix, value)
+            return className === undefined ? css({ [prop]: value }) : className
+          }
 
       // Sugar for the string form, so the feature has an import to discover, a signature to
       // hover and a name the editor can complete. The extractor evaluates the call, so the
@@ -274,5 +274,45 @@ describe('generate css-fn — the recipe seam', () => {
     const js = generateCssFn(createGeneratorContext({}) as any).js
     expect(js).not.toContain('__atomicCss')
     expect(js).not.toContain('grouped: false')
+  })
+
+  /**
+   * `cssLeaf`'s fallback is the single reference keeping the css engine reachable from a
+   * fully-lowered module, and the assertion that matters is about the *emitted text* rather
+   * than about behaviour: a bundler decides what to keep by reading it. Measured on
+   * `sandbox/runtime-perf`, one dynamic leaf is 7,542 B gzipped with the reference and
+   * 1,077 B without — 39 top-level bindings against 10.
+   */
+  describe('leafFallback', () => {
+    // The declaration alone. Slicing to the next export would swallow the comment above it,
+    // which mentions `css()` in prose and would satisfy the assertion below for the wrong
+    // reason — the thing being asserted is that the *function* has no reference.
+    const leafOf = (js: string) => js.slice(js.indexOf('export const cssLeaf')).split('\n\n')[0]!
+
+    test('on by default, and the leaf reaches css()', () => {
+      const leaf = leafOf(generateCssFn(createGeneratorContext({}) as any).js)
+
+      expect(leaf).toContain('css({ [prop]: value })')
+    })
+
+    test('off removes the reference entirely', () => {
+      const leaf = leafOf(generateCssFn(createGeneratorContext({ leafFallback: false } as any) as any).js)
+
+      // Not "does it behave differently" — does the text a bundler reads still mention it.
+      // A `css(` anywhere in this function is the edge, whatever guards it.
+      expect(leaf).not.toContain('css(')
+      expect(leaf).toContain('throw new Error')
+    })
+
+    test('off, the throw names the property and the way out', () => {
+      // A silent wrong class is the failure this project spends its diagnostics preventing,
+      // so the one shape that cannot work has to say which property and what to do instead.
+      const leaf = leafOf(generateCssFn(createGeneratorContext({ leafFallback: false } as any) as any).js)
+
+      expect(leaf).toContain('${prop}')
+      expect(leaf).toContain('leafFallback')
+      expect(leaf).toMatch(/responsive array/)
+      expect(leaf).toMatch(/condition object/)
+    })
   })
 })

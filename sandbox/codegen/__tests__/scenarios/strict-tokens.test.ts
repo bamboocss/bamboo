@@ -29,6 +29,30 @@ describe('css', () => {
     assertType(css({ fontSize: '2xl/2' }))
   })
 
+  /**
+   * A modifier does not license the path in front of it. Both forms reach the token through
+   * the same lookup, so a typo is a typo either way — and these are what keeps that true
+   * through `WithModifier`, which folds `/`, `!` and ` !` into one open-ended tail rather
+   * than spelling out a closed template per form.
+   */
+  test('a modifier does not launder an unknown token', () => {
+    // @ts-expect-error expected from strictTokens: true
+    assertType(css({ color: 'blue.3000!' }))
+    // @ts-expect-error expected from strictTokens: true
+    assertType(css({ color: 'blue.3000 !important' }))
+    // @ts-expect-error expected from strictTokens: true
+    assertType(css({ color: 'blue.3000/40' }))
+  })
+
+  test('the tail after a modifier is not checked', () => {
+    // The one thing `WithModifier` gives up against the five exact templates it replaced.
+    // Deliberate, and cheap to hold: `unresolvedToken` strips the mark and resolves
+    // `blue.300` underneath, so the build still reports a bad path wearing one — warning by
+    // default, failing under `'error'`. See
+    // `packages/core/__tests__/unresolved-token-severity.test.ts`.
+    assertType(css({ color: 'blue.300!nonsense' }))
+  })
+
   test('utility prop', () => {
     assertType(
       css({

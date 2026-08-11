@@ -115,6 +115,84 @@ describe('a call to a binding that does not exist', () => {
     expect(error?.message).toMatch(/^2 call\(s\)/)
   })
 
+  /**
+   * A binding dropped from a preset is called everywhere at once, so the useful unit of the
+   * report is the binding rather than the file. Listed per file it was one sentence repeated
+   * per call site — 400 files produced 1,221 lines of stderr carrying one line of information,
+   * with the paragraph explaining the failure scrolled off the top.
+   */
+  test('groups by the binding, not by the file', () => {
+    const { ctx, add } = withFile(
+      'src/a.tsx',
+      `
+      import { stack } from 'styled-system/patterns'
+      export const A = () => <div className={stack({})} />
+      `,
+    )
+    for (const name of ['b', 'c', 'd', 'e', 'f', 'g']) {
+      add(
+        `src/${name}.tsx`,
+        `
+        import { stack } from 'styled-system/patterns'
+        export const X = () => <div className={stack({})} />
+        `,
+      )
+    }
+    for (const file of ctx.getFiles()) ctx.parseFile(file)
+
+    const message = (() => {
+      try {
+        ctx.assertNoDeadCalls()
+      } catch (e) {
+        return (e as Error).message
+      }
+      return ''
+    })()
+
+    // One sentence for the binding, once — not seven.
+    expect(message.match(/is not a pattern/g)).toHaveLength(1)
+    expect(message).toMatch(/^7 call\(s\)/)
+    expect(message).toMatch(/7 file\(s\):/)
+    // The first few named, the rest counted, so the list cannot outgrow the advice under it.
+    expect(message).toMatch(/… and 2 more/)
+    expect(message).toMatch(/absent from the stylesheet/)
+  })
+
+  test('two distinct bindings stay two findings', () => {
+    // The other side of the grouping: `stack` and `wrap` are two things to fix, and collapsing
+    // them because they share an entrypoint would hide one of them.
+    const { ctx, add } = withFile(
+      'src/a.tsx',
+      `
+      import { stack } from 'styled-system/patterns'
+      export const A = () => <div className={stack({})} />
+      `,
+    )
+    add(
+      'src/b.tsx',
+      `
+      import { wrap } from 'styled-system/patterns'
+      export const B = () => <div className={wrap({})} />
+      `,
+    )
+
+    ctx.parseFile('src/a.tsx')
+    ctx.parseFile('src/b.tsx')
+
+    const message = (() => {
+      try {
+        ctx.assertNoDeadCalls()
+      } catch (e) {
+        return (e as Error).message
+      }
+      return ''
+    })()
+
+    expect(message.match(/is not a pattern/g)).toHaveLength(2)
+    expect(message).toMatch(/`stack`/)
+    expect(message).toMatch(/`wrap`/)
+  })
+
   test('a live pattern is untouched', () => {
     const { ctx } = withFile(
       'src/ok.tsx',

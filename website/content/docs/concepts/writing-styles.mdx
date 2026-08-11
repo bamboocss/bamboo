@@ -131,6 +131,19 @@ css({ bg: '[red]' }) // ✅ Valid, since `[red]` is using the escape-hatch synta
 css({ fontSize: '[123px]' }) // ✅ Valid, since `[123px]` is using the escape-hatch syntax
 ```
 
+A token can carry an important mark or a colour opacity modifier, and the path in front of one is checked as usual:
+
+```ts
+css({ bg: 'red.400!' }) // ✅ Valid
+css({ bg: 'red.400/50' }) // ✅ Valid
+css({ bg: 'rd.400!' }) // ❌ Error: `rd.400` is not a token, mark or no mark
+```
+
+What follows the mark is **not** checked — `bg: 'red.400!nonsense'` typechecks. Spelling that out as a closed set of
+templates multiplies every token in the union by five, and it was around half the cost of typechecking a `css()` call
+under `strictTokens`. [`unresolvedToken`](/docs/references/config#unresolvedtoken) resolves the path underneath the
+mark, so the build still reports the value — warning by default, failing the build under `'error'`.
+
 #### strictPropertyValues
 
 With `config.strictPropertyValues` enabled, you can only use valid CSS values for properties that do have a predefined

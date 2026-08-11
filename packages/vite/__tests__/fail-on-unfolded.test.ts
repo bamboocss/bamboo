@@ -16,8 +16,13 @@ const cwd = join(dirname(fileURLToPath(import.meta.url)), '../../../sandbox/code
 const hookOf = <T>(hook: T | { handler: T } | undefined): T | undefined =>
   typeof hook === 'function' ? hook : (hook as { handler: T } | undefined)?.handler
 
-const run = async (code: string, file: string, failOnUnfolded: boolean) => {
-  const plugin = bamboocss({ transform: true, cwd, reportSummary: false, failOnUnfolded }).find(
+const run = async (code: string, file: string, failOnUnfolded: boolean, options: { leafFallback?: boolean } = {}) => {
+  // A sibling config rather than a mutated context: the plugin reads `leafFallback` off the
+  // resolved config, which is the same place codegen reads it, and a test that reached past
+  // that could pass while the two disagreed about what was emitted.
+  const configPath = options.leafFallback === false ? join(cwd, 'bamboo.leaf-fallback.config.ts') : undefined
+
+  const plugin = bamboocss({ transform: true, cwd, reportSummary: false, failOnUnfolded, configPath }).find(
     (p) => p.name === 'bamboocss:fold',
   )!
 
@@ -54,6 +59,39 @@ describe('failOnUnfolded', () => {
     const end = await run(src(`export const f = (tone) => css({ color: tone })`), 'src/strict-leaf.tsx', true)
 
     expect(end).toThrow(/lowered-leaf/)
+  }, 60_000)
+
+  /**
+   * The other side of that, and the reason `leafFallback` exists.
+   *
+   * With the fallback off the emitted `cssLeaf` has no reference to `css`, so a lowered leaf
+   * keeps nothing and reporting one would fail a build that genuinely dropped the engine.
+   * That is the difference between "zero runtime is reachable for an app with no dynamic
+   * styling" and "reachable for an app whose dynamic values are scalars" — which is most of
+   * them.
+   */
+  test('accepts a lowered leaf when the fallback is off', async () => {
+    const end = await run(
+      src(`export const f = (tone) => css({ color: tone })`),
+      'src/strict-leaf-nofallback.tsx',
+      true,
+      { leafFallback: false },
+    )
+
+    expect(end).not.toThrow()
+  }, 60_000)
+
+  test('still fails on an unresolvable call when the fallback is off', async () => {
+    // The option narrows what counts as surviving; it does not turn the guarantee off. A
+    // spread the build cannot see is still a real `css()` in the output.
+    const end = await run(
+      src(`export const f = (p) => css({ ...p, color: 'red.300' })`),
+      'src/strict-spread-nofallback.tsx',
+      true,
+      { leafFallback: false },
+    )
+
+    expect(end).toThrow(/dynamic/)
   }, 60_000)
 
   test('says nothing when every call folded', async () => {

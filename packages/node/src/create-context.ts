@@ -3,7 +3,7 @@ import { checkNamingAgreement, formatNamingDisagreement } from '@bamboocss/core'
 import { Generator } from '@bamboocss/generator'
 import { logger } from '@bamboocss/logger'
 import { ParserResult, Project } from '@bamboocss/parser'
-import { BambooError, uniq } from '@bamboocss/shared'
+import { BambooError, groupBy, truncateList, uniq } from '@bamboocss/shared'
 import type { LoadConfigResult, Runtime, WatchOptions, WatcherEventType } from '@bamboocss/types'
 import { debounce } from 'perfect-debounce'
 import { createBox } from './cli-box'
@@ -221,9 +221,16 @@ export class BambooContext extends Generator {
     // Relative to `cwd`, like `formatDeclined` beside it — an absolute path per entry buries
     // the part that differs. Non-empty lines only, so a message with a blank line between
     // paragraphs does not gain a line of trailing whitespace per paragraph.
-    const detail = Array.from(this.parseFailures.entries())
-      .map(([file, error]) => `${this.relative(file)}\n${messageOf(error).replace(/^(?=.)/gm, '  ')}`)
-      .join('\n\n')
+    // Not grouped, unlike the dead-call list: each of these carries a distinct parser message,
+    // so there is nothing to collapse. Capped for the same reason — a broken codemod can fail
+    // every file at once, and the paragraph below has to survive that.
+    const detail = truncateList(
+      Array.from(
+        this.parseFailures.entries(),
+        ([file, error]) => `${this.relative(file)}\n${messageOf(error).replace(/^(?=.)/gm, '  ')}`,
+      ),
+      { unit: 'file' },
+    )
 
     throw new BambooError(
       'EXTRACT_FAILED',
@@ -277,19 +284,38 @@ export class BambooContext extends Generator {
 
     const entrypoint = { pattern: 'pattern', recipe: 'recipe' } as const
 
-    const detail = Array.from(this.deadCalls.entries())
-      .map(([file, calls]) => {
-        const lines = calls.map((call) => {
+    // By the binding rather than by the file, because a dead binding is one mistake however
+    // many call sites reach it. A pattern dropped from a preset and called across an app is
+    // the case this exists for, and listing it per file said the same sentence 400 times —
+    // 1,221 lines of stderr for one thing to fix, with the paragraph explaining it scrolled
+    // off the top. Grouped, the same failure is four lines and reads as one cause.
+    const occurrences = Array.from(this.deadCalls.entries()).flatMap(([file, calls]) =>
+      calls.map((call) => ({ file, call })),
+    )
+
+    const detail = truncateList(
+      Array.from(
+        groupBy(occurrences, ({ call }) => `${call.entrypoint} ${call.mod} ${call.name} ${call.alias}`),
+        ([, group]) => {
+          const { call } = group[0]!
           // The imported name when it was renamed, since that is the one the entrypoint would
           // have to export and the one to search a changelog for.
           const named = call.alias === call.name ? `\`${call.name}\`` : `\`${call.name}\` (called as \`${call.alias}\`)`
-          return `  ${named} is not a ${entrypoint[call.entrypoint]} — \`${call.mod}\` does not export it.`
-        })
-        return `${this.relative(file)}\n${lines.join('\n')}`
-      })
-      .join('\n\n')
+          // Distinct files: one module can call the same dead binding more than once, and
+          // naming it twice in the list reads as two different places to look.
+          const files = uniq(group.map(({ file }) => this.relative(file)))
+          const shown = files.slice(0, 5).join(', ')
+          const rest = files.length > 5 ? `, … and ${files.length - 5} more` : ''
+          return (
+            `${named} is not a ${entrypoint[call.entrypoint]} — \`${call.mod}\` does not export it.\n` +
+            `  ${files.length} file(s): ${shown}${rest}`
+          )
+        },
+      ),
+      { unit: 'binding' },
+    )
 
-    const count = Array.from(this.deadCalls.values()).reduce((n, calls) => n + calls.length, 0)
+    const count = occurrences.length
 
     throw new BambooError(
       'DEAD_IMPORT',

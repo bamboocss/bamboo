@@ -1,6 +1,7 @@
 import { resolve } from 'node:path'
 
 import { logger } from '@bamboocss/logger'
+import { truncateList } from '@bamboocss/shared'
 import { loadConfigAndCreateContext } from '@bamboocss/node'
 import type { Plugin } from 'vite'
 import { bamboocssCss } from './css'
@@ -324,7 +325,12 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
         // reports no skip at all. But `cssLeaf` falls back to `css({ [prop]: value })` for a
         // value that is not a scalar -- a condition object, a nested block -- which the
         // build cannot rule out. So it imports the engine, and the bundle keeps it.
-        if (result.code.includes('cssLeaf(')) {
+        //
+        // Unless `leafFallback` is off, where that reference does not exist and a lowered
+        // leaf keeps nothing. Reporting one then would fail a build that genuinely dropped
+        // the engine, which is the outcome this option exists to make reachable: with the
+        // fallback on, `failOnUnfolded` can only pass an app with no dynamic styling at all.
+        if ((ctx.config.leafFallback ?? true) && result.code.includes('cssLeaf(')) {
           survivors.push({
             file: filePath,
             line: lineAt(result.code, result.code.indexOf('cssLeaf(')),
@@ -369,11 +375,16 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
         const named = (e: (typeof survivors)[number]) =>
           e.reason === 'runtime-binding' || e.reason === 'fold-failed' ? e.name : `${e.name}()`
 
-        const detail = Array.from(byFile.entries())
-          .map(([file, entries]) =>
+        // Capped by file rather than by call: the per-call lines under one file are what make
+        // it actionable, and a project turning this on for the first time can have every
+        // module survive. Without a bound the advice at the bottom — which is the part that
+        // says what to do — scrolls off behind a list nobody reads to the end of.
+        const detail = truncateList(
+          Array.from(byFile.entries(), ([file, entries]) =>
             [`  ${file}`, ...entries.map((e) => `    ${e.line}: ${named(e)} — ${e.reason}`)].join('\n'),
-          )
-          .join('\n')
+          ),
+          { unit: 'file', separator: '\n' },
+        )
 
         // The advice below is about call sites, and does not apply to a module that threw —
         // there the error above this one is the thing to fix.

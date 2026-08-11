@@ -24,12 +24,35 @@ export function generatePropTypes(ctx: Context) {
   return outdent`
   ${result.join('\n')}
 
-  type WithColorOpacityModifier<T> = [T] extends [string] ? \`$\{T}/\${string}\` & { __colorOpacityModifier?: true } : never
-
   type ImportantMark = "!" | "!important"
   type WhitespaceImportant = \` \${ImportantMark}\`
   type Important = ImportantMark | WhitespaceImportant
   type WithImportant<T> = [T] extends [string] ? \`\${T}\${Important}\` & { __important?: true } : never
+
+  /**
+   * The modifiers a token path may carry, as one open-ended tail rather than one closed
+   * template per form.
+   *
+   * ⚠️ The \`& { __modifier?: true }\` is load-bearing, and nothing reads it. Deleting it as
+   * dead weight costs **12.8x** on \`tsc\` — measured at 87.2s against 6.8s over 4,000 call
+   * sites — because it is what stops TypeScript attempting subtype reduction across the
+   * union these expand into. The same applies to \`__important\` above.
+   *
+   * A template literal distributes over a union in any placeholder, so \`\${T}\` against a
+   * 258-token colour palette is 258 members, and the old \`\${T}\${Important}\` was four times
+   * that. Between them the two modifier forms were 5N of a ~1,560-member union for \`color\`
+   * alone, and half the cost of type-checking a \`css()\` call under \`strictTokens\`. Folding
+   * them into one 3N tail is 14.5% off that — 7.09s against 8.29s over the same 4,000 call
+   * sites, with a control repeat agreeing to 3.5%.
+   *
+   * What it gives up is the tail: \`red.300!nonsense\` type-checks now, where five exact
+   * templates would have rejected it. \`unresolvedToken\` strips the mark and resolves the
+   * path underneath, so the build still reports it — warning by default, failing under
+   * \`'error'\`. The diagnostic moves rather than disappears, and only for a value nobody
+   * writes on purpose.
+   */
+  type Modifier = "/" | "!" | " !"
+  type WithModifier<T> = [T] extends [string] ? \`\${T}\${Modifier}\${string}\` & { __modifier?: true } : never
 
   /**
    * A list of candidate values, most-preferred first, emitted as repeated declarations so the
@@ -62,8 +85,7 @@ export function generatePropTypes(ctx: Context) {
     | \`[\${string}]\`
     | FallbackValue
     | WithImportant<FallbackValue>
-    | WithColorOpacityModifier<T>
-    | WithImportant<T>
+    | WithModifier<T>
 
   /**
    * Will restrict the value of properties that have predefined values to those values only.

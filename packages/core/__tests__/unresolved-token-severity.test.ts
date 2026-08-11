@@ -164,6 +164,77 @@ describe("'error'", () => {
   })
 })
 
+/**
+ * A token path can carry `!important` or a `/opacity` modifier, and the path underneath is
+ * still a path that either names a token or does not. Tested as written, every one of these
+ * fails `TOKEN_PATH` on the modifier's own punctuation and reads as a value with no token in
+ * it — so `background: accent.default!` shipped a declaration the browser drops, silently.
+ *
+ * The normalization used to sit in `assertNoUnresolvedTokens`, which gave `'error'` sight of
+ * `!` that `'warn'` did not have, and gave neither any sight of `/`. It lives in the shared
+ * predicate now, so the modes cannot disagree — the pairs below are what pins that down.
+ */
+describe('modifiers on the path', () => {
+  const forms = {
+    'important, tight': 'accent.default!',
+    'important, long': 'accent.default!important',
+    'important, spaced': 'accent.default !important',
+    'opacity modifier': 'accent.default/50',
+  }
+
+  for (const [name, value] of Object.entries(forms)) {
+    test(`'error' sees through a bad path with an ${name}`, () => {
+      const { run } = build('error', styled(value))
+      expect(() => run()).toThrowError(/`background: accent.default`/)
+    })
+
+    test(`'warn' sees through a bad path with an ${name}, exactly as 'error' does`, () => {
+      const spy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+      const { run } = build('warn', styled(value))
+
+      expect(() => run()).not.toThrow()
+      expect(messages(spy)).toMatch(/Unknown token `accent.default`/)
+    })
+  }
+
+  test('a resolvable path is still fine wearing a modifier', () => {
+    // The other half, and the one that would break first: strip too eagerly, or judge the
+    // stripped path against the wrong set, and every `red.300!` in a real codebase fails.
+    for (const value of ['red.300!', 'red.300 !important', 'red.300/50']) {
+      const { run } = build('error', styled(value))
+      expect(() => run(), value).not.toThrow()
+    }
+  })
+
+  test('one finding for one typo, however it is spelled', () => {
+    const { run } = build(
+      'error',
+      `
+      import { css } from 'styled-system/css'
+      export const App = () => (
+        <div className={css({ background: { base: 'accent.default', _hover: 'accent.default!', md: 'accent.default/50' } })} />
+      )
+      `,
+    )
+
+    expect(() => run()).toThrowError(/^1 style value\(s\)/)
+  })
+
+  test('a slash is only a modifier where a modifier means something', () => {
+    // `/` opens an opacity modifier on a property drawing from `colors`, and is ordinary
+    // syntax everywhere else — `font: 12px/1.5 serif`, `gridArea: 1 / 2 / 3 / 4`. Asserted on
+    // the normalization rather than through a build because `TOKEN_PATH` rejects a slash
+    // outright, so a mis-cut here cannot surface as a finding either way. It would surface as
+    // the opposite: a real typo going unreported because the path was cut somewhere it should
+    // not have been.
+    const { ctx } = build('error', styled('red.300'))
+
+    expect(ctx.utility.bareTokenPath('background', 'accent.default/50')).toBe('accent.default')
+    expect(ctx.utility.bareTokenPath('fontFamily', 'Helvetica/Neue.Bold')).toBe('Helvetica/Neue.Bold')
+    expect(ctx.utility.bareTokenPath('gridArea', '1 / 2 / 3 / 4')).toBe('1 / 2 / 3 / 4')
+  })
+})
+
 describe('across rebuilds', () => {
   /**
    * The case that decides the design. The decoder memoizes each atom by hash, so a second

@@ -160,6 +160,24 @@ A bench that measures a shape nothing calls is worse than no bench, because it r
 spent a while measuring only the four-group shape that went away with the JSX factory, which left the one-array-group
 shape every recipe actually uses with nothing at all. When a caller is removed, check what its benchmarks were for.
 
+**Where a cold build's time actually goes.** Profiled with `bamboo --cpu-prof` over 2,000 files, 12 `css()` calls each
+(2.9s sampled):
+
+| area                            | self   | share     |
+| ------------------------------- | ------ | --------- |
+| ts-morph                        | 1675ms | **57.7%** |
+| node internals (GC alone 296ms) | 580ms  | 20.0%     |
+| extractor                       | 345ms  | 11.9%     |
+| core + parser                   | 180ms  | 6.2%      |
+| generator + postcss             | 9ms    | 0.3%      |
+
+So bamboo's own logic is ~12% of an extraction pass and the rest is AST construction and traversal. Micro-optimising the
+extractor is capped at that 12%; the two levers that reach the 58% are **sharding extraction across workers** (the loop
+in `builder.ts` is serial, and measures ~1.2x CPU-to-wall, so it is not doing any of this in parallel today) and a
+**persistent cache** keyed on content, since nothing survives the process — `fileModifiedMap` is module state, so
+touching one file in a 2,000-file project still costs a full 2.3s re-parse from the CLI, which is what every CI run and
+dev-server cold start pays. Neither is a small change; both are the right shape. Do not spend effort on the 12% first.
+
 🚨 **Nothing in CI catches a performance regression.** The Quality workflow runs format, tests, lint, knip and typecheck
 — benchmarks are excluded on purpose, for the reason below. That makes measuring a _manual obligation before
 committing_, not an optional follow-up:

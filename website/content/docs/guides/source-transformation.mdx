@@ -455,6 +455,43 @@ nothing.
 Three things are excluded from that walk: the helpers the fold itself writes (`cx`, `cvaPick`, `splitProps`), `cssLeaf`
 (already reported as `lowered-leaf`), and any reference inside a range the fold rewrote.
 
+### `leafFallback`, and reaching zero runtime with dynamic styles
+
+`cssLeaf` is reported as `lowered-leaf` for one reason: it falls back to `css()` when the value turns out to be a
+condition object or a responsive array, which no class-name concatenation describes. That single reference is the only
+edge from a fully-lowered module to the engine, and it is worth the entire prize:
+
+| `sandbox/runtime-perf`, one dynamic leaf | raw      | gzip    | top-level bindings |
+| ---------------------------------------- | -------- | ------- | ------------------ |
+| `leafFallback: true` (default)           | 22,154 B | 7,542 B | 39                 |
+| `leafFallback: false`                    | 2,094 B  | 1,077 B | 10                 |
+
+So with the fallback on, `failOnUnfolded` can only pass an app with **no dynamic styling at all** — which is a much
+narrower target than it sounds, and not one most apps can hit.
+
+Setting [`leafFallback: false`](/docs/references/config#leaffallback) in your Bamboo config removes the reference, and
+`failOnUnfolded` stops reporting a lowered leaf. The two together make zero runtime reachable for an app whose dynamic
+values are **scalars** — a string, a number, a boolean, or nothing:
+
+```ts
+// ✅ folds to cssLeaf, keeps nothing
+css({ color: tone })
+
+// ✅ both branches resolve at build time
+css({ color: active ? 'red.300' : 'blue.300' })
+
+// ❌ throws at runtime under `leafFallback: false`
+const styles = { base: 'red.300', _hover: 'blue.300' }
+css({ color: styles })
+
+// ✅ the same thing written where the build can read it
+css({ color: { base: 'red.300', _hover: 'blue.300' } })
+```
+
+The last shape throws rather than guessing, naming the property. `leafClass` declines exactly two things — a condition
+object and a responsive array — and both mean one class per entry rather than one class, so there is no string to return
+that is not silently wrong.
+
 ### A module the fold threw on
 
 The last shape the ledger cannot describe is a module the fold **failed** on. If the transform throws – on a retired

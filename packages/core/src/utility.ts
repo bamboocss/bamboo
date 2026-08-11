@@ -11,6 +11,7 @@ import {
   memo,
   parseFallbackValue,
   toHash,
+  withoutImportant,
   withoutSpace,
 } from '@bamboocss/shared'
 import type { TokenDictionary } from '@bamboocss/token-dictionary'
@@ -684,10 +685,45 @@ export class Utility {
   isUnresolvedTokenValue = (prop: string, value: string) => {
     // Cheapest test first: this runs for every value the build transforms, and most of them
     // have no dot at all.
-    if (!value.includes('.') || !TOKEN_PATH.test(value)) return false
+    if (!value.includes('.')) return false
 
-    const known = this.getKnownValues(this.resolveShorthand(prop))
-    return !!known && known.size > 0 && !known.has(value)
+    const key = this.resolveShorthand(prop)
+    const bare = this.bareTokenPath(key, value)
+    if (!TOKEN_PATH.test(bare)) return false
+
+    const known = this.getKnownValues(key)
+    return !!known && known.size > 0 && !known.has(bare)
+  }
+
+  /**
+   * A style value reduced to the token path it names, with the modifiers that may decorate
+   * one stripped off.
+   *
+   * `red.300!` and `red.300/50` resolve through the token `red.300`, so a typo in the path
+   * is a typo whether or not a modifier follows it. Tested as written, both fail
+   * `TOKEN_PATH` on the modifier's own punctuation and are reported as fine — which is how
+   * `color: red.3000!` shipped a declaration the browser drops with nothing said about it.
+   *
+   * Here rather than at each caller, which is the whole point. The normalization used to
+   * live in `assertNoUnresolvedTokens`, so `unresolvedToken: 'error'` saw through `!` and
+   * `unresolvedToken: 'warn'` did not — the two modes disagreeing about the same value,
+   * which is exactly what one shared predicate exists to prevent. Neither saw through `/`.
+   *
+   * The opacity modifier is stripped only for a property that draws on `colors`, since that
+   * is the only place the modifier means anything. Elsewhere a slash is ordinary syntax —
+   * `font: 12px/1.5 serif`, `gridArea: 1 / 2 / 3 / 4` — and must not be cut. `TOKEN_PATH`
+   * would reject those remainders anyway; gating on the category means this does not have
+   * to depend on that for its correctness.
+   */
+  bareTokenPath = (prop: string, value: string) => {
+    // `withoutImportant` also trims, which matters: ` red.300 !important` reaches here from a
+    // template literal and has to reduce to the same path as `red.300`.
+    const bare = value.includes('!') ? withoutImportant(value) : value
+
+    if (!bare.includes('/') || this.getTokenCategory(prop) !== 'colors') return bare
+
+    // The first slash, matching `colorMix`, which reads `path/opacity` and ignores the rest.
+    return bare.slice(0, bare.indexOf('/'))
   }
 
   /** The token category a property draws from, when it draws from exactly one. */
@@ -719,9 +755,12 @@ export class Utility {
 
     if (!this.isUnresolvedTokenValue(key, value)) return
 
-    // One report per mistake. `transform` runs once per condition, so a single bad token
-    // under `base`, `_hover` and two breakpoints is one typo and four identical warnings.
-    const id = `${key}:${value}`
+    // One report per mistake, keyed on the path rather than on the value as written: the same
+    // typo reached through `red.3000`, `red.3000!` and `red.3000/50` is one thing to fix.
+    // `transform` also runs once per condition, so a single bad token under `base`, `_hover`
+    // and two breakpoints is four identical warnings without this.
+    const bare = this.bareTokenPath(key, value)
+    const id = `${key}:${bare}`
     if (this.warnedTokens.has(id)) return
     this.warnedTokens.add(id)
 
@@ -729,7 +768,7 @@ export class Utility {
     const where = category ? ` Check the path against your \`${category}\` tokens.` : ''
     logger.warn(
       'utility',
-      `Unknown token \`${value}\` in \`${key}: ${value}\`. It is emitted as written, which the browser will drop.${where} Write \`[${value}]\` if it is meant as a literal.`,
+      `Unknown token \`${bare}\` in \`${key}: ${value}\`. It is emitted as written, which the browser will drop.${where} Write \`[${bare}]\` if it is meant as a literal.`,
     )
   }
 
