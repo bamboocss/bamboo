@@ -1,5 +1,185 @@
 # @bamboocss/node
 
+## 1.32.0
+
+### Minor Changes
+
+- c29044f: Fail the build when a file cannot be extracted, instead of logging it and exiting 0.
+
+  ```
+  error during build:
+  [bamboocss:css] Could not load virtual:bamboo.css: 1 file(s) could not be extracted:
+
+  src/Timeline.tsx
+    `{colors.brand.purple/35}` in the value `0 0 0 2px {colors.brand.purple/35}` is the retired
+    token reference syntax. Write `token(colors.brand.purple/35)` instead.
+
+  Nothing emits a rule for a file the build could not read, so every style in these is absent from
+  the stylesheet and the classes their components ask for have nothing behind them.
+  ```
+
+  Extraction caught, logged, and carried on. The file's styles never reach the encoder, so every rule it would have
+  contributed is simply gone — one retired token spelling in one component dropped that component's css and left a green
+  build behind it. Three error-level lines, exit 0, and `built` printed at the end.
+
+  **The two integrations disagreed about the same source.** `bamboo cssgen` exited 1 on a file it could not extract,
+  because it went through the one entry point that let the throw out; every bundler build went through the one that
+  caught it. CI running a build passed what CI running `cssgen` rejected. Both now go through the same path, so the
+  question is settled once rather than per integration.
+
+  Every broken file is named in one error rather than the first one aborting the pass, and a failure is keyed by file so
+  it survives the incremental passes that skip an unchanged one — otherwise a rebuild of identical, still-broken source
+  came back green. It is dropped once the file parses, is deleted, or leaves `include`, since a context outlives
+  rebuilds and all three of those are fixes. A watch rebuild still reports and keeps watching; only a build fails.
+
+  **`failOnUnfolded` counts a module the fold threw on.** A throw in the vite transform was caught and the module
+  returned unchanged, which is safe — its runtime call still works — but it landed in neither the folded column nor the
+  declined one. The coverage summary reported 100% over the files that did not throw, and the survivor check saw a file
+  that was never there, so the option's whole guarantee held vacuously over it. It now reports as `fold-failed`. Unknown
+  counts as survives: the claim is that _nothing_ still calls `css()`, and a module nobody could look at cannot support
+  it. Without `failOnUnfolded` it stays a logged error and a declined module, as before.
+
+- b0ed6dc: Remove the top-level `hooks` config option, so a hook has one place to live.
+
+  Hooks were registrable two ways — through `plugins`, or through a bare `hooks` key on the config, which was treated as
+  a nameless plugin appended after all the others. Write a plugin:
+
+  ```ts
+  export default defineConfig({
+    plugins: [
+      {
+        name: 'my-app',
+        hooks: {
+          'tokens:created': ({ configure }) => configure({ formatTokenName: (path) => '$' + path.join('-') }),
+        },
+      },
+    ],
+  })
+  ```
+
+  One mechanism with two spellings also meant an ordering rule you had to know — "plugins in sequence, then the config's
+  own last" — and a diagnostic layer that had a name to print for one spelling and nothing for the other. Ordering is
+  now just the order of the array, and every hook belongs to something named.
+
+  A config still setting `hooks` fails naming the replacement, like any other removed option, rather than reverting to
+  the default in silence.
+
+  Internally the merged hooks no longer travel on the config object. They were written onto it by `mergeConfigs` and
+  read back off in `resolveConfig`, which is what made a `hooks` key ambiguous between "what you wrote" and "what
+  resolution produced"; `plugins` is the only source, so `resolveConfig` merges them once and keeps them on
+  `LoadConfigResult`. `createContext` from `@bamboocss/fixture` reads hooks from `plugins` for the same reason.
+
+- 591a0f1: Remove `cssgen --minimal`, leaving the artifact type as the one way to say what `cssgen` emits.
+
+  `cssgen <type>` names one of `preflight`, `tokens`, `static`, `global` or `keyframes`. `--minimal` answered the same
+  question from the other side — everything _except_ those five — so which flag you reached for depended on which side
+  of the set you were standing on.
+
+  To ship only the css your source uses, generate everything and import the part you want. `--splitting` writes each
+  layer as its own file:
+
+  ```bash
+  bamboo cssgen --splitting
+  ```
+
+  ```
+  styled-system/styles/utilities.css   # what --minimal emitted
+  styled-system/styles/recipes.css
+  ```
+
+  That costs the generation of the layers you then do not import, which is build time rather than shipped bytes.
+
+- c29044f: Add `prune.keepTokens`, so a token path the build cannot follow costs a category instead of the whole theme.
+
+  ```ts
+  prune: { tokens: 'accounted', keepTokens: ['colors.*'] }
+  ```
+
+  `accounted`'s fallback was total: **one** reference the accounting could not follow kept every declaration in the
+  project, so a codebase with a single `token(key)` in it shipped the same stylesheet as one that never pruned. There
+  was no middle ground between that and asserting every path resolves — which put the feature out of reach of the
+  codebases that reach for `token()` most.
+
+  `keepTokens` is the bound the build could not infer, written by hand. Under `accounted` it keeps what it matches
+  **and** stands in for what could not be followed, in place of the blanket keep. Measured on `sandbox/vite-ts` with one
+  unfollowable `token(key)`:
+
+  | setting                                             | declarations | stylesheet |
+  | --------------------------------------------------- | -----------: | ---------: |
+  | `tokens: 'reachable'`                               |          426 |   23,412 B |
+  | `tokens: 'accounted'`                               |          426 |   23,412 B |
+  | `tokens: 'accounted', keepTokens: ['colors.*']`     |          270 |   17,867 B |
+  | `tokens: 'accounted', keepTokens: ['colors.red.*']` |           51 |   10,649 B |
+
+  Patterns are anchored globs over the dotted token _path_, with `*` for any run of characters and a leading `!` to
+  exclude. The path, not the css variable: a token is `fontSizes.3xl` and its declaration is `--font-sizes-3xl`, so
+  `font-sizes.*` matches nothing. A pattern matching no token is reported and names the spelling that would have worked,
+  because it is nearly always a typo and keeping nothing is otherwise silent; so is a list holding only exclusions,
+  which selects everything they do not name.
+
+  Saying `keepTokens: ['colors.*']` is an assertion about your own code — _the reads you cannot follow land in colours_
+  — which is why nothing infers it. Nothing verifies it either, so the covered references are still printed under
+  `warn`. `unresolvedPath: 'error'` deliberately does **not** combine with it: one asserts every path resolves and the
+  other declares where the ones that do not will land, and the build says which to drop rather than silently preferring
+  the weaker claim.
+
+  Under `reachable` it is additive only, for a token nothing in the stylesheet references and no javascript here reads —
+  a sibling package consuming the output, or css outside `include`.
+
+  This replaces `staticCss` as the way to keep a token category alive. `staticCss` emits utility _classes_: keeping the
+  colours meant shipping a rule per colour purely to hold the declarations up, usually a larger stylesheet than the
+  pruning saved. `CssRule.properties` also has no documented wildcard, so every value had to be enumerated by hand.
+
+  **Docs.** The `prune` reference had not caught up with the option renames — it documented `prune.unresolved`,
+  `tokens: false` and the wrong default for `unresolvedPath`. It also never mentioned that a template literal is
+  **bounded rather than declined**: ``token(`colors.${shade}`)`` keeps the `colors` category and prunes everything else,
+  which already covers the commonest dynamic read and is worth knowing before concluding `accounted` is unusable.
+
+- b2b4173: Rebuild the themes artifact when a theme variant changes, and carry the original errors on a failed
+  extraction.
+
+  **`theme.variants` rebuilt nothing.** The watch rebuild decides which artifacts to regenerate by matching the changed
+  config path against a per-artifact list, and the themes artifact still watched `themes` — the option's name before it
+  became `theme.variants`. `ConfigPath` ends in `(string & {})`, so the stale path typechecked and simply stopped
+  matching.
+
+  Nothing reported it. The diff saw the change, no matcher claimed it, and the affected set came back empty — which is
+  not "rebuild everything": `getMatchingArtifacts` filters on `ids.includes(...)`, and an empty list includes nothing.
+  So editing or adding a theme variant regenerated no artifact at all and kept serving the previous `theme-*.json`.
+  `eject` was stale in the same list, left by the same round of renames.
+
+  A test now checks every watched path against the removed-option table, so an option that is renamed and not updated
+  here fails at the commit that renames it rather than silently detaching an artifact from its trigger.
+
+  **`ERR_BAMBOO_EXTRACT_FAILED` carries its causes.** The aggregate named every file it could not extract but kept only
+  their messages, so a caller acting on the failure could not tell a retired token spelling from a syntax error. It now
+  sets `cause` to an `AggregateError` of the originals — always, one file or six, so reading `cause.errors` never has to
+  test how many there were first.
+
+### Patch Changes
+
+- Updated dependencies [c29044f]
+- Updated dependencies [b0ed6dc]
+- Updated dependencies [8a66bb9]
+- Updated dependencies [2b84dfa]
+- Updated dependencies [da792cc]
+- Updated dependencies [1cc1860]
+- Updated dependencies [c29044f]
+- Updated dependencies [b2b4173]
+- Updated dependencies [f3a8b0d]
+- Updated dependencies [c29044f]
+  - @bamboocss/shared@1.32.0
+  - @bamboocss/config@1.32.0
+  - @bamboocss/types@1.32.0
+  - @bamboocss/generator@1.32.0
+  - @bamboocss/core@1.32.0
+  - @bamboocss/parser@1.32.0
+  - @bamboocss/reporter@1.32.0
+  - @bamboocss/token-dictionary@1.32.0
+  - @bamboocss/logger@1.32.0
+  - @bamboocss/plugin-svelte@1.32.0
+  - @bamboocss/plugin-vue@1.32.0
+
 ## 1.31.0
 
 ### Minor Changes

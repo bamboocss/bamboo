@@ -1,5 +1,233 @@
 # @bamboocss/types
 
+## 1.32.0
+
+### Minor Changes
+
+- b0ed6dc: Remove the top-level `hooks` config option, so a hook has one place to live.
+
+  Hooks were registrable two ways — through `plugins`, or through a bare `hooks` key on the config, which was treated as
+  a nameless plugin appended after all the others. Write a plugin:
+
+  ```ts
+  export default defineConfig({
+    plugins: [
+      {
+        name: 'my-app',
+        hooks: {
+          'tokens:created': ({ configure }) => configure({ formatTokenName: (path) => '$' + path.join('-') }),
+        },
+      },
+    ],
+  })
+  ```
+
+  One mechanism with two spellings also meant an ordering rule you had to know — "plugins in sequence, then the config's
+  own last" — and a diagnostic layer that had a name to print for one spelling and nothing for the other. Ordering is
+  now just the order of the array, and every hook belongs to something named.
+
+  A config still setting `hooks` fails naming the replacement, like any other removed option, rather than reverting to
+  the default in silence.
+
+  Internally the merged hooks no longer travel on the config object. They were written onto it by `mergeConfigs` and
+  read back off in `resolveConfig`, which is what made a `hooks` key ambiguous between "what you wrote" and "what
+  resolution produced"; `plugins` is the only source, so `resolveConfig` merges them once and keeps them on
+  `LoadConfigResult`. `createContext` from `@bamboocss/fixture` reads hooks from `plugins` for the same reason.
+
+- 8a66bb9: Remove the responsive array syntax, so a responsive value has one spelling.
+
+  `fontWeight: ['medium', undefined, undefined, 'bold']` used to mean one value per breakpoint. Write the condition
+  object instead:
+
+  ```ts
+  css({ fontWeight: { base: 'medium', lg: 'bold' } })
+  ```
+
+  The array form was the worse of the two on its own terms — positional, so skipping a breakpoint needed `undefined`
+  padding, and inserting a breakpoint re-pointed every value after it. But the reason it had to go is that CSS already
+  writes lists as arrays, so a font stack written the obvious way
+
+  ```ts
+  css({ fontFamily: ['Inter', 'sans-serif'] })
+  ```
+
+  compiled to `Inter` at base and `sans-serif` at `sm`, with no error and nothing in the type to suggest it.
+
+  An array in a style value is now an error naming the property it was written on, rather than a silent
+  reinterpretation. The type no longer admits one either: `ConditionalValue` drops its array member, and `CssProperties`
+  is built from csstype's `Properties` rather than `PropertiesFallback` — that array meant repeated declarations, which
+  `fallback()` already expresses and which the runtime never implemented.
+
+  A pattern property takes the same conditional value, so `grid({ columns: [2, 3, 4] })` becomes
+  `grid({ columns: { base: 2, sm: 3, md: 4 } })`.
+
+  The generated runtime no longer carries the breakpoint key list into `css`, `cva` and `mergeCss` — it existed only to
+  expand these arrays.
+
+- da792cc: Replace `textStyles`, `layerStyles` and `animationStyles` with one `theme.mixins`.
+
+  The three were one mechanism wearing three names: one registration, one cascade layer, and a `{ description?, value }`
+  shape they all shared. They differed only in which css properties the value was allowed to set — a partition that was
+  arbitrary at the edges (`color` was legal in a text style _and_ a layer style; `transform` in a layer style but
+  `transformOrigin` only in an animation style) and costly in the middle, since a bundle wanting a font _and_ a border
+  had to be split across two keys and applied twice.
+
+  ```ts
+  // before
+  export default defineConfig({
+    theme: { textStyles, layerStyles, animationStyles },
+  })
+  css({ textStyle: 'body' })
+  css({ layerStyle: 'card' })
+
+  // after
+  export default defineConfig({ theme: { mixins } })
+  css({ mixin: 'body' })
+  css({ mixin: 'card' })
+  ```
+
+  - `defineTextStyles`, `defineLayerStyles` and `defineAnimationStyles` become `defineMixins`.
+  - The `text-styles.json`, `layer-styles.json` and `animation-styles.json` specs become `mixins.json`, and the MCP
+    tools `get_text_styles`, `get_layer_styles` and `get_animation_styles` become `get_mixins`.
+  - Setting a property that does not exist is still an error. `Mixin` is built on the same property set `css()` uses
+    rather than on `SystemStyleObject`, whose index signature would accept a typo — which is what the three allowlists
+    were really protecting, and why one of them shipped `hypens` for as long as it did.
+  - One namespace now holds every mixin, so prefix them by purpose — `text.body`, `layer.card` — if the flat list gets
+    long. Nesting already supports this, and `DEFAULT` gives each group a bare name.
+
+  A config still setting one of the three old keys fails with the replacement named, rather than reverting to the
+  default in silence.
+
+- 1cc1860: Remove `variantKeys` from a recipe, leaving `variantMap` as the one way to ask what variants it has.
+
+  The two were never independent — `variantKeys` was `Object.keys(variantMap)`, computed once and stored beside it. Ask
+  the map:
+
+  ```ts
+  Object.keys(button.variantMap) // was button.variantKeys
+  button.variantMap.size //         unchanged
+  ```
+
+  `splitVariantProps` is unaffected, and remains the way to pull variant props out of a props object without naming
+  them.
+
+  Internally `RecipeNode` carried the same fact three times — `variantKeys`, `variantKeyMap`, and `props`, the last two
+  being the map and a second copy of the keys. Only `variantKeyMap` remains. That type is exported from
+  `@bamboocss/core`, so a plugin reading `node.props` or `node.variantKeys` reads `Object.keys(node.variantKeyMap)`
+  instead.
+
+  `variantMap` keeps its name rather than becoming `variants`: on the config that word already means the style
+  definitions, and a `button.variants` that answered `{ size: ['sm', 'md'] }` instead of the objects you wrote would be
+  a worse kind of ambiguity than the one being removed.
+
+- c29044f: Add `prune.keepTokens`, so a token path the build cannot follow costs a category instead of the whole theme.
+
+  ```ts
+  prune: { tokens: 'accounted', keepTokens: ['colors.*'] }
+  ```
+
+  `accounted`'s fallback was total: **one** reference the accounting could not follow kept every declaration in the
+  project, so a codebase with a single `token(key)` in it shipped the same stylesheet as one that never pruned. There
+  was no middle ground between that and asserting every path resolves — which put the feature out of reach of the
+  codebases that reach for `token()` most.
+
+  `keepTokens` is the bound the build could not infer, written by hand. Under `accounted` it keeps what it matches
+  **and** stands in for what could not be followed, in place of the blanket keep. Measured on `sandbox/vite-ts` with one
+  unfollowable `token(key)`:
+
+  | setting                                             | declarations | stylesheet |
+  | --------------------------------------------------- | -----------: | ---------: |
+  | `tokens: 'reachable'`                               |          426 |   23,412 B |
+  | `tokens: 'accounted'`                               |          426 |   23,412 B |
+  | `tokens: 'accounted', keepTokens: ['colors.*']`     |          270 |   17,867 B |
+  | `tokens: 'accounted', keepTokens: ['colors.red.*']` |           51 |   10,649 B |
+
+  Patterns are anchored globs over the dotted token _path_, with `*` for any run of characters and a leading `!` to
+  exclude. The path, not the css variable: a token is `fontSizes.3xl` and its declaration is `--font-sizes-3xl`, so
+  `font-sizes.*` matches nothing. A pattern matching no token is reported and names the spelling that would have worked,
+  because it is nearly always a typo and keeping nothing is otherwise silent; so is a list holding only exclusions,
+  which selects everything they do not name.
+
+  Saying `keepTokens: ['colors.*']` is an assertion about your own code — _the reads you cannot follow land in colours_
+  — which is why nothing infers it. Nothing verifies it either, so the covered references are still printed under
+  `warn`. `unresolvedPath: 'error'` deliberately does **not** combine with it: one asserts every path resolves and the
+  other declares where the ones that do not will land, and the build says which to drop rather than silently preferring
+  the weaker claim.
+
+  Under `reachable` it is additive only, for a token nothing in the stylesheet references and no javascript here reads —
+  a sibling package consuming the output, or css outside `include`.
+
+  This replaces `staticCss` as the way to keep a token category alive. `staticCss` emits utility _classes_: keeping the
+  colours meant shipping a rule per colour purely to hold the declarations up, usually a larger stylesheet than the
+  pruning saved. `CssRule.properties` also has no documented wildcard, so every value had to be enumerated by hand.
+
+  **Docs.** The `prune` reference had not caught up with the option renames — it documented `prune.unresolved`,
+  `tokens: false` and the wrong default for `unresolvedPath`. It also never mentioned that a template literal is
+  **bounded rather than declined**: ``token(`colors.${shade}`)`` keeps the `colors` category and prunes everything else,
+  which already covers the commonest dynamic read and is worth knowing before concluding `accounted` is unusable.
+
+- f3a8b0d: Remove `defineParts`, leaving one way to model a multi-part component.
+
+  A slot recipe is that way. Where you wanted the other thing `defineParts` offered — a single class on the root that
+  reaches its children, so there is nothing to bind — that was never an API, only an object whose keys are selectors:
+
+  ```ts
+  defineRecipe({
+    className: 'checkbox',
+    base: {
+      '& [data-part="root"]': {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '2',
+      },
+      '& [data-part="control"]': { borderWidth: '1px', borderRadius: 'sm' },
+    },
+  })
+  ```
+
+  `defineParts` only keyed that object by part name instead. It earned its place when the selectors came from a Zag or
+  Ark `anatomy` and were tedious to spell out — `&[data-scope="card"][data-part="root"], & [data-scope=…]` per part.
+  That case is still real, and still a few lines that belong in your codebase rather than in the framework:
+
+  ```ts
+  const toParts =
+    <T extends Record<string, { selector: string }>>(anatomy: T) =>
+    (config: Partial<Record<keyof T, SystemStyleObject>>): SystemStyleObject =>
+      Object.fromEntries(Object.entries(config).map(([part, styles]) => [anatomy[part].selector, styles]))
+  ```
+
+  The `Part` and `Parts` types go with it, as does the `defineParts` declaration in the generated `styled-system/types`.
+
+  `no-config-function-in-source` also picks up `defineMixins` and drops `defineLayerStyles` and `defineTextStyles`,
+  which the preceding mixins change had left behind — writing `defineMixins` in a source file was not being flagged.
+
+- c29044f: Throw on a config option that no longer exists, instead of warning about it.
+
+  ```
+  ERR_BAMBOO_CONFIG_ERROR: 2 config option(s) no longer exist:
+
+  - [config] `pruneUnusedTokens` is now `prune: { tokens: 'reachable' }`.
+  - [config] `themes` is now `theme.variants`.
+  ```
+
+  Removed-option detection reported every key by name with its replacement, and then warned. A warning is not a signal
+  anything acts on: these removals ship in **minor** versions, so a warning is precisely what an automated dependency
+  upgrade merges without a person ever reading it — while the option itself is silent in every other way. There is no
+  schema walk, so a key that no longer exists is otherwise ignored outright, the build reverts to the default, and any
+  assertion the option asked for stops being enforced.
+
+  This is separate from unknown-key tolerance, which is unchanged. An unknown key may be forward-compatible — a setting
+  for a version not installed yet. A _removed_ key can only point backwards: it is proof the config predates the version
+  reading it.
+
+  Not governed by `validation`, in either direction, for the same reason a retired token spelling is not. That option
+  grades opinions about a config that still builds; this is evidence the config is not the one being read. Every
+  occurrence is collected before throwing, so a config is fixed in one pass, and the checks run ahead of the ordinary
+  findings — a config that predates the version is why the rest disagrees.
+
+  Found one in this repository: `sandbox/waku-ts` still set `themes`, so the app's theme variants were never generated
+  while it imported `getTheme` and `injectTheme` from them.
+
 ## 1.31.0
 
 ### Minor Changes

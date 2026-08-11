@@ -1,5 +1,18 @@
 # @bamboocss/preset-open-props
 
+## 1.32.0
+
+### Patch Changes
+
+- Updated dependencies [b0ed6dc]
+- Updated dependencies [8a66bb9]
+- Updated dependencies [da792cc]
+- Updated dependencies [1cc1860]
+- Updated dependencies [c29044f]
+- Updated dependencies [f3a8b0d]
+- Updated dependencies [c29044f]
+  - @bamboocss/types@1.32.0
+
 ## 1.31.0
 
 ### Minor Changes
