@@ -90,7 +90,6 @@ export function generateSvaFn(ctx: Context) {
         raw,
         config,
         variantMap,
-        variantKeys,
         classNameMap,
         /** The slots that enclose other slots, and so anchor their variant rules. */
         scopeRoots: anchors,

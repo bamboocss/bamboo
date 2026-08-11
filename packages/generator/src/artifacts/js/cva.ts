@@ -97,7 +97,6 @@ export function generateCvaFn(ctx: Context) {
       const self = Object.assign(memo(cvaFn), {
         __cva__: true,
         variantMap,
-        variantKeys,
         raw: (...args) => cloneStyles(resolveVariants(...args)),
         config,
         // Composed against \`self\`, not against this closure, so \`a.merge(b).merge(c)\`
@@ -133,7 +132,7 @@ export function generateCvaFn(ctx: Context) {
     function composeRecipes(left, right) {
       const leftConfig = defaults(left.config)
       const rightConfig = defaults(right.config)
-      const variantKeys = uniq(left.variantKeys, right.variantKeys)
+      const variantKeys = uniq(Object.keys(left.variantMap), Object.keys(right.variantMap))
 
       const config = {
         base: mergeCss(leftConfig.base, rightConfig.base),
@@ -154,7 +153,6 @@ export function generateCvaFn(ctx: Context) {
         {
           __cva__: true,
           variantMap: Object.fromEntries(variantKeys.map((key) => [key, Object.keys(config.variants[key] ?? {})])),
-          variantKeys,
           raw: (props) => {
             const selection = select(props)
             return cloneStyles(mergeCss(left.raw(selection), right.raw(selection)))

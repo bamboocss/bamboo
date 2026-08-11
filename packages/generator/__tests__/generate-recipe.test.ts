@@ -160,7 +160,7 @@ describe('generate recipes', () => {
        if (!recipeA && recipeB) return recipeB
 
        const recipeFn = (...args) => cx(recipeA(...args), recipeB(...args))
-       const variantKeys = uniq(recipeA.variantKeys, recipeB.variantKeys)
+       const variantKeys = uniq(Object.keys(recipeA.variantMap), Object.keys(recipeB.variantMap))
        const variantMap = variantKeys.reduce((acc, key) => {
          acc[key] = uniq(recipeA.variantMap[key], recipeB.variantMap[key])
          return acc
@@ -170,7 +170,6 @@ describe('generate recipes', () => {
          __recipe__: true,
          __name__: \`\${recipeA.__name__} \${recipeB.__name__}\`,
          raw: (props) => props,
-         variantKeys,
          variantMap,
          splitVariantProps(props) {
            return splitProps(props, variantKeys)
@@ -207,8 +206,8 @@ describe('generate recipes', () => {
         __type: TextStyleVariantProps
         (props?: TextStyleVariantProps): string
         raw: (props?: TextStyleVariantProps) => TextStyleVariantProps
+        /** Each variant and the values it accepts. \`Object.keys\` it for the variant names. */
         variantMap: TextStyleVariantMap
-        variantKeys: Array<keyof TextStyleVariant>
         splitVariantProps<Props extends TextStyleVariantProps>(props: Props): [TextStyleVariantProps, Pretty<DistributiveOmit<Props, keyof TextStyleVariantProps>>]
         getVariantProps: (props?: TextStyleVariantProps) => TextStyleVariantProps
         
@@ -236,7 +235,6 @@ describe('generate recipes', () => {
         __name__: 'textStyle',
         __getCompoundVariantCss__: textStyleFn.__getCompoundVariantCss__,
         raw: (props) => props,
-        variantKeys: textStyleVariantKeys,
         variantMap: textStyleVariantMap,
         merge(recipe) {
           return mergeRecipes(this, recipe)
@@ -271,8 +269,8 @@ describe('generate recipes', () => {
         __type: TooltipStyleVariantProps
         (props?: TooltipStyleVariantProps): string
         raw: (props?: TooltipStyleVariantProps) => TooltipStyleVariantProps
+        /** Each variant and the values it accepts. \`Object.keys\` it for the variant names. */
         variantMap: TooltipStyleVariantMap
-        variantKeys: Array<keyof TooltipStyleVariant>
         splitVariantProps<Props extends TooltipStyleVariantProps>(props: Props): [TooltipStyleVariantProps, Pretty<DistributiveOmit<Props, keyof TooltipStyleVariantProps>>]
         getVariantProps: (props?: TooltipStyleVariantProps) => TooltipStyleVariantProps
         
@@ -295,7 +293,6 @@ describe('generate recipes', () => {
         __name__: 'tooltipStyle',
         __getCompoundVariantCss__: tooltipStyleFn.__getCompoundVariantCss__,
         raw: (props) => props,
-        variantKeys: tooltipStyleVariantKeys,
         variantMap: tooltipStyleVariantMap,
         merge(recipe) {
           return mergeRecipes(this, recipe)
@@ -330,8 +327,8 @@ describe('generate recipes', () => {
         __type: CardStyleVariantProps
         (props?: CardStyleVariantProps): string
         raw: (props?: CardStyleVariantProps) => CardStyleVariantProps
+        /** Each variant and the values it accepts. \`Object.keys\` it for the variant names. */
         variantMap: CardStyleVariantMap
-        variantKeys: Array<keyof CardStyleVariant>
         splitVariantProps<Props extends CardStyleVariantProps>(props: Props): [CardStyleVariantProps, Pretty<DistributiveOmit<Props, keyof CardStyleVariantProps>>]
         getVariantProps: (props?: CardStyleVariantProps) => CardStyleVariantProps
         
@@ -358,7 +355,6 @@ describe('generate recipes', () => {
         __name__: 'cardStyle',
         __getCompoundVariantCss__: cardStyleFn.__getCompoundVariantCss__,
         raw: (props) => props,
-        variantKeys: cardStyleVariantKeys,
         variantMap: cardStyleVariantMap,
         merge(recipe) {
           return mergeRecipes(this, recipe)
@@ -400,8 +396,8 @@ describe('generate recipes', () => {
         __type: ButtonStyleVariantProps
         (props?: ButtonStyleVariantProps): string
         raw: (props?: ButtonStyleVariantProps) => ButtonStyleVariantProps
+        /** Each variant and the values it accepts. \`Object.keys\` it for the variant names. */
         variantMap: ButtonStyleVariantMap
-        variantKeys: Array<keyof ButtonStyleVariant>
         splitVariantProps<Props extends ButtonStyleVariantProps>(props: Props): [ButtonStyleVariantProps, Pretty<DistributiveOmit<Props, keyof ButtonStyleVariantProps>>]
         getVariantProps: (props?: ButtonStyleVariantProps) => ButtonStyleVariantProps
         
@@ -436,7 +432,6 @@ describe('generate recipes', () => {
         __name__: 'buttonStyle',
         __getCompoundVariantCss__: buttonStyleFn.__getCompoundVariantCss__,
         raw: (props) => props,
-        variantKeys: buttonStyleVariantKeys,
         variantMap: buttonStyleVariantMap,
         merge(recipe) {
           return mergeRecipes(this, recipe)
@@ -474,8 +469,8 @@ describe('generate recipes', () => {
         __type: CheckboxVariantProps
         (props?: CheckboxVariantProps): Pretty<Record<CheckboxSlot, string>>
         raw: (props?: CheckboxVariantProps) => CheckboxVariantProps
+        /** Each variant and the values it accepts. \`Object.keys\` it for the variant names. */
         variantMap: CheckboxVariantMap
-        variantKeys: Array<keyof CheckboxVariant>
         splitVariantProps<Props extends CheckboxVariantProps>(props: Props): [CheckboxVariantProps, Pretty<DistributiveOmit<Props, keyof CheckboxVariantProps>>]
         getVariantProps: (props?: CheckboxVariantProps) => CheckboxVariantProps
         /** Which slots each variant writes styles for. */
@@ -550,7 +545,6 @@ describe('generate recipes', () => {
         classNameMap: /* @__PURE__ */ Object.fromEntries(checkboxSlotNames),
         /** The slots that enclose other slots, and so anchor their variant rules. */
         scopeRoots: ["root"],
-        variantKeys: checkboxVariantKeys,
         variantMap: {
         "size": [
           "sm",
@@ -598,8 +592,8 @@ describe('generate recipes', () => {
         __type: BadgeVariantProps
         (props?: BadgeVariantProps): Pretty<Record<BadgeSlot, string>>
         raw: (props?: BadgeVariantProps) => BadgeVariantProps
+        /** Each variant and the values it accepts. \`Object.keys\` it for the variant names. */
         variantMap: BadgeVariantMap
-        variantKeys: Array<keyof BadgeVariant>
         splitVariantProps<Props extends BadgeVariantProps>(props: Props): [BadgeVariantProps, Pretty<DistributiveOmit<Props, keyof BadgeVariantProps>>]
         getVariantProps: (props?: BadgeVariantProps) => BadgeVariantProps
         /** Which slots each variant writes styles for. */
@@ -679,7 +673,6 @@ describe('generate recipes', () => {
         classNameMap: /* @__PURE__ */ Object.fromEntries(badgeSlotNames),
         /** The slots that enclose other slots, and so anchor their variant rules. */
         scopeRoots: [],
-        variantKeys: badgeVariantKeys,
         variantMap: {
         "size": [
           "sm"

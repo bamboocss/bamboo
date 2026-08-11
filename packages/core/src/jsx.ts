@@ -35,7 +35,7 @@ export class JsxEngine {
 
   assignRecipeMatcher() {
     for (const recipe of this.context.recipes.details) {
-      this.recipePropertiesByJsxName.set(recipe.jsxName, new Set(recipe.props ?? []))
+      this.recipePropertiesByJsxName.set(recipe.jsxName, new Set(Object.keys(recipe.variantKeyMap ?? {})))
       recipe.jsx.forEach((jsx) => {
         if (typeof jsx === 'string') {
           this.recipeMatcher.string.add(jsx)

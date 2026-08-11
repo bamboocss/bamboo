@@ -38,7 +38,7 @@ type RecipeVariantMap<T extends RecipeVariantRecord> = {
 
 export interface RecipeRuntimeFn<T extends RecipeVariantRecord> extends RecipeVariantFn<T> {
   __type: RecipeSelection<T>
-  variantKeys: (keyof T)[]
+  /** Each variant and the values it accepts. `Object.keys` it for the variant names. */
   variantMap: RecipeVariantMap<T>
   raw: (props?: RecipeSelection<T>) => SystemStyleObject
   config: RecipeConfig<T>
@@ -138,7 +138,7 @@ export interface SlotRecipeRuntimeFn<
   T extends SlotRecipeVariantRecord<S>,
 > extends SlotRecipeVariantFn<S, T> {
   raw: (props?: RecipeSelection<T>) => Record<S, SystemStyleObject>
-  variantKeys: (keyof T)[]
+  /** Each variant and the values it accepts. `Object.keys` it for the variant names. */
   variantMap: RecipeVariantMap<T>
   /** The config this recipe was created from. */
   config: SlotRecipeDefinition<S, T>

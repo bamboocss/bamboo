@@ -152,10 +152,6 @@ describe('recipe ruleset', () => {
         ],
         "jsxName": "ButtonStyle",
         "match": /\\^ButtonStyle\\$/,
-        "props": [
-          "size",
-          "variant",
-        ],
         "splitProps": [Function],
         "type": "recipe",
         "upperName": "ButtonStyle",
@@ -169,10 +165,6 @@ describe('recipe ruleset', () => {
             "outline",
           ],
         },
-        "variantKeys": [
-          "size",
-          "variant",
-        ],
       }
     `)
 

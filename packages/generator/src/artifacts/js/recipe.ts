@@ -168,7 +168,7 @@ export function generateCreateRecipe(ctx: Context) {
     if (!recipeA && recipeB) return recipeB
 
     const recipeFn = (...args) => cx(recipeA(...args), recipeB(...args))
-    const variantKeys = uniq(recipeA.variantKeys, recipeB.variantKeys)
+    const variantKeys = uniq(Object.keys(recipeA.variantMap), Object.keys(recipeB.variantMap))
     const variantMap = variantKeys.reduce((acc, key) => {
       acc[key] = uniq(recipeA.variantMap[key], recipeB.variantMap[key])
       return acc
@@ -178,7 +178,6 @@ export function generateCreateRecipe(ctx: Context) {
       __recipe__: true,
       __name__: \`$\{recipeA.__name__} \${recipeB.__name__}\`,
       raw: (props) => props,
-      variantKeys,
       variantMap,
       splitVariantProps(props) {
         return splitProps(props, variantKeys)
@@ -298,7 +297,6 @@ export function generateRecipes(ctx: Context, filters?: ArtifactFilters) {
           classNameMap: /* @__PURE__ */ Object.fromEntries(${baseName}SlotNames),
           /** The slots that enclose other slots, and so anchor their variant rules. */
           scopeRoots: ${JSON.stringify(anchors)},
-          variantKeys: ${baseName}VariantKeys,
           variantMap: ${stringify(variantKeyMap)},
           /** Which slots each variant actually reaches, for a slot a scope cannot get to. */
           slotsAffectedBy: ${stringify(slotsAffectedBy)},
@@ -335,7 +333,6 @@ export function generateRecipes(ctx: Context, filters?: ArtifactFilters) {
           __name__: '${baseName}',
           __getCompoundVariantCss__: ${baseName}Fn.__getCompoundVariantCss__,
           raw: (props) => props,
-          variantKeys: ${baseName}VariantKeys,
           variantMap: ${baseName}VariantMap,
           merge(recipe) {
             return mergeRecipes(this, recipe)
@@ -386,8 +383,8 @@ export function generateRecipes(ctx: Context, filters?: ArtifactFilters) {
             Recipes.isSlotRecipeConfig(config) ? `Pretty<Record<${upperName}Slot, string>>` : 'string'
           }
           raw: (props?: ${upperName}VariantProps) => ${upperName}VariantProps
+          /** Each variant and the values it accepts. \`Object.keys\` it for the variant names. */
           variantMap: ${upperName}VariantMap
-          variantKeys: Array<keyof ${upperName}Variant>
           splitVariantProps<Props extends ${upperName}VariantProps>(props: Props): [${upperName}VariantProps, Pretty<DistributiveOmit<Props, keyof ${upperName}VariantProps>>]
           getVariantProps: (props?: ${upperName}VariantProps) => ${upperName}VariantProps
           ${

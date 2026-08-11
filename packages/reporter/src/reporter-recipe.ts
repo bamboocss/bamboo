@@ -51,7 +51,7 @@ export function analyzeRecipes(ctx: ParserOptions, result: AnalysisReport): Reci
             .map((id) => {
               const reportItem = result.propByIndex.get(id)!
               const recipe = ctx.recipes.getRecipe(recipeName)
-              if (!recipe?.variantKeys.includes(reportItem.propName)) return
+              if (!Object.hasOwn(recipe?.variantKeyMap ?? {}, reportItem.propName)) return
               return reportItem.propName + '.' + reportItem.value
             })
             .filter(Boolean),
@@ -67,7 +67,7 @@ export function analyzeRecipes(ctx: ParserOptions, result: AnalysisReport): Reci
         return acc.concat(variantMap[variantName].map((value) => `${variantName}.${value}`))
       }, [] as string[])
 
-      const variantCount = recipe.variantKeys.length
+      const variantCount = Object.keys(variantMap).length
       const percentUsed =
         Math.ceil((distinctUsedCombinations.length / (possibleCombinations.length || 1)) * 10_000) / 100
 

@@ -242,7 +242,6 @@ export class Recipes {
       className: recipe.className ?? name,
       jsx,
       type: 'recipe' as const,
-      variantKeys,
       variantKeyMap: Object.fromEntries(
         Object.entries(recipe.variants ?? {}).map(([key, value]) => {
           return [key, Object.keys(value)]
@@ -253,7 +252,6 @@ export class Recipes {
       splitProps: (props) => {
         return splitProps(props, variantKeys) as [Dict, Dict]
       },
-      props: variantKeys,
     })
   }
 

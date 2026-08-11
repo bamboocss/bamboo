@@ -148,7 +148,7 @@ export class FileMatcher {
     this.context.jsx.nodes.forEach((node) => {
       const aliases = this.getAliases(node.jsxName)
       aliases.forEach((alias) => {
-        node.props?.forEach((prop) => this.propertiesMap.set(prop, true))
+        Object.keys(node.variantKeyMap ?? {}).forEach((prop) => this.propertiesMap.set(prop, true))
         this.functions.set(node.baseName, this.propertiesMap)
         this.functions.set(alias, this.propertiesMap)
         this.components.set(alias, this.propertiesMap)

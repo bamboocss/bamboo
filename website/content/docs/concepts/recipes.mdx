@@ -595,8 +595,7 @@ Learn more about the [extend](/docs/concepts/extend) keyword.
 Both atomic and config recipe ships a helper methods and properties that can be used to get information about the
 recipe.
 
-- `variantKeys`: An array of the recipe variant keys
-- `variantMap`: An object of the recipe variant keys and their values
+- `variantMap`: Each variant and the values it accepts. `Object.keys(recipe.variantMap)` gives you the variant names
 - `splitVariantProps`: A function that takes an object as its argument and returns an array containing the recipe
   variant props and the rest of the props
 
@@ -620,11 +619,11 @@ const buttonRecipe = cva({
   },
 })
 
-buttonRecipe.variantKeys
-// => ['size']
-
 buttonRecipe.variantMap
 // => { size: ['sm', 'md'] }
+
+Object.keys(buttonRecipe.variantMap)
+// => ['size']
 
 buttonRecipe.splitVariantProps({ size: 'sm', onClick() {} })
 // => [{ size: 'sm'}, { onClick() {} }]

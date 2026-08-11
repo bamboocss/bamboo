@@ -60,11 +60,8 @@ export interface RecipeNode {
    */
   type: 'recipe'
   /**
-   * The keys of the variants
-   */
-  variantKeys: string[]
-  /**
-   * The map of the variant keys to their possible values
+   * Each variant and the values it accepts. `Object.keys` it for the variant names — this
+   * used to be spelled out twice more, as `variantKeys` and again as `props`.
    */
   variantKeyMap: Record<string, string[]>
   /**
@@ -95,10 +92,6 @@ export interface RecipeNode {
    * The function to split the props
    */
   splitProps: (props: Dict) => [Dict, Dict]
-  /**
-   * The props of the recipe
-   */
-  props: string[]
 }
 
 export interface CssOptions extends Pick<UserConfig, 'minify'> {}

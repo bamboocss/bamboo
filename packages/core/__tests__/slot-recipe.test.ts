@@ -106,9 +106,6 @@ describe('slot recipe ruleset', () => {
         ],
         "jsxName": "Checkbox",
         "match": /\\^Checkbox\\$\\|\\^Checkbox\\.Root\\$\\|\\^CheckboxRoot\\$/,
-        "props": [
-          "size",
-        ],
         "splitProps": [Function],
         "type": "recipe",
         "upperName": "Checkbox",
@@ -119,9 +116,6 @@ describe('slot recipe ruleset', () => {
             "lg",
           ],
         },
-        "variantKeys": [
-          "size",
-        ],
       }
     `)
   })
