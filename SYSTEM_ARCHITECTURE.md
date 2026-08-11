@@ -2,9 +2,9 @@
 
 ## Overview
 
-Bamboo CSS is a universal, build-time, type-safe CSS-in-JS solution that extracts styles at compile time and generates
-optimized CSS and TypeScript utilities. The system follows a modular architecture built as a pnpm monorepo with distinct
-packages handling different aspects of the styling pipeline.
+Bamboo CSS is a universal, build-time, type-safe, zero-runtime CSS-in-JS solution that extracts styles at compile time
+and generates optimized CSS and TypeScript utilities. The system follows a modular architecture built as a pnpm monorepo
+with distinct packages handling different aspects of the styling pipeline.
 
 ## Core Philosophy
 

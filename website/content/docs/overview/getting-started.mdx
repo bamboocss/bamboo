@@ -1,70 +1,72 @@
 ---
 title: Get started with Bamboo
-description: Bamboo is build-time, type-safe CSS-in-JS
+description: Bamboo is build-time, type-safe, zero-runtime CSS-in-JS
 ---
 
 ## Why Bamboo?
 
-Bamboo CSS is a fork of [Panda CSS](https://panda-css.com/) with a smaller API and leaner output. `css`, `cva`, `sva`,
-`cx`, patterns and recipes carry over, so [migrating](/docs/migration/panda) is mostly a rename.
-
-No JSX factory, no template literals, no style props: every class name comes from a call the compiler can see, so a
-production build can [fold it into the string it would have returned](/docs/guides/source-transformation):
+Bamboo [folds](/docs/guides/source-transformation) each call into the string it would have returned:
 
 ```tsx
 // you write
 <div className={css({ fontSize: 'lg', fontWeight: 'bold' })}>Title</div>
+<div className={css({ fontSize: 'lg', fontWeight: active ? 'bold' : 'normal' })}>Title</div>
 
 // the bundle gets
 <div className="fs_lg fw_bold">Title</div>
+<div className={cx('fs_lg', active ? 'fw_bold' : 'fw_normal')}>Title</div>
 ```
 
-A style that varies does not put the call back. Both branches are known, so each resolves at build time and only the
-choice is left behind:
-
-```tsx
-// you write
-css({ fontSize: 'lg', fontWeight: active ? 'bold' : 'normal' })
-
-// the bundle gets
-cx('fs_lg', active ? 'fw_bold' : 'fw_normal')
-```
+Once every call folds, nothing imports `styled-system/css` and the engine drops out of the bundle.
+[`failOnUnfolded`](/docs/guides/source-transformation#failonunfolded) fails the build if one call survives, so zero
+runtime is something you can hold rather than hope for.
 
 Even a value the build cannot see lowers: `css({ color: tone })` becomes `cssLeaf('c_', 'color', tone)`, which builds
 the class from the prefix already known here. See
 [partly static calls](/docs/guides/source-transformation#partly-static-calls) for where the line falls.
 
-A few things behave differently beyond the smaller surface — see
-[why we forked](/docs/overview/why-bamboo#why-we-forked-panda-css) and
+Bamboo [fails](/docs/concepts/build-diagnostics) the build when a call names a pattern or token that does not exist:
+
+```
+ERR_BAMBOO_DEAD_IMPORT: 12 call(s) name a binding that does not exist:
+
+`stack` is not a pattern — `../styled-system/patterns` does not export it.
+  12 file(s): src/modal.tsx, src/drawer.tsx, src/sheet.tsx, … and 9 more
+```
+
+Bamboo [prunes](/docs/references/config#prune) tokens, keyframes and reset rules that your application does not use. On
+the example apps in the repository that is 36–78% of `styles.css` — one goes from 18,032 bytes to 3,959.
+
+Bamboo is used in production by [Contra](https://contra.com), whose UI has more than 20,000 `css()` call sites, and is
+covered by more than 3,000 tests.
+
+Bamboo CSS is a fork of [Panda CSS](https://panda-css.com/) with a smaller API and leaner output. `css`, `cva`, `sva`,
+`cx`, patterns and recipes carry over, so [migrating](/docs/migration/panda) is mostly a rename. A few things behave
+differently beyond the smaller surface — see [why we forked](/docs/overview/why-bamboo#why-we-forked-panda-css) and
 [what changed](/docs/overview/faq#how-is-bamboo-css-different-from-panda-css).
 
 ## How it works
 
 Bamboo scans your JavaScript and TypeScript for style function calls, and generates atomic CSS for the call sites it
-finds. It runs as a CLI or a PostCSS plugin.
+finds. It runs as a Vite plugin, a CLI or a PostCSS plugin — only the Vite plugin folds calls into class strings.
 
 You author styles as plain objects. Tokens, recipes and variants are generated from your config as types, so the editor
 autocompletes them and the compiler checks them.
 
 ## Features
 
-- ⚡️ Write plain style objects, extracted at build time
-- 🪶 [Zero runtime where it can be](/docs/guides/source-transformation) – with `@bamboocss/vite`, a production build
-  folds static `css()`, pattern and recipe calls into plain class strings, on by default
-- ✨ Modern CSS output – cascade layers `@layer`, css variables and more
-- ✂️ Prune [unused tokens](/docs/references/config#prune) and [keyframes](/docs/references/config#prune) – ship only
-  what your app uses
-- 🎯 [Predictable overrides](/docs/concepts/cascade-layers) – a recipe's styles sit in a lower cascade layer than
-  `css()`, so a consumer's override wins by origin rather than by source order
+- ✨ Modern CSS output – cascade layers (`@layer`) and custom properties
+- 🎯 [Predictable overrides](/docs/concepts/cascade-layers) – precedence comes from cascade layers rather than source
+  order, so a consumer's `css()` wins over a component's `cva`/`sva` recipe
+- 🚀 [Recipes and variants](/docs/concepts/recipes) – composable style variants, an API inspired by Stitches
+- 💪 Type-safe styles and autocomplete, generated from your config
+- 🎨 Design tokens with simultaneous themes
 - 🛟 [Fallback values](/docs/concepts/writing-styles#fallback-values) – `fallback(100dvh, 100vh)` for progressive
   enhancement, in one declaration
 - 🎬 [View transitions](/docs/concepts/view-transitions) – `viewTransition()` writes the `::view-transition-*` rules and
   hands back one class to share across elements
+- 🤖 [MCP server](/docs/ai/mcp-server) – AI assistants read your tokens, recipes and usage
 - 🦄 Works with most JavaScript frameworks
-- 🚀 [Recipes and Variants](/docs/concepts/recipes) – composable style variants, an API inspired by Stitches
-- 🎨 High-level design tokens support for simultaneous themes
-- 💪 Type-safe styles and autocomplete (via codegen)
-- 🤖 [MCP server](/docs/ai/mcp-server) – let AI assistants read your tokens, recipes and usage
 
 ## Cheat Sheet
 
