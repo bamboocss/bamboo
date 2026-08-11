@@ -71,10 +71,6 @@ describe('cssgen prune flags', () => {
     expect(await run({ prune: { tokens: 'reachable', keyframes: false } })).toEqual(['tokens'])
   })
 
-  test('minimal skips both, since it omits the token layer entirely', async () => {
-    expect(await run({ prune: { tokens: 'reachable', keyframes: true } }, { minimal: true })).toEqual([])
-  })
-
   test('prunePreflight is a third independent switch', async () => {
     expect(await run({ prune: { preflight: true } })).toEqual(['tokens', 'preflight', 'keyframes'])
     expect(await run({ prune: { preflight: true, tokens: 'off', keyframes: false } })).toEqual([

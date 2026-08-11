@@ -12,12 +12,11 @@ export interface CssGenOptions {
   cwd: string
   outfile?: string
   type?: CssArtifactType
-  minimal?: boolean
   splitting?: boolean
 }
 
 export const cssgen = async (ctx: BambooContext, options: CssGenOptions) => {
-  const { outfile, type, minimal, splitting } = options
+  const { outfile, type, splitting } = options
 
   const sheet = ctx.createSheet()
 
@@ -51,25 +50,20 @@ export const cssgen = async (ctx: BambooContext, options: CssGenOptions) => {
     const { files, results } = ctx.parseFiles()
 
     const done = logger.time.info(ctx.messages.buildComplete(files.length))
-    if (!minimal) {
-      ctx.appendLayerParams(sheet)
-      ctx.appendBaselineCss(sheet)
-    }
 
+    ctx.appendLayerParams(sheet)
+    ctx.appendBaselineCss(sheet)
     ctx.appendParserCss(sheet)
 
-    // Only now does the sheet hold everything that could reference a token. `minimal`
-    // omits the token layer altogether, so there is nothing to prune. Gathering the
-    // references reads every source file, so each stays behind its own flag.
-    if (!minimal) {
-      pruneTokensForBuild(ctx, sheet, results)
-    }
+    // Only now does the sheet hold everything that could reference a token. Gathering the
+    // references reads every source file, so each pass stays behind its own flag.
+    pruneTokensForBuild(ctx, sheet, results)
 
-    if (!minimal && ctx.config.prune?.preflight) {
+    if (ctx.config.prune?.preflight) {
       ctx.prunePreflight(sheet, collectRenderedElements(ctx))
     }
 
-    if (!minimal && ctx.config.prune?.keyframes) {
+    if (ctx.config.prune?.keyframes) {
       ctx.pruneKeyframes(sheet, collectKeyframeReferences(ctx, keyframeNames(ctx)))
     }
 

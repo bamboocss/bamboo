@@ -178,7 +178,6 @@ export async function main() {
     .option('--clean', 'Clean the output before generating')
     .option('-c, --config <path>', 'Path to bamboo config file')
     .option('-w, --watch', 'Watch files and rebuild')
-    .option('--minimal', 'Do not include CSS generation for theme tokens, preflight, keyframes, static and global css')
     .option('--polyfill', 'Polyfill CSS @layers at-rules for older browsers.')
     .option('-p, --poll', 'Use polling instead of filesystem events when watching')
     .option('-o, --outfile [file]', "Output file for extracted css, default to './styled-system/styles.css'")
@@ -187,7 +186,7 @@ export async function main() {
     .option('--cpu-prof', 'Generates a `.cpuprofile` to help debug performance issues')
     .option('--logfile <file>', 'Outputs logs to a file')
     .action(async (maybeGlob?: string, flags: CssGenCommandFlags = {}) => {
-      const { silent, config: configPath, outfile, watch, poll, minimal, splitting, ...rest } = flags
+      const { silent, config: configPath, outfile, watch, poll, splitting, ...rest } = flags
 
       const cwd = resolve(flags.cwd ?? '')
       const stream = setLogStream({ cwd, logfile: flags.logfile })
@@ -222,7 +221,6 @@ export async function main() {
         cwd,
         outfile,
         type: cssArtifact,
-        minimal,
         splitting,
       }
 
