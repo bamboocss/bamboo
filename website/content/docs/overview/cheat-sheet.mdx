@@ -58,7 +58,7 @@ const [variantProps, rest] = button.splitVariantProps(props)
 A recipe's classes land in the `recipes` [cascade layer](/docs/concepts/cascade-layers), so a consumer's `css()` in
 `utilities` overrides them by layer rather than by source order. Declaring the same shape in `theme.recipes` generates
 only the variants you use, apart from an axis passed dynamically — see
-[atomic vs config recipes](/docs/concepts/recipes#should-i-use-atomic-or-config-recipes-).
+[inline vs config recipes](/docs/concepts/recipes#should-i-use-an-inline-or-config-recipe).
 
 `sva` is the same for multi-part components, and its variants are [scoped](/docs/concepts/slot-recipes#variant-scoping)
 so only the enclosing slot takes props:

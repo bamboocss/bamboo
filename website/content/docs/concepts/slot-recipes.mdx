@@ -18,13 +18,13 @@ A slot recipe consists of these properties:
 > [Chakra UI](https://chakra-ui.com/docs/styled-system/component-style) and slot variants in
 > [Tailwind Variants](https://tailwind-variants.org)
 
-[See the comparison table between atomic recipes (`cva`) and `config recipes` here.](/docs/concepts/recipes#should-i-use-atomic-or-config-recipes-)
+[See the comparison table between inline recipes (`cva`) and `config recipes` here.](/docs/concepts/recipes#should-i-use-an-inline-or-config-recipe)
 The same comparison applies to `sva` and `slot recipes`.
 
-## Atomic Slot Recipe (or sva)
+## Inline Slot Recipe (or sva)
 
-The `sva` function is a shorthand for creating a slot recipe with atomic variants. It takes the same arguments as `cva`
-but returns a slot recipe instead.
+The `sva` function is a shorthand for creating a slot recipe next to the component rather than in your config. It takes
+the same arguments as `cva` but returns a slot recipe instead.
 
 ### Defining the Recipe
 
@@ -427,7 +427,7 @@ In React that makes the file a client component, so add `'use client'` at the to
 
 ## Config Slot Recipe
 
-Config slot recipes are very similar to atomic recipes. Both store their styles in the `recipes` cascade layer and name
+Config slot recipes are very similar to inline recipes. Both store their styles in the `recipes` cascade layer and name
 their classes from the config; a config recipe is declared in `theme.slotRecipes` under a key, so it gets a readable
 name and a generated module to import.
 

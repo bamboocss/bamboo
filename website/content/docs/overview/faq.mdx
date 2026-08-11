@@ -198,8 +198,8 @@ import { button, type ButtonVariantProps } from '../styled-system/recipes'
 
 ---
 
-You can get an [`atomic recipe`](/docs/concepts/recipes#atomic-recipe-or-cva) properties types by using
-`RecipeVariantProps`. Let's say you have a `atomic recipe` named `button`, you can get its type like this:
+You can get an [`inline recipe`](/docs/concepts/recipes#inline-recipe-or-cva) properties types by using
+`RecipeVariantProps`. Let's say you have an `inline recipe` named `button`, you can get its type like this:
 
 ```ts
 import { cva, type RecipeVariantProps } from '../styled-system/css'
@@ -229,7 +229,7 @@ export function Button(props: ButtonProps) {
 }
 ```
 
-The same `xxx.splitVariantProps` method is available for both `config recipes` and `atomic recipes`.
+The same `xxx.splitVariantProps` method is available for both `config recipes` and `inline recipes`.
 
 ---
 
@@ -461,11 +461,11 @@ comes from and how much gets generated:
 
 - A **config recipe** is declared in `theme.recipes` under a key, so it is known before extraction starts and only the
   variants your code actually uses are generated.
-- An **atomic recipe** (`cva`) is colocated with the component. It is scattered through your source, so finding which
+- An **inline recipe** (`cva`) is colocated with the component. It is scattered through your source, so finding which
   variants are used would mean scanning the app repeatedly — instead every variant it declares is generated.
 
 Colocation against leaner CSS, in other words. See
-[Should I use atomic or config recipes?](/docs/concepts/recipes#should-i-use-atomic-or-config-recipes-) for the full
+[Should I use an inline or config recipe?](/docs/concepts/recipes#should-i-use-an-inline-or-config-recipe) for the full
 comparison table — kept there rather than duplicated here, since a copy of it in this page went stale once already.
 
 ---

@@ -15,23 +15,23 @@ A recipe consists of four properties:
 > **Credit:** This API was inspired by [Stitches](https://stitches.dev/),
 > [Vanilla Extract](https://vanilla-extract.style/), and [Class Variance Authority](https://cva.style/).
 
-[Comparison table between the different types of recipes here: "Should I use atomic or config recipes ?"](/docs/concepts/recipes#should-i-use-atomic-or-config-recipes-)
+[Comparison table between the different types of recipes here: "Should I use an inline or config recipe?"](/docs/concepts/recipes#should-i-use-an-inline-or-config-recipe)
 
-## Atomic Recipe (or cva)
+## Inline Recipe (or cva)
 
-Atomic recipes are a way to create multi-variant styles with a type-safe runtime API, colocated with the component
+Inline recipes are a way to create multi-variant styles with a type-safe runtime API, colocated with the component
 rather than declared in your config.
 
-> **The name is historical.** `cva` does not emit atomic classes. Its output is named from the config —
-> `button--size_sm` — and lands in the `recipes` [cascade layer](/docs/concepts/cascade-layers), exactly like a recipe
-> declared in `theme.recipes`. "Atomic" here means _defined inline_; the difference from a config recipe is where the
-> name comes from, not what the CSS looks like.
+> These were called _atomic_ recipes, which described neither their input nor their output. `cva` does not emit atomic
+> classes: its output is named from the config — `button--size_sm` — and lands in the `recipes`
+> [cascade layer](/docs/concepts/cascade-layers), exactly like a recipe declared in `theme.recipes`. What distinguishes
+> the two is where the recipe is written, which is what "inline" says.
 
 They are defined using the `cva` function which was inspired by [Class Variance Authority](https://cva.style/). The
 `cva` function which takes an object as its argument.
 
 > **Note:** `cva` is not the same as [Class Variance Authority](https://cva.style/). The `cva` from Bamboo is a
-> purpose-built function for creating atomic recipes that are connected to your design tokens and utilities.
+> purpose-built function for creating inline recipes that are connected to your design tokens and utilities.
 
 ### Defining the recipe
 
@@ -592,8 +592,7 @@ Learn more about the [extend](/docs/concepts/extend) keyword.
 
 ## Methods and Properties
 
-Both atomic and config recipe ships a helper methods and properties that can be used to get information about the
-recipe.
+Both inline and config recipes ship helper methods and properties that can be used to get information about the recipe.
 
 - `variantMap`: Each variant and the values it accepts. `Object.keys(recipe.variantMap)` gives you the variant names
 - `splitVariantProps`: A function that takes an object as its argument and returns an array containing the recipe
@@ -730,20 +729,20 @@ recipe without using the recipe in your code or if you use dynamic styling that 
 
 More information about static CSS can be found [here](/docs/guides/static#generating-recipes).
 
-## Should I use atomic or config recipes ?
+## Should I use an inline or config recipe?
 
 [Config recipes](/docs/concepts/recipes#config-recipe) are generated just in time — only the variants your code uses
 reach the CSS, apart from an axis passed dynamically — because all of `config.recipes` is known when the config is
-evaluated. [Atomic recipes](/docs/concepts/recipes#atomic-recipe-or-cva) (`cva`) are scattered through your source
+evaluated. [Inline recipes](/docs/concepts/recipes#inline-recipe-or-cva) (`cva`) are scattered through your source
 instead, so all of their variants are emitted rather than scanning your app code repeatedly to find which are used.
 
-|                                                        | Config recipe                                                                                                                                                                                                             | Atomic recipe (cva)                                                                                                                                                                                                  |
-| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Can both use any theme tokens, utilities or conditions | ✅ yes                                                                                                                                                                                                                    | ✅ yes                                                                                                                                                                                                               |
-| Are generated just in time (JIT) based on usage        | ✅ yes, only the recipe variants found in your code will be generated — an axis the build cannot read emits every declared value                                                                                          | ❌ no, all variants found in your `cva` recipes will always be generated                                                                                                                                             |
-| Can be shared in a preset                              | ✅ yes, you can include it in your `preset.theme.recipes`                                                                                                                                                                 | ❌ no                                                                                                                                                                                                                |
-| Can be applied responsively                            | ✅ yes, `button({ size: { base: 'sm', md: 'lg' } })`                                                                                                                                                                      | ❌ no, only the styles in the recipe can be responsive                                                                                                                                                               |
-| Can be colocated in your markup code                   | ❌ no, they must be defined or imported in your `bamboo.config`                                                                                                                                                           | ✅ yes, you can place it anywhere in your app                                                                                                                                                                        |
-| Generate atomic classes                                | ❌ no, a specific className will be generated using your `recipe.className`                                                                                                                                               | ❌ no, a specific className is generated too — from `className` when you set one, otherwise hashed from the config                                                                                                   |
-| Land in the `recipes` cascade layer                    | ✅ yes                                                                                                                                                                                                                    | ✅ yes                                                                                                                                                                                                               |
-| Can be composed/merged at runtime                      | ❌ no, a specific className will be generated using your `recipe.className`, [you need to use `cx` to add each recipe classes](https://bamboocss.com/docs/concepts/merging-styles#merging-config-recipe-and-style-object) | ✅ [yes, you can use the `.raw` function (ex: `button.raw({ size: "md" })`) to get the atomic style object and merge them all in a `css(xxx, yyy, zzz)` call](/docs/concepts/merging-styles#merging-cva--css-styles) |
+|                                                        | Config recipe                                                                                                                                                                                                             | Inline recipe (cva)                                                                                                                                                                                                    |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Can both use any theme tokens, utilities or conditions | ✅ yes                                                                                                                                                                                                                    | ✅ yes                                                                                                                                                                                                                 |
+| Are generated just in time (JIT) based on usage        | ✅ yes, only the recipe variants found in your code will be generated — an axis the build cannot read emits every declared value                                                                                          | ❌ no, all variants found in your `cva` recipes will always be generated                                                                                                                                               |
+| Can be shared in a preset                              | ✅ yes, you can include it in your `preset.theme.recipes`                                                                                                                                                                 | ❌ no                                                                                                                                                                                                                  |
+| Can be applied responsively                            | ✅ yes, `button({ size: { base: 'sm', md: 'lg' } })`                                                                                                                                                                      | ❌ no, only the styles in the recipe can be responsive                                                                                                                                                                 |
+| Can be colocated in your markup code                   | ❌ no, they must be defined or imported in your `bamboo.config`                                                                                                                                                           | ✅ yes, you can place it anywhere in your app                                                                                                                                                                          |
+| Generate atomic classes                                | ❌ no, a specific className will be generated using your `recipe.className`                                                                                                                                               | ❌ no, a specific className is generated too — from `className` when you set one, otherwise hashed from the config                                                                                                     |
+| Land in the `recipes` cascade layer                    | ✅ yes                                                                                                                                                                                                                    | ✅ yes                                                                                                                                                                                                                 |
+| Can be composed/merged at runtime                      | ❌ no, a specific className will be generated using your `recipe.className`, [you need to use `cx` to add each recipe classes](https://bamboocss.com/docs/concepts/merging-styles#merging-config-recipe-and-style-object) | ✅ [yes, you can use the `.raw` function (ex: `button.raw({ size: "md" })`) to get the resolved style object and merge them all in a `css(xxx, yyy, zzz)` call](/docs/concepts/merging-styles#merging-cva--css-styles) |
