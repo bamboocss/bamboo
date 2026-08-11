@@ -77,9 +77,9 @@ describe('a file that could not be extracted', () => {
   })
 
   /**
-   * One aggregate code rather than the code of whichever file happened to throw first. Six
-   * broken files can throw six different errors, so there is no single one to re-raise — each
-   * original is logged where it happened, with its own code and stack.
+   * One aggregate code rather than the code of whichever file happened to throw first: six
+   * broken files can throw six different errors, so there is no single one to re-raise. The
+   * originals are reachable through `cause`, below.
    */
   test('throws one aggregate error, whatever the files threw', () => {
     vi.spyOn(logger, 'caughtError').mockImplementation(() => undefined)
@@ -87,6 +87,37 @@ describe('a file that could not be extracted', () => {
     ctx.parseFile('app/src/timeline.tsx')
 
     expect(() => ctx.assertExtracted()).toThrow(expect.objectContaining({ code: 'ERR_BAMBOO_EXTRACT_FAILED' }) as Error)
+  })
+
+  /**
+   * The originals, reachable from the aggregate.
+   *
+   * The message names every file, but a caller acting on the failure needs the codes
+   * underneath — `ERR_BAMBOO_INVALID_TOKEN` distinguishes a retired token spelling from a
+   * syntax error, and the aggregate's own code cannot. Always an `AggregateError`, one file or
+   * six, so reading `cause.errors` never has to test how many there were first.
+   */
+  test('carries the original errors as its cause', () => {
+    vi.spyOn(logger, 'caughtError').mockImplementation(() => undefined)
+    const { ctx, add } = withFile('app/src/one.tsx', RETIRED)
+    add('app/src/two.tsx', RETIRED.replace('red.300/35', 'red.300/40'))
+
+    ctx.parseFile('app/src/one.tsx')
+    ctx.parseFile('app/src/two.tsx')
+
+    let cause: AggregateError | undefined
+    try {
+      ctx.assertExtracted()
+    } catch (error) {
+      cause = (error as Error).cause as AggregateError
+    }
+
+    expect(cause).toBeInstanceOf(AggregateError)
+    expect(cause?.errors).toHaveLength(2)
+    expect(cause?.errors.map((entry: { code?: string }) => entry.code)).toEqual([
+      'ERR_BAMBOO_INVALID_TOKEN',
+      'ERR_BAMBOO_INVALID_TOKEN',
+    ])
   })
 
   /** Relative to `cwd`, like the token diagnostics beside it: an absolute path per entry

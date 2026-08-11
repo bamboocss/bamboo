@@ -11,6 +11,9 @@ import { DiffEngine } from './diff-engine'
 import { nodeRuntime } from './node-runtime'
 import { OutputEngine } from './output-engine'
 
+/** A thrown value's message, for a `catch` binding that is typed `unknown`. */
+const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error))
+
 /**
  * What each loss is, and what the author can do about it.
  *
@@ -46,7 +49,7 @@ export class BambooContext extends Generator {
   explicitDeps: string[] = []
 
   /**
-   * Files whose extraction threw, keyed by path, with the message it threw.
+   * Files whose extraction threw, keyed by path, holding what it threw.
    *
    * A parse failure is not an opinion about a build that still works. The file's styles never
    * reach the encoder, so every rule it would have contributed is absent from the stylesheet
@@ -58,8 +61,13 @@ export class BambooContext extends Generator {
    * Retained rather than rethrown from the `catch`, so one pass names every broken file
    * instead of the first. Keyed by file, so a failure survives the incremental passes that
    * skip an unchanged file: nothing re-parses it, and its styles stay missing until it does.
+   *
+   * The error rather than its message, so `assertExtracted` can hand the originals on as a
+   * `cause`. The aggregate carries a code of its own — `ERR_BAMBOO_EXTRACT_FAILED` — and the
+   * codes underneath it are what a caller has to read to tell a retired token spelling from a
+   * syntax error.
    */
-  parseFailures = new Map<string, string>()
+  parseFailures = new Map<string, unknown>()
 
   constructor(conf: LoadConfigResult) {
     super(conf)
@@ -195,7 +203,7 @@ export class BambooContext extends Generator {
     // the part that differs. Non-empty lines only, so a message with a blank line between
     // paragraphs does not gain a line of trailing whitespace per paragraph.
     const detail = Array.from(this.parseFailures.entries())
-      .map(([file, message]) => `${this.relative(file)}\n${message.replace(/^(?=.)/gm, '  ')}`)
+      .map(([file, error]) => `${this.relative(file)}\n${messageOf(error).replace(/^(?=.)/gm, '  ')}`)
       .join('\n\n')
 
     throw new BambooError(
@@ -204,6 +212,16 @@ export class BambooContext extends Generator {
         `Nothing emits a rule for a file the build could not read, so every style in these is ` +
         `absent from the stylesheet and the classes their components ask for have nothing behind ` +
         `them.`,
+      {
+        // Always an `AggregateError`, including for one file, so a caller reads `cause.errors`
+        // without first testing how many there were. This aggregates by construction — six
+        // broken files can throw six different errors — and flattening that to whichever came
+        // first would hand back an arbitrary one of them.
+        cause: new AggregateError(
+          Array.from(this.parseFailures.values()),
+          `${this.parseFailures.size} file(s) could not be extracted`,
+        ),
+      },
     )
   }
 
@@ -224,12 +242,8 @@ export class BambooContext extends Generator {
       result = this.project.parseSourceFile(file, encoder)
       this.parseFailures.delete(file)
     } catch (error) {
-      // The message rather than the error: this aggregates, and an aggregate of six failures
-      // has no single `cause` to carry. The original — stack, code and all — is logged right
-      // here by `caughtError`, which is where it is useful. `assertNoRetiredSyntax` collects
-      // the same way for the same reason.
       logger.caughtError('file:extract', `Failed to parse ${file}`, error)
-      this.parseFailures.set(file, error instanceof Error ? error.message : String(error))
+      this.parseFailures.set(file, error)
     }
 
     if (result) this.reportUnresolvedStyles(result)
