@@ -142,16 +142,19 @@ pnpm build-fast               # Fast build without type definitions
 
 Perf-sensitive code has Vitest benchmarks in `{packages,sandbox}/*/__tests__/**/*.bench.ts`:
 
-| bench                                           | covers                                 |
-| ----------------------------------------------- | -------------------------------------- |
-| `core/static-css-perf`, `static-css-real-world` | static css generation                  |
-| `core/sort-style-rules`                         | rule ordering                          |
-| `extractor/extract-speed`                       | expression evaluation                  |
-| `parser/ts-eval`, `parser/extract-modes`        | extraction                             |
-| `generator/css-fn`, `cva`, `recipe`             | the generated runtime                  |
-| `shared/split-props`, `shared/leaf-class`       | runtime helpers on the per-render path |
-| `vite/fold`                                     | the fold's per-module cost             |
-| `sandbox/runtime-perf/render`                   | a React render of a folded tree        |
+| bench                                           | covers                                                        |
+| ----------------------------------------------- | ------------------------------------------------------------- |
+| `core/static-css-perf`, `static-css-real-world` | static css generation, up to `getCssRuleObjects`              |
+| `core/optimize-css`                             | the postcss pipeline after the sheet is built                 |
+| `core/sort-style-rules`                         | rule ordering                                                 |
+| `extractor/extract-speed`                       | expression evaluation, one file                               |
+| `extractor/cross-file-cost`                     | extraction cost as a function of _project_ size               |
+| `parser/ts-eval`, `parser/extract-modes`        | extraction                                                    |
+| `generator/css-fn`, `cva`, `recipe`             | the generated runtime, cached path                            |
+| `generator/css-fn-miss`                         | the uncached path; kept in its own file so ordering can't lie |
+| `shared/split-props`, `shared/leaf-class`       | runtime helpers on the per-render path                        |
+| `vite/fold`                                     | the fold's per-module cost                                    |
+| `sandbox/runtime-perf/render`                   | a React render of a folded tree                               |
 
 A bench that measures a shape nothing calls is worse than no bench, because it reads as coverage. `split-props.bench.ts`
 spent a while measuring only the four-group shape that went away with the JSX factory, which left the one-array-group

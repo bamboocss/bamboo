@@ -102,22 +102,39 @@ function Example() {
 
 ## Directory Structure
 
+Installed by you:
+
+| Package                                             | Description                                                   |
+| --------------------------------------------------- | ------------------------------------------------------------- |
+| [cli](packages/cli)                                 | The `@bamboocss/dev` package and the `bamboo` command         |
+| [vite](packages/vite)                               | Vite plugin: emits the stylesheet and folds static calls      |
+| [postcss](packages/postcss)                         | PostCSS plugin                                                |
+| [eslint-plugin](packages/eslint-plugin)             | Lint rules for token paths, escape hatches and recipe usage   |
+| [mcp](packages/mcp)                                 | MCP server exposing tokens, recipes and usage to assistants   |
+| [plugin-lightningcss](packages/plugin-lightningcss) | Opt-in LightningCSS optimizer, replacing the PostCSS pipeline |
+| [preset-base](packages/preset-base)                 | The default utilities, patterns and conditions                |
+| [preset-bamboo](packages/preset-bamboo)             | The default design tokens, keyframes and mixins               |
+| [preset-atlaskit](packages/preset-atlaskit)         | Atlassian Design System tokens                                |
+| [preset-open-props](packages/preset-open-props)     | Open Props tokens                                             |
+
+Pulled in for you:
+
 | Package                                       | Description                                                  |
 | --------------------------------------------- | ------------------------------------------------------------ |
-| [cli](packages/cli)                           | CLI package installed by the end user                        |
 | [core](packages/core)                         | Contains core features of Bamboo (utility, recipes, etc)     |
 | [config](packages/config)                     | Contains functions for reading and merging the bamboo config |
 | [extractor](packages/extractor)               | Contains code for fast AST parsing and scanning              |
-| [generator](packages/generator)               | Contains codegen artifacts (js, css, jsx)                    |
+| [generator](packages/generator)               | Contains codegen artifacts (js, css)                         |
 | [parser](packages/parser)                     | Contains code for parsing a source code                      |
 | [is-valid-prop](packages/is-valid-prop)       | Contains code for checking if a prop is a valid css prop     |
 | [node](packages/node)                         | Contains the Node.js API of Bamboo's features                |
 | [token-dictionary](packages/token-dictionary) | Contains code used to process tokens and semantic tokens     |
 | [shared](packages/shared)                     | Contains shared TS functions                                 |
-| [vite](packages/vite)                         | Vite plugin: emits the stylesheet and folds static calls     |
-| [postcss](packages/postcss)                   | PostCSS plugin                                               |
 | [types](packages/types)                       | Public type definitions, including the config shape          |
-| [mcp](packages/mcp)                           | MCP server exposing tokens, recipes and usage to assistants  |
+| [logger](packages/logger)                     | Log formatting and filtering                                 |
+| [reporter](packages/reporter)                 | Builds the token and recipe usage reports behind `analyze`   |
+| [plugin-vue](packages/plugin-vue)             | Vue SFC parsing, auto-injected                               |
+| [plugin-svelte](packages/plugin-svelte)       | Svelte component parsing, auto-injected                      |
 
 ## Contributing
 

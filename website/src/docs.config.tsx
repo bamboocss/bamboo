@@ -142,6 +142,7 @@ export const docsNavigation: NavItem = {
         { title: 'Presets', url: 'presets' },
         { title: 'Theme', url: 'theme' },
         { title: 'Config Functions', url: 'config-functions' },
+        { title: 'Deprecations', url: 'deprecations' },
       ],
     },
     {

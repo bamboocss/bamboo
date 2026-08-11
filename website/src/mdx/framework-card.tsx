@@ -1,7 +1,9 @@
+import { AngularLogo } from '@/icons/angular'
 import { AstroLogo } from '@/icons/astro'
 import { EmberLogo } from '@/icons/ember'
 import { GatsbyLogo } from '@/icons/gatsby'
 import { NextjsLogo } from '@/icons/nextjs'
+import { NuxtLogo } from '@/icons/nuxt'
 import { PreactLogo } from '@/icons/preact'
 import { ReactRouterLogo } from '@/icons/react-router'
 import { QwikLogo } from '@/icons/qwik'
@@ -82,6 +84,16 @@ const logoMap = {
     name: 'Vue',
     logo: VueLogo,
     href: '/docs/installation/vue',
+  },
+  nuxt: {
+    name: 'Nuxt',
+    logo: NuxtLogo,
+    href: '/docs/installation/nuxt',
+  },
+  angular: {
+    name: 'Angular',
+    logo: AngularLogo,
+    href: '/docs/installation/angular',
   },
   storybook: {
     name: 'Storybook',

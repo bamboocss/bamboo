@@ -248,7 +248,7 @@ injectTheme(document.documentElement, theme) // this returns the injected style 
 // app/layout.tsx
 import { cookies } from 'next/headers'
 import './globals.css'
-import { ThemeName, getTheme } from '../../styled-system/themes'
+import { getTheme, type ThemeName } from '../../styled-system/themes'
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const store = cookies()

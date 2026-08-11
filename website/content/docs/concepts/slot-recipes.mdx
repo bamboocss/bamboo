@@ -379,7 +379,8 @@ That last failure is quiet — the slot keeps its base styles, so it renders _ne
 into a console warning naming the slot:
 
 ```js
-import { auditSlotScopes, select } from '../styled-system/css'
+import { auditSlotScopes } from '../styled-system/css'
+import { select } from '../styled-system/recipes'
 
 if (process.env.NODE_ENV !== 'production') {
   auditSlotScopes([select], { observe: true })
