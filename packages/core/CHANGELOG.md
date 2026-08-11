@@ -1,5 +1,131 @@
 # @bamboocss/core
 
+## 1.33.0
+
+### Minor Changes
+
+- f7bbc14: Move `prune.preflight` onto `preflight`, so one key owns the reset.
+
+  ```ts
+  preflight: { scope: '.app', prune: true } // was preflight: { scope: '.app' }, prune: { preflight: true }
+  ```
+
+  There were two config keys named `preflight`, one level apart, and a config had to set both to prune a scoped reset —
+  asking for the reset in one place and reshaping it in another. They were never independent: pruning reads
+  `preflight.scope` to strip the scope before an element can be read out of a selector, and without that the pass
+  matches nothing and silently removes nothing.
+
+  `preflight: true` still means on with the defaults, and is _not_ pruned — pruning stays opt-in, since unlike the token
+  and keyframe passes there is nothing to prove it against. `scope` is now optional, which it already was at runtime.
+
+  A config still setting `prune.preflight` fails with the edit to make, rather than reverting to the default in silence.
+  That matters more here than for most removals: the reset keeps being emitted either way, just unpruned, so nothing
+  about the output would have said the setting had stopped being read.
+
+### Patch Changes
+
+- 61561a0: Remove empty nodes in one pass per container, instead of one sibling scan per removal.
+
+  `postcss-discard-empty` removes each node through `Node.remove()`, which postcss resolves with `Container.removeChild`
+  — an `indexOf` over the parent's children, then a splice. That is linear per removal, so a pass costs removals ×
+  siblings. Hand-written CSS never notices. A generated stylesheet does: every condition's block sits under one cascade
+  layer as a sibling of every other, and `mergeRules` runs immediately before, leaving empty `@media` shells behind. A
+  663 kB sheet reaches this pass with 6,005 shells under one layer, so both factors grow with the config and the cost is
+  their product.
+
+  Measured over a sibling group half of which is empty, against a parse-only control, all three interleaved in one
+  process and taken as best of seven:
+
+  | siblings | control | before  | after  | before/control | after/control |
+  | -------- | ------- | ------- | ------ | -------------- | ------------- |
+  | 8,000    | 8.5ms   | 26.8ms  | 18.8ms | 3.2×           | 2.2×          |
+  | 16,000   | 11.8ms  | 54.0ms  | 29.0ms | 4.6×           | 2.5×          |
+  | 32,000   | 25.7ms  | 369.0ms | 53.9ms | 14.4×          | 2.1×          |
+
+  The last two columns are the point rather than the speedup: the replacement stays a fixed multiple of the control
+  across the range, the way a linear pass does, and what it replaces does not.
+
+  Output is byte-identical — same predicate, same depth-first order, and the same `raws.before` transfer `Root` performs
+  when a first child is dropped. `discard-empty.test.ts` pins all of that against upstream, which stays as a
+  devDependency for exactly that purpose.
+
+  `optimize-css.bench.ts` could not have caught this. Both of its cases are well-formed throughout, so the removal pass
+  walked them and removed nothing; it now carries a case that arrives the way a real sheet does, each paired with a
+  size-matched control that has nothing to remove.
+
+- ac54258: Resolve a nested `&` against a combinator parent the same way on every call.
+
+  `getResolvedSelectors` decides between `:is(parent)` and a bare parent with two regexes that carried the global flag
+  and were driven with `.test()`. A `/g` regex resumes from `lastIndex` and advances it on a match, so the same argument
+  answered `true`, then `false`, then `true` — and the branch was picked by how many times the function had run rather
+  than by what it was given.
+
+  The repo's own snapshot had it frozen in place. One input, two structurally identical parents, resolving differently:
+
+  ```js
+  globalCss({
+    'body > p, body > ul': {
+      margin: 0,
+      '& ~ &': { marginTop: 10 },
+    },
+  })
+  ```
+
+  ```css
+  /* before */
+  :is(body > p) ~ :is(body > p),
+  body > ul ~ body > ul {
+    margin-top: var(--spacing-10);
+  }
+  /* after */
+  :is(body > p) ~ :is(body > p),
+  :is(body > ul) ~ :is(body > ul) {
+    margin-top: var(--spacing-10);
+  }
+  ```
+
+  The second half of that selector was not a cosmetic difference. `body > ul ~ body > ul` asks for a `ul` inside a
+  `body` that is a _sibling_ of a `ul`, and a document has one `body` — so it matched nothing, and the rule the author
+  wrote never applied to anything but the first selector in the list.
+
+  Which selectors were affected depended on stylesheet traversal order, so the same source could emit different CSS
+  between builds. Only styles reaching this shape change: a parent carrying a combinator (`` ` ` ``, `+`, `>`, `~`)
+  nested under a selector that mentions `&` more than once. Every stylesheet in this repo is byte-identical either way.
+
+- f640a68: Stop serializing the stylesheet only to parse it straight back, and stop the optimize pipeline from rewriting
+  the context's own layer tree.
+
+  `Stylesheet.toCss` built its css text and handed it to `optimizeCss`, which parsed it into the tree it needed. On a
+  432 kB sheet that round trip cost 13.0ms; cloning the tree instead costs 6.8ms.
+
+  The round trip was doing something else as well, by accident. `Layers.insert()` returns the `Layers` instance's own
+  `Root`, and everything downstream rewrites what it is handed — `expandScreenAtRule`, `sortMediaQueries`, the
+  cascade-layer polyfill, and then the whole optimize pipeline, which merges rules and drops nodes. A string cannot be
+  mutated, so the serialization was the only thing keeping the context's layers intact between calls. Cloning does it
+  deliberately, and covers the two plugins that ran against the shared tree even before:
+
+  **Fixes `toCss()` returning different css the second time it is called.** With `config.polyfill` on, a second call
+  returned 7,837 bytes where the first returned 4,283 — the polyfill re-applied itself to a tree it had already
+  rewritten. Both calls now agree, with the polyfill on or off.
+
+  The exported `optimizeCss` still serializes a `Root` it is given, so it continues to leave the caller's tree alone;
+  the consuming variant is internal and used only by `toCss`, on the clone it owns.
+
+  `dedupeNodes` folded `raws.before` into its dedupe key in a way that distinguished absent from empty — every node in a
+  _parsed_ tree has one, so this could not arise while the plugin only ever saw re-parsed css, and it can now that it
+  sees a tree built directly. Two identical nodes landing on opposite sides of that split would both have survived.
+
+  One output change, in non-minified css only: a nested `@layer`'s closing brace now indents to match its opening (two
+  spaces rather than four). `diff -w` against the previous output on an 85 kB sheet reports no differences, and minified
+  output is byte-identical.
+
+- Updated dependencies [f7bbc14]
+  - @bamboocss/types@1.33.0
+  - @bamboocss/logger@1.33.0
+  - @bamboocss/token-dictionary@1.33.0
+  - @bamboocss/is-valid-prop@1.33.0
+  - @bamboocss/shared@1.33.0
+
 ## 1.32.0
 
 ### Minor Changes
