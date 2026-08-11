@@ -3,7 +3,7 @@ import { breakpoints } from './breakpoints'
 import { containerSizes } from './containers'
 import { keyframes } from './keyframes'
 import { tokens } from './tokens'
-import { textStyles } from './typography'
+import { mixins } from './typography'
 
 const definePreset = <T extends Preset>(config: T) => config
 
@@ -13,7 +13,7 @@ export const preset = definePreset({
     keyframes,
     breakpoints,
     tokens,
-    textStyles,
+    mixins,
     containerSizes,
   },
 })

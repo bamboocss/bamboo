@@ -23,7 +23,7 @@ const styles = css({
       borderRadius: 'lg',
       mt: '1px',
       ml: '-36px',
-      textStyle: 'md',
+      mixin: 'md',
       fontWeight: 'bold',
     },
   },

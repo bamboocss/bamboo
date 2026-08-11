@@ -7,7 +7,7 @@ export const MultiThemes = () => {
   return (
     <div className={css({ m: '4' })}>
       <button
-        className={css({ bg: 'blue.300', px: '2', py: '0.5', textStyle: 'sm', borderRadius: 'sm' })}
+        className={css({ bg: 'blue.300', px: '2', py: '0.5', mixin: 'sm', borderRadius: 'sm' })}
         onClick={async () => {
           // const el = document.documentElement
           const el = document.getElementById('abc')!

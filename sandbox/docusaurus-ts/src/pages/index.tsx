@@ -23,7 +23,7 @@ function HomepageHeader() {
         <Heading
           as="h1"
           className={css({
-            textStyle: '4xl!',
+            mixin: '4xl!',
           })}
         >
           {siteConfig.title}

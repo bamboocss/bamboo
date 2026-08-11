@@ -34,7 +34,7 @@ export const dialogSlotRecipe = sva({
       width: '100%',
       outline: 0,
       borderRadius: 'md',
-      textStyle: 'sm',
+      mixin: 'sm',
       my: 'var(--dialog-margin, var(--dialog-base-margin))',
       '--dialog-z-index': '200',
       zIndex: 'calc(var(--dialog-z-index) + var(--layer-index, 0))',
@@ -42,7 +42,7 @@ export const dialogSlotRecipe = sva({
       boxShadow: 'lg',
     },
     title: {
-      textStyle: 'lg',
+      mixin: 'lg',
       fontWeight: 'semibold',
     },
     description: {

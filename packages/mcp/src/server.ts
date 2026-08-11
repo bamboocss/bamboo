@@ -107,18 +107,10 @@ export function createMcpServer(options: CreateMcpServerOptions) {
     json(ctx.getSpecOfType('keyframes')),
   )
 
-  server.registerTool('get_text_styles', { description: 'Get text style compositions for typography' }, async () =>
-    json(ctx.getSpecOfType('text-styles')),
-  )
-
   server.registerTool(
-    'get_layer_styles',
-    { description: 'Get layer style compositions for visual styling' },
-    async () => json(ctx.getSpecOfType('layer-styles')),
-  )
-
-  server.registerTool('get_animation_styles', { description: 'Get animation style compositions' }, async () =>
-    json(ctx.getSpecOfType('animation-styles')),
+    'get_mixins',
+    { description: 'Get the named style bundles the theme declares, applied through the `mixin` style property' },
+    async () => json(ctx.getSpecOfType('mixins')),
   )
 
   server.registerTool('get_color_palette', { description: 'Get the color palette with all color values' }, async () =>

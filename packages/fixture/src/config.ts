@@ -37,7 +37,7 @@ const tokens = {
   },
 } as Theme['tokens']
 
-const textStyles = {
+const mixins = {
   headline: {
     DEFAULT: {
       value: {
@@ -65,7 +65,7 @@ export const fixturePreset: Omit<PresetCore, 'global' | 'staticCss'> = {
   conditions,
   theme: {
     ...theme,
-    textStyles,
+    mixins,
     tokens,
     semanticTokens,
     recipes,

@@ -27,9 +27,7 @@ export const generateTypesEntry = (ctx: Context) => {
       export function defineSlotRecipe<S extends string, V extends SlotRecipeVariantRecord<S>>(config: SlotRecipeConfig<S, V>): Bamboo.SlotRecipeConfig
       export function defineStyles(definition: SystemStyleObject): SystemStyleObject
       export function defineGlobalStyles(definition: GlobalStyleObject): Bamboo.GlobalStyleObject
-      export function defineTextStyles(definition: CompositionStyles['textStyles']): Bamboo.TextStyles
-      export function defineAnimationStyles(definition: CompositionStyles['animationStyles']): Bamboo.AnimationStyles
-      export function defineLayerStyles(definition: CompositionStyles['layerStyles']): Bamboo.LayerStyles
+      export function defineMixins(definition: CompositionStyles['mixins']): Bamboo.Mixins
       export function definePattern<T extends PatternProperties>(config: PatternConfig<T>): Bamboo.PatternConfig
       export function defineParts<T extends Parts>(parts: T): (config: Partial<Record<keyof T, SystemStyleObject>>) => Partial<Record<keyof T, SystemStyleObject>>
     }

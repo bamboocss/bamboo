@@ -41,7 +41,7 @@ export const CodeBlock = (props: CodeBlockProps) => {
         })}
       >
         {resolvedLang && <CodeLangIcon type={resolvedLang} />}
-        <p className={css({ textStyle: 'sm', fontFamily: 'mono' })}>{title}</p>
+        <p className={css({ mixin: 'sm', fontFamily: 'mono' })}>{title}</p>
       </div>
       {children}
     </div>

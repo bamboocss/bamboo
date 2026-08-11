@@ -310,7 +310,7 @@ describe('rule processor', () => {
         "bd_1px_solid_token\\(colors\\.red\\.100\\)",
         "bg_blue\\.300",
         "c_red",
-        "textStyle_headline\\.h1",
+        "text-style_headline\\.h1",
         "fs_xs",
         "w_1",
         "dark\\:fs_2xl",
@@ -334,13 +334,6 @@ describe('rule processor', () => {
 
     expect(result.css).toMatchInlineSnapshot(`
       "@layer utilities {
-        @layer compositions {
-          .textStyle_headline\\.h1 {
-            font-size: 2rem;
-            font-weight: var(--font-weights-bold);
-      }
-      }
-
         .bd_1px_solid_token\\(colors\\.red\\.100\\) {
           border: 1px solid var(--colors-red-100);
       }
@@ -351,6 +344,10 @@ describe('rule processor', () => {
 
         .c_red\\! {
           color: red !important;
+      }
+
+        .text-style_headline\\.h1 {
+          text-style: headline.h1;
       }
 
         .fs_xs {
@@ -557,8 +554,7 @@ describe('rule processor', () => {
 
         .cva_ikTMbL--size_sm {
           padding: 0 0.5rem;
-          font-size: 2rem;
-          font-weight: var(--font-weights-bold);
+          text-style: headline.h1;
           height: 2.5rem;
           min-width: 2.5rem;
       }
@@ -634,8 +630,7 @@ describe('rule processor', () => {
 
         @scope (.checkbox__root--size_sm) to (.checkbox__root) {
           .checkbox__control {
-            font-size: 2rem;
-            font-weight: var(--font-weights-bold);
+            text-style: headline.h1;
             width: var(--sizes-8);
             height: var(--sizes-8);
       }

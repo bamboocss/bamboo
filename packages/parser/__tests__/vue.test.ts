@@ -248,6 +248,18 @@ describe('extract Vue templates', () => {
 
     expect(result.css).toMatchInlineSnapshot(`
       "@layer utilities {
+        .text-style_overline {
+          text-style: overline;
+      }
+
+        .text-style_h7 {
+          text-style: h7;
+      }
+
+        .text-style_text {
+          text-style: text;
+      }
+
         .c_grey\\.70 {
           color: grey.70;
       }

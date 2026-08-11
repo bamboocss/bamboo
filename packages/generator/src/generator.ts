@@ -18,14 +18,12 @@ import { generateResetCss } from './artifacts/css/reset-css'
 import { generateStaticCss } from './artifacts/css/static-css'
 import { generateTokenCss } from './artifacts/css/token-css'
 import { getThemeCss } from './artifacts/js/themes'
-import { generateAnimationStylesSpec } from './spec/animation-styles'
 import { generateColorPaletteSpec } from './spec/color-palette'
 import { generateConditionsSpec } from './spec/conditions'
 import { generateKeyframesSpec } from './spec/keyframes'
-import { generateLayerStylesSpec } from './spec/layer-styles'
+import { generateMixinsSpec } from './spec/mixins'
 import { generatePatternsSpec } from './spec/patterns'
 import { generateRecipesSpec } from './spec/recipes'
-import { generateTextStylesSpec } from './spec/text-styles'
 import { generateThemesSpec } from './spec/themes'
 import { generateSemanticTokensSpec, generateTokensSpec } from './spec/tokens'
 
@@ -453,9 +451,7 @@ export class Generator extends Context {
       generateConditionsSpec(this),
       generateKeyframesSpec(this),
       generateSemanticTokensSpec(this),
-      generateTextStylesSpec(this),
-      generateLayerStylesSpec(this),
-      generateAnimationStylesSpec(this),
+      generateMixinsSpec(this),
     ]
 
     const colorPaletteSpec = generateColorPaletteSpec(this)
@@ -488,12 +484,8 @@ export class Generator extends Context {
           return generateConditionsSpec(this)
         case 'keyframes':
           return generateKeyframesSpec(this)
-        case 'text-styles':
-          return generateTextStylesSpec(this)
-        case 'layer-styles':
-          return generateLayerStylesSpec(this)
-        case 'animation-styles':
-          return generateAnimationStylesSpec(this)
+        case 'mixins':
+          return generateMixinsSpec(this)
         case 'color-palette':
           return generateColorPaletteSpec(this) ?? undefined
         case 'themes':

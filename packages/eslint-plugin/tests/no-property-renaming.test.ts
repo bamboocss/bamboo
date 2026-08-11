@@ -9,7 +9,7 @@ eslintTester.run(RULE_NAME, rule, {
   import { css } from './bamboo/css';
   
   function Text({ variant }){
-    return <p className={css({ textStyle: variant })} />;
+    return <p className={css({ mixin: variant })} />;
   }`,
       errors: [{ messageId: 'noRenaming' }],
     },
@@ -19,7 +19,7 @@ eslintTester.run(RULE_NAME, rule, {
   import { css } from './bamboo/css';
   
   function Text(props){
-    return <p className={css({ textStyle: props.variant })} />;
+    return <p className={css({ mixin: props.variant })} />;
   }`,
       errors: [{ messageId: 'noRenaming' }],
     },
@@ -53,8 +53,8 @@ eslintTester.run(RULE_NAME, rule, {
       code: multiline`
   import { css } from './bamboo/css';
   
-  function Text({ textStyle }){
-    return <p className={css({ textStyle })} />;
+  function Text({ mixin }){
+    return <p className={css({ mixin })} />;
   }`,
     },
 
@@ -63,7 +63,7 @@ eslintTester.run(RULE_NAME, rule, {
   import { css } from './bamboo/css';
   
   function Text(props){
-    return <p className={css({ textStyle: props.textStyle })} />;
+    return <p className={css({ mixin: props.mixin })} />;
   }`,
     },
 

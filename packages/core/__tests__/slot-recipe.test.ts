@@ -23,8 +23,7 @@ describe('slot recipe ruleset', () => {
 
         @scope (.checkbox__root--size_sm) to (.checkbox__root) {
           .checkbox__control {
-            font-size: 2rem;
-            font-weight: var(--font-weights-bold);
+            text-style: headline.h1;
             width: var(--sizes-8);
             height: var(--sizes-8);
       }

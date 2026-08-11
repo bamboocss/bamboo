@@ -258,57 +258,25 @@ const defineTheme = defineThemeContract({
 })
 ```
 
-### `defineTextStyles`
+### `defineMixins`
 
-Function for [text styles](/docs/theming/text-styles) definitions.
+Function for [mixin](/docs/theming/mixins) definitions. Replaces `defineTextStyles`, `defineLayerStyles` and
+`defineAnimationStyles`, which differed only in which css properties the value could set.
 
 ```ts
-import { defineTextStyles } from '@bamboocss/dev'
+import { defineMixins } from '@bamboocss/dev'
 
-export const textStyles = defineTextStyles({
+export const mixins = defineMixins({
   body: {
     description: 'The body text style - used in paragraphs',
     value: {
       fontFamily: 'Inter',
       fontWeight: '500',
       fontSize: '16px',
-      lineHeight: '24',
+      lineHeight: '24px',
       letterSpacing: '0',
-      textDecoration: 'None',
-      textTransform: 'None',
     },
   },
-})
-```
-
-### `defineLayerStyles`
-
-Function for [layer styles](/docs/theming/layer-styles) definitions.
-
-```ts
-import { defineLayerStyles } from '@bamboocss/dev'
-
-const layerStyles = defineLayerStyles({
-  container: {
-    description: 'container styles',
-    value: {
-      background: 'gray.50',
-      border: '2px solid',
-      borderColor: 'gray.500',
-    },
-  },
-})
-```
-
-### `defineAnimationStyles`
-
-Function for [animation styles](/docs/theming/animation-styles) definitions. Same `{ description?, value }` shape as
-text and layer styles, holding the animation properties to compose. That page has a worked example.
-
-```ts
-import { defineAnimationStyles } from '@bamboocss/dev'
-
-export const animationStyles = defineAnimationStyles({
   'fade-in': {
     value: {
       animationName: 'fade-in',

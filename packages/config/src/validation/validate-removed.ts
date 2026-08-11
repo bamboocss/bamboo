@@ -53,10 +53,18 @@ const RETIRED_VALUES: Record<string, Record<string, string>> = {
 }
 
 /** Removed keys nested one level down, keyed by their parent. */
+const COMPOSITION_MOVED = (old: string, prop: string) => () =>
+  `\`theme.${old}\` is now \`theme.mixins\`, applied through \`css({ mixin: '…' })\` rather than \`css({ ${prop}: '…' })\`. The three keys ran through one registration and differed only in which properties the value could set — an arbitrary partition that cost a bundle spanning two of them a second key and a second application.`
+
 const REMOVED_NESTED: Record<string, Record<string, (value: unknown) => string>> = {
   prune: {
     unresolved: (value) =>
       `\`prune.unresolved\` is now \`prune.unresolvedPath\`, and the accounting pass it used to switch on is now \`prune.tokens: 'accounted'\` — write \`prune: { tokens: 'accounted', unresolvedPath: '${value === 'error' ? 'error' : 'warn'}' }\`. They are separate because \`'off'\` used to mean two things at once: no accounting, and no report.`,
+  },
+  theme: {
+    textStyles: COMPOSITION_MOVED('textStyles', 'textStyle'),
+    layerStyles: COMPOSITION_MOVED('layerStyles', 'layerStyle'),
+    animationStyles: COMPOSITION_MOVED('animationStyles', 'animationStyle'),
   },
 }
 

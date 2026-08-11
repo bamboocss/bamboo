@@ -13,7 +13,7 @@ export const Toolbar = (props: PropsWithChildren) => (
       </a>
       <span
         className={css({
-          textStyle: 'sm',
+          mixin: 'sm',
         })}
       >
         v{pkgJson.version}

@@ -38,20 +38,20 @@ How to truncate multi-line text
 | `lineClamp` | `-webkit-line-clamp` | none           |
 | `truncate`  | `text-overflow`      | none           |
 
-## Text Styles
+## Mixins
 
-Utilities for applying a composition of typography properties.
+Applies a named bundle of declarations from the theme — see [mixins](/docs/theming/mixins).
 
 ```jsx
 <h1
   className={css({
-    textStyle: 'heading/marketing',
+    mixin: 'heading.marketing',
   })}
 >
   Hello World
 </h1>
 ```
 
-| Prop        | Config       |
-| ----------- | ------------ |
-| `textStyle` | `textStyles` |
+| Prop    | Config   |
+| ------- | -------- |
+| `mixin` | `mixins` |

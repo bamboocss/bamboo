@@ -84,7 +84,7 @@ describe('unresolved token paths', () => {
   test('does not fire on a valid value of an array-valued property', () => {
     const { utility, spy } = setup()
 
-    utility.transform('textStyle', 'headline.h1')
+    utility.transform('mixin', 'headline.h1')
 
     expect(spy).not.toHaveBeenCalled()
   })
@@ -92,7 +92,7 @@ describe('unresolved token paths', () => {
   test('does fire on an invalid value of an array-valued property', () => {
     const { utility, spy } = setup()
 
-    utility.transform('textStyle', 'headline.h9')
+    utility.transform('mixin', 'headline.h9')
 
     expect(spy).toHaveBeenCalledTimes(1)
   })

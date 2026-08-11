@@ -22,7 +22,7 @@ export const Breadcrumb = ({ slug }: Props) => {
           className={flex({
             align: 'center',
             gap: '8px',
-            textStyle: 'sm',
+            mixin: 'sm',
             fontWeight: 'semibold',
             textTransform: 'uppercase',
             letterSpacing: 'wide',

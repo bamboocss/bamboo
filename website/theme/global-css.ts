@@ -123,7 +123,7 @@ export const globalCss = defineGlobalStyles({
       border: 'none',
       bg: 'transparent!',
       p: '0!',
-      textStyle: 'sm',
+      mixin: 'sm',
       lineHeight: '1.25rem',
       color: 'currentcolor',
       _dark: {

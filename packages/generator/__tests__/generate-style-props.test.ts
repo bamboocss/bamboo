@@ -8091,7 +8091,7 @@ describe('generate property types', () => {
        srOnly?: ConditionalValue<UtilityValues["srOnly"] | CssVars | AnyString>
        debug?: ConditionalValue<UtilityValues["debug"] | CssVars | AnyString>
        colorPalette?: ConditionalValue<UtilityValues["colorPalette"] | CssVars | AnyString>
-       textStyle?: ConditionalValue<UtilityValues["textStyle"] | CssVars | AnyString>
+       mixin?: ConditionalValue<UtilityValues["mixin"] | CssVars | AnyString>
       }"
     `)
   })
@@ -16184,7 +16184,7 @@ describe('generate property types', () => {
        srOnly?: ConditionalValue<WithEscapeHatch<UtilityValues["srOnly"] | CssVars>>
        debug?: ConditionalValue<WithEscapeHatch<UtilityValues["debug"] | CssVars>>
        colorPalette?: ConditionalValue<WithEscapeHatch<UtilityValues["colorPalette"] | CssVars>>
-       textStyle?: ConditionalValue<WithEscapeHatch<UtilityValues["textStyle"] | CssVars>>
+       mixin?: ConditionalValue<WithEscapeHatch<UtilityValues["mixin"] | CssVars>>
       }"
     `)
   })

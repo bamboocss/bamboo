@@ -126,7 +126,7 @@ export function Sidebar({ slug: currentSlug }: Props) {
                     py: '1.5',
                     borderInlineStartWidth: '2px',
                     borderColor: 'transparent',
-                    textStyle: 'sm',
+                    mixin: 'sm',
                     color: 'fg.muted',
                     fontWeight: 'normal',
                     transitionProperty: 'color, border-color',

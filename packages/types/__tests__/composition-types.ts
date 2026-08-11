@@ -1,44 +1,46 @@
-import type { AnimationStyle, LayerStyle, TextStyle } from '../src/composition'
+import type { Mixin } from '../src/composition'
 
 /**
- * Type-level assertions about the composition property allowlists.
+ * Type-level assertions about what a mixin value accepts.
  *
  * Not a `.test.ts`: there is nothing to run. `tsc --noEmit` covers `packages/**` and is part of
- * `pnpm check`, so a wrong entry in one of these unions fails the build from here.
+ * `pnpm check`, so a wrong entry fails the build from here.
  *
- * It exists because one of them was wrong for a long time and nothing could notice.
- * `TextStyleProperty` listed `hypens`, which is not a css property, and so did not list
+ * It exists because a hand-maintained allowlist was wrong for a long time and nothing could
+ * notice. `TextStyleProperty` listed `hypens`, which is not a css property, and so did not list
  * `hyphens`, which is — and which bamboo defines a utility for, complete with the
- * `-webkit-hyphens` polyfill. A `textStyle` could set a property that does nothing and could
- * not set the one it meant. A hand-maintained allowlist of 72 names has no other guard.
+ * `-webkit-hyphens` polyfill. A text style could set a property that does nothing and could not
+ * set the one it meant.
+ *
+ * The three allowlists are gone, but the guard they were meant to be is not: `Mixin` is built on
+ * `SystemProperties` rather than `SystemStyleObject`, whose index signature would accept the
+ * typo again. That is the single thing this file now pins.
  */
 
-/* -----------------------------------------------------------------------------
- * Text styles
- * -----------------------------------------------------------------------------*/
+export const hyphens: Mixin = { hyphens: 'auto' }
+export const hyphenateCharacter: Mixin = { hyphenateCharacter: '-' }
+export const hyphenateLimitChars: Mixin = { hyphenateLimitChars: '6 3 2' }
 
-export const hyphens: TextStyle = { hyphens: 'auto' }
+// @ts-expect-error `hypens` is not a css property
+export const misspelled: Mixin = { hypens: 'auto' }
 
-/** Its siblings were always spelled correctly, which is what made the gap odd. */
-export const hyphenateCharacter: TextStyle = { hyphenateCharacter: '-' }
-export const hyphenateLimitChars: TextStyle = { hyphenateLimitChars: '6 3 2' }
+/**
+ * The partition itself is what went away: one bundle may now set a font, a border and an
+ * animation, which previously needed three theme keys and three applications.
+ */
+export const spansFormerCategories: Mixin = {
+  fontWeight: 'bold',
+  backgroundColor: 'red',
+  boxShadow: 'sm',
+  animationName: 'fade-in',
+}
 
-// @ts-expect-error `hypens` is not a css property and is no longer accepted
-export const misspelled: TextStyle = { hypens: 'auto' }
+/** Conditions and nested selectors come from `Nested`, so narrowing the leaf keeps them. */
+export const conditional: Mixin = {
+  color: 'red',
+  _hover: { color: 'blue' },
+  '& > p': { fontWeight: 'bold' },
+}
 
-// @ts-expect-error a layer-style property is not a text-style property
-export const notTextStyle: TextStyle = { backgroundColor: 'red' }
-
-/* -----------------------------------------------------------------------------
- * The other two, so the same class of mistake is pinned there as well
- * -----------------------------------------------------------------------------*/
-
-export const layer: LayerStyle = { backgroundColor: 'red', boxShadow: 'sm' }
-
-// @ts-expect-error a text-style property is not a layer-style property
-export const notLayerStyle: LayerStyle = { fontWeight: 'bold' }
-
-export const animation: AnimationStyle = { animationName: 'fade-in', animationDuration: '1s' }
-
-// @ts-expect-error a layer-style property is not an animation-style property
-export const notAnimationStyle: AnimationStyle = { color: 'red' }
+/** Custom properties are still declarable, which `CssVarProperties` is there for. */
+export const cssVar: Mixin = { '--ring': '2px' }

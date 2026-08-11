@@ -31,7 +31,7 @@ export const codeTabsRecipe = defineRecipe({
       userSelect: 'none',
       color: 'white',
       bg: 'rgba(246, 228, 88, 0.09)',
-      textStyle: 'md',
+      mixin: 'md',
       _hover: {
         color: 'black',
         bg: 'yellow.400',

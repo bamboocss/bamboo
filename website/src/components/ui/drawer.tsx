@@ -39,7 +39,7 @@ export const drawerSlotRecipe = sva({
       width: '100%',
       outline: 0,
       zIndex: 'modal',
-      textStyle: 'sm',
+      mixin: 'sm',
       maxH: '100dvh',
       color: 'inherit',
       bg: 'bg',

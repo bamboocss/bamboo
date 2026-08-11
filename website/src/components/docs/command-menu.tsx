@@ -127,7 +127,7 @@ export const CommandMenu = (props: Props) => {
                 <Combobox.List>
                   {collection.items.length === 0 && (
                     <div className={center({ p: '3', minH: '40' })}>
-                      <div className={css({ color: 'fg.muted', textStyle: 'sm' })}>
+                      <div className={css({ color: 'fg.muted', mixin: 'sm' })}>
                         No results found for <strong>{inputValue}</strong>
                       </div>
                     </div>
@@ -167,7 +167,7 @@ export const CommandMenu = (props: Props) => {
                               {item.label}
                               {item.type === 'heading' && <Badge>{item.category}</Badge>}
                             </div>
-                            <div className={css({ textStyle: 'sm', color: 'fg.muted', lineClamp: 2 })}>
+                            <div className={css({ mixin: 'sm', color: 'fg.muted', lineClamp: 2 })}>
                               {item.description}
                             </div>
                           </div>

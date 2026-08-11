@@ -1,4 +1,5 @@
-import type { CompositionStyleObject } from './system-types'
+import type { Nested } from './conditions'
+import type { CssVarProperties, SystemProperties } from './style-props'
 
 interface Token<T> {
   value: T
@@ -10,217 +11,34 @@ interface Recursive<T> {
 }
 
 /* -----------------------------------------------------------------------------
- * Text styles
+ * Mixins
  * -----------------------------------------------------------------------------*/
 
-type TextStyleProperty =
-  | 'color'
-  | 'direction'
-  | 'font'
-  | 'fontFamily'
-  | 'fontFeatureSettings'
-  | 'fontKerning'
-  | 'fontLanguageOverride'
-  | 'fontOpticalSizing'
-  | 'fontPalette'
-  | 'fontSize'
-  | 'fontSizeAdjust'
-  | 'fontStretch'
-  | 'fontStyle'
-  | 'fontSynthesis'
-  | 'fontVariant'
-  | 'fontVariantAlternates'
-  | 'fontVariantCaps'
-  | 'fontVariantLigatures'
-  | 'fontVariantNumeric'
-  | 'fontVariantPosition'
-  | 'fontVariationSettings'
-  | 'fontWeight'
-  | 'hangingPunctuation'
-  | 'hyphens'
-  | 'hyphenateCharacter'
-  | 'hyphenateLimitChars'
-  | 'letterSpacing'
-  | 'lineBreak'
-  | 'lineHeight'
-  | 'quotes'
-  | 'overflowWrap'
-  | 'tabSize'
-  | 'textAlign'
-  | 'textAlignLast'
-  | 'textBox'
-  | 'textBoxEdge'
-  | 'textBoxTrim'
-  | 'textCombineUpright'
-  | 'textDecoration'
-  | 'textDecorationColor'
-  | 'textDecorationLine'
-  | 'textDecorationSkip'
-  | 'textDecorationSkipBox'
-  | 'textDecorationSkipInk'
-  | 'textDecorationSkipInset'
-  | 'textDecorationStyle'
-  | 'textDecorationThickness'
-  | 'textEmphasis'
-  | 'textEmphasisColor'
-  | 'textEmphasisPosition'
-  | 'textEmphasisStyle'
-  | 'textIndent'
-  | 'textJustify'
-  | 'textOrientation'
-  | 'textOverflow'
-  | 'textRendering'
-  | 'textShadow'
-  | 'textStroke'
-  | 'textStrokeColor'
-  | 'textStrokeWidth'
-  | 'textTransform'
-  | 'textUnderlineOffset'
-  | 'textUnderlinePosition'
-  | 'textWrap'
-  | 'textWrapMode'
-  | 'textWrapStyle'
-  | 'unicodeBidi'
-  | 'verticalAlign'
-  | 'whiteSpace'
-  | 'wordBreak'
-  | 'wordSpacing'
-  | 'writingMode'
+/**
+ * A named bundle of declarations, applied by name through the `mixin` style property.
+ *
+ * This was three theme keys — `textStyles`, `layerStyles` and `animationStyles` — with three
+ * `define*` helpers, three spec artifacts and three style properties, all running through the
+ * same registration and differing only in which css properties the value was allowed to set.
+ *
+ * That partition was not a guard worth three concepts. It was arbitrary at the edges (`color`
+ * was legal in both a text style and a layer style, `transform` in a layer style but
+ * `transformOrigin` only in an animation style), and it cost something real in the middle: a
+ * bundle wanting a font *and* a border had to be split across two keys and applied twice,
+ * because neither key would accept the other's half.
+ *
+ * What the three allowlists did buy was rejecting a property that does not exist, and that is
+ * kept here rather than thrown away with them — which is why this is not simply
+ * `SystemStyleObject`. That type unions in an index signature so a style object can carry an
+ * arbitrary selector or at-rule, and an index signature accepts anything, including a typo.
+ * `TextStyleProperty` once listed `hypens` instead of `hyphens` and nothing could notice; under
+ * an index signature nothing would notice again. Conditions and nested selectors still work,
+ * because `Nested` supplies those keys itself.
+ */
+export type Mixin = Nested<SystemProperties & CssVarProperties>
 
-export type TextStyle = CompositionStyleObject<TextStyleProperty>
-
-export type TextStyles = Recursive<Token<TextStyle>>
-
-/* -----------------------------------------------------------------------------
- * Layer styles
- * -----------------------------------------------------------------------------*/
-
-type LogicalPlacement = 'Inline' | 'Block' | 'InlineStart' | 'InlineEnd' | 'BlockStart' | 'BlockEnd'
-
-type PhysicalPlacement = 'Top' | 'Right' | 'Bottom' | 'Left'
-
-type Placement = PhysicalPlacement | LogicalPlacement
-
-type Radius =
-  | `Top${'Right' | 'Left'}`
-  | `Bottom${'Right' | 'Left'}`
-  | `Start${'Start' | 'End'}`
-  | `End${'Start' | 'End'}`
-
-type LayerStyleProperty =
-  | 'aspectRatio'
-  | 'background'
-  | 'backgroundColor'
-  | 'backgroundImage'
-  | 'border'
-  | 'borderColor'
-  | 'borderImage'
-  | 'borderImageOutset'
-  | 'borderImageRepeat'
-  | 'borderImageSlice'
-  | 'borderImageSource'
-  | 'borderImageWidth'
-  | 'borderRadius'
-  | 'borderStyle'
-  | 'borderWidth'
-  | `border${Placement}`
-  | `border${Placement}Color`
-  | `border${Placement}Style`
-  | `border${Placement}Width`
-  | 'borderRadius'
-  | `border${Radius}Radius`
-  | 'boxShadow'
-  | 'boxShadowColor'
-  | 'clipPath'
-  | 'color'
-  | 'contain'
-  | 'content'
-  | 'contentVisibility'
-  | 'cursor'
-  | 'display'
-  | 'filter'
-  | 'backdropFilter'
-  | 'height'
-  | 'width'
-  | 'minHeight'
-  | 'minWidth'
-  | 'maxHeight'
-  | 'maxWidth'
-  | `margin${Placement}`
-  | 'inset'
-  | `inset${LogicalPlacement}`
-  | Lowercase<PhysicalPlacement>
-  | 'isolation'
-  | 'mask'
-  | 'maskClip'
-  | 'maskComposite'
-  | 'maskImage'
-  | 'maskMode'
-  | 'maskOrigin'
-  | 'maskPosition'
-  | 'maskRepeat'
-  | 'maskSize'
-  | 'mixBlendMode'
-  | 'objectFit'
-  | 'objectPosition'
-  | 'opacity'
-  | 'outline'
-  | 'outlineColor'
-  | 'outlineOffset'
-  | 'outlineStyle'
-  | 'outlineWidth'
-  | 'overflow'
-  | 'overflowX'
-  | 'overflowY'
-  | 'padding'
-  | `padding${Placement}`
-  | 'pointerEvents'
-  | 'position'
-  | 'resize'
-  | 'transform'
-  | 'transition'
-  | 'visibility'
-  | 'willChange'
-  | 'zIndex'
-  | 'backgroundBlendMode'
-  | 'backgroundAttachment'
-  | 'backgroundClip'
-  | 'backgroundOrigin'
-  | 'backgroundPosition'
-  | 'backgroundRepeat'
-  | 'backgroundSize'
-
-export type LayerStyle = CompositionStyleObject<LayerStyleProperty>
-
-export type LayerStyles = Recursive<Token<LayerStyle>>
-
-/* -----------------------------------------------------------------------------
- * Motion styles
- * -----------------------------------------------------------------------------*/
-
-type AnimationStyleProperty =
-  | 'animation'
-  | 'animationComposition'
-  | 'animationDelay'
-  | 'animationDirection'
-  | 'animationDuration'
-  | 'animationFillMode'
-  | 'animationIterationCount'
-  | 'animationName'
-  | 'animationPlayState'
-  | 'animationTimingFunction'
-  | 'animationRange'
-  | 'animationRangeStart'
-  | 'animationRangeEnd'
-  | 'animationTimeline'
-  | 'transformOrigin'
-
-export type AnimationStyle = CompositionStyleObject<AnimationStyleProperty>
-
-export type AnimationStyles = Recursive<Token<AnimationStyle>>
+export type Mixins = Recursive<Token<Mixin>>
 
 export interface CompositionStyles {
-  textStyles: TextStyles
-  layerStyles: LayerStyles
-  animationStyles: AnimationStyles
+  mixins: Mixins
 }

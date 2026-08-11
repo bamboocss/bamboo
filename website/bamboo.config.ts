@@ -3,8 +3,7 @@ import { defineConfig } from '@bamboocss/dev'
 import { tokens } from './theme/tokens'
 import { semanticTokens } from './theme/semantic-tokens'
 import { recipes } from './theme/recipes'
-import { textStyles } from './theme/text-styles'
-import { layerStyles } from './theme/layer-styles'
+import { mixins } from './theme/mixins'
 import { globalCss } from './theme/global-css'
 import { keyframes } from './theme/keyframes'
 
@@ -41,8 +40,7 @@ export default defineConfig({
       semanticTokens,
       tokens,
       recipes,
-      textStyles,
-      layerStyles,
+      mixins,
       keyframes,
     },
   },

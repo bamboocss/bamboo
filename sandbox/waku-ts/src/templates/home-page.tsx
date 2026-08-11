@@ -10,7 +10,7 @@ export const HomePage = async () => {
   return (
     <div>
       <title>{data.title}</title>
-      <h1 className={css({ textStyle: '4xl', fontWeight: 'bold', letterSpacing: 'tight' })}>{data.headline}</h1>
+      <h1 className={css({ mixin: '4xl', fontWeight: 'bold', letterSpacing: 'tight' })}>{data.headline}</h1>
       <p>{data.body}</p>
       <Counter />
       <Link to="/about" className={css({ mt: '4', display: 'inline-block', textDecoration: 'underline' })}>

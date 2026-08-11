@@ -210,7 +210,12 @@ describe('ast parser / sva', () => {
           color: var(--colors-white);
       }
 
+        .sva_gbRdhD__content {
+          text-style: lg;
+      }
+
         .sva_gbRdhD__title {
+          text-style: xl;
           font-weight: var(--font-weights-semibold);
           padding-bottom: var(--spacing-2);
       }

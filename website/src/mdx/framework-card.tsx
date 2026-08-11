@@ -114,7 +114,7 @@ export const FrameworkCard = (props: Props) => {
       <div
         className={center({
           size: '14',
-          layerStyle: 'offShadow',
+          mixin: 'offShadow',
           shadowColor: { _dark: 'neutral.700' },
           rounded: 'md',
         })}

@@ -10,7 +10,7 @@ import { fontSizes } from './typography/sizes'
 import { fonts } from './typography/fonts'
 import { fontWeights } from './typography/weights'
 import { lineHeights } from './typography/lineHeights'
-import { textStyles } from './textStyles'
+import { mixins } from './mixins'
 import { durations } from './durations'
 import { easings } from './easings'
 
@@ -36,7 +36,7 @@ export const preset = definePreset({
       colors: semanticColors,
       shadows: semanticShadows,
     },
-    textStyles: textStyles,
+    mixins,
   },
 })
 

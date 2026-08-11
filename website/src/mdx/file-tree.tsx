@@ -27,7 +27,7 @@ const Tree = ({ children }: { children: React.ReactNode }) => (
     className={css({
       marginTop: 6,
       userSelect: 'none',
-      textStyle: 'sm',
+      mixin: 'sm',
       color: 'gray.800',
       _dark: {
         color: 'gray.300',

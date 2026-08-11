@@ -24,7 +24,7 @@ export const EXAMPLES = [
               fontWeight: 'semibold',
               color: 'yellow.300',
               textAlign: 'center',
-              textStyle: '4xl',
+              mixin: '4xl',
             })}
           >
             <span>🎋</span>
@@ -96,10 +96,10 @@ export const EXAMPLES = [
           _dark: { bg: '#262626', color: 'white' },
         },
         content: {
-          textStyle: 'lg',
+          mixin: 'lg',
         },
         title: {
-          textStyle: 'xl',
+          mixin: 'xl',
           fontWeight: 'semibold',
           pb: '2',
         },
@@ -212,10 +212,10 @@ export const EXAMPLES = [
       _dark: { bg: '#262626', color: 'white' },
     },
     content: {
-      textStyle: 'lg',
+      mixin: 'lg',
     },
     title: {
-      textStyle: 'xl',
+      mixin: 'xl',
       fontWeight: 'semibold',
       pb: '2',
     },

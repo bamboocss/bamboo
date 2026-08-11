@@ -80,19 +80,19 @@ export const buttonRecipe = defineRecipe({
     size: {
       sm: {
         paddingY: 3,
-        textStyle: 'lg',
+        mixin: 'lg',
       },
       md: {
-        textStyle: 'md',
+        mixin: 'md',
         md: {
-          textStyle: 'lg',
+          mixin: 'lg',
         },
         lg: {
-          textStyle: 'xl',
+          mixin: 'xl',
         },
       },
       lg: {
-        textStyle: '2xl',
+        mixin: '2xl',
       },
       xl: {
         fontSize: '2rem',

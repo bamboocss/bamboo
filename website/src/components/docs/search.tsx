@@ -22,7 +22,7 @@ const styles = {
     ps: '3',
     pe: '12',
     transition: 'shadow',
-    textStyle: 'sm',
+    mixin: 'sm',
     lineHeight: 'tight',
     bg: 'bg.muted',
   }),

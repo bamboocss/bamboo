@@ -11,7 +11,7 @@ export default function App() {
           fontWeight: 'semibold',
           color: 'blue.300',
           textAlign: 'center',
-          textStyle: '4xl',
+          mixin: '4xl',
         })}
       >
         <span>🐼</span>

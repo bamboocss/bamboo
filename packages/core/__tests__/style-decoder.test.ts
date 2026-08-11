@@ -213,18 +213,17 @@ describe('style decoder', () => {
           "scoped": false,
         },
         {
-          "className": "textStyle_headline\\.h1",
+          "className": "text-style_headline\\.h1",
           "conditions": undefined,
           "entry": {
             "prop": "textStyle",
             "value": "headline.h1",
           },
           "hash": "textStyle]___[value:headline.h1",
-          "layer": "compositions",
+          "layer": undefined,
           "result": {
-            ".textStyle_headline\\.h1": {
-              "fontSize": "2rem",
-              "fontWeight": "var(--font-weights-bold)",
+            ".text-style_headline\\.h1": {
+              "textStyle": "headline.h1",
             },
           },
           "scoped": false,
@@ -1183,9 +1182,8 @@ describe('style decoder', () => {
           "result": {
             "@scope (.checkbox__root--size_sm) to (.checkbox__root)": {
               ".checkbox__control": {
-                "fontSize": "2rem",
-                "fontWeight": "var(--font-weights-bold)",
                 "height": "var(--sizes-8)",
+                "textStyle": "headline.h1",
                 "width": "var(--sizes-8)",
               },
             },

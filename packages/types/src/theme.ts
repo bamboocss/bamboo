@@ -1,4 +1,4 @@
-import type { AnimationStyles, LayerStyles, TextStyles } from './composition'
+import type { Mixins } from './composition'
 import type { RecipeConfig, SlotRecipeConfig } from './recipe'
 import type { CssKeyframes } from './system-types'
 import type { SemanticTokens, Tokens } from './tokens'
@@ -39,17 +39,9 @@ export interface Theme {
    */
   semanticTokens?: SemanticTokens
   /**
-   * The typography styles for your project.
+   * Named bundles of declarations, applied by name through the `mixin` style property.
    */
-  textStyles?: TextStyles
-  /**
-   * The layer styles for your project.
-   */
-  layerStyles?: LayerStyles
-  /**
-   * The animation styles for your project.
-   */
-  animationStyles?: AnimationStyles
+  mixins?: Mixins
   /**
    * Multi-variant style definitions for your project.
    * Useful for defining component styles.

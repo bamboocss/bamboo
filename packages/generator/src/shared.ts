@@ -1,5 +1,5 @@
 import { isObject, walkObject } from '@bamboocss/shared'
-import type { AnimationStyleSpec, LayerStyleSpec, TextStyleSpec } from '@bamboocss/types'
+import type { MixinSpec } from '@bamboocss/types'
 
 export const isBooleanValue = (value: string) => value === 'true' || value === 'false'
 
@@ -44,32 +44,14 @@ const collectCompositionStyles = (values: Record<string, any>): Array<{ name: st
   return result
 }
 
-export type CompositionStyleType = 'text-styles' | 'layer-styles' | 'animation-styles'
-
-const COMPOSITION_STYLE_CONFIG: Record<CompositionStyleType, { prop: string; themeKey: string }> = {
-  'text-styles': { prop: 'textStyle', themeKey: 'textStyles' },
-  'layer-styles': { prop: 'layerStyle', themeKey: 'layerStyles' },
-  'animation-styles': { prop: 'animationStyle', themeKey: 'animationStyles' },
-}
-
-type CompositionStyleSpec<T extends CompositionStyleType> = T extends 'text-styles'
-  ? TextStyleSpec
-  : T extends 'layer-styles'
-    ? LayerStyleSpec
-    : AnimationStyleSpec
-
-export function generateCompositionStyleSpec<T extends CompositionStyleType>(
-  type: T,
-  theme: Record<string, any> | undefined,
-): CompositionStyleSpec<T> {
-  const { prop, themeKey } = COMPOSITION_STYLE_CONFIG[type]
-  const styles = collectCompositionStyles(theme?.[themeKey] ?? {})
+export function generateMixinsSpec(theme: Record<string, any> | undefined): MixinSpec {
+  const styles = collectCompositionStyles(theme?.['mixins'] ?? {})
 
   const data = styles.map((style) => ({
     name: style.name,
     description: style.description,
-    functionExamples: [`css({ ${formatProps({ [prop]: style.name })} })`],
+    functionExamples: [`css({ ${formatProps({ mixin: style.name })} })`],
   }))
 
-  return { type, data } as CompositionStyleSpec<T>
+  return { type: 'mixins', data }
 }

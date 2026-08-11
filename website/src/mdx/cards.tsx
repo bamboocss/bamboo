@@ -35,7 +35,7 @@ export const Card = (props: Props) => {
         {icon}
         <span>
           <div className={flex({ direction: 'column', gap: '1' })}>
-            <span className={css({ textStyle: 'lg', fontWeight: 'semibold' })}>
+            <span className={css({ mixin: 'lg', fontWeight: 'semibold' })}>
               <span className={flex({ align: 'center', gap: '8px' })}>
                 {title}
                 {animatedArrow}

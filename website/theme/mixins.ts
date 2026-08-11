@@ -1,6 +1,6 @@
-import { defineTextStyles } from '@bamboocss/dev'
+import { defineMixins } from '@bamboocss/dev'
 
-export const textStyles = defineTextStyles({
+export const mixins = defineMixins({
   bamboo: {
     h1: {
       value: {
@@ -29,6 +29,13 @@ export const textStyles = defineTextStyles({
         lineHeight: '1.2',
         letterSpacing: 'tight',
       },
+    },
+  },
+
+  offShadow: {
+    value: {
+      border: '3px solid var(--shadow-color, black)',
+      boxShadow: '4px 4px 0px 0px var(--shadow-color, black)',
     },
   },
 })

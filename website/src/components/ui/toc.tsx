@@ -215,7 +215,7 @@ const tocRecipe = sva({
     title: {
       // Matches the entries' 12px inset so the heading lines up with them off the rail.
       ps: '3',
-      textStyle: 'sm',
+      mixin: 'sm',
       fontWeight: 'medium',
       letterSpacing: 'tight',
       mb: '3',
@@ -231,7 +231,7 @@ const tocRecipe = sva({
       ms: '-1px',
       borderInlineStartWidth: '2px',
       borderColor: 'transparent',
-      textStyle: 'sm',
+      mixin: 'sm',
       color: 'fg.subtle',
       py: '1.5',
       transitionProperty: 'color, border-color',

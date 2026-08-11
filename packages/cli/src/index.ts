@@ -1,13 +1,12 @@
 import { BambooError } from '@bamboocss/shared'
 import type {
-  AnimationStyles,
   CompositionStyles,
   Config,
   CssKeyframes,
   GlobalFontface,
   GlobalStyleObject,
   HooksApiInterface,
-  LayerStyles,
+  Mixins,
   BambooPlugin,
   Parts,
   PatternConfig,
@@ -20,7 +19,6 @@ import type {
   SlotRecipeConfig,
   SlotRecipeVariantRecord,
   SystemStyleObject,
-  TextStyles,
   ThemeVariant,
   Tokens,
 } from '@bamboocss/types'
@@ -118,11 +116,7 @@ function createProxy<T>(): ProxyValue<T> {
 export const defineTokens = /* @__PURE__ */ createProxy<Tokens>()
 export const defineSemanticTokens = /* @__PURE__ */ createProxy<SemanticTokens>()
 
-export function defineTextStyles(definition: CompositionStyles['textStyles']) {
-  return definition
-}
-
-export function defineLayerStyles(definition: CompositionStyles['layerStyles']) {
+export function defineMixins(definition: CompositionStyles['mixins']) {
   return definition
 }
 
@@ -130,18 +124,13 @@ export function defineStyles(definition: SystemStyleObject) {
   return definition
 }
 
-export function defineAnimationStyles(definition: CompositionStyles['animationStyles']) {
-  return definition
-}
-
 export type {
-  AnimationStyles,
   CompositionStyles,
   Config,
   CssKeyframes,
   GlobalStyleObject,
   HooksApiInterface,
-  LayerStyles,
+  Mixins,
   PatternConfig,
   PatternProperties,
   Preset,
@@ -152,6 +141,5 @@ export type {
   SlotRecipeConfig,
   SlotRecipeVariantRecord,
   SystemStyleObject,
-  TextStyles,
   Tokens,
 }

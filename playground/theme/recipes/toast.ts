@@ -40,10 +40,10 @@ export const toast = defineRecipe({
     },
     title: {
       fontWeight: 'semibold',
-      textStyle: 'sm',
+      mixin: 'sm',
     },
     description: {
-      textStyle: 'sm',
+      mixin: 'sm',
     },
     icon: {
       '&[data-type="success"]': {

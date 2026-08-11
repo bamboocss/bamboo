@@ -285,13 +285,7 @@ export class Context {
   patternHelpers = createPatternFns((path, fallback) => this.tokens.view.getVar(path) ?? fallback)
 
   setupCompositions = (theme: Theme): void => {
-    const { textStyles, layerStyles, animationStyles } = theme
-
-    const compositions = compact({
-      textStyle: textStyles,
-      layerStyle: layerStyles,
-      animationStyle: animationStyles,
-    })
+    const compositions = compact({ mixin: theme.mixins })
 
     const stylesheetCtx = {
       ...this.baseSheetContext,

@@ -1,4 +1,4 @@
-import type { TextStyles, Tokens } from '@bamboocss/types'
+import type { Mixins, Tokens } from '@bamboocss/types'
 
 export const fontSizes: Tokens['fontSizes'] = {
   '2xs': { value: '0.5rem' },
@@ -83,7 +83,7 @@ export const fonts: Tokens['fonts'] = {
   },
 }
 
-export const textStyles: TextStyles = {
+export const mixins: Mixins = {
   xs: {
     value: {
       fontSize: '0.75rem',

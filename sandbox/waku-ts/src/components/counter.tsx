@@ -27,7 +27,7 @@ export const Counter = () => {
           bg: 'black',
           px: '2',
           py: '0.5',
-          textStyle: 'sm',
+          mixin: 'sm',
           color: 'white',
         })}
       >

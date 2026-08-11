@@ -68,7 +68,7 @@ export const navbarRecipe = defineRecipe({
       marginEnd: 'auto',
     },
     menuLink: {
-      textStyle: 'sm',
+      mixin: 'sm',
       display: 'flex',
       gap: '1',
     },
@@ -79,7 +79,7 @@ export const navbarRecipe = defineRecipe({
       p: '0.5',
     },
     navLink: {
-      textStyle: 'sm',
+      mixin: 'sm',
       position: 'relative',
       ml: '-2',
       display: 'none',

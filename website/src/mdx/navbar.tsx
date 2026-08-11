@@ -17,7 +17,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect } from 'react'
 
 const classes = {
-  link: css({ textStyle: 'sm' }),
+  link: css({ mixin: 'sm' }),
   active: css({
     fontWeight: 'medium',
   }),

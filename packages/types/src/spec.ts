@@ -5,9 +5,7 @@ export type SpecType =
   | 'conditions'
   | 'keyframes'
   | 'semantic-tokens'
-  | 'text-styles'
-  | 'layer-styles'
-  | 'animation-styles'
+  | 'mixins'
   | 'color-palette'
   | 'themes'
 
@@ -103,34 +101,14 @@ export interface KeyframeSpec {
   data: KeyframeSpecDefinition[]
 }
 
-export interface TextStyleSpecDefinition extends Examples {
+export interface MixinSpecDefinition extends Examples {
   name: string
   description?: string
 }
 
-export interface TextStyleSpec {
-  type: 'text-styles'
-  data: TextStyleSpecDefinition[]
-}
-
-export interface LayerStyleSpecDefinition extends Examples {
-  name: string
-  description?: string
-}
-
-export interface LayerStyleSpec {
-  type: 'layer-styles'
-  data: LayerStyleSpecDefinition[]
-}
-
-export interface AnimationStyleSpecDefinition extends Examples {
-  name: string
-  description?: string
-}
-
-export interface AnimationStyleSpec {
-  type: 'animation-styles'
-  data: AnimationStyleSpecDefinition[]
+export interface MixinSpec {
+  type: 'mixins'
+  data: MixinSpecDefinition[]
 }
 
 export interface ColorPaletteSpec {
@@ -173,9 +151,7 @@ export type SpecFile =
   | PatternSpec
   | ConditionSpec
   | KeyframeSpec
-  | TextStyleSpec
-  | LayerStyleSpec
-  | AnimationStyleSpec
+  | MixinSpec
   | ColorPaletteSpec
   | ThemesSpec
 
@@ -186,9 +162,7 @@ export interface SpecTypeMap {
   patterns: PatternSpec
   conditions: ConditionSpec
   keyframes: KeyframeSpec
-  'text-styles': TextStyleSpec
-  'layer-styles': LayerStyleSpec
-  'animation-styles': AnimationStyleSpec
+  mixins: MixinSpec
   'color-palette': ColorPaletteSpec
   themes: ThemesSpec
 }

@@ -128,9 +128,7 @@ export const docsNavigation: NavItem = {
       items: [
         { title: 'Tokens', url: 'tokens' },
         { title: 'Token Usage', url: 'usage' },
-        { title: 'Text Styles', url: 'text-styles' },
-        { title: 'Layer Styles', url: 'layer-styles' },
-        { title: 'Animation Styles', url: 'animation-styles' },
+        { title: 'Mixins', url: 'mixins' },
         { title: 'Spec', url: 'spec', tag: 'new' },
       ],
     },

@@ -121,7 +121,7 @@ export const Preview = memo(function Preview(props: PreviewProps) {
           >
             <div
               className={css({
-                textStyle: 'xs',
+                mixin: 'xs',
                 fontWeight: 'medium',
                 color: { base: 'gray.600', _dark: 'gray.400' },
               })}

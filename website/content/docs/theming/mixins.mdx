@@ -1,0 +1,158 @@
+---
+title: Mixins
+description: Define reusable named bundles of css declarations.
+---
+
+A mixin is a named bundle of declarations you apply by name. It is the shape you reach for when several elements share a
+set of properties that is more than one token and less than a component — typography scales, container treatments,
+animation presets.
+
+## Defining mixins
+
+Mixins are defined in the `mixins` property of the theme.
+
+```js filename="mixins.ts"
+import { defineMixins } from '@bamboocss/dev'
+
+export const mixins = defineMixins({
+  body: {
+    description: 'The body text style - used in paragraphs',
+    value: {
+      fontFamily: 'Inter',
+      fontWeight: '500',
+      fontSize: '16px',
+      lineHeight: '24px',
+      letterSpacing: '0',
+    },
+  },
+  container: {
+    description: 'container styles',
+    value: {
+      background: 'gray.50',
+      border: '2px solid',
+      borderColor: 'gray.500',
+    },
+  },
+  'slide-fade-in': {
+    value: {
+      transformOrigin: 'var(--transform-origin)',
+      animationDuration: 'fast',
+      '&[data-placement^=top]': {
+        animationName: 'slide-from-top, fade-in',
+      },
+      '&[data-placement^=bottom]': {
+        animationName: 'slide-from-bottom, fade-in',
+      },
+    },
+  },
+})
+```
+
+> **Good to know:** The `value` property maps to a style object that will be applied to the element. It takes the same
+> conditions and nested selectors a `css()` call does.
+
+## Update the config
+
+To use the mixins, we need to update the `config` object in the `bamboo.config.ts` file.
+
+```js filename="bamboo.config.ts"
+import { defineConfig } from '@bamboocss/dev'
+import { mixins } from './mixins'
+
+export default defineConfig({
+  theme: {
+    extend: {
+      mixins,
+    },
+  },
+})
+```
+
+This should automatically update the generated theme with the specified `mixins`. If this doesn't happen, you can run
+the `bamboo codegen` command.
+
+## Using mixins
+
+Now we can use the `mixin` property in our components.
+
+```jsx
+import { css } from '../styled-system/css'
+
+function App() {
+  return (
+    <div className={css({ mixin: 'container' })}>
+      <p className={css({ mixin: 'body' })}>This is a paragraph from Bamboo with the body mixin.</p>
+    </div>
+  )
+}
+```
+
+## Nesting mixins
+
+Mixins support nested structures with a special `DEFAULT` key. This allows you to create variants of a mixin while
+having a default fallback.
+
+When you define a `DEFAULT` key within a nested mixin, you can reference the parent key directly to use the default
+value.
+
+```js filename="bamboo.config.ts"
+export default defineConfig({
+  theme: {
+    extend: {
+      mixins: {
+        heading: {
+          DEFAULT: {
+            value: { fontSize: '1.5rem', lineHeight: '1.2' },
+          },
+          h1: {
+            value: { fontSize: '2.5rem', lineHeight: '1.1' },
+          },
+        },
+      },
+    },
+  },
+})
+```
+
+Now you can use the default heading style or specific variants:
+
+```jsx
+import { css } from '../styled-system/css'
+
+function App() {
+  return (
+    <div>
+      <h1 className={css({ mixin: 'heading.h1' })}>Main Title</h1>
+      <h2 className={css({ mixin: 'heading' })}>Uses DEFAULT variant</h2>
+    </div>
+  )
+}
+```
+
+## Best Practices
+
+### Naming conventions
+
+We recommend using the same names your designers use. Common approaches:
+
+- Sized-based naming (`xs`, `sm`, `md`, `lg`, `xl`)
+- Semantic naming that corresponds to html tags in production (`caption`, `paragraph`, `h1`, `h2`)
+- Descriptive naming that explains the intended use (`alert`, `modal-header`, `button-label`)
+
+### Group by what they are for
+
+One flat namespace holds every mixin, so a prefix is what keeps them navigable — `text.body`, `layer.container`,
+`motion.slide-fade-in`. Nesting gives you this for free, and `DEFAULT` gives each group a bare name.
+
+<Callout type="info">
+  This replaces `textStyles`, `layerStyles` and `animationStyles`, and the `textStyle`, `layerStyle` and
+  `animationStyle` properties that applied them. The three ran through one registration and differed only in which css
+  properties the value was allowed to set — a partition that was arbitrary at the edges (`color` was legal in a text
+  style *and* a layer style) and costly in the middle: a bundle wanting a font and a border needed two keys and two
+  applications.
+
+Setting a property that does not exist is still an error. `Mixin` is built on the same property set `css()` uses rather
+than on `SystemStyleObject`, whose index signature would accept a typo — which is what the old allowlists were really
+protecting, and the reason one of them shipped `hypens` for as long as it did.
+
+</Callout>

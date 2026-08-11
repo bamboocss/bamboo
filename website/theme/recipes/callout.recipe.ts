@@ -21,7 +21,7 @@ export const calloutRecipe = defineRecipe({
     },
     icon: {
       userSelect: 'none',
-      textStyle: 'xl',
+      mixin: 'xl',
       pe: '2',
       fontFamily: '"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
     },

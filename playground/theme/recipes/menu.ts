@@ -9,7 +9,7 @@ const itemStyle = {
   cursor: 'pointer',
   display: 'flex',
   fontWeight: 'medium',
-  textStyle: 'sm',
+  mixin: 'sm',
   transitionDuration: 'fast',
   transitionProperty: 'background, color',
   transitionTimingFunction: 'default',
@@ -54,7 +54,7 @@ export const menu = defineRecipe({
     },
     itemGroupLabel: {
       fontWeight: 'semibold',
-      textStyle: 'sm',
+      mixin: 'sm',
     },
     itemGroup: {
       display: 'flex',

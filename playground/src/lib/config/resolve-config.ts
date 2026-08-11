@@ -99,7 +99,7 @@ const playgroundPreset: Preset = {
           background: { base: 'white', _dark: '#262626' },
           borderBottomWidth: '1px',
           borderBottomColor: { base: '#f3f4f6', _dark: '#262626' },
-          textStyle: 'sm',
+          mixin: 'sm',
 
           '& > span': {
             borderRadius: 'full',

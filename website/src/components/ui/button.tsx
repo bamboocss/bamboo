@@ -93,13 +93,13 @@ const buttonRecipe = cva({
         py: '2',
       },
       xs: {
-        textStyle: 'sm',
+        mixin: 'sm',
         gap: '2',
         px: '4',
         py: '2',
       },
       sm: {
-        textStyle: 'lg',
+        mixin: 'lg',
         gap: '3',
         px: '6',
         py: '3',
@@ -108,13 +108,13 @@ const buttonRecipe = cva({
         gap: '3',
         px: '6',
         py: '3',
-        textStyle: { base: 'md', md: 'lg', lg: 'xl' },
+        mixin: { base: 'md', md: 'lg', lg: 'xl' },
       },
       lg: {
         gap: '3',
         px: '6',
         py: '3',
-        textStyle: '2xl',
+        mixin: '2xl',
       },
       xl: {
         gap: '3',

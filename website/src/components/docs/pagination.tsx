@@ -104,7 +104,7 @@ const PagationLink = (props: PagationLinkProps) => {
     >
       {type === 'prev' && <ChevronRightIcon className={css({ transform: 'rotate(180deg)' })} />}
       <div className={css({ textAlign: 'start', minW: '0', flex: '1' })}>
-        <div className={css({ textStyle: 'sm', mb: '1' })}>{item.category}</div>
+        <div className={css({ mixin: 'sm', mb: '1' })}>{item.category}</div>
         <div className={css({ fontWeight: 'medium', color: 'fg', truncate: true })}>{item.title}</div>
       </div>
       {type === 'next' && <ChevronRightIcon />}

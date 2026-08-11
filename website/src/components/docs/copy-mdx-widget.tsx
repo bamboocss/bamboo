@@ -102,7 +102,7 @@ const ActionMenu = (props: { doc: Docs }) => {
                   px: '2',
                   py: '1',
                   minH: '8',
-                  textStyle: 'sm',
+                  mixin: 'sm',
                   fontWeight: 'medium',
                   textDecoration: 'underline',
                   textDecorationColor: 'border',

@@ -3,20 +3,29 @@ import type { SystemStyleObject } from '@bamboocss/types'
 import { describe, expect, test } from 'vitest'
 import { createRuleProcessor } from './fixture'
 
+/**
+ * The extra bundles here go under `extend`, not straight onto `theme.mixins`.
+ *
+ * They used to live under `animationStyles`, a separate key from the fixture's `textStyles`, so
+ * both survived without anyone saying so. One key means a bare `mixins` *replaces* the preset's
+ * — which quietly emptied the `headline` assertions below when these tests were first migrated.
+ */
 function css(styles: SystemStyleObject) {
   return createRuleProcessor({
     theme: {
-      animationStyles: {
-        'scale-fade-in': {
-          value: {
-            transformOrigin: 'var(--transform-origin)',
-            animationName: 'scale-in, fade-in',
+      extend: {
+        mixins: {
+          'scale-fade-in': {
+            value: {
+              transformOrigin: 'var(--transform-origin)',
+              animationName: 'scale-in, fade-in',
+            },
           },
-        },
-        'scale-fade-out': {
-          value: {
-            transformOrigin: 'var(--transform-origin)',
-            animationName: 'scale-out, fade-out',
+          'scale-fade-out': {
+            value: {
+              transformOrigin: 'var(--transform-origin)',
+              animationName: 'scale-out, fade-out',
+            },
           },
         },
       },
@@ -29,10 +38,10 @@ function css(styles: SystemStyleObject) {
 describe('compositions', () => {
   test('should assign composition', () => {
     const ctx = createGeneratorContext()
-    const result = ctx.utility.transform('textStyle', 'headline.h2')
+    const result = ctx.utility.transform('mixin', 'headline.h2')
     expect(result).toMatchInlineSnapshot(`
       {
-        "className": "textStyle_headline.h2",
+        "className": "mixin_headline.h2",
         "layer": "compositions",
         "styles": {
           "@media (width >= 64rem)": {
@@ -44,9 +53,9 @@ describe('compositions', () => {
       }
     `)
 
-    expect(ctx.utility.transform('textStyle', 'headline.h5')).toMatchInlineSnapshot(`
+    expect(ctx.utility.transform('mixin', 'headline.h5')).toMatchInlineSnapshot(`
       {
-        "className": "textStyle_headline.h5",
+        "className": "mixin_headline.h5",
         "layer": "compositions",
         "styles": {},
       }
@@ -54,10 +63,10 @@ describe('compositions', () => {
   })
 
   test('should respect the layer', () => {
-    expect(css({ textStyle: 'headline.h1' })).toMatchInlineSnapshot(`
+    expect(css({ mixin: 'headline.h1' })).toMatchInlineSnapshot(`
       "@layer utilities {
         @layer compositions {
-          .textStyle_headline\\.h1 {
+          .mixin_headline\\.h1 {
             font-size: 2rem;
             font-weight: var(--font-weights-bold);
       }
@@ -65,16 +74,16 @@ describe('compositions', () => {
       }"
     `)
 
-    expect(css({ textStyle: 'headline.h2' })).toMatchInlineSnapshot(`
+    expect(css({ mixin: 'headline.h2' })).toMatchInlineSnapshot(`
       "@layer utilities {
         @layer compositions {
-          .textStyle_headline\\.h2 {
+          .mixin_headline\\.h2 {
             font-size: 1.5rem;
             font-weight: var(--font-weights-bold);
       }
 
           @media (width >= 64rem) {
-            .textStyle_headline\\.h2 {
+            .mixin_headline\\.h2 {
               font-size: 2rem;
       }
       }
@@ -84,10 +93,10 @@ describe('compositions', () => {
   })
 
   test('should resolve DEFAULT', () => {
-    expect(css({ textStyle: 'headline' })).toMatchInlineSnapshot(`
+    expect(css({ mixin: 'headline' })).toMatchInlineSnapshot(`
       "@layer utilities {
         @layer compositions {
-          .textStyle_headline {
+          .mixin_headline {
             font-size: 1.5rem;
             font-weight: var(--font-weights-bold);
       }
@@ -97,10 +106,10 @@ describe('compositions', () => {
   })
 
   test('should resolve animation styles', () => {
-    expect(css({ animationStyle: 'scale-fade-in' })).toMatchInlineSnapshot(`
+    expect(css({ mixin: 'scale-fade-in' })).toMatchInlineSnapshot(`
       "@layer utilities {
         @layer compositions {
-          .animationStyle_scale-fade-in {
+          .mixin_scale-fade-in {
             transform-origin: var(--transform-origin);
             animation-name: scale-in, fade-in;
       }

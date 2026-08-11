@@ -83,7 +83,7 @@ export const GeneratedCss = React.memo(function GeneratedCss({
             <SegmentGroup.ItemText
               className={css({
                 alignSelf: 'center',
-                textStyle: 'sm',
+                mixin: 'sm',
                 fontWeight: 'medium',
                 color: { base: 'text.default', _dark: 'white', _checked: 'black' },
                 transition: 'color 170ms ease-in-out',
