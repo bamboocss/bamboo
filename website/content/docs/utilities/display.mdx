@@ -13,21 +13,26 @@ Bamboo provides utilities and style properties for styling display of an element
 
 ## Hiding Elements
 
-Bamboo provides shortcut properties for hiding elements from and below a specific breakpoint.
-
-### Hide From
-
-```jsx
-<div className={css({ display: 'flex', hideFrom: 'md' })} />
-```
-
-### Hide Below
+Hide an element from a breakpoint up by setting `display` under that breakpoint, and below one by setting it under the
+breakpoint's `Down` range. See [Responsive design](/docs/concepts/responsive-design) for the full set of ranges.
 
 ```jsx
-<div className={css({ display: 'flex', hideBelow: 'md' })} />
+// hidden from md up
+<div className={css({ display: 'flex', md: { display: 'none' } })} />
+
+// hidden below md
+<div className={css({ display: 'flex', mdDown: { display: 'none' } })} />
 ```
 
-| Prop        | CSS Property | Token Category |
-| ----------- | ------------ | -------------- |
-| `hideFrom`  | `display`    | `breakpoints`  |
-| `hideBelow` | `display`    | `breakpoints`  |
+A width the breakpoints do not name is an [arbitrary at-rule](/docs/concepts/conditional-styles#arbitrary-selectors):
+
+```jsx
+<div className={css({ '@media (width < 800px)': { display: 'none' } })} />
+```
+
+<Callout type="info">
+  `hideFrom` and `hideBelow` utilities used to spell the first two of these. They were removed: they said nothing the
+  conditions did not, and the two spellings had already disagreed once at a boundary — `hideBelow` resolved to an
+  inclusive `max-width` for a raw value and to an exclusive range for a breakpoint token, so `hideBelow="800px"` and an
+  `800px` breakpoint behaved differently at exactly 800px.
+</Callout>

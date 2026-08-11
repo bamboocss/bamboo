@@ -55,7 +55,7 @@ export const SearchButton = (props: React.ComponentProps<'button'>) => {
   const key = useCommandOrControl()
   return (
     <>
-      <div className={cx(styles.container, css({ hideBelow: 'sm' }))}>
+      <div className={cx(styles.container, css({ smDown: { display: 'none' } }))}>
         <button spellCheck={false} className={cx(className, styles.input)} {...rest}>
           Search docs...
         </button>
@@ -67,7 +67,7 @@ export const SearchButton = (props: React.ComponentProps<'button'>) => {
         {...rest}
         className={center({
           boxSize: '7',
-          hideFrom: 'sm',
+          sm: { display: 'none' },
           _icon: { boxSize: '5' },
         })}
       >

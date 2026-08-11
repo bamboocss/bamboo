@@ -7949,8 +7949,6 @@ describe('generate property types', () => {
          * @see https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/scroll-padding-inline
          */
       scrollPaddingX?: ConditionalValue<UtilityValues["scrollPaddingInline"] | CssVars | CssProperties["scrollPaddingInline"] | AnyString>
-       hideFrom?: ConditionalValue<UtilityValues["hideFrom"] | CssVars | AnyString>
-       hideBelow?: ConditionalValue<UtilityValues["hideBelow"] | CssVars | AnyString>
        spaceX?: ConditionalValue<UtilityValues["spaceX"] | CssVars | AnyString>
        spaceY?: ConditionalValue<UtilityValues["spaceY"] | CssVars | AnyString>
        focusRing?: ConditionalValue<UtilityValues["focusRing"] | CssVars | AnyString>
@@ -16042,8 +16040,6 @@ describe('generate property types', () => {
          * @see https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/scroll-padding-inline
          */
       scrollPaddingX?: ConditionalValue<WithEscapeHatch<UtilityValues["scrollPaddingInline"] | CssVars>>
-       hideFrom?: ConditionalValue<WithEscapeHatch<UtilityValues["hideFrom"] | CssVars>>
-       hideBelow?: ConditionalValue<WithEscapeHatch<UtilityValues["hideBelow"] | CssVars>>
        spaceX?: ConditionalValue<WithEscapeHatch<UtilityValues["spaceX"] | CssVars>>
        spaceY?: ConditionalValue<WithEscapeHatch<UtilityValues["spaceY"] | CssVars>>
        focusRing?: ConditionalValue<WithEscapeHatch<UtilityValues["focusRing"] | CssVars>>

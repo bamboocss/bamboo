@@ -24,7 +24,7 @@ export const Toolbar = (props: PropsWithChildren) => (
         align: 'center',
         gap: '8px',
         '& > *:not(:last-child):not(:first-child)': {
-          hideBelow: 'md',
+          mdDown: { display: 'none' },
         },
       })}
     >

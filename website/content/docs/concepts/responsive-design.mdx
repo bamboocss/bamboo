@@ -25,8 +25,8 @@ Let's say you want to change the font weight of a text on large screens, you can
 > Range syntax needs Chrome 104+, Safari 16.4+ or Firefox 102+. The
 > [`lightningcss`](/docs/references/config#lightningcss) option lowers these queries against your browserslist targets,
 > which recovers most of that: a plain breakpoint becomes `(min-width: …)` again, but an exclusive upper bound has no
-> older spelling and lowers to `not (min-width: …)`, so `smDown`, `mdOnly` and `hideBelow` still need roughly Chrome 88
-> / Safari 14 / Firefox 64.
+> older spelling and lowers to `not (min-width: …)`, so `smDown`, `mdOnly` and `mdToXl` still need roughly Chrome 88 /
+> Safari 14 / Firefox 64.
 
 > These queries carry no media type, so unlike the `@media screen and …` Bamboo emitted previously, responsive styles
 > now also apply when printing — against the page width. Wrap rules you want to keep off the printed page in an explicit
@@ -152,5 +152,5 @@ export default defineConfig({
 
 ### Hiding elements by breakpoint
 
-If you need to limit the visibility of an element to any breakpoint, Bamboo provides
-[display utilities](/docs/utilities/display) to help you achieve this.
+Set `display` under the range you want it hidden in — `md: { display: 'none' }` from `md` up, `mdDown` below it. See
+[Display](/docs/utilities/display#hiding-elements) for the worked forms.

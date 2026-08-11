@@ -6,14 +6,16 @@ import { Utility } from '../src/utility'
 const { tokens, semanticTokens } = fixturePreset.theme
 
 describe('Utility', () => {
-  test('should resolve hideFrom and hideBelow', () => {
+  // A utility valued by `breakpoints` gets one entry per breakpoint, and its transform is
+  // handed the breakpoint name as `raw` so it can build a condition from it.
+  test('should expand a breakpoint-valued utility through its transform', () => {
     const utility = new Utility({
       tokens: new TokenDictionary({
         breakpoints: { sm: '640px', md: '768px', lg: '1024px', xl: '1280px' },
       }).init(),
       config: {
-        hideFrom: {
-          className: 'hide',
+        fromWidth: {
+          className: 'from',
           values: 'breakpoints',
           transform(value, { raw }) {
             return {
@@ -24,8 +26,8 @@ describe('Utility', () => {
           },
         },
 
-        hideBelow: {
-          className: 'show',
+        belowWidth: {
+          className: 'below',
           values: 'breakpoints',
           transform(value, { raw }) {
             return {
@@ -40,55 +42,55 @@ describe('Utility', () => {
 
     expect(utility.classNames).toMatchInlineSnapshot(`
       Map {
-        "(hideFrom = sm)" => "hide_sm",
-        "(hideFrom = md)" => "hide_md",
-        "(hideFrom = lg)" => "hide_lg",
-        "(hideFrom = xl)" => "hide_xl",
-        "(hideBelow = sm)" => "show_sm",
-        "(hideBelow = md)" => "show_md",
-        "(hideBelow = lg)" => "show_lg",
-        "(hideBelow = xl)" => "show_xl",
+        "(fromWidth = sm)" => "from_sm",
+        "(fromWidth = md)" => "from_md",
+        "(fromWidth = lg)" => "from_lg",
+        "(fromWidth = xl)" => "from_xl",
+        "(belowWidth = sm)" => "below_sm",
+        "(belowWidth = md)" => "below_md",
+        "(belowWidth = lg)" => "below_lg",
+        "(belowWidth = xl)" => "below_xl",
       }
     `)
 
     expect(utility.styles).toMatchInlineSnapshot(`
       Map {
-        "(hideFrom = sm)" => {
+        "(fromWidth = sm)" => {
           "@breakpoint sm": {
             "display": "none",
           },
         },
-        "(hideFrom = md)" => {
+        "(fromWidth = md)" => {
           "@breakpoint md": {
             "display": "none",
           },
         },
-        "(hideFrom = lg)" => {
+        "(fromWidth = lg)" => {
           "@breakpoint lg": {
             "display": "none",
           },
         },
-        "(hideFrom = xl)" => {
+        "(fromWidth = xl)" => {
           "@breakpoint xl": {
             "display": "none",
           },
         },
-        "(hideBelow = sm)" => {
+        "(belowWidth = sm)" => {
           "@breakpoint smDown": {
             "display": "none",
           },
         },
-        "(hideBelow = md)" => {
+        "(belowWidth = md)" => {
           "@breakpoint mdDown": {
             "display": "none",
           },
         },
-        "(hideBelow = lg)" => {
+        "(belowWidth = lg)" => {
           "@breakpoint lgDown": {
             "display": "none",
           },
         },
-        "(hideBelow = xl)" => {
+        "(belowWidth = xl)" => {
           "@breakpoint xlDown": {
             "display": "none",
           },

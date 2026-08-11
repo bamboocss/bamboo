@@ -647,25 +647,23 @@ describe('atomic / with direct nesting', () => {
     `)
   })
 
-  test('responsive helpers', () => {
-    expect(
-      css({
-        hideFrom: 'sm',
-      }),
-    ).toMatchInlineSnapshot(`
+  // These were the `hideFrom` / `hideBelow` utilities, which said nothing the breakpoint
+  // conditions did not. The media queries below are the ones those utilities emitted.
+  test('hiding by breakpoint', () => {
+    expect(css({ sm: { display: 'none' } })).toMatchInlineSnapshot(`
       "@layer utilities {
         @media (width >= 40rem) {
-          .hide_sm {
+          .sm\\:d_none {
             display: none;
       }
       }
       }"
     `)
 
-    expect(css({ hideBelow: 'lg' })).toMatchInlineSnapshot(`
+    expect(css({ lgDown: { display: 'none' } })).toMatchInlineSnapshot(`
       "@layer utilities {
         @media (width < 64rem) {
-          .show_lg {
+          .lgDown\\:d_none {
             display: none;
       }
       }
