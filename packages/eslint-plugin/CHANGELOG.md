@@ -1,5 +1,19 @@
 # @bamboocss/eslint-plugin
 
+## 1.34.0
+
+### Patch Changes
+
+- Updated dependencies [c49ab36]
+- Updated dependencies [c527ea7]
+- Updated dependencies [10bf63d]
+- Updated dependencies [c49ab36]
+- Updated dependencies [c49ab36]
+- Updated dependencies [c527ea7]
+  - @bamboocss/shared@1.34.0
+  - @bamboocss/generator@1.34.0
+  - @bamboocss/config@1.34.0
+
 ## 1.33.0
 
 ### Patch Changes
