@@ -209,8 +209,14 @@ export function parseSelectors(selector: string): string[] {
 }
 
 const parentSelectorRegex = /&/g
-const descendantSelectorRegex = /[ +>|~]/g
-const surroundedRegex = /&.*&/g
+// Deliberately not global, unlike the one above. `.test()` on a `/g` regex resumes from
+// `lastIndex` and advances it on a match, so the same argument answered `true` then `false`
+// on alternating calls — and the branch below picked `:is(parent)` or a bare parent by call
+// count rather than by its arguments. Those two are not the same rule: `.a .b:hover .a .b`
+// matches a different element set than `:is(.a .b):hover :is(.a .b)`. `parentSelectorRegex`
+// keeps its flag because `.replace()` has to reach every `&`, and it resets `lastIndex`.
+const descendantSelectorRegex = /[ +>|~]/
+const surroundedRegex = /&.*&/
 
 /**
  * Returns selectors resolved from parent selectors and nested selectors.

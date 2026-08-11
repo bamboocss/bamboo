@@ -30,4 +30,25 @@ describe('stringify', () => {
       "
     `)
   })
+
+  /**
+   * A parent carrying a combinator, nested under a selector that mentions `&` twice, is the one
+   * shape that reaches the `:is(...)` branch in `getResolvedSelectors`. The two regexes deciding
+   * it were global, and `.test()` advances `lastIndex` on a match — so the branch was taken on
+   * the first call and skipped on the next, from the same input. Repeating the call is the whole
+   * point of this test: one call passes either way.
+   */
+  test('a combinator parent resolves the same on every call', () => {
+    const styles = () => ({ '.a .b': { '&:hover &': { color: 'red' } } })
+
+    const outputs = Array.from({ length: 4 }, () => stringify(styles()))
+
+    expect(new Set(outputs).size).toBe(1)
+    // `:is()` rather than a bare parent: `.a .b:hover .a .b` selects a different element set.
+    expect(outputs[0]).toMatchInlineSnapshot(`
+      ":is(.a .b):hover :is(.a .b) {color: red;
+      }
+      "
+    `)
+  })
 })

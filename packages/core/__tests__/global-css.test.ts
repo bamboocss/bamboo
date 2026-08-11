@@ -1626,7 +1626,7 @@ describe('Global css', () => {
           margin: var(--spacing-0);
       }
 
-        :is(body > p) ~ :is(body > p),body > ul ~ body > ul {
+        :is(body > p) ~ :is(body > p),:is(body > ul) ~ :is(body > ul) {
           margin-top: var(--spacing-10);
       }
 
