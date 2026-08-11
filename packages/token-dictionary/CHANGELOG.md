@@ -1,5 +1,125 @@
 # @bamboocss/token-dictionary
 
+## 1.31.0
+
+### Minor Changes
+
+- 9fdce28: One way to reference a token from a string: `token(colors.red.300)`. The curly form is gone.
+
+  ```ts
+  // before — both worked, and meant the same thing
+  css({ color: '{colors.red.300}' })
+  css({ color: 'token(colors.red.300)' })
+
+  // after
+  css({ color: 'token(colors.red.300)' })
+  ```
+
+  The same everywhere a reference can appear: theme and semantic token values, conditions, media queries, style values.
+
+  `token()` was kept rather than `{…}` because it is the readable one — it reads as what it is, it can be searched for,
+  and it is already the name of the javascript api that does the same job. Keeping braces would have left the concept
+  with two names, one of which is punctuation.
+
+  It also had a hole that made the choice easy: in a theme or semantic token value, `token(colors.red.300)` was never
+  expanded at all. It landed in the emitted stylesheet as literal text — invalid css, no warning. That is fixed. The
+  fallback form in a theme value, `token(colors.red.300, blue)`, is still not expanded; that is unchanged by this
+  release and remains a known gap.
+
+  **Upgrading.** A curly reference left behind does not fail loudly. In a style value the declaration is dropped; in a
+  theme value the literal text is emitted. Nothing warns, and config validation cannot report it either, since it is no
+  longer a reference to check. Search your config and styles for `{` followed by a token path.
+
+  Emitted css does not change. What changes is that a class name derived from a value containing a reference now spells
+  it `token(…)`, since class names encode the value as authored. Verified byte-identical on two real projects, one of
+  them a theme with 39 references.
+
+  Token pruning had to be taught the difference between the two things now spelled `token(`. The gate that decides
+  whether javascript can reach a token is a text scan, and a reference inside a css value —
+  `css({ border: '1px solid token(colors.red.300)' })` — is not javascript reaching a token. Reading it as one turned
+  pruning off wholesale, which measured 3.2x the stylesheet on a sandbox: 246 colour declarations where 11 were used. A
+  `token(` that survives blanking every string literal is a call; one that does not was written inside a string.
+
+  Config validation understands the new spelling too. It carries its own copy of the reference regex, because it is the
+  thing that reports a missing or circular reference — a spelling only the dictionary understood would have been silence
+  rather than an error.
+
+  The fallback form is otherwise unchanged: `token(spacing.4, 4)` still means "this token, or this literal if there is
+  no such token", which is how the `bleed`, `divider` and `container` patterns accept either a token name or a raw css
+  value.
+
+- 678bdee: Remove `token(path, fallback)`. A token is referenced one way: `token(path)`.
+
+  The fallback bundled two unrelated behaviours under one spelling — "resolve this, or use the literal if it names no
+  token", answered at build time, and "emit `var(--x, fallback)`", answered by the browser. The call site could not say
+  which it was getting, and the build-time half silently masked a typo'd path, which is the same reason the `fallback`
+  argument was removed from `token.value()`.
+
+  **Patterns resolve tokens directly now.** `PatternHelpers` gains `token(path, fallback)`:
+
+  ```ts
+  // before — deferred into a string for the css pipeline to parse later
+  const val = isCssUnit(v) ? v : `token(spacing.${v}, ${v})`
+
+  // after — answered where it can be answered
+  const val = isCssUnit(v) ? v : token(`spacing.${v}`, v)
+  ```
+
+  Same semantics: `spacer({ size: '4' })` resolves to `var(--spacing-4)`, `spacer({ size: 'auto' })` to `auto`. The
+  build, the extractor and the browser answer identically — the browser through the generated tokens artifact, so it
+  cannot disagree with the build about a variable's name.
+
+  **What this buys.** `expand-token-references.ts` was a 180-line character-state parser, and every line of it existed
+  for the fallback and its nesting. It is now **22 lines and one regex**. That also closes a live bug for free:
+  `token(path)` in a theme or semantic token value was never expanded — it landed in the stylesheet as literal text,
+  with no warning — because the parser's shape forced a reference regex that could not see it.
+
+  **Breaking.** A retired form now fails rather than emitting text: in a token value the build stops and names the token
+  and its replacement; in a style value it throws where it is used.
+
+  `spacer`, `grid` and `bleed` emit `var(--spacing-4)` where they emitted `token(spacing.4, 4)`, so their declarations
+  lose a now-redundant css fallback and the class names derived from those values change. Apps not using those three
+  patterns are byte-identical — verified on an example app.
+
+  Cost: a pattern module now imports the generated tokens artifact, shared with any other `token()` use in the app.
+
+### Patch Changes
+
+- a72eb09: Fail on the retired curly token reference instead of emitting it.
+
+  ```
+  1 token value(s) use the retired curly reference syntax:
+
+  - `theme.semanticTokens.colors.fg`: `{colors.red.300}` → `token(colors.red.300)`
+  ```
+
+  Removing the syntax left it failing in the two ways hardest to notice: in a style value the declaration was dropped,
+  and in a token value the text was emitted into the stylesheet as-is. Neither reported itself, and neither is valid css
+  — so the previous release said "search for it when upgrading", which is not a diagnostic.
+
+  It is safe to throw rather than warn because the spelling was never available for anything else. Until it was removed,
+  `{…}` in a value was consumed unconditionally — braces stripped, an unresolved path emitted bare — so no literal
+  `{a.b}` could have survived to mean itself. There is no legitimate use to break, which is what separates this from a
+  strict-mode opinion.
+
+  Token values are checked ahead of `validation`, and throw even under `validation: 'none'`: that opts out of opinions
+  about a config that will still build, and this is not one. Every occurrence is collected first, so a config is fixed
+  in one pass rather than one token at a time.
+
+  Style values throw where they are used, through the one hook every value already passes. A brace that is not a
+  reference is left alone — whitespace, quotes and `:` are excluded, so a `content` string holding json-ish text is not
+  mistaken for one.
+
+- Updated dependencies [8fb87ac]
+- Updated dependencies [8fb87ac]
+- Updated dependencies [cd5954c]
+- Updated dependencies [9c32b00]
+- Updated dependencies [678bdee]
+- Updated dependencies [774048b]
+  - @bamboocss/types@1.31.0
+  - @bamboocss/logger@1.31.0
+  - @bamboocss/shared@1.31.0
+
 ## 1.30.1
 
 ### Patch Changes

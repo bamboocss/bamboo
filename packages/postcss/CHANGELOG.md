@@ -1,5 +1,15 @@
 # @bamboocss/postcss
 
+## 1.31.0
+
+### Patch Changes
+
+- Updated dependencies [8fb87ac]
+- Updated dependencies [8fb87ac]
+- Updated dependencies [cd5954c]
+- Updated dependencies [9fdce28]
+  - @bamboocss/node@1.31.0
+
 ## 1.30.1
 
 ### Patch Changes
