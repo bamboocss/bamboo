@@ -141,6 +141,66 @@ describe('failOnUnfolded', () => {
   }, 60_000)
 
   /**
+   * What the asymmetry between the two kinds of recipe costs, which is the question a design
+   * system actually asks of this option.
+   *
+   * `config-recipe-parity` pins what the fold *does* with a config recipe and why. This pins
+   * what follows from it: a wrapper taking its variants from props is the shape a design system
+   * has by definition — the variants are its public API — and for a config recipe that call does
+   * not lower, so the import it leaves keeps the engine and the gate fails. The same recipe
+   * written inline passes, because `cva` calls lower even when the selection is dynamic.
+   *
+   * So the two are mutually exclusive, and the only way to the gate is moving the recipe out of
+   * the config and into source. That is worth a test rather than only a doc line, because
+   * nothing about it is visible from either side on its own.
+   */
+  describe('a wrapper whose variants arrive as props', () => {
+    test('fails for a config recipe, which cannot lower a runtime selection', async () => {
+      const end = await run(
+        `import { cx } from 'styled-system/css'
+import { button } from 'styled-system/recipes'
+export const B = (props) => {
+  const [variantProps, rest] = button.splitVariantProps(props)
+  return <button className={cx(button(variantProps), rest.className)} />
+}
+`,
+        'src/strict-config-recipe-wrapper.tsx',
+        true,
+      )
+
+      expect(end).toThrow(/could not be folded/)
+      expect(end).toThrow(/runtime-binding/)
+    }, 60_000)
+
+    test('passes for the same recipe written inline', async () => {
+      const end = await run(
+        `import { cva, cx } from 'styled-system/css'
+const button = cva({ base: { color: 'red.300' }, variants: { visual: { solid: { bg: 'blue.300' } } } })
+export const B = (props) => {
+  const [variantProps, rest] = button.splitVariantProps(props)
+  return <button className={cx(button(variantProps), rest.className)} />
+}
+`,
+        'src/strict-inline-recipe-wrapper.tsx',
+        true,
+      )
+
+      expect(end).not.toThrow()
+    }, 60_000)
+
+    /** Unaffected: a config recipe call whose selection resolves folds like anything else. */
+    test('passes for a config recipe call the build can resolve', async () => {
+      const end = await run(
+        `import { button } from 'styled-system/recipes'\nexport const cls = button({ visual: 'solid' })\n`,
+        'src/strict-config-recipe-static.tsx',
+        true,
+      )
+
+      expect(end).not.toThrow()
+    }, 60_000)
+  })
+
+  /**
    * The ledger only holds calls something recognised, so a guarantee built on it is worth
    * what the recogniser is — and these are the shapes nothing recognises. Each folds nothing,
    * reports nothing, and keeps the module live; before this they passed `failOnUnfolded` outright.

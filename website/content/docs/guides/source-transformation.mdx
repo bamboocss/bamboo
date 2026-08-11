@@ -63,8 +63,9 @@ css({ color: 'red.300', padding: '2' }, { color: 'blue.500' })
 // ✅ pattern calls
 flex({ direction: 'column', gap: '4', align: 'center' })
 
-// ✅ config recipe calls, default and compound variants included
+// ✅ config recipe calls, default and compound variants included — when the selection resolves
 buttonStyle({ size: 'sm' })
+buttonStyle(variantProps) // ❌ a runtime selection does not lower; see below
 
 // ✅ inline recipe calls — `const badge = cva({ … })` — resolved or not
 badge({ tone: 'info' }) // → a literal
@@ -405,6 +406,28 @@ Three things stop a name resolving that way: a namespace import (`import * as s`
 export, and a recipe outside the project's `include`, which is never parsed and so has no rules to fold against. Two
 `export *`s carrying the same name are ambiguous and resolve to neither.
 
+### Config recipes, and a runtime selection
+
+Everything above is about **inline** recipes. A _config_ recipe – declared in `theme.recipes` and imported from
+`styled-system/recipes` – folds when the build can resolve the selection, and does not lower when it cannot:
+
+```ts
+buttonStyle({ size: 'sm' }) // ✅ → "button button--size_sm", named from the recipe's `className`
+buttonStyle(variantProps) // ❌ reported as `dynamic`, left for the runtime
+```
+
+The asymmetry is deliberate, and it comes from the two runtimes resolving a selection differently. `cva` reads a variant
+value as a **key**, so a conditional value finds no entry and names no class – which is exactly what `cvaPick` does, so
+lowering an inline recipe reproduces its runtime. A config recipe routes its selection through `createCss`, which
+_expands_ a conditional into one class per condition:
+
+```ts
+buttonStyle({ size: { base: 'sm', md: 'lg' } }) // responsive, documented, and type-permitted
+```
+
+For a **dynamic** axis the build cannot know which of the two kinds of value will arrive, so a scalar lookup would
+silently drop every class a responsive variant produces. It declines rather than risk that.
+
 ## `failOnUnfolded`
 
 A coverage percentage cannot tell you whether you won anything. The fold's real prize is not the per-call CPU it saves –
@@ -431,6 +454,36 @@ them with `staticCss` — or set `failOnUnfolded: false` to accept the runtime.
 `cssLeaf("c_", "color", tone)` call, so it reports no skip at all – but `cssLeaf` falls back to the full engine for a
 value that is not a scalar, such as a condition object, and the build cannot prove your `tone` never is one. So it
 imports the engine, and the bundle keeps it.
+
+### Config recipes cannot pass it
+
+A config recipe whose variants arrive at runtime cannot pass `failOnUnfolded` – and that is the shape a design system
+takes, because its variants are the component's public API and so are props by definition:
+
+```tsx
+const [variantProps, rest] = buttonStyle.splitVariantProps(props)
+return <button className={cx(buttonStyle(variantProps), rest.className)} />
+```
+
+That call does not lower, [for the reason above](#config-recipes-and-a-runtime-selection), and the `buttonStyle` import
+it leaves behind keeps `styled-system/css` in the bundle.
+
+Writing the same recipe **inline** does pass. A `cva`/`sva` definition is reported as `not-foldable`, which the gate
+accepts on purpose: it keeps the much smaller recipe runtime rather than the css engine, and its calls lower even when
+the selection is dynamic.
+
+```tsx
+const buttonStyle = cva({ base: { … }, variants: { size: { sm: { … }, lg: { … } } } })
+
+const [variantProps, rest] = buttonStyle.splitVariantProps(props)
+return <button className={cx(buttonStyle(variantProps), rest.className)} /> // → cvaPick, no engine
+```
+
+So the gate does not ask you to give up recipes – it asks you to stop importing the engine, and an inline recipe never
+did. For a design system that wants zero runtime, that makes
+[config recipe versus `cva`](/docs/concepts/recipes#should-i-use-an-inline-or-config-recipe) a decision about the gate
+rather than about where the file lives. A config recipe called with a **resolvable** selection is unaffected, and folds
+like anything else.
 
 ### What it checks beyond the declined calls
 
