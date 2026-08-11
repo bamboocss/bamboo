@@ -34,6 +34,12 @@ const createEngine = (files: Record<string, string>) => {
         join: (...parts: string[]) => parts.join('/'),
         dirname: (file: string) => file.split('/').slice(0, -1).join('/'),
         resolve: (...parts: string[]) => parts.join('/'),
+        // Node's rule, which the sweep leans on: a leading dot is a name, not an extension,
+        // so `.gitignore` comes back extensionless.
+        extname: (file: string) => {
+          const at = file.lastIndexOf('.')
+          return at <= 0 ? '' : file.slice(at)
+        },
       },
     },
   } as any)
@@ -143,7 +149,8 @@ describe('OutputEngine prune', () => {
 
   test('leaves the files codegen does not own', () => {
     // `styles.css` comes from `writeCss` and `package.json` is co-owned, so neither appears
-    // in any artifact list and both would otherwise read as stale on every build.
+    // in any artifact list and both would otherwise read as stale on every build. Codegen
+    // wrote no `.css` or `.json` here, so neither is a kind of file it may remove.
     const { engine, files } = createEngine({
       'out/styles.css': '@layer reset;',
       'out/package.json': '{}',
@@ -157,15 +164,69 @@ describe('OutputEngine prune', () => {
     expect(files['out/package.json']).toBe('{}')
   })
 
-  test('an artifact with no code is not produced, so its file is stale', () => {
-    // `write` skips an artifact whose `code` is undefined. Reading it as produced here would
-    // leave exactly the file that pass declined to write.
-    const { engine, files } = createEngine({ 'out/patterns/stack.mjs': 'stale' })
+  test('keeps a .gitignore inside a generated directory', () => {
+    // Regression. `packages/config/__tests__/samples/**/…-outdir/.gitignore` is committed,
+    // that sample's `prepare` script runs `bamboo codegen`, so `pnpm install` swept it and
+    // CI failed on a deleted tracked file. A dotfile is extensionless and nothing we write
+    // is, which is what makes it safe without naming it.
+    const { engine, files } = createEngine({
+      'out/patterns/.gitignore': '*',
+      'out/patterns/stack.mjs': 'stale',
+    })
 
-    engine.prune([
-      { id: 'patterns' as const, dir: ['out', 'patterns'], files: [{ file: 'stack.mjs', code: undefined }] },
+    const { removed } = engine.prune([patterns('flex')])
+
+    expect(removed).toBe(1)
+    expect(files['out/patterns/.gitignore']).toBe('*')
+    expect(files['out/patterns/stack.mjs']).toBeUndefined()
+  })
+
+  test('only removes the kinds of file it wrote to that directory', () => {
+    // A README beside the generated patterns is not ours to judge, and neither is a
+    // stylesheet: codegen put `.mjs` files here and nothing else.
+    const { engine, files } = createEngine({
+      'out/patterns/README.md': 'hand written',
+      'out/patterns/extra.css': '.a{}',
+      'out/patterns/stack.mjs': 'stale',
+    })
+
+    const { removed } = engine.prune([patterns('flex')])
+
+    expect(removed).toBe(1)
+    expect(files['out/patterns/README.md']).toBe('hand written')
+    expect(files['out/patterns/extra.css']).toBe('.a{}')
+  })
+
+  test('a directory whose artifacts all declined to write is left alone', () => {
+    // No extension was produced, so nothing is eligible — rather than everything being.
+    const { engine, files } = createEngine({ 'out/patterns/stack.mjs': 'kept' })
+
+    const { removed } = engine.prune([
+      { id: 'patterns' as const, dir: ['out', 'patterns'], files: [{ file: 'flex.mjs', code: undefined }] },
     ])
 
+    expect(removed).toBe(0)
+    expect(files['out/patterns/stack.mjs']).toBe('kept')
+  })
+
+  test('an artifact with no code is not produced, so its file is stale', () => {
+    // `write` skips an artifact whose `code` is undefined. Reading it as produced here would
+    // leave exactly the file that pass declined to write. Its sibling still wrote a `.mjs`,
+    // which is what makes the directory eligible at all.
+    const { engine, files } = createEngine({ 'out/patterns/stack.mjs': 'stale' })
+
+    const { removed } = engine.prune([
+      {
+        id: 'patterns' as const,
+        dir: ['out', 'patterns'],
+        files: [
+          { file: 'flex.mjs', code: 'live' },
+          { file: 'stack.mjs', code: undefined },
+        ],
+      },
+    ])
+
+    expect(removed).toBe(1)
     expect(files['out/patterns/stack.mjs']).toBeUndefined()
   })
 })

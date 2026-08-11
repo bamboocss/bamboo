@@ -41,23 +41,47 @@ export class OutputEngine {
    * emitted no css. A stale artifact is worse than a missing one: it answers.
    *
    * Scoped to the directories this call actually wrote to, so a directory bamboo does not
-   * generate into is never read, let alone emptied. Within them the produced file list is
-   * exhaustive by construction — that is what makes the question decidable without keeping
-   * a manifest around, and it is why the caller must only run a *complete* codegen through
-   * here. Subdirectories are left alone; they are swept as themselves when their own
-   * artifacts are written.
+   * generate into is never read, let alone emptied. It is bounded twice over, because the
+   * cost of being wrong here is a deleted file rather than a stale one:
+   *
+   * - only a *complete* codegen may be swept, since a filtered artifact list cannot say what
+   *   a directory should contain. That is the caller's to enforce;
+   * - within a directory, only files carrying an extension this codegen actually wrote
+   *   *there* are eligible. `patterns/` got `.mjs` and `.d.ts` files, so a leftover
+   *   `stack.mjs` is stale; a `.gitignore`, a `README.md` or a `styles.css` is not the kind
+   *   of thing we put there and is none of our business.
+   *
+   * The second bound replaces a list of known exceptions, which was the wrong shape: a
+   * denylist has to name every file anyone might legitimately keep in an output directory,
+   * and the failure mode when it misses one is silent deletion. It missed the `.gitignore`
+   * that ships inside a generated directory, which is committed in this repo's own fixtures.
+   * Reasoning from what we wrote needs no such list.
+   *
+   * Subdirectories are left alone; they are swept as themselves when their own artifacts
+   * are written.
    */
   prune = (artifacts: Array<Artifact | undefined>) => {
     const produced = new Map<string, Set<string>>()
+    /** Per directory, the file extensions this codegen wrote into it. */
+    const kinds = new Map<string, Set<string>>()
 
     for (const artifact of artifacts) {
       if (!artifact) continue
       const dir = this.path.join(...(artifact.dir ?? this.paths.root))
+
       let files = produced.get(dir)
       if (!files) produced.set(dir, (files = new Set()))
+
+      let extensions = kinds.get(dir)
+      if (!extensions) kinds.set(dir, (extensions = new Set()))
+
       // An artifact whose `code` is undefined is not written, so it is not produced —
       // matching `write`, which skips it. Nothing else here may decide that separately.
-      for (const { file, code } of artifact.files) if (code) files.add(file)
+      for (const { file, code } of artifact.files) {
+        if (!code) continue
+        files.add(file)
+        extensions.add(this.path.extname(file))
+      }
     }
 
     let removed = 0
@@ -65,8 +89,16 @@ export class OutputEngine {
     for (const [dir, files] of produced) {
       if (!this.fs.existsSync(dir)) continue
 
+      // An empty set removes nothing, so a directory whose artifacts all declined to write
+      // is left exactly as it stands rather than emptied.
+      const extensions = kinds.get(dir)!
+
       for (const entry of this.fs.readDirSync(dir)) {
-        if (files.has(entry) || this.isNotOurs(dir, entry)) continue
+        if (files.has(entry)) continue
+
+        // `extname` gives `''` for a dotfile, which is what keeps `.gitignore` — nothing we
+        // write is extensionless, so the set can never contain `''`.
+        if (!extensions.has(this.path.extname(entry))) continue
 
         const absPath = this.path.join(dir, entry)
         if (this.fs.isDirSync(absPath)) continue
@@ -81,16 +113,6 @@ export class OutputEngine {
 
     return { removed }
   }
-
-  /**
-   * Files in the output root that codegen does not own, and so cannot call stale.
-   *
-   * `styles.css` is written by `writeCss`/`writeSplitCss` rather than as an artifact, so it
-   * is absent from every artifact list and would be deleted on sight. `package.json` is
-   * co-owned — see `writePackageJson` — and a consumer's edits to it outlive us.
-   */
-  private isNotOurs = (dir: string, entry: string) =>
-    dir === this.path.join(...this.paths.root) && (entry === 'styles.css' || entry === 'package.json')
 
   write = (output: Artifact | undefined) => {
     if (!output) return
