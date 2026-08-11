@@ -5,7 +5,6 @@ import {
   getSlotCompoundVariant,
   isObjectOrArray,
   normalizeStyleObject,
-  toResponsiveObject,
   traverse,
   uniq,
   viewTransitionClassName,
@@ -172,10 +171,7 @@ export class StyleEncoder {
           return
         }
 
-        // { mx: [1, 2, 3] } => { mx: { base: 1, sm: 2, md: 3 } }
-        const value = Array.isArray(rawValue)
-          ? toResponsiveObject(rawValue, this.context.conditions.breakpoints.keys)
-          : rawValue
+        const value = rawValue
 
         prop = key
 
@@ -241,9 +237,8 @@ export class StyleEncoder {
       // build disagree with the runtime about which class this call returns.
       if (value == null) continue
       // The emit path serializes a slot body whole rather than atomizing it, so it never
-      // reaches the normalizing the atomic path does on the way in. Without this a
-      // responsive array stays an array, and `serializeStyles` walks it into `0:`/`1:`
-      // declarations instead of a breakpoint object.
+      // reaches the normalizing the atomic path does on the way in — which is where a
+      // shorthand is renamed to its longhand and a nullish leaf is dropped.
       slots[slot] = normalizeStyleObject(value as StyleResultObject, this.context)
     }
 

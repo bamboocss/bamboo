@@ -64,36 +64,10 @@ describe('atomic / with basic style object', () => {
     `)
   })
 
-  test('should resolve responsive array', () => {
-    expect(css({ width: ['50px', '60px'] })).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .w_50px {
-          width: 50px;
-      }
-
-        @media (width >= 40rem) {
-          .sm\\:w_60px {
-            width: 60px;
-      }
-      }
-      }"
-    `)
-  })
-
-  test('should resolve responsive array with gaps', () => {
-    expect(css({ width: ['50px', null, '60px'] })).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .w_50px {
-          width: 50px;
-      }
-
-        @media (width >= 48rem) {
-          .md\\:w_60px {
-            width: 60px;
-      }
-      }
-      }"
-    `)
+  test('should reject an array, naming the property', () => {
+    // It used to mean one value per breakpoint, which made a font stack written the way CSS
+    // writes one into `Inter` at base and `sans-serif` at `sm`, silently.
+    expect(() => css({ width: ['50px', '60px'] as any })).toThrowError('An array is not a style value: "width".')
   })
 
   test('should work with inner responsive', () => {

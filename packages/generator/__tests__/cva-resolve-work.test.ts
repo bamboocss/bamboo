@@ -140,7 +140,7 @@ describe('cva resolve, work done', () => {
     ['a base and active variants', { display: 'inline-flex' }, { size: 'lg', tone: 'danger' }],
     ['a base and no active variants', { display: 'inline-flex' }, {}],
     ['an undefined key beside a defined one', { display: 'inline-flex', color: undefined }, {}],
-    ['a responsive value', { padding: ['1', '2'] }, { size: 'lg' }],
+    ['a responsive value', { padding: { base: '1', sm: '2' } }, { size: 'lg' }],
     ['a nested condition', { _hover: { color: 'red.300' } }, { tone: 'danger' }],
   ])('the short-circuit returns exactly what the merge did, for %s', (_name, base, props) => {
     const { resolve } = buildResolve({

@@ -103,7 +103,6 @@ export function checkNamingAgreement(ctx: NamingContext): NamingDisagreement | u
     conditions: {
       shift: ctx.conditions.shift,
       finalize: ctx.conditions.finalize,
-      breakpoints: { keys: ctx.conditions.breakpoints.keys },
     },
     utility: {
       prefix: ctx.utility.prefix,

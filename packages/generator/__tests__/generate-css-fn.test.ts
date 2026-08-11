@@ -76,7 +76,6 @@ describe('generate css-fn', () => {
         conditions: {
           shift: sortConditions,
           finalize: finalizeConditions,
-          breakpoints: { keys: ["base","sm","md","lg","xl","2xl"] }
         },
         utility: {
           
@@ -216,7 +215,6 @@ describe('generate css-fn', () => {
         conditions: {
           shift: sortConditions,
           finalize: finalizeConditions,
-          breakpoints: { keys: ["base","sm","md","lg","xl","2xl"] }
         },
         utility: {
           

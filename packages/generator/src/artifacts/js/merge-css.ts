@@ -26,7 +26,7 @@ import { outdent } from 'outdent'
  * beside it offered a footgun under a second name. `cva` imports it from here directly.
  */
 export function generateMergeCssFn(ctx: Context) {
-  const { conditions, utility } = ctx
+  const { utility } = ctx
 
   // Only the properties that declare a shorthand, and only the shorthand names. The class
   // each property maps to belongs to the naming table.
@@ -75,11 +75,9 @@ export function generateMergeCssFn(ctx: Context) {
     `
     }
 
-    // Only what \`normalizeStyleObject\` reads: shorthand resolution, and the breakpoint keys
-    // it needs to turn a responsive array into an object. No class naming, so none of the
-    // engine that does it.
+    // Only what \`normalizeStyleObject\` reads: shorthand resolution. No class naming, so
+    // none of the engine that does it.
     const mergeContext = {
-      conditions: { breakpoints: { keys: ${JSON.stringify(conditions.breakpoints.keys)} } },
       utility: { hasShorthand, resolveShorthand },
     }
 

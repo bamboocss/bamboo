@@ -1,5 +1,5 @@
 import type { ConditionalValue, Nested } from './conditions'
-import type { AtRule, Globals, PropertiesFallback } from './csstype'
+import type { AtRule, Globals, Properties } from './csstype'
 import type { SystemProperties, CssVarProperties } from './style-props'
 
 type String = string & {}
@@ -63,9 +63,9 @@ export interface ModernCssProperties {
     | String
 }
 
-export type CssProperty = keyof PropertiesFallback
+export type CssProperty = keyof Properties
 
-export interface CssProperties extends PropertiesFallback<String | Number>, CssVarProperties, ModernCssProperties {}
+export interface CssProperties extends Properties<String | Number>, CssVarProperties, ModernCssProperties {}
 
 export interface CssKeyframes {
   [name: string]: {

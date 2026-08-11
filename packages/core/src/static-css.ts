@@ -225,6 +225,11 @@ export class StaticCss {
 
       if (isSlot) {
         Object.values(css).forEach((styles) => {
+          // A slot the compound variant does not style has no object to walk. This was
+          // reachable before and typed away by `ConditionalValue`'s array member, which
+          // made the union satisfy `Object.entries`' `ArrayLike` overload.
+          if (!styles || typeof styles !== 'object') return
+
           Object.entries(styles).forEach(([prop, value]) => {
             cssRules.push({ [prop]: value })
           })

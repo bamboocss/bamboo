@@ -38,7 +38,6 @@ export const createCssContext = (ctx: Context) => ({
   conditions: {
     shift: ctx.conditions.shift,
     finalize: ctx.conditions.finalize,
-    breakpoints: { keys: ctx.conditions.breakpoints.keys },
   },
   utility: {
     prefix: ctx.utility.prefix,
@@ -205,7 +204,6 @@ export const createRuntimeRecipe = (ctx: Context): RuntimeRecipe => {
       conditions: {
         shift: ctx.conditions.shift,
         finalize: ctx.conditions.finalize,
-        breakpoints: { keys: ctx.conditions.breakpoints.keys },
       },
       utility: {
         prefix: ctx.utility.prefix,

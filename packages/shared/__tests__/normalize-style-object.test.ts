@@ -12,16 +12,14 @@ const context = {
     toHash: (path: string[], h: (s: string) => string) => h(path.join(':')),
   },
   conditions: {
-    breakpoints: { keys: ['base', 'sm', 'md'] },
     shift: (v: string[]) => v,
     finalize: (v: string[]) => v,
   },
 }
 
 /**
- * Normalizing renames shorthands, expands responsive arrays and drops nullish leaves. An
- * object needing none of the three is returned as it came in, so each of these is a case
- * where that shortcut must not be taken.
+ * Normalizing renames shorthands and drops nullish leaves. An object needing neither is
+ * returned as it came in, so each of these is a case where that shortcut must not be taken.
  */
 describe('normalizeStyleObject', () => {
   test('a flat longhand object comes back unchanged', () => {
@@ -32,13 +30,13 @@ describe('normalizeStyleObject', () => {
     expect(normalizeStyleObject(styles, context)).toBe(styles)
   })
 
-  test('a top-level responsive array is expanded, not returned as it came', () => {
-    // `stop` is handed the container, so an array arriving here becomes a breakpoint object
-    // rather than being walked into. A guard that only inspected values would miss it.
-    expect(normalizeStyleObject(['red', 'blue'] as unknown as Record<string, any>, context)).toEqual({
-      base: 'red',
-      sm: 'blue',
-    })
+  test('a top-level array is rejected, not returned as it came', () => {
+    // `stop` is handed the container, so an array arriving here reaches the predicate whole
+    // rather than being walked into. A guard that only inspected values would miss it, and
+    // the shortcut above would hand the array straight back.
+    expect(() => normalizeStyleObject(['red', 'blue'] as unknown as Record<string, any>, context)).toThrow(
+      'An array is not a style value.',
+    )
   })
 
   test('a shorthand is still renamed', () => {
@@ -48,10 +46,18 @@ describe('normalizeStyleObject', () => {
     })
   })
 
-  test('a responsive array is still expanded', () => {
-    expect(normalizeStyleObject({ color: ['red', 'blue'] }, context)).toEqual({
-      color: { base: 'red', sm: 'blue' },
-    })
+  test('an array under a property is rejected, and the message names the property', () => {
+    // The whole reason this throws rather than passing the array through: a font stack
+    // written the way CSS writes one used to become one value per breakpoint, silently.
+    expect(() => normalizeStyleObject({ fontFamily: ['Inter', 'sans-serif'] }, context)).toThrow(
+      'An array is not a style value: "fontFamily".',
+    )
+  })
+
+  test('the property named is the one holding the array, however deep', () => {
+    expect(() => normalizeStyleObject({ _hover: { color: ['red', 'blue'] } }, context)).toThrow(
+      'An array is not a style value: "_hover.color".',
+    )
   })
 
   test('a nullish leaf is still dropped', () => {

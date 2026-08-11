@@ -363,7 +363,7 @@ cx('fs_lg', active ? 'fw_bold' : 'fw_normal')
 
 Even a value the build cannot see lowers, since the class is the property's prefix plus whatever the value holds, and
 the prefix is known now – `css({ color: tone })` becomes `cssLeaf('c_', 'color', tone)`, which falls back to the engine
-only for a non-scalar such as a responsive array.
+only for a non-scalar such as a condition object.
 
 It also folds pattern calls, config recipe calls, and inline and imported `cva` recipe calls – following named imports
 across files – and splits a partly static call so the half that resolves becomes a literal. CSS output is unchanged –

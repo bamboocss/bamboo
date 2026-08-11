@@ -17,9 +17,9 @@ import { isImportant, sanitize, withoutImportant, withoutSpace } from './importa
  * Three shapes do not reduce to `prefix + value`, and all three return `undefined` so the
  * caller runs `css()` instead:
  *
- * - An array is expanded to a responsive object by `normalizeStyleObject`, so it produces
- *   one class per breakpoint rather than one class.
- * - An object is a condition block, walked into for the same reason.
+ * - An array is not a style value at all, and `normalizeStyleObject` throws saying so. That
+ *   diagnostic names the property, which this cannot, so the array has to reach it.
+ * - An object is a condition block, walked into rather than named.
  * - `null` and `undefined` are skipped by the walk entirely, which is an empty string
  *   rather than a class — that one is answered here, since it needs no `css()` call.
  *

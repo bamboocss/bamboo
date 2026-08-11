@@ -815,15 +815,15 @@ describe('preset patterns', () => {
     `)
   })
 
-  test('responsive array syntax', () => {
+  test('responsive pattern properties', () => {
     const code = `
       import { grid, gridItem } from "styled-system/patterns"
 
       function Button() {
         return (
           <div>
-              <div className={grid({ columns: [2, 3, 4] })}>
-                <div className={gridItem({ colSpan: [1, 2, 3] })}>Click me</div>
+              <div className={grid({ columns: { base: 2, sm: 3, md: 4 } })}>
+                <div className={gridItem({ colSpan: { base: 1, sm: 2, md: 3 } })}>Click me</div>
               </div>
           </div>
         )
@@ -835,11 +835,11 @@ describe('preset patterns', () => {
         {
           "data": [
             {
-              "columns": [
-                2,
-                3,
-                4,
-              ],
+              "columns": {
+                "base": 2,
+                "md": 4,
+                "sm": 3,
+              },
             },
           ],
           "name": "grid",
@@ -848,11 +848,11 @@ describe('preset patterns', () => {
         {
           "data": [
             {
-              "colSpan": [
-                1,
-                2,
-                3,
-              ],
+              "colSpan": {
+                "base": 1,
+                "md": 3,
+                "sm": 2,
+              },
             },
           ],
           "name": "gridItem",

@@ -42,13 +42,13 @@ const skipCases: Array<{ name: string; code: string; reason?: string }> = [
     `,
   },
   {
-    // A bare `color: tone` lowers to the leaf helper now. A responsive array does not:
-    // it expands to one class per breakpoint, which no single prefix describes.
-    name: 'runtime variable in a responsive array',
+    // A bare `color: tone` lowers to the leaf helper now. A condition object does not: it
+    // names one class per condition, which no single prefix describes.
+    name: 'runtime variable in a condition object',
     reason: 'dynamic',
     code: `
       import { css } from 'styled-system/css'
-      export const make = (tone, other) => css({ color: [tone, other] })
+      export const make = (tone, other) => css({ color: { base: tone, md: other } })
     `,
   },
   {
@@ -87,11 +87,11 @@ const skipCases: Array<{ name: string; code: string; reason?: string }> = [
     `,
   },
   {
-    name: 'value from a function call in a responsive array',
+    name: 'value from a function call in a condition object',
     reason: 'dynamic',
     code: `
       import { css } from 'styled-system/css'
-      export const make = (n) => css({ padding: [compute(n), '2'] })
+      export const make = (n) => css({ padding: { base: compute(n), md: '2' } })
     `,
   },
   {
@@ -129,14 +129,14 @@ describe('mixed modules', () => {
     const code = `
       import { css } from 'styled-system/css'
       export const fixed = css({ color: 'red.300' })
-      export const dynamic = (tone, other) => css({ color: [tone, other] })
+      export const dynamic = (tone, other) => css({ color: { base: tone, md: other } })
     `
 
     const result = fold(code)
 
     expect(result.folded).toHaveLength(1)
     expect(result.code).toContain('export const fixed = "c_red.300"')
-    expect(result.code).toContain('export const dynamic = (tone, other) => css({ color: [tone, other] })')
+    expect(result.code).toContain('export const dynamic = (tone, other) => css({ color: { base: tone, md: other } })')
   })
 
   test('css.raw beside a foldable css() does not confuse the fold', () => {

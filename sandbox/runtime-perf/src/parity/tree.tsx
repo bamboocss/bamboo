@@ -38,8 +38,8 @@ export const Tree = ({ tone, rest, flag }: { tone: string; rest: Record<string, 
       <span className={css({ color: 'red600' })}>nested</span>
     </div>
 
-    {/* declines: a responsive array is one class per breakpoint, which no prefix describes */}
-    <div className={css({ padding: ['sm', tone] })}>dynamic</div>
+    {/* declines: a condition object is one class per condition, which no prefix describes */}
+    <div className={css({ padding: { base: 'sm', md: tone } })}>dynamic</div>
 
     {/* partially folds: the static half becomes a literal, the dynamic one is lowered */}
     <div className={css({ padding: 'xs', fontWeight: 'bold', backgroundColor: tone })}>partial call</div>

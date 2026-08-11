@@ -12,7 +12,7 @@ describe('ast parser', () => {
         const testStyle = css({
           bg: "red.300",
           margin: { xs: "0", lg:"40px" },
-          padding: [12, 50]
+          padding: { base: 12, lg: 50 }
         })
      `
 
@@ -105,31 +105,31 @@ describe('ast parser', () => {
                 },
                 "padding" => {
                   "column": 20,
-                  "endColumn": 28,
+                  "endColumn": 40,
                   "endLineNumber": 10,
                   "line": 10,
-                  "node": "ArrayLiteralExpression",
-                  "type": "array",
-                  "value": [
-                    {
-                      "column": 21,
-                      "endColumn": 23,
+                  "node": "ObjectLiteralExpression",
+                  "type": "map",
+                  "value": Map {
+                    "base" => {
+                      "column": 28,
+                      "endColumn": 30,
                       "endLineNumber": 10,
                       "line": 10,
                       "node": "NumericLiteral",
                       "type": "literal",
                       "value": 12,
                     },
-                    {
-                      "column": 25,
-                      "endColumn": 27,
+                    "lg" => {
+                      "column": 36,
+                      "endColumn": 38,
                       "endLineNumber": 10,
                       "line": 10,
                       "node": "NumericLiteral",
                       "type": "literal",
                       "value": 50,
                     },
-                  ],
+                  },
                 },
               },
             },
@@ -140,10 +140,10 @@ describe('ast parser', () => {
                   "lg": "40px",
                   "xs": "0",
                 },
-                "padding": [
-                  12,
-                  50,
-                ],
+                "padding": {
+                  "base": 12,
+                  "lg": 50,
+                },
               },
             ],
             "name": "css",
@@ -165,7 +165,7 @@ describe('ast parser', () => {
         const testStyle = css({
           bg: "red.300",
           margin: { xs: "0", lg:"40px" },
-          padding: [12, 50]
+          padding: { base: 12, lg: 50 }
         })
      `
 
@@ -258,31 +258,31 @@ describe('ast parser', () => {
                 },
                 "padding" => {
                   "column": 20,
-                  "endColumn": 28,
+                  "endColumn": 40,
                   "endLineNumber": 11,
                   "line": 11,
-                  "node": "ArrayLiteralExpression",
-                  "type": "array",
-                  "value": [
-                    {
-                      "column": 21,
-                      "endColumn": 23,
+                  "node": "ObjectLiteralExpression",
+                  "type": "map",
+                  "value": Map {
+                    "base" => {
+                      "column": 28,
+                      "endColumn": 30,
                       "endLineNumber": 11,
                       "line": 11,
                       "node": "NumericLiteral",
                       "type": "literal",
                       "value": 12,
                     },
-                    {
-                      "column": 25,
-                      "endColumn": 27,
+                    "lg" => {
+                      "column": 36,
+                      "endColumn": 38,
                       "endLineNumber": 11,
                       "line": 11,
                       "node": "NumericLiteral",
                       "type": "literal",
                       "value": 50,
                     },
-                  ],
+                  },
                 },
               },
             },
@@ -293,10 +293,10 @@ describe('ast parser', () => {
                   "lg": "40px",
                   "xs": "0",
                 },
-                "padding": [
-                  12,
-                  50,
-                ],
+                "padding": {
+                  "base": 12,
+                  "lg": 50,
+                },
               },
             ],
             "name": "css",
@@ -318,7 +318,7 @@ describe('ast parser', () => {
         const testStyle = nCss({
           bg: "red.300",
           margin: { xs: "0", lg:"40px" },
-          padding: [12, 50]
+          padding: { base: 12, lg: 50 }
         })
      `
 
@@ -411,31 +411,31 @@ describe('ast parser', () => {
                 },
                 "padding" => {
                   "column": 20,
-                  "endColumn": 28,
+                  "endColumn": 40,
                   "endLineNumber": 11,
                   "line": 11,
-                  "node": "ArrayLiteralExpression",
-                  "type": "array",
-                  "value": [
-                    {
-                      "column": 21,
-                      "endColumn": 23,
+                  "node": "ObjectLiteralExpression",
+                  "type": "map",
+                  "value": Map {
+                    "base" => {
+                      "column": 28,
+                      "endColumn": 30,
                       "endLineNumber": 11,
                       "line": 11,
                       "node": "NumericLiteral",
                       "type": "literal",
                       "value": 12,
                     },
-                    {
-                      "column": 25,
-                      "endColumn": 27,
+                    "lg" => {
+                      "column": 36,
+                      "endColumn": 38,
                       "endLineNumber": 11,
                       "line": 11,
                       "node": "NumericLiteral",
                       "type": "literal",
                       "value": 50,
                     },
-                  ],
+                  },
                 },
               },
             },
@@ -446,10 +446,10 @@ describe('ast parser', () => {
                   "lg": "40px",
                   "xs": "0",
                 },
-                "padding": [
-                  12,
-                  50,
-                ],
+                "padding": {
+                  "base": 12,
+                  "lg": 50,
+                },
               },
             ],
             "name": "css",

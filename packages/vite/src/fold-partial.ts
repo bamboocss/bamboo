@@ -888,7 +888,7 @@ const partitionObject = (
     // folded to its `whenTrue` branch: `styles` is a projection that already picked a
     // branch, and `accountsForSource` answers "are the declared keys present", not "is
     // every leaf resolvable". `isStaticBox` is the one that rejects a `conditional` or
-    // `unresolvable` box, including one nested in a responsive array.
+    // `unresolvable` box, including one nested in a condition object.
     if (key in styles && isStatic(valueBox) && isAccounted(value, valueBox)) {
       staticKeys.push(key)
       staticStyles[key] = styles[key]

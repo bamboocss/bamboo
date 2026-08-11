@@ -62,7 +62,7 @@ describe('vite plugin, real build', () => {
     const code = await bundle({ transform: true })
 
     // Still calling `css` at runtime, with the value that made each one decline.
-    expect(code).toContain('padding: ["sm", tone]')
+    expect(code).toContain('padding: { base: "sm", md: tone }')
     expect(code).toContain('...rest')
 
     // And the dynamic pattern call site still calls the pattern.

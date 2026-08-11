@@ -43,13 +43,13 @@ describe('splits a partly static call', () => {
 
   test('an aliased css callee keeps its alias in the runtime half', () => {
     const { fold } = createFoldFixture()
-    // A responsive array rather than a bare value, so a runtime half survives to carry
+    // A condition object rather than a bare value, so a runtime half survives to carry
     // the alias: a scalar would lower to the leaf helper and leave no call to check.
     const result = fold(
-      `import { css as xcss } from 'styled-system/css'\nexport const f = (p) => xcss({ color: 'red.300', padding: ['1', p] })\n`,
+      `import { css as xcss } from 'styled-system/css'\nexport const f = (p) => xcss({ color: 'red.300', padding: { base: '1', md: p } })\n`,
     )
 
-    expect(result.code).toContain(`xcss({ padding: ['1', p] })`)
+    expect(result.code).toContain(`xcss({ padding: { base: '1', md: p } })`)
   })
 
   test('several static properties fold together', () => {
@@ -208,14 +208,14 @@ export const b = (q) => css({ display: 'flex', margin: q })`),
     expect(result.folded[0]!.className).toBe('m_2')
   })
 
-  test('a dynamic element in a responsive array is not dropped', () => {
+  test('a dynamic branch of a condition object is not dropped', () => {
     const { fold } = createFoldFixture()
-    const code = src(`export const f = (p, q) => css({ padding: ['1', p], color: q })`)
+    const code = src(`export const f = (p, q) => css({ padding: { base: '1', md: p }, color: q })`)
 
     // Folding the static half emitted only `p_1`, losing the breakpoint class entirely.
     // The array still travels whole -- it expands to one class per breakpoint, which no
     // single prefix describes -- while the scalar sibling lowers beside it.
-    expect(fold(code).code).toContain(`cx(css({ padding: ['1', p] }), cssLeaf("c_", "color", q))`)
+    expect(fold(code).code).toContain(`cx(css({ padding: { base: '1', md: p } }), cssLeaf("c_", "color", q))`)
   })
 
   test('a base block disqualifies the split', () => {
@@ -730,17 +730,17 @@ describe('finite branches', () => {
     // with nothing dynamic left to interleave with there would be no demotion to test.
     const interleaved = fold(
       src(
-        `export const f = (p, e, m) => css({ bg: 'red.300', padding: ['1', p], color: e ? 'red.300' : 'blue.500', margin: ['1', m] })`,
+        `export const f = (p, e, m) => css({ bg: 'red.300', padding: { base: '1', md: p }, color: e ? 'red.300' : 'blue.500', margin: { base: '1', md: m } })`,
       ),
     )
     expect(interleaved.code).toContain(
-      `cx("bg_red.300", css({ padding: ['1', p], color: e ? 'red.300' : 'blue.500', margin: ['1', m] }))`,
+      `cx("bg_red.300", css({ padding: { base: '1', md: p }, color: e ? 'red.300' : 'blue.500', margin: { base: '1', md: m } }))`,
     )
 
     // Same for a nested split, which must not be lost either.
     const nested = fold(
       src(
-        `export const f = (p, e) => css({ _hover: { bg: 'red.300', padding: p }, color: e ? 'red.300' : 'blue.500', margin: ['1', p] })`,
+        `export const f = (p, e) => css({ _hover: { bg: 'red.300', padding: p }, color: e ? 'red.300' : 'blue.500', margin: { base: '1', md: p } })`,
       ),
     )
     expect(nested.code).toContain('cx("hover:bg_red.300", css({ _hover: { padding: p },')
@@ -802,19 +802,25 @@ describe('finite branches', () => {
     // Responsive arrays for the dynamic values, so they stay in the call rather than
     // lowering -- what is under test is the ternary's position relative to them.
     const after = fold(
-      src(`export const f = (p, e) => css({ padding: ['1', log(p)], color: log(e) ? 'red.300' : 'blue.500' })`),
+      src(
+        `export const f = (p, e) => css({ padding: { base: '1', md: log(p) }, color: log(e) ? 'red.300' : 'blue.500' })`,
+      ),
     )
-    expect(after.code).toContain(`cx(css({ padding: ['1', log(p)] }), log(e) ? "c_red.300" : "c_blue.500")`)
+    expect(after.code).toContain(`cx(css({ padding: { base: '1', md: log(p) } }), log(e) ? "c_red.300" : "c_blue.500")`)
 
     // Written before it, before.
     const before = fold(
-      src(`export const f = (p, e) => css({ color: log(e) ? 'red.300' : 'blue.500', padding: ['1', log(p)] })`),
+      src(
+        `export const f = (p, e) => css({ color: log(e) ? 'red.300' : 'blue.500', padding: { base: '1', md: log(p) } })`,
+      ),
     )
-    expect(before.code).toContain(`cx(log(e) ? "c_red.300" : "c_blue.500", css({ padding: ['1', log(p)] }))`)
+    expect(before.code).toContain(
+      `cx(log(e) ? "c_red.300" : "c_blue.500", css({ padding: { base: '1', md: log(p) } }))`,
+    )
 
     // Interleaved, neither order holds, so the lowering is declined outright.
     const between = src(
-      `export const f = (p, q, e) => css({ padding: ['1', log(p)], color: log(e) ? 'red.300' : 'blue.500', margin: ['1', log(q)] })`,
+      `export const f = (p, q, e) => css({ padding: { base: '1', md: log(p) }, color: log(e) ? 'red.300' : 'blue.500', margin: { base: '1', md: log(q) } })`,
     )
     expect(fold(between).code).toContain(`color: log(e) ? 'red.300' : 'blue.500'`)
   })
@@ -895,8 +901,8 @@ describe('finite branches', () => {
         (e) => ({ margin: '2', _hover: { color: e ? 'red.300' : 'blue.500' } }),
       ],
       [
-        `css({ margin: '2', color: e ? ['red.300', 'blue.500'] : 'green.400' })`,
-        (e) => ({ margin: '2', color: e ? ['red.300', 'blue.500'] : 'green.400' }),
+        `css({ margin: '2', color: e ? { base: 'red.300', md: 'blue.500' } : 'green.400' })`,
+        (e) => ({ margin: '2', color: e ? { base: 'red.300', md: 'blue.500' } : 'green.400' }),
       ],
       [
         `css({ bg: 'red.300', color: e ? 'red.300' : 'blue.500', margin: e ? '1' : '2' })`,
@@ -1141,7 +1147,7 @@ describe('choices the extractor could not decide', () => {
     expect(fold(bound).code).toContain('cx("p_2"')
 
     const reassigned = src(
-      `let m = ['1', '2']\nm = undefined\nexport const f = () => css({ padding: '2', margin: m || '2' })`,
+      `let m = { base: '1', md: '2' }\nm = undefined\nexport const f = () => css({ padding: '2', margin: m || '2' })`,
     )
     expect(fold(reassigned).code).toContain(`m || '2'`)
     expect(fold(reassigned).code).toContain('cx("p_2"')
@@ -1206,8 +1212,8 @@ describe('choices the extractor could not decide', () => {
       // `??` answers with a left that is merely non-nullish, which `||` would not: this
       // is the pair that separates the two rules.
       ['margin', `0 ?? fn()`, 'm_0'],
-      // An object or array written here is truthy, so `||` yields it.
-      ['margin', `['1', '2'] || '2'`, 'm_1 sm:m_2'],
+      // An object written here is truthy, so `||` yields it.
+      ['margin', `{ base: '1', sm: '2' } || '2'`, 'm_1 sm:m_2'],
       ['_hover', `{ color: 'red.300' } || { color: 'blue.500' }`, 'hover:c_red.300'],
       // `&&` with a falsy left yields the left, so the right never has to resolve.
       ['color', `false && fn()`, 'c_false'],

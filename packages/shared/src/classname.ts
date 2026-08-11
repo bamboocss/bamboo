@@ -23,7 +23,6 @@ export interface CreateCssContext {
    * Partial properties from the Condition class
    */
   conditions?: {
-    breakpoints: { keys: string[] }
     shift: (paths: string[]) => string[]
     finalize: (paths: string[]) => string[]
   }
@@ -32,7 +31,6 @@ export interface CreateCssContext {
 const fallbackCondition: NonNullable<CreateCssContext['conditions']> = {
   shift: (v) => v,
   finalize: (v) => v,
-  breakpoints: { keys: [] },
 }
 
 /**

@@ -92,20 +92,17 @@ describe('viewTransition', () => {
   })
 
   /**
-   * A responsive array has to become a breakpoint object before the slot body is
-   * serialized whole. Left as an array it walks into `0:`/`1:` declarations, which is not
-   * CSS at all — and the type permits the array, so nothing upstream would catch it.
+   * A slot body is serialized whole rather than atomized, so it reaches normalization by
+   * its own route. Left unnormalized, an array walks into `0:`/`1:` declarations, which is
+   * not CSS at all — so the rejection has to happen here too, not only on the atomic path.
    */
-  test('expands a responsive array inside a slot', () => {
+  test('rejects an array inside a slot', () => {
     const code = `
     import { viewTransition } from 'styled-system/css'
     const t = viewTransition({ group: { animationDuration: ['0.2s', '0.4s'] } })
     `
 
-    const { css } = parseAndExtract(code)
-    expect(css).toContain('animation-duration: 0.2s')
-    expect(css).toMatch(/@media \(width >= 40rem\)/)
-    expect(css).not.toMatch(/\b0:\s/)
+    expect(() => parseAndExtract(code)).toThrow('An array is not a style value: "animationDuration".')
   })
 
   test('records the call in the parser result', () => {

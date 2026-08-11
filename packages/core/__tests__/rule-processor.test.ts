@@ -256,7 +256,7 @@ describe('rule processor', () => {
       border: '1px solid token(colors.red.100)',
       bg: 'blue.300',
       textStyle: 'headline.h1',
-      w: [1, 2, undefined, null, 3],
+      w: { base: 1, sm: 2, xl: 3 },
       fontSize: {
         base: 'xs',
         sm: 'sm',

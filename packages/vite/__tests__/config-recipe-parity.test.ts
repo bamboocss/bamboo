@@ -65,7 +65,10 @@ describe('a config recipe resolves conditionals a scalar lookup cannot', () => {
    */
   test.each([
     { label: 'a conditional value', props: { visual: { base: 'solid', md: 'outline' } } as Record<string, unknown> },
-    { label: 'a responsive array', props: { visual: ['solid', 'outline'] } as Record<string, unknown> },
+    {
+      label: 'a nested conditional value',
+      props: { visual: { base: 'solid', _hover: 'outline' } } as Record<string, unknown>,
+    },
   ])('$label diverges from a scalar lookup', ({ props }) => {
     const lowered = loweredFor('button')
     if (lowered.kind !== 'expression') throw new Error('expected an expression')

@@ -18,7 +18,7 @@ const css = createCss({
     transform: (prop, value) => ({ className: `${prop}_${withoutSpace(value)}` }),
     toHash: (path) => path.join(':'),
   },
-  conditions: { breakpoints: { keys: ['base', 'sm', 'md'] }, shift: (v) => v, finalize: (v) => v },
+  conditions: { shift: (v) => v, finalize: (v) => v },
 })
 
 /** What the fold resolves at build time: the class for a value that survives untouched. */
@@ -76,10 +76,11 @@ describe('leafClass', () => {
   })
 
   describe('declines what does not reduce to one class', () => {
-    test('an array expands to one class per breakpoint', () => {
+    test('an array is not a style value, and the diagnostic naming the property is css()’s', () => {
       expect(viaLeaf(['red.300', 'blue.500'])).toBeUndefined()
-      // The shape it declined to answer, for contrast.
-      expect(viaCss(['red.300', 'blue.500'])).toBe('color_red.300 sm:color_blue.500')
+      // Why it has to decline rather than answer: the array must reach `css()` to be
+      // rejected there, where the walk knows which property held it.
+      expect(() => viaCss(['red.300', 'blue.500'])).toThrow('An array is not a style value: "color".')
     })
 
     test('an object is a condition block', () => {

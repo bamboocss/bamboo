@@ -88,14 +88,9 @@ const CASES: Array<{ authored: () => unknown; name: string; source: string }> = 
     source: `{ compoundVariants: [{ css: { color: null, padding: '2' }, size: 'sm' }], variants: { size: { sm: { padding: '1' } } } }`,
   },
   {
-    authored: () => ({ base: { padding: ['1', '2'] } }),
-    name: 'a responsive array',
-    source: `{ base: { padding: ['1', '2'] } }`,
-  },
-  {
-    authored: () => ({ base: { padding: ['1', null, '2'] } }),
-    name: 'a responsive array with a hole',
-    source: `{ base: { padding: ['1', null, '2'] } }`,
+    authored: () => ({ base: { padding: { base: '1', sm: '2' } } }),
+    name: 'a conditional value',
+    source: `{ base: { padding: { base: '1', sm: '2' } } }`,
   },
   {
     authored: () => ({ base: { _hover: { _focus: { md: { color: 'red' } } } } }),

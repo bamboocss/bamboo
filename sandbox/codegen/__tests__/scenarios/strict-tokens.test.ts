@@ -155,17 +155,10 @@ describe('css', () => {
     )
   })
 
-  test('responsive array syntax prop', () => {
+  test('responsive value prop', () => {
     assertType(
       css({
-        bg: [
-          'cyan.100',
-          'cyan.200',
-          null,
-          // @ts-expect-error expected from strictTokens: true
-          undefined,
-          'cyan.300',
-        ],
+        bg: { base: 'cyan.100', sm: 'cyan.200', xl: 'cyan.300' },
       }),
     )
   })
@@ -183,7 +176,7 @@ describe('css', () => {
     assertType(css({ '@media screen and (min-width: token(sizes.4xl))': { bg: 'blue.500' } }))
   })
 
-  test('nested condition prop with array syntax', () => {
-    assertType(css({ _hover: { _dark: { bg: ['pink.100', 'pink.200'] } } }))
+  test('nested condition prop with a responsive value', () => {
+    assertType(css({ _hover: { _dark: { bg: { base: 'pink.100', sm: 'pink.200' } } } }))
   })
 })

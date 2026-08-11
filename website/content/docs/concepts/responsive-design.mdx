@@ -62,22 +62,26 @@ Bamboo allows you apply the responsive condition directly to a style property, r
 </span>
 ```
 
-### The Array syntax
+### Why there is no array syntax
 
-Bamboo also accepts arrays as values for responsive styles. Pass the corresponding value for each breakpoint in the
-array. Using our previous code as an example:
+An earlier version also read an array as one value per breakpoint —
+`fontWeight: ['medium', undefined, undefined, 'bold']`. It has been removed, and an array in a style value is now an
+error naming the property it was written on.
 
-```jsx
-<span
-  className={css({
-    fontWeight: ['medium', undefined, undefined, 'bold'],
-  })}
->
-  Text
-</span>
+It was the worse of the two spellings on its own terms: positional, so it needed `undefined` padding to skip a
+breakpoint, and it re-pointed every value if you inserted a breakpoint above them. But the reason it had to go is that
+CSS already writes lists as arrays, so a font stack written the obvious way —
+
+```js
+css({ fontFamily: ['Inter', 'sans-serif'] })
 ```
 
-> We're leaving the corresponding values of the unused breakpoints `md` and `lg` as undefined.
+— quietly compiled to `Inter` at base and `sans-serif` at `sm`. No error, no warning, and nothing in the type to suggest
+it. Write the condition object instead:
+
+```js
+css({ fontWeight: { base: 'medium', lg: 'bold' } })
+```
 
 ### Targeting a breakpoint range
 

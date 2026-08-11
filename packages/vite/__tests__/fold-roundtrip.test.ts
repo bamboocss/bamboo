@@ -16,7 +16,7 @@ const cases: Array<{ name: string; styles: string }> = [
   { name: 'pseudo condition', styles: `{ color: 'red.300', _hover: { color: 'blue.500' } }` },
   { name: 'nested conditions', styles: `{ _hover: { _dark: { color: 'red.300' } } }` },
   { name: 'responsive object', styles: `{ fontSize: { base: 'sm', md: 'lg' } }` },
-  { name: 'responsive array', styles: `{ fontSize: ['sm', 'md', 'lg'] }` },
+  { name: 'responsive object across three breakpoints', styles: `{ fontSize: { base: 'sm', md: 'md', lg: 'lg' } }` },
   { name: 'breakpoint key', styles: `{ md: { color: 'red.300' } }` },
   {
     name: 'conditional value map',

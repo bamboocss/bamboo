@@ -322,7 +322,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
         // A lowered leaf counts too, and this is the shape that would otherwise slip
         // through: `css({ color: tone })` *folds*, to `cssLeaf("c_", "color", tone)`, so it
         // reports no skip at all. But `cssLeaf` falls back to `css({ [prop]: value })` for a
-        // value that is not a scalar -- a responsive array, a condition object -- which the
+        // value that is not a scalar -- a condition object, a nested block -- which the
         // build cannot rule out. So it imports the engine, and the bundle keeps it.
         if (result.code.includes('cssLeaf(')) {
           survivors.push({

@@ -45,10 +45,10 @@ describe('cssLeaf', () => {
     expect(cssLeaf('c_', 'color', null)).toBe('')
   })
 
-  test('a responsive array falls back and still expands', () => {
-    agrees('c_', 'color', ['red.300', 'blue.500'])
-    // Not merely equal to itself: the fallback has to produce both breakpoint classes.
-    expect(cssLeaf('c_', 'color', ['red.300', 'blue.500']).split(' ').length).toBe(2)
+  test('an array falls back, and the fallback is what rejects it', () => {
+    // `cssLeaf` cannot name the property in a diagnostic — it is handed a prefix — so it
+    // declines and lets `css()` throw, which can.
+    expect(() => cssLeaf('c_', 'color', ['red.300', 'blue.500'])).toThrow('An array is not a style value: "color".')
   })
 
   test('a condition object falls back and still nests', () => {

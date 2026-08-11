@@ -10,7 +10,6 @@ const context = {
     toHash: (path: string[], h: (s: string) => string) => h(path.join(':')),
   },
   conditions: {
-    breakpoints: { keys: ['sm', 'md'] },
     shift: (v: string[]) => v,
     finalize: (v: string[]) => v,
   },
@@ -61,26 +60,32 @@ describe('mergeCss discards empty style objects', () => {
   })
 
   /**
-   * The next two need a responsive array to say anything at all.
+   * The next two need a surviving nullish leaf to say anything at all.
    *
    * How many objects survive the predicate decides whether normalization runs: one survivor
-   * is returned untouched, two or more are each normalized, and only normalization expands an
-   * array into a breakpoint object. Asserting on a plain value instead would pass under any
-   * predicate, because an object that wrongly survived would flatten to `{}` and merge to
-   * nothing. Each also uses its own property name, so the memo cannot answer one from the
-   * entry another left behind.
+   * is returned untouched, two or more are each normalized, and only normalization drops a
+   * nullish leaf. Asserting on a plain value instead would pass under any predicate, because
+   * an object that wrongly survived would flatten to `{}` and merge to nothing. Each also
+   * uses its own property names, so the memo cannot answer one from the entry another left
+   * behind.
    */
   test('an inherited value does not count as present', () => {
     const inherited = Object.create({ color: 'blue' }) as Record<string, unknown>
 
-    expect(mergeCss({ padding: ['1px', '2px'] }, inherited)).toEqual({ padding: ['1px', '2px'] })
+    expect(mergeCss({ padding: '1px', paddingTop: null }, inherited)).toEqual({
+      padding: '1px',
+      paddingTop: null,
+    })
   })
 
   test('a non-enumerable own value does not count as present', () => {
     const hidden = {}
     Object.defineProperty(hidden, 'color', { value: 'blue', enumerable: false })
 
-    expect(mergeCss({ margin: ['3px', '4px'] }, hidden)).toEqual({ margin: ['3px', '4px'] })
+    expect(mergeCss({ margin: '3px', marginTop: null }, hidden)).toEqual({
+      margin: '3px',
+      marginTop: null,
+    })
   })
 
   test('a nested condition block counts as present', () => {

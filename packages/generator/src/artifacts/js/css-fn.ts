@@ -2,7 +2,7 @@ import type { Context } from '@bamboocss/core'
 import { outdent } from 'outdent'
 
 export function generateCssFn(ctx: Context) {
-  const { utility, hash, prefix, conditions } = ctx
+  const { utility, hash, prefix } = ctx
 
   const { separator } = utility
 
@@ -83,7 +83,6 @@ export function generateCssFn(ctx: Context) {
       conditions: {
         shift: sortConditions,
         finalize: finalizeConditions,
-        breakpoints: { keys: ${JSON.stringify(conditions.breakpoints.keys)} }
       },
       utility: {
         ${prefix.className ? 'prefix: ' + JSON.stringify(prefix.className) + ',' : ''}

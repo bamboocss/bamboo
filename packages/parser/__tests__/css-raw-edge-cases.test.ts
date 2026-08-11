@@ -161,23 +161,21 @@ describe('css.raw edge cases with spreading', () => {
     `)
   })
 
-  test('handles spreading with array syntax', () => {
+  test('handles spreading inside a condition', () => {
     const code = `
       import { css } from "styled-system/css";
-      
+
       const baseStyles = css.raw({
         color: 'green',
         fontSize: '16px'
       })
-      
+
       const component = css({
         ...baseStyles,
-        _hover: [
-          {
-            ...baseStyles,
-            opacity: 0.8
-          }
-        ]
+        _hover: {
+          ...baseStyles,
+          opacity: 0.8
+        }
       })
     `
 
@@ -198,13 +196,11 @@ describe('css.raw edge cases with spreading', () => {
         {
           "data": [
             {
-              "_hover": [
-                {
-                  "color": "green",
-                  "fontSize": "16px",
-                  "opacity": 0.8,
-                },
-              ],
+              "_hover": {
+                "color": "green",
+                "fontSize": "16px",
+                "opacity": 0.8,
+              },
               "color": "green",
               "fontSize": "16px",
             },

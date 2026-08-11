@@ -13,7 +13,7 @@ const hasOwn = (obj: any | undefined, key: string): obj is Record<string, any> =
 }
 
 export function generateCreateRecipe(ctx: Context) {
-  const { conditions, recipes, prefix, hash, utility } = ctx
+  const { recipes, prefix, hash, utility } = ctx
 
   if (recipes.isEmpty()) return
 
@@ -116,7 +116,6 @@ export function generateCreateRecipe(ctx: Context) {
         conditions: {
           shift: sortConditions,
           finalize: finalizeConditions,
-          breakpoints: { keys: ${JSON.stringify(conditions.breakpoints.keys)} }
         },
         utility: {
           ${prefix.className ? 'prefix: ' + JSON.stringify(prefix.className) + ',' : ''}

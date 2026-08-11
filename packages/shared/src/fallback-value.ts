@@ -5,11 +5,11 @@ const FALLBACK_FN = 'fallback('
  * `stringify`.
  *
  * A style object cannot hold one property twice, and the obvious carrier — an array — is
- * already taken twice over: `normalizeStyleObject` reads an array as responsive values, and
- * `stringify` reads one under a declaration as a comma-separated list, which is how a
- * custom utility returns a font stack. A string is the only shape that survives the walk,
- * the encoder, the memo, `mergeProps` and `lodash.merge` without any of them ascribing a
- * meaning to it, so the candidates travel joined and `stringify` splits them at the end.
+ * already taken: `stringify` reads one under a declaration as a comma-separated list, which
+ * is how a custom utility returns a font stack, and `normalizeStyleObject` rejects one
+ * written as a style value outright. A string is the only shape that survives the walk, the
+ * encoder, the memo, `mergeProps` and `lodash.merge` without any of them ascribing a meaning
+ * to it, so the candidates travel joined and `stringify` splits them at the end.
  *
  * NUL cannot appear in a CSS value, so nothing can collide with it.
  */

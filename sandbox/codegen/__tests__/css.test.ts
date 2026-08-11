@@ -62,8 +62,8 @@ describe('css', () => {
     expect(className).toMatchInlineSnapshot('"sm:bg_purple"')
   })
 
-  test('responsive array syntax prop', () => {
-    const className = css({ bg: ['cyan.100', 'cyan.200', null, undefined, 'cyan.300'] })
+  test('responsive value prop', () => {
+    const className = css({ bg: { base: 'cyan.100', sm: 'cyan.200', xl: 'cyan.300' } })
 
     expect(className).toMatchInlineSnapshot('"bg_cyan.100 sm:bg_cyan.200 xl:bg_cyan.300"')
   })
@@ -80,8 +80,8 @@ describe('css', () => {
     expect(className).toMatchInlineSnapshot('"[@media_screen_and_(min-width:_token(sizes.4xl))]:bg_blue.500"')
   })
 
-  test('nested condition prop with array syntax', () => {
-    const className = css({ _hover: { _dark: { bg: ['pink.100', 'pink.200'] } } })
+  test('nested condition prop with a responsive value', () => {
+    const className = css({ _hover: { _dark: { bg: { base: 'pink.100', sm: 'pink.200' } } } })
 
     expect(className).toMatchInlineSnapshot('"hover:dark:bg_pink.100 hover:dark:sm:bg_pink.200"')
   })
@@ -237,18 +237,16 @@ describe('css.raw', () => {
     `)
   })
 
-  test('responsive array syntax prop', () => {
-    const styles = css.raw({ bg: ['cyan.100', 'cyan.200', null, undefined, 'cyan.300'] })
+  test('responsive value prop', () => {
+    const styles = css.raw({ bg: { base: 'cyan.100', sm: 'cyan.200', xl: 'cyan.300' } })
 
     expect(styles).toMatchInlineSnapshot(`
       {
-        "bg": [
-          "cyan.100",
-          "cyan.200",
-          null,
-          undefined,
-          "cyan.300",
-        ],
+        "bg": {
+          "base": "cyan.100",
+          "sm": "cyan.200",
+          "xl": "cyan.300",
+        },
       }
     `)
   })
@@ -275,17 +273,17 @@ describe('css.raw', () => {
     `)
   })
 
-  test('nested condition prop with array syntax', () => {
-    const styles = css.raw({ _hover: { _dark: { bg: ['pink.100', 'pink.200'] } } })
+  test('nested condition prop with a responsive value', () => {
+    const styles = css.raw({ _hover: { _dark: { bg: { base: 'pink.100', sm: 'pink.200' } } } })
 
     expect(styles).toMatchInlineSnapshot(`
       {
         "_hover": {
           "_dark": {
-            "bg": [
-              "pink.100",
-              "pink.200",
-            ],
+            "bg": {
+              "base": "pink.100",
+              "sm": "pink.200",
+            },
           },
         },
       }
