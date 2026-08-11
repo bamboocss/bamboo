@@ -263,6 +263,7 @@ export class Context {
       shorthands: config.shorthands,
       strictTokens: config.strictTokens,
       keyframes: config.theme?.keyframes,
+      unresolvedToken: config.unresolvedToken,
     })
   }
 

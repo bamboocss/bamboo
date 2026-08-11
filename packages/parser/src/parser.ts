@@ -408,6 +408,10 @@ export function createParser(context: ParserOptions) {
       }
     })
 
+    // After extraction, which is what fills it: `matchFn` only sees a name once a call
+    // expression names it, so asking before the walk would always come back empty.
+    parserResult.deadCalls = file.getDeadCalls()
+
     return parserResult
   }
 }

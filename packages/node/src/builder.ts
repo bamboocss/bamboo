@@ -198,7 +198,8 @@ export class Builder {
       // no-op rebuild would launder a broken build into a green one. No file list to hand it:
       // this branch globbed nothing, and `assertExtracted` only reaches for one when there is
       // a failure to place.
-      return ctx.assertExtracted()
+      ctx.assertExtracted()
+      return ctx.assertNoDeadCalls()
     }
 
     const files = ctx.getFiles()
@@ -213,6 +214,7 @@ export class Builder {
     // being swallowed by the throw. Handed the list this pass walked, so it does not glob
     // a second time to ask which files still exist.
     ctx.assertExtracted(files)
+    ctx.assertNoDeadCalls(files)
   }
 
   isValidRoot = (root: Root) => {

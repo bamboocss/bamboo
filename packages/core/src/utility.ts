@@ -44,6 +44,7 @@ export interface UtilityOptions {
   shorthands?: boolean
   strictTokens?: boolean
   keyframes?: CssKeyframes
+  unresolvedToken?: 'off' | 'warn' | 'error'
 }
 
 export class Utility {
@@ -112,8 +113,15 @@ export class Utility {
 
   strictTokens = false
 
+  /** @see UserConfig.unresolvedToken */
+  unresolvedToken: 'off' | 'warn' | 'error' = 'warn'
+
   constructor(private options: UtilityOptions) {
-    const { tokens, config = {}, separator, prefix, shorthands, strictTokens } = options
+    const { tokens, config = {}, separator, prefix, shorthands, strictTokens, unresolvedToken } = options
+
+    if (unresolvedToken) {
+      this.unresolvedToken = unresolvedToken
+    }
 
     this.tokens = tokens
     this.config = this.normalizeConfig(config)
@@ -660,6 +668,35 @@ export class Utility {
   private warnedTokens = new Set<string>()
 
   /**
+   * Whether a style value is shaped like a token path and names no token.
+   *
+   * The whole of the test, exposed because the build asserts on the *finished sheet* rather
+   * than on the transforms that filled it — see `assertNoUnresolvedTokens`. Keeping one
+   * predicate is what stops the warning and the error disagreeing about the same value.
+   *
+   * Membership rather than "did the resolver hand it back unchanged": for an array of values
+   * the resolver returns the value either way, so identity would report every valid
+   * composition — `mixin: 'headline.h9'` — as a mistake.
+   *
+   * A property with an empty set is left alone. Nothing is enumerated, so every value is a
+   * literal and none of them can be wrong.
+   */
+  isUnresolvedTokenValue = (prop: string, value: string) => {
+    // Cheapest test first: this runs for every value the build transforms, and most of them
+    // have no dot at all.
+    if (!value.includes('.') || !TOKEN_PATH.test(value)) return false
+
+    const known = this.getKnownValues(this.resolveShorthand(prop))
+    return !!known && known.size > 0 && !known.has(value)
+  }
+
+  /** The token category a property draws from, when it draws from exactly one. */
+  getTokenCategory = (prop: string) => {
+    const category = this.configs.get(this.resolveShorthand(prop))?.values
+    return isString(category) ? category : undefined
+  }
+
+  /**
    * Report a value shaped like a token path that resolved to nothing.
    *
    * Every branch of `getPropertyRawValue` ends in `|| value`, so an unknown path is handed
@@ -676,12 +713,11 @@ export class Utility {
    * literal and none of them can be wrong.
    */
   private warnUnresolvedToken = (key: string, value: string) => {
-    // Cheapest test first: this runs for every value the build transforms, and most of them
-    // have no dot at all.
-    if (!value.includes('.') || !TOKEN_PATH.test(value)) return
+    // `off` says nothing, and `error` reports the whole set at the end of the build instead —
+    // warning here as well would print every finding twice and bury the line that failed it.
+    if (this.unresolvedToken !== 'warn') return
 
-    const known = this.getKnownValues(key)
-    if (!known || known.size === 0 || known.has(value)) return
+    if (!this.isUnresolvedTokenValue(key, value)) return
 
     // One report per mistake. `transform` runs once per condition, so a single bad token
     // under `base`, `_hover` and two breakpoints is one typo and four identical warnings.
@@ -689,8 +725,8 @@ export class Utility {
     if (this.warnedTokens.has(id)) return
     this.warnedTokens.add(id)
 
-    const category = this.configs.get(key)?.values
-    const where = isString(category) ? ` Check the path against your \`${category}\` tokens.` : ''
+    const category = this.getTokenCategory(key)
+    const where = category ? ` Check the path against your \`${category}\` tokens.` : ''
     logger.warn(
       'utility',
       `Unknown token \`${value}\` in \`${key}: ${value}\`. It is emitted as written, which the browser will drop.${where} Write \`[${value}]\` if it is meant as a literal.`,

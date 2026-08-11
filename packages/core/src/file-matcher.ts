@@ -21,6 +21,17 @@ interface FileMatcherOptions {
   value: ImportResult[]
 }
 
+/** A call to a name imported from an entrypoint that no longer exports it. */
+export interface DeadImport {
+  /** The name as the entrypoint would have to export it, before any `as` rename. */
+  name: string
+  /** The name the call site used. Equal to `name` unless the import was renamed. */
+  alias: string
+  /** @example '../../styled-system/patterns' */
+  mod: string
+  entrypoint: 'pattern' | 'recipe'
+}
+
 const cssEntrypointFns = new Set(['css', 'cva', 'sva'])
 
 /**
@@ -65,6 +76,39 @@ export class FileMatcher {
   private localRecipes = new Set<string>()
   private patternAliases = new Set<string>()
 
+  /**
+   * Named imports from the pattern or recipe entrypoint that name nothing those entrypoints
+   * export, keyed by the local alias.
+   *
+   * Both entrypoints are generated from the config, so what they export moves when the config
+   * does — a pattern dropped from a preset, a recipe renamed. The import survives that as a
+   * *binding to nothing*: `isValidPattern` declines it, so it never reaches `patternAliases`,
+   * `matchFn` declines every call of it, and the extractor records nothing. The call site is
+   * still there and still asks for a class, and the rules behind it are simply gone.
+   *
+   * That is the shape `assertExtracted` already fails on, so `deadCalls` reports it the same
+   * way rather than leaving it to a diff of selector sets — which is how one removed pattern
+   * took eleven selectors out of a build that printed four ticks and exited 0.
+   *
+   * Candidates, not findings: a name here is only reported once something *calls* it. See
+   * `deadCalls`.
+   */
+  private deadCandidates = new Map<string, DeadImport>()
+
+  /**
+   * The subset of `deadCandidates` a call expression actually named.
+   *
+   * Gated on the call rather than on the import because both entrypoints export types beside
+   * their functions — `FlexProperties` from `patterns`, `ButtonVariantProps` from `recipes` —
+   * and neither is a pattern or a recipe, so an import-only test reports every file that
+   * types a prop. TypeScript lets those be written without the `type` keyword, so the keyword
+   * is not a reliable filter either. A type is never called, which is.
+   *
+   * It also keeps the report to what the client would notice: a binding nobody calls emits no
+   * rules because nothing asked it to, which is not a missing stylesheet.
+   */
+  private deadCalls = new Map<string, DeadImport>()
+
   private propertiesMap = new Map<string, boolean>()
   private functions = new Map<string, Map<string, boolean>>()
   private components = new Map<string, Map<string, boolean>>()
@@ -99,6 +143,8 @@ export class FileMatcher {
       if (this.isValidPattern(result.alias)) {
         this.patternAliases.add(result.alias)
       }
+
+      this.collectDeadCandidate(result)
 
       if (isCssEntrypoint(result.alias)) {
         if (result.name === 'css') {
@@ -143,6 +189,39 @@ export class FileMatcher {
       }
     })
   }
+
+  /**
+   * Record a named import from an entrypoint that does not export it.
+   *
+   * Only the two config-derived entrypoints. The `css` and `tokens` barrels are fixed — their
+   * exports move when bamboo is upgraded, not when a config is edited — and TypeScript already
+   * reports a bad name there against a `.d.ts` that is never out of step with them.
+   *
+   * Namespace imports are skipped: `p.stack()` arrives at `matchFn` as a dotted name resolved
+   * against `namespaces`, where the member is checked against the live pattern list on every
+   * call and there is no binding to be stale.
+   */
+  private collectDeadCandidate(result: ImportResult) {
+    if (result.kind === 'namespace') return
+    if (this.recipeAliases.has(result.alias) || this.patternAliases.has(result.alias)) return
+
+    // `mod` against the entrypoint list the same way `createMatch` does, including the
+    // `importMapValue` a TS path mapping resolved to.
+    const from = (mods: string[]) => mods.some((m) => result.mod.includes(m) || result.importMapValue?.includes(m))
+
+    const entrypoint = from(this.importMap.pattern) ? 'pattern' : from(this.importMap.recipe) ? 'recipe' : undefined
+    if (!entrypoint) return
+
+    this.deadCandidates.set(result.alias, {
+      name: result.name,
+      alias: result.alias,
+      mod: result.mod,
+      entrypoint,
+    })
+  }
+
+  /** Calls this file made to a binding its entrypoint no longer exports. */
+  getDeadCalls = (): DeadImport[] => Array.from(this.deadCalls.values())
 
   private assignProperties() {
     this.context.jsx.nodes.forEach((node) => {
@@ -357,6 +436,11 @@ export class FileMatcher {
 
       return this.functions.has(identifier)
     }
+
+    // Last, and only on the way to declining: a name that matched anything above is live, and
+    // this runs once per name because `matchFn` is memoized per file.
+    const dead = this.deadCandidates.get(fnName)
+    if (dead) this.deadCalls.set(fnName, dead)
 
     return false
   })

@@ -1067,6 +1067,71 @@ stops being enforced. Removals ship in minor versions, so a warning is what an a
 without a person reading it. An _unknown_ key is a different case and is still tolerated — it may be a setting for a
 version you have not installed yet. A removed key can only point backwards.
 
+### unresolvedToken
+
+**Type**: `'off' | 'warn' | 'error'`
+
+**Default**: `warn`
+
+What to do about a style value shaped like a token path that names no token.
+
+- `off` says nothing.
+- `warn` logs each one as it is transformed.
+- `error` fails the build, listing every one it found.
+
+```json
+{
+  "unresolvedToken": "error"
+}
+```
+
+Token resolution falls back to the value it was given, so an unknown path is emitted as written —
+`css({ background: 'accent.default' })` ships as `background: accent.default`. That parses, so the stylesheet is valid
+and no build step objects; the browser drops the declaration at compute time and the style is simply absent. It surfaces
+as "this colour never applied", a long way from the typo that caused it.
+
+The default is `warn` because the test is a **shape**: a dotted value, against the set of values the property
+enumerates. That is right about a mistyped token and cannot be certain about a literal, so escalating it is a choice a
+project makes once it knows its own source is clean. A property that enumerates nothing — `gridTemplateAreas` — is never
+reported, and `[accent.default]` marks a value as literal.
+
+<Callout type="info">
+  Not to be confused with [`prune.unresolvedPath`](#prune), which is about a `token()` **call** whose path the prune
+  scan cannot follow statically — a question about pruning coverage, asked of a token that usually exists. This one is
+  about a token that does not.
+</Callout>
+
+Under `error` the check is asked of the stylesheet being emitted rather than of the calls that built it, so it reports
+exactly what the file about to be written contains. Extraction is additive within a watch process — the rule for a style
+deleted from source stays in the sheet until the process restarts — so a dev server reports a value you have already
+fixed for the same reason it still serves its rule. A production build is a fresh process and sees only what its source
+asked for.
+
+A **binding that does not exist** is not graded here and always fails the build; see below.
+
+### Calls to a binding that does not exist
+
+Not an option — there is no setting under which it is what someone meant.
+
+`styled-system/patterns` and `styled-system/recipes` are generated from your config, so what they export moves when it
+does: a pattern dropped from a preset, a recipe renamed. The import survives that as a binding to nothing. Nothing
+extracts the call, so every rule it would have contributed is absent and the class the component asks for has nothing
+behind it — while the build prints its ticks and exits 0.
+
+```
+error: 1 call(s) name a binding that does not exist:
+
+src/modal.tsx
+  `stack` is not a pattern — `../styled-system/patterns` does not export it.
+```
+
+Reported per **call**, not per import: both entrypoints export types beside their functions — `FlexProperties`,
+`ButtonVariantProps` — and importing one of those is ordinary. A binding nobody calls is left alone too, since nothing
+asked it for a class.
+
+This is the same test [`prune.unresolvedPath`](#prune) and extraction failures already apply, against the third way of
+arriving at the same output: a stylesheet missing rules that a green build did not mention.
+
 ## Other options
 
 ### Plugins

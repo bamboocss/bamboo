@@ -1,4 +1,4 @@
-import type { ParserOptions } from '@bamboocss/core'
+import type { DeadImport, ParserOptions } from '@bamboocss/core'
 import { box } from '@bamboocss/extractor'
 import { BambooError, getOrCreateSet } from '@bamboocss/shared'
 import type { ParserResultInterface, ResultItem } from '@bamboocss/types'
@@ -27,6 +27,16 @@ export class ParserResult implements ParserResultInterface {
    * absent from the element — silently. Only the surprising half is collected; see `setCss`.
    */
   unresolved: UnresolvedStyle[] = []
+
+  /**
+   * Calls to a name the pattern or recipe entrypoint no longer exports.
+   *
+   * Separate from `unresolved`, which grades a call the build *did* see and could only
+   * partly resolve. These it saw and could not resolve at all: the binding is dead, so every
+   * rule the call would have contributed is absent rather than incomplete. Reported by
+   * `assertNoDeadCalls` rather than warned about, for that reason.
+   */
+  deadCalls: DeadImport[] = []
 
   constructor(
     private context: ParserOptions,

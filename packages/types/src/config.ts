@@ -650,6 +650,37 @@ export interface Config
    * @default 'warn'
    */
   validation?: 'off' | 'warn' | 'error'
+
+  /**
+   * What to do about a style value shaped like a token path that resolves to no token.
+   *
+   * - `off` says nothing.
+   * - `warn` logs each one as it is transformed.
+   * - `error` fails the build, listing every one it found.
+   *
+   * Every branch of the resolver ends in `|| value`, so an unknown path is emitted as
+   * written: `background: 'accent.default'` ships as `background: accent.default`. That
+   * parses, so nothing downstream objects and the stylesheet is valid — the browser drops the
+   * declaration at compute time and the style is simply absent. It surfaces as "this colour
+   * never applied", a long way from the typo that caused it, and a build carrying one warns
+   * identically on every run until somebody happens to read the log.
+   *
+   * `warn` is the default because the test is a *shape*: a dotted value against the set of
+   * values the property enumerates. That is right about a mistyped token and cannot be sure
+   * about a literal, so escalating it is a choice a project makes once it knows its own
+   * source is clean. `[accent.default]` marks a value as literal and is never reported.
+   *
+   * Not to be confused with {@link PruneOptions.unresolvedPath}, which is about a `token()`
+   * *call* whose path the prune scan cannot follow statically — a question about pruning
+   * coverage, asked of a token that usually exists. This one is about a token that does not.
+   *
+   * A binding that does not exist is not graded here and always throws: that is read off an
+   * entrypoint's own export list rather than inferred, so there is no setting under which it
+   * is what someone meant.
+   *
+   * @default 'warn'
+   */
+  unresolvedToken?: 'off' | 'warn' | 'error'
 }
 
 export interface Preset extends ExtendableOptions, PresetOptions {

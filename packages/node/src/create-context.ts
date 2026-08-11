@@ -1,4 +1,4 @@
-import type { StyleEncoder, Stylesheet } from '@bamboocss/core'
+import type { DeadImport, StyleEncoder, Stylesheet } from '@bamboocss/core'
 import { checkNamingAgreement, formatNamingDisagreement } from '@bamboocss/core'
 import { Generator } from '@bamboocss/generator'
 import { logger } from '@bamboocss/logger'
@@ -68,6 +68,17 @@ export class BambooContext extends Generator {
    * syntax error.
    */
   parseFailures = new Map<string, unknown>()
+
+  /**
+   * Files that call a binding their entrypoint no longer exports, keyed by path.
+   *
+   * Keyed and scoped exactly like `parseFailures`, and for the same reasons: an incremental
+   * pass that skips an unchanged file does not re-parse it, so the finding has to outlive the
+   * pass that recorded it or a no-op rebuild launders a broken build into a green one — and it
+   * has to be dropped once the file is fixed, deleted, or leaves `include`, or the fix can
+   * never take.
+   */
+  deadCalls = new Map<string, DeadImport[]>()
 
   constructor(conf: LoadConfigResult) {
     super(conf)
@@ -225,6 +236,64 @@ export class BambooContext extends Generator {
     )
   }
 
+  /**
+   * Fail on a call to a binding the pattern or recipe entrypoint no longer exports.
+   *
+   * The same test `assertExtracted` applies, against the other way of arriving at the same
+   * output. There the build could not read the file; here it read it and the call named
+   * nothing, so the extractor recorded no styles and the class the component asks for has no
+   * rule behind it. Both leave a green build and a stylesheet missing rules, which is the one
+   * failure a diff of the output is the only way to notice.
+   *
+   * Not graded by a severity option, unlike an unresolved token path: that one is inferred
+   * from a value's shape and can be wrong about a literal, while this is read off the
+   * entrypoint's own export list. There is no configuration under which calling a binding
+   * that does not exist is what someone meant.
+   *
+   * Scoped like `assertExtracted`, for the reasons given there — a file taken out of
+   * `include` or deleted is a fix, and an entry naming a path that no longer exists would
+   * fail every later build and wedge a dev server.
+   */
+  assertNoDeadCalls = (files?: Iterable<string>) => {
+    if (!this.deadCalls.size) return
+
+    const inScope = new Set(
+      Array.from(files ?? this.getFiles(), (file) => this.runtime.path.abs(this.config.cwd, file)),
+    )
+
+    for (const file of this.deadCalls.keys()) {
+      if (!inScope.has(file)) this.deadCalls.delete(file)
+    }
+
+    if (!this.deadCalls.size) return
+
+    const entrypoint = { pattern: 'pattern', recipe: 'recipe' } as const
+
+    const detail = Array.from(this.deadCalls.entries())
+      .map(([file, calls]) => {
+        const lines = calls.map((call) => {
+          // The imported name when it was renamed, since that is the one the entrypoint would
+          // have to export and the one to search a changelog for.
+          const named = call.alias === call.name ? `\`${call.name}\`` : `\`${call.name}\` (called as \`${call.alias}\`)`
+          return `  ${named} is not a ${entrypoint[call.entrypoint]} — \`${call.mod}\` does not export it.`
+        })
+        return `${this.relative(file)}\n${lines.join('\n')}`
+      })
+      .join('\n\n')
+
+    const count = Array.from(this.deadCalls.values()).reduce((n, calls) => n + calls.length, 0)
+
+    throw new BambooError(
+      'DEAD_IMPORT',
+      `${count} call(s) name a binding that does not exist:\n\n${detail}\n\n` +
+        `Both entrypoints are generated from your config, so what they export moves when it ` +
+        `does — a pattern dropped from a preset, a recipe renamed. The call survives that as a ` +
+        `binding to nothing: nothing extracts it, so every rule it would have contributed is ` +
+        `absent from the stylesheet and the classes their components ask for have nothing ` +
+        `behind them.`,
+    )
+  }
+
   /** A path as the user typed it, when it is under `cwd`. */
   private relative = (file: string) =>
     file.startsWith(this.config.cwd) ? file.slice(this.config.cwd.length + 1) : file
@@ -246,7 +315,15 @@ export class BambooContext extends Generator {
       this.parseFailures.set(file, error)
     }
 
-    if (result) this.reportUnresolvedStyles(result)
+    if (result) {
+      this.reportUnresolvedStyles(result)
+
+      // Set-or-delete on every parse, like `parseFailures` above: a file that no longer calls
+      // a dead binding has fixed it, and an entry that outlived the fix would fail every
+      // later build. Recorded rather than thrown here so one pass names every file.
+      if (result.deadCalls.length) this.deadCalls.set(file, result.deadCalls)
+      else this.deadCalls.delete(file)
+    }
 
     measure()
     return result
@@ -279,6 +356,7 @@ export class BambooContext extends Generator {
     })
 
     this.assertExtracted(files)
+    this.assertNoDeadCalls(files)
 
     return {
       filesWithCss,

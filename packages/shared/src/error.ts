@@ -18,6 +18,8 @@ export type BambooErrorCode =
   | 'NAMING_DISAGREEMENT'
   | 'TOKEN_REFERENCE_UNRESOLVED'
   | 'EXTRACT_FAILED'
+  | 'DEAD_IMPORT'
+  | 'UNRESOLVED_TOKEN'
 
 export class BambooError extends Error {
   readonly code: string

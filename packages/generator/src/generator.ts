@@ -8,7 +8,7 @@ import {
   type Stylesheet,
 } from '@bamboocss/core'
 import { logger } from '@bamboocss/logger'
-import { cssVarRefs, dashCase, isObject, BambooError } from '@bamboocss/shared'
+import { cssVarRefs, dashCase, isObject, withoutImportant, BambooError } from '@bamboocss/shared'
 import type { ArtifactId, CssArtifactType, LoadConfigResult, SpecFile, SpecType, SpecTypeMap } from '@bamboocss/types'
 import { match } from 'ts-pattern'
 import { generateArtifacts } from './artifacts'
@@ -334,7 +334,79 @@ export class Generator extends Context {
       css = this.hooks['cssgen:done']({ artifact: 'styles.css', content: css }) ?? css
     }
 
+    this.assertNoUnresolvedTokens()
+
     return css
+  }
+
+  /**
+   * Fail on a style value shaped like a token path that names no token.
+   *
+   * Only under `unresolvedToken: 'error'` — see that option for why this one is graded and a
+   * dead binding is not.
+   *
+   * Read off the decoded sheet rather than accumulated as `transform` runs, and that is the
+   * load-bearing part. A `Context` outlives rebuilds while the decoder memoizes each atom by
+   * hash, so on the second build of the same source `transform` is never re-entered: an
+   * accumulating record either keeps a finding past the edit that fixed it — wedging a dev
+   * server — or is cleared and then never refilled, which passes a build whose source is
+   * still broken. That second one is the worse failure and is what an earlier version of this
+   * did.
+   *
+   * `decoder.atomic` has neither problem, because it is not a record of what happened — it is
+   * what the sheet is built from, and each result keeps the `prop` and `value` it was written
+   * with. So the question asked is the one that matters: does the stylesheet *being emitted*
+   * contain a declaration the browser will drop.
+   *
+   * Within a watch process that set is cumulative, and so is the css: extraction is additive,
+   * so the rule for a style deleted from source is still in the sheet until the process
+   * restarts. This reports the same way for the same reason — the declaration really is still
+   * in the file being written, and saying otherwise would be a check that disagreed with its
+   * own output. A production build is a fresh process and sees only what its source asked
+   * for.
+   *
+   * Here rather than beside the asserts in `BambooContext` because this is where the sheet
+   * exists: those all run during extraction, before anything has been decoded. Every path
+   * that emits css comes through `getCss`.
+   */
+  assertNoUnresolvedTokens = () => {
+    if (this.config.unresolvedToken !== 'error') return
+
+    const found = new Map<string, { prop: string; value: string; category?: string }>()
+
+    for (const atom of this.decoder.atomic) {
+      const { prop, value } = atom.entry
+      if (typeof value !== 'string' || typeof prop !== 'string') continue
+
+      // The same normalization the decoder applies before handing a value to `transform`, so
+      // `color: red.300!` is judged as `red.300` rather than failing the shape test and
+      // slipping through.
+      const bare = withoutImportant(value)
+      if (!this.utility.isUnresolvedTokenValue(prop, bare)) continue
+
+      // One finding per mistake: the same typo under `base`, `_hover` and two breakpoints is
+      // four atoms and one thing to fix.
+      found.set(`${prop}:${bare}`, { prop, value: bare, category: this.utility.getTokenCategory(prop) })
+    }
+
+    if (!found.size) return
+
+    const detail = Array.from(found.values())
+      .map(({ prop, value, category }) => {
+        const where = category ? ` Check the path against your \`${category}\` tokens.` : ''
+        return `- \`${prop}: ${value}\`.${where}`
+      })
+      .join('\n')
+
+    throw new BambooError(
+      'UNRESOLVED_TOKEN',
+      `${found.size} style value(s) name a token that does not exist:\n\n${detail}\n\n` +
+        `Each is emitted as written, which parses — so the stylesheet is valid and nothing ` +
+        `downstream objects. The browser drops the declaration at compute time and the style is ` +
+        `simply absent from the element, which surfaces as "this never applied" a long way from ` +
+        `the typo that caused it. Write \`[value]\` to mark one as a literal, or set ` +
+        `\`unresolvedToken: 'warn'\` to report these without failing.`,
+    )
   }
 
   /**
