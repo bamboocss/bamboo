@@ -1,31 +1,36 @@
 import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
-  hooks: {
-    // Dynamically add a recipe
-    'config:resolved': async ({ config }) => {
-      const { someRecipe } = await import('./some-recipe')
-      const recipes = config.theme?.recipes
-      if (recipes) {
-        recipes['someRecipe'] = someRecipe
-      }
-    },
-    // Change the hash function
-    'utility:created': ({ configure }) => {
-      configure({
-        toHash: (paths, toHash) => {
-          const stringConds = paths.join(':')
-          const splitConds = stringConds.split('_')
-          const hashConds = splitConds.map(toHash)
-          return hashConds.join('_')
+  plugins: [
+    {
+      name: 'vite-ts-sandbox',
+      hooks: {
+        // Dynamically add a recipe
+        'config:resolved': async ({ config }) => {
+          const { someRecipe } = await import('./some-recipe')
+          const recipes = config.theme?.recipes
+          if (recipes) {
+            recipes['someRecipe'] = someRecipe
+          }
         },
-      })
+        // Change the hash function
+        'utility:created': ({ configure }) => {
+          configure({
+            toHash: (paths, toHash) => {
+              const stringConds = paths.join(':')
+              const splitConds = stringConds.split('_')
+              const hashConds = splitConds.map(toHash)
+              return hashConds.join('_')
+            },
+          })
+        },
+        // Dynamically create a CSS rule
+        'context:created': ({ ctx }) => {
+          ctx.processor.css({ color: 'lime.300' })
+        },
+      },
     },
-    // Dynamically create a CSS rule
-    'context:created': ({ ctx }) => {
-      ctx.processor.css({ color: 'lime.300' })
-    },
-  },
+  ],
   preflight: true,
   include: ['./src/**/*.{tsx,jsx}', './pages/**/*.{jsx,tsx}'],
   exclude: [],

@@ -279,8 +279,8 @@ Bamboo deliberately has one way to write a style, rather than several.
   no equivalent, and `styled-system/jsx` is not generated at all. Style props become a `css()` call, and a recipe
   component becomes an ordinary component that calls the recipe. `jsxFramework`, `jsxFactory` and `jsxStyleProps` are
   gone from the config with them.
-- **There are no JSX pattern components.** `<Stack>`, `<Box>` and the rest are not generated. The pattern _functions_ —
-  `stack()`, `box()`, `hstack()` — are unchanged, and they are what those components wrapped.
+- **There are no JSX pattern components.** `<Stack>`, `<Box>` and the rest are not generated. The pattern _functions_
+  are what those components wrapped — see [patterns](/docs/concepts/patterns) for the set that survives.
 - **There is no template literal syntax.** ``css`color: red` `` is not supported; write the object form.
 
 The result is that a class name in Bamboo always comes from a function call you can see, which is also what makes the

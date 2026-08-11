@@ -228,7 +228,7 @@ export const EXAMPLES = [
     id: 'patterns',
     label: 'Patterns',
     code: outdent`import { cx } from 'styled-system/css';
-    import { flex, square, circle, center } from 'styled-system/patterns';
+    import { flex, center } from 'styled-system/patterns';
     
     export const App = () => {
       return (
@@ -242,9 +242,9 @@ export const EXAMPLES = [
           )}
         >
           <div className={flex({ gap: '6', padding: '1' })}>
-            <div className={square({ size: '11', bg: 'yellow.300' })}>1</div>
-            <div className={square({ size: '11', bg: 'red.300' })}>2</div>
-            <div className={square({ size: '11', bg: 'green.300' })}>3</div>
+            <div className={center({ size: '11', bg: 'yellow.300' })}>1</div>
+            <div className={center({ size: '11', bg: 'red.300' })}>2</div>
+            <div className={center({ size: '11', bg: 'green.300' })}>3</div>
           </div>
     
           <div
@@ -254,9 +254,9 @@ export const EXAMPLES = [
               gap: '4',
             })}
           >
-            <div className={circle({ size: '12', bg: 'blue.300' })}>1</div>
-            <div className={circle({ size: '12', bg: 'orange.300' })}>2</div>
-            <div className={circle({ size: '12', bg: 'violet.300' })}>3</div>
+            <div className={center({ size: '12', borderRadius: 'full', bg: 'blue.300' })}>1</div>
+            <div className={center({ size: '12', borderRadius: 'full', bg: 'orange.300' })}>2</div>
+            <div className={center({ size: '12', borderRadius: 'full', bg: 'violet.300' })}>3</div>
           </div>
         </div>
       );

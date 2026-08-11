@@ -1,5 +1,5 @@
 import { css, cva } from 'styled-system/css'
-import { stack } from 'styled-system/patterns'
+import { flex } from 'styled-system/patterns'
 import { btn } from 'styled-system/recipes'
 import { token } from 'styled-system/tokens'
 
@@ -30,7 +30,7 @@ export const App = () => {
       <div className={notice()}>Styled</div>
       <div className={css({ bg: 'pink', color: 'green' })}>Unstyled + css</div>
       <div className={notice({ size: 'lg' })}>Styled + variants (font-size: 3xl)</div>
-      <div className={stack()}>
+      <div className={flex({ direction: 'column', gap: '8px' })}>
         <a className={css({ mb: '3', paddingEnd: '2' })}>Click me</a>
       </div>
       <div className={css({ color: 'yellow' })}></div>

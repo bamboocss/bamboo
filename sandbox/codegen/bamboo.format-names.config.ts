@@ -24,18 +24,23 @@ export default defineConfig({
 
   // Stitches preset
   separator: '-',
-  hooks: {
-    'tokens:created': ({ configure }) => {
-      configure({
-        formatTokenName: (path) => `$${path.join('-')}`,
-        formatCssVar: (path) => {
-          const variable = dasherize(path.join('-'))
-          return {
-            var: variable,
-            ref: `var(--${variable})`,
-          }
+  plugins: [
+    {
+      name: 'format-names',
+      hooks: {
+        'tokens:created': ({ configure }) => {
+          configure({
+            formatTokenName: (path) => `$${path.join('-')}`,
+            formatCssVar: (path) => {
+              const variable = dasherize(path.join('-'))
+              return {
+                var: variable,
+                ref: `var(--${variable})`,
+              }
+            },
+          })
         },
-      })
+      },
     },
-  },
+  ],
 })

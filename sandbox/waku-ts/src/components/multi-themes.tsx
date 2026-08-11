@@ -1,6 +1,6 @@
 'use client'
 import { css } from '../../styled-system/css/index.js'
-import { hstack } from '../../styled-system/patterns/hstack.js'
+import { flex } from '../../styled-system/patterns/flex.js'
 import { getTheme, injectTheme } from '../../styled-system/themes/index.js'
 
 export const MultiThemes = () => {
@@ -37,7 +37,10 @@ export const MultiThemes = () => {
 
 const ThemeExample = ({ name }: { name?: string }) => {
   return (
-    <div className={hstack({ p: '4', my: '4', border: '1px dashed' })} data-bamboo-theme={name ? name : undefined}>
+    <div
+      className={flex({ align: 'center', gap: '8px', p: '4', my: '4', border: '1px dashed' })}
+      data-bamboo-theme={name ? name : undefined}
+    >
       <span>{name || 'inherit'}:</span>
       <span className={css({ color: 'text' })}>text</span>
       <span className={css({ color: 'body' })}>body</span>

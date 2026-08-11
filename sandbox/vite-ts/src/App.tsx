@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { css, cx } from '../styled-system/css'
-import { circle as circleLike, hstack, stack, vstack } from '../styled-system/patterns'
+import { center as centerLike, flex } from '../styled-system/patterns'
 import { button, someRecipe } from '../styled-system/recipes'
 import { Badge, badge } from './Badge'
 import { AnotherButtonWithRegex, Button, ListedButton } from './Button'
@@ -17,7 +17,7 @@ function App() {
   const [color] = useState('lime.300')
 
   return (
-    <div className={stack({ padding: '40px', align: 'stretch', color: 'red.300' })}>
+    <div className={flex({ direction: 'column', gap: '8px', padding: '40px', align: 'stretch', color: 'red.300' })}>
       <section className={panel}>
         <p className={css({ fontWeight: 'semibold', mb: '2' })}>CSS - Function</p>
         <div className={css({ maxWidth: '840px', marginX: 'auto', textAlign: 'center' })}>
@@ -89,7 +89,8 @@ function App() {
       <section className={css({ padding: '5', borderWidth: '1px' })}>
         <p className={css({ fontWeight: 'semibold', mb: '2' })}>Pattern - Function (nested)</p>
         <div
-          className={stack({
+          className={flex({
+            direction: 'column',
             align: 'center',
             padding: '20px',
             marginBottom: '30px',
@@ -97,8 +98,18 @@ function App() {
             gap: { base: '4', md: '10' },
           })}
         >
-          <div className={circleLike({ size: '40px', bg: 'red.300', fontSize: '1.2em', fontWeight: 'bold' })}>S</div>
-          <div className={hstack({ gap: '40px', debug: true })}>
+          <div
+            className={centerLike({
+              size: '40px',
+              borderRadius: 'full',
+              bg: 'red.300',
+              fontSize: '1.2em',
+              fontWeight: 'bold',
+            })}
+          >
+            S
+          </div>
+          <div className={flex({ align: 'center', gap: '40px', debug: true })}>
             <div className={className}>Element 1</div>
             <div className={css({ color: 'red', fontWeight: 'bold', fontSize: '50px' })}>Element 2</div>
           </div>
@@ -107,17 +118,28 @@ function App() {
 
       <section className={css({ padding: '5', borderWidth: '1px' })}>
         <p className={css({ fontWeight: 'semibold', mb: '2' })}>Pattern - Function</p>
-        <div className={vstack({ justify: 'center', bg: 'red.200', py: '2', mb: '30px', debug: true })}>
+        <div
+          className={flex({
+            direction: 'column',
+            align: 'center',
+            gap: '8px',
+            justify: 'center',
+            bg: 'red.200',
+            py: '2',
+            mb: '30px',
+            debug: true,
+          })}
+        >
           <button className={cx(button({ variant: 'primary', state: 'focused' }), css({ color: 'yellow' }))}>
             Click me
           </button>
           <button>Button 1</button>
           <button>Button 2</button>
-          <div className={circleLike({ size: '10', bg: 'purple', color: 'white' })}>3</div>
+          <div className={centerLike({ size: '10', borderRadius: 'full', bg: 'purple', color: 'white' })}>3</div>
         </div>
       </section>
 
-      <section className={stack({ padding: '5', borderWidth: '1px' })}>
+      <section className={flex({ direction: 'column', gap: '8px', padding: '5', borderWidth: '1px' })}>
         <p className={css({ fontWeight: 'semibold', mb: '2' })}>CVA - Function</p>
         <div className={badge({ status: 'warning' })}>Warning</div>
         <div className={badge({ status: 'success' })}>Warning</div>

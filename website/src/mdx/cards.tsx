@@ -1,5 +1,5 @@
 import { css, cx } from '@/styled-system/css'
-import { grid, hstack, stack } from '@/styled-system/patterns'
+import { flex, grid } from '@/styled-system/patterns'
 import { LuChevronRight } from 'react-icons/lu'
 import { Anchor } from '../components/ui/anchor'
 
@@ -34,9 +34,9 @@ export const Card = (props: Props) => {
         {image || children}
         {icon}
         <span>
-          <div className={stack({ gap: '1' })}>
+          <div className={flex({ direction: 'column', gap: '1' })}>
             <span className={css({ textStyle: 'lg', fontWeight: 'semibold' })}>
-              <span className={hstack()}>
+              <span className={flex({ align: 'center', gap: '8px' })}>
                 {title}
                 {animatedArrow}
               </span>

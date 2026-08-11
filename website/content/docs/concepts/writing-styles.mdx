@@ -297,18 +297,19 @@ objects to be merged as expected in any situation.
 **Pattern Example:**
 
 ```tsx filename="src/components/Button.tsx"
-import { hstack } from '../styled-system/patterns'
+import { flex } from '../styled-system/patterns'
 import { css } from '../styled-system/css'
 
 export const Button = ({ css: cssProp = {}, children }) => {
   // using the flex pattern
-  const hstackProps = hstack.raw({
+  const flexProps = flex.raw({
+    align: 'center',
     border: '1px solid',
     _hover: { color: 'blue.400' },
   })
 
   // merging the styles
-  const className = css(hstackProps, cssProp)
+  const className = css(flexProps, cssProp)
 
   return <button className={className}>{children}</button>
 }

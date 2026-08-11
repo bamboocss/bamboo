@@ -36,140 +36,6 @@ describe('preset patterns', () => {
     `)
   })
 
-  test('stack', () => {
-    const code = `
-      import { stack } from "styled-system/patterns"
-
-      function Button() {
-        return (
-          <div>
-              <div className={stack()}>Click me</div>
-          </div>
-        )
-      }
-     `
-    const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {},
-          ],
-          "name": "stack",
-          "type": "pattern",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .gap_8px {
-          gap: 8px;
-      }
-
-        .d_flex {
-          display: flex;
-      }
-
-        .flex-d_column {
-          flex-direction: column;
-      }
-      }"
-    `)
-  })
-
-  test('vstack', () => {
-    const code = `
-      import { vstack } from "styled-system/patterns"
-
-      function Button() {
-        return (
-          <div>
-              <div className={vstack()}>Click me</div>
-          </div>
-        )
-      }
-     `
-    const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {},
-          ],
-          "name": "vstack",
-          "type": "pattern",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .gap_8px {
-          gap: 8px;
-      }
-
-        .d_flex {
-          display: flex;
-      }
-
-        .ai_center {
-          align-items: center;
-      }
-
-        .flex-d_column {
-          flex-direction: column;
-      }
-      }"
-    `)
-  })
-
-  test('hstack', () => {
-    const code = `
-      import { hstack } from "styled-system/patterns"
-
-      function Button() {
-        return (
-          <div>
-              <div className={hstack()}>Click me</div>
-          </div>
-        )
-      }
-     `
-    const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {},
-          ],
-          "name": "hstack",
-          "type": "pattern",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .gap_8px {
-          gap: 8px;
-      }
-
-        .d_flex {
-          display: flex;
-      }
-
-        .ai_center {
-          align-items: center;
-      }
-
-        .flex-d_row {
-          flex-direction: row;
-      }
-      }"
-    `)
-  })
-
   test('spacer', () => {
     const code = `
       import { spacer } from "styled-system/patterns"
@@ -332,56 +198,6 @@ describe('preset patterns', () => {
     `)
   })
 
-  test('circle', () => {
-    const code = `
-      import { circle } from "styled-system/patterns"
-
-      function Button() {
-        return (
-          <div>
-              <div className={circle()}>Click me</div>
-          </div>
-        )
-      }
-     `
-    const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {},
-          ],
-          "name": "circle",
-          "type": "pattern",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .flex_0_0_auto {
-          flex: 0 0 auto;
-      }
-
-        .bdr_9999px {
-          border-radius: 9999px;
-      }
-
-        .d_flex {
-          display: flex;
-      }
-
-        .ai_center {
-          align-items: center;
-      }
-
-        .jc_center {
-          justify-content: center;
-      }
-      }"
-    `)
-  })
-
   test('float', () => {
     const code = `
       import { float } from "styled-system/patterns"
@@ -514,48 +330,6 @@ describe('preset patterns', () => {
     expect(result.css).toMatchInlineSnapshot('""')
   })
 
-  test('wrap', () => {
-    const code = `
-      import { wrap } from "styled-system/patterns"
-
-      function Button() {
-        return (
-          <div>
-              <div className={wrap()}>Click me</div>
-          </div>
-        )
-      }
-     `
-    const result = parseAndExtract(code)
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {},
-          ],
-          "name": "wrap",
-          "type": "pattern",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .gap_8px {
-          gap: 8px;
-      }
-
-        .d_flex {
-          display: flex;
-      }
-
-        .flex-wrap_wrap {
-          flex-wrap: wrap;
-      }
-      }"
-    `)
-  })
-
   test('container', () => {
     const code = `
       import { container } from "styled-system/patterns"
@@ -656,6 +430,33 @@ describe('preset patterns', () => {
     `)
   })
 
+  /**
+   * `size` is what `square` and `circle` were. It sets both axes and pins `flex`, which is the
+   * part that is not obvious: without it a flex parent shrinks the box back below the size that
+   * was asked for. An unsized `center` must not get that declaration, since it would change how
+   * every existing call lays out — hence both halves asserted here.
+   */
+  test('center - with size', () => {
+    const code = `
+      import { center } from "styled-system/patterns"
+
+      function Button() {
+        return (
+          <div>
+              <div className={center({ size: '12' })}>square</div>
+              <div className={center({ size: '12', borderRadius: 'full' })}>circle</div>
+          </div>
+        )
+      }
+     `
+    const result = parseAndExtract(code)
+
+    expect(result.css).toContain('flex: 0 0 auto')
+    expect(result.css).toContain('width: var(--sizes-12)')
+    expect(result.css).toContain('height: var(--sizes-12)')
+    expect(result.css).toContain('border-radius: var(--radii-full)')
+  })
+
   test('aspectRatio', () => {
     const code = `
       import { aspectRatio } from "styled-system/patterns"
@@ -737,79 +538,6 @@ describe('preset patterns', () => {
 
         .\\[\\&\\>\\*\\]\\:h_100\\%>* {
           height: 100%;
-      }
-      }"
-    `)
-  })
-
-  test('cq', () => {
-    const code = `
-      import { cq } from "styled-system/patterns"
-      import { css } from "styled-system/css"
-
-      function Nav() {
-        return (
-          <nav className={cq({ name: 'sidebar' })}>
-            <div
-              className={css({
-                fontSize: { base: 'lg', '@sidebar/sm': 'md' },
-              })}
-            />
-          </nav>
-        )
-      }
-     `
-    const result = parseAndExtract(code, {
-      theme: {
-        extend: {
-          containerNames: ['sidebar', 'content'],
-        },
-      },
-    })
-    expect(result.json).toMatchInlineSnapshot(`
-      [
-        {
-          "data": [
-            {
-              "name": "sidebar",
-            },
-          ],
-          "name": "cq",
-          "type": "pattern",
-        },
-        {
-          "data": [
-            {
-              "fontSize": {
-                "@sidebar/sm": "md",
-                "base": "lg",
-              },
-            },
-          ],
-          "name": "css",
-          "type": "css",
-        },
-      ]
-    `)
-
-    expect(result.css).toMatchInlineSnapshot(`
-      "@layer utilities {
-        .cq-t_inline-size {
-          container-type: inline-size;
-      }
-
-        .cq-n_sidebar {
-          container-name: sidebar;
-      }
-
-        .fs_lg {
-          font-size: var(--font-sizes-lg);
-      }
-
-        @container sidebar (inline-size >= 24rem) {
-          .\\@sidebar\\/sm\\:fs_md {
-            font-size: var(--font-sizes-md);
-      }
       }
       }"
     `)
@@ -1149,7 +877,7 @@ describe('staticCss', () => {
       staticCss: {
         patterns: {
           // type: 'property'
-          circle: [{ properties: { size: ['sm', 'md', 'lg'] } }],
+          center: [{ properties: { size: ['sm', 'md', 'lg'] } }],
         },
       },
     })
@@ -1162,10 +890,6 @@ describe('staticCss', () => {
       "@layer utilities {
         .flex_0_0_auto {
           flex: 0 0 auto;
-      }
-
-        .bdr_9999px {
-          border-radius: 9999px;
       }
 
         .d_flex {

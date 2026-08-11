@@ -1,5 +1,5 @@
 import { component$ } from '@builder.io/qwik'
-import { hstack } from 'styled-system/patterns'
+import { flex } from 'styled-system/patterns'
 import { useServerTimeLoader } from '~/routes/layout'
 
 export default component$(() => {
@@ -8,7 +8,7 @@ export default component$(() => {
   return (
     <footer>
       <div class="container">
-        <a href="https://www.builder.io/" target="_blank" class={hstack({ color: 'white' })}>
+        <a href="https://www.builder.io/" target="_blank" class={flex({ align: 'center', gap: '8px', color: 'white' })}>
           <span>Made with ♡ by Builder.io</span>
           <span>|</span>
           <span>{serverTime.value.date}</span>

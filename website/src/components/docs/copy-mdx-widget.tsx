@@ -4,7 +4,7 @@ import { Docs } from '.velite'
 import { Button } from '@/components/ui/button'
 import { getPublicUrl } from '@/lib/public-url'
 import { css } from '@/styled-system/css'
-import { flex, hstack } from '@/styled-system/patterns'
+import { flex } from '@/styled-system/patterns'
 import { useClipboard } from '@ark-ui/react/clipboard'
 import { Menu } from '@ark-ui/react/menu'
 import { Portal } from '@ark-ui/react/portal'
@@ -95,7 +95,8 @@ const ActionMenu = (props: { doc: Docs }) => {
                 key={item.label}
                 value={item.label}
                 asChild
-                className={hstack({
+                className={flex({
+                  align: 'center',
                   cursor: 'pointer',
                   gap: '2',
                   px: '2',

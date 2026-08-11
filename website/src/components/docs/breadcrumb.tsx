@@ -1,6 +1,6 @@
 import { ChevronRightIcon } from '@/icons'
 import { css } from '@/styled-system/css'
-import { hstack } from '@/styled-system/patterns'
+import { flex } from '@/styled-system/patterns'
 
 interface Props {
   slug: string
@@ -15,11 +15,13 @@ export const Breadcrumb = ({ slug }: Props) => {
   }))
 
   return (
-    <div className={hstack({ mb: '4', flexWrap: 'wrap', gap: '2' })}>
+    <div className={flex({ align: 'center', mb: '4', flexWrap: 'wrap', gap: '2' })}>
       {breadcrumbs.map((crumb, index) => (
         <div
           key={`${crumb.label}-${index}`}
-          className={hstack({
+          className={flex({
+            align: 'center',
+            gap: '8px',
             textStyle: 'sm',
             fontWeight: 'semibold',
             textTransform: 'uppercase',

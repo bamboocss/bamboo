@@ -2,7 +2,7 @@
 title: Patterns
 description:
   Patterns are layout primitives that can be used to create robust and responsive layouts with ease. Bamboo comes with
-  predefined patterns like stack, hstack, vstack, wrap, etc. Each one is a function that returns a class name.
+  predefined patterns like flex, grid, center, container, etc. Each one is a function that returns a class name.
 ---
 
 Pattern properties can be overridden as needed, just like in the `css` function. To define your own, see
@@ -10,9 +10,10 @@ Pattern properties can be overridden as needed, just like in the `css` function.
 
 ## Predefined Patterns
 
-> Two patterns were removed because each was a second spelling of something the system already had. `box(styles)` had no
-> styles of its own and was exactly `css(styles)`; `visuallyHidden()` was `css({ srOnly: true })`, wrapping a utility.
-> Use the `css` form for both.
+> Patterns are removed whenever one turns out to be a second spelling of something the system already had. `box(styles)`
+> was exactly `css(styles)` and `visuallyHidden()` was `css({ srOnly: true })`; `stack`, `hstack`, `vstack` and `wrap`
+> were [`flex`](#flex) with defaults frozen; `square` and `circle` were [`center`](#center) with a size; and `cq` was
+> `css({ containerType, containerName })`. Each section below says what to write instead.
 
 ### Container
 
@@ -31,95 +32,6 @@ import { container } from '../styled-system/patterns'
 function App() {
   return (
     <div className={container()}>
-      <div>First</div>
-      <div>Second</div>
-      <div>Third</div>
-    </div>
-  )
-}
-```
-
-### Stack
-
-The Stack pattern is a layout primitive that can be used to create a vertical or horizontal stack of elements.
-
-The `stack` function accepts the following properties:
-
-- `direction`: An alias for the css `flex-direction` property. Default is `column`.
-- `gap`: The gap between the elements in the stack.
-- `align`: An alias for the css `align-items` property.
-- `justify`: An alias for the css `justify-content` property.
-
-```tsx
-import { stack } from '../styled-system/patterns'
-
-function App() {
-  return (
-    <div className={stack({ gap: '6', padding: '4' })}>
-      <div>First</div>
-      <div>Second</div>
-      <div>Third</div>
-    </div>
-  )
-}
-```
-
-#### HStack
-
-The HStack pattern lays its children out in a `row` and centers them vertically. It accepts `gap` and `justify` (an
-alias for the css `justify-content` property).
-
-```tsx
-import { hstack } from '../styled-system/patterns'
-
-function App() {
-  return (
-    <div className={hstack({ gap: '6' })}>
-      <div>First</div>
-      <div>Second</div>
-      <div>Third</div>
-    </div>
-  )
-}
-```
-
-#### VStack
-
-The VStack pattern lays its children out in a `column` and centers them horizontally. It accepts `gap` and `justify` (an
-alias for the css `justify-content` property).
-
-```tsx
-import { vstack } from '../styled-system/patterns'
-
-function App() {
-  return (
-    <div className={vstack({ gap: '6' })}>
-      <div>First</div>
-      <div>Second</div>
-      <div>Third</div>
-    </div>
-  )
-}
-```
-
-### Wrap
-
-The Wrap pattern is used to add space between elements and wraps automatically if there isn't enough space.
-
-The `wrap` function accepts the following properties:
-
-- `gap`: The gap between the elements in the stack.
-- `columnGap`: The gap between the elements in the stack horizontally.
-- `rowGap`: The gap between the elements in the stack vertically.
-- `align`: An alias for the css `align-items` property.
-- `justify`: An alias for the css `justify-content` property.
-
-```tsx
-import { wrap } from '../styled-system/patterns'
-
-function App() {
-  return (
-    <div className={wrap({ gap: '6' })}>
       <div>First</div>
       <div>Second</div>
       <div>Third</div>
@@ -165,12 +77,14 @@ The `flex` function accepts the following properties:
 - `grow`: An alias for the css `flex-grow` property.
 - `shrink`: An alias for the css `flex-shrink` property.
 
+Any other style property is accepted too, so `gap` and the rest of the box model work here without being listed above.
+
 ```tsx
 import { flex } from '../styled-system/patterns'
 
 function App() {
   return (
-    <div className={flex({ direction: 'row', align: 'center' })}>
+    <div className={flex({ direction: 'row', align: 'center', gap: '6' })}>
       <div>First</div>
       <div>Second</div>
       <div>Third</div>
@@ -179,13 +93,27 @@ function App() {
 }
 ```
 
+<Callout type="info">
+  `stack`, `hstack`, `vstack` and `wrap` were removed. Each was `flex` with defaults frozen, so writing the default you
+  want is the whole migration — and the gap they applied silently is now yours to choose:
+
+```tsx
+flex({ direction: 'column', gap: '8px' }) // was stack()
+flex({ align: 'center', gap: '8px' }) // was hstack()
+flex({ direction: 'column', align: 'center', gap: '8px' }) // was vstack()
+flex({ wrap: 'wrap', gap: '8px' }) // was wrap()
+```
+
+</Callout>
+
 ### Center
 
-The Center pattern is used to center the content of a container.
+The Center pattern is used to center the content of a container, optionally at a fixed size.
 
 The `center` function accepts the following properties:
 
 - `inline`: Whether to use `inline-flex` or `flex` for the container. The value is a boolean.
+- `size`: Sets `width` and `height` together, and stops a flex parent from shrinking the result.
 
 ```tsx
 import { center } from '../styled-system/patterns'
@@ -198,6 +126,27 @@ function App() {
   )
 }
 ```
+
+Pass `size` for a fixed square, and add `borderRadius` for a circle:
+
+```tsx
+import { center } from '../styled-system/patterns'
+
+function App() {
+  return (
+    <>
+      <div className={center({ size: '12', bg: 'red.300' })}>1</div>
+      <div className={center({ size: '12', borderRadius: 'full', bg: 'red.300' })}>2</div>
+    </>
+  )
+}
+```
+
+<Callout type="info">
+  `square` and `circle` were removed. `square({ size })` is `center({ size })`, and `circle({ size })` is
+  `center({ size, borderRadius: 'full' })` — `borderRadius` is an ordinary style property, so the rounded case never
+  needed a pattern of its own.
+</Callout>
 
 ### LinkOverlay
 
@@ -255,9 +204,9 @@ The Grid pattern is used to create a grid layout.
 The `grid` function accepts the following properties:
 
 - `columns`: The number of columns in the grid.
-- `gap`: The gap between the elements in the stack.
-- `columnGap`: The gap between the elements in the stack horizontally.
-- `rowGap`: The gap between the elements in the stack vertically.
+- `gap`: The gap between the grid items.
+- `columnGap`: The gap between the grid items horizontally.
+- `rowGap`: The gap between the grid items vertically.
 - `minChildWidth`: The minimum width of the child elements before wrapping (must not be used with `columns`).
 
 ```tsx
@@ -312,48 +261,16 @@ The `divider` function accepts the following properties:
 - `color`: The color of the divider. Can be a color token, or arbitrary value.
 
 ```tsx
-import { divider, stack } from '../styled-system/patterns'
+import { divider, flex } from '../styled-system/patterns'
 
 function App() {
   return (
-    <div className={stack()}>
+    <div className={flex({ direction: 'column', gap: '8px' })}>
       <button>First</button>
       <div className={divider({ orientation: 'horizontal' })} />
       <button>Second</button>
     </div>
   )
-}
-```
-
-### Circle
-
-The Circle pattern is used to create a circle.
-
-The `circle` function accepts the following properties:
-
-- `size`: The size of the circle. Can be a sizing token, or arbitrary value.
-
-```tsx
-import { circle } from '../styled-system/patterns'
-
-function App() {
-  return <div className={circle({ size: '12', bg: 'red.300' })} />
-}
-```
-
-### Square
-
-The Square pattern is used to create a square with equal width and height.
-
-The `square` function accepts the following properties:
-
-- `size`: The size of the square. Can be a sizing token, or arbitrary value.
-
-```tsx
-import { square } from '../styled-system/patterns'
-
-function App() {
-  return <div className={square({ size: '12', bg: 'red.300' })} />
 }
 ```
 
@@ -367,11 +284,11 @@ The `spacer` function accepts the following properties:
   fill the remaining space.
 
 ```tsx
-import { hstack, spacer } from '../styled-system/patterns'
+import { flex, spacer } from '../styled-system/patterns'
 
 function App() {
   return (
-    <div className={hstack()}>
+    <div className={flex({ align: 'center', gap: '8px' })}>
       <div>Logo</div>
       <div className={spacer()} />
       <div>Menu</div>
@@ -402,25 +319,17 @@ export function Page() {
 }
 ```
 
-### cq (Container Query)
+### Container Queries
 
-To make it easier to use container queries, we've added a new `cq` pattern to `@bamboocss/preset-base`. It is used to
-apply styles based on the width of the container.
-
-The `cq` function accepts the following properties:
-
-- `name`: The name of the container query, Maps to the
-  [`containerName` CSS property](https://developer.mozilla.org/en-US/docs/Web/CSS/container-name).
-- `type`: The type of the container query. Maps to the
-  [`containerType` CSS property](https://developer.mozilla.org/en-US/docs/Web/CSS/container-type). Defaults to
-  `inline-size`.
+There is no pattern for this — `containerType` and `containerName` are ordinary utilities, and `containerName` is
+already typed against the `containerNames` theme key.
 
 ```ts
-import { cq } from 'styled-system/patterns'
+import { css } from 'styled-system/css'
 
 function Demo() {
   return (
-    <nav className={cq()}>
+    <nav className={css({ containerType: 'inline-size' })}>
       <div
         className={css({
           fontSize: { base: 'lg', '@/sm': 'md' },
@@ -431,7 +340,7 @@ function Demo() {
 }
 ```
 
-You can also named container queries:
+You can also use named container queries:
 
 ```tsx
 // 1 - Define container conditions
@@ -450,13 +359,13 @@ export default defineConfig({
 ```
 
 ```tsx
-// 2 - Automatically generate container query pattern
+// 2 - Name the container and query it
 
-import { cq } from 'styled-system/patterns'
+import { css } from 'styled-system/css'
 
 function Demo() {
   return (
-    <nav className={cq({ name: 'sidebar' })}>
+    <nav className={css({ containerType: 'inline-size', containerName: 'sidebar' })}>
       <div
         className={css({
           // When the sidebar container reaches the `sm` size
@@ -468,5 +377,11 @@ function Demo() {
   )
 }
 ```
+
+<Callout type="info">
+  The `cq` pattern was removed. It renamed two properties onto `containerType` and `containerName` and defaulted the
+  first to `inline-size`, which is one default's worth of value for a name that sat next to the unrelated `container`
+  pattern in autocomplete.
+</Callout>
 
 Read more about container queries [here](/docs/concepts/conditional-styles#container-queries).

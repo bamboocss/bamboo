@@ -1,6 +1,6 @@
 import { useClipboard } from '@ark-ui/react/clipboard'
 import { css, cva } from '@/styled-system/css'
-import { grid, hstack, square } from '@/styled-system/patterns'
+import { center, flex, grid } from '@/styled-system/patterns'
 import type { Token } from '@bamboocss/token-dictionary'
 
 interface ColorGridProps {
@@ -26,8 +26,8 @@ export const ColorGridToken = (props: ColorGridTokenProps) => {
   const { token } = props
   const { copied, copy } = useClipboard({ value: token.value })
   return (
-    <div className={hstack({ cursor: 'pointer' })} onClick={copy}>
-      <div className={square({ size: '8', rounded: 'sm' })} style={{ background: token.extensions.varRef }} />
+    <div className={flex({ align: 'center', gap: '8px', cursor: 'pointer' })} onClick={copy}>
+      <div className={center({ size: '8', rounded: 'sm' })} style={{ background: token.extensions.varRef }} />
       <div>
         <div className={css({ fontWeight: 'medium' })}>{token.extensions.prop}</div>
         <div className={colorTokenValue({ copied })}>{token.value}</div>

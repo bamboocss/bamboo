@@ -4,6 +4,18 @@ function definePattern<T extends PatternConfig>(config: T) {
   return config
 }
 
+/**
+ * The one flexbox pattern. `stack`, `vstack`, `hstack` and `wrap` were this with defaults frozen
+ * — `stack` added `direction: 'column'` and an 8px gap, the two axis-named ones additionally
+ * hard-coded `align: 'center'` and dropped `direction` from the props, and `wrap` set
+ * `flexWrap: 'wrap'`. Five names, one transform, and four of them a superset of the fifth only in
+ * what they assumed for you.
+ *
+ * `gap` is deliberately not listed here and does not need to be: anything absent from
+ * `properties` still arrives as an ordinary style prop, so `flex({ gap: '6' })` types and folds
+ * exactly as it did through `stack`. What goes with the old names is the implicit `gap: '8px'`,
+ * which was a design opinion no call site asked for.
+ */
 const flex = definePattern({
   properties: {
     align: { type: 'property', value: 'alignItems' },
@@ -30,72 +42,6 @@ const flex = definePattern({
   },
 })
 
-const stack = definePattern({
-  properties: {
-    align: { type: 'property', value: 'alignItems' },
-    justify: { type: 'property', value: 'justifyContent' },
-    direction: { type: 'property', value: 'flexDirection' },
-    gap: { type: 'property', value: 'gap' },
-  },
-  defaultValues: {
-    direction: 'column',
-    gap: '8px',
-  },
-  transform(props) {
-    const { align, justify, direction, gap, ...rest } = props
-    return {
-      display: 'flex',
-      flexDirection: direction,
-      alignItems: align,
-      justifyContent: justify,
-      gap,
-      ...rest,
-    }
-  },
-})
-
-const vstack = definePattern({
-  properties: {
-    justify: { type: 'property', value: 'justifyContent' },
-    gap: { type: 'property', value: 'gap' },
-  },
-  defaultValues: {
-    gap: '8px',
-  },
-  transform(props) {
-    const { justify, gap, ...rest } = props
-    return {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: justify,
-      gap,
-      flexDirection: 'column',
-      ...rest,
-    }
-  },
-})
-
-const hstack = definePattern({
-  properties: {
-    justify: { type: 'property', value: 'justifyContent' },
-    gap: { type: 'property', value: 'gap' },
-  },
-  defaultValues: {
-    gap: '8px',
-  },
-  transform(props) {
-    const { justify, gap, ...rest } = props
-    return {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: justify,
-      gap,
-      flexDirection: 'row',
-      ...rest,
-    }
-  },
-})
-
 const spacer = definePattern({
   properties: {
     size: { type: 'token', value: 'spacing' },
@@ -110,43 +56,6 @@ const spacer = definePattern({
         const val = isCssUnit(v) || isCssVar(v) ? v : token(`spacing.${v}`, v)
         return `0 0 ${val}`
       }),
-      ...rest,
-    }
-  },
-})
-
-const circle = definePattern({
-  properties: {
-    size: { type: 'property', value: 'width' },
-  },
-  transform(props) {
-    const { size, ...rest } = props
-    return {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flex: '0 0 auto',
-      width: size,
-      height: size,
-      borderRadius: '9999px',
-      ...rest,
-    }
-  },
-})
-
-const square = definePattern({
-  properties: {
-    size: { type: 'property', value: 'width' },
-  },
-  transform(props) {
-    const { size, ...rest } = props
-    return {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flex: '0 0 auto',
-      width: size,
-      height: size,
       ...rest,
     }
   },
@@ -206,29 +115,6 @@ const gridItem = definePattern({
   },
 })
 
-const wrap = definePattern({
-  properties: {
-    gap: { type: 'property', value: 'gap' },
-    rowGap: { type: 'property', value: 'gap' },
-    columnGap: { type: 'property', value: 'gap' },
-    align: { type: 'property', value: 'alignItems' },
-    justify: { type: 'property', value: 'justifyContent' },
-  },
-  transform(props) {
-    const { columnGap, rowGap, gap = columnGap || rowGap ? undefined : '8px', align, justify, ...rest } = props
-    return {
-      display: 'flex',
-      flexWrap: 'wrap',
-      alignItems: align,
-      justifyContent: justify,
-      gap,
-      columnGap,
-      rowGap,
-      ...rest,
-    }
-  },
-})
-
 const container = definePattern({
   transform(props) {
     return {
@@ -241,16 +127,31 @@ const container = definePattern({
   },
 })
 
+/**
+ * Absorbs what `square` and `circle` used to be. `square({ size })` is `center({ size })`, and
+ * `circle({ size })` is `center({ size, borderRadius: 'full' })` — `borderRadius` is an ordinary
+ * style prop, so the rounded case needs nothing here beyond the size the square case already
+ * wanted. Three patterns whose transforms differed by one declaration is three names to learn
+ * and three places for `alignItems: center` to drift.
+ *
+ * `flex: '0 0 auto'` rides with `size` rather than being unconditional: it is what stops a sized
+ * box from being shrunk by a flex parent, so it is meaningless without one, and applying it to
+ * an unsized `center` would change how every existing call lays out inside a flex row.
+ */
 const center = definePattern({
   properties: {
     inline: { type: 'boolean' },
+    size: { type: 'property', value: 'width' },
   },
   transform(props) {
-    const { inline, ...rest } = props
+    const { inline, size, ...rest } = props
     return {
       display: inline ? 'inline-flex' : 'flex',
       alignItems: 'center',
       justifyContent: 'center',
+      flex: size == null ? undefined : '0 0 auto',
+      width: size,
+      height: size,
       ...rest,
     }
   },
@@ -414,41 +315,16 @@ const bleed = definePattern({
   },
 })
 
-const cq = definePattern({
-  properties: {
-    name: { type: 'token', value: 'containerNames', property: 'containerName' },
-    type: { type: 'property', value: 'containerType' },
-  },
-  defaultValues: {
-    type: 'inline-size',
-  },
-  transform(props) {
-    const { name, type, ...rest } = props
-    return {
-      containerType: type,
-      containerName: name,
-      ...rest,
-    }
-  },
-})
-
 export const patterns = {
   flex,
-  stack,
-  vstack,
-  hstack,
   spacer,
-  square,
-  circle,
   center,
   linkOverlay,
   aspectRatio,
   grid,
   gridItem,
-  wrap,
   container,
   divider,
   float,
   bleed,
-  cq,
 }

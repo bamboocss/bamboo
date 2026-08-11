@@ -116,13 +116,13 @@ export default defineConfig({
 })
 ```
 
-The base presets work the same way — here, dropping the `stack` pattern from `@bamboocss/preset-base`:
+The base presets work the same way — here, dropping the `float` pattern from `@bamboocss/preset-base`:
 
 ```ts
 import bambooBasePreset from '@bamboocss/preset-base'
 
-// omitting stack here
-const { stack, ...bambooBasePresetPatterns } = bambooBasePreset.patterns
+// omitting float here
+const { float, ...bambooBasePresetPatterns } = bambooBasePreset.patterns
 
 export default defineConfig({
   presets: ['@bamboocss/preset-bamboo'], // 👈 we still want the tokens, breakpoints and textStyles from this preset
@@ -137,7 +137,7 @@ export default defineConfig({
 ```
 
 > ⚠️ `presets: []` is required in that second case: with anything else listed, `@bamboocss/preset-base` is loaded only
-> if you list it, and it puts `stack` back. See
+> if you list it, and it puts `float` back. See
 > [which presets are included](/docs/customization/presets#which-bamboo-presets-will-be-included-).
 
 ## Minimal setup

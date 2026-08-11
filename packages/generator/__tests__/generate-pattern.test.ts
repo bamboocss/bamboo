@@ -55,13 +55,13 @@ test('should generate pattern', () => {
 
     const flexConfig = {
     transform(props) {
-      const { direction, align, justify, wrap: wrap2, basis, grow, shrink, ...rest } = props;
+      const { direction, align, justify, wrap, basis, grow, shrink, ...rest } = props;
       return {
         display: "flex",
         flexDirection: direction,
         alignItems: align,
         justifyContent: justify,
-        flexWrap: wrap2,
+        flexWrap: wrap,
         flexBasis: basis,
         flexGrow: grow,
         flexShrink: shrink,
@@ -77,185 +77,6 @@ test('should generate pattern', () => {
     export const flex = /* @__PURE__ */ memo((styles) => css(getFlexStyle(styles)))
     flex.raw = getFlexStyle",
         "name": "flex",
-      },
-      {
-        "dts": "import type { SystemStyleObject, ConditionalValue } from '../types/index';
-    import type { Properties } from '../types/csstype';
-    import type { SystemProperties } from '../types/style-props';
-    import type { DistributiveOmit } from '../types/system-types';
-    import type { Tokens } from '../tokens/index';
-
-    export interface StackProperties {
-       align?: SystemProperties["alignItems"]
-    	justify?: SystemProperties["justifyContent"]
-    	direction?: SystemProperties["flexDirection"]
-    	gap?: SystemProperties["gap"]
-    }
-
-    interface StackStyles extends StackProperties, DistributiveOmit<SystemStyleObject, keyof StackProperties > {}
-
-    interface StackPatternFn {
-      (styles?: StackStyles): string
-      raw: (styles?: StackStyles) => SystemStyleObject
-    }
-
-
-    export declare const stack: StackPatternFn;
-    ",
-        "js": "import { getPatternStyles, createPatternFns, memo } from '../helpers.mjs';
-    import { css } from '../css/index.mjs';
-    import { token } from '../tokens/index.mjs';
-
-    /**
-     * The transform's token lookup, answered by the generated tokens artifact.
-     *
-     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
-     * the build about a token's variable name — both come from the same generated source. The
-     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
-     * paid twice.
-     */
-    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
-
-    const stackConfig = {
-    transform(props) {
-      const { align, justify, direction, gap, ...rest } = props;
-      return {
-        display: "flex",
-        flexDirection: direction,
-        alignItems: align,
-        justifyContent: justify,
-        gap,
-        ...rest
-      };
-    },
-    defaultValues:{direction:'column',gap:'8px'}}
-
-    export const getStackStyle = (styles = {}) => {
-      const _styles = getPatternStyles(stackConfig, styles)
-      return stackConfig.transform(_styles, patternHelpers)
-    }
-
-    export const stack = /* @__PURE__ */ memo((styles) => css(getStackStyle(styles)))
-    stack.raw = getStackStyle",
-        "name": "stack",
-      },
-      {
-        "dts": "import type { SystemStyleObject, ConditionalValue } from '../types/index';
-    import type { Properties } from '../types/csstype';
-    import type { SystemProperties } from '../types/style-props';
-    import type { DistributiveOmit } from '../types/system-types';
-    import type { Tokens } from '../tokens/index';
-
-    export interface VstackProperties {
-       justify?: SystemProperties["justifyContent"]
-    	gap?: SystemProperties["gap"]
-    }
-
-    interface VstackStyles extends VstackProperties, DistributiveOmit<SystemStyleObject, keyof VstackProperties > {}
-
-    interface VstackPatternFn {
-      (styles?: VstackStyles): string
-      raw: (styles?: VstackStyles) => SystemStyleObject
-    }
-
-
-    export declare const vstack: VstackPatternFn;
-    ",
-        "js": "import { getPatternStyles, createPatternFns, memo } from '../helpers.mjs';
-    import { css } from '../css/index.mjs';
-    import { token } from '../tokens/index.mjs';
-
-    /**
-     * The transform's token lookup, answered by the generated tokens artifact.
-     *
-     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
-     * the build about a token's variable name — both come from the same generated source. The
-     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
-     * paid twice.
-     */
-    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
-
-    const vstackConfig = {
-    transform(props) {
-      const { justify, gap, ...rest } = props;
-      return {
-        display: "flex",
-        alignItems: "center",
-        justifyContent: justify,
-        gap,
-        flexDirection: "column",
-        ...rest
-      };
-    },
-    defaultValues:{gap:'8px'}}
-
-    export const getVstackStyle = (styles = {}) => {
-      const _styles = getPatternStyles(vstackConfig, styles)
-      return vstackConfig.transform(_styles, patternHelpers)
-    }
-
-    export const vstack = /* @__PURE__ */ memo((styles) => css(getVstackStyle(styles)))
-    vstack.raw = getVstackStyle",
-        "name": "vstack",
-      },
-      {
-        "dts": "import type { SystemStyleObject, ConditionalValue } from '../types/index';
-    import type { Properties } from '../types/csstype';
-    import type { SystemProperties } from '../types/style-props';
-    import type { DistributiveOmit } from '../types/system-types';
-    import type { Tokens } from '../tokens/index';
-
-    export interface HstackProperties {
-       justify?: SystemProperties["justifyContent"]
-    	gap?: SystemProperties["gap"]
-    }
-
-    interface HstackStyles extends HstackProperties, DistributiveOmit<SystemStyleObject, keyof HstackProperties > {}
-
-    interface HstackPatternFn {
-      (styles?: HstackStyles): string
-      raw: (styles?: HstackStyles) => SystemStyleObject
-    }
-
-
-    export declare const hstack: HstackPatternFn;
-    ",
-        "js": "import { getPatternStyles, createPatternFns, memo } from '../helpers.mjs';
-    import { css } from '../css/index.mjs';
-    import { token } from '../tokens/index.mjs';
-
-    /**
-     * The transform's token lookup, answered by the generated tokens artifact.
-     *
-     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
-     * the build about a token's variable name — both come from the same generated source. The
-     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
-     * paid twice.
-     */
-    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
-
-    const hstackConfig = {
-    transform(props) {
-      const { justify, gap, ...rest } = props;
-      return {
-        display: "flex",
-        alignItems: "center",
-        justifyContent: justify,
-        gap,
-        flexDirection: "row",
-        ...rest
-      };
-    },
-    defaultValues:{gap:'8px'}}
-
-    export const getHstackStyle = (styles = {}) => {
-      const _styles = getPatternStyles(hstackConfig, styles)
-      return hstackConfig.transform(_styles, patternHelpers)
-    }
-
-    export const hstack = /* @__PURE__ */ memo((styles) => css(getHstackStyle(styles)))
-    hstack.raw = getHstackStyle",
-        "name": "hstack",
       },
       {
         "dts": "import type { SystemStyleObject, ConditionalValue } from '../types/index';
@@ -323,125 +144,9 @@ test('should generate pattern', () => {
     import type { DistributiveOmit } from '../types/system-types';
     import type { Tokens } from '../tokens/index';
 
-    export interface SquareProperties {
-       size?: SystemProperties["width"]
-    }
-
-    interface SquareStyles extends SquareProperties, DistributiveOmit<SystemStyleObject, keyof SquareProperties > {}
-
-    interface SquarePatternFn {
-      (styles?: SquareStyles): string
-      raw: (styles?: SquareStyles) => SystemStyleObject
-    }
-
-
-    export declare const square: SquarePatternFn;
-    ",
-        "js": "import { getPatternStyles, createPatternFns, memo } from '../helpers.mjs';
-    import { css } from '../css/index.mjs';
-    import { token } from '../tokens/index.mjs';
-
-    /**
-     * The transform's token lookup, answered by the generated tokens artifact.
-     *
-     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
-     * the build about a token's variable name — both come from the same generated source. The
-     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
-     * paid twice.
-     */
-    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
-
-    const squareConfig = {
-    transform(props) {
-      const { size, ...rest } = props;
-      return {
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flex: "0 0 auto",
-        width: size,
-        height: size,
-        ...rest
-      };
-    }}
-
-    export const getSquareStyle = (styles = {}) => {
-      const _styles = getPatternStyles(squareConfig, styles)
-      return squareConfig.transform(_styles, patternHelpers)
-    }
-
-    export const square = /* @__PURE__ */ memo((styles) => css(getSquareStyle(styles)))
-    square.raw = getSquareStyle",
-        "name": "square",
-      },
-      {
-        "dts": "import type { SystemStyleObject, ConditionalValue } from '../types/index';
-    import type { Properties } from '../types/csstype';
-    import type { SystemProperties } from '../types/style-props';
-    import type { DistributiveOmit } from '../types/system-types';
-    import type { Tokens } from '../tokens/index';
-
-    export interface CircleProperties {
-       size?: SystemProperties["width"]
-    }
-
-    interface CircleStyles extends CircleProperties, DistributiveOmit<SystemStyleObject, keyof CircleProperties > {}
-
-    interface CirclePatternFn {
-      (styles?: CircleStyles): string
-      raw: (styles?: CircleStyles) => SystemStyleObject
-    }
-
-
-    export declare const circle: CirclePatternFn;
-    ",
-        "js": "import { getPatternStyles, createPatternFns, memo } from '../helpers.mjs';
-    import { css } from '../css/index.mjs';
-    import { token } from '../tokens/index.mjs';
-
-    /**
-     * The transform's token lookup, answered by the generated tokens artifact.
-     *
-     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
-     * the build about a token's variable name — both come from the same generated source. The
-     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
-     * paid twice.
-     */
-    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
-
-    const circleConfig = {
-    transform(props) {
-      const { size, ...rest } = props;
-      return {
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flex: "0 0 auto",
-        width: size,
-        height: size,
-        borderRadius: "9999px",
-        ...rest
-      };
-    }}
-
-    export const getCircleStyle = (styles = {}) => {
-      const _styles = getPatternStyles(circleConfig, styles)
-      return circleConfig.transform(_styles, patternHelpers)
-    }
-
-    export const circle = /* @__PURE__ */ memo((styles) => css(getCircleStyle(styles)))
-    circle.raw = getCircleStyle",
-        "name": "circle",
-      },
-      {
-        "dts": "import type { SystemStyleObject, ConditionalValue } from '../types/index';
-    import type { Properties } from '../types/csstype';
-    import type { SystemProperties } from '../types/style-props';
-    import type { DistributiveOmit } from '../types/system-types';
-    import type { Tokens } from '../tokens/index';
-
     export interface CenterProperties {
        inline?: ConditionalValue<boolean>
+    	size?: SystemProperties["width"]
     }
 
     interface CenterStyles extends CenterProperties, DistributiveOmit<SystemStyleObject, keyof CenterProperties > {}
@@ -470,11 +175,14 @@ test('should generate pattern', () => {
 
     const centerConfig = {
     transform(props) {
-      const { inline, ...rest } = props;
+      const { inline, size, ...rest } = props;
       return {
         display: inline ? "inline-flex" : "flex",
         alignItems: "center",
         justifyContent: "center",
+        flex: size == null ? void 0 : "0 0 auto",
+        width: size,
+        height: size,
         ...rest
       };
     }}
@@ -754,69 +462,6 @@ test('should generate pattern', () => {
     import type { DistributiveOmit } from '../types/system-types';
     import type { Tokens } from '../tokens/index';
 
-    export interface WrapProperties {
-       gap?: SystemProperties["gap"]
-    	rowGap?: SystemProperties["gap"]
-    	columnGap?: SystemProperties["gap"]
-    	align?: SystemProperties["alignItems"]
-    	justify?: SystemProperties["justifyContent"]
-    }
-
-    interface WrapStyles extends WrapProperties, DistributiveOmit<SystemStyleObject, keyof WrapProperties > {}
-
-    interface WrapPatternFn {
-      (styles?: WrapStyles): string
-      raw: (styles?: WrapStyles) => SystemStyleObject
-    }
-
-
-    export declare const wrap: WrapPatternFn;
-    ",
-        "js": "import { getPatternStyles, createPatternFns, memo } from '../helpers.mjs';
-    import { css } from '../css/index.mjs';
-    import { token } from '../tokens/index.mjs';
-
-    /**
-     * The transform's token lookup, answered by the generated tokens artifact.
-     *
-     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
-     * the build about a token's variable name — both come from the same generated source. The
-     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
-     * paid twice.
-     */
-    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
-
-    const wrapConfig = {
-    transform(props) {
-      const { columnGap, rowGap, gap = columnGap || rowGap ? void 0 : "8px", align, justify, ...rest } = props;
-      return {
-        display: "flex",
-        flexWrap: "wrap",
-        alignItems: align,
-        justifyContent: justify,
-        gap,
-        columnGap,
-        rowGap,
-        ...rest
-      };
-    }}
-
-    export const getWrapStyle = (styles = {}) => {
-      const _styles = getPatternStyles(wrapConfig, styles)
-      return wrapConfig.transform(_styles, patternHelpers)
-    }
-
-    export const wrap = /* @__PURE__ */ memo((styles) => css(getWrapStyle(styles)))
-    wrap.raw = getWrapStyle",
-        "name": "wrap",
-      },
-      {
-        "dts": "import type { SystemStyleObject, ConditionalValue } from '../types/index';
-    import type { Properties } from '../types/csstype';
-    import type { SystemProperties } from '../types/style-props';
-    import type { DistributiveOmit } from '../types/system-types';
-    import type { Tokens } from '../tokens/index';
-
     export interface ContainerProperties {
        
     }
@@ -1073,62 +718,6 @@ test('should generate pattern', () => {
     export const bleed = /* @__PURE__ */ memo((styles) => css(getBleedStyle(styles)))
     bleed.raw = getBleedStyle",
         "name": "bleed",
-      },
-      {
-        "dts": "import type { SystemStyleObject, ConditionalValue } from '../types/index';
-    import type { Properties } from '../types/csstype';
-    import type { SystemProperties } from '../types/style-props';
-    import type { DistributiveOmit } from '../types/system-types';
-    import type { Tokens } from '../tokens/index';
-
-    export interface CqProperties {
-       name?: ConditionalValue<Tokens["containerNames"] | Properties["containerName"]>
-    	type?: SystemProperties["containerType"]
-    }
-
-    interface CqStyles extends CqProperties, DistributiveOmit<SystemStyleObject, keyof CqProperties > {}
-
-    interface CqPatternFn {
-      (styles?: CqStyles): string
-      raw: (styles?: CqStyles) => SystemStyleObject
-    }
-
-
-    export declare const cq: CqPatternFn;
-    ",
-        "js": "import { getPatternStyles, createPatternFns, memo } from '../helpers.mjs';
-    import { css } from '../css/index.mjs';
-    import { token } from '../tokens/index.mjs';
-
-    /**
-     * The transform's token lookup, answered by the generated tokens artifact.
-     *
-     * Read from there rather than from a copy emitted here, so the browser cannot disagree with
-     * the build about a token's variable name — both come from the same generated source. The
-     * artifact is shared with any other \`token()\` use in the app, so it is deduped rather than
-     * paid twice.
-     */
-    const patternHelpers = /* @__PURE__ */ createPatternFns((path, fallback) => token(path) ?? fallback)
-
-    const cqConfig = {
-    transform(props) {
-      const { name, type, ...rest } = props;
-      return {
-        containerType: type,
-        containerName: name,
-        ...rest
-      };
-    },
-    defaultValues:{type:'inline-size'}}
-
-    export const getCqStyle = (styles = {}) => {
-      const _styles = getPatternStyles(cqConfig, styles)
-      return cqConfig.transform(_styles, patternHelpers)
-    }
-
-    export const cq = /* @__PURE__ */ memo((styles) => css(getCqStyle(styles)))
-    cq.raw = getCqStyle",
-        "name": "cq",
       },
     ]
   `)

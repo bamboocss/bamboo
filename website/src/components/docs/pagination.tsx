@@ -1,7 +1,7 @@
 import { docsNavigation, type NavItem } from '@/docs.config'
 import { ChevronRightIcon } from '@/icons'
 import { css } from '@/styled-system/css'
-import { hstack } from '@/styled-system/patterns'
+import { flex } from '@/styled-system/patterns'
 import Link from 'next/link'
 
 interface PaginationItem {
@@ -72,7 +72,7 @@ export const Pagination = ({ slug }: Props) => {
   }
 
   return (
-    <div className={hstack({ justify: 'space-between', mt: '12', gap: '4' })}>
+    <div className={flex({ align: 'center', justify: 'space-between', mt: '12', gap: '4' })}>
       {prev ? <PagationLink item={prev} type="prev" /> : <div className={css({ flex: '1' })} />}
       {next ? <PagationLink item={next} type="next" /> : <div className={css({ flex: '1' })} />}
     </div>

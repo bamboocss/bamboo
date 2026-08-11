@@ -6,7 +6,7 @@ describe('extract namespace', () => {
     const code = `
         import * as p from "styled-system/patterns"
     
-        p.stack({ mt: "40px" })
+        p.flex({ mt: "40px" })
          `
 
     const result = parseAndExtract(code)
@@ -19,7 +19,7 @@ describe('extract namespace', () => {
                   "mt": "40px",
                 },
               ],
-              "name": "stack",
+              "name": "flex",
               "type": "pattern",
             },
           ]
@@ -27,16 +27,8 @@ describe('extract namespace', () => {
 
     expect(result.css).toMatchInlineSnapshot(`
       "@layer utilities {
-        .gap_8px {
-          gap: 8px;
-      }
-
         .d_flex {
           display: flex;
-      }
-
-        .flex-d_column {
-          flex-direction: column;
       }
 
         .mt_40px {

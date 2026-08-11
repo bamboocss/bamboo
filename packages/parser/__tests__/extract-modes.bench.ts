@@ -24,7 +24,7 @@ const filePath = 'app/src/bench.tsx'
 /** A file shaped like application code: static calls, ternaries, patterns. */
 const source = `
 import { css } from "styled-system/css"
-import { stack, hstack } from "styled-system/patterns"
+import { flex, center } from "styled-system/patterns"
 
 export const Card = ({ active, tone }) => (
   <div className={css({ padding: '4', borderRadius: 'md', backgroundColor: 'white' })}>
@@ -32,8 +32,8 @@ export const Card = ({ active, tone }) => (
     <span className={css({ color: tone, marginTop: '2' })} />
     <div className={css({ color: 'red.300', padding: '4', fontSize: 'xl' })} />
     <div className={css({ color: active ? 'red.300' : 'blue.300', padding: '2' })} />
-    <div className={stack({ gap: '4', padding: '2' })} />
-    <div className={hstack({ gap: active ? '2' : '4', padding: '4' })} />
+    <div className={flex({ gap: '4', padding: '2' })} />
+    <div className={center({ gap: active ? '2' : '4', padding: '4' })} />
     <div className={css({ _hover: { color: 'red.300' }, md: { padding: '8' }, fontSize: 'md' })} />
   </div>
 )
@@ -42,7 +42,7 @@ export const Row = ({ on }) => (
   <div className={css({ display: 'flex', gap: '2', alignItems: 'center' })}>
     <button className={css({ paddingX: '4', paddingY: '2', borderRadius: 'sm', backgroundColor: 'blue.500' })} />
     <div className={css({ color: on ? 'white' : 'black', fontSize: 'sm' })} />
-    <div className={stack({ gap: '2' })} />
+    <div className={flex({ gap: '2' })} />
   </div>
 )
 `

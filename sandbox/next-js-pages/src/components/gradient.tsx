@@ -1,9 +1,9 @@
 import { css } from '../../styled-system/css'
-import { stack } from '../../styled-system/patterns'
+import { flex } from '../../styled-system/patterns'
 
 export const RadialGradient = () => {
   return (
-    <div className={stack({ fontSize: '2xl', fontWeight: 'bold', padding: '4' })}>
+    <div className={flex({ direction: 'column', gap: '8px', fontSize: '2xl', fontWeight: 'bold', padding: '4' })}>
       <div
         className={css({
           boxSize: '20',
@@ -42,7 +42,7 @@ export const RadialGradient = () => {
 export const LinearGradient = () => {
   return (
     <div>
-      <div className={stack({ fontSize: '2xl', fontWeight: 'bold', padding: '4' })}>
+      <div className={flex({ direction: 'column', gap: '8px', fontSize: '2xl', fontWeight: 'bold', padding: '4' })}>
         <div
           className={css({
             height: '14',
@@ -82,7 +82,7 @@ export const LinearGradient = () => {
 
 export const ConicGradient = () => {
   return (
-    <div className={stack({ fontSize: '2xl', fontWeight: 'bold', padding: '4' })}>
+    <div className={flex({ direction: 'column', gap: '8px', fontSize: '2xl', fontWeight: 'bold', padding: '4' })}>
       <div
         className={css({
           boxSize: '24',

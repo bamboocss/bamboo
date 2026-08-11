@@ -98,8 +98,8 @@ const skipCases: Array<{ name: string; code: string; reason?: string }> = [
     name: 'dynamic pattern props',
     reason: 'dynamic',
     code: `
-      import { stack } from 'styled-system/patterns'
-      export const make = (gap) => stack({ gap })
+      import { flex } from 'styled-system/patterns'
+      export const make = (gap) => flex({ gap })
     `,
   },
 ]
@@ -187,8 +187,8 @@ describe('nested calls', () => {
 
     const code = `
       import { css } from 'styled-system/css'
-      import { stack } from 'styled-system/patterns'
-      export const cls = stack({ gap: '4', css: css({ color: 'red.300' }) })
+      import { flex } from 'styled-system/patterns'
+      export const cls = flex({ gap: '4', css: css({ color: 'red.300' }) })
     `
 
     // Whatever the fold decides here, it must not corrupt the output.

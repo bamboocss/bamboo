@@ -135,20 +135,20 @@ describe('patterns', () => {
     const { fold, ctx, runtimeCss } = createFoldFixture()
 
     const result = fold(`
-      import { stack } from 'styled-system/patterns'
-      export const cls = stack({ gap: '4', align: 'center' })
+      import { flex } from 'styled-system/patterns'
+      export const cls = flex({ gap: '4', align: 'center' })
     `)
 
     expect(result.folded).toHaveLength(1)
-    expect(result.folded[0]!.className).toBe(runtimeCss(ctx.patterns.transform('stack', { gap: '4', align: 'center' })))
+    expect(result.folded[0]!.className).toBe(runtimeCss(ctx.patterns.transform('flex', { gap: '4', align: 'center' })))
   })
 
   test('pattern classes are backed by emitted CSS', () => {
     const { fold, getCss } = createFoldFixture()
 
     const result = fold(`
-      import { stack } from 'styled-system/patterns'
-      export const cls = stack({ gap: '4' })
+      import { flex } from 'styled-system/patterns'
+      export const cls = flex({ gap: '4' })
     `)
 
     const css = getCss()

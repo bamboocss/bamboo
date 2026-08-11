@@ -24,10 +24,10 @@ eslintTester.run(RULE_NAME, rule, {
 
     {
       code: multiline`
-  import { stack } from './bamboo/patterns';
+  import { flex } from './bamboo/patterns';
   
   const align = 'center';
-  const styles = stack({ align: align })`,
+  const styles = flex({ align: align })`,
       errors: [{ messageId: 'dynamic' }],
     },
 

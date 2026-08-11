@@ -256,8 +256,8 @@ is added for a compound variant, because the rule matches on the variant classes
   </Stack>
 
   // bamboo
-  import { stack } from '../styled-system/patterns'
-  ;<div className={stack({ gap: '4', align: 'center' })}>{children}</div>
+  import { flex } from '../styled-system/patterns'
+  ;<div className={flex({ direction: 'column', gap: '4', align: 'center' })}>{children}</div>
   ```
 
 - **There is no template literal syntax.** ``css`color: red` ``, and the template form of `cva`, `sva` and the patterns,

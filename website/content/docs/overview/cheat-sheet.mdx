@@ -71,13 +71,12 @@ checkbox({ size: 'md' }).control // 'checkbox__control' — a constant
 
 ## Patterns
 
-Layout helpers that are `css()` with a transform applied. `stack`, `hstack`, `vstack`, `box`, `flex`, `grid`,
-`gridItem`, `center`, `circle`, `square`, `container`, `wrap`, `spacer`, `divider`, `float`, `aspectRatio`, `bleed`,
-`cq`, `linkOverlay`, `visuallyHidden`.
+Layout helpers that are `css()` with a transform applied. `flex`, `grid`, `gridItem`, `center`, `container`, `spacer`,
+`divider`, `float`, `aspectRatio`, `bleed`, `linkOverlay`.
 
 ```jsx
-import { stack } from '../styled-system/patterns'
-;<div className={stack({ gap: '4', align: 'center' })} />
+import { flex } from '../styled-system/patterns'
+;<div className={flex({ direction: 'column', gap: '4', align: 'center' })} />
 ```
 
 ## Tokens and escape hatches

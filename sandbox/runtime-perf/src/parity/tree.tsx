@@ -1,5 +1,5 @@
 import { css, cx } from '../../styled-system/css'
-import { hstack, stack } from '../../styled-system/patterns'
+import { flex } from '../../styled-system/patterns'
 
 /**
  * A tree covering both halves of the fold: shapes that collapse to an intrinsic tag,
@@ -67,18 +67,18 @@ export const Tree = ({ tone, rest, flag }: { tone: string; rest: Record<string, 
     <section className={css({ color: 'yellow600' })}>as</section>
 
     {/* folds: a pattern call site resolves to its class string */}
-    <div className={stack({ gap: 'sm' })}>
+    <div className={flex({ direction: 'column', gap: 'sm' })}>
       <div className={css({ padding: 'xs', backgroundColor: 'white' })} id="boxed">
         box
       </div>
-      <div className={hstack({ gap: 'xxs', color: 'gray700' })}>hstack</div>
+      <div className={flex({ align: 'center', gap: 'xxs', color: 'gray700' })}>hstack</div>
     </div>
 
     {/* folds: the tag is written out, so any element can carry a pattern class */}
-    <nav className={stack({ gap: 'xxs' })}>nav stack</nav>
+    <nav className={flex({ direction: 'column', gap: 'xxs' })}>nav stack</nav>
 
     {/* declines: a dynamic pattern prop */}
-    <div className={stack({ gap: tone })}>dynamic pattern</div>
+    <div className={flex({ direction: 'column', gap: tone })}>dynamic pattern</div>
 
     {/* folds as a call site, not an element */}
     <div className={css({ color: 'blue800', padding: 'xs' })}>call site</div>

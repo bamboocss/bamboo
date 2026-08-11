@@ -437,11 +437,11 @@ As with breakpoints, the upper bound is exclusive, so `@/smOnly` stops exactly w
 You can also named container queries:
 
 ```ts
-import { cq } from 'styled-system/patterns'
+import { css } from 'styled-system/css'
 
 function Demo() {
   return (
-    <nav className={cq({ name: 'sidebar' })}>
+    <nav className={css({ containerType: 'inline-size', containerName: 'sidebar' })}>
       <div
         className={css({
           fontSize: { base: 'lg', '@sidebar/sm': 'md' }

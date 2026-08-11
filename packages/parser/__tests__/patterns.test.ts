@@ -4,12 +4,12 @@ import { patternParser } from './fixture'
 describe('pattern jsx', () => {
   test('should extract', () => {
     const code = `
-       import { stack, hstack as aliased } from "styled-system/patterns"
+       import { flex, center as aliased } from "styled-system/patterns"
 
        function Button() {
          return (
             <div>
-               <div className={stack({ align: "center" })}>Click me</div>
+               <div className={flex({ align: "center" })}>Click me</div>
                <div className={aliased({ justify: "flex-end" })}>Click me</div>
             </div>
         )
@@ -18,19 +18,19 @@ describe('pattern jsx', () => {
 
     expect(patternParser(code)).toMatchInlineSnapshot(`
       Map {
-        "stack" => Set {
+        "flex" => Set {
           {
             "box": {
               "column": 32,
-              "endColumn": 58,
+              "endColumn": 57,
               "endLineNumber": 7,
               "line": 7,
               "node": "CallExpression",
               "type": "map",
               "value": Map {
                 "align" => {
-                  "column": 47,
-                  "endColumn": 55,
+                  "column": 46,
+                  "endColumn": 54,
                   "endLineNumber": 7,
                   "line": 7,
                   "node": "StringLiteral",
@@ -44,11 +44,11 @@ describe('pattern jsx', () => {
                 "align": "center",
               },
             ],
-            "name": "stack",
+            "name": "flex",
             "type": "pattern",
           },
         },
-        "hstack" => Set {
+        "center" => Set {
           {
             "box": {
               "column": 32,
@@ -74,7 +74,7 @@ describe('pattern jsx', () => {
                 "justify": "flex-end",
               },
             ],
-            "name": "hstack",
+            "name": "center",
             "type": "pattern",
           },
         },

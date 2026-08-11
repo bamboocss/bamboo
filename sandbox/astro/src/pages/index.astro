@@ -3,7 +3,7 @@ import Layout from '../layouts/Layout.astro'
 import { Button } from '../components/button.jsx'
 import Card from '../components/Card.astro';
 import { css } from '../../styled-system/css'
-import { circle, hstack } from '../../styled-system/patterns'
+import { center, flex } from '../../styled-system/patterns'
 ---
 
 <Layout title="Welcome to Astro.">
@@ -17,11 +17,12 @@ import { circle, hstack } from '../../styled-system/patterns'
         fontSize: '50px',
       })}
     >
-      <div class={hstack({ gap: '10' })}>
+      <div class={flex({ align: 'center', gap: '10' })}>
         <span> Welcome home</span>
         <span
-          class={circle({
+          class={center({
             size: '10',
+            borderRadius: 'full',
             bg: 'yellow',
             color: 'black',
             fontSize: 'lg',

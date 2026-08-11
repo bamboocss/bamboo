@@ -14,7 +14,7 @@ import { SvelteLogo } from '@/icons/svelte'
 import { ViteLogo } from '@/icons/vite'
 import { VueLogo } from '@/icons/vue'
 import { css } from '@/styled-system/css'
-import { grid, square, stack } from '@/styled-system/patterns'
+import { center, flex, grid } from '@/styled-system/patterns'
 import Link from 'next/link'
 
 const logoMap = {
@@ -104,7 +104,7 @@ export const FrameworkCard = (props: Props) => {
   const { logo: Logo, name, href } = logoMap[framework] ?? {}
   return (
     <div
-      className={stack({
+      className={flex({
         gap: '6',
         position: 'relative',
         direction: { base: 'column', sm: 'row' },
@@ -112,7 +112,7 @@ export const FrameworkCard = (props: Props) => {
       })}
     >
       <div
-        className={square({
+        className={center({
           size: '14',
           layerStyle: 'offShadow',
           shadowColor: { _dark: 'neutral.700' },

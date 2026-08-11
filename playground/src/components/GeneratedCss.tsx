@@ -1,6 +1,6 @@
 import { defaultEditorOptions } from '@/src/hooks/useEditor'
 import { css } from '@/styled-system/css'
-import { stack } from '@/styled-system/patterns'
+import { flex } from '@/styled-system/patterns'
 import { SegmentGroup } from '@ark-ui/react/segment-group'
 import MonacoEditor from '@monaco-editor/react'
 import { format } from '@projectwallace/format-css'
@@ -27,7 +27,9 @@ export const GeneratedCss = React.memo(function GeneratedCss({
 
   return (
     <div
-      className={stack({
+      className={flex({
+        direction: 'column',
+        gap: '8px',
         h: 'full',
         overflow: 'auto',
         '&[hidden]': { display: 'none' },

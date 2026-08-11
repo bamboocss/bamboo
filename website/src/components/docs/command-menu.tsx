@@ -12,7 +12,7 @@ import { useEnvironmentContext } from '@ark-ui/react/environment'
 import { Portal } from '@ark-ui/react/portal'
 import { useRouter } from 'next/navigation'
 import { useDeferredValue, useEffect, useMemo, useState } from 'react'
-import { center, stack } from 'styled-system/patterns'
+import { center, flex } from 'styled-system/patterns'
 
 interface Props {
   mediaQuery: string
@@ -162,7 +162,7 @@ export const CommandMenu = (props: Props) => {
                             },
                           })}
                         >
-                          <div className={stack({ gap: '1' })}>
+                          <div className={flex({ direction: 'column', gap: '1' })}>
                             <div className={css({ fontWeight: 'semibold' })}>
                               {item.label}
                               {item.type === 'heading' && <Badge>{item.category}</Badge>}

@@ -41,8 +41,8 @@ describe('a raw composition the build cannot resolve', () => {
     ],
     [
       'a pattern',
-      `import { css } from 'styled-system/css'\nimport { stack } from 'styled-system/patterns'\nexport const a = css(stack.raw({ gap: '4' }), { fontFamily: 'monospace' })`,
-      'stack',
+      `import { css } from 'styled-system/css'\nimport { flex } from 'styled-system/patterns'\nexport const a = css(flex.raw({ gap: '4' }), { fontFamily: 'monospace' })`,
+      'flex',
     ],
   ])('%s is reported', (_label, code, prop) => {
     const { unresolved } = parse(code)

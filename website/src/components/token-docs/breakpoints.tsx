@@ -1,6 +1,6 @@
 import { css } from '@/styled-system/css'
 import { defaultBreakpoints } from './query'
-import { hstack, stack } from '@/styled-system/patterns'
+import { flex } from '@/styled-system/patterns'
 
 const itemStyle = css({
   rounded: 'sm',
@@ -12,11 +12,11 @@ const itemStyle = css({
 
 export const Breakpoints = () => {
   return (
-    <div className={stack({ gap: '8' })}>
+    <div className={flex({ direction: 'column', gap: '8' })}>
       {Object.entries(defaultBreakpoints).map(([key, value], index) => {
         const width = (index + 1) * 20
         return (
-          <div key={key} className={hstack()}>
+          <div key={key} className={flex({ align: 'center', gap: '8px' })}>
             <div className={css({ minWidth: '120px' })}>
               <div className={itemStyle} style={{ width }} />
             </div>

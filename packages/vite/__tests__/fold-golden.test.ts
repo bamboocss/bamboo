@@ -57,13 +57,13 @@ export const plain = css({ margin: '0 auto' })
   },
   {
     name: 'patterns',
-    code: `import { stack, hstack } from 'styled-system/patterns'
+    code: `import { flex, center } from 'styled-system/patterns'
 
-export const column = stack({ gap: '4', align: 'center' })
-export const row = hstack({ gap: '2' })
+export const column = flex({ gap: '4', align: 'center' })
+export const row = center({ gap: '2' })
 
 export function spaced(gap: string) {
-  return stack({ gap })
+  return flex({ gap })
 }
 `,
   },

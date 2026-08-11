@@ -1,5 +1,5 @@
 import { css } from '@/styled-system/css'
-import { container, vstack } from '@/styled-system/patterns'
+import { container, flex } from '@/styled-system/patterns'
 import Link from 'next/link'
 
 export default function Page() {
@@ -8,7 +8,7 @@ export default function Page() {
   return (
     <div className={css({ bg: 'yellow.300', color: 'black', height: 'dvh' })}>
       <div className={container({ py: '20', textAlign: 'center' })}>
-        <div className={vstack()}>
+        <div className={flex({ direction: 'column', align: 'center', gap: '8px' })}>
           <h1 className={css({ textStyle: 'bamboo.h1', fontWeight: 'bold' })}>404</h1>
           <h2 className={css({ textStyle: 'bamboo.h2', fontWeight: 'medium' })}>Page Not Found</h2>
           <p className={css({ textStyle: 'bamboo.h4' })}>

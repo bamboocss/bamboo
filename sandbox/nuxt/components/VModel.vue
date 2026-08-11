@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { css, cva } from '../styled-system/css'
-import { vstack } from '../styled-system/patterns'
+import { flex } from '../styled-system/patterns'
 
 const CustomInputStyle = cva({
   base: {
@@ -17,7 +17,7 @@ const styledModel = ref('')
 </script>
 
 <template>
-  <div :class="vstack()">
+  <div :class="flex({ direction: 'column', align: 'center', gap: '8px' })">
     <label>
       JSXModel:
       <input v-model="jsxModel" :class="CustomInputStyle()" />

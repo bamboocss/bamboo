@@ -73,7 +73,7 @@ export default defineConfig({
 ### Modifying the config
 
 Here's an example of how to leveraging the provided `utils` functions in the `config:resolved` hook to remove the
-`stack` pattern from the resolved config.
+`float` pattern from the resolved config.
 
 ```ts
 import { defineConfig } from '@bamboocss/dev'
@@ -85,7 +85,7 @@ export default defineConfig({
       name: 'my-app',
       hooks: {
         'config:resolved': ({ config, utils }) => {
-          return utils.omit(config, ['patterns.stack'])
+          return utils.omit(config, ['patterns.float'])
         },
       },
     },

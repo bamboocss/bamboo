@@ -66,7 +66,7 @@ describe('vite plugin, real build', () => {
     expect(code).toContain('...rest')
 
     // And the dynamic pattern call site still calls the pattern.
-    expect(code).toContain('stack({ gap: tone')
+    expect(code).toContain('flex({ direction: "column", gap: tone')
 
     // The dynamic call site is lowered rather than keeping its call. Matched by its
     // arguments rather than by the helper's name, which the bundler is free to rename.

@@ -1,13 +1,13 @@
 import { css } from '@/styled-system/css'
 import { defaultShadows } from './query'
-import { hstack, stack } from '@/styled-system/patterns'
+import { flex } from '@/styled-system/patterns'
 
 export const Shadows = () => {
   return (
-    <div className={stack({ gap: '8' })}>
+    <div className={flex({ direction: 'column', gap: '8' })}>
       {defaultShadows.map((token, index) => {
         return (
-          <div className={hstack({ gap: '4' })} key={index}>
+          <div className={flex({ align: 'center', gap: '4' })} key={index}>
             <div className={css({ width: '20' })}>{token.extensions.prop}</div>
             <div className={css({ width: '32' })}>
               <div

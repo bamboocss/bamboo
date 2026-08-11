@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { docsNavigation, type NavItem } from '@/docs.config'
 import { ChevronDownIcon, ChevronRightIcon } from '@/icons'
 import { css } from '@/styled-system/css'
-import { hstack, stack } from '@/styled-system/patterns'
+import { flex } from '@/styled-system/patterns'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
@@ -63,7 +63,7 @@ export function Sidebar({ slug: currentSlug }: Props) {
   }
 
   return (
-    <nav className={stack({ gap: '1' })}>
+    <nav className={flex({ direction: 'column', gap: '1' })}>
       {sidebarStructure.map((section) => {
         const isExpanded = expandedSections.has(section.slug) || isSectionActive(section)
         const ChevronIcon = isExpanded ? ChevronDownIcon : ChevronRightIcon
@@ -93,7 +93,7 @@ export function Sidebar({ slug: currentSlug }: Props) {
                 cursor: 'pointer',
               })}
             >
-              <span className={hstack()}>
+              <span className={flex({ align: 'center', gap: '8px' })}>
                 <span>{section.title}</span>
                 {section.tag && <Badge variant="solid">{section.tag}</Badge>}
               </span>
@@ -102,7 +102,8 @@ export function Sidebar({ slug: currentSlug }: Props) {
 
             {isExpanded && section.children && (
               <div
-                className={stack({
+                className={flex({
+                  direction: 'column',
                   gap: '0',
                   mt: '1',
                   // Hairline the children hang off, so a section reads as one group and

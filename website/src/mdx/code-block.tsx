@@ -1,5 +1,5 @@
 import { css, cx } from '@/styled-system/css'
-import { hstack } from '@/styled-system/patterns'
+import { flex } from '@/styled-system/patterns'
 
 interface CodeBlockProps {
   title: string
@@ -29,7 +29,17 @@ export const CodeBlock = (props: CodeBlockProps) => {
         },
       })}
     >
-      <div className={hstack({ bg: 'bg.muted', px: '4', py: '3', roundedTop: 'lg', borderBottomWidth: '1px' })}>
+      <div
+        className={flex({
+          align: 'center',
+          gap: '8px',
+          bg: 'bg.muted',
+          px: '4',
+          py: '3',
+          roundedTop: 'lg',
+          borderBottomWidth: '1px',
+        })}
+      >
         {resolvedLang && <CodeLangIcon type={resolvedLang} />}
         <p className={css({ textStyle: 'sm', fontFamily: 'mono' })}>{title}</p>
       </div>

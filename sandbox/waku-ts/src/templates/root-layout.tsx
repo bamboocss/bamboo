@@ -2,7 +2,7 @@ import '../styles.css'
 
 import type { ReactNode } from 'react'
 import { css } from '../../styled-system/css/index.js'
-import { hstack } from '../../styled-system/patterns/index.js'
+import { flex } from '../../styled-system/patterns/index.js'
 import { Footer } from '../components/footer.js'
 import { Header } from '../components/header.js'
 
@@ -17,7 +17,9 @@ export const RootLayout = async ({ children }: RootLayoutProps) => {
       <link rel="icon" type="image/png" href={data.icon} />
       <Header />
       <main
-        className={hstack({
+        className={flex({
+          align: 'center',
+          gap: '8px',
           minH: 'svh',
           justify: 'center',
         })}

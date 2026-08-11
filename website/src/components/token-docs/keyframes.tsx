@@ -1,6 +1,6 @@
 import { defaultKeyframes } from '@/components/token-docs/query'
 import { css } from '@/styled-system/css'
-import { grid, square, stack } from '@/styled-system/patterns'
+import { center, flex, grid } from '@/styled-system/patterns'
 import { Token, token } from '@/styled-system/tokens'
 
 export const Keyframes = () => {
@@ -8,9 +8,9 @@ export const Keyframes = () => {
     <div className={grid({ columns: 3, gap: '8', fontSize: 'sm' })}>
       {Object.keys(defaultKeyframes).map((keyframe) => {
         return (
-          <div key={keyframe} className={stack()}>
+          <div key={keyframe} className={flex({ direction: 'column', gap: '8px' })}>
             <div
-              className={square({
+              className={center({
                 size: '12',
                 bg: 'pink.200',
               })}

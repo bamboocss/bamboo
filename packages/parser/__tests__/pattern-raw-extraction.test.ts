@@ -5,15 +5,15 @@ describe('pattern.raw() extraction in selectors', () => {
   test('pattern.raw() spread at top level', () => {
     const code = `
       import { css } from "styled-system/css";
-      import { stack } from "styled-system/patterns";
+      import { flex } from "styled-system/patterns";
       
-      const baseStack = stack.raw({ 
+      const baseFlex = flex.raw({ 
         direction: 'column',
         gap: '4'
       })
       
       const styles = css({
-        ...baseStack,
+        ...baseFlex,
         padding: '6'
       })
     `
@@ -29,7 +29,7 @@ describe('pattern.raw() extraction in selectors', () => {
               "gap": "4",
             },
           ],
-          "name": "stack",
+          "name": "flex",
           "type": "pattern",
         },
         {
@@ -50,9 +50,9 @@ describe('pattern.raw() extraction in selectors', () => {
   test('pattern.raw() spread within hover selector', () => {
     const code = `
       import { css } from "styled-system/css";
-      import { stack } from "styled-system/patterns";
+      import { flex } from "styled-system/patterns";
       
-      const hoverStack = stack.raw({ 
+      const hoverFlex = flex.raw({ 
         direction: 'row',
         gap: '8'
       })
@@ -60,7 +60,7 @@ describe('pattern.raw() extraction in selectors', () => {
       const styles = css({
         padding: '4',
         '&:hover': {
-          ...hoverStack,
+          ...hoverFlex,
           opacity: 0.8
         }
       })
@@ -77,7 +77,7 @@ describe('pattern.raw() extraction in selectors', () => {
               "gap": "8",
             },
           ],
-          "name": "stack",
+          "name": "flex",
           "type": "pattern",
         },
         {
@@ -212,12 +212,12 @@ describe('pattern.raw() extraction in selectors', () => {
   test('inline pattern.raw() within selector', () => {
     const code = `
       import { css } from "styled-system/css";
-      import { stack } from "styled-system/patterns";
+      import { flex } from "styled-system/patterns";
       
       const styles = css({
         padding: '4',
         '&:hover': {
-          ...stack.raw({ direction: 'row', gap: '8' }),
+          ...flex.raw({ direction: 'row', gap: '8' }),
           opacity: 0.8
         }
       })
@@ -248,7 +248,7 @@ describe('pattern.raw() extraction in selectors', () => {
               "gap": "8",
             },
           ],
-          "name": "stack",
+          "name": "flex",
           "type": "pattern",
         },
       ]
@@ -258,12 +258,12 @@ describe('pattern.raw() extraction in selectors', () => {
   test('multiple inline pattern.raw() calls in nested selectors', () => {
     const code = `
       import { css } from "styled-system/css";
-      import { stack, center, grid } from "styled-system/patterns";
+      import { flex, center, grid } from "styled-system/patterns";
       
       const styles = css({
         display: 'block',
         '& > div': {
-          ...stack.raw({ direction: 'column', gap: '2' }),
+          ...flex.raw({ direction: 'column', gap: '2' }),
           '&:hover': {
             ...center.raw({ inline: true }),
             background: 'gray.100'
@@ -309,7 +309,7 @@ describe('pattern.raw() extraction in selectors', () => {
               "gap": "2",
             },
           ],
-          "name": "stack",
+          "name": "flex",
           "type": "pattern",
         },
         {
@@ -338,9 +338,9 @@ describe('pattern.raw() extraction in selectors', () => {
   test('pattern.raw() in cva recipe with selectors', () => {
     const code = `
       import { cva } from "styled-system/css";
-      import { stack } from "styled-system/patterns";
+      import { flex } from "styled-system/patterns";
       
-      const stackLayout = stack.raw({
+      const flexLayout = flex.raw({
         direction: 'column',
         gap: '2'
       })
@@ -349,7 +349,7 @@ describe('pattern.raw() extraction in selectors', () => {
         base: {
           cursor: 'pointer',
           '&:hover': {
-            ...stackLayout,
+            ...flexLayout,
             opacity: 0.9
           }
         },
@@ -358,7 +358,7 @@ describe('pattern.raw() extraction in selectors', () => {
             sm: {
               padding: '2',
               '&:focus': {
-                ...stackLayout,
+                ...flexLayout,
                 outline: '2px solid blue'
               }
             }
@@ -378,7 +378,7 @@ describe('pattern.raw() extraction in selectors', () => {
               "gap": "2",
             },
           ],
-          "name": "stack",
+          "name": "flex",
           "type": "pattern",
         },
         {
@@ -545,9 +545,9 @@ describe('pattern.raw() extraction in selectors', () => {
   test('css.raw() inline within pattern (reverse scenario)', () => {
     const code = `
       import { css } from "styled-system/css";
-      import { stack } from "styled-system/patterns";
+      import { flex } from "styled-system/patterns";
       
-      const layout = stack({
+      const layout = flex({
         direction: 'column',
         '&:hover': {
           ...css.raw({ color: 'red', fontSize: '16px' }),
@@ -571,7 +571,7 @@ describe('pattern.raw() extraction in selectors', () => {
               "direction": "column",
             },
           ],
-          "name": "stack",
+          "name": "flex",
           "type": "pattern",
         },
         {
@@ -590,12 +590,12 @@ describe('pattern.raw() extraction in selectors', () => {
 
   test('pattern function called inside another pattern', () => {
     const code = `
-      import { flex, stack } from "styled-system/patterns";
+      import { flex, flex } from "styled-system/patterns";
       
       const layout = flex({
         direction: 'column',
         '&:hover': {
-          ...stack.raw({ gap: '4', direction: 'row' }),
+          ...flex.raw({ gap: '4', direction: 'row' }),
           opacity: 0.9
         }
       })
@@ -626,7 +626,7 @@ describe('pattern.raw() extraction in selectors', () => {
               "gap": "4",
             },
           ],
-          "name": "stack",
+          "name": "flex",
           "type": "pattern",
         },
       ]
@@ -696,13 +696,13 @@ describe('pattern.raw() extraction in selectors', () => {
   test('multiple pattern.raw spreads in same object', () => {
     const code = `
       import { css } from "styled-system/css";
-      import { flex, center, stack } from "styled-system/patterns";
+      import { flex, center, flex } from "styled-system/patterns";
       
       const styles = css({
         '&:hover': {
           ...flex.raw({ direction: 'row' }),
           ...center.raw({ inline: true }),
-          ...stack.raw({ gap: '4' }),
+          ...flex.raw({ gap: '4' }),
           color: 'red'
         }
       })
@@ -738,19 +738,19 @@ describe('pattern.raw() extraction in selectors', () => {
         {
           "data": [
             {
-              "inline": true,
+              "gap": "4",
             },
           ],
-          "name": "center",
+          "name": "flex",
           "type": "pattern",
         },
         {
           "data": [
             {
-              "gap": "4",
+              "inline": true,
             },
           ],
-          "name": "stack",
+          "name": "center",
           "type": "pattern",
         },
       ]
@@ -760,13 +760,13 @@ describe('pattern.raw() extraction in selectors', () => {
   test('comparing all scenarios: top-level vs selector vs inline', () => {
     const code = `
       import { css } from "styled-system/css";
-      import { stack } from "styled-system/patterns";
+      import { flex } from "styled-system/patterns";
       
-      const stackRaw = stack.raw({ direction: 'row', gap: '4' })
+      const flexRaw = flex.raw({ direction: 'row', gap: '4' })
       
       // Scenario 1: Works - spread at top level
       const worksAtTopLevel = css({
-        ...stackRaw,
+        ...flexRaw,
         padding: '6'
       })
       
@@ -774,7 +774,7 @@ describe('pattern.raw() extraction in selectors', () => {
       const worksInSelector = css({
         padding: '6',
         '&:hover': {
-          ...stackRaw,
+          ...flexRaw,
           opacity: 0.8
         }
       })
@@ -783,7 +783,7 @@ describe('pattern.raw() extraction in selectors', () => {
       const inlineInSelector = css({
         padding: '6',
         '&:hover': {
-          ...stack.raw({ direction: 'column', gap: '8' }),
+          ...flex.raw({ direction: 'column', gap: '8' }),
           opacity: 0.8
         }
       })
@@ -800,7 +800,7 @@ describe('pattern.raw() extraction in selectors', () => {
               "gap": "4",
             },
           ],
-          "name": "stack",
+          "name": "flex",
           "type": "pattern",
         },
         {
@@ -810,7 +810,7 @@ describe('pattern.raw() extraction in selectors', () => {
               "gap": "8",
             },
           ],
-          "name": "stack",
+          "name": "flex",
           "type": "pattern",
         },
         {

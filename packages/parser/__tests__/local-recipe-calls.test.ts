@@ -202,9 +202,9 @@ describe('calls of a locally-bound recipe', () => {
       ctx.project.addSourceFile(
         'app/src/test.tsx',
         `import { cva } from 'styled-system/css'\n` +
-          `import { stack } from 'styled-system/patterns'\n` +
-          `export function Card() {\n  const stack = cva({ base: { color: 'red.300' } })\n  return stack({})\n}\n` +
-          `export const y = stack({ gap: '4' })`,
+          `import { flex } from 'styled-system/patterns'\n` +
+          `export function Card() {\n  const flex = cva({ base: { color: 'red.300' } })\n  return flex({})\n}\n` +
+          `export const y = flex({ gap: '4' })`,
       )
       const result = ctx.project.parseSourceFile('app/src/test.tsx')
 
@@ -263,7 +263,7 @@ describe('calls of a locally-bound recipe', () => {
       const out = encode(
         `import { cva } from 'styled-system/css'\n` +
           `import * as p from 'styled-system/patterns'\n` +
-          `const stack = ${RECIPE}\nexport const a = stack({ tone: 'a' })`,
+          `const flex = ${RECIPE}\nexport const a = flex({ tone: 'a' })`,
       )
 
       expect(out.atomic).toEqual([])
@@ -298,8 +298,8 @@ describe('calls of a locally-bound recipe', () => {
     test('a pattern imported under an alias is unaffected', () => {
       const out = encode(
         `import { cva } from 'styled-system/css'\n` +
-          `import { stack as s } from 'styled-system/patterns'\n` +
-          `const hstack = ${RECIPE}\nexport const a = hstack({ tone: 'a' })\nexport const b = s({ gap: '4' })`,
+          `import { flex as s } from 'styled-system/patterns'\n` +
+          `const myRecipe = ${RECIPE}\nexport const a = myRecipe({ tone: 'a' })\nexport const b = s({ gap: '4' })`,
       )
 
       expect(out.atomic.join('\n')).toContain('gap')

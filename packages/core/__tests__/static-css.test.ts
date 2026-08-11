@@ -823,7 +823,7 @@ describe('static-css', () => {
           // type: 'token'
           spacer: [{ properties: { size: ['sm', 'md', 'lg'] } }],
           // type: 'property'
-          circle: [{ properties: { size: ['sm', 'md', 'lg'] } }],
+          center: [{ properties: { size: ['sm', 'md', 'lg'] } }],
           bleed: [{ properties: { inline: ['*'] } }],
           // type: 'enum' + type: 'token'
           divider: [{ properties: { orientation: ['*'], thickness: ['*'] } }],
@@ -915,10 +915,6 @@ describe('static-css', () => {
 
         .flex_0_0_auto {
           flex: 0 0 auto;
-      }
-
-        .bdr_9999px {
-          border-radius: 9999px;
       }
 
         .mx_calc\\(var\\(--bleed-x\\,_0\\)_\\*_-1\\) {
@@ -1342,7 +1338,6 @@ describe('static-css', () => {
             },
             {
               "alignItems": "center",
-              "borderRadius": "9999px",
               "display": "flex",
               "flex": "0 0 auto",
               "height": "sm",
@@ -1351,7 +1346,6 @@ describe('static-css', () => {
             },
             {
               "alignItems": "center",
-              "borderRadius": "9999px",
               "display": "flex",
               "flex": "0 0 auto",
               "height": "md",
@@ -1360,7 +1354,6 @@ describe('static-css', () => {
             },
             {
               "alignItems": "center",
-              "borderRadius": "9999px",
               "display": "flex",
               "flex": "0 0 auto",
               "height": "lg",

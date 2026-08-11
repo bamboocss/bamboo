@@ -1,5 +1,5 @@
 import { css, cva } from '@/styled-system/css'
-import { hstack, stack } from '@/styled-system/patterns'
+import { flex } from '@/styled-system/patterns'
 import type { ResultItem } from '@bamboocss/types'
 import { useTheme } from 'next-themes'
 import { useBamboo } from '../hooks/useBamboo'
@@ -14,7 +14,7 @@ export const ASTViewer = React.memo(function ASTViewer(props: {
   if (!props.parserResult) return null
 
   return (
-    <div className={stack({ py: '4', h: 'full', overflow: 'auto' })}>
+    <div className={flex({ direction: 'column', gap: '8px', py: '4', h: 'full', overflow: 'auto' })}>
       {Array.from(props.parserResult.toArray()).map((result, index) => {
         return <ResultItemRow key={index} result={result} />
       })}
@@ -63,8 +63,8 @@ const ResultItemRow = (props: { result: ResultItem }) => {
   const { result } = props
   const { resolvedTheme } = useTheme()
   return (
-    <div className={stack({ px: '6' })}>
-      <div className={hstack()}>
+    <div className={flex({ direction: 'column', gap: '8px', px: '6' })}>
+      <div className={flex({ align: 'center', gap: '8px' })}>
         <span className={resultType({ type: result.type })}>{result.type}</span>{' '}
         <span className={resultType({ name: result.name as 'cva' | 'css' })}>{result.name}</span>
         <span className={css({ ml: 'auto' })}>(l{getReportRange(result)})</span>

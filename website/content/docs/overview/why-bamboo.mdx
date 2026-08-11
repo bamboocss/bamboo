@@ -35,20 +35,21 @@ If you're building a JavaScript application with a framework that supports PostC
 
 ```jsx
 import { css } from '../styled-system/css'
-import { circle, stack } from '../styled-system/patterns'
+import { center, flex } from '../styled-system/patterns'
 
 function App() {
   return (
     <div
-      className={stack({
+      className={flex({
         direction: 'row',
+        gap: '8px',
         p: '4',
         rounded: 'md',
         shadow: 'lg',
         bg: 'white',
       })}
     >
-      <div className={circle({ size: '5rem', overflow: 'hidden' })}>
+      <div className={center({ size: '5rem', borderRadius: 'full', overflow: 'hidden' })}>
         <img src="https://via.placeholder.com/150" alt="avatar" />
       </div>
       <div className={css({ mt: '4', fontSize: 'xl', fontWeight: 'semibold' })}>John Doe</div>

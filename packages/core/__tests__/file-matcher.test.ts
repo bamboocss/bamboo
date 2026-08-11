@@ -32,22 +32,22 @@ describe('file matcher', () => {
 
     const file = ctx.imports.file([
       { mod: 'styled-system/css', name: 'cva', alias: 'cva' },
-      { mod: 'styled-system/patterns', name: 'stack', alias: 'stack' },
+      { mod: 'styled-system/patterns', name: 'flex', alias: 'flex' },
       { mod: '@acme/org/css', name: 'cva', alias: 'cvaAcme' },
-      { mod: '@acme/org/patterns', name: 'stack', alias: 'stackAcme' },
+      { mod: '@acme/org/patterns', name: 'flex', alias: 'flexAcme' },
 
       { mod: '@wrong/org/css', name: 'cva', alias: 'cvaWrong' },
-      { mod: '@wrong/org/patterns', name: 'stack', alias: 'stackWrong' },
+      { mod: '@wrong/org/patterns', name: 'flex', alias: 'flexWrong' },
     ])
 
     expect(file.matchFn('cva')).toMatchInlineSnapshot('true')
     expect(file.matchFn('cvaAcme')).toMatchInlineSnapshot('true')
-    expect(file.isValidPattern('stack')).toMatchInlineSnapshot('true')
-    expect(file.isValidPattern('stackAcme')).toMatchInlineSnapshot('true')
+    expect(file.isValidPattern('flex')).toMatchInlineSnapshot('true')
+    expect(file.isValidPattern('flexAcme')).toMatchInlineSnapshot('true')
 
     expect(file.isValidPattern('randxxx')).toMatchInlineSnapshot('false')
     expect(file.matchFn('cvaWrong')).toMatchInlineSnapshot(`false`)
-    expect(file.matchFn('stackWrong')).toMatchInlineSnapshot(`false`)
+    expect(file.matchFn('flexWrong')).toMatchInlineSnapshot(`false`)
   })
 
   test('isBambooComponent', () => {
@@ -79,15 +79,15 @@ describe('file matcher', () => {
     const ctx = createContext()
 
     const file = ctx.imports.file([
-      { mod: 'styled-system/patterns', name: 'stack', alias: 'stack' },
-      { mod: 'styled-system/patterns', name: 'vstack', alias: '__vstack' },
+      { mod: 'styled-system/patterns', name: 'flex', alias: 'flex' },
+      { mod: 'styled-system/patterns', name: 'center', alias: '__center' },
     ])
 
     expect(file.isValidPattern('randxxx')).toMatchInlineSnapshot('false')
-    expect(file.isValidPattern('stack')).toMatchInlineSnapshot('true')
+    expect(file.isValidPattern('flex')).toMatchInlineSnapshot('true')
 
-    expect(file.isValidPattern('__vstack')).toMatchInlineSnapshot('true')
-    expect(file.isValidPattern('vstack')).toMatchInlineSnapshot('true')
+    expect(file.isValidPattern('__center')).toMatchInlineSnapshot('true')
+    expect(file.isValidPattern('center')).toMatchInlineSnapshot('true')
   })
 
   test('is valid recipe', () => {
@@ -121,7 +121,7 @@ describe('file matcher', () => {
     const file = ctx.imports.file([
       { mod: 'styled-system/css', name: 'css', alias: 'xcss' },
       { mod: 'styled-system/css', name: 'cva', alias: 'cva' },
-      { mod: 'styled-system/patterns', name: 'stack', alias: 'stack' },
+      { mod: 'styled-system/patterns', name: 'flex', alias: 'flex' },
     ])
 
     expect(file.isRawFn('css')).toMatchInlineSnapshot('true')
@@ -129,7 +129,7 @@ describe('file matcher', () => {
 
     expect(file.isRawFn('css.raw')).toMatchInlineSnapshot('true')
     expect(file.isRawFn('xcss.raw')).toMatchInlineSnapshot('true') // xcss.raw should work too
-    expect(file.isRawFn('stack.raw')).toMatchInlineSnapshot('true')
+    expect(file.isRawFn('flex.raw')).toMatchInlineSnapshot('true')
 
     expect(file.isRawFn('cva.raw')).toMatchInlineSnapshot('true') // cva is imported, should be true
   })
@@ -170,7 +170,7 @@ describe('file matcher', () => {
     // import * as p from 'styled-system/patterns'
     const file = ctx.imports.file([{ mod: 'styled-system/patterns', name: 'p', alias: 'p', kind: 'namespace' }])
 
-    expect(file.isValidPattern('p.stack')).toMatchInlineSnapshot(`true`)
+    expect(file.isValidPattern('p.flex')).toMatchInlineSnapshot(`true`)
     expect(file.isValidPattern('p.grid')).toMatchInlineSnapshot(`true`)
   })
 

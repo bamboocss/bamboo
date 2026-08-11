@@ -6,7 +6,7 @@ describe('{fn}.raw', () => {
     const code = `
         import { css } from "styled-system/css";
         import { buttonStyle } from "styled-system/recipes";
-        import { stack } from "styled-system/patterns";
+        import { flex } from "styled-system/patterns";
 
         const filePath = String.raw\`C:\\Development\\profile\\aboutme.html\`;
 
@@ -29,11 +29,11 @@ describe('{fn}.raw', () => {
 
         // mixed with pattern
         const stackProps = {
-          sm: stack.raw({ direction: "column" }),
-          md: stack.raw({ direction: "row" })
+          sm: flex.raw({ direction: "column" }),
+          md: flex.raw({ direction: "row" })
         }
 
-        stack(stackProps[props.size]))
+        flex(stackProps[props.size]))
 
          `
 
@@ -90,7 +90,7 @@ describe('{fn}.raw', () => {
               "direction": "column",
             },
           ],
-          "name": "stack",
+          "name": "flex",
           "type": "pattern",
         },
         {
@@ -99,14 +99,14 @@ describe('{fn}.raw', () => {
               "direction": "row",
             },
           ],
-          "name": "stack",
+          "name": "flex",
           "type": "pattern",
         },
         {
           "data": [
             {},
           ],
-          "name": "stack",
+          "name": "flex",
           "type": "pattern",
         },
       ]
@@ -165,10 +165,6 @@ describe('{fn}.raw', () => {
 
         .mx_10 {
           margin-inline: var(--spacing-10);
-      }
-
-        .gap_8px {
-          gap: 8px;
       }
 
         .c_amber\\.100 {
