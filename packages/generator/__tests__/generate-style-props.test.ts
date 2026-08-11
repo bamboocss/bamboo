@@ -16192,11 +16192,16 @@ describe('generate property types', () => {
   test('with globalVars', () => {
     const str = generateStyleProps(
       createContext({
-        hooks: {
-          'config:resolved': ({ config, utils }) => {
-            return utils.omit(config, ['utilities', 'theme.tokens', 'theme.semanticTokens'])
+        plugins: [
+          {
+            name: 'test',
+            hooks: {
+              'config:resolved': ({ config, utils }) => {
+                return utils.omit(config, ['utilities', 'theme.tokens', 'theme.semanticTokens'])
+              },
+            },
           },
-        },
+        ],
         global: {
           vars: {
             '--random-color': 'red',

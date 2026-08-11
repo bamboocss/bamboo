@@ -6,7 +6,12 @@ description: Leveraging hooks in Bamboo to create custom functionality.
 Bamboo hooks can be used to add new functionality or modify existing behavior during certian parts of the compiler
 lifecycle.
 
-Hooks are mostly callbacks that can be added to the bamboo config via the `hooks` property, or installed via `plugins`.
+Hooks are mostly callbacks, registered through `plugins` — a plugin is a `name` and a `hooks` object.
+
+They used to be registrable two ways: through `plugins`, or through a bare `hooks` key on the config, which was treated
+as a nameless plugin appended after the rest. That gave one mechanism two spellings and an ordering rule you had to
+know, and left every diagnostic about a hook with no name to print for the config's own set. Your own hooks are a plugin
+like any other now, so ordering is just the order of the array.
 
 See the [Reference](#reference) below for the full list of hooks and their signatures.
 
@@ -21,13 +26,18 @@ import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   // ...
-  hooks: {
-    'tokens:created': ({ configure }) => {
-      configure({
-        formatTokenName: (path) => '$' + path.join('-'),
-      })
+  plugins: [
+    {
+      name: 'my-app',
+      hooks: {
+        'tokens:created': ({ configure }) => {
+          configure({
+            formatTokenName: (path) => '$' + path.join('-'),
+          })
+        },
+      },
     },
-  },
+  ],
 })
 ```
 
@@ -40,18 +50,23 @@ hash the classnames.
 export default defineConfig({
   // ...
   hash: true,
-  hooks: {
-    'utility:created': ({ configure }) => {
-      configure({
-        toHash: (paths, toHash) => {
-          const stringConds = paths.join(':')
-          const splitConds = stringConds.split('_')
-          const hashConds = splitConds.map(toHash)
-          return hashConds.join('_')
+  plugins: [
+    {
+      name: 'my-app',
+      hooks: {
+        'utility:created': ({ configure }) => {
+          configure({
+            toHash: (paths, toHash) => {
+              const stringConds = paths.join(':')
+              const splitConds = stringConds.split('_')
+              const hashConds = splitConds.map(toHash)
+              return hashConds.join('_')
+            },
+          })
         },
-      })
+      },
     },
-  },
+  ],
 })
 ```
 
@@ -65,11 +80,16 @@ import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   // ...
-  hooks: {
-    'config:resolved': ({ config, utils }) => {
-      return utils.omit(config, ['patterns.stack'])
+  plugins: [
+    {
+      name: 'my-app',
+      hooks: {
+        'config:resolved': ({ config, utils }) => {
+          return utils.omit(config, ['patterns.stack'])
+        },
+      },
     },
-  },
+  ],
 })
 ```
 
@@ -83,14 +103,19 @@ import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   // ...
-  hooks: {
-    'preset:resolved': ({ utils, preset, name }) => {
-      if (name === '@bamboocss/preset-bamboo') {
-        return utils.omit(preset, ['theme.tokens.colors', 'theme.semanticTokens.colors'])
-      }
-      return preset
+  plugins: [
+    {
+      name: 'my-app',
+      hooks: {
+        'preset:resolved': ({ utils, preset, name }) => {
+          if (name === '@bamboocss/preset-bamboo') {
+            return utils.omit(preset, ['theme.tokens.colors', 'theme.semanticTokens.colors'])
+          }
+          return preset
+        },
+      },
     },
-  },
+  ],
 })
 ```
 
@@ -111,16 +136,21 @@ Let's see a Radix UI example where the `Select.Content` component has a `positio
 ```ts
 export default defineConfig({
   // ...
-  hooks: {
-    'parser:before': ({ configure }) => {
-      configure({
-        // ignore the Select.Content entirely
-        matchTag: (tag) => tag !== 'Select.Content',
-        // ...or specifically ignore the `position` property
-        matchTagProp: (tag, prop) => tag === 'Select.Content' && prop !== 'position',
-      })
+  plugins: [
+    {
+      name: 'my-app',
+      hooks: {
+        'parser:before': ({ configure }) => {
+          configure({
+            // ignore the Select.Content entirely
+            matchTag: (tag) => tag !== 'Select.Content',
+            // ...or specifically ignore the `position` property
+            matchTagProp: (tag, prop) => tag === 'Select.Content' && prop !== 'position',
+          })
+        },
+      },
     },
-  },
+  ],
 })
 ```
 
@@ -136,13 +166,18 @@ import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   // ...
-  hooks: {
-    'cssgen:done': ({ artifact, content }) => {
-      if (artifact === 'styles.css') {
-        return content.replaceAll('url(/assets/', 'url(https://cdn.example.com/assets/')
-      }
+  plugins: [
+    {
+      name: 'my-app',
+      hooks: {
+        'cssgen:done': ({ artifact, content }) => {
+          if (artifact === 'styles.css') {
+            return content.replaceAll('url(/assets/', 'url(https://cdn.example.com/assets/')
+          }
+        },
+      },
     },
-  },
+  ],
 })
 ```
 
@@ -155,11 +190,11 @@ export default defineConfig({
 
 ## Sharing hooks
 
-Hooks can be shared as a snippet or as a `plugin`. Plugins are currently simple objects that contain a `name` associated
-with a `hooks` object with the same structure as the `hooks` object in the config.
+A plugin is already shareable — it is a plain object with a `name` and a `hooks` object, so exporting one from a package
+is all there is to it.
 
-> Plugins differ from `presets` as they can't be extended, but they will be called in sequence in the order they are
-> defined in the `plugins` array, with the user's config called last.
+> Plugins differ from `presets` as they can't be extended, and they are called in sequence in the order they are defined
+> in the `plugins` array.
 
 ```ts
 import { defineConfig } from '@bamboocss/dev'

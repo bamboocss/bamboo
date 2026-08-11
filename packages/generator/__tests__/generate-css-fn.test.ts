@@ -129,18 +129,23 @@ describe('generate css-fn', () => {
     expect(
       generateCssFn(
         createContext({
-          hooks: {
-            'utility:created': ({ configure }) => {
-              configure({
-                toHash(paths, toHash) {
-                  const stringConds = paths.join(':')
-                  const splitConds = stringConds.split('_')
-                  const hashConds = splitConds.map(toHash)
-                  return hashConds.join('_')
+          plugins: [
+            {
+              name: 'test',
+              hooks: {
+                'utility:created': ({ configure }) => {
+                  configure({
+                    toHash(paths, toHash) {
+                      const stringConds = paths.join(':')
+                      const splitConds = stringConds.split('_')
+                      const hashConds = splitConds.map(toHash)
+                      return hashConds.join('_')
+                    },
+                  })
                 },
-              })
+              },
             },
-          },
+          ],
         }),
       ),
     ).toMatchInlineSnapshot(`
@@ -225,11 +230,11 @@ describe('generate css-fn', () => {
                   },
           hasShorthand: true,
           toHash: toHash(paths, toHash) {
-                        const stringConds = paths.join(":");
-                        const splitConds = stringConds.split("_");
-                        const hashConds = splitConds.map(toHash);
-                        return hashConds.join("_");
-                      },
+                            const stringConds = paths.join(":");
+                            const splitConds = stringConds.split("_");
+                            const hashConds = splitConds.map(toHash);
+                            return hashConds.join("_");
+                          },
           resolveShorthand: resolveShorthand,
         }
       }

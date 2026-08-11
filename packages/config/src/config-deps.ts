@@ -18,7 +18,6 @@ const all: ConfigPath[] = [
   'emitTokensOnly',
   'presets',
   'plugins',
-  'hooks',
 ]
 
 const format: ConfigPath[] = ['hash', 'prefix', 'separator', 'strictTokens', 'strictPropertyValues', 'shorthands']

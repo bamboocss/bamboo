@@ -1,4 +1,4 @@
-import { BAMBOO_CONFIG_NAME, assign, mergeWith, mergeAndConcat, walkObject } from '@bamboocss/shared'
+import { assign, mergeWith, mergeAndConcat, walkObject } from '@bamboocss/shared'
 import type { Config } from '@bamboocss/types'
 import { mergeHooks } from './merge-hooks'
 export { mergeHooks }
@@ -116,12 +116,6 @@ function mergeScalarShorthand(key: string, records: ExtendableConfig[]) {
  * Merge all configs into a single config
  */
 export function mergeConfigs(configs: ExtendableConfig[]) {
-  const userConfig = configs.at(-1)!
-  const pluginHooks = userConfig.plugins ?? []
-  if (userConfig.hooks) {
-    pluginHooks.push({ name: BAMBOO_CONFIG_NAME, hooks: userConfig.hooks })
-  }
-
   const reversed = Array.from(configs).reverse()
 
   const theme: Dict = mergeExtensions(reversed.map((config) => config.theme ?? {}))
@@ -161,7 +155,6 @@ export function mergeConfigs(configs: ExtendableConfig[]) {
       hash: mergeScalarShorthand('hash', reversed),
       prefix: mergeScalarShorthand('prefix', reversed),
       preflight: mergeScalarShorthand('preflight', reversed),
-      hooks: mergeHooks(pluginHooks),
     },
     ...reversed,
   )

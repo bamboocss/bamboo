@@ -1,4 +1,4 @@
-import { mergeConfigs } from '@bamboocss/config'
+import { mergeConfigs, mergeHooks } from '@bamboocss/config'
 import { RuleProcessor } from '@bamboocss/core'
 import { Generator } from '@bamboocss/generator'
 import { BambooContext } from '@bamboocss/node'
@@ -51,13 +51,18 @@ export const createGeneratorContext = (userConfig?: Config) => {
 export const createContext = (userConfig?: Config & Pick<Partial<LoadConfigResult>, 'tsconfig' | 'tsOptions'>) => {
   let resolvedConfig = mergeConfigs([isBare(userConfig) ? {} : fixtureDefaults.config, userConfig ?? {}]) as UserConfig
 
-  const hooks = userConfig?.hooks ?? {}
+  // From `plugins`, the same and only source the real pipeline reads. Kept in step with it
+  // deliberately: a fixture that accepted a config shape the product does not would let a
+  // test pass against an input no user can write.
+  const plugins = userConfig?.plugins ?? []
+  const hooks = mergeHooks(plugins)
 
-  // This allows editing the config before the context is created
-  // since this function is only used in tests, we only look at the user hooks
-  // not the presets hooks, so that we can keep this fn sync
-  if (hooks['config:resolved']) {
-    const result = hooks['config:resolved']({
+  // This allows editing the config before the context is created. Only the user's plugins,
+  // not the presets', so that this function can stay sync — and applied one plugin at a time
+  // rather than through `hooks`, because `mergeHooks` wraps `config:resolved` in an async
+  // reducer whose promise this would assign to the config wholesale.
+  for (const plugin of plugins) {
+    const result = plugin.hooks?.['config:resolved']?.({
       config: resolvedConfig,
       path: fixtureDefaults.path,
       dependencies: fixtureDefaults.dependencies,
@@ -70,7 +75,7 @@ export const createContext = (userConfig?: Config & Pick<Partial<LoadConfigResul
 
   return new BambooContext({
     ...fixtureDefaults,
-    hooks: userConfig?.hooks ?? {},
+    hooks,
     // Path mappings reach the context through `conf`, not through the config, so a test
     // exercising alias resolution has to supply them here.
     ...(userConfig?.tsOptions ? { tsOptions: userConfig.tsOptions } : {}),

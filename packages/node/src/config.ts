@@ -43,7 +43,7 @@ export async function loadConfigAndCreateContext(options: { cwd?: string; config
   // Auto plugins run first, then the already-resolved user hooks run after
   const autoPlugins = getAutoPlugins()
 
-  // conf.hooks is already properly merged from user plugins + inline hooks by resolveConfig.
+  // conf.hooks is already properly merged from the user's plugins by resolveConfig.
   // Prepend auto-plugins before it — don't re-process user plugins to avoid double-execution.
   conf.hooks = mergeHooks([...autoPlugins, { name: RESOLVED_HOOKS_NAME, hooks: conf.hooks }])
   conf.config.plugins = [...autoPlugins, ...(conf.config.plugins ?? [])]

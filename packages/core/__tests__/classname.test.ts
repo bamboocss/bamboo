@@ -98,20 +98,25 @@ describe('generate classnames', () => {
   test('should not format the class name', () => {
     const css = createCss(
       createGeneratorContext({
-        hooks: {
-          'tokens:created': ({ configure }) => {
-            configure({
-              formatTokenName: (path) => '$' + path.join('-'),
-              formatCssVar: (path) => {
-                const variable = path.join('-').replace('$', '').replace('.', '')
-                return {
-                  var: variable as any,
-                  ref: `var(--${variable})`,
-                }
+        plugins: [
+          {
+            name: 'test',
+            hooks: {
+              'tokens:created': ({ configure }) => {
+                configure({
+                  formatTokenName: (path) => '$' + path.join('-'),
+                  formatCssVar: (path) => {
+                    const variable = path.join('-').replace('$', '').replace('.', '')
+                    return {
+                      var: variable as any,
+                      ref: `var(--${variable})`,
+                    }
+                  },
+                })
               },
-            })
+            },
           },
-        },
+        ],
       }).baseSheetContext,
     )
     expect(
@@ -125,20 +130,25 @@ describe('generate classnames', () => {
   test('should format the non-string values', () => {
     const css = createCss(
       createGeneratorContext({
-        hooks: {
-          'tokens:created': ({ configure }) => {
-            configure({
-              formatTokenName: (path) => '$' + path.join('-'),
-              formatCssVar: (path) => {
-                const variable = path.join('-').replace('$', '').replace('.', '')
-                return {
-                  var: variable as any,
-                  ref: `var(--${variable})`,
-                }
+        plugins: [
+          {
+            name: 'test',
+            hooks: {
+              'tokens:created': ({ configure }) => {
+                configure({
+                  formatTokenName: (path) => '$' + path.join('-'),
+                  formatCssVar: (path) => {
+                    const variable = path.join('-').replace('$', '').replace('.', '')
+                    return {
+                      var: variable as any,
+                      ref: `var(--${variable})`,
+                    }
+                  },
+                })
               },
-            })
+            },
           },
-        },
+        ],
       }).baseSheetContext,
     )
     expect(

@@ -2048,13 +2048,18 @@ test('[dts] should generate package', () => {
 test('with formatTokenName', () => {
   expect(
     tokenJs({
-      hooks: {
-        'tokens:created': ({ configure }) => {
-          configure({
-            formatTokenName: (path: string[]) => '$' + path.join('-'),
-          })
+      plugins: [
+        {
+          name: 'test',
+          hooks: {
+            'tokens:created': ({ configure }) => {
+              configure({
+                formatTokenName: (path: string[]) => '$' + path.join('-'),
+              })
+            },
+          },
         },
-      },
+      ],
     }),
   ).toMatchInlineSnapshot(
     `

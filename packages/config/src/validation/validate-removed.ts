@@ -36,6 +36,9 @@ const REMOVED: Record<string, (value: unknown) => string> = {
       ? `\`eject: true\` is now \`presets: []\`. \`presets\` is the complete list — an unset \`presets\` loads \`defaultPresets\`, and listing your own no longer keeps a default underneath it.`
       : `\`eject: false\` was the default and no longer exists — delete it. \`presets\` is now the complete list.`,
 
+  hooks: () =>
+    `\`hooks\` is now a plugin: \`plugins: [{ name: 'my-app', hooks: { ... } }]\`. One mechanism had two spellings, and the nameless one left every diagnostic about a hook with nothing to print. Ordering is now just the order of the array, rather than "plugins in sequence, then the config's own last".`,
+
   lightningcss: (value) =>
     value
       ? `\`lightningcss: true\` is now \`plugins: [pluginLightningcss()]\` from \`@bamboocss/plugin-lightningcss\`, which you install yourself. The flag forced a static import, so every project carried the native binary whether or not it was on.`

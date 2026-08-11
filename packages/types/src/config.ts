@@ -400,12 +400,19 @@ interface PresetOptions {
   presets?: (string | Preset | Promise<Preset>)[]
 }
 
-export interface HooksOptions {
-  hooks?: Partial<BambooHooks>
-}
-
-export interface BambooPlugin extends HooksOptions {
+/**
+ * A named set of hooks.
+ *
+ * The name is the point. Hooks used to be registrable two ways — here, and as a bare
+ * `hooks` key on the config — with the config's own set treated as a nameless plugin
+ * appended last. That gave one mechanism two spellings and an ordering rule you had to
+ * know, while every diagnostic about a hook had a name to print for one of them and not
+ * the other. Your own hooks are now a plugin like any other, so ordering is just the order
+ * of this array.
+ */
+export interface BambooPlugin {
   name: string
+  hooks?: Partial<BambooHooks>
 }
 
 export interface PluginsOptions {
@@ -598,14 +605,7 @@ export interface PruneOptions {
 }
 
 export interface Config
-  extends
-    ExtendableOptions,
-    CssgenOptions,
-    CodegenOptions,
-    FileSystemOptions,
-    PresetOptions,
-    HooksOptions,
-    PluginsOptions {
+  extends ExtendableOptions, CssgenOptions, CodegenOptions, FileSystemOptions, PresetOptions, PluginsOptions {
   /**
    * What to do when the config does not validate.
    *

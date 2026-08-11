@@ -91,13 +91,18 @@ describe('rule processor', () => {
         color: '$blue-300',
       },
       {
-        hooks: {
-          'tokens:created': ({ configure }) => {
-            configure({
-              formatTokenName: (path: string[]) => '$' + path.join('-'),
-            })
+        plugins: [
+          {
+            name: 'test',
+            hooks: {
+              'tokens:created': ({ configure }) => {
+                configure({
+                  formatTokenName: (path: string[]) => '$' + path.join('-'),
+                })
+              },
+            },
           },
-        },
+        ],
       },
     )
     expect(result.className).toMatchInlineSnapshot(`
@@ -135,13 +140,18 @@ describe('rule processor', () => {
         mx: 'token($spacing-2)',
       },
       {
-        hooks: {
-          'tokens:created': ({ configure }) => {
-            configure({
-              formatTokenName: (path: string[]) => '$' + path.join('-'),
-            })
+        plugins: [
+          {
+            name: 'test',
+            hooks: {
+              'tokens:created': ({ configure }) => {
+                configure({
+                  formatTokenName: (path: string[]) => '$' + path.join('-'),
+                })
+              },
+            },
           },
-        },
+        ],
       },
     )
     expect(result.className).toMatchInlineSnapshot(`
@@ -207,18 +217,23 @@ describe('rule processor', () => {
       },
       {
         hash: true,
-        hooks: {
-          'utility:created': ({ configure }) => {
-            configure({
-              toHash(paths, toHash) {
-                const stringConds = paths.join(':')
-                const splitConds = stringConds.split('_')
-                const hashConds = splitConds.map(toHash)
-                return hashConds.join('_')
+        plugins: [
+          {
+            name: 'test',
+            hooks: {
+              'utility:created': ({ configure }) => {
+                configure({
+                  toHash(paths, toHash) {
+                    const stringConds = paths.join(':')
+                    const splitConds = stringConds.split('_')
+                    const hashConds = splitConds.map(toHash)
+                    return hashConds.join('_')
+                  },
+                })
               },
-            })
+            },
           },
-        },
+        ],
       },
     )
     expect(result.className).toMatchInlineSnapshot(`

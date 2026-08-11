@@ -617,20 +617,25 @@ describe('atomic / with direct nesting', () => {
       css(
         { bg: '$blue-400' },
         {
-          hooks: {
-            'tokens:created': ({ configure }) => {
-              configure({
-                formatTokenName: (path) => '$' + path.join('-'),
-                formatCssVar: (path) => {
-                  const variable = path.join('---')
-                  return {
-                    var: variable as any,
-                    ref: `var(--${variable})`,
-                  }
+          plugins: [
+            {
+              name: 'test',
+              hooks: {
+                'tokens:created': ({ configure }) => {
+                  configure({
+                    formatTokenName: (path) => '$' + path.join('-'),
+                    formatCssVar: (path) => {
+                      const variable = path.join('---')
+                      return {
+                        var: variable as any,
+                        ref: `var(--${variable})`,
+                      }
+                    },
+                  })
                 },
-              })
+              },
             },
-          },
+          ],
         },
       ),
     ).toMatchInlineSnapshot(`

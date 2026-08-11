@@ -31,6 +31,19 @@ describe('removed config options', () => {
     )
   })
 
+  /**
+   * `hooks` is the one whose merged form used to live on the resolved config, which is what
+   * this reads. Reporting it at all depends on resolution keeping the merged hooks off the
+   * config object — otherwise every build would trip this.
+   */
+  test('a config still setting hooks is told to write a plugin', () => {
+    expect(errorFor({ hooks: {} })).toContain(`plugins: [{ name: 'my-app', hooks: { ... } }]`)
+  })
+
+  test('a config using plugins is not reported', () => {
+    expect(errorFor({ plugins: [{ name: 'x', hooks: {} }] })).toBeUndefined()
+  })
+
   /** The value carries over, so the message is the edit rather than a description of one. */
   test.each([
     [{ pruneUnusedTokens: false }, "prune: { tokens: 'off' }"],

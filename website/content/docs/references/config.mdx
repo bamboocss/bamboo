@@ -1056,22 +1056,18 @@ version you have not installed yet. A removed key can only point backwards.
 
 ## Other options
 
-### Hooks
-
-**Type**: `BambooHooks`
-
-Bamboo provides a set of callbacks that you can hook into for more advanced use cases. Check the
-[Hooks](/docs/concepts/hooks) docs for more information.
-
 ### Plugins
 
 **Type**: `BambooPlugin[]`
 
-Plugins are currently simple objects that contain a `name` and a `hooks` object with the same structure as the `hooks`
-object in the config.
+Plugins are simple objects that contain a `name` and a `hooks` object. They are the only way to register a hook — Bamboo
+provides a set of callbacks you can hook into for more advanced use cases, and the [Hooks](/docs/concepts/hooks) docs
+list them all.
 
-They will be called in sequence in the order they are defined in the `plugins` array, with the user's config called
-last.
+They are called in sequence in the order they are defined in the `plugins` array.
+
+A bare `hooks` key on the config used to be a second way to do this, treated as a nameless plugin appended last. It has
+been removed, and a config still setting it fails naming the replacement.
 
 ```ts
 import { defineConfig } from '@bamboocss/dev'

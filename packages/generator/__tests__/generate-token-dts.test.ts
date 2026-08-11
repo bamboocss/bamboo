@@ -72,13 +72,18 @@ test('[dts] formatTokenName', () => {
   expect(
     generateTokenTypes(
       createContext({
-        hooks: {
-          'tokens:created': ({ configure }) => {
-            configure({
-              formatTokenName: (path) => '$' + path.join('-'),
-            })
+        plugins: [
+          {
+            name: 'test',
+            hooks: {
+              'tokens:created': ({ configure }) => {
+                configure({
+                  formatTokenName: (path) => '$' + path.join('-'),
+                })
+              },
+            },
           },
-        },
+        ],
       }),
     ),
   ).toMatchInlineSnapshot(`

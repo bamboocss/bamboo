@@ -27,11 +27,16 @@ describe('preset:resolved hook', () => {
           },
         },
       ],
-      hooks: {
-        'preset:resolved': ({ name }: any) => {
-          capturedPresets.push(name)
+      plugins: [
+        {
+          name: 'test',
+          hooks: {
+            'preset:resolved': ({ name }: any) => {
+              capturedPresets.push(name)
+            },
+          },
         },
-      },
+      ],
     }
 
     await resolveConfig({ ...bundleResult, config }, '/mock')
@@ -61,11 +66,16 @@ describe('preset:resolved hook', () => {
           },
         },
       ],
-      hooks: {
-        'preset:resolved': ({ preset, utils }: any) => {
-          return utils.omit(preset, ['theme.tokens.colors.danger', 'theme.tokens.colors.warning'])
+      plugins: [
+        {
+          name: 'test',
+          hooks: {
+            'preset:resolved': ({ preset, utils }: any) => {
+              return utils.omit(preset, ['theme.tokens.colors.danger', 'theme.tokens.colors.warning'])
+            },
+          },
         },
-      },
+      ],
     }
 
     const result = await resolveConfig({ ...bundleResult, config }, '/mock')
@@ -107,11 +117,16 @@ describe('preset:resolved hook', () => {
           },
         },
       ],
-      hooks: {
-        'preset:resolved': ({ preset, utils }: any) => {
-          return utils.pick(preset, ['name', 'theme.tokens.colors.primary', 'theme.tokens.colors.secondary'])
+      plugins: [
+        {
+          name: 'test',
+          hooks: {
+            'preset:resolved': ({ preset, utils }: any) => {
+              return utils.pick(preset, ['name', 'theme.tokens.colors.primary', 'theme.tokens.colors.secondary'])
+            },
+          },
         },
-      },
+      ],
     }
 
     const result = await resolveConfig({ ...bundleResult, config }, '/mock')

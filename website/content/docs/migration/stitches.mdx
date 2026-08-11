@@ -279,13 +279,18 @@ import { defineConfig } from '@bamboocss/dev'
 
 export default defineConfig({
   // ...
-  hooks: {
-    'tokens:created': ({ configure }) => {
-      configure({
-        formatTokenName: (path) => '$' + path.join('-'),
-      })
+  plugins: [
+    {
+      name: 'stitches-token-names',
+      hooks: {
+        'tokens:created': ({ configure }) => {
+          configure({
+            formatTokenName: (path) => '$' + path.join('-'),
+          })
+        },
+      },
     },
-  },
+  ],
 })
 ```
 

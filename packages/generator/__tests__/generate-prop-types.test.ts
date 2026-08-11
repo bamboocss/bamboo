@@ -277,11 +277,16 @@ describe('generate property types', () => {
     expect(
       generatePropTypes(
         createContext({
-          hooks: {
-            'config:resolved': ({ config, utils }) => {
-              return utils.omit(config, ['utilities', 'theme.tokens', 'theme.semanticTokens'])
+          plugins: [
+            {
+              name: 'test',
+              hooks: {
+                'config:resolved': ({ config, utils }) => {
+                  return utils.omit(config, ['utilities', 'theme.tokens', 'theme.semanticTokens'])
+                },
+              },
             },
-          },
+          ],
           global: {
             vars: {
               '--random-color': 'red',

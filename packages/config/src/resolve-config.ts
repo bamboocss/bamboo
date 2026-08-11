@@ -61,18 +61,13 @@ export async function resolveConfig(result: BundleConfigResult, cwd: string): Pr
 
   warnIfBaseDropped(listed, result.config.presets as Preset[])
 
-  // Get hooks from user config and plugins to use during preset resolution
-  const userConfig = result.config
-  const pluginHooks = userConfig.plugins ?? []
-  if (userConfig.hooks) {
-    pluginHooks.push({ name: BAMBOO_CONFIG_NAME, hooks: userConfig.hooks })
-  }
+  // `plugins` is the only source of hooks — a preset cannot carry them — so this is the
+  // complete set, not a preliminary one. Merged before `getResolvedConfig` because
+  // `preset:resolved` fires during it, and kept off the config object so that a `hooks` key
+  // surviving on a config is unambiguously the removed authoring option.
+  const hooks = mergeHooks(result.config.plugins ?? [])
 
-  // Import mergeHooks to get hooks before merging
-  const earlyHooks = mergeHooks(pluginHooks)
-
-  const mergedConfig = await getResolvedConfig(result.config, cwd, earlyHooks)
-  const hooks = mergedConfig.hooks ?? {}
+  const mergedConfig = await getResolvedConfig(result.config, cwd, hooks)
 
   if (mergedConfig.logLevel) {
     logger.level = mergedConfig.logLevel
