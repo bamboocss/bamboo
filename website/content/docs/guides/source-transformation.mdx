@@ -319,9 +319,11 @@ The reasons are:
 | `unresolved-token`   | A `token()` path resolving to no usable string (see above).                         |
 | `no-call-expression` | The call site could not be located in the source.                                   |
 | `runtime-binding`    | A Bamboo import still referenced after the rewrite (see below).                     |
+| `fold-failed`        | The fold threw on this module, so nothing about it was established (see below).     |
 
-`runtime-binding` is reported only under [`strict`](#strict), because it is the only reason that costs an extra walk of
-the module and the only one nothing else acts on.
+`runtime-binding` and `fold-failed` are reported only under [`failOnUnfolded`](#failonunfolded) — the first because it
+costs an extra walk of the module, and neither because anything else acts on them. `fold-failed` also never appears in
+`reportSkipped`, which lists declined _call sites_: a module that threw produced none.
 
 `not-foldable` and `unsupported-kind` are deliberately separate. The first is permanent – `cva` and `sva` return
 functions, so there is no class string to fold to. The second is a limitation of this phase, such as a bare slot-recipe
@@ -403,18 +405,18 @@ Three things stop a name resolving that way: a namespace import (`import * as s`
 export, and a recipe outside the project's `include`, which is never parsed and so has no rules to fold against. Two
 `export *`s carrying the same name are ambiguous and resolve to neither.
 
-## `strict`
+## `failOnUnfolded`
 
 A coverage percentage cannot tell you whether you won anything. The fold's real prize is not the per-call CPU it saves –
 it is that a bundle where _every_ `css()` call folded stops importing `styled-system/css`, and the engine behind it
-drops out. One survivor keeps the whole thing. `strict` fails the build instead:
+drops out. One survivor keeps the whole thing. `failOnUnfolded` fails the build instead:
 
 ```ts
 bamboocss({ transform: true, failOnUnfolded: true })
 ```
 
 ```txt
-bamboocss: 2 call(s) could not be folded, and `strict` is on.
+bamboocss: 2 call(s) could not be folded, and `failOnUnfolded` is on.
 
   src/Chart.tsx
     41: css() — dynamic
@@ -422,7 +424,7 @@ bamboocss: 2 call(s) could not be folded, and `strict` is on.
 
 Each one keeps `styled-system/css` in the bundle, so the engine cannot be dropped however many
 other calls folded. Make the values static, move the variation into a `cva` variant, or generate
-them with `staticCss` — or set `strict: false` to accept the runtime.
+them with `staticCss` — or set `failOnUnfolded: false` to accept the runtime.
 ```
 
 `lowered-leaf` is the case that would otherwise slip past you. `css({ color: tone })` _does_ fold, to a
@@ -435,8 +437,8 @@ imports the engine, and the bundle keeps it.
 A skip reason only exists for a call something _recognised_, and a shape nothing looks at appears in neither the folded
 nor the declined column – so the ledger alone can read clean while the module still imports the engine.
 
-So `strict` also asks the question the guarantee actually makes, of the output rather than the ledger: once every
-rewrite is applied, is anything from a Bamboo module still referenced? Anything that is gets reported as
+So `failOnUnfolded` also asks the question the guarantee actually makes, of the output rather than the ledger: once
+every rewrite is applied, is anything from a Bamboo module still referenced? Anything that is gets reported as
 `runtime-binding`. It catches a binding passed on rather than called, one handed to a function the build cannot follow,
 a module whose only Bamboo usage produced no parse result at all, a wrapper re-exporting the css API – and the half a
 **partial fold** keeps, which is the one most projects will meet:
@@ -453,11 +455,30 @@ nothing.
 Three things are excluded from that walk: the helpers the fold itself writes (`cx`, `cvaPick`, `splitProps`), `cssLeaf`
 (already reported as `lowered-leaf`), and any reference inside a range the fold rewrote.
 
+### A module the fold threw on
+
+The last shape the ledger cannot describe is a module the fold **failed** on. If the transform throws – on a retired
+token spelling in a `cva`, say – the module is left as it was, which is safe: its runtime call still works. What it is
+not is _checked_. It contributed to neither the folded column nor the declined one, so a coverage summary reported 100%
+over the files that did not throw, and the survivor check saw a file that was never there.
+
+That reads as `fold-failed`, and it fails the build under `failOnUnfolded`:
+
+```txt
+  src/Timeline.tsx
+    1: fold — fold-failed
+```
+
+Unknown has to count as survives here. The guarantee is that _nothing_ still calls `css()`, and a module nobody was able
+to look at cannot support it. The error logged for the module itself is the thing to fix; without `failOnUnfolded` it
+stays a logged error and a declined module, not a build failure.
+
 ### What it does not check
 
-**`strict` is deliberately silent about inline recipes.** A `cva(...)` definition returns a function and can never
-collapse to a class string, so it does not fail the build – and neither do its invocations, whether they lowered or were
-declined as `recipe-call`. A project full of recipes can pass `strict` while shipping plenty of Bamboo runtime.
+**`failOnUnfolded` is deliberately silent about inline recipes.** A `cva(...)` definition returns a function and can
+never collapse to a class string, so it does not fail the build – and neither do its invocations, whether they lowered
+or were declined as `recipe-call`. A project full of recipes can pass `failOnUnfolded` while shipping plenty of Bamboo
+runtime.
 
 Being silent about recipes is the intended trade rather than an oversight, because the two runtimes are not the same
 size. Measured as tree-shaken production bundles of `sandbox/vite-ts`:
@@ -468,13 +489,13 @@ size. Measured as tree-shaken production bundles of `sandbox/vite-ts`:
 | `cva` + `cx`  | 4,477 B |
 | `css` + `cva` | 8,546 B |
 
-So what `strict` guarantees is narrower than "no runtime", and it is the half worth guaranteeing: **nothing still
-reaches the css engine** – not a call, not a re-export, not a binding handed somewhere the build cannot follow. Recipes
-keep a runtime roughly half the size, and their invocations are not verified at all – which is why `recipe-call` exists
-in the report even though it does not fail the build.
+So what `failOnUnfolded` guarantees is narrower than "no runtime", and it is the half worth guaranteeing: **nothing
+still reaches the css engine** – not a call, not a re-export, not a binding handed somewhere the build cannot follow.
+Recipes keep a runtime roughly half the size, and their invocations are not verified at all – which is why `recipe-call`
+exists in the report even though it does not fail the build.
 
 One edge is worth knowing because it does not follow that rule: a bare **config** slot recipe call is reported as
-`unsupported-kind`, which _does_ fail `strict`, while the equivalent inline `sva(...)` call is reported as
+`unsupported-kind`, which _does_ fail `failOnUnfolded`, while the equivalent inline `sva(...)` call is reported as
 `recipe-call`, which does not. Neither keeps the `css()` engine, so by the rule above neither should fail.
 `unsupported-kind` is a catch-all that also covers shapes which are genuinely unresolved, and it is treated as a
 survivor on their account.

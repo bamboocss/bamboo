@@ -15,6 +15,7 @@ export type BambooErrorCode =
   | 'INVALID_TOKEN'
   | 'NAMING_DISAGREEMENT'
   | 'TOKEN_REFERENCE_UNRESOLVED'
+  | 'EXTRACT_FAILED'
 
 export class BambooError extends Error {
   readonly code: string

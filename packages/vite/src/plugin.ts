@@ -290,6 +290,19 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
         })
       } catch (error) {
         logger.caughtError('vite:transform', `Failed to fold ${filePath}`, error)
+
+        // Not a build failure on its own: an unfolded module keeps its runtime `css()` call,
+        // which still works. What it is not is *silence* — the module was neither folded nor
+        // declined, so it landed in neither column, the summary reported 100% over the files
+        // that did not throw, and `failOnUnfolded` passed a build with a module nobody
+        // checked. Counted here so both of those describe the build that actually ran.
+        totals.files++
+        totals.skipped.set('fold-failed', (totals.skipped.get('fold-failed') ?? 0) + 1)
+
+        if (failOnUnfolded) {
+          survivors.push({ file: filePath, line: 1, name: 'fold', reason: 'fold-failed' })
+        }
+
         return null
       }
 
@@ -351,20 +364,29 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
           byFile.set(entry.file, list)
         }
 
+        // `runtime-binding` is a binding rather than a call, and `fold-failed` is the whole
+        // module, so neither takes the call parens the rest read better with.
+        const named = (e: (typeof survivors)[number]) =>
+          e.reason === 'runtime-binding' || e.reason === 'fold-failed' ? e.name : `${e.name}()`
+
         const detail = Array.from(byFile.entries())
           .map(([file, entries]) =>
-            [
-              `  ${file}`,
-              ...entries.map(
-                (e) => `    ${e.line}: ${e.name}${e.reason === 'runtime-binding' ? '' : '()'} — ${e.reason}`,
-              ),
-            ].join('\n'),
+            [`  ${file}`, ...entries.map((e) => `    ${e.line}: ${named(e)} — ${e.reason}`)].join('\n'),
           )
           .join('\n')
+
+        // The advice below is about call sites, and does not apply to a module that threw —
+        // there the error above this one is the thing to fix.
+        const threw = survivors.some((entry) => entry.reason === 'fold-failed')
 
         throw new Error(
           `bamboocss: ${survivors.length} call(s) could not be folded, and \`failOnUnfolded\` is on.\n\n` +
             `${detail}\n\n` +
+            (threw
+              ? `\`fold-failed\` is a module the fold threw on — see the error logged for it above. ` +
+                `Nothing was established about its calls either way, so it cannot support the ` +
+                `guarantee this option makes.\n\n`
+              : '') +
             `Each one keeps \`styled-system/css\` in the bundle, so the engine cannot be dropped ` +
             `however many other calls folded. Make the values static, move the variation into a ` +
             `\`cva\` variant, or generate them with \`staticCss\` — or set \`failOnUnfolded: false\` to ` +

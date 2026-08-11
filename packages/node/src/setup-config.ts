@@ -54,10 +54,10 @@ export default defineConfig({
     exclude: [],
 
     // Tokens, keyframes and @property rules nothing in the emitted css reaches are dropped
-    // by default — worth 36-78% of a new project's stylesheet. Set \`prune: { tokens: false }\`
-    // if you read tokens from somewhere the build cannot see them — \`token()\` with a
-    // computed path, or a hand-written stylesheet outside \`include\` — or list those under
-    // \`staticCss\` to keep them.
+    // by default — worth 36-78% of a new project's stylesheet. If you read tokens from
+    // somewhere the build cannot see them — \`token()\` with a computed path, or a
+    // hand-written stylesheet outside \`include\` — name the categories they land in with
+    // \`prune: { keepTokens: ['colors.*'] }\`, or set \`prune: { tokens: 'off' }\`.
 
     // Useful for theme customization
     theme: {

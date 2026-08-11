@@ -148,7 +148,9 @@ canvasContext.fillStyle = token.value('colors.red.300') // '#fca5a5'
   A runtime path defeats the build's reachability analysis. `token()` hands back a variable for **any** token, so a path
   Bamboo cannot resolve at build time means every token declaration has to be kept — see
   [`prune.tokens`](/docs/references/config#prune). Prefer a path spelled out at the call, or one built from a constant
-  the extractor can follow.
+  the extractor can follow. A template literal is bounded rather than lost: `` token(`colors.${shade}`) `` keeps the
+  `colors` category and prunes the rest. When there is no static head to bound it, name the category with
+  [`prune.keepTokens`](/docs/references/config#prunekeeptokens).
 </Callout>
 
 ## Property Renaming

@@ -1,5 +1,6 @@
 import { createContext as createFixtureContext } from '@bamboocss/fixture'
-import { describe, expect, test } from 'vitest'
+import { logger } from '@bamboocss/logger'
+import { describe, expect, test, vi } from 'vitest'
 import type { PruneOptions } from '@bamboocss/types'
 import type { BambooContext } from '../src/create-context'
 import { pruneTokensForBuild } from '../src/token-references'
@@ -118,6 +119,22 @@ describe('prune.unresolved, against the emitted css', () => {
     expect(warned).toBe(errored)
   })
 
+  /**
+   * `off` is documented as falling back and saying nothing, and said plenty: the throw branch
+   * was gated on `error` and the warn beside it on nothing at all, so the quietest setting
+   * printed the loudest diagnostic — advising the reader to set `warn`, which they were already
+   * quieter than.
+   */
+  test('off says nothing at all', () => {
+    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => undefined)
+
+    buildCss(`${imports}export const brand = (p) => token(p)`, { tokens: 'accounted', unresolvedPath: 'off' })
+
+    expect(warn).not.toHaveBeenCalledWith('tokens:unresolved', expect.anything())
+
+    warn.mockRestore()
+  })
+
   test('warn does not throw on the path error rejects', () => {
     const source = `${imports}export const brand = (p) => token(p)`
 
@@ -146,5 +163,210 @@ describe('prune.unresolved, against the emitted css', () => {
     const dangling = referenced.filter((name) => !declared.has(name!))
 
     expect([...new Set(dangling)]).toEqual([])
+  })
+})
+
+/**
+ * `prune.keepTokens`, the declared bound.
+ *
+ * The fallback this replaces is total: **one** reference the accounting cannot follow keeps
+ * every declaration in the project, so a codebase with a single `token(key)` in it ships the
+ * same stylesheet as one that never prunes. That put the whole feature out of reach of the
+ * codebases that reach for `token()` most — the middle ground was missing rather than narrow.
+ *
+ * The claim being made is about the author's own code, which is why nothing infers it: naming
+ * `colors.*` says *the reads you cannot follow land in colours*. So these assert both halves —
+ * that the named category survives, and that the rest actually goes.
+ */
+describe('prune.keepTokens', () => {
+  /** No static head, so nothing bounds it and every declaration used to survive. */
+  const UNFOLLOWABLE = `${imports}export const brand = (p) => token(p)`
+
+  const accounted = { tokens: 'accounted', unresolvedPath: 'warn' } as const
+
+  test('bounds a reference the build cannot follow, instead of keeping everything', () => {
+    const bounded = buildCss(UNFOLLOWABLE, { ...accounted, keepTokens: ['colors.*'] })
+    const blanket = buildCss(UNFOLLOWABLE, accounted)
+
+    expect(declares(bounded, '--colors-blue-500')).toBe(true)
+    expect(declares(bounded, '--font-sizes-3xl')).toBe(false)
+    expect(declarationCount(bounded)).toBeLessThan(declarationCount(blanket))
+  })
+
+  /** Without it, the same source is the cliff this exists to remove. */
+  test('the same source keeps everything without it', () => {
+    const blanket = buildCss(UNFOLLOWABLE, accounted)
+    const relaxed = buildCss(UNFOLLOWABLE, { tokens: 'reachable' })
+
+    expect(declarationCount(blanket)).toBe(declarationCount(relaxed))
+  })
+
+  test('narrows to a sub-path, not just a category', () => {
+    const css = buildCss(UNFOLLOWABLE, { ...accounted, keepTokens: ['colors.blue.*'] })
+
+    expect(declares(css, '--colors-blue-500')).toBe(true)
+    expect(declares(css, '--colors-teal-500')).toBe(false)
+  })
+
+  test('takes an exact path', () => {
+    const css = buildCss(UNFOLLOWABLE, { ...accounted, keepTokens: ['colors.blue.500'] })
+
+    expect(declares(css, '--colors-blue-500')).toBe(true)
+    expect(declares(css, '--colors-blue-600')).toBe(false)
+  })
+
+  /** `logFilter`'s language, so `!` excludes from a wider pattern beside it. */
+  test('excludes with a leading `!`', () => {
+    const css = buildCss(UNFOLLOWABLE, { ...accounted, keepTokens: ['colors.*', '!colors.teal.*'] })
+
+    expect(declares(css, '--colors-blue-500')).toBe(true)
+    expect(declares(css, '--colors-teal-500')).toBe(false)
+  })
+
+  /**
+   * An inferred bound and a declared one compose. This is the shape that regressed while the
+   * feature was being written: prefix bounding was skipped whenever anything declined, on the
+   * reasoning that the blanket keep made it redundant — true until `keepTokens` removed the
+   * blanket keep, at which point skipping it dropped a category the build *had* proved was
+   * needed.
+   */
+  test('keeps an inferred bound alongside the declared one', () => {
+    const source =
+      `${imports}export const gutter = (s) => token(\`spacing.\${s}\`)\n` + `export const brand = (p) => token(p)\n`
+
+    const css = buildCss(source, { ...accounted, keepTokens: ['colors.*'] })
+
+    expect(declares(css, '--spacing-16')).toBe(true)
+    expect(declares(css, '--colors-blue-500')).toBe(true)
+    expect(declares(css, '--font-sizes-3xl')).toBe(false)
+  })
+
+  /**
+   * Contradictory requests, so the build stops rather than silently preferring the weaker
+   * claim. `error` asserts every path resolves; `keepTokens` declares where the ones that do
+   * not will land. Letting a keep suppress the throw would make `error` stop meaning anything
+   * the moment one was added.
+   */
+  test('does not silence `unresolvedPath: error`', () => {
+    expect(() =>
+      buildCss(UNFOLLOWABLE, { tokens: 'accounted', unresolvedPath: 'error', keepTokens: ['colors.*'] }),
+    ).toThrow(/contradictory/)
+  })
+
+  /**
+   * And not only for the declines `failsStrict` picks out.
+   *
+   * Every other decline reports without throwing, for reasons that all assume the blanket keep
+   * is what it costs — `import(`./pages/${n}`)` is routine code with nothing to do with tokens,
+   * and failing a build over it would be indefensible. `keepTokens` is exactly what takes that
+   * blanket keep away, so guarding only the subset let a dynamic import put the keeps in charge
+   * of the whole theme under the one setting whose job is to refuse that. Verified before the
+   * fix: no throw, and the categories outside the keeps were dropped.
+   */
+  test('does not silence it for a decline that is not about a token path either', () => {
+    const source =
+      `${imports}export const page = (n) => import(\`./pages/\${n}\`)\n` +
+      `export const brand = token('colors.blue.500')\n`
+
+    expect(() =>
+      buildCss(source, { tokens: 'accounted', unresolvedPath: 'error', keepTokens: ['colors.blue.*'] }),
+    ).toThrow(/contradictory/)
+  })
+
+  /**
+   * `!` subtracts from a selection, so a list of only exclusions selects everything they do not
+   * name — the opposite of what a list of keeps reads as, and `tokens: 'off'` with extra steps.
+   * Reported rather than reinterpreted.
+   */
+  test('reports a list that holds only exclusions', () => {
+    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => undefined)
+
+    buildCss(UNFOLLOWABLE, { ...accounted, keepTokens: ['!colors.teal.*'] })
+
+    expect(warn).toHaveBeenCalledWith('prune:tokens', expect.stringContaining('only exclusions'))
+
+    warn.mockRestore()
+  })
+
+  /**
+   * Additive under `reachable`, where there is no fallback to replace.
+   *
+   * The source must not reach for a token at all: `reachable` keeps every declaration the
+   * moment it sees one, so a source that calls `token()` passes this whatever `keepTokens`
+   * does — including when the pattern matches nothing. It did, on both counts.
+   */
+  test('keeps a token the stylesheet never references, under reachable', () => {
+    const source = 'export const unrelated = 1\n'
+
+    const withKeep = buildCss(source, { tokens: 'reachable', keepTokens: ['fontSizes.*'] })
+    const without = buildCss(source, { tokens: 'reachable' })
+
+    expect(declares(withKeep, '--font-sizes-3xl')).toBe(true)
+    expect(declares(without, '--font-sizes-3xl')).toBe(false)
+  })
+
+  /**
+   * Token paths are camelCase and their variables are dash-cased, so `font-sizes.*` is the
+   * natural thing to write after reading `styles.css` and it matches nothing at all. The
+   * report has to name the spelling that would have worked, or it is the same silence one
+   * level out.
+   */
+  test('reports the css-variable spelling of a category, with the path to use', () => {
+    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => undefined)
+
+    buildCss(UNFOLLOWABLE, { ...accounted, keepTokens: ['font-sizes.*'] })
+
+    expect(warn).toHaveBeenCalledWith('prune:tokens', expect.stringContaining('fontSizes.*'))
+
+    warn.mockRestore()
+  })
+
+  test('is inert when nothing declines and the paths all resolve', () => {
+    const source = `${imports}export const brand = token('colors.blue.500')`
+
+    const withKeep = buildCss(source, { ...accounted, keepTokens: ['colors.blue.500'] })
+    const without = buildCss(source, accounted)
+
+    expect(withKeep).toBe(without)
+  })
+
+  /**
+   * The property everything above is a proxy for: a declaration dropped while something still
+   * references it leaves a `var()` that inherits rather than falling back, which is silent.
+   */
+  test('leaves no dangling token variable', () => {
+    const css = buildCss(UNFOLLOWABLE, { ...accounted, keepTokens: ['colors.blue.*'] })
+
+    const declared = new Set([...css.matchAll(/(--[a-z0-9\\.-]+)\s*:/g)].map((match) => match[1]))
+    const referenced = [...css.matchAll(/var\(\s*(--[a-z0-9\\.-]+)/g)].map((match) => match[1])
+
+    expect([...new Set(referenced.filter((name) => !declared.has(name!)))]).toEqual([])
+  })
+
+  /**
+   * A pattern matching nothing is nearly always a typo for one that would have — `colors` for
+   * `colors.*`, which is the mistake the anchoring invites. It keeps nothing, and everything
+   * else about that is silent.
+   */
+  test('reports a pattern that matches no token', () => {
+    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => undefined)
+
+    buildCss(UNFOLLOWABLE, { ...accounted, keepTokens: ['colors.*', 'colours.*'] })
+
+    expect(warn).toHaveBeenCalledWith('prune:tokens', expect.stringContaining('colours.*'))
+    expect(warn).not.toHaveBeenCalledWith('prune:tokens', expect.stringContaining('colors.*\n'))
+
+    warn.mockRestore()
+  })
+
+  /** An exclusion selects nothing by construction, so it is not evidence of a typo. */
+  test('does not report an exclusion as unmatched', () => {
+    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => undefined)
+
+    buildCss(UNFOLLOWABLE, { ...accounted, keepTokens: ['colors.*', '!colors.teal.*'] })
+
+    expect(warn).not.toHaveBeenCalledWith('prune:tokens', expect.stringContaining('match no token'))
+
+    warn.mockRestore()
   })
 })

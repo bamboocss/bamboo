@@ -443,13 +443,19 @@ export interface PruneOptions {
    * `unresolvedPath` exists, and why setting it to `error` is what makes `accounted` worth
    * asking for: it guarantees you are shipping the exact set rather than the fallback.
    *
+   * A template literal is bounded rather than declined: `` token(`colors.${shade}`) `` cannot
+   * say which token it wants, but it says which it *cannot*, so the `colors` category is kept
+   * and nothing else. That covers the commonest dynamic read outright. What it does not cover
+   * is a path with no static head — `token(key)`, `token('colors.' + shade)` — and there
+   * `keepTokens` is the answer.
+   *
    * Three things stay invisible to `accounted`: a token named by a path assembled from a
    * value that only exists at runtime, one referenced only from a stylesheet outside
    * `include`, and one used by a separate package consuming the output as design tokens. The
    * scan reads `include`, which scopes style extraction rather than everything that may
    * import — so a script, a config, or a sibling workspace package that calls `token()` is
-   * not covered, nor is a binding renamed away from `token`, as in `const t = token`. Use
-   * `staticCss` to keep those.
+   * not covered, nor is a binding renamed away from `token`, as in `const t = token`. Name
+   * them with `keepTokens`.
    *
    * A custom property declared by `global.css` or `global.vars` is not one of these cases:
    * the declaration ships whether or not anything in the stylesheet reads it, so whatever it
@@ -459,17 +465,63 @@ export interface PruneOptions {
    */
   tokens?: 'off' | 'reachable' | 'accounted'
   /**
+   * Token paths to keep whatever the build can see, as exact names or `*` patterns.
+   *
+   * ```ts
+   * prune: { tokens: 'accounted', keepTokens: ['colors.*'] }
+   * ```
+   *
+   * This is the bound the build could not infer, written by hand. It exists because the
+   * fallback is otherwise total: **one** reference the accounting cannot follow keeps every
+   * declaration in the project, so a codebase with a single `token(key)` in it gets the same
+   * stylesheet as one that never prunes — and the codebases that reach for `token()` most are
+   * exactly the ones that end up there. Naming the category those dynamic reads land in is a
+   * far smaller answer than keeping everything, and it is the same answer the build already
+   * derives for itself from a template literal's static head.
+   *
+   * So under `accounted` this does two things: it keeps what it matches, and it stands in for
+   * what could not be followed, in place of the blanket keep. Saying `keepTokens: ['colors.*']`
+   * is saying *the reads you cannot follow land in `colors`* — an assertion about your own
+   * code, which is why nothing infers it for you. Declines are still reported, so you can see
+   * what you are covering; `unresolvedPath: 'error'` still fails, because asserting every path
+   * resolves and declaring a bound for the ones that do not are contradictory requests.
+   *
+   * Under `reachable` it is additive only, for a token nothing in the stylesheet references
+   * and no javascript here reads — one consumed by a sibling package, or by css outside
+   * `include`. It is inert under `tokens: 'off'`, which keeps everything already.
+   *
+   * Patterns match the dotted token *path*, anchored and case-sensitively, with `*` standing
+   * for any run of characters and a leading `!` excluding. `colors.*` keeps every colour,
+   * `colors.brand.*` one palette, `colors.red.300` one token, `['colors.*', '!colors.legacy.*']`
+   * every colour but one palette.
+   *
+   * The path, not the css variable: a token is `fontSizes.3xl` and its declaration is
+   * `--font-sizes-3xl`, so `font-sizes.*` — the natural thing to write after reading
+   * `styles.css` — matches nothing at all. A pattern matching no token is reported, and names
+   * the spelling that would have worked, because keeping nothing is otherwise silent in a build
+   * whose whole job here is dropping things.
+   *
+   * This replaces `staticCss` as the way to keep a category alive. `staticCss` emits utility
+   * *classes* — keeping the colours meant shipping a rule per colour to hold the declarations
+   * up, which is a larger stylesheet than the pruning saved.
+   */
+  keepTokens?: string[]
+  /**
    * What to do about a token path `accounted` cannot follow.
    *
    * A path spelled at the call resolves; one assembled at runtime does not. An unfollowable
-   * path is what forces `accounted` back onto the blanket keep, so this decides whether that
-   * happens quietly, loudly, or not at all.
+   * path is what forces `accounted` back onto the blanket keep — unless `keepTokens` names
+   * the bound — so this decides whether that happens quietly, loudly, or not at all.
    *
    * - `off` falls back and says nothing.
    * - `warn` falls back and reports what it could not follow.
    * - `error` fails the build, so the fallback can never ship unnoticed.
    *
    * Inert under `tokens: 'off'` and `tokens: 'reachable'`, which run no accounting pass.
+   *
+   * `error` and `keepTokens` do not combine: one asserts every path resolves, the other
+   * declares where the ones that do not will land. A project that cannot make the first
+   * assertion wants `warn`, which still prints every reference being covered.
    *
    * Named for what it checks rather than `strict`, which already means something unrelated
    * here: `strictTokens` and `strictPropertyValues` narrow generated *typescript*, and
@@ -561,10 +613,17 @@ export interface Config
    * - `warn` logs what failed.
    * - `error` throws.
    *
-   * A retired spelling is checked ahead of this and is not silenceable by it — that is
-   * output which is already broken rather than an opinion about a config that still
-   * builds. Neither is a removed option: `off` used to switch off the one mechanism that
-   * tells an upgrader their setting is no longer read.
+   * This grades opinions about a config that still builds. Two checks are not that, run
+   * ahead of it, and answer to nothing here: a retired token spelling, which is output that
+   * is already broken; and an option that has been removed, which is proof the config
+   * predates the version reading it. Both throw at any setting, including `off`.
+   *
+   * A removed option throws rather than warns because a warning is not a signal anything
+   * acts on. Removals ship in minor versions, so a warning is what an automated dependency
+   * upgrade merges without a person reading it — while the option itself is silent in every
+   * other way, reverting to the default and taking the assertion it asked for with it. An
+   * unknown key is a different case and still tolerated: it may be forward-compatible, a
+   * setting for a version not installed yet. A *removed* key can only be backward.
    *
    * @default 'warn'
    */

@@ -1,6 +1,7 @@
 import { logger } from '@bamboocss/logger'
 import type { ParserResult } from '@bamboocss/parser'
 import { BambooError, cssVarRefs } from '@bamboocss/shared'
+import { isMatch } from 'matcher'
 import type { BambooContext } from './create-context'
 import { snapshotTexts, sourceSnapshots } from './source-snapshots'
 import { accountSnapshot, type DeclinedReference, failsStrict, type TokenAccounting } from './token-accounting'
@@ -145,7 +146,7 @@ export function collectTokenReferences(ctx: BambooContext, results: ParserResult
  * The token prune, as all three build paths need to run it.
  *
  * One function because it was three copies of one conditional, and the `false` branch went
- * missing from a copy: a watch rebuild with `prune: { tokens: false }` skipped `pruneTokens`
+ * missing from a copy: a watch rebuild with `prune: { tokens: 'off' }` skipped `pruneTokens`
  * altogether, so it kept `@property` registrations that a full build of the same source
  * strips. The other two copies carried a comment pointing at that file for the reasoning,
  * which is how a missing branch reads as intentional.
@@ -212,6 +213,13 @@ export function pruneTokensForBuild(
 
   for (const name of tokenVarsFor(ctx, paths)) vars.add(name)
 
+  // Declared keeps apply to every strategy that prunes at all. Under `reachable` that is all
+  // they do — a token nothing in the stylesheet references and no javascript here reads, which
+  // is the sibling-package case. Under `accounted` they also stand in for the blanket keep,
+  // below.
+  const declared = declaredKeeps(ctx)
+  for (const name of tokenVarsFor(ctx, declared)) vars.add(name)
+
   if (!accounts) {
     ctx.pruneTokens(sheet, vars, reachable)
     return
@@ -219,13 +227,18 @@ export function pruneTokensForBuild(
 
   for (const name of tokenVarsFor(ctx, accounting.paths)) vars.add(name)
 
+  // Whether the author has named the bound the accounting could not derive. That is what turns
+  // a decline from "keep every declaration" into "keep what was declared" — see `keepTokens`.
+  const bounded = (ctx.config.prune?.keepTokens?.length ?? 0) > 0
+
   // A reference bounded by a prefix rather than resolved to a path — `` token(`colors.${x}`) ``
   // — keeps the tokens that prefix can reach and nothing else. Declining it instead kept every
   // declaration in the project, which is what the whole category costs against.
   //
-  // Skipped when something else already declined, since the blanket keep below makes every
-  // name here redundant.
-  if (accounting.prefixes.size && !accounting.declined.length) {
+  // Skipped when something else already declined *and* nothing was declared, since the blanket
+  // keep below then makes every name here redundant. With `keepTokens` there is no blanket
+  // keep, so an inferred bound is load-bearing again alongside the declared ones.
+  if (accounting.prefixes.size && (bounded || !accounting.declined.length)) {
     const prefixes = Array.from(accounting.prefixes)
     const matched: string[] = []
 
@@ -252,34 +265,170 @@ export function pruneTokensForBuild(
   const failing = accounting.declined.filter(failsStrict)
   const reported = accounting.declined.filter((entry) => !failsStrict(entry))
 
+  // `keepTokens` and `error` are contradictory requests — one asserts every path resolves, the
+  // other declares where the ones that do not will land — so the build stops rather than
+  // silently preferring the weaker claim.
+  //
+  // Checked against *every* decline rather than against `failing`, which is only the subset
+  // `failsStrict` picks out. The rest never throw on their own, for good reasons that all
+  // assume the blanket keep is what they cost — and `keepTokens` is precisely what takes that
+  // away. So guarding the subset let a `require()` or a transformed component put the keeps in
+  // charge of the whole theme under the setting whose entire job is to refuse that.
+  if (bounded && unresolved === 'error' && accounting.declined.length) {
+    throw new BambooError(
+      'TOKEN_REFERENCE_UNRESOLVED',
+      `${accounting.declined.length} token reference(s) could not be accounted for.\n\n` +
+        `${formatDeclined(ctx, accounting.declined)}\n\n` +
+        `\`prune.unresolvedPath: 'error'\` asserts that every token path resolves at build time, and ` +
+        `\`prune.keepTokens\` declares where the ones that do not will land. Those are contradictory, so one ` +
+        `has to go: drop \`keepTokens\` and respell the paths, or set \`prune: { unresolvedPath: 'warn' }\` ` +
+        `and let the keeps cover them.`,
+    )
+  }
+
   // Thrown before the report, so a build that is about to fail does not first announce what it
   // kept. Under `warn` the same references are printed and the build carries on, which is the
-  // only difference between the two modes.
-  if (failing.length) {
-    const message =
-      `${failing.length} token reference(s) could not be resolved.\n\n${formatDeclined(ctx, failing)}\n\n` +
-      `\`prune.tokens: 'accounted'\` asserts that every token path resolves at build time. Spell the path ` +
-      `as a string literal at the call, give a template a static prefix so it can be bounded, move the ` +
-      `token into \`staticCss\`, set \`prune: { unresolvedPath: 'warn' }\` to keep the assertion without ` +
-      `failing, or \`prune: { tokens: 'reachable' }\` to stop asserting.`
+  // only difference between the two modes — and under `off` neither happens, which is what
+  // `off` means.
+  if (failing.length && unresolved !== 'off') {
+    const where = `${failing.length} token reference(s) could not be resolved.\n\n${formatDeclined(ctx, failing)}\n\n`
 
-    if (unresolved === 'error') throw new BambooError('TOKEN_REFERENCE_UNRESOLVED', message)
+    // `bounded` cannot reach the throw: the contradiction above has already stopped the build.
+    if (unresolved === 'error') {
+      throw new BambooError(
+        'TOKEN_REFERENCE_UNRESOLVED',
+        where +
+          `\`prune.tokens: 'accounted'\` asserts that every token path resolves at build time. Spell the path ` +
+          `as a string literal at the call, give a template a static prefix so it can be bounded, name the ` +
+          `category they land in with \`prune: { keepTokens: ['colors.*'] }\` and drop to ` +
+          `\`prune: { unresolvedPath: 'warn' }\`, or set \`prune: { tokens: 'reachable' }\` to stop asserting.`,
+      )
+    }
 
-    logger.warn('tokens:unresolved', message)
+    logger.warn(
+      'tokens:unresolved',
+      bounded
+        ? where +
+            `\`prune.keepTokens\` covers them: they keep what it names rather than every declaration in the ` +
+            `theme. Nothing checks that they stay inside it, which is why it is yours to declare — a read ` +
+            `landing outside the patterns loses its declaration and resolves to a \`var()\` with nothing ` +
+            `behind it. Respell what you can, and widen the patterns for what you cannot.`
+        : where +
+            `\`prune.tokens: 'accounted'\` asserts that every token path resolves at build time. Spell the ` +
+            `path as a string literal at the call, give a template a static prefix so it can be bounded, ` +
+            `name the category they land in with \`prune: { keepTokens: ['colors.*'] }\`, or set ` +
+            `\`prune: { tokens: 'reachable' }\` to stop asserting.`,
+    )
   }
 
   if (reported.length && unresolved !== 'off') {
     logger.warn(
       'tokens:unresolved',
-      `${reported.length} reference(s) could not be accounted for, so every token declaration is kept.\n\n` +
-        `${formatDeclined(ctx, reported)}\n\n` +
+      `${reported.length} reference(s) could not be accounted for, so ` +
+        (bounded ? `\`prune.keepTokens\` decides what they keep` : `every token declaration is kept`) +
+        `.\n\n${formatDeclined(ctx, reported)}\n\n` +
         `These are shapes the build cannot follow rather than paths you can respell — a component stored ` +
         `post-transform, a file it could not parse, a barrel it cannot classify, a dynamic \`import()\`. ` +
-        `Narrow \`include\`, or accept the keeps.`,
+        (bounded
+          ? `Nothing checks that they stay inside \`keepTokens\`, which is why it is yours to declare: ` +
+            `a read landing outside it loses its declaration. Narrow \`include\`, or widen the patterns.`
+          : `Narrow \`include\`, name the categories they reach with \`prune: { keepTokens: [...] }\`, or ` +
+            `accept the keeps.`),
     )
   }
 
-  ctx.pruneTokens(sheet, vars, accounting.declined.length > 0 && reachable)
+  // A decline falls back to what `reachable` would have answered — unless the author declared
+  // the bound, which is the whole point of `keepTokens`: it replaces that fallback rather than
+  // adding to it, so a single unfollowable reference stops costing every declaration.
+  ctx.pruneTokens(sheet, vars, !bounded && accounting.declined.length > 0 && reachable)
+}
+
+/**
+ * The dash-cased spelling of a token path, as it appears in the emitted css variable.
+ *
+ * Not a transform this applies — only one it recognises, to tell a user their pattern is
+ * written against the wrong side of the system. The paths are camelCase (`fontSizes.3xl`) and
+ * the variables are dash-cased (`--font-sizes-3xl`), so `font-sizes.*` is the natural thing to
+ * write after reading `styles.css` and it matches nothing at all.
+ */
+const dashed = (path: string) => path.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)
+
+/**
+ * The token names `prune.keepTokens` names, matched against the whole theme.
+ *
+ * Patterns are anchored globs over the dotted token *path* — `colors.*`, `colors.brand.*`,
+ * `!colors.legacy.*`, or a bare path for one token. Matched case-sensitively, because a path is
+ * a key in the config rather than free text.
+ *
+ * A pattern that matches nothing is reported rather than ignored. It is nearly always a typo
+ * for one that would have matched, and the failure it causes is the one this whole module is
+ * careful about everywhere else: a declaration dropped while something still asks for it, with
+ * no error and no warning, resolving to a `var()` that inherits instead of falling back.
+ */
+function declaredKeeps(ctx: BambooContext) {
+  const patterns = ctx.config.prune?.keepTokens
+  if (!patterns?.length) return []
+
+  // `!` subtracts from a selection, so a list holding only exclusions selects everything they
+  // do not name — which is the opposite of what a list of keeps reads as, and is `tokens: 'off'`
+  // with extra steps. Reported rather than reinterpreted: guessing at the intent of a config
+  // that decides what ships is worse than saying what was understood.
+  const includes = patterns.filter((pattern) => !pattern.startsWith('!'))
+
+  if (!includes.length) {
+    logger.warn(
+      'prune:tokens',
+      `\`prune.keepTokens\` holds only exclusions, so it keeps every token they do not name:\n\n` +
+        `${patterns.map((pattern) => `  ${pattern}`).join('\n')}\n\n` +
+        `A leading \`!\` subtracts from a selection and there is none here. Add the categories to keep — ` +
+        `\`['colors.*', '!colors.legacy.*']\` — or use \`prune: { tokens: 'off' }\` if keeping everything ` +
+        `is the intent.`,
+    )
+  }
+
+  const matched: string[] = []
+  const used = new Set<string>()
+
+  for (const token of ctx.tokens.allTokens) {
+    // The whole list, in one call: `!` is a property of the *set*, so matching pattern by
+    // pattern and taking any hit reads `['colors.*', '!colors.teal.*']` as "colours, or
+    // anything that is not teal" — which is everything.
+    if (isMatch(token.name, patterns, { caseSensitive: true })) matched.push(token.name)
+
+    // Which inclusions pull their weight, for the report below. Asked separately because the
+    // combined answer cannot attribute a match, and asked of the inclusions alone so a pattern
+    // whose every match is later excluded still counts as spelled correctly.
+    if (used.size === includes.length) continue
+    for (const pattern of includes) {
+      if (isMatch(token.name, pattern, { caseSensitive: true })) used.add(pattern)
+    }
+  }
+
+  const unused = includes.filter((pattern) => !used.has(pattern))
+
+  if (unused.length) {
+    // The camelCase/dash-case mix-up specifically, since it is the one a correct reading of the
+    // stylesheet leads you into. Named per pattern rather than described in general, because
+    // the whole point is that the two spellings look equally plausible.
+    const paths = ctx.tokens.allTokens.map((token) => token.name)
+    const respell = unused
+      .map((pattern) => {
+        const hit = paths.find((path) => isMatch(dashed(path), pattern, { caseSensitive: true }))
+        if (!hit) return `  ${pattern}`
+        return `  ${pattern} — matches \`${dashed(hit)}\`, which is the css variable's spelling. Write the token path: \`${hit.split('.')[0]}.*\``
+      })
+      .join('\n')
+
+    logger.warn(
+      'prune:tokens',
+      `${unused.length} \`prune.keepTokens\` pattern(s) match no token in this theme:\n\n${respell}\n\n` +
+        `A pattern is an anchored glob over the dotted token *path* — \`colors.*\`, not \`colors\`, and ` +
+        `\`fontSizes.*\` rather than the \`--font-sizes-\` spelling the css variable uses. One that matches ` +
+        `nothing keeps nothing, which is silent everywhere except here.`,
+    )
+  }
+
+  return matched
 }
 
 /** The custom properties a set of token paths resolves to. */
@@ -426,7 +575,8 @@ export function collectRenderedElements(ctx: BambooContext) {
  * away from `token`, as in `const t = token`. Also unseen is a caller outside `include`,
  * which scopes style extraction rather than everything that may import — a script, a config,
  * or a sibling workspace package. Both prune declarations the running app then asks for, and
- * neither reports itself; `prune: { tokens: false }` is the way out.
+ * neither reports itself. `prune: { keepTokens: [...] }` names what they reach; `prune: { tokens:
+ * 'off' }` keeps the lot.
  */
 export function tokensReachableFromJs(ctx: BambooContext) {
   for (const content of sourceTexts(ctx)) {

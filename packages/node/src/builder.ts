@@ -187,13 +187,19 @@ export class Builder {
   }
 
   extract = () => {
+    const ctx = this.getContextOrThrow()
+
     const hasConfigChanged = this.affecteds ? this.affecteds.hasConfigChanged : true
     if (!this.filesMeta && !hasConfigChanged) {
       logger.debug('builder', 'No files or config changed, skipping extract')
-      return
+      // Still asserted. A file that failed to extract on an earlier pass is not re-parsed by
+      // one that skips it, so the failure has to outlive the pass that recorded it or a
+      // no-op rebuild would launder a broken build into a green one. No file list to hand it:
+      // this branch globbed nothing, and `assertExtracted` only reaches for one when there is
+      // a failure to place.
+      return ctx.assertExtracted()
     }
 
-    const ctx = this.getContextOrThrow()
     const files = ctx.getFiles()
 
     const done = logger.time.info('Extracted in')
@@ -201,6 +207,11 @@ export class Builder {
     files.map((file) => this.extractFile(ctx, file))
 
     done()
+
+    // After `done()`, so the timing line still reports the pass that just ran rather than
+    // being swallowed by the throw. Handed the list this pass walked, so it does not glob
+    // a second time to ask which files still exist.
+    ctx.assertExtracted(files)
   }
 
   isValidRoot = (root: Root) => {

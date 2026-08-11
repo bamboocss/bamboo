@@ -508,6 +508,9 @@ importers:
       look-it-up:
         specifier: 2.1.0
         version: 2.1.0
+      matcher:
+        specifier: 6.0.0
+        version: 6.0.0
       outdent:
         specifier: ' ^0.8.0'
         version: 0.8.0

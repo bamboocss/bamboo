@@ -45,6 +45,22 @@ export class BambooContext extends Generator {
   diff: DiffEngine
   explicitDeps: string[] = []
 
+  /**
+   * Files whose extraction threw, keyed by path, with the message it threw.
+   *
+   * A parse failure is not an opinion about a build that still works. The file's styles never
+   * reach the encoder, so every rule it would have contributed is absent from the stylesheet
+   * and the classes its components ask for have nothing behind them — the same shape as a
+   * naming disagreement, and the reverse of `reportUnresolvedStyles`, where what the build
+   * *did* see still applies. Logging it and carrying on is how a build printed error-level
+   * lines, dropped rules, and exited 0.
+   *
+   * Retained rather than rethrown from the `catch`, so one pass names every broken file
+   * instead of the first. Keyed by file, so a failure survives the incremental passes that
+   * skip an unchanged file: nothing re-parses it, and its styles stay missing until it does.
+   */
+  parseFailures = new Map<string, string>()
+
   constructor(conf: LoadConfigResult) {
     super(conf)
 
@@ -142,6 +158,59 @@ export class BambooContext extends Generator {
     return this.runtime.fs.glob({ include, exclude, cwd })
   }
 
+  /**
+   * Fail the build if any file's extraction threw.
+   *
+   * Called at the end of an extraction pass rather than from the `catch`, so the message names
+   * every broken file at once — a config with one retired token spelling in six components is
+   * fixed once, not six builds in a row.
+   *
+   * This is what makes the integrations agree. `cssgen` already exited non-zero on a file it
+   * could not extract, by letting the throw through; every bundler goes through `parseFile`,
+   * which caught it. CI running a build passed what CI running `cssgen` rejected, over the same
+   * source.
+   *
+   * `files` is the set still in scope, which the caller has usually just globbed. Deleting the
+   * offending file, or taking it out of `include`, is a *fix* — and nothing re-parses a file
+   * that is gone, so the entry that outlived it would fail every later build, naming a path
+   * that no longer exists. A context outlives rebuilds (it is replaced only when the config
+   * changes) and both long-lived integrations hold one, so that wedged a dev server until the
+   * process was restarted.
+   */
+  assertExtracted = (files?: Iterable<string>) => {
+    // Before the glob, so the common case costs nothing: no failures, no question to ask.
+    if (!this.parseFailures.size) return
+
+    const inScope = new Set(
+      Array.from(files ?? this.getFiles(), (file) => this.runtime.path.abs(this.config.cwd, file)),
+    )
+
+    for (const file of this.parseFailures.keys()) {
+      if (!inScope.has(file)) this.parseFailures.delete(file)
+    }
+
+    if (!this.parseFailures.size) return
+
+    // Relative to `cwd`, like `formatDeclined` beside it — an absolute path per entry buries
+    // the part that differs. Non-empty lines only, so a message with a blank line between
+    // paragraphs does not gain a line of trailing whitespace per paragraph.
+    const detail = Array.from(this.parseFailures.entries())
+      .map(([file, message]) => `${this.relative(file)}\n${message.replace(/^(?=.)/gm, '  ')}`)
+      .join('\n\n')
+
+    throw new BambooError(
+      'EXTRACT_FAILED',
+      `${this.parseFailures.size} file(s) could not be extracted:\n\n${detail}\n\n` +
+        `Nothing emits a rule for a file the build could not read, so every style in these is ` +
+        `absent from the stylesheet and the classes their components ask for have nothing behind ` +
+        `them.`,
+    )
+  }
+
+  /** A path as the user typed it, when it is under `cwd`. */
+  private relative = (file: string) =>
+    file.startsWith(this.config.cwd) ? file.slice(this.config.cwd.length + 1) : file
+
   parseFile = (filePath: string, styleEncoder?: StyleEncoder) => {
     const file = this.runtime.path.abs(this.config.cwd, filePath)
     logger.debug('file:extract', file)
@@ -153,8 +222,14 @@ export class BambooContext extends Generator {
     try {
       const encoder = styleEncoder || this.parserOptions.encoder
       result = this.project.parseSourceFile(file, encoder)
+      this.parseFailures.delete(file)
     } catch (error) {
+      // The message rather than the error: this aggregates, and an aggregate of six failures
+      // has no single `cause` to carry. The original — stack, code and all — is logged right
+      // here by `caughtError`, which is where it is useful. `assertNoRetiredSyntax` collects
+      // the same way for the same reason.
       logger.caughtError('file:extract', `Failed to parse ${file}`, error)
+      this.parseFailures.set(file, error instanceof Error ? error.message : String(error))
     }
 
     if (result) this.reportUnresolvedStyles(result)
@@ -163,6 +238,13 @@ export class BambooContext extends Generator {
     return result
   }
 
+  /**
+   * Extract every file in one pass, and fail on the ones that could not be read.
+   *
+   * Routed through `parseFile` rather than parsing directly, so the two entry points cannot
+   * disagree about what a failure means. This one used to let the first throw out, which is
+   * why `cssgen` and a bundler build reported different things about the same source.
+   */
   parseFiles = (styleEncoder?: StyleEncoder) => {
     const encoder = styleEncoder || this.parserOptions.encoder
 
@@ -171,18 +253,18 @@ export class BambooContext extends Generator {
     const results = [] as ParserResult[]
 
     files.forEach((file) => {
-      const measure = logger.time.debug(`Parsed ${file}`)
-      const result = this.project.parseSourceFile(file, encoder)
+      // `parseFile` reports unresolved styles itself, before the empty checks below: a file
+      // whose only `css()` call was unresolvable produces no styles at all, which is exactly
+      // the case worth warning about.
+      const result = this.parseFile(file, encoder)
 
-      measure()
-      // Before the empty checks below: a file whose only `css()` call was unresolvable
-      // produces no styles at all, which is exactly the case worth warning about.
-      if (result) this.reportUnresolvedStyles(result)
       if (!result || result.isEmpty() || encoder.isEmpty()) return
 
       filesWithCss.push(file)
       results.push(result)
     })
+
+    this.assertExtracted(files)
 
     return {
       filesWithCss,

@@ -171,4 +171,45 @@ export const pass = css
       expect(end).not.toThrow()
     }, 60_000)
   })
+
+  /**
+   * The module the fold threw on — the blind spot the ledger cannot see by construction.
+   *
+   * A throw in `transform` was caught, logged, and returned `null`, so the module contributed
+   * to neither the folded column nor the skipped one and the survivor check saw a file that did
+   * not exist. That is the same silence this option was added to close, one level up: a build
+   * whose whole point is "nothing still calls `css()`" cannot make that claim about a module
+   * nobody checked. A retired token spelling inside a `cva` is what reaches it — a recipe's
+   * styles are resolved while the file is parsed, so the throw lands inside the fold.
+   */
+  describe('a module the fold threw on', () => {
+    const BROKEN =
+      `import { cva } from 'styled-system/css'\n` +
+      `export const t = cva({ base: { boxShadow: '0 0 0 2px {colors.red.300/35}' } })\n`
+
+    test('counts as a survivor rather than as nothing', async () => {
+      const end = await run(BROKEN, 'src/strict-threw.tsx', true)
+
+      expect(end).toThrow(/could not be folded/)
+      expect(end).toThrow(/fold-failed/)
+      expect(end).toThrow(/strict-threw\.tsx/)
+    }, 60_000)
+
+    /** The advice for a declined call site does not apply, so the message says where to look. */
+    test('points at the error that was logged for it', async () => {
+      const end = await run(BROKEN, 'src/strict-threw-why.tsx', true)
+
+      expect(end).toThrow(/see the error logged for it above/)
+    }, 60_000)
+
+    /**
+     * Still not a build failure on its own. An unfolded module keeps its runtime call, which
+     * works — the fold is an optimisation, and declining to apply it is not an error.
+     */
+    test('does not fail a build that did not ask for the guarantee', async () => {
+      const end = await run(BROKEN, 'src/strict-threw-off.tsx', false)
+
+      expect(end).not.toThrow()
+    }, 60_000)
+  })
 })

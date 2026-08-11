@@ -47,6 +47,7 @@ export type SkipReason =
   | 'empty' // resolved to no class names at all
   | 'unresolved-token' // `token(...)` resolves to no usable string, so the call has to stay
   | 'runtime-binding' // a bamboo import still referenced after the rewrite, whoever left it
+  | 'fold-failed' // the fold threw on this module, so nothing about it was established
 
 export interface FoldedCall {
   name: string
@@ -201,6 +202,11 @@ export const SURVIVES_TO_RUNTIME = new Set<SkipReason>([
   'no-call-expression',
   'empty',
   'unresolved-token',
+  // A module the fold threw on. Nothing was established about it either way — its calls were
+  // neither folded nor declined — so it counted towards neither column and `failOnUnfolded`
+  // saw a module that did not exist. Unknown has to read as survives: the guarantee is that
+  // *nothing* still calls `css()`, and a module nobody checked cannot support it.
+  'fold-failed',
 ])
 
 /**

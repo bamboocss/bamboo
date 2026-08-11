@@ -7,7 +7,7 @@ import { validateBreakpoints } from './validation/validate-breakpoints'
 import { validateConditions } from './validation/validate-condition'
 import { validatePatterns } from './validation/validate-patterns'
 import { validateRecipes } from './validation/validate-recipes'
-import { validateRemovedOptions } from './validation/validate-removed'
+import { assertNoRemovedOptions } from './validation/validate-removed'
 import { assertNoRetiredSyntax } from './validation/validate-retired-syntax'
 import { validateTokens } from './validation/validate-tokens'
 
@@ -20,25 +20,28 @@ import { validateTokens } from './validation/validate-tokens'
  * - Check for missing tokens references
  * - Check for conditions selectors (must contain '&')
  * - Check for breakpoints units (must be the same)
- * - Check for options that have been removed, which are otherwise ignored in silence
+ * - Throw on options that have been removed, which are otherwise ignored in silence
  * - Throw on token values still written in the retired curly reference syntax
+ *
+ * The two throwing checks run first and answer to nothing below them. `validation` grades
+ * *opinions about a config that still builds*; those two are evidence that the config is not
+ * the one being read, which is a different question and not one a severity setting should
+ * decide.
  */
 export const validateConfig = (config: Partial<UserConfig>) => {
   // Ahead of the opt-out: a retired spelling is not an opinion about a config that still builds,
   // it is output that is already broken. See `validate-retired-syntax`.
   assertNoRetiredSyntax(config)
 
+  // Also ahead of it. A removed key is unambiguous proof the config predates the version reading
+  // it, and left alone it reverts to the default in silence — see `validate-removed`.
+  assertNoRemovedOptions(config)
+
   const warnings = new Set<string>()
 
   const addError = (scope: string, message: string) => {
     warnings.add(`[${scope}] ` + message)
   }
-
-  // Also ahead of the opt-out, and for the same reason. An unknown key is otherwise ignored in
-  // silence, so a removed option under `validation: 'off'` means the build reverts to the
-  // default and says nothing — the upgrade this check exists to prevent. It used to sit below
-  // the bail, which made one severity setting switch off the whole migration path.
-  validateRemovedOptions(config, addError)
 
   const report = () => {
     if (!warnings.size) return

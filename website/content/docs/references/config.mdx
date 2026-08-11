@@ -453,7 +453,7 @@ Whether to allow shorthand properties.
 ### prune
 
 **Type**:
-`{ tokens?: 'off' | 'reachable' | 'accounted'; unresolvedPath?: 'off' | 'warn' | 'error'; propertyRegistrations?: boolean; keyframes?: boolean; preflight?: boolean }`
+`{ tokens?: 'off' | 'reachable' | 'accounted'; keepTokens?: string[]; unresolvedPath?: 'off' | 'warn' | 'error'; propertyRegistrations?: boolean; keyframes?: boolean; preflight?: boolean }`
 
 **Default**:
 `{ tokens: 'reachable', unresolvedPath: 'warn', propertyRegistrations: true, keyframes: true, preflight: false }`
@@ -477,38 +477,32 @@ size of your app. Across the example apps in this repository it is worth 10–67
 
 ```json
 {
-  "prune": { "tokens": false }
+  "prune": { "tokens": "off" }
 }
 ```
+
+- `'off'` keeps every token declaration.
+- `'reachable'` (the default) keeps what the generated css reaches.
+- `'accounted'` reads the token paths out of your source and keeps only those.
 
 A variable is kept when the generated css references it, when a kept variable's own value references it, or when it is
 named by `token()`, `token.value()`, or a literal `var(--x)` anywhere under [`include`](#include). Anything a theme
 refers to is kept as well, since themes ship as separate artifacts injected at runtime.
 
-There is an escape hatch because reachability cannot be proven for every reference. Three things stay invisible to it:
-
-- A token named by a path your source does not spell out as a string literal, such as `token(key)`. A path built from a
-  constant or a template literal the extractor can follow **is** seen; only a value that exists solely at runtime is
-  not.
-- A token referenced only from a stylesheet outside `include`.
-- A token consumed by a separate package that treats your output as design tokens.
-
-Use [`staticCss`](#staticcss) to keep those, or set this to `false` to keep every token declaration.
-
 Turning it off does **not** bring back the `@property` rules your utilities register: those are not tokens, so
 reachability never applied to them, and a preset ships the set it composes from regardless of what you draw.
 
 <Callout type="warning">
-  **Reaching for a token from javascript disables token pruning.** `token()` hands back a `var()` for every token, so a
-  path the build cannot resolve could name any of them, and every declaration has to be kept. The check is
-  all-or-nothing per project: a token call or a `/tokens` import anywhere under [`include`](#include) is enough. On the
-  default preset that is 468 declarations kept instead of 68.
+  **Under `'reachable'`, reaching for a token from javascript disables token pruning.** `token()` hands back a `var()`
+  for every token, so a path the build cannot resolve could name any of them, and every declaration has to be kept. The
+  check is all-or-nothing per project: a token call or a `/tokens` import anywhere under [`include`](#include) is
+  enough. On the default preset that is 468 declarations kept instead of 68. `'accounted'` is the way out.
 </Callout>
 
-#### prune.unresolved
+#### prune.unresolvedPath
 
-What to do about a token reference the build cannot read. `'off'` (the default) prunes on what the css reaches and says
-nothing; `'warn'` reports; `'error'` fails the build.
+What to do about a token path `'accounted'` cannot follow. `'warn'` (the default) prunes and reports; `'off'` prunes and
+says nothing; `'error'` fails the build. It is inert under the other two strategies, which run no accounting pass.
 
 Set `prune: { tokens: 'accounted', unresolvedPath: 'error' }` to assert that every token path in your project is spelled
 out at the call. Bamboo then accounts for each reference individually, keeps by name only what is asked for, and
@@ -526,8 +520,82 @@ out at the call. Bamboo then accounts for each reference individually, keeps by 
 Reach for `'warn'` first: it runs the same accounting and prints the same references, so you can see what `'error'`
 would reject before a build depends on it.
 
-A reference it cannot read is never pruned — it falls back to whatever the default would have answered for your project.
-So asserting is never less safe and never larger than the default, and the message tells you why when it cannot prune.
+A reference it cannot read is never pruned — it falls back to whatever `'reachable'` would have answered for your
+project. So asserting is never less safe and never larger than the default, and the message tells you why when it cannot
+prune.
+
+##### A dynamic path is bounded, not declined
+
+``token(`colors.${shade}`)`` cannot say which token it wants, but it says which it **cannot**. The static head is a
+bound on everything the expression can produce, so the `colors` category is kept and nothing else — no decline, no
+fallback. That covers the commonest dynamic read outright, and it is worth knowing before you conclude that
+`'accounted'` is out of reach:
+
+```ts
+// bounded — keeps `colors.*`, prunes the rest
+token(`colors.${shade}` as Token)
+
+// unfollowable — nothing bounds it
+token(key)
+token('colors.' + shade)
+```
+
+#### prune.keepTokens
+
+Token paths to keep whatever the build can see, as exact names or `*` patterns.
+
+```json
+{
+  "prune": { "tokens": "accounted", "keepTokens": ["colors.*"] }
+}
+```
+
+This is the bound the build could not infer, written by hand. It exists because the fallback is otherwise total: **one**
+reference the accounting cannot follow keeps every declaration in the project, so a codebase with a single `token(key)`
+in it ships the same stylesheet as one that never prunes.
+
+Under `'accounted'` it does two things — it keeps what it matches, and it stands in for what could not be followed, in
+place of the blanket keep. Measured on `sandbox/vite-ts` with one unfollowable `token(key)` in it:
+
+| setting                                             | declarations | stylesheet |
+| --------------------------------------------------- | -----------: | ---------: |
+| `tokens: 'reachable'`                               |          426 |   23,412 B |
+| `tokens: 'accounted'`                               |          426 |   23,412 B |
+| `tokens: 'accounted', keepTokens: ['colors.*']`     |          270 |   17,867 B |
+| `tokens: 'accounted', keepTokens: ['colors.red.*']` |           51 |   10,649 B |
+
+Patterns match the dotted token path, anchored and case-sensitively, with `*` standing for any run of characters and a
+leading `!` excluding. `colors.*` keeps every colour, `colors.brand.*` one palette, `colors.red.300` one token, and
+`['colors.*', '!colors.legacy.*']` every colour but one palette.
+
+<Callout type="warning">
+  Patterns match the token **path**, not the css variable. A token is `fontSizes.3xl` and its declaration is
+  `--font-sizes-3xl`, so `font-sizes.*` — the natural thing to write after reading `styles.css` — matches nothing at
+  all. The same goes for `lineHeights`, `letterSpacings`, `aspectRatios` and every other multi-word category. A category
+  name on its own (`colors`) is not a path either.
+</Callout>
+
+A pattern matching no token is reported rather than ignored, and names the spelling that would have worked, because it
+is nearly always a typo and keeping nothing is otherwise silent. A list holding **only** exclusions is reported too: `!`
+subtracts from a selection, so `['!colors.legacy.*']` on its own selects everything else rather than nothing.
+
+<Callout type="warning">
+  Saying `keepTokens: ['colors.*']` is saying **the reads you cannot follow land in colours** — an assertion about your
+  own code, which is why nothing infers it for you. Nothing verifies it: a read landing outside the patterns loses its
+  declaration and resolves to a `var()` with nothing behind it, which inherits rather than falling back. The references
+  being covered are still printed under `'warn'`, so check them.
+</Callout>
+
+`'error'` and `keepTokens` do not combine, and the build says so: one asserts every path resolves, the other declares
+where the ones that do not will land. A project that cannot make the first assertion wants `'warn'`.
+
+Under `'reachable'` this is additive only — for a token nothing in the stylesheet references and no javascript here
+reads, such as one consumed by a sibling package or by css outside `include`. It is inert under `'off'`, which keeps
+everything already.
+
+This replaces [`staticCss`](#staticcss) as the way to keep a token category alive. `staticCss` emits utility _classes_,
+so keeping the colours meant shipping a rule per colour purely to hold the declarations up — usually a larger stylesheet
+than the pruning saved.
 
 These resolve, and cost nothing:
 
@@ -972,6 +1040,19 @@ What to do when the config does not validate.
   "validation": "error"
 }
 ```
+
+This grades opinions about a config that still builds. Two checks are not that, and are not governed by this option —
+they throw at every setting, including `off`:
+
+- A token value written in a **retired reference syntax**, which is output that is already broken.
+- An option that has been **removed or renamed**, which is proof the config predates the version reading it. The error
+  names each key and what to write instead.
+
+A removed option throws rather than warns because nothing else notices it. There is no schema walk, so a key that no
+longer exists is otherwise ignored in silence: the build reverts to the default, and any assertion the option asked for
+stops being enforced. Removals ship in minor versions, so a warning is what an automated dependency upgrade merges
+without a person reading it. An _unknown_ key is a different case and is still tolerated — it may be a setting for a
+version you have not installed yet. A removed key can only point backwards.
 
 ## Other options
 

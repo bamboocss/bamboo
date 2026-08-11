@@ -1,3 +1,4 @@
+import { BambooError } from '@bamboocss/shared'
 import type { UserConfig } from '@bamboocss/types'
 
 /**
@@ -33,12 +34,12 @@ const REMOVED: Record<string, (value: unknown) => string> = {
   eject: (value) =>
     value
       ? `\`eject: true\` is now \`presets: []\`. \`presets\` is the complete list — an unset \`presets\` loads \`defaultPresets\`, and listing your own no longer keeps a default underneath it.`
-      : `\`eject: false\` is the default and can be removed. \`presets\` is now the complete list.`,
+      : `\`eject: false\` was the default and no longer exists — delete it. \`presets\` is now the complete list.`,
 
   lightningcss: (value) =>
     value
       ? `\`lightningcss: true\` is now \`plugins: [pluginLightningcss()]\` from \`@bamboocss/plugin-lightningcss\`, which you install yourself. The flag forced a static import, so every project carried the native binary whether or not it was on.`
-      : `\`lightningcss: false\` is the default and can be removed.`,
+      : `\`lightningcss: false\` was the default and no longer exists — delete it.`,
 }
 
 /** Values that no longer exist for an option that does. Keyed by option, then by old value. */
@@ -54,6 +55,46 @@ const REMOVED_NESTED: Record<string, Record<string, (value: unknown) => string>>
     unresolved: (value) =>
       `\`prune.unresolved\` is now \`prune.unresolvedPath\`, and the accounting pass it used to switch on is now \`prune.tokens: 'accounted'\` — write \`prune: { tokens: 'accounted', unresolvedPath: '${value === 'error' ? 'error' : 'warn'}' }\`. They are separate because \`'off'\` used to mean two things at once: no accounting, and no report.`,
   },
+}
+
+/**
+ * Options a config still sets that no longer exist — a hard error, and not silenceable.
+ *
+ * Runs ahead of `validation` and ignores it, for the reason `assertNoRetiredSyntax` does. The
+ * rest of `validateConfig` reports opinions about a config that will still build; this reports a
+ * config that is *provably* not the one being read. An unknown key might be forward-compatible —
+ * a setting for a version you have not installed yet — but a key on this list is only reachable
+ * by a config written against a version that is behind the one running it.
+ *
+ * It used to warn, which is the wrong severity for exactly the upgrade this exists to catch. A
+ * warning scrolls past in CI, and a removed option is silent in every other way: the build
+ * reverts to the default and the assertion the user asked for stops being enforced. These
+ * removals ship in minor versions, so a Renovate auto-merge sails through a warning without a
+ * person ever reading it — the one case where nothing else can catch it.
+ *
+ * Every occurrence is collected before throwing, because the point is to fix a config once
+ * rather than to be told about it one key at a time. Delete this a release or two after removal,
+ * along with `validate-retired-syntax.ts`.
+ */
+export function assertNoRemovedOptions(config: Partial<UserConfig>): void {
+  const found: string[] = []
+
+  validateRemovedOptions(config, (scope, message) => {
+    found.push(`- [${scope}] ${message}`)
+  })
+
+  if (!found.length) return
+
+  throw new BambooError(
+    'CONFIG_ERROR',
+    `${found.length} config option(s) no longer exist:\n\n${found.join('\n')}\n\n` +
+      `Nothing walks a config for keys it does not recognise, so an option left in place here is ` +
+      `reported nowhere else — the build reverts to the default in silence, and any assertion the ` +
+      `option asked for stops being enforced. Make the edits above and the build proceeds. This is ` +
+      `not governed by \`validation\`, which grades a config that still builds.\n\n` +
+      `This reads the config after presets are merged, so a key you cannot find in your own file ` +
+      `came from one of them — upgrade that preset, or drop the key with a \`config:resolved\` hook.`,
+  )
 }
 
 export function validateRemovedOptions(

@@ -57,6 +57,7 @@
     "is-glob": "4.0.3",
     "lodash.merge": "4.6.2",
     "look-it-up": "2.1.0",
+    "matcher": "6.0.0",
     "outdent": " ^0.8.0",
     "p-limit": "5.0.0",
     "package-manager-detector": "1.6.0",

@@ -122,8 +122,12 @@ for.
 </Callout>
 
 The extractor follows a path built from a constant or a template literal, so `token(KEY)` is seen by the reachability
-analysis behind [`prune.tokens`](/docs/references/config#prune) as well as a path spelled out at the call. A path
-assembled from a value that only exists at runtime is not; keep those tokens with `staticCss`, or set
+analysis behind [`prune.tokens`](/docs/references/config#prune) as well as a path spelled out at the call. A template
+with a substitution is bounded rather than lost: ``token(`colors.${shade}`)`` keeps the `colors` category, because that
+is what its static head can reach.
+
+A path with no static head — `token(key)`, `token('colors.' + shade)` — is the one the build cannot follow. Name the
+category those land in with [`prune.keepTokens`](/docs/references/config#prunekeeptokens), or set
 `prune: { tokens: 'off' }`.
 
 ### Styled Components
