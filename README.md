@@ -1,7 +1,5 @@
 <p align="center">
-  Bamboo is build-time, type-safe CSS-in-JS &mdash;
-  <br/>
-  the scaffolding comes down before you ship.
+  Bamboo is build-time, type-safe CSS-in-JS
 </p>
 
 ## Why Bamboo?
