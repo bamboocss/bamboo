@@ -3,35 +3,86 @@ title: Why Bamboo
 description: From the endless list of CSS-in-JS libraries, why should you choose Bamboo?
 ---
 
-## The new era of CSS-in-JS
+## Styles that resolve before they ship
 
-Bamboo is a new CSS-in-JS engine that aims to solve the challenges of CSS-in-JS in the server-first era. It provides
-styling primitives to create, organize, and manage CSS styles in a type-safe and readable manner.
+Bamboo is a build-time CSS-in-JS engine. You write style objects; it reads them out of your source, emits atomic CSS,
+and — wherever the value is knowable — rewrites the call into the class string it would have returned. Nothing generates
+styles in the browser or injects them into the `<head>`.
 
-- **PostCSS:** After static analysis, Bamboo uses a set of PostCSS plugins to convert the parsed data to atomic css at
-  build time. **This makes Bamboo compatible with any framework that supports PostCSS.**
+Three things follow from that, and they are what Bamboo is for.
 
-- **Codegen:** Bamboo generates a lightweight runtime JS code that is used to author styles. It doesn't generate styles
-  in the browser nor inject styles in the `<head>`.
+### The call disappears
 
-- **Type-Safety:** Bamboo combines `csstype` and auto-generated typings to provide type-safety for css properties and
-  design tokens.
+Every class name comes from a function call the compiler can see. There is no JSX factory, no template literal syntax
+and no style props, so a production build can [fold the call away entirely](/docs/guides/source-transformation):
 
-## Why we forked Panda CSS
+```tsx
+// you write
+export const title = css({ fontSize: 'lg', fontWeight: 'bold' })
+
+// the bundle gets
+export const title = 'fs_lg fw_bold'
+```
+
+A style that varies does not put the call back. Both branches of a ternary are known, so each resolves at build time and
+only the choice is left behind — and even a value the build cannot see lowers, because the class is the property's
+prefix plus whatever the value holds, and the prefix is known now.
+
+The payoff is not the CPU that saves per call. It is that a bundle where everything lowered stops importing
+`styled-system/css` at all, and the engine drops out of your app. On one sandbox here, with
+[`leafFallback: false`](/docs/references/config#leaffallback) asserting that runtime values are scalars, a module with a
+dynamic style goes from 7,542 bytes gzipped to 1,077 — because the last reference to the engine is gone rather than
+merely unused.
+
+### A green build means a complete stylesheet
+
+Static extraction's characteristic failure is silence. A file the parser threw on, a call to a pattern a preset dropped,
+a `background: 'accent.default'` naming a token that does not exist — each contributes no rule, and nothing downstream
+objects, because a stylesheet missing rules is still a valid stylesheet. The class the component asks for simply has
+nothing behind it, and it surfaces much later as "this colour never applied", a long way from the edit that caused it.
+
+Bamboo treats that as a build failure rather than a fact of life:
+
+```
+ERR_BAMBOO_DEAD_IMPORT: 12 call(s) name a binding that does not exist:
+
+`stack` is not a pattern — `../styled-system/patterns` does not export it.
+  12 file(s): src/modal.tsx, src/drawer.tsx, src/sheet.tsx, … and 9 more
+```
+
+[Build diagnostics](/docs/concepts/build-diagnostics) lists what is checked, what each check costs, and which of them
+you can grade.
+
+### You ship what you use
+
+The token layer declares every token in your theme while an app uses a fraction of them, so
+[pruning](/docs/references/config#prune) what nothing can reach is usually the largest single saving in render-blocking
+CSS — 36% to 78% of `styles.css` on the example apps in this repository. The same applies to `@keyframes` a preset
+declares and your app never animates, and to the parts of the reset that style elements your source never renders.
+
+## Built at scale
 
 Bamboo is the styling engine behind [Contra](https://contra.com), whose UI has more than 20,000 `css()` call sites. At
 that scale everything a styling library spends per call site – bytes emitted, work at runtime, time in the build – is
-multiplied by five figures, so optimizations too small to notice elsewhere are plainly measurable.
+multiplied by five figures, so optimizations too small to notice elsewhere are plainly measurable. Bamboo exists to
+chase them further than a general-purpose library reasonably would.
 
-The fork exists to chase them further than a general-purpose library reasonably would. The authoring API is unchanged
-from [Panda CSS](https://panda-css.com/); what has diverged is how much CSS and JavaScript reaches the browser. The
-[full comparison](/docs/overview/faq#how-is-bamboo-css-different-from-panda-css) has the measurements.
+It began as a fork of [Panda CSS](https://panda-css.com/) and keeps its authoring primitives: `css`, `cva`, `sva`, `cx`,
+patterns and recipes. The API is smaller and several behaviours differ — `cx` joins rather than merges, recipes are
+named rather than atomic, and slot recipes scope their variants — so if you are coming from Panda, read
+[what changed](/docs/overview/faq#how-is-bamboo-css-different-from-panda-css) before you
+[migrate](/docs/migration/panda).
 
 ## When to use Bamboo?
 
+Bamboo suits an app whose stylesheet is starting to track the size of its design system rather than the size of its own
+UI, and a team that would rather have an extraction failure stop the build than find it in a diff of the output. It asks
+for something in return: styles are written one way, as objects passed to a call, and dynamic values have to be
+reachable statically or say so.
+
 ### Styling engine
 
-If you're building a JavaScript application with a framework that supports PostCSS, Bamboo is a great choice for you.
+Bamboo runs anywhere PostCSS does, and there is a [CLI](/docs/installation/cli) for anywhere it does not.
 
 ```jsx
 import { css } from '../styled-system/css'
@@ -58,8 +109,6 @@ function App() {
   )
 }
 ```
-
-> If your framework doesn't support PostCSS, you can use the [Bamboo CLI](/docs/installation/cli)
 
 ### Token generator
 

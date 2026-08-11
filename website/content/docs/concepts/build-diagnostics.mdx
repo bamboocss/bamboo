@@ -1,0 +1,155 @@
+---
+title: Build Diagnostics
+description: What Bamboo refuses to ship broken, and what it can only warn you about.
+---
+
+Static extraction has one characteristic failure, and it is silence.
+
+Bamboo reads your source, finds the styles, and emits a rule for each one. When it cannot — a file it could not parse, a
+call to a pattern that no longer exists, a value naming a token with a typo in it — it emits nothing. The stylesheet
+that results is still a valid stylesheet. Nothing downstream objects, because there is nothing to object to: a missing
+rule looks exactly like a rule you never asked for.
+
+What ships is a component asking for a class with nothing behind it. It surfaces as "this colour never applied", weeks
+later, a long way from the edit that caused it, and the only reliable way to find it is to diff the selector sets of two
+builds.
+
+So the checks below exist. Most of them fail the build outright; a few can only warn, and the difference is always the
+same question — can this be decided, or is it inferred from the shape of your code.
+
+## What fails the build
+
+These are read off something the build knows for certain, so there is no setting to grade them. There is no
+configuration under which the answer is what you meant.
+
+### A file the build could not read
+
+`ERR_BAMBOO_EXTRACT_FAILED`
+
+Extraction threw. The file's styles never reach the encoder, so every rule it would have contributed is absent and every
+class its components ask for has nothing behind it.
+
+```
+ERR_BAMBOO_EXTRACT_FAILED: 2 file(s) could not be extracted:
+
+src/checkout/summary.tsx
+  Unexpected token (14:22)
+
+src/checkout/total.tsx
+  `colors.brand.500` was renamed to `colors.brand.primary`
+```
+
+One pass names every broken file rather than stopping at the first, so a config change that breaks six components is one
+fix rather than six builds. The original errors are on the thrown error's `cause` as an `AggregateError` — the codes
+underneath are what tells a retired token spelling from a syntax error.
+
+Deleting the file, or taking it out of [`include`](/docs/references/config#include), is a fix and is treated as one.
+
+### A call to a binding that does not exist
+
+`ERR_BAMBOO_DEAD_IMPORT`
+
+The `patterns` and `recipes` entrypoints are generated from your config, so what they export moves when the config does
+— a pattern dropped from a preset, a recipe renamed. The import survives that as a binding to nothing: nothing extracts
+the call, and every rule it would have contributed is gone.
+
+```
+ERR_BAMBOO_DEAD_IMPORT: 400 call(s) name a binding that does not exist:
+
+`stack` is not a pattern — `../styled-system/patterns` does not export it.
+  400 file(s): src/comp-0.tsx, src/comp-1.tsx, src/comp-10.tsx, … and 397 more
+```
+
+Removing one pattern took eleven selectors out of a release this way, along with every modal's spacing and width.
+Codegen printed four ticks and exited 0.
+
+Grouped by the binding, because that is the unit of the mistake — a pattern dropped from a preset and called across an
+app is one thing to fix, however many call sites reach it. Two distinct dead bindings stay two findings.
+
+Reported per _call_, not per import. Both entrypoints export types beside their functions — `FlexProperties`,
+`ButtonVariantProps` — and neither is a pattern or a recipe, so an import-only test would report every file that types a
+prop. A type is never called, which is the difference. A binding nobody calls is left alone for the same reason: nothing
+asked it for a class, so no rule is missing.
+
+### A class name the build and the browser would spell differently
+
+`ERR_BAMBOO_NAMING_DISAGREEMENT`
+
+A class name is derived twice — once here, and once by the generated runtime in the browser — and the two only meet in
+the DOM, where a mismatch is silent and total. Checked once per build, against the config actually being built. Failing
+costs a build; not failing ships a blank app.
+
+## What you can grade
+
+These are inferred rather than decided, so each has a setting. The default is the one that is right when the inference
+might be wrong about your code; escalating is a choice you make once you know your own source is clean.
+
+### A value naming a token that does not exist
+
+[`unresolvedToken`](/docs/references/config#unresolvedtoken) — `off` | `warn` | `error`, default `warn`
+
+Token resolution ends in the value it was given, so an unknown path is emitted as written and
+`background: 'accent.default'` ships as `background: accent.default`. That parses. The stylesheet is valid, no build
+step objects, and the browser drops the declaration at compute time.
+
+```
+ERR_BAMBOO_UNRESOLVED_TOKEN: 2 style value(s) name a token that does not exist:
+
+- `background: accent.default`. Check the path against your `colors` tokens.
+- `color: brand.foreground`. Check the path against your `colors` tokens.
+```
+
+At `warn` the same findings are logged and the build carries on; at `error` the list is capped at 25, and the count
+tells you what was withheld.
+
+The default is `warn` because the test is a _shape_: a dotted value against the set of values the property enumerates.
+That is right about a mistyped token and cannot be certain about a literal. A property that enumerates nothing is never
+reported, and `[accent.default]` marks a value as literal.
+
+### A call the build could not fully see
+
+Always a warning, on the `css` and `recipe` log channels.
+
+A `css()` call degrades: the declarations the build resolved still apply, and only the ones it could not are missing. A
+recipe does not degrade at all — its classes are named from a hash of its config, so a declaration the build cannot see
+gives the build and the browser different names and _every_ style is lost. The two are worded differently for that
+reason, and the recipe message tells you to set `className` so the name stops depending on what the build could resolve.
+
+Nothing under [`outdir`](/docs/references/config#outdir) is reported, because it is not yours to rewrite.
+
+### A token path the prune scan could not follow
+
+[`prune.unresolvedPath`](/docs/references/config#pruneunresolvedpath) — `off` | `warn` | `error`, default `warn`
+
+Only under [`prune.tokens: 'accounted'`](/docs/references/config#prune), which is an assertion that every token path in
+your project resolves at build time. A path assembled at runtime does not, and an unfollowable path forces the
+accounting back onto a blanket keep — so `error` is what makes `accounted` worth asking for: it guarantees you are
+shipping the exact set rather than the fallback.
+
+### A config that does not validate
+
+[`validation`](/docs/references/config#validation) — `off` | `warn` | `error`, default `warn`
+
+This grades opinions about a config that still builds. Two checks are not that and answer to nothing here: a retired
+token spelling, which is output that is already broken, and a removed option, which is proof the config predates the
+version reading it. Both throw at any setting.
+
+## What nothing can check
+
+The honest limits, all of which have the same shape — the evidence is outside what the build can see.
+
+- **[`preflight.prune`](/docs/references/config#preflightprune)** decides which reset rules to keep from a textual scan
+  of your own source, so an element rendered by a dependency, by `dangerouslySetInnerHTML` or by markdown is invisible
+  to it. This is why it is the one pruning option that is off by default and cannot be made safe by default.
+- **A caller outside [`include`](/docs/references/config#include).** The token scans read what `include` covers, which
+  scopes style extraction rather than everything that may import — a script, a config, or a sibling workspace package
+  that calls `token()` is not covered. Name what they reach with
+  [`prune.keepTokens`](/docs/references/config#prunekeeptokens).
+- **A binding renamed away from `token`.** `const t = token` is invisible to the scan that decides whether a token is
+  reachable from JavaScript.
+- **An entry template outside `include`.** `include` conventionally covers components rather than markup, and
+  `index.html` is where `<table>`, `<noscript>` and a page's static markup usually live. The scans read any file
+  `include` covers, not only ones the parser understands, so listing it is the fix.
+
+A `prune.keepTokens` pattern that matches no token in your theme is reported, because keeping nothing is otherwise
+silent in a pass whose whole job is dropping things.

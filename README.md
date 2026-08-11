@@ -6,12 +6,9 @@
 
 ## Why Bamboo?
 
-Bamboo CSS is a fork of [Panda CSS](https://panda-css.com/) with a smaller API and leaner output. `css`, `cva`, `sva`,
-`cx`, patterns and recipes carry over, so [migrating](https://bamboocss.com/docs/migration/panda) is mostly a rename.
-
-No JSX factory, no template literals, no style props: every class name comes from a call the compiler can see, so a
+**Every class name comes from a call the compiler can see.** No JSX factory, no template literals, no style props — so a
 production build can
-[fold it into the string it would have returned](https://bamboocss.com/docs/guides/source-transformation):
+[fold the call into the string it would have returned](https://bamboocss.com/docs/guides/source-transformation):
 
 ```tsx
 // you write
@@ -32,25 +29,46 @@ css({ fontSize: 'lg', fontWeight: active ? 'bold' : 'normal' })
 cx('fs_lg', active ? 'fw_bold' : 'fw_normal')
 ```
 
+**A build that succeeds ships every rule your source asked for.** Static extraction fails quietly by nature: a file the
+build could not read, a call to a pattern that no longer exists, a value naming a token with a typo in it. Each one
+emits nothing, the class your component asks for has no rule behind it, and the stylesheet is still perfectly valid — so
+the build exits 0. Bamboo stops instead:
+
+```
+ERR_BAMBOO_DEAD_IMPORT: 12 call(s) name a binding that does not exist:
+
+`stack` is not a pattern — `../styled-system/patterns` does not export it.
+  12 file(s): src/modal.tsx, src/drawer.tsx, src/sheet.tsx, … and 9 more
+```
+
+Removing one pattern took eleven selectors out of a release this way. Codegen printed four ticks and exited 0, and it
+was found by diffing selector sets after the fact.
+[Everything the build refuses to ship broken →](https://bamboocss.com/docs/concepts/build-diagnostics)
+
+**You ship the CSS you use, not the CSS your design system defines.** The token layer declares every token in your
+theme; an app uses a fraction of them. Dropping what nothing can reach is worth 36% to 78% of `styles.css` on the
+example apps in this repository — one goes from 18,032 bytes to 3,959, and 4,828 gzipped to 1,525.
+
+Bamboo is the styling engine behind [Contra](https://contra.com), whose UI has more than 20,000 `css()` call sites.
+
 ## Features
 
-- ⚡️ Write style objects, extract them at build time
-- 🪶 [Optional zero runtime](https://bamboocss.com/docs/guides/source-transformation) – fold static `css()`, pattern and
-  recipe calls into plain class strings at build time
-- ✨ Modern CSS output – cascade layers `@layer`, css variables and more
-- ✂️ Prune [unused tokens](https://bamboocss.com/docs/references/config#prunetokens) and
-  [keyframes](https://bamboocss.com/docs/references/config#prunekeyframes) – ship only what your app uses
+- 🪶 [Optional zero runtime](https://bamboocss.com/docs/guides/source-transformation) – static `css()`, pattern and
+  recipe calls become plain class strings at build time
+- 🛑 [Nothing ships silently broken](https://bamboocss.com/docs/concepts/build-diagnostics) – an unreadable file, a call
+  to a pattern that no longer exists, or a value naming a token that does not, fails the build rather than emitting
+  nothing
+- ✂️ Prune [unused tokens](https://bamboocss.com/docs/references/config#prunetokens),
+  [keyframes](https://bamboocss.com/docs/references/config#prunekeyframes) and
+  [reset rules](https://bamboocss.com/docs/references/config#preflightprune) – 36–78% of `styles.css` on the apps here
 - 🎯 [Predictable overrides](https://bamboocss.com/docs/concepts/cascade-layers) – precedence is decided by cascade
   layer, so a component written with `cva`/`sva` lands in `recipes` and a consumer's `css()` in `utilities` wins
-- 🛟 [Fallback values](https://bamboocss.com/docs/concepts/writing-styles#fallback-values) – `fallback(100dvh, 100vh)`
-  for progressive enhancement, in one declaration
-- 🎬 [View transitions](https://bamboocss.com/docs/concepts/view-transitions) – `viewTransition()` writes the
-  `::view-transition-*` rules and hands back one class to share across elements
-- 🦄 Works with most JavaScript frameworks
-- 🚀 Recipes and Variants – composable style variants, an API [inspired by Stitches](https://stitches.dev/)
-- 🎨 High-level design tokens support for simultaneous themes
-- 💪 Type-safe styles and autocomplete (via codegen)
 - 🤖 [MCP server](https://bamboocss.com/docs/ai/mcp-server) – let AI assistants read your tokens, recipes and usage
+
+Plus design tokens with simultaneous themes, type-safe styles and autocomplete via codegen, recipes and variants
+[inspired by Stitches](https://stitches.dev/),
+[fallback values](https://bamboocss.com/docs/concepts/writing-styles#fallback-values),
+[view transitions](https://bamboocss.com/docs/concepts/view-transitions), and support for most JavaScript frameworks.
 
 ---
 

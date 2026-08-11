@@ -96,6 +96,7 @@ export const docsNavigation: NavItem = {
       url: 'concepts',
       items: [
         { title: 'Cascade Layers', url: 'cascade-layers' },
+        { title: 'Build Diagnostics', url: 'build-diagnostics' },
         { title: 'Writing Styles', url: 'writing-styles' },
         { title: 'Merging Styles', url: 'merging-styles' },
         { title: 'Global Styles', url: 'global-styles' },
