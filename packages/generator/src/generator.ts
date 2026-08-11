@@ -6,6 +6,7 @@ import {
   pruneTokenVars,
   type StyleDecoder,
   type Stylesheet,
+  type UnresolvedTokenRef,
 } from '@bamboocss/core'
 import { logger } from '@bamboocss/logger'
 import { cssVarRefs, dashCase, isObject, truncateList, BambooError } from '@bamboocss/shared'
@@ -359,13 +360,15 @@ export class Generator extends Context {
    * Only under `unresolvedToken: 'error'` — see that option for why this one is graded and a
    * dead binding is not.
    *
-   * Read off the decoded sheet rather than accumulated as `transform` runs, and that is the
-   * load-bearing part. A `Context` outlives rebuilds while the decoder memoizes each atom by
-   * hash, so on the second build of the same source `transform` is never re-entered: an
-   * accumulating record either keeps a finding past the edit that fixed it — wedging a dev
-   * server — or is cleared and then never refilled, which passes a build whose source is
-   * still broken. That second one is the worse failure and is what an earlier version of this
-   * did.
+   * Two sources, because neither sees the whole build.
+   *
+   * **Atomic styles are read off the decoded sheet** rather than accumulated as `transform`
+   * runs, and that is the load-bearing part for them. A `Context` outlives rebuilds while the
+   * decoder memoizes each atom by hash, so on the second build of the same source `transform`
+   * is never re-entered: an accumulating record either keeps a finding past the edit that
+   * fixed it — wedging a dev server — or is cleared and then never refilled, which passes a
+   * build whose source is still broken. That second one is the worse failure and is what an
+   * earlier version of this did.
    *
    * `decoder.atomic` has neither problem, because it is not a record of what happened — it is
    * what the sheet is built from, and each result keeps the `prop` and `value` it was written
@@ -379,6 +382,18 @@ export class Generator extends Context {
    * own output. A production build is a fresh process and sees only what its source asked
    * for.
    *
+   * **Config-derived styles are not in that set at all**, which is the gap this used to have.
+   * `globalCss`, the reset, config recipes and compositions serialize through
+   * `transformStyles`, and that clones the decoder — so their atoms land in a throwaway and
+   * `decoder.atomic` never hears about them. Reading only the sheet made `'error'` *quieter*
+   * than the default on exactly those styles: the warning was suppressed in favour of a check
+   * that could not see them, so a bad token in `globalCss` warned with the option unset and
+   * then passed silently with it set to `'error'`. `utility.unresolvedTokens` is the record of
+   * what only `transform` can see; see it for why accumulating is right for that half.
+   *
+   * Both halves key on `property:path` with shorthands resolved, so a value that does reach
+   * both — every atomic style is transformed once before it is memoized — is one finding.
+   *
    * Here rather than beside the asserts in `BambooContext` because this is where the sheet
    * exists: those all run during extraction, before anything has been decoded. Every path
    * that emits css comes through `getCss`.
@@ -386,7 +401,7 @@ export class Generator extends Context {
   assertNoUnresolvedTokens = () => {
     if (this.config.unresolvedToken !== 'error') return
 
-    const found = new Map<string, { prop: string; value: string; category?: string }>()
+    const found = new Map<string, UnresolvedTokenRef>(this.utility.unresolvedTokens)
 
     for (const atom of this.decoder.atomic) {
       const { prop, value } = atom.entry
@@ -394,14 +409,20 @@ export class Generator extends Context {
 
       if (!this.utility.isUnresolvedTokenValue(prop, value)) continue
 
+      // Resolved, so an atom written as `bg` keys and prints the same as the `background` the
+      // transform-side record holds. The encoder resolves shorthands before hashing so these
+      // arrive resolved already; doing it here as well means the two halves cannot key
+      // differently on the same mistake and report it twice.
+      const key = this.utility.resolveShorthand(prop)
+
       // The path the value names, with `!important` and a `/opacity` modifier stripped. The
       // predicate above normalizes the same way — this asks for the result of it, rather than
       // repeating the rule and letting the two drift.
-      const bare = this.utility.bareTokenPath(prop, value)
+      const bare = this.utility.bareTokenPath(key, value)
 
       // One finding per mistake: the same typo under `base`, `_hover` and two breakpoints is
       // four atoms and one thing to fix.
-      found.set(`${prop}:${bare}`, { prop, value: bare, category: this.utility.getTokenCategory(prop) })
+      found.set(`${key}:${bare}`, { prop: key, value: bare, category: this.utility.getTokenCategory(key) })
     }
 
     if (!found.size) return

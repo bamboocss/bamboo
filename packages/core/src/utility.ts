@@ -33,9 +33,19 @@ import { withCssUnit } from './stringify'
 /**
  * A value shaped like a token path: dot-separated segments, the first starting with a letter
  * and the rest with a letter or digit. `red.300` matches, `0.5` and `1.5rem` do not, which is
- * the distinction that keeps numeric values out of `warnUnresolvedToken`.
+ * the distinction that keeps numeric values out of `recordUnresolvedToken`.
  */
 const TOKEN_PATH = /^[a-zA-Z][\w-]*(?:\.[a-zA-Z0-9][\w-]*)+$/
+
+/** A style value shaped like a token path that names no token. */
+export interface UnresolvedTokenRef {
+  /** The property, with any shorthand resolved. */
+  prop: string
+  /** The token path the value names, with `!important` and a `/opacity` modifier stripped. */
+  value: string
+  /** The token category the property draws from, when it draws from exactly one. */
+  category?: string
+}
 
 export interface UtilityOptions {
   config?: UtilityConfig
@@ -666,7 +676,25 @@ export class Utility {
     return result
   }
 
-  private warnedTokens = new Set<string>()
+  /**
+   * Every unresolved token path this utility has transformed, keyed on `property:path`.
+   *
+   * One structure for two jobs — the dedup set behind the warning, and the record
+   * `unresolvedToken: 'error'` fails on — because two would be two chances for the modes to
+   * disagree about what counts as one finding.
+   *
+   * `'error'` cannot read this off the finished sheet the way it reads atomic styles.
+   * `globalCss`, the reset, config recipes and compositions all serialize through
+   * `transformStyles`, which decodes into a *clone* of the decoder, so nothing they contain
+   * ever reaches `decoder.atomic`. Transforming them is the only moment they are visible.
+   *
+   * Accumulating is safe here in a way it is not for atomic styles, and for a reason specific
+   * to what is being recorded: all of it is config-derived, transformed once when the context
+   * is built, and a config edit constructs a whole new context. So nothing here outlives the
+   * config it describes — where a record cleared per build would report these on the first
+   * build and pass every build after it.
+   */
+  unresolvedTokens = new Map<string, UnresolvedTokenRef>()
 
   /**
    * Whether a style value is shaped like a token path and names no token.
@@ -733,7 +761,7 @@ export class Utility {
   }
 
   /**
-   * Report a value shaped like a token path that resolved to nothing.
+   * Record a value shaped like a token path that resolved to nothing, and say so under `warn`.
    *
    * Every branch of `getPropertyRawValue` ends in `|| value`, so an unknown path is handed
    * straight through and `background: 'accent.default'` ships as `background: accent.default`.
@@ -747,24 +775,34 @@ export class Utility {
    *
    * A property with an empty set is left alone. Nothing is enumerated, so every value is a
    * literal and none of them can be wrong.
+   *
+   * Recording under `error` too is what stops that mode being *quieter* than the default.
+   * It used to return here on anything but `warn` and leave the whole question to
+   * `assertNoUnresolvedTokens`, which reads `decoder.atomic` — a set the config-derived
+   * styles never enter. A bad token in `globalCss` warned with the option unset and then
+   * went silent, exit 0, the dead declaration still in `styles.css`, the moment the option
+   * was set to the value that exists to escalate it.
    */
-  private warnUnresolvedToken = (key: string, value: string) => {
-    // `off` says nothing, and `error` reports the whole set at the end of the build instead —
-    // warning here as well would print every finding twice and bury the line that failed it.
-    if (this.unresolvedToken !== 'warn') return
+  private recordUnresolvedToken = (key: string, value: string) => {
+    if (this.unresolvedToken === 'off') return
 
     if (!this.isUnresolvedTokenValue(key, value)) return
 
-    // One report per mistake, keyed on the path rather than on the value as written: the same
+    // One record per mistake, keyed on the path rather than on the value as written: the same
     // typo reached through `red.3000`, `red.3000!` and `red.3000/50` is one thing to fix.
     // `transform` also runs once per condition, so a single bad token under `base`, `_hover`
-    // and two breakpoints is four identical warnings without this.
+    // and two breakpoints is four identical findings without this.
     const bare = this.bareTokenPath(key, value)
     const id = `${key}:${bare}`
-    if (this.warnedTokens.has(id)) return
-    this.warnedTokens.add(id)
+    if (this.unresolvedTokens.has(id)) return
 
     const category = this.getTokenCategory(key)
+    this.unresolvedTokens.set(id, { prop: key, value: bare, category })
+
+    // `error` reports the whole set at the end of the build instead — warning here as well
+    // would print every finding twice and bury the line that failed it.
+    if (this.unresolvedToken !== 'warn') return
+
     const where = category ? ` Check the path against your \`${category}\` tokens.` : ''
     logger.warn(
       'utility',
@@ -804,7 +842,7 @@ export class Utility {
     // the broken one for good. That is the same silent failure as the bare case, wearing a
     // fallback that makes it look deliberate.
     for (const candidate of fallbackValues ?? [value]) {
-      if (isString(candidate)) this.warnUnresolvedToken(key, candidate)
+      if (isString(candidate)) this.recordUnresolvedToken(key, candidate)
     }
 
     return compact({

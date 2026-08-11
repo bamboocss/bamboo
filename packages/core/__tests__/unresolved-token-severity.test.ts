@@ -18,8 +18,8 @@ import { afterEach, describe, expect, test, vi } from 'vitest'
  * `transform` is not re-entered at all — which is exactly the case an earlier version of this
  * check got wrong, passing a build whose source was still broken.
  */
-const build = (severity: 'off' | 'warn' | 'error' | undefined, source: string) => {
-  const ctx = createContext(severity ? ({ unresolvedToken: severity } as any) : undefined) as any
+const build = (severity: 'off' | 'warn' | 'error' | undefined, source: string, config: object = {}) => {
+  const ctx = createContext({ ...(severity ? { unresolvedToken: severity } : {}), ...config } as any) as any
   const files: string[] = []
 
   const write = (src: string) => {
@@ -258,5 +258,159 @@ describe('across rebuilds', () => {
 
     expect(() => run()).not.toThrow()
     expect(() => run()).not.toThrow()
+  })
+})
+
+/**
+ * Styles that come from the config, not from a `css()` call in a source file.
+ *
+ * These reach the sheet through `serializeStyles`/`transformStyles`, which decodes into a
+ * *clone* of the decoder — so nothing they contain ever lands in `decoder.atomic`. A check
+ * that read only that set was blind to every one of them, and because `'error'` suppresses
+ * the warning in favour of it, setting the option to the value that exists to escalate an
+ * unresolved token made these *quieter* than leaving it unset: no warning, exit 0, and the
+ * dead declaration still in `styles.css`.
+ *
+ * The pairs below are the guard. Each one asserts the default reports it and `'error'` fails
+ * on it, so neither mode can go silent on a style the other one sees.
+ */
+describe('styles that never reach the decoder', () => {
+  const cases = {
+    globalCss: { global: { css: { body: { background: 'accent.default' } } } },
+    'the preflight scope': {
+      preflight: { scope: '.app' },
+      global: { css: { body: { background: 'accent.default' } } },
+    },
+    'a config recipe base': {
+      theme: { extend: { recipes: { card: { className: 'card', base: { background: 'accent.default' } } } } },
+    },
+    'a config recipe variant': {
+      theme: {
+        extend: {
+          recipes: {
+            card: { className: 'card', base: {}, variants: { tone: { loud: { background: 'accent.default' } } } },
+          },
+        },
+      },
+    },
+    'a config recipe compound variant': {
+      theme: {
+        extend: {
+          recipes: {
+            card: {
+              className: 'card',
+              base: {},
+              variants: { tone: { loud: {} }, size: { lg: {} } },
+              compoundVariants: [{ tone: 'loud', size: 'lg', css: { background: 'accent.default' } }],
+            },
+          },
+        },
+      },
+    },
+    'a mixin': {
+      theme: { extend: { mixins: { headline: { h9: { value: { background: 'accent.default' } } } } } },
+    },
+  }
+
+  for (const [name, config] of Object.entries(cases)) {
+    // `mixin` is transformed on use rather than at setup, so it needs a call site. The rest
+    // are reached whether or not a source file mentions them, which is the point of them.
+    const source = name === 'a mixin' ? styled('headline.h9', 'mixin') : styled('red.300')
+
+    test(`the default reports an unknown token in ${name}`, () => {
+      const spy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+      const { run } = build(undefined, source, config)
+
+      expect(() => run()).not.toThrow()
+      expect(messages(spy)).toMatch(/Unknown token `accent.default`/)
+    })
+
+    test(`'error' fails on an unknown token in ${name}`, () => {
+      const { run } = build('error', source, config)
+
+      expect(() => run()).toThrowError(/`background: accent.default`/)
+    })
+  }
+
+  /**
+   * A `viewTransition` is the same blind spot arrived at from source rather than config. Its
+   * slot bodies are ordinary style objects, but the rules are written against
+   * `::view-transition-*` pseudo-elements rather than a class — so they are collected apart
+   * from the atomic styles and serialized through the same clone, and a check reading only
+   * `decoder.atomic` saw nothing in them either.
+   */
+  const transition = `
+    import { viewTransition } from 'styled-system/css'
+    export const slide = viewTransition({ group: { background: 'accent.default' } })
+  `
+
+  test('the default reports an unknown token in a viewTransition slot', () => {
+    const spy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+    const { run } = build(undefined, transition)
+
+    expect(() => run()).not.toThrow()
+    expect(messages(spy)).toMatch(/Unknown token `accent.default`/)
+  })
+
+  test("'error' fails on an unknown token in a viewTransition slot", () => {
+    const { run } = build('error', transition)
+
+    expect(() => run()).toThrowError(/`background: accent.default`/)
+  })
+
+  test("'off' still says nothing", () => {
+    const spy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+    const { run } = build('off', styled('red.300'), cases.globalCss)
+
+    expect(() => run()).not.toThrow()
+    expect(messages(spy)).not.toMatch(/Unknown token/)
+  })
+
+  test('a resolvable token in the config is not a finding', () => {
+    const { run } = build('error', styled('red.300'), { global: { css: { body: { background: 'red.300' } } } })
+
+    expect(() => run()).not.toThrow()
+  })
+
+  /**
+   * The config is fixed for a context's lifetime — a config edit builds a new one — but these
+   * are transformed once when the context is built and never again. A record cleared per
+   * build would report them on the first build and pass every build after it, which is the
+   * failure mode that makes a check worse than no check.
+   */
+  test('a config finding fails every rebuild, not just the first', () => {
+    const { run } = build('error', styled('red.300'), cases.globalCss)
+
+    expect(() => run()).toThrow()
+    expect(() => run()).toThrow()
+    expect(() => run()).toThrow()
+  })
+
+  /**
+   * Config and source are two sources feeding one report, and an atomic style passes through
+   * both: it is transformed once before the decoder memoizes it, so it is in the record *and*
+   * in the sheet. Keying both halves on the resolved property and the bare path is what makes
+   * that one finding instead of two.
+   */
+  test('a value both halves can see is reported once', () => {
+    const { run } = build('error', styled('accent.default', 'bg'))
+
+    expect(() => run()).toThrowError(/^1 style value\(s\)/)
+  })
+
+  test('config and source findings collect into one report', () => {
+    const { run } = build('error', styled('brand.fg', 'color'), cases.globalCss)
+
+    const error = (() => {
+      try {
+        run()
+      } catch (e) {
+        return e as Error
+      }
+    })()
+
+    expect(error?.message).toMatch(/^2 style value\(s\)/)
+    expect(error?.message).toMatch(/background: accent\.default/)
+    expect(error?.message).toMatch(/color: brand\.fg/)
   })
 })

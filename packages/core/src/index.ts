@@ -28,5 +28,5 @@ export { StyleDecoder } from './style-decoder'
 export { StyleEncoder } from './style-encoder'
 export { Stylesheet } from './stylesheet'
 export type { CssOptions, ParserOptions, RecipeNode, StylesheetContext, TransformResult } from './types'
-export { Utility } from './utility'
+export { Utility, type UnresolvedTokenRef } from './utility'
 export { messages }

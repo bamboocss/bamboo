@@ -25,7 +25,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest'
  */
 const setup = () => {
   const ctx = createGeneratorContext() as any
-  ctx.utility.warnedTokens.clear()
+  ctx.utility.unresolvedTokens.clear()
   const spy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
   return { utility: ctx.utility, spy }
 }

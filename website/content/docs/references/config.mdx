@@ -1140,6 +1140,10 @@ enumerates. That is right about a mistyped token and cannot be certain about a l
 project makes once it knows its own source is clean. A property that enumerates nothing — `gridTemplateAreas` — is never
 reported, and `[accent.default]` marks a value as literal.
 
+Every style the build transforms is graded, wherever it was written — a `css()` call, `staticCss`, and the styles your
+config supplies: `globalCss`, the preflight scope, config recipes and mixins. The three settings differ in what they do
+about a finding, never in which styles they look at.
+
 The modifiers a path can carry are stripped before it is resolved, so `accent.default!`, `accent.default !important` and
 `accent.default/50` are all judged as `accent.default` and reported once between them. The opacity modifier is only
 stripped for a property drawing on `colors`, since that is the only place it means anything — a slash stays part of the

@@ -100,7 +100,8 @@ ERR_BAMBOO_UNRESOLVED_TOKEN: 2 style value(s) name a token that does not exist:
 ```
 
 At `warn` the same findings are logged and the build carries on; at `error` the list is capped at 25, and the count
-tells you what was withheld.
+tells you what was withheld. Both grade the same styles — a `css()` call, `staticCss`, and what your config supplies:
+`globalCss`, the preflight scope, config recipes and mixins.
 
 The default is `warn` because the test is a _shape_: a dotted value against the set of values the property enumerates.
 That is right about a mistyped token and cannot be certain about a literal. A property that enumerates nothing is never
