@@ -128,6 +128,14 @@ export class BambooContext extends Generator {
     if (!unresolved?.length) return
 
     for (const entry of unresolved) {
+      // Nothing under `outdir` is the author's to rewrite. `cssLeaf` calls `css({ [prop]:
+      // value })` — a computed key, and so unenumerable by construction — which warned on
+      // every build of every project whose `include` reaches its own output, with no edit
+      // that would silence it and (until keyframe reachability stopped depending on that
+      // overlap) no way to exclude the directory either. A permanent line in the same
+      // channel as the losses that matter is how the ones that matter get ignored.
+      if (this.isGenerated(entry.filePath)) continue
+
       const where = `${entry.filePath}:${entry.line}:${entry.column}`
       const prop = entry.prop ? `\`${entry.prop}\`` : 'a property'
       const [what] = unresolvedReasons[entry.reason](prop)
@@ -297,6 +305,20 @@ export class BambooContext extends Generator {
   /** A path as the user typed it, when it is under `cwd`. */
   private relative = (file: string) =>
     file.startsWith(this.config.cwd) ? file.slice(this.config.cwd.length + 1) : file
+
+  /**
+   * Whether a file is one bamboo wrote.
+   *
+   * `include` conventionally covers a source tree that `outdir` sits inside — `./src/**` and
+   * `src/styled-system` — so the build routinely parses its own output. That is load-bearing
+   * rather than accidental, which is why the answer here is "do not report it" rather than
+   * "do not read it": the token and keyframe scans read whatever `include` covers, and a
+   * project that excludes its `outdir` should not lose them.
+   */
+  private isGenerated = (file: string) => {
+    const outdir = this.runtime.path.join(...this.paths.root)
+    return file === outdir || file.startsWith(outdir + this.runtime.path.sep)
+  }
 
   parseFile = (filePath: string, styleEncoder?: StyleEncoder) => {
     const file = this.runtime.path.abs(this.config.cwd, filePath)
