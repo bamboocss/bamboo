@@ -70,7 +70,7 @@ describe('compositions', () => {
             font-size: 2rem;
             font-weight: var(--font-weights-bold);
       }
-          }
+        }
       }"
     `)
 
@@ -87,7 +87,7 @@ describe('compositions', () => {
               font-size: 2rem;
       }
       }
-          }
+        }
       }"
     `)
   })
@@ -100,7 +100,7 @@ describe('compositions', () => {
             font-size: 1.5rem;
             font-weight: var(--font-weights-bold);
       }
-          }
+        }
       }"
     `)
   })
@@ -113,7 +113,7 @@ describe('compositions', () => {
             transform-origin: var(--transform-origin);
             animation-name: scale-in, fade-in;
       }
-          }
+        }
       }"
     `)
   })

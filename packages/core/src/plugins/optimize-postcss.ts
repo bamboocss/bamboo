@@ -1,4 +1,4 @@
-import postcss, { Container } from 'postcss'
+import postcss, { type Document, type Root } from 'postcss'
 import minifySelectors from 'postcss-minify-selectors'
 import nested from 'postcss-nested'
 import normalizeWhiteSpace from 'postcss-normalize-whitespace'
@@ -26,7 +26,7 @@ interface OptimizeOptions {
  */
 const BASELINE = ['chrome 123', 'edge 123', 'firefox 146', 'ios_saf 17.5', 'safari 17.5', 'opera 109']
 
-export function optimizePostCss(code: string | Container, options: OptimizeOptions = {}) {
+export function optimizePostCss(code: string | Root | Document, options: OptimizeOptions = {}) {
   const { minify = false } = options
 
   // prettier-ignore

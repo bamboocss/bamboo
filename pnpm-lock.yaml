@@ -110,6 +110,8 @@ importers:
         specifier: 7.3.1
         version: 7.3.1
 
+  packages/cli/__tests__/samples/styled-system: {}
+
   packages/config:
     dependencies:
       '@bamboocss/logger':

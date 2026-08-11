@@ -201,3 +201,35 @@ describe('dedupeNodes keeps what upstream drops for a bodyless at-rule', () => {
     expect(run(dedupeNodes(), css)).toBe(run(upstream(), css))
   })
 })
+
+/**
+ * `signature` folds `raws.before` into its key, and every node in a *parsed* tree has one --
+ * so for as long as this plugin only ever saw re-parsed css, absent and empty could not both
+ * occur. `Stylesheet.toCss` now hands the pipeline a tree it built rather than a serialization
+ * of one, and a programmatically constructed node simply has no `raws.before`, so the two
+ * spellings meet. Whitespace before a node is not part of what makes it a duplicate.
+ */
+describe('dedupeNodes is indifferent to how absent whitespace is spelled', () => {
+  const twoIdenticalDecls = (first: string | undefined, second: string | undefined) => {
+    const root = postcss.parse(`.a{}`)
+    const rule = root.first as postcss.Rule
+    for (const before of [first, second]) {
+      const decl = postcss.decl({ prop: 'color', value: 'red' })
+      rule.append(decl)
+      decl.raws.before = before as string
+    }
+    return root
+  }
+
+  test.each([
+    ['absent, then a space', undefined, ' '],
+    ['a space, then absent', ' ', undefined],
+    ['absent on both', undefined, undefined],
+    ['a space on both', ' ', ' '],
+    ['absent, then empty', undefined, ''],
+  ])('%s', (_label, first, second) => {
+    const out = postcss([dedupeNodes()]).process(twoIdenticalDecls(first, second), { from: undefined }).css
+
+    expect(out.match(/color/g)).toHaveLength(1)
+  })
+})

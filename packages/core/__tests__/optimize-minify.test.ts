@@ -1,6 +1,8 @@
 import { createGeneratorContext } from '@bamboocss/fixture'
 import type { Dict } from '@bamboocss/types'
+import postcss from 'postcss'
 import { afterEach, describe, expect, test } from 'vitest'
+import { optimizeCss } from '../src/optimize'
 import { optimizePostCss } from '../src/plugins/optimize-postcss'
 
 /**
@@ -86,4 +88,37 @@ describe('optimize (minify) is independent of the ambient browserslist', () => {
       expect(minify(input)).toBe(':is(.a,.b) .icon{color:red}')
     },
   )
+})
+
+/**
+ * `optimizeCss` is exported from the package, and everything behind it rewrites in place --
+ * `mergeRules` joins selectors, `discardEmpty` drops nodes, `prettify` rewrites whitespace. A
+ * `Root` handed to it therefore has to be serialized rather than forwarded.
+ *
+ * That used to hold by accident: the serialization existed to feed the `css:optimize` hook and
+ * ran whether or not a hook was registered. Making it conditional is what put this at risk, and
+ * `Stylesheet.toCss` reaches the consuming variant (`optimizeCssRoot`) instead, on a clone it
+ * owns.
+ */
+describe('optimizeCss leaves a Root argument alone', () => {
+  test.each([
+    ['mergeable selectors and an empty layer', `@layer a{ .x{color:red} .y{color:red} } @layer b{}`],
+    ['nested rules', `.a{ color:red; &:hover{ color:blue } }`],
+    ['an at-rule that will be emptied', `@media print{ .a{} }`],
+  ])('%s', (_label, css) => {
+    const root = postcss.parse(css)
+    const before = root.toString()
+
+    const out = optimizeCss(root)
+
+    expect(root.toString()).toBe(before)
+    // Not vacuous: the call has to have done something for the preservation to mean anything.
+    expect(out).not.toBe(before)
+  })
+
+  test('a second call on the same Root returns the same css', () => {
+    const root = postcss.parse(`@layer a{ .x{color:red} .y{color:red} }`)
+
+    expect(optimizeCss(root)).toBe(optimizeCss(root))
+  })
 })

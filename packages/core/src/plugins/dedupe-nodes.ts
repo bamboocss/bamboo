@@ -1,6 +1,17 @@
 import type { AnyNode, ChildNode, Container, Plugin } from 'postcss'
 
-const trim = (v: string | undefined) => (v ? v.trim() : v)
+/**
+ * Absent and empty have to collapse to the same thing, not to `undefined` and `''`.
+ *
+ * `signature` interpolates the result into a string key, so returning `undefined` put the
+ * literal `"undefined"` in it and made a node with no `raws.before` unequal to an otherwise
+ * identical node whose `raws.before` is whitespace. Every node in a *parsed* tree has one, so
+ * for as long as this only ever saw re-parsed css the distinction could not arise; a tree
+ * built programmatically and passed through without a serialization round trip has nodes where
+ * it is simply absent, and two duplicates landing on opposite sides of that split would both
+ * survive. Whitespace before a node is not part of what makes it a duplicate either way.
+ */
+const trim = (v: string | undefined) => (v ? v.trim() : '')
 
 /**
  * A key capturing what `postcss-discard-duplicates`' `equals` compares, so two nodes share a
