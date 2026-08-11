@@ -1,6 +1,6 @@
 {
   "name": "@bamboocss/preset-atlaskit",
-  "version": "1.32.0",
+  "version": "1.33.0",
   "description": "The preset for BambooCSS that contains the default theme",
   "homepage": "https://bamboocss.com",
   "license": "MIT",
