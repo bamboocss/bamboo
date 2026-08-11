@@ -75,13 +75,13 @@ function App() {
 
       <section className={css({ padding: '5', borderWidth: '1px' })}>
         <p className={css({ fontWeight: 'semibold', mb: '2' })}>CVA - JSX</p>
-        <Card size="sm" shape="square" width="400px">
+        <Card size="sm" shape="square" className={css({ width: '400px' })}>
           size:sm + open:true
         </Card>
         <Card shape="circle" open>
           size:xs + open:true + shape:square
         </Card>
-        <Badge status="success" background="pink.800">
+        <Badge status="success" className={css({ background: 'pink.800' })}>
           Welcome
         </Badge>
       </section>

@@ -1,24 +1,49 @@
-import { Fragment, Profiler as ReactProfiler, useState, useCallback } from 'react'
+import {
+  Fragment,
+  type ProfilerOnRenderCallback,
+  Profiler as ReactProfiler,
+  type ReactNode,
+  useCallback,
+  useState,
+} from 'react'
 
-function ProfilerResult(id, phase, actualDuration, baseDuration, startTime, commitTime) {
-  this.id = id
-  this.phase = phase
-  this.actualDuration = actualDuration
-  this.baseDuration = baseDuration
-  this.startTime = startTime
-  this.commitTime = commitTime
+/**
+ * One `onRender` call, held so the whole run can be printed as a table rather than as a
+ * line per commit.
+ *
+ * A class rather than the constructor function this was, which `strict` cannot type: `this`
+ * in a plain function has no annotation to infer from, so every field landed as `any` and
+ * the six parameters with it.
+ */
+class ProfilerResult {
+  constructor(
+    readonly id: string,
+    readonly phase: 'mount' | 'update' | 'nested-update',
+    readonly actualDuration: number,
+    readonly baseDuration: number,
+    readonly startTime: number,
+    readonly commitTime: number,
+  ) {}
 }
 
-const entries = []
+const entries: ProfilerResult[] = []
 
-const profilerResults = function (...args) {
+const profilerResults: ProfilerOnRenderCallback = (...args) => {
   entries.push(new ProfilerResult(...args))
   console.group('Profiler')
   console.table(entries)
   console.groupEnd()
 }
 
-export const Profiler = ({ children, id, name: _name, onRerender }) => {
+interface ProfilerProps {
+  children: ReactNode
+  /** Passed through to React's `Profiler`, which reports it back on every commit. */
+  id: string
+  name?: string
+  onRerender: (value: number) => void
+}
+
+export const Profiler = ({ children, id, name: _name, onRerender }: ProfilerProps) => {
   const [value, setValue] = useState(0)
 
   const onClick = useCallback(() => {
