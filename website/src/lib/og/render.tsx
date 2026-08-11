@@ -47,7 +47,6 @@ export const renderOgImage = async ({ title = DEFAULT_TITLE, description, catego
           style={{
             display: 'flex',
             flexDirection: 'column',
-            maxWidth: '72%',
             flex: '1',
           }}
         >
@@ -61,7 +60,7 @@ export const renderOgImage = async ({ title = DEFAULT_TITLE, description, catego
                 marginBottom: '16px',
               }}
             >
-              🎋 / {upperFirst(category)}
+              {upperFirst(category)}
             </div>
           )}
           <div
@@ -70,6 +69,10 @@ export const renderOgImage = async ({ title = DEFAULT_TITLE, description, catego
               fontFamily: 'Onest',
               fontWeight: 700,
               letterSpacing: '-1.5px',
+              // 72% of the 1040px content box, which is where this used to sit on the
+              // column. Kept here rather than on the column so the description below can
+              // run wider than the title without changing how the title breaks.
+              maxWidth: '750px',
             }}
           >
             {upperFirst(title)}
@@ -83,6 +86,9 @@ export const renderOgImage = async ({ title = DEFAULT_TITLE, description, catego
                 fontWeight: 400,
                 color: '#7B722C',
                 lineHeight: 1.4,
+                // Nearly the full 1040px content box. At the title's 750px the default
+                // description wrapped with `JS` alone on the second line.
+                maxWidth: '960px',
               }}
             >
               {description}
