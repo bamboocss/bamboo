@@ -245,5 +245,15 @@ Properties that rarely need `responsive: true`:
 
 ## Removing unused CSS
 
+Reach for [`prune`](/docs/references/config#prune) first — it drops token declarations, `@property` registrations and
+keyframes the finished stylesheet cannot reach, and [`preflight.prune`](/docs/references/config#preflightprune) drops
+the parts of the reset that style elements you never render. These read the build's own output rather than guessing from
+your markup, so they are safe in ways a selector scan is not.
+
+Note that `staticCss` works against them: every rule it emits is a rule the pruning has to keep, along with whatever it
+references. If you added a `staticCss` entry to stop a token category being pruned, use
+[`prune.keepTokens`](/docs/references/config#prunekeeptokens) instead — it keeps the declarations without emitting a
+rule per value to hold them up.
+
 For an even smaller css output size, you can utilize [PurgeCSS](https://purgecss.com/) to treeshake and remove unused
 CSS. This tool will analyze your template and match selectors against your CSS.

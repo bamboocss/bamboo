@@ -934,6 +934,17 @@ Used to generate css utility classes for your project.
 }
 ```
 
+<Callout type="info">
+  This is for classes your source never writes — a class name assembled at runtime, or one applied from outside the
+  files [`include`](#include) covers.
+
+It is **not** the way to stop a token being pruned, which is what it used to be reached for. `staticCss` emits a utility
+_rule_ per value, so keeping a colour palette alive meant shipping a rule per colour purely to hold its declaration up —
+usually a larger stylesheet than the pruning saved. Name the tokens with [`prune.keepTokens`](#prunekeeptokens) instead,
+which keeps the declarations without emitting anything that uses them.
+
+</Callout>
+
 ### strictTokens
 
 **Type**: `boolean`
