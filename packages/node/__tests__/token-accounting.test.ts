@@ -299,7 +299,12 @@ describe('pruneTokensForBuild reads each file once', () => {
         },
       },
     } as BambooContext['runtime']
-    ctx.pruneTokens = (() => ({ removed: 0, kept: 0 })) as BambooContext['pruneTokens']
+    ctx.pruneTokens = (() => ({
+      reachable: undefined,
+      removed: 0,
+      removedProperties: 0,
+      kept: 0,
+    })) as BambooContext['pruneTokens']
 
     pruneTokensForBuild(ctx, {} as never, [])
     return { reads, files: files.length }
@@ -496,7 +501,12 @@ describe('strict fails only on an unresolved token reference', () => {
     ctx.project.addSourceFile(absolute, code)
     ctx.getFiles = () => [FILE]
     ctx.runtime = { ...ctx.runtime, fs: { ...ctx.runtime.fs, readFileSync: () => code } } as BambooContext['runtime']
-    ctx.pruneTokens = (() => ({ removed: 0, kept: 0 })) as BambooContext['pruneTokens']
+    ctx.pruneTokens = (() => ({
+      reachable: undefined,
+      removed: 0,
+      removedProperties: 0,
+      kept: 0,
+    })) as BambooContext['pruneTokens']
 
     return () => pruneTokensForBuild(ctx, {} as never, [])
   }

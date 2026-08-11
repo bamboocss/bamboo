@@ -58,14 +58,14 @@ export const cssgen = async (ctx: BambooContext, options: CssGenOptions) => {
 
     // Only now does the sheet hold everything that could reference a token. Gathering the
     // references reads every source file, so each pass stays behind its own flag.
-    pruneTokensForBuild(ctx, sheet, results)
+    const reachableVars = pruneTokensForBuild(ctx, sheet, results)
 
     if (prunesPreflight(ctx.config.preflight)) {
       ctx.prunePreflight(sheet, collectRenderedElements(ctx))
     }
 
     if (ctx.config.prune?.keyframes) {
-      ctx.pruneKeyframes(sheet, collectKeyframeReferences(ctx, keyframeNames(ctx)))
+      ctx.pruneKeyframes(sheet, collectKeyframeReferences(ctx, keyframeNames(ctx)), reachableVars)
     }
 
     if (splitting) {

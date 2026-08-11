@@ -182,8 +182,21 @@ export class Generator extends Context {
    * unused for want of a utility to reference it.
    *
    * `keep` carries names this cannot see for itself; see `collectKeyframeReferences`.
+   *
+   * `reachableVars` is `pruneTokens`' answer about custom properties, which has to be handed
+   * over rather than re-derived here. A token kept by a reader outside the stylesheet — a
+   * `token()` call, a `prune.keepTokens` pattern, a theme, a `globalCss` export — is
+   * reachable to that pass and invisible to this one, so deriving it again from the css
+   * deletes the `@keyframes` out from under a declaration that ships. Every caller that
+   * prunes both hands it over.
+   *
+   * Omitting it falls back to what `prune.tokens` implies. Under `off` that is `'all'`: no
+   * token declaration is removable, so each one ships and keeps the keyframe it names —
+   * and `off` is precisely the setting chosen because something outside the stylesheet
+   * reads them. Otherwise it is the css alone, which is what a caller running this pass
+   * without the other one is asking for.
    */
-  pruneKeyframes = (sheet: Stylesheet, keep?: Set<string>) => {
+  pruneKeyframes = (sheet: Stylesheet, keep?: Set<string>, reachableVars?: Set<string> | 'all') => {
     if (!this.config.prune?.keyframes) return
 
     const layers = sheet.layers
@@ -205,6 +218,7 @@ export class Generator extends Context {
       target: layers.tokens,
       keyframeNames,
       keep: new Set([...this.getThemeKeyframeNames(keyframeNames), ...(keep ?? [])]),
+      reachableVars: reachableVars ?? ((this.config.prune?.tokens ?? 'reachable') === 'off' ? 'all' : undefined),
     })
 
     logger.debug('prune:keyframes', `Removed ${result.removed} unused keyframe(s)`)

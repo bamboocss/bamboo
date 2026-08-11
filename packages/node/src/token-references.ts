@@ -156,16 +156,21 @@ export function collectTokenReferences(ctx: BambooContext, results: ParserResult
  * exists for does not apply to them, and opting out of token pruning should not mean shipping
  * a preset's whole filter and gradient set for nothing.
  */
+/**
+ * Returns the custom properties left standing, for `pruneKeyframes` to root its own walk
+ * at — see `Generator.pruneKeyframes`. `'all'` when this pass had nothing to remove and so
+ * never computed the closure, which is not a missing answer but the correct one: a sheet
+ * nothing was removed from still declares everything it declared.
+ */
 export function pruneTokensForBuild(
   ctx: BambooContext,
   sheet: Parameters<BambooContext['pruneTokens']>[0],
   results: ParserResult[],
-) {
+): Set<string> | 'all' {
   const strategy = ctx.config.prune?.tokens ?? 'reachable'
 
   if (strategy === 'off') {
-    ctx.pruneTokens(sheet)
-    return
+    return ctx.pruneTokens(sheet)?.reachable ?? 'all'
   }
 
   // `accounted` is an assertion, not a cleverer inference: the user has said every token path
@@ -221,8 +226,7 @@ export function pruneTokensForBuild(
   for (const name of tokenVarsFor(ctx, declared)) vars.add(name)
 
   if (!accounts) {
-    ctx.pruneTokens(sheet, vars, reachable)
-    return
+    return ctx.pruneTokens(sheet, vars, reachable)?.reachable ?? 'all'
   }
 
   for (const name of tokenVarsFor(ctx, accounting.paths)) vars.add(name)
@@ -340,7 +344,7 @@ export function pruneTokensForBuild(
   // A decline falls back to what `reachable` would have answered — unless the author declared
   // the bound, which is the whole point of `keepTokens`: it replaces that fallback rather than
   // adding to it, so a single unfollowable reference stops costing every declaration.
-  ctx.pruneTokens(sheet, vars, !bounded && accounting.declined.length > 0 && reachable)
+  return ctx.pruneTokens(sheet, vars, !bounded && accounting.declined.length > 0 && reachable)?.reachable ?? 'all'
 }
 
 /**

@@ -59,7 +59,14 @@ export function pruneTokenVars(options: PruneOptions) {
   const { scan, target, tokenVars, keep, registeredProperties, propertyTarget } = options
   // Registrations are pruned by the same walk, so a theme declaring no tokens at all still
   // gets them considered rather than falling out here.
-  if (!tokenVars.size && !registeredProperties?.size) return { removed: 0, kept: 0 }
+  //
+  // `reachable` is undefined rather than empty on this path, so a caller can tell "nothing
+  // was reachable" from "no walk ran". `pruneKeyframes` has to: an empty set reads as
+  // "every custom property is unreachable" and would strand a keyframe behind a declaration
+  // that ships.
+  if (!tokenVars.size && !registeredProperties?.size) {
+    return { reachable: undefined, removed: 0, removedProperties: 0, kept: 0 }
+  }
 
   // References found in a normal declaration reach their token directly. References found
   // in the value of a custom property only reach it if that property is itself reachable,
@@ -166,7 +173,13 @@ export function pruneTokenVars(options: PruneOptions) {
     if (!rule.nodes?.length) rule.remove()
   })
 
-  return { removed, removedProperties, kept: reachable.size }
+  // `reachable` itself, not just its size. It is the answer to "which custom properties
+  // survive into the shipped stylesheet", and `pruneKeyframes` asks the same question of the
+  // same sheet a moment later — recomputing it there from the css alone gives a *weaker*
+  // answer, because the roots that live outside the css (`keep`, `surviving`) are not
+  // visible in it. That disagreement is what shipped `--animations-x: slide-in 400ms` with
+  // its `@keyframes` deleted.
+  return { reachable: reachable as Set<string> | undefined, removed, removedProperties, kept: reachable.size }
 }
 
 function isInsideKeyframes(node: { parent?: unknown } | undefined): boolean {

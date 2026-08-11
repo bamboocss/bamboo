@@ -20,6 +20,29 @@ interface PruneKeyframesOptions {
    * rather than through bamboo.
    */
   keep?: Set<string>
+  /**
+   * The custom properties that survive into the shipped stylesheet — `pruneTokenVars`'
+   * own answer, handed over rather than recomputed.
+   *
+   * A custom property is reachable for two reasons this pass cannot see from the css. It
+   * may be rooted *outside* the sheet — a `token()` call, a `prune.keepTokens` pattern, a
+   * theme artifact injected at runtime, a `globalCss` declaration exported for something
+   * else to read — or it may simply not be the token system's to remove. Either way the
+   * declaration ships, so the keyframe it names has to ship with it.
+   *
+   * Reading only the `var()` references in the css gives the weaker answer, and the gap
+   * between the two is a live bug rather than a missed optimisation: the token pass keeps
+   * `--animations-drawer-in-right: slide-in-right 400ms`, this pass finds nothing pointing
+   * at that property, and `@keyframes slide-in-right` is deleted out from under a
+   * declaration that is still there. Nothing reports it — the stylesheet is valid and the
+   * animation simply never plays.
+   *
+   * `'all'` is what "no token pass ran" means, rather than a missing answer: nothing was
+   * removed, so every declaration in the sheet ships, so every keyframe one of them names
+   * ships with it. Undefined trusts the css alone, which is only ever right for a caller
+   * that knows no custom property outlives what references it.
+   */
+  reachableVars?: Set<string> | 'all'
 }
 
 /**
@@ -64,7 +87,7 @@ const namesIn = (value: string, keyframeNames: Set<string>) => {
  * unused.
  */
 export function pruneKeyframes(options: PruneKeyframesOptions) {
-  const { scan, target, keyframeNames, keep } = options
+  const { scan, target, keyframeNames, keep, reachableVars } = options
   if (!keyframeNames.size) return { removed: 0, kept: 0 }
 
   const referenced = new Set<string>(keep)
@@ -75,17 +98,29 @@ export function pruneKeyframes(options: PruneKeyframesOptions) {
   // the pass useless in practice: a preset declares `--animations-spin: spin 1s linear
   // infinite` whether or not anything uses that token, and reading it as a reference
   // keeps every keyframe the preset ships.
+  //
+  // Which is why `reachableVars` is a set of *survivors* and not a second scan. It says
+  // which of those declarations are still standing after the token pass, so an animation
+  // token nothing uses still takes its keyframe with it, and one kept alive by a reader
+  // outside the sheet keeps its keyframe too.
   const byCustomProperty = new Map<string, Set<string>>()
   /** Custom property -> the custom properties its value reads through `var()`. */
   const varEdges = new Map<string, Set<string>>()
-  const reachableVars = new Set<string>()
   const varQueue: string[] = []
 
+  /** Custom properties this walk has rooted, whether from `reachableVars` or from the css. */
+  const visited = new Set<string>()
+
   const visitVar = (name: string) => {
-    if (reachableVars.has(name)) return
-    reachableVars.add(name)
+    if (visited.has(name)) return
+    visited.add(name)
     varQueue.push(name)
   }
+
+  // Seeded before the walk, so a surviving property's own `var()` edges are followed too:
+  // `--enter: var(--drawer-in)` and `--drawer-in: slide-in-right 400ms` is one chain, and
+  // rooting only the head of it strands the tail exactly as before.
+  if (reachableVars && reachableVars !== 'all') reachableVars.forEach(visitVar)
 
   for (const container of scan) {
     container.walkDecls((decl) => {
@@ -98,6 +133,8 @@ export function pruneKeyframes(options: PruneKeyframesOptions) {
         for (const name of namesIn(decl.value, keyframeNames)) referenced.add(name)
         return
       }
+
+      if (reachableVars === 'all') visitVar(decl.prop)
 
       for (const name of namesIn(decl.value, keyframeNames)) {
         let names = byCustomProperty.get(decl.prop)
@@ -117,7 +154,7 @@ export function pruneKeyframes(options: PruneKeyframesOptions) {
     varEdges.get(varQueue.pop()!)?.forEach(visitVar)
   }
 
-  for (const property of reachableVars) {
+  for (const property of visited) {
     byCustomProperty.get(property)?.forEach((name) => referenced.add(name))
   }
 

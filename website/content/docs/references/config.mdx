@@ -711,6 +711,17 @@ That last clause is a textual scan, and it is deliberately over-inclusive: it co
 runtime or handed to an inline `style` rather than to Bamboo, neither of which the css can show. A name matching a word
 in unrelated prose keeps its keyframe alive, which is the cheap failure.
 
+"A custom property that is itself reachable" means reachable to [`prune.tokens`](#prune), not merely referenced
+somewhere in the stylesheet. A token can be reached from outside the css entirely — a `token()` call, a
+[`keepTokens`](#prunekeeptokens) pattern, a theme injected at runtime, a `global.css` export — and those are exactly the
+declarations `prune.tokens` keeps. So a keyframe is dropped only when the declarations naming it were dropped too, and
+under `prune: { tokens: 'off' }`, where nothing is removable, every keyframe a declaration names is kept.
+
+This is why you do not have to keep your own `outdir` inside `include` to protect your animations. The textual scan
+reads whatever `include` covers, and the generated token artifact spells each animation value out in full — so a project
+whose `include` reached its own output was keeping its keyframes by accident, and excluding `outdir` took the accident
+away.
+
 Names are recovered by testing each token in a value against the set your theme declares, rather than by parsing the
 `animation` shorthand – whose parts come in any order. A keyframe named after a keyword such as `none` or `ease`
 therefore always looks referenced. The bias is intentional throughout: keeping an unused keyframe costs bytes, dropping

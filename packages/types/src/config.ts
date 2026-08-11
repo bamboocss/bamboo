@@ -615,11 +615,20 @@ export interface PruneOptions {
    * are dead weight in the stylesheet that blocks first paint. Only keyframes the theme
    * declares are ever removed — one emitted by `global.css` is left alone.
    *
-   * A name is kept when any declaration in the generated css names it, and when it
-   * appears anywhere under `include`, which covers an animation assembled at runtime or
-   * applied through an inline `style` rather than through bamboo. That textual fallback
-   * is deliberately over-inclusive: keeping an unused keyframe costs bytes, dropping a
-   * used one breaks the animation.
+   * A name is kept when any declaration in the generated css names it, when a token
+   * declaration that *survives* `tokens` names it, and when it appears anywhere under
+   * `include` — which covers an animation assembled at runtime or applied through an inline
+   * `style` rather than through bamboo. That textual fallback is deliberately
+   * over-inclusive: keeping an unused keyframe costs bytes, dropping a used one breaks the
+   * animation.
+   *
+   * The middle one is why this cannot be read off the stylesheet alone. `--animations-drawer:
+   * slide-in-right 400ms` reaches its keyframe only if something reaches the property, and a
+   * property can be reached from outside the css entirely — a `token()` call, a `keepTokens`
+   * pattern, a theme, a `globalCss` export. Those are exactly the tokens `tokens` keeps, so
+   * this defers to that pass rather than asking again: a keyframe is dropped only when the
+   * declarations naming it were dropped too. Under `tokens: 'off'` nothing is removable, so
+   * every keyframe a declaration names is kept.
    *
    * @default true
    */

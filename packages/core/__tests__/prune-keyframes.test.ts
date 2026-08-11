@@ -15,6 +15,7 @@ const prune = (
   scan: string[] = [],
   names: string[] = ['fade-in', 'spin', 'slide-up'],
   keep?: string[],
+  reachableVars?: Set<string> | 'all',
 ) => {
   const targetRoot = build(target)
   const result = pruneKeyframes({
@@ -22,6 +23,7 @@ const prune = (
     target: targetRoot,
     keyframeNames: new Set(names),
     keep: keep ? new Set(keep) : undefined,
+    reachableVars,
   })
   return { css: targetRoot.toString(), ...result }
 }
@@ -124,6 +126,37 @@ describe('name matching', () => {
     const { css } = prune(KEYFRAMES, [':root { --animations-spin: spin 1s linear infinite }'])
 
     expect(css).not.toContain('@keyframes spin')
+  })
+
+  test('a surviving custom property keeps the keyframe it names', () => {
+    // The other half of the case above, and the one that was wrong. `pruneTokenVars` roots
+    // reachability at what the css references *plus* what is reachable from outside it —
+    // a `token()` call, a `prune.keepTokens` pattern, a theme, a `globalCss` export. So a
+    // declaration nothing in the sheet points at can still ship, and deleting the keyframe
+    // it names strands it: valid css, and the animation never plays.
+    const scan = [':root { --animations-spin: spin 1s linear infinite }']
+    const { css, removed } = prune(KEYFRAMES, scan, undefined, undefined, new Set(['--animations-spin']))
+
+    expect(css).toContain('@keyframes spin')
+    // Only that one. A survivor is not a licence to keep the rest.
+    expect(removed).toBe(2)
+  })
+
+  test('reachability follows a chain of surviving custom properties', () => {
+    const scan = [':root { --enter: var(--drawer-in); --drawer-in: fade-in 400ms }']
+    const { css } = prune(KEYFRAMES, scan, undefined, undefined, new Set(['--enter']))
+
+    expect(css).toContain('@keyframes fade-in')
+  })
+
+  test("`'all'` keeps every keyframe a declaration names", () => {
+    // What "no token pass ran" means: nothing was removed, so every declaration in the
+    // sheet is still standing and every keyframe one of them names ships with it.
+    const scan = [':root { --animations-spin: spin 1s linear infinite }']
+    const { css } = prune(KEYFRAMES, scan, undefined, undefined, 'all')
+
+    expect(css).toContain('@keyframes spin')
+    expect(css).not.toContain('@keyframes fade-in')
   })
 
   test('a keyframe named like a keyword errs toward keeping', () => {

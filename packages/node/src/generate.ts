@@ -27,14 +27,14 @@ async function build(ctx: BambooContext, artifactIds?: ArtifactId[]) {
   ctx.appendParserCss(sheet)
 
   // Gathering the references reads every source file, so each stays behind its own flag.
-  pruneTokensForBuild(ctx, sheet, parsed.results)
+  const reachableVars = pruneTokensForBuild(ctx, sheet, parsed.results)
 
   if (prunesPreflight(ctx.config.preflight)) {
     ctx.prunePreflight(sheet, collectRenderedElements(ctx))
   }
 
   if (ctx.config.prune?.keyframes) {
-    ctx.pruneKeyframes(sheet, collectKeyframeReferences(ctx, keyframeNames(ctx)))
+    ctx.pruneKeyframes(sheet, collectKeyframeReferences(ctx, keyframeNames(ctx)), reachableVars)
   }
 
   await ctx.writeCss(sheet)
@@ -89,14 +89,14 @@ export async function generate(config: Config, configPath?: string) {
       // once its last reference is gone. Parser results are deliberately not gathered
       // here: `parseFiles` would encode every style into the running encoder a second
       // time on each change.
-      pruneTokensForBuild(ctx, sheet, [])
+      const reachableVars = pruneTokensForBuild(ctx, sheet, [])
 
       if (prunesPreflight(ctx.config.preflight)) {
         ctx.prunePreflight(sheet, collectRenderedElements(ctx))
       }
 
       if (ctx.config.prune?.keyframes) {
-        ctx.pruneKeyframes(sheet, collectKeyframeReferences(ctx, keyframeNames(ctx)))
+        ctx.pruneKeyframes(sheet, collectKeyframeReferences(ctx, keyframeNames(ctx)), reachableVars)
       }
 
       const css = ctx.getCss(sheet)

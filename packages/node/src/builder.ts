@@ -283,14 +283,14 @@ export class Builder {
     // `extract` has already run, so this sheet carries the utilities and recipes too.
     // Parser results are not retained across that call, so the reference set comes from
     // the source scan alone; re-parsing here would encode every style a second time.
-    pruneTokensForBuild(ctx, sheet, [])
+    const reachableVars = pruneTokensForBuild(ctx, sheet, [])
 
     if (prunesPreflight(ctx.config.preflight)) {
       ctx.prunePreflight(sheet, collectRenderedElements(ctx))
     }
 
     if (ctx.config.prune?.keyframes) {
-      ctx.pruneKeyframes(sheet, collectKeyframeReferences(ctx, keyframeNames(ctx)))
+      ctx.pruneKeyframes(sheet, collectKeyframeReferences(ctx, keyframeNames(ctx)), reachableVars)
     }
 
     return ctx.getCss(sheet)
