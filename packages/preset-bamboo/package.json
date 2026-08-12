@@ -1,6 +1,6 @@
 {
   "name": "@bamboocss/preset-bamboo",
-  "version": "1.37.4",
+  "version": "1.37.5",
   "description": "The preset for BambooCSS that contains the default theme",
   "homepage": "https://bamboocss.com",
   "license": "MIT",
