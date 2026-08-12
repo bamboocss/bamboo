@@ -1,6 +1,6 @@
 {
   "name": "@bamboocss/parser",
-  "version": "1.37.11",
+  "version": "1.37.12",
   "description": "The static parser for bamboo css",
   "homepage": "https://bamboocss.com",
   "license": "MIT",
