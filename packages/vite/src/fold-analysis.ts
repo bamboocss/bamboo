@@ -520,11 +520,32 @@ const collectModuleScopeNames = (sourceFile: SourceFile): Set<string> => {
  * while under-reporting ships an element whose class has no rule behind it and says nothing.
  * Shadowing a recipe binding is rare; silently shipping unstyled markup is not recoverable.
  */
+const identifiersByName = new WeakMap<SourceFile, { text: string; value: Map<string, Node[]> }>()
+
+/**
+ * Every identifier in the module, grouped by the name it spells.
+ *
+ * Walking the whole tree per binding made this O(bindings x identifiers): a module declaring
+ * ten recipes walked its identifiers ten times. One walk answers for all of them, and the
+ * result is cached against the source text like the module-scope names beside it, so a
+ * re-transform of unchanged text reuses it.
+ */
+const identifierIndex = (sourceFile: SourceFile): Map<string, Node[]> =>
+  byText(identifiersByName, sourceFile, () => {
+    const index = new Map<string, Node[]>()
+    for (const identifier of sourceFile.getDescendantsOfKind(SyntaxKind.Identifier)) {
+      const text = identifier.getText()
+      const known = index.get(text)
+      if (known) known.push(identifier)
+      else index.set(text, [identifier])
+    }
+    return index
+  })
+
 export const localReferencesTo = (sourceFile: SourceFile, name: string, declaration: Node): Node[] => {
   const references: Node[] = []
 
-  for (const identifier of sourceFile.getDescendantsOfKind(SyntaxKind.Identifier)) {
-    if (identifier.getText() !== name) continue
+  for (const identifier of identifierIndex(sourceFile).get(name) ?? []) {
     // The declaration itself is not a read of it. For a local recipe that is the variable's
     // name node; for an imported one it is the import specifier, which stays in the module
     // and would otherwise read as a surviving reference in every consumer.

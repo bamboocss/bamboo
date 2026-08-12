@@ -141,22 +141,28 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
   const staticSession = createStaticCompilationSession()
 
   type Survivor = { file: string; line: number; name: string; reason: SkipReason }
-  const survivors: Survivor[] = []
-  const survivorKeys = new Set<string>()
-  const addSurvivor = (entry: (typeof survivors)[number]) => {
-    const key = `${entry.file}:${entry.line}:${entry.name}:${entry.reason}`
-    if (survivorKeys.has(key)) return
-    survivorKeys.add(key)
-    survivors.push(entry)
+  /**
+   * Indexed by file, because the only bulk operation on it is "forget this one's".
+   *
+   * A flat array meant every transform scanned every survivor and then rebuilt the dedupe key
+   * set from scratch — O(modules x survivors) across a build, and worst exactly when a build is
+   * already failing and the user is iterating on it. One project had 736 of them across 9,461
+   * modules, which is seven million string builds to discard.
+   */
+  const survivorsByFile = new Map<string, Survivor[]>()
+  const allSurvivors = () => [...survivorsByFile.values()].flat()
+  const addSurvivor = (entry: Survivor) => {
+    const forFile = survivorsByFile.get(entry.file) ?? []
+    // Deduped within the file rather than globally: the key is file-scoped anyway, and a
+    // per-file list is short enough that scanning it beats maintaining a second index.
+    if (forFile.some((seen) => seen.line === entry.line && seen.name === entry.name && seen.reason === entry.reason)) {
+      return
+    }
+    forFile.push(entry)
+    survivorsByFile.set(entry.file, forFile)
   }
   const clearSurvivorsFor = (file: string) => {
-    for (let index = survivors.length - 1; index >= 0; index--) {
-      if (survivors[index]?.file === file) survivors.splice(index, 1)
-    }
-    survivorKeys.clear()
-    for (const entry of survivors) {
-      survivorKeys.add(`${entry.file}:${entry.line}:${entry.name}:${entry.reason}`)
-    }
+    survivorsByFile.delete(file)
   }
   const createSurvivorError = (entries: Survivor[]) => {
     const byFile = new Map<string, Survivor[]>()
@@ -251,8 +257,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
         totals.files = 0
         totals.filesWithFolds = 0
         totals.skipped.clear()
-        survivors.length = 0
-        survivorKeys.clear()
+        survivorsByFile.clear()
         recipeConfigCache.clear()
         resetStaticCompilationSession(staticSession)
       }
@@ -410,8 +415,9 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
         this.addWatchFile?.(dependency)
       }
 
-      if (command === 'serve' && survivors.some((entry) => entry.file === filePath)) {
-        throw createSurvivorError(survivors.filter((entry) => entry.file === filePath))
+      const forFile = survivorsByFile.get(filePath)
+      if (command === 'serve' && forFile?.length) {
+        throw createSurvivorError(forFile)
       }
 
       if (!result.folded.length) return null
@@ -422,6 +428,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
     },
 
     buildEnd() {
+      const survivors = allSurvivors()
       if (survivors.length) {
         throw createSurvivorError(survivors)
       }
