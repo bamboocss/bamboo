@@ -1,5 +1,11 @@
 # @bamboocss/postcss
 
+## 1.36.1
+
+### Patch Changes
+
+- @bamboocss/node@1.36.1
+
 ## 1.36.0
 
 ### Patch Changes
