@@ -166,9 +166,23 @@ export const ensureRecipeHelperImport = (
    * alone, having resolved everything else.
    */
   newImportModule?: string,
+  /**
+   * Given an import specifier in this file, where the helper could be imported from instead.
+   *
+   * A project that imports the generated helpers as individual modules — `styled-system/css/cva.js`
+   * rather than the barrel — has no declaration this can extend, because `cva.js` does not export
+   * the helper. Before this, no host was found and every runtime recipe selection in such a file
+   * declined: one client saw 736 failing calls across 193 files that dropped to 23 by changing the
+   * import spelling alone, with no other edit.
+   *
+   * Returns a sibling module that does export it, spelled the way the file already spells the
+   * generated output, so an alias, a relative path and an explicit extension all survive.
+   */
+  helperModuleFromSubpath?: (mod: string) => string | undefined,
 ): { name: string; insert?: { pos: number; names: string[]; module?: string } } | undefined => {
   const sourceFile = call.getSourceFile()
   let host: ReturnType<typeof sourceFile.getImportDeclarations>[number] | undefined
+  let subpathModule: string | undefined
 
   for (const declaration of sourceFile.getImportDeclarations()) {
     const mod = declaration.getModuleSpecifierValue()
@@ -186,9 +200,14 @@ export const ensureRecipeHelperImport = (
     }
 
     if (!host && isGeneratedCssModule(mod) && declaration.getNamedImports().length > 0) host = declaration
+    if (!subpathModule) subpathModule = helperModuleFromSubpath?.(mod)
   }
 
-  if (!host && !newImportModule) return undefined
+  // A subpath spelling is only reached for when there is no barrel to extend, so a file that
+  // imports both keeps its existing declaration rather than growing a second one.
+  const fallbackModule = newImportModule ?? subpathModule
+
+  if (!host && !fallbackModule) return undefined
 
   // A module-scope binding of this name would collide with the one being added, and one in
   // scope at the call site would be reached instead of it.
@@ -203,7 +222,7 @@ export const ensureRecipeHelperImport = (
     const anchor = declarations.at(-1)
     if (!anchor) return undefined
 
-    return { name: imported, insert: { pos: anchor.getEnd(), names: [imported], module: newImportModule } }
+    return { name: imported, insert: { pos: anchor.getEnd(), names: [imported], module: fallbackModule } }
   }
 
   const last = host.getNamedImports().at(-1)

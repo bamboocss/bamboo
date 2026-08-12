@@ -754,6 +754,39 @@ export const foldSource = (options: FoldOptions): FoldResult => {
   const isGeneratedCssModule = (mod: string) => matchesModule(mod, [generatedCssModule])
 
   /**
+   * Where the compiler's helpers can be imported from, for a file that imports the generated
+   * css module by *subpath* rather than through its barrel.
+   *
+   * `styled-system/css/cva.js` is a real spelling, and it cannot host the helper: that module
+   * exports `cva`, not `cvaMap`. Matching only the barrel meant no host was found and every
+   * runtime recipe selection in the file declined — a failure whose reported reason said
+   * nothing about import spelling, and whose suggested remedies all pointed elsewhere.
+   *
+   * The sibling `cx` module is what actually exports them. The prefix is verified against the
+   * configured output before anything is derived, so an unrelated `foo/css/bar.js` is left
+   * alone, and the caller's extension is preserved rather than guessed at.
+   */
+  const helperModuleFromSubpath = (mod: string): string | undefined => {
+    const normalized = mod.replaceAll('\\', '/')
+    const marker = '/css/'
+    const at = normalized.lastIndexOf(marker)
+    if (at < 0) return undefined
+
+    const prefix = normalized.slice(0, at + marker.length - 1)
+    if (!isGeneratedCssModule(prefix)) return undefined
+
+    const rest = normalized.slice(at + marker.length)
+    if (!rest || rest.includes('/')) return undefined
+
+    const dot = rest.lastIndexOf('.')
+    const extension = dot > 0 ? rest.slice(dot) : ''
+    // Already the helper module, so there is a host to extend and nothing to derive.
+    if (rest === `cx${extension}`) return undefined
+
+    return `${prefix}/cx${extension}`
+  }
+
+  /**
    * The generated css entry as spelled beside an imported config recipe.
    *
    * A decision table needs only `cvaMap`, but a module importing a config recipe often has
@@ -1201,6 +1234,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
               isGeneratedCssModule,
               isShadowed,
               helperModules.get(name),
+              helperModuleFromSubpath,
             )
 
             if (helper) {
@@ -1234,6 +1268,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
                   isGeneratedCssModule,
                   isShadowed,
                   helperModules.get(name),
+                  helperModuleFromSubpath,
                 )
               : undefined
 
@@ -1804,6 +1839,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
         // files that lowering now serves — leaving the access, so the binding, so the config
         // the whole exercise exists to let a bundler drop.
         helperModules.get(target.getText()),
+        helperModuleFromSubpath,
       )
       if (!helper) continue
 

@@ -192,6 +192,22 @@ describe('late CSS asset renaming', () => {
     expect(entry.referencedFiles).toEqual([renamedKey(bundle)])
   })
 
+  // Renaming replaces an entry in `bundle`, which Rolldown does not support: it logs that the
+  // assignment is ignored and drops the asset, so the build exits 0 having shipped no
+  // stylesheet at all and the app renders unstyled. Pruning without renaming is the safe
+  // subset — correct bytes, weaker cache key.
+  test('prunes without renaming when renaming is not available', () => {
+    const { bundle, entry } = bundleWith(chunk())
+
+    optimizeStaticCssAssets(bundle as never, sessionWithPruning(), { rename: false })
+
+    expect(Object.keys(bundle)).toContain(CSS_NAME)
+    expect(String((bundle[CSS_NAME] as { source: string }).source)).not.toContain('345.6789px')
+    // Still carries the marker, so the emitted-asset guard does not read this as a lost sheet.
+    expect(String((bundle[CSS_NAME] as { source: string }).source)).toContain('--made-with-bamboo')
+    expect(entry.code).toContain(CSS_NAME)
+  })
+
   test('leaves the asset name alone when pruning changed nothing', () => {
     const { bundle } = bundleWith(chunk())
 

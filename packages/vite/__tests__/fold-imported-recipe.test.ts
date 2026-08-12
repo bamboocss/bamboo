@@ -472,3 +472,47 @@ export const passed = heading
     expect(survivor!.start).toBeLessThan(local.length)
   })
 })
+
+/**
+ * Importing the generated helpers by subpath rather than through the barrel.
+ *
+ * `styled-system/css/cva.js` is a real spelling, and it cannot host the injected helper —
+ * that module exports `cva`, not `cvaMap`. Matching only the barrel meant no host was found
+ * and every runtime recipe selection in the file declined, under a reason that said nothing
+ * about imports. One client saw 736 failing calls across 193 files drop to 23 by rewriting
+ * the import spelling and changing nothing else.
+ */
+describe('generated helpers imported by subpath', () => {
+  const recipe = (from: string) => `import { cva } from '${from}'
+const badge = cva({
+  base: { display: 'flex' },
+  variants: { tone: { quiet: { color: 'gray.500' }, loud: { color: 'red.500' } } },
+})
+export const cls = (tone) => badge({ tone })
+`
+
+  test('compiles, importing the helper from the sibling module that exports it', () => {
+    const result = createFoldFixture().fold(recipe('styled-system/css/cva.js'), 'app/subpath.tsx', true)
+
+    expect(result.skipped).toEqual([])
+    expect(result.code).toContain('cvaMap([tone]')
+    // Not `css/cva.js`, which has no such export, and not the bare barrel, which would
+    // discard the caller's extension.
+    expect(result.code).toContain(`from 'styled-system/css/cx.js'`)
+  })
+
+  test('the barrel spelling still extends the import already there', () => {
+    const result = createFoldFixture().fold(recipe('styled-system/css'), 'app/barrel.tsx', true)
+
+    expect(result.skipped).toEqual([])
+    expect(result.code).toContain('cvaMap([tone]')
+    expect(result.code).not.toContain('/cx')
+  })
+
+  // The prefix is verified against the configured output, so a lookalike is left alone.
+  test('an unrelated path containing /css/ is not treated as generated output', () => {
+    const result = createFoldFixture().fold(recipe('some-lib/css/cva.js'), 'app/unrelated.tsx', true)
+
+    expect(result.code).not.toContain(`some-lib/css/cx.js`)
+  })
+})

@@ -109,7 +109,13 @@ const replaceAssetReferences = (
  * would therefore leave two different reachable subsets under one CDN key. The extra final
  * hash is not cosmetic: it makes late graph reachability cache-safe.
  */
-export const optimizeStaticCssAssets = (bundle: Rollup.OutputBundle, session: StaticCompilationSession) => {
+export const optimizeStaticCssAssets = (
+  bundle: Rollup.OutputBundle,
+  session: StaticCompilationSession,
+  options: { rename?: boolean } = {},
+) => {
+  const { rename = true } = options
+
   for (const [bundleName, output] of Object.entries(bundle)) {
     if (output.type !== 'asset') continue
     const source = typeof output.source === 'string' ? output.source : Buffer.from(output.source).toString()
@@ -118,6 +124,13 @@ export const optimizeStaticCssAssets = (bundle: Rollup.OutputBundle, session: St
     const optimized = pruneStaticCss(source, session)
     output.source = optimized
     if (optimized === source) continue
+
+    // Renaming means replacing an entry in `bundle`, which Rolldown does not support: it
+    // logs that the assignment is ignored and the asset is *dropped*, so the build exits 0
+    // having shipped no stylesheet at all. Pruning in place is the safe subset — the bytes
+    // are still correct, only the cache key is weaker. See `emitsMarkerAsset`, which turns
+    // any remaining way to lose the sheet into a hard error rather than a silent one.
+    if (!rename) continue
 
     const nextName = output.fileName.replace(/\.css$/, `.b-${toHash(optimized)}.css`)
     if (nextName === output.fileName) continue
@@ -138,6 +151,8 @@ interface BambooCssPluginOptions {
   cwd?: string
   /** Internal state supplied by `bamboocss()`; the CSS emitter is not a standalone mode. */
   session: StaticCompilationSession
+  /** See `BambooVitePluginOptions.renameCssAsset`. @default true */
+  renameCssAsset?: boolean
 }
 
 /**
@@ -154,7 +169,7 @@ interface BambooCssPluginOptions {
  * process just wrote, which is a race on any watch rebuild.
  */
 export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
-  const { configPath, cwd, session } = options
+  const { configPath, cwd, session, renameCssAsset = true } = options
 
   const builder = new Builder()
   let server: ViteDevServer | undefined
@@ -290,7 +305,35 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
     generateBundle: {
       order: 'post',
       handler(_, bundle) {
-        optimizeStaticCssAssets(bundle, session)
+        // Rolldown ignores writes to `bundle` and drops the asset with them, so the rename is
+        // only safe where replacing an entry is. Detected rather than configured: a user who
+        // has to discover an opt-out has already shipped the unstyled build once.
+        const rolldown = Boolean((this.meta as { rolldownVersion?: string } | undefined)?.rolldownVersion)
+
+        optimizeStaticCssAssets(bundle, session, { rename: renameCssAsset && !rolldown })
+
+        // A stylesheet that vanishes between here and disk is the worst shape a failure takes:
+        // the build is green, every class in the markup is real, and nothing is styled. The
+        // compiler knows it produced classes, so it can also insist something carries them —
+        // in the same spirit as the unimported-`virtual:bamboo.css` check, which catches the
+        // other way to end up with classes and no rules.
+        if (!session.transformedFiles.size) return
+
+        const emitsMarkerAsset = Object.values(bundle).some((output) => {
+          if (output.type !== 'asset') return false
+          const source = typeof output.source === 'string' ? output.source : Buffer.from(output.source).toString()
+          return source.includes('--made-with-bamboo')
+        })
+
+        if (!emitsMarkerAsset) {
+          throw new Error(
+            `bamboocss: ${session.transformedFiles.size} module(s) were compiled to Bamboo class values, but no ` +
+              `emitted asset carries the generated stylesheet. The build would ship unstyled.\n\n` +
+              `This happens when another plugin, or the bundler itself, drops or replaces the CSS asset after it is ` +
+              `emitted. If you are on Rolldown, report this — the rename that used to cause it is already disabled ` +
+              `there. Otherwise look for a plugin running in \`generateBundle\` that rewrites CSS assets.`,
+          )
+        }
       },
     },
   }

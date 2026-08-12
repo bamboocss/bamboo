@@ -45,6 +45,24 @@ export interface BambooVitePluginOptions {
    * build time and memory for the exact compound-variant decision table. @default 65536
    */
   maxRecipeStates?: number
+  /**
+   * Give the pruned stylesheet a final name derived from its own bytes.
+   *
+   * Rollup expands `[hash]` before `generateBundle`, so pruning after it can leave two
+   * different reachable subsets under one CDN key. Renaming closes that, at the cost of
+   * replacing an entry in the output bundle — which not every consumer of the bundle
+   * tolerates. Rolldown drops the asset outright (detected automatically, no flag needed),
+   * and a framework that relocates assets itself, such as react-router's SSR build, can
+   * lose track of the new name.
+   *
+   * Turning it off keeps the pruned bytes and Vite's own content hash. That hash is computed
+   * before pruning, so it stops describing the file exactly; in practice it still changes
+   * whenever the extracted CSS does, and only a change that alters *reachability alone*
+   * can now reuse a key. Prefer that over an asset your framework cannot find.
+   *
+   * @default true
+   */
+  renameCssAsset?: boolean
 }
 
 const DEFAULT_EXTENSIONS = /\.(?:[cm]?[jt]sx?)$/
@@ -121,6 +139,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
     reportSummary = true,
     denseClassNames = true,
     maxRecipeStates,
+    renameCssAsset = true,
   } = options
 
   if (maxRecipeStates !== undefined && (!Number.isSafeInteger(maxRecipeStates) || maxRecipeStates < 1)) {
@@ -174,9 +193,17 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
           ? `\`compile-failed\` is a module the compiler threw on — see the error logged for it above. ` +
             `Nothing was established about its calls either way.\n\n`
           : '') +
+        (entries.some((entry) => entry.reason === 'runtime-binding')
+          ? `\`runtime-binding\` is a Bamboo value read outside a call the compiler rewrote — most often an ` +
+            `inline \`cva\`/\`sva\` imported by another module. Its declaration is erased where it is declared, ` +
+            `so the import receives \`undefined\`; a recipe used in more than one file has to be a config ` +
+            `recipe under \`theme.extend.recipes\`. The location given is the reference to change, not the ` +
+            `declaration.\n\n`
+          : '') +
         `Bamboo emits no runtime styling fallback or recipe layer. Make the values finite and statically ` +
         `analyzable, move variation into declared recipe variants, or safelist intentional dynamic classes ` +
-        `with \`staticCss\`.`,
+        `with \`staticCss\`.\n\n` +
+        `Set \`BAMBOO_DIAGNOSTIC_LIMIT=all\` to list every finding rather than the first few.`,
     )
   }
 
@@ -437,5 +464,5 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
 
   // The css plugin first: it owns the extraction the compiler's context reads from, and Vite
   // preserves array order within one `enforce` bucket.
-  return [bamboocssCss({ configPath, cwd, session: staticSession }), compiler]
+  return [bamboocssCss({ configPath, cwd, session: staticSession, renameCssAsset }), compiler]
 }
