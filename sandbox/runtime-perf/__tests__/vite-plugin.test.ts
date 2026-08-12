@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { esc } from '@bamboocss/shared'
 import bamboocss from '@bamboocss/vite'
 import { build, type Rollup } from 'vite'
-import { build as buildVite8 } from 'vite8'
+import { build as buildVite8, createBuilder } from 'vite8'
 import { afterEach, describe, expect, test } from 'vitest'
 
 /**
@@ -585,4 +585,65 @@ describe('vite 8 / rolldown', () => {
     )
     expect(missing, 'shapes with no rule in the emitted sheet').toEqual([])
   }, 120_000)
+})
+
+/**
+ * A client and an SSR environment, built against one plugin instance.
+ *
+ * `buildStart` fires once per environment, and it reset the whole compilation session each
+ * time. The second environment therefore discarded what the first established: `cssLoaded`
+ * went false, so an SSR bundle — which legitimately never imports the stylesheet, because the
+ * client build emits it — failed the "not imported" check outright. The reachability sets that
+ * pruning consults were emptied by the same reset.
+ *
+ * Driven through `createBuilder` rather than a framework, because the framework is incidental:
+ * what matters is two environments sharing one instance, which is the shape react-router,
+ * Nuxt and SvelteKit all produce.
+ */
+const envClientEntry = join(cwd, 'src/__env-client.tsx')
+const envSsrEntry = join(cwd, 'src/__env-ssr.tsx')
+
+describe('two build environments, one plugin instance', () => {
+  afterEach(() => {
+    rmSync(envClientEntry, { force: true })
+    rmSync(envSsrEntry, { force: true })
+  })
+
+  test('an ssr environment does not have to import the stylesheet', async () => {
+    writeFileSync(
+      envClientEntry,
+      `import 'virtual:bamboo.css'\nimport { css } from '../styled-system/css'\nexport const a = css({ width: '[31.1px]' })\n`,
+    )
+    writeFileSync(
+      envSsrEntry,
+      `import { css } from '../styled-system/css'\nexport const b = css({ width: '[31.3px]' })\n`,
+    )
+
+    const builder = await createBuilder({
+      root: cwd,
+      logLevel: 'silent',
+      css: { postcss: { plugins: [] } },
+      plugins: [bamboocss({ cwd, reportSummary: false })],
+      build: { write: false, minify: false, rollupOptions: { external: [/^react/] } },
+      environments: {
+        client: { build: { lib: { entry: envClientEntry, formats: ['es'], fileName: 'env-client' } } },
+        ssr: { build: { ssr: true, lib: { entry: envSsrEntry, formats: ['es'], fileName: 'env-ssr' } } },
+      },
+    })
+
+    const sources: string[] = []
+    for (const name of ['client', 'ssr']) {
+      const built = await builder.build(builder.environments[name]!)
+      for (const bundle of Array.isArray(built) ? built : [built]) {
+        for (const output of (bundle as { output?: unknown[] }).output ?? []) {
+          const asset = output as { source?: unknown }
+          if (typeof asset.source === 'string') sources.push(asset.source)
+        }
+      }
+    }
+
+    const css = sources.join('\n')
+    expect(css).toContain('--made-with-bamboo')
+    expect(css).toContain('31.1px')
+  }, 180_000)
 })

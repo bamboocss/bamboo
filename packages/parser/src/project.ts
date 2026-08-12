@@ -295,7 +295,15 @@ export class Project {
   createSourceFiles = () => {
     const files = this.getFiles()
     for (const file of files) {
-      this.createSourceFile(file)
+      // A file can disappear between being globbed and being read — a watch rebuild racing a
+      // delete, a generated fixture cleaning itself up, a branch switch mid-build. That is a
+      // file to skip, not a build to fail: it is not in the project any more, so it has no
+      // styles to contribute. Anything else still throws.
+      try {
+        this.createSourceFile(file)
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException)?.code !== 'ENOENT') throw error
+      }
     }
   }
 

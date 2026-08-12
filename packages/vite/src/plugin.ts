@@ -133,6 +133,9 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
     throw new Error('bamboocss: `maxRecipeStates` must be a positive safe integer.')
   }
 
+  /** Environments whose `buildStart` has run in the build currently in progress. */
+  const seenEnvironments = new Set<string>()
+
   /** Totals across the build, for the summary. */
   const totals = { folded: 0, files: 0, filesWithFolds: 0, skipped: new Map<string, number>() }
   const staticSession = createStaticCompilationSession()
@@ -229,17 +232,31 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
     },
 
     async buildStart() {
-      // `vite build --watch` runs this hook once per rebuild against the same plugin
-      // instance, so without a reset the summary reports every build since the first
-      // and the percentage stops describing the bundle that was just written.
-      totals.folded = 0
-      totals.files = 0
-      totals.filesWithFolds = 0
-      totals.skipped.clear()
-      survivors.length = 0
-      survivorKeys.clear()
-      recipeConfigCache.clear()
-      resetStaticCompilationSession(staticSession)
+      // Reset per *run*, not per environment.
+      //
+      // `buildStart` fires once per environment, and a framework that builds a client and an
+      // SSR bundle — react-router among them — runs both against this one plugin instance.
+      // Resetting on each meant the second environment discarded everything the first
+      // established: `cssLoaded` went false, so an SSR bundle that legitimately never imports
+      // the stylesheet failed the "not imported" check, and the reachability sets that
+      // pruning consults were emptied halfway through.
+      //
+      // Environments of one run each fire this once, in sequence, so seeing the *same* one
+      // twice is what distinguishes a new run — a `vite build --watch` rebuild — from another
+      // environment of the run in progress.
+      const environment = (this as { environment?: { name?: string } }).environment?.name ?? 'default'
+      if (seenEnvironments.has(environment)) {
+        seenEnvironments.clear()
+        totals.folded = 0
+        totals.files = 0
+        totals.filesWithFolds = 0
+        totals.skipped.clear()
+        survivors.length = 0
+        survivorKeys.clear()
+        recipeConfigCache.clear()
+        resetStaticCompilationSession(staticSession)
+      }
+      seenEnvironments.add(environment)
 
       // Normalized here too. `ensureContext` loads and evaluates the user's config file and
       // its hooks, so what it throws is entirely outside this plugin's control — and in dev

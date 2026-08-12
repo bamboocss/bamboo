@@ -206,6 +206,16 @@ interface BambooCssPluginOptions {
 export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
   const { configPath, cwd, session, renameCssAsset = true } = options
 
+  /**
+   * Environments whose `load` served the virtual stylesheet.
+   *
+   * The lost-sheet guard below is about an asset that existed and then went missing, so it
+   * can only be asked of an environment that asked for one. An SSR bundle never imports the
+   * stylesheet — the client build emits it — and firing there turned a correct two-environment
+   * build into a hard failure.
+   */
+  const servedEnvironments = new Set<string>()
+
   const builder = new Builder()
   let server: ViteDevServer | undefined
   let command: 'build' | 'serve' = 'build'
@@ -300,6 +310,8 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
     async load(id) {
       if (id !== RESOLVED_ID) return null
 
+      servedEnvironments.add((this as { environment?: { name?: string } }).environment?.name ?? 'default')
+
       let css: string
       try {
         css = await generate()
@@ -352,6 +364,10 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
         // compiler knows it produced classes, so it can also insist something carries them —
         // in the same spirit as the unimported-`virtual:bamboo.css` check, which catches the
         // other way to end up with classes and no rules.
+        // Only the environment that served the stylesheet answers for it.
+        if (!servedEnvironments.has((this as { environment?: { name?: string } }).environment?.name ?? 'default')) {
+          return
+        }
         if (!session.transformedFiles.size) return
 
         const emitsMarkerAsset = Object.values(bundle).some((output) => {
