@@ -1,5 +1,13 @@
 # @bamboocss/eslint-plugin
 
+## 1.37.12
+
+### Patch Changes
+
+- @bamboocss/config@1.37.12
+- @bamboocss/generator@1.37.12
+- @bamboocss/shared@1.37.12
+
 ## 1.37.11
 
 ### Patch Changes
