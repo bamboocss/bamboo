@@ -1,6 +1,6 @@
 {
   "name": "@bamboocss/preset-base",
-  "version": "1.36.4",
+  "version": "1.36.5",
   "description": "The base preset for Bamboo CSS that contains the conditions and utilities",
   "homepage": "https://bamboocss.com",
   "license": "MIT",
