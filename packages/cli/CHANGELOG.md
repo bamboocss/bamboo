@@ -1,5 +1,19 @@
 # @bamboocss/dev
 
+## 1.35.2
+
+### Patch Changes
+
+- Updated dependencies [eb3025a]
+  - @bamboocss/shared@1.35.2
+  - @bamboocss/node@1.35.2
+  - @bamboocss/token-dictionary@1.35.2
+  - @bamboocss/types@1.35.2
+  - @bamboocss/postcss@1.35.2
+  - @bamboocss/logger@1.35.2
+  - @bamboocss/preset-bamboo@1.35.2
+  - @bamboocss/preset-base@1.35.2
+
 ## 1.35.1
 
 ### Patch Changes
