@@ -25,6 +25,7 @@
     "source-map-explorer": "2.5.3",
     "typescript": "6.0.2",
     "vite": "7.2.6",
-    "vite-bundle-visualizer": "1.2.1"
+    "vite-bundle-visualizer": "1.2.1",
+    "vite8": "npm:vite@8.2.1"
   }
 }

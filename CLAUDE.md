@@ -32,7 +32,7 @@ with workspace support.
 
 /sandbox/          # Integration tests and examples
   /codegen/        # Generated code validation tests (the scenario suites)
-  /runtime-perf/   # Bundle-size and real-Vite-build assertions
+  /runtime-perf/   # Bundle-size and real-build assertions, on Vite 7 and Vite 8/Rolldown
   /vite-ts/, /next-js-*/, /remix/, /astro/, /nuxt/, /svelte/, /solid-ts/,
   /preact-ts/, /qwik-ts/, /waku-ts/, /gatsby-ts/, /docusaurus-ts/,
   /storybook/, /component-lib/    # per-framework integration apps
