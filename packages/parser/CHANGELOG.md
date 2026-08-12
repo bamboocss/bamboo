@@ -1,5 +1,16 @@
 # @bamboocss/parser
 
+## 1.37.8
+
+### Patch Changes
+
+- @bamboocss/config@1.37.8
+- @bamboocss/core@1.37.8
+- @bamboocss/extractor@1.37.8
+- @bamboocss/logger@1.37.8
+- @bamboocss/shared@1.37.8
+- @bamboocss/types@1.37.8
+
 ## 1.37.7
 
 ### Patch Changes
