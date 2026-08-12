@@ -117,3 +117,66 @@ describe('a class spelled with or without its escape', () => {
     expect(result).not.toContain('--unused-size:4px')
   })
 })
+
+/**
+ * A merged rule is judged per selector, not as a whole.
+ *
+ * The optimizer collapses rules sharing a body into one selector list, so an atom nothing can
+ * reach routinely ends up beside a reachable one — `content: ""` is written by every `_before`
+ * and `_after` in a project, and they merge into a single rule. Judging the rule as a whole
+ * kept all of them, which is dead CSS that pruning exists to remove and which grows with
+ * exactly the declarations that repeat most.
+ */
+describe('a rule merged from several atoms', () => {
+  const sheet = (body: string) =>
+    `@layer reset, base, tokens, utilities;@layer utilities{${body}}:root{--made-with-bamboo:🌱}`
+
+  const session = () => {
+    const s = createStaticCompilationSession()
+    for (const name of ['before\\:content_a', 'after\\:content_a', 'd_flex']) s.prunableClasses.add(name)
+    return s
+  }
+
+  test('keeps the reachable selectors and drops the rest', () => {
+    const s = session()
+    s.markClassUsed('before:content_a')
+
+    const result = pruneStaticCss(sheet('.before\\:content_a::before,.after\\:content_a::after{content:"a"}'), s)
+
+    expect(result).toContain('content:"a"')
+    expect(result).toContain('before\\:content_a')
+    expect(result).not.toContain('after\\:content_a')
+  })
+
+  test('removes the rule when no selector survives', () => {
+    const result = pruneStaticCss(
+      sheet('.before\\:content_a::before,.after\\:content_a::after{content:"a"}'),
+      session(),
+    )
+
+    expect(result).not.toContain('content:"a"')
+  })
+
+  test('leaves a rule alone when every selector is reachable', () => {
+    const s = session()
+    s.markClassUsed('before:content_a')
+    s.markClassUsed('after:content_a')
+
+    const result = pruneStaticCss(sheet('.before\\:content_a::before,.after\\:content_a::after{content:"a"}'), s)
+
+    expect(result).toContain('before\\:content_a')
+    expect(result).toContain('after\\:content_a')
+  })
+
+  // A compound variant selects on classes the element already carries, so no single atom owns
+  // the rule and dropping it would take a style the element still needs.
+  test('never touches a selector naming more than one class', () => {
+    const s = createStaticCompilationSession()
+    s.prunableClasses.add('btn--size_sm')
+    s.prunableClasses.add('btn--tone_a')
+
+    const result = pruneStaticCss(sheet('.btn--size_sm.btn--tone_a{color:red}'), s)
+
+    expect(result).toContain('color:red')
+  })
+})

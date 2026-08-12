@@ -53,15 +53,38 @@ export const pruneStaticCss = (
   if (prune) {
     root.walkRules((rule) => {
       if (!isUtilityRule(rule)) return
-      const classes = new Set<string>()
+
+      // Decided per selector, not per rule.
+      //
+      // The optimizer merges rules sharing a body into one selector list, so an atom nothing
+      // can reach routinely ends up beside one that is reachable — `content: ""` is written by
+      // every `_before` and `_after` in a project, and they collapse into a single rule. Judging
+      // the rule as a whole kept every one of those, which is dead CSS that pruning is supposed
+      // to be removing and which grows with exactly the declarations that repeat most.
+      //
+      // A selector naming more than one class is left alone: a compound variant selects on the
+      // classes an element already carries, so no single atom owns the rule and dropping it
+      // would take a style the element still needs.
+      let removedAny = false
+      let selector: string
       try {
-        selectorParser((selectors) => {
-          selectors.walkClasses((classNode) => {
-            // Both spellings, because a class can reach the sheet either way and they denote
-            // the same class. `--bottom-mask-size_16px` needs no escape to be valid CSS — an
-            // ident may begin with `--` — while `esc` produces the escaped `\--…` form, so a
-            // set keyed on one spelling misses a rule written in the other.
-            classes.add(bare(classNode.toString().slice(1)))
+        selector = selectorParser((selectors) => {
+          selectors.each((candidate) => {
+            const classes = new Set<string>()
+            candidate.walkClasses((classNode) => {
+              // Both spellings, because a class can reach the sheet either way and they denote
+              // the same class. `--bottom-mask-size_16px` needs no escape to be valid CSS — an
+              // ident may begin with `--` — while `esc` produces the escaped `\--…` form, so a
+              // set keyed on one spelling misses a rule written in the other.
+              classes.add(bare(classNode.toString().slice(1)))
+            })
+
+            if (classes.size !== 1) return
+            const [className] = classes
+            if (!className || !prunable.has(className) || used.has(className)) return
+
+            candidate.remove()
+            removedAny = true
           })
         }).processSync(rule.selector)
       } catch {
@@ -69,10 +92,13 @@ export const pruneStaticCss = (
         return
       }
 
-      if (classes.size !== 1) return
-      const [className] = classes
-      if (!className || !prunable.has(className) || used.has(className)) return
-      rule.remove()
+      if (!removedAny) return
+      // Every selector went, so the rule has nothing left to style.
+      if (!selector.trim()) {
+        rule.remove()
+        return
+      }
+      rule.selector = selector
     })
   }
 
