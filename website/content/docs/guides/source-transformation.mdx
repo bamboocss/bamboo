@@ -136,9 +136,9 @@ export const alias = badge //   runtime-binding — the value itself is read
 badge.raw({ tone: 'loud' }) //  runtime-binding — returns a style object, not a class
 ```
 
-Exporting is fine on its own. It only matters because an exported binding is reachable from modules the compiler may
-read differently, and each of those references has to be a compiled call too. The diagnostic names the file and line of
-the reference that survived, which is the one to change — not the declaration.
+Exporting is fine, and so is calling the recipe from another module — that call compiles like any other. Each module
+answers only for its own text, so a module that reads the binding reports itself, and one that only calls it reports
+nothing. The diagnostic names the file and line of the read, which is what has to change, not the declaration.
 
 ### Config recipes
 

@@ -722,35 +722,34 @@ selection tables.
 | Can use theme tokens, utilities and conditions       | ✅ yes                                | ✅ yes                                                               |
 | Production CSS follows transformed call reachability | ✅ statically selected values survive | ✅ selected values or every value of a runtime decision axis survive |
 | Can be shared in a preset                            | ✅ yes                                | ❌ no                                                                |
-| Can be imported by another module                    | ✅ yes                                | ❌ no — see below                                                    |
+| Can be imported by another module                    | ✅ yes                                | ✅ yes — see below                                                   |
 | Can be colocated in markup code                      | ❌ defined in config or presets       | ✅ yes                                                               |
 | Emit globally shared declaration atoms with Vite     | ✅ yes                                | ✅ yes                                                               |
 | Emit named rules in a `recipes` layer with Vite      | ❌ no                                 | ❌ no                                                                |
 | Can be merged semantically by analyzable `cx()`      | ✅ yes                                | ✅ yes                                                               |
 
-### An inline recipe cannot be shared across modules
-
-This is the constraint that decides how shared styles are organised, so it is worth stating directly rather than reading
-off the table.
+### Reading an inline recipe, rather than calling it
 
 An inline recipe's declaration is **erased** from the module that declares it — that is what lets the config leave the
-bundle. The binding's value is then `undefined`, so any module that imports it receives nothing, and the build fails
-rather than shipping that:
+bundle. Calling it is fine anywhere, including from another module: the call compiles to the class string it produces,
+so nothing needs the binding at runtime.
+
+What cannot compile is _reading the binding itself_, because after erasure its value is `undefined`:
 
 ```tsx
-// app/styles.ts
-export const probeRecipe = cva({ base: { display: 'block' } })
+export const badge = cva({ ... })
 
-// app/root.tsx
-;<span className={probeRecipe({ on: true })} /> // probeRecipe — runtime-binding
+badge({ tone }) //         compiles — a call, rewritten to the classes it selects
+export const alias = badge //  runtime-binding — the value is read, not called
+badge.raw({ tone: 'loud' }) //  runtime-binding — returns a style object, not a class
 ```
 
-The call site being fully literal does not help; nothing about the _selection_ is the problem. A recipe used in more
-than one file has to be a config recipe, declared under `theme.extend.recipes` and imported from
-`styled-system/recipes`. Inline recipes are for styles that stay in the file that declares them. | Can accept a runtime
-variant selection under Vite | ✅ finite axes become a precompiled decision table | ✅ finite axes become a precompiled
-decision table | | Can use a responsive object as the runtime selection | ❌ put responsiveness in the recipe's style
-declarations | ❌ put responsiveness in the recipe's style declarations |
+Each module answers for its own text, so the diagnostic names the file and line of the read that has to change. A module
+that only ever calls the recipe reports nothing, wherever the recipe was declared.
+
+| Can accept a runtime variant selection under Vite | ✅ finite axes become a precompiled decision table | ✅ finite
+axes become a precompiled decision table | | Can use a responsive object as the runtime selection | ❌ put
+responsiveness in the recipe's declarations | ❌ put responsiveness in the recipe's declarations |
 
 These rows describe the Vite compiler. Extraction-only CLI or PostCSS output retains the generated recipe runtime and
 its named recipe representation.

@@ -194,10 +194,10 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
             `Nothing was established about its calls either way.\n\n`
           : '') +
         (entries.some((entry) => entry.reason === 'runtime-binding')
-          ? `\`runtime-binding\` is a Bamboo value read outside a call the compiler rewrote — most often an ` +
-            `inline \`cva\`/\`sva\` imported by another module. Its declaration is erased where it is declared, ` +
-            `so the import receives \`undefined\`; a recipe used in more than one file has to be a config ` +
-            `recipe under \`theme.extend.recipes\`. The location given is the reference to change, not the ` +
+          ? `\`runtime-binding\` is a Bamboo value read rather than called. An inline \`cva\`/\`sva\` ` +
+            `declaration is erased, so its binding is \`undefined\` at runtime: calling it compiles, including ` +
+            `from another module, but reading the value itself — \`const alias = badge\`, \`badge.raw(...)\`, ` +
+            `re-exporting it — has nothing behind it. The location given is the read to change, not the ` +
             `declaration.\n\n`
           : '') +
         `Bamboo emits no runtime styling fallback or recipe layer. Make the values finite and statically ` +
