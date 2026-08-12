@@ -254,7 +254,14 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
       recipeConfigCache.clear()
       resetStaticCompilationSession(staticSession)
 
-      await ensureContext()
+      // Normalized here too. `ensureContext` loads and evaluates the user's config file and
+      // its hooks, so what it throws is entirely outside this plugin's control — and in dev
+      // it reaches Vite's error middleware, which crashes on anything that is not an object.
+      try {
+        await ensureContext()
+      } catch (error) {
+        throw asError(error, 'failed to load the bamboo config')
+      }
     },
 
     /**
@@ -302,7 +309,11 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
     async transform(code, id) {
       if (!shouldTransform(id)) return null
 
-      await ensureContext()
+      try {
+        await ensureContext()
+      } catch (error) {
+        throw asError(error, 'failed to load the bamboo config')
+      }
       if (!ctx || !runtimeCss || !styleCompiler) return null
 
       const [filePath] = id.split('?')
