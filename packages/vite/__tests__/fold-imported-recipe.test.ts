@@ -419,3 +419,56 @@ export const f = () => {
     expect(result.code).toContain(`textInput({ size: 'sm' })`)
   })
 })
+
+/**
+ * Where a surviving reference is reported.
+ *
+ * `findReferencesAsNodes` searches the whole ts-morph project, so the reference that keeps an
+ * erased recipe binding alive is usually in another module. Its offsets index *that* file, and
+ * they were reported against the module being folded — which produced a line derived from text
+ * that does not contain it. A client saw `app/styles.ts:841` on a file with fewer lines than
+ * that, and the call that actually had to change was in a different module entirely.
+ */
+describe('a surviving reference in another module', () => {
+  const DEFINITION = `import { cva } from 'styled-system/css'
+export const heading = cva({
+  base: { display: 'flex' },
+  variants: { tone: { quiet: { color: 'gray.500' }, loud: { color: 'red.500' } } },
+})
+`
+
+  test('is reported against the file it is in, not the one being folded', () => {
+    const fixture = createFoldFixture()
+    // Padded so an offset from this file cannot coincidentally be a valid one in the smaller
+    // definition module — which is the whole failure being pinned.
+    fixture.addFiles({
+      'app/faraway.tsx': `${'// filler\n'.repeat(400)}import { heading } from './styles'\nexport const passed = heading\n`,
+    })
+
+    const result = fixture.fold(DEFINITION, 'app/styles.ts', true)
+    const survivor = result.skipped.find((entry) => entry.reason === 'runtime-binding')
+
+    expect(survivor).toBeDefined()
+    expect(survivor!.origin?.filePath).toContain('faraway.tsx')
+    expect(survivor!.origin?.line).toBeGreaterThan(400)
+
+    // The local offsets have to stay inside the folded module, or every consumer of them —
+    // `lineAt`, sourcemaps, range checks — is reading text that does not contain them.
+    expect(survivor!.start).toBeLessThan(DEFINITION.length)
+    expect(survivor!.end).toBeLessThanOrEqual(DEFINITION.length)
+  })
+
+  test('a same-module reference carries no origin and stays local', () => {
+    const fixture = createFoldFixture()
+    const local = `import { cva } from 'styled-system/css'
+const heading = cva({ base: { display: 'flex' } })
+export const passed = heading
+`
+    const result = fixture.fold(local, 'app/local.tsx', true)
+    const survivor = result.skipped.find((entry) => entry.reason === 'runtime-binding')
+
+    expect(survivor).toBeDefined()
+    expect(survivor!.origin).toBeUndefined()
+    expect(survivor!.start).toBeLessThan(local.length)
+  })
+})

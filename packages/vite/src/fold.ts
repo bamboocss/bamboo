@@ -66,6 +66,16 @@ export interface SkippedCall {
   reason: SkipReason
   start: number
   end: number
+  /**
+   * Where the surviving reference actually is, when that is not the module being folded.
+   *
+   * A recipe declared in one module and referenced from another is found through the
+   * project-wide symbol graph, so `start`/`end` index the *referencing* file. Reporting them
+   * against the folded module produced a line number derived from the wrong text — one past
+   * EOF in the case that surfaced this — and named the declaration rather than the call site
+   * that has to change. Both are carried so the diagnostic can point at the real one.
+   */
+  origin?: { filePath: string; line: number }
 }
 
 export interface FoldResult {
@@ -1860,7 +1870,20 @@ export const foldSource = (options: FoldOptions): FoldResult => {
         .findReferencesAsNodes()
         .find((ref) => !applied.some(([from, to]) => ref.getStart() >= from && ref.getStart() < to))
       if (!survivor) continue
-      skipped.push({ name: binding, reason: 'runtime-binding', start: survivor.getStart(), end: survivor.getEnd() })
+
+      // `findReferencesAsNodes` searches the whole project, so the reference that survives
+      // is often in another module. Its offsets index *that* file, and reporting them against
+      // this one yields a position in text they do not describe. Carry the reference's own
+      // file and line, and let the offsets stay local so nothing else has to special-case them.
+      const survivorFile = survivor.getSourceFile()
+      const foreign = survivorFile !== sourceFile
+      skipped.push({
+        name: binding,
+        reason: 'runtime-binding',
+        start: foreign ? nameNode.getStart() : survivor.getStart(),
+        end: foreign ? nameNode.getEnd() : survivor.getEnd(),
+        ...(foreign ? { origin: { filePath: survivorFile.getFilePath(), line: survivor.getStartLineNumber() } } : {}),
+      })
     }
 
     const bambooModules = [

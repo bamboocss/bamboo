@@ -35,8 +35,35 @@ export interface TruncateListOptions {
  * Returns the entries joined and nothing else when they fit, so a build reporting two
  * problems reads exactly as it did before this existed.
  */
+/**
+ * `BAMBOO_DIAGNOSTIC_LIMIT` — how many findings to render, or `all` for every one.
+ *
+ * A cap is right for reading a failure and wrong for scoping the work behind it: "… and 13
+ * more files" gives no way to drive a migration to zero except by fixing what is shown and
+ * rebuilding to reveal the next batch, at minutes per round. The default stays low because
+ * the common case is reading one mistake; this is the escape hatch for the other one.
+ *
+ * Read defensively rather than through a bare `process.env`: this module is exported from
+ * `@bamboocss/shared`, which is also the package the generated runtime draws from, and a
+ * bare reference would throw in a browser that never sets it.
+ */
+const configuredLimit = (): number | undefined => {
+  const raw = typeof process === 'undefined' ? undefined : process.env?.BAMBOO_DIAGNOSTIC_LIMIT
+  if (!raw) return undefined
+  if (raw === 'all') return Number.POSITIVE_INFINITY
+  const parsed = Number(raw)
+  // A malformed value falls back to the default rather than failing the build: this only
+  // decides how much of a diagnostic is printed, and erroring here would replace the message
+  // the user was trying to read with one about their own env var.
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : undefined
+}
+
 export function truncateList(entries: string[], options: TruncateListOptions = {}): string {
-  const { limit = DEFAULT_LIMIT, unit = 'item', separator = '\n\n' } = options
+  const { limit: requested = DEFAULT_LIMIT, unit = 'item', separator = '\n\n' } = options
+  // The override wins over a caller's explicit limit, not just over the default. A caller
+  // that asked for 25 is stating a house style for that diagnostic; the env var is a user
+  // saying they need the whole list regardless of which diagnostic produced it.
+  const limit = configuredLimit() ?? requested
 
   if (entries.length <= limit) return entries.join(separator)
 

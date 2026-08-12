@@ -74,3 +74,52 @@ describe('groupBy', () => {
     expect(groupBy([], String).size).toBe(0)
   })
 })
+
+/**
+ * The cap is right for reading a failure and wrong for scoping the work behind it. A user
+ * migrating a codebase could only see ten findings at a time and had to rebuild — minutes a
+ * round — to reveal the next batch, with no way to drive the list to zero.
+ */
+describe('BAMBOO_DIAGNOSTIC_LIMIT', () => {
+  const withLimit = <T>(value: string | undefined, run: () => T): T => {
+    const previous = process.env.BAMBOO_DIAGNOSTIC_LIMIT
+    if (value === undefined) delete process.env.BAMBOO_DIAGNOSTIC_LIMIT
+    else process.env.BAMBOO_DIAGNOSTIC_LIMIT = value
+    try {
+      return run()
+    } finally {
+      if (previous === undefined) delete process.env.BAMBOO_DIAGNOSTIC_LIMIT
+      else process.env.BAMBOO_DIAGNOSTIC_LIMIT = previous
+    }
+  }
+
+  const entries = Array.from({ length: 30 }, (_, index) => `entry-${index}`)
+
+  test('raises the default', () => {
+    const result = withLimit('20', () => truncateList(entries, { separator: '\n' }))
+    expect(result).toContain('entry-19')
+    expect(result).toContain('… and 10 more items.')
+  })
+
+  test('`all` withholds nothing', () => {
+    const result = withLimit('all', () => truncateList(entries, { separator: '\n' }))
+    expect(result).toContain('entry-29')
+    expect(result).not.toContain('more')
+  })
+
+  // A caller's limit is a house style for that one diagnostic; the env var is a user saying
+  // they need the whole list whichever diagnostic produced it.
+  test('overrides a limit the caller passed explicitly', () => {
+    const result = withLimit('all', () => truncateList(entries, { limit: 5, separator: '\n' }))
+    expect(result).toContain('entry-29')
+  })
+
+  // Replacing the message the user was trying to read with one about their own env var is
+  // not an improvement, so a malformed value falls back rather than throwing.
+  test('a malformed value falls back to the default', () => {
+    for (const value of ['0', '-4', 'lots', '2.5']) {
+      const result = withLimit(value, () => truncateList(entries, { separator: '\n' }))
+      expect(result, value).toContain('… and 20 more items.')
+    }
+  })
+})

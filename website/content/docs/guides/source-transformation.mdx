@@ -118,6 +118,28 @@ Spreads, computed selection keys, unresolved recipe configs, and reflective read
 `recipe.splitVariantProps(props)` is compiled to the generated `splitProps` helper and does not retain the recipe
 object.
 
+#### What actually decides whether an inline recipe compiles
+
+Not where it is declared, and not whether its variants are chosen at runtime — both of those compile, in the declaring
+module and across module boundaries alike. What decides it is whether every **reference to the binding** is a call the
+compiler rewrote.
+
+The declaration is erased, so the binding's value becomes `undefined`. A reference that is not a compiled call therefore
+has nothing behind it, and the build fails with `runtime-binding` rather than shipping a value that would be `undefined`
+at runtime:
+
+```tsx
+export const badge = cva({ ... })
+
+badge({ tone }) // compiles — a call, rewritten to a cvaMap lookup
+export const alias = badge //   runtime-binding — the value itself is read
+badge.raw({ tone: 'loud' }) //  runtime-binding — returns a style object, not a class
+```
+
+Exporting is fine on its own. It only matters because an exported binding is reachable from modules the compiler may
+read differently, and each of those references has to be a compiled call too. The diagnostic names the file and line of
+the reference that survived, which is the one to change — not the declaration.
+
 ### Config recipes
 
 Config recipes use the same lowering as inline recipes. Static selections become literal atom strings; scalar variant

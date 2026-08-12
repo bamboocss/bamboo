@@ -343,7 +343,15 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
         // StyleSet composition when every argument is analyzable; nested Bamboo calls are
         // still compiled independently before this runtime join.
         if (entry.name === 'cx' && entry.reason === 'dynamic') continue
-        addSurvivor({ file: filePath, line: lineAt(code, entry.start), name: entry.name, reason: entry.reason })
+        // `origin` is set when the surviving reference lives in another module — the offsets
+        // then index that file, so `lineAt` against this module's text would be meaningless.
+        // Reporting the reference is also what makes the message actionable: the declaration
+        // is rarely what has to change, the call site is.
+        addSurvivor(
+          entry.origin
+            ? { file: entry.origin.filePath, line: entry.origin.line, name: entry.name, reason: entry.reason }
+            : { file: filePath, line: lineAt(code, entry.start), name: entry.name, reason: entry.reason },
+        )
       }
 
       if (reportSkipped && result.skipped.length) {
@@ -383,7 +391,12 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
         if (!staticSession.cssLoaded) {
           throw new Error(
             `bamboocss: compiled class values were produced, but ${JSON.stringify(VIRTUAL_CSS_ID)} ` +
-              `was not imported. Import it once from the application entry so the compiled rules are emitted.`,
+              `was not imported. Add \`import ${JSON.stringify(VIRTUAL_CSS_ID)}\` once, from a JavaScript or ` +
+              `TypeScript module in the application entry graph.\n\n` +
+              `It has to be a JS import. \`@import\` from a stylesheet does not reach it: the id names a virtual ` +
+              `module resolved by this plugin, and Vite resolves CSS \`@import\` before plugin resolution, so it ` +
+              `fails as an unresolvable path. A project that ships one preloaded stylesheet imports this from its ` +
+              `entry module instead, and lets Vite emit the CSS asset.`,
           )
         }
 
