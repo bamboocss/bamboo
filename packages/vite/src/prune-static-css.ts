@@ -110,12 +110,42 @@ export const pruneStaticCss = (
     }
 
     if (orphaned.length) {
+      // Reported with enough context to diagnose without a second build.
+      //
+      // The class name alone is not enough, and that cost a round trip: a report of twelve
+      // orphans — every one a CSS custom property or a vendor-prefixed name, so every one a
+      // class needing a leading-dash escape — could not be reproduced from the names, because
+      // the names looked identical on both sides. What distinguishes the two possible causes
+      // is *where* the entry is missing: absent from the extracted atom set means it was never
+      // emitted, while present there but not in the sheet means the rule was written and then
+      // pruned or not matched.
+      //
+      // The near misses matter as much. A class that differs only in escaping has a rule under
+      // a spelling this did not recognise, which points at the encoding rather than at
+      // emission — and is invisible if only the missing name is printed.
+      const describe = (className: string) => {
+        if (/\s/.test(className)) return `  ${className}\n      (malformed key: a class name cannot contain whitespace)`
+
+        const extracted = session.prunableClasses.has(className) ? 'in the extracted atoms' : 'NOT extracted'
+        const bare = className.replaceAll('\\', '')
+        const near = [...present].filter(
+          (candidate) => candidate !== className && candidate.replaceAll('\\', '') === bare,
+        )
+
+        return (
+          `  ${className}\n      (${extracted}; no rule in the sheet` +
+          (near.length ? `; a rule exists under ${near.map((n) => JSON.stringify(n)).join(', ')}` : '') +
+          `)`
+        )
+      }
+
       throw new Error(
         `bamboocss: ${orphaned.length} compiled class(es) have no rule in the emitted stylesheet. ` +
           `Elements carrying them would render unstyled.\n\n` +
-          `${truncateList(orphaned, { unit: 'class', separator: '\n' })}\n\n` +
-          `This is a compiler bug rather than anything to fix in your source — please report it ` +
-          `with the class names above.`,
+          `${truncateList(orphaned.map(describe), { unit: 'class', separator: '\n' })}\n\n` +
+          `This is a compiler bug rather than anything to fix in your source. Please report it with ` +
+          `the block above — the parenthesised part is what distinguishes an atom that was never ` +
+          `emitted from one whose rule is present under a different spelling.`,
       )
     }
   }
