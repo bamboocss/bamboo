@@ -1899,9 +1899,21 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       (parserResult as { importedRecipes?: Map<string, unknown> }).importedRecipes?.keys() ?? [],
     )
 
-    // One walk for every binding in this module. Built here rather than cached across passes:
-    // it holds nodes, and a node does not outlive its source file being replaced.
-    const identifiers = identifierIndex(sourceFile)
+    /**
+     * Every identifier in the module, grouped by the name it spells — built at most once per
+     * pass, and only when something below has a name to look up.
+     *
+     * One index answers for every binding, rather than a walk per binding. Built here rather
+     * than cached across passes: it holds nodes, and a node does not outlive its source file
+     * being replaced.
+     *
+     * Deferred because most modules in an app neither declare nor import a recipe, and the
+     * walk is not cheap — `getDescendantsOfKind` wraps every identifier in the file in a
+     * ts-morph node to answer a question those modules never ask. It was 11% of a 6,307-file
+     * build, most of it spent producing an index nothing read.
+     */
+    let identifiers: Map<string, Node[]> | undefined
+    const identifiersByName = () => (identifiers ??= identifierIndex(sourceFile))
 
     for (const binding of new Set([...recipeConfigs.keys(), ...importedRecipeBindings])) {
       const entry = recipeConfigs.get(binding)
@@ -1924,7 +1936,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
 
       // Syntactic, so no language service is involved. See `localReferencesTo` for why that
       // matters: one query binds the project's whole `.d.ts` closure into the bundler's heap.
-      const references = localReferencesTo(identifiers, binding, nameNode)
+      const references = localReferencesTo(identifiersByName(), binding, nameNode)
 
       const declined = skipped
         .filter((item) => SURVIVES_TO_RUNTIME.has(item.reason) && item.end > item.start)
@@ -2065,25 +2077,35 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     const declined = skipped
       .filter((entry) => SURVIVES_TO_RUNTIME.has(entry.reason) && entry.end > entry.start)
       .map((entry) => [entry.start, entry.end] as const)
-    const reported = new Set<string>()
 
-    for (const identifier of sourceFile.getDescendantsOfKind(SyntaxKind.Identifier)) {
-      const local = identifier.getText()
-      const imported = watched.get(local)
-      if (imported === undefined || reported.has(local)) continue
+    // Driven from the watched names rather than from a second pass over every identifier in
+    // the file. The index above already groups identifiers by the name they spell, and only a
+    // watched name can produce a survivor here — so this reads a handful of buckets where it
+    // used to wrap every identifier in the module a second time.
+    const survivors: SkippedCall[] = []
 
-      const start = identifier.getStart()
-      // The import declaration naming it is not a use of it, and neither is anything the
-      // rewrite already replaced.
-      if (identifier.getFirstAncestorByKind(SyntaxKind.ImportDeclaration)) continue
-      if (applied.some(([from, to]) => start >= from && start < to)) continue
-      if (declined.some(([from, to]) => start >= from && start < to)) continue
-      if (!isValueReference(identifier)) continue
-      if (isShadowed(identifier, local)) continue
+    for (const [local, imported] of watched) {
+      // Each bucket is in document order, so the first identifier that survives every check is
+      // the same one the full pass reported — and one report per name, as before.
+      for (const identifier of identifiersByName().get(local) ?? []) {
+        const start = identifier.getStart()
+        // The import declaration naming it is not a use of it, and neither is anything the
+        // rewrite already replaced.
+        if (identifier.getFirstAncestorByKind(SyntaxKind.ImportDeclaration)) continue
+        if (applied.some(([from, to]) => start >= from && start < to)) continue
+        if (declined.some(([from, to]) => start >= from && start < to)) continue
+        if (!isValueReference(identifier)) continue
+        if (isShadowed(identifier, local)) continue
 
-      reported.add(local)
-      skipped.push({ name: imported, reason: 'runtime-binding', start, end: identifier.getEnd() })
+        survivors.push({ name: imported, reason: 'runtime-binding', start, end: identifier.getEnd() })
+        break
+      }
     }
+
+    // Restored to document order. Grouping by name is an artefact of how they were found, and
+    // these are read by a human as a list of positions in their file.
+    survivors.sort((a, b) => a.start - b.start)
+    skipped.push(...survivors)
   }
 
   // The other reporting point. Mutually exclusive with the one above — that return exits —

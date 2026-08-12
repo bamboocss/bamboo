@@ -32,6 +32,31 @@ describe('a binding the rewrite left behind', () => {
     expect(survivors(result)).toEqual(['css'])
   })
 
+  /**
+   * Several at once, reported in the order they appear in the file.
+   *
+   * These are found by looking up each watched name in an index of the module's identifiers,
+   * which groups them by name — so the order they are *found* in is the order of the imports,
+   * not of the file. A user reads them as positions to go and fix, so document order is the
+   * one that makes the list navigable, and it is what a single pass over every identifier
+   * produced before the index replaced it.
+   */
+  test('several bindings are reported in the order they appear', () => {
+    const { foldStrict } = createFoldFixture()
+    const result = foldStrict(
+      `import { sva, css, cva } from 'styled-system/css'
+export const third = cva
+export const second = css
+export const first = sva
+`,
+    )
+
+    expect(survivors(result)).toEqual(['cva', 'css', 'sva'])
+
+    const starts = result.skipped.filter((entry) => entry.reason === 'runtime-binding').map((entry) => entry.start)
+    expect(starts).toEqual([...starts].sort((a, b) => a - b))
+  })
+
   test.each([
     ['a named re-export', `export { css } from 'styled-system/css'\n`],
     ['a star re-export', `export * from 'styled-system/css'\n`],
