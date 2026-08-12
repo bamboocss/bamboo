@@ -1,6 +1,6 @@
 {
   "name": "@bamboocss/is-valid-prop",
-  "version": "1.35.5",
+  "version": "1.36.0",
   "description": "Common error messages for css bamboo",
   "homepage": "https://bamboocss.com",
   "license": "MIT",

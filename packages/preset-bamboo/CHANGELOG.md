@@ -1,5 +1,11 @@
 # @bamboocss/preset-bamboo
 
+## 1.36.0
+
+### Patch Changes
+
+- @bamboocss/types@1.36.0
+
 ## 1.35.5
 
 ### Patch Changes
