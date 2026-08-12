@@ -167,7 +167,7 @@ atoms through the virtual stylesheet:
 export const title = css({ fontSize: 'lg', fontWeight: 'bold' })
 
 // the bundle gets
-export const title = '_4p9d _7bc2'
+export const title = 'fs_lg fw_bold'
 ```
 
 | option            | default | what it does                                                     |
@@ -177,6 +177,25 @@ export const title = '_4p9d _7bc2'
 | `reportSkipped`   | `false` | Report every call site the compiler rejected, and why, per file. |
 | `configPath`      | –       | Path to `bamboo.config.ts`, resolved the same way as the CLI.    |
 | `cwd`             | –       | Directory the config is resolved from.                           |
+| `renameCssAsset`  | `true`  | Name the stylesheet after its own pruned bytes. See below.       |
+
+`renameCssAsset` exists because `[hash]` is expanded before Bamboo prunes unreachable rules, so the name Vite assigns
+describes the stylesheet as it was _before_ pruning. Renaming it afterwards closes that: without it, a change to
+reachability alone — which is what upgrading Bamboo is — can leave identical source CSS under an identical name with
+different content, and a CDN holding that key serves the old stylesheet past the deploy.
+
+Turning it off does not merely skip the rename, it skips the pruning with it. The two are one operation, and shipping a
+larger stylesheet is a better failure than shipping a stale one. Reach for it only when something downstream cannot
+follow a renamed asset, and expect the full extracted stylesheet when you do.
+
+### Seeing every diagnostic
+
+Compiler errors list the first few findings and count the rest, which is right for reading one failure and wrong for
+scoping a migration. Set `BAMBOO_DIAGNOSTIC_LIMIT` to a number, or to `all`, to see the whole list:
+
+```bash
+BAMBOO_DIAGNOSTIC_LIMIT=all vite build
+```
 
 Compilation and strict rejection are not options. A style-producing call that cannot be represented by the emitted CSS
 fails instead of retaining a runtime fallback. See [Source compilation](/docs/guides/source-transformation) for the

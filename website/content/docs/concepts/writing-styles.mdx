@@ -398,7 +398,7 @@ With fully analyzable Bamboo arguments, later declarations win and the losing at
 
 ```js
 cx(css({ paddingX: '4' }), css({ paddingX: '2' }))
-// one compact atom for padding-inline: 2
+// one atom for padding-inline: 2
 ```
 
 The compiler cannot infer the declarations behind `className` in the component example. Take a style object when a
@@ -419,8 +419,9 @@ finite public API.
 
 ### Hashing
 
-The `hash` option shortens extraction-only semantic class names and CSS variables. Vite uses `hash` for compiler-owned
-atoms; this setting is still useful when CSS variable names should also be hashed.
+The `hash` option shortens class names and CSS variables, and it is the only thing that does. It applies to every build
+path — Vite, the CLI and PostCSS alike — so a project wanting short names in its compiled output sets it here rather
+than per integration.
 
 ```ts filename="bamboo.config.ts"
 import { defineConfig } from '@bamboocss/dev'

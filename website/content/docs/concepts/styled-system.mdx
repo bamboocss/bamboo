@@ -65,5 +65,5 @@ authoring API. Extraction-only integrations execute it; Vite treats its style su
 ## Pre-rendering
 
 Vite compilation removes `styled-system` style functions whether rendering happens in the browser, Astro, RSC, or
-another pre-renderer. Use stable compact names (the default) when server and client are built separately so their HTML
-and CSS agree.
+another pre-renderer. Class names are derived from the declarations themselves, so a server build and a client build
+name the same style identically and their HTML and CSS agree without coordination.

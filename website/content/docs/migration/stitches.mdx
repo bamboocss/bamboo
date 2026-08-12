@@ -122,7 +122,8 @@ const button = cva({
 // => <button class="button">Button</button>
 ```
 
-`className` is optional extraction metadata. It does not enter Vite's declaration identity or compact atom names.
+`className` is optional extraction metadata. It does not enter Vite's declaration identity or the names of the atoms it
+emits.
 
 - **In the config**, by defining the recipe in `bamboo.config.ts`. It uses the same Vite lowering as an inline recipe,
   while codegen exposes a named import and its variant types.

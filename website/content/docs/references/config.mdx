@@ -280,8 +280,9 @@ For the [shared example](#prefix), the emitted class and variable are:
 | `{ cssVar: true, className: false }` | `.text_blue\.500` | `var(--cgpxvS)`          |
 | `{ cssVar: false, className: true }` | `.dOFUTE`         | `var(--colors-blue-500)` |
 
-This option controls extraction-only semantic class names. Vite's compiler composes StyleSets before naming and then
-emits the names the stylesheet is written under, so hashing cannot change `cx` semantics there.
+This option applies to every build path, Vite included — it is the only thing that shortens class names. Vite's compiler
+composes StyleSets before naming and then emits the names the stylesheet is written under, so hashing changes what those
+names look like without changing `cx` semantics.
 
 ## File system options
 
