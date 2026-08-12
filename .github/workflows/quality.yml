@@ -112,30 +112,6 @@ jobs:
             exit 1
           fi
 
-  browser:
-    name: Browser Parity
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Install
-        uses: ./.github/composite-actions/install
-
-      - name: Install Chromium
-        run: pnpm --filter sandbox-runtime-perf exec playwright install --with-deps chromium
-
-      # Builds the sandbox twice, with and without the source transform, and compares what
-      # a real browser computed. This is the only check that shows a folded class actually
-      # *resolves* -- identical markup with a class the stylesheet does not carry looks
-      # correct everywhere else.
-      #
-      # Run through the root script, which sets the flag the root vitest config gates this
-      # file on. The Unit Tests job has no browser, so it must not pick this up.
-      - name: Run browser parity
-        run: pnpm test:browser
-
   lint:
     name: Lint
     runs-on: ubuntu-latest

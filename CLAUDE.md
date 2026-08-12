@@ -32,7 +32,7 @@ with workspace support.
 
 /sandbox/          # Integration tests and examples
   /codegen/        # Generated code validation tests (the scenario suites)
-  /runtime-perf/   # Render benchmarks and the browser-parity test
+  /runtime-perf/   # Bundle-size and real-Vite-build assertions
   /vite-ts/, /next-js-*/, /remix/, /astro/, /nuxt/, /svelte/, /solid-ts/,
   /preact-ts/, /qwik-ts/, /waku-ts/, /gatsby-ts/, /docusaurus-ts/,
   /storybook/, /component-lib/    # per-framework integration apps
@@ -101,11 +101,15 @@ pnpm --filter=./sandbox/<name> exec bamboo codegen --clean    # one sandbox
 formats, and an unformatted changeset is enough to fail the build. Run `pnpm fmt` before committing, or
 `pnpm exec oxfmt <paths>` to fix in place.
 
-🚨 **`pnpm test` skips the browser-parity suite.** The root `vitest.config.ts` excludes `**/browser-parity.test.ts`
-unless `BROWSER_PARITY` is set, because it runs two full Vite builds and drives Chromium. CI gives it its own job that
-installs Chromium first. To run it locally use the **root** script — `pnpm test:browser` — which sets the
-`BROWSER_PARITY` flag the config gates the file on. The filtered form (`pnpm --filter sandbox-runtime-perf …`) fails:
-that package has no such script.
+🚨 **Nothing drives a real browser any more, and no check reads a computed style.** The browser-parity suite built the
+sandbox twice — folded and unfolded — and compared what Chromium computed. Mandatory compilation (`13ce729fc`) left no
+unfolded build to compare against, so it went along with its fixtures, the `playwright` dependency and its CI job.
+
+What carries the guarantee it existed for — that a class the transform emits actually has a rule behind it — is now
+static: `sandbox/runtime-perf/__tests__/vite-plugin.test.ts` proves the CSS and Vite source graphs agree, and
+`packages/vite/__tests__/strict-compiler.test.ts` covers the calls the compiler must reject. Both run in `pnpm test`, so
+there is no separate command to remember. Neither observes rendering, so a rule that is emitted but _wrong_ still passes
+everything.
 
 **Where the framework-runtime guarantees actually live.** Per-framework _test suites_ no longer exist — they were
 removed with the JSX factory in `f2d5df251`, and the `sandbox/*` framework apps that remain are integration examples,
@@ -146,6 +150,7 @@ Perf-sensitive code has Vitest benchmarks in `{packages,sandbox}/*/__tests__/**/
 | ----------------------------------------------- | ------------------------------------------------------------- |
 | `core/static-css-perf`, `static-css-real-world` | static css generation, up to `getCssRuleObjects`              |
 | `core/optimize-css`                             | the postcss pipeline after the sheet is built                 |
+| `core/prune`                                    | keyframe and token pruning                                    |
 | `core/sort-style-rules`                         | rule ordering                                                 |
 | `extractor/extract-speed`                       | expression evaluation, one file                               |
 | `extractor/cross-file-cost`                     | extraction cost as a function of _project_ size               |
@@ -154,7 +159,10 @@ Perf-sensitive code has Vitest benchmarks in `{packages,sandbox}/*/__tests__/**/
 | `generator/css-fn-miss`                         | the uncached path; kept in its own file so ordering can't lie |
 | `shared/split-props`, `shared/leaf-class`       | runtime helpers on the per-render path                        |
 | `vite/fold`                                     | the fold's per-module cost                                    |
-| `sandbox/runtime-perf/render`                   | a React render of a folded tree                               |
+
+Nothing measures what the compiled output costs to _render_. `sandbox/runtime-perf/render.bench.ts` did, and went with
+`13ce729fc` — it drove the old `foldSource` signature over fixtures that commit deleted. Compilation now runs on every
+dev-server transform, not just production builds, so that gap is wider than it was when the bench existed.
 
 A bench that measures a shape nothing calls is worse than no bench, because it reads as coverage. `split-props.bench.ts`
 spent a while measuring only the four-group shape that went away with the JSX factory, which left the one-array-group
@@ -438,5 +446,5 @@ Reporting": copy anything uncommitted to a scratch directory first.
 
 ---
 
-**Last Updated**: 2026-08-07 **Published version**: see `packages/core/package.json` (the root `package.json` is private
+**Last Updated**: 2026-08-11 **Published version**: see `packages/core/package.json` (the root `package.json` is private
 and its `0.0.1` is not the project version)
