@@ -1,5 +1,11 @@
 # @bamboocss/preset-open-props
 
+## 1.37.1
+
+### Patch Changes
+
+- @bamboocss/types@1.37.1
+
 ## 1.37.0
 
 ### Patch Changes
