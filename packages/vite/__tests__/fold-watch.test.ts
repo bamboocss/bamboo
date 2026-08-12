@@ -37,9 +37,7 @@ const hookOf = <T>(hook: T | { handler: T } | undefined): T | undefined =>
   typeof hook === 'function' ? hook : (hook as { handler: T } | undefined)?.handler
 
 const driver = () => {
-  const plugin = bamboocss({ cwd, denseClassNames: false, reportSummary: false }).find(
-    (p) => p.name === 'bamboocss:compiler',
-  )!
+  const plugin = bamboocss({ cwd, reportSummary: false }).find((p) => p.name === 'bamboocss:compiler')!
 
   const buildStart = hookOf(plugin.buildStart)
   const transform = hookOf(plugin.transform)

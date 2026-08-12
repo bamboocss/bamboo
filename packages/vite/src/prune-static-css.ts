@@ -120,30 +120,5 @@ export const pruneStaticCss = (
     }
   }
 
-  if (session.denseClassNames) {
-    root.walkRules((rule) => {
-      if (!isUtilityRule(rule)) return
-      const transitionClasses = new Set<string>()
-      try {
-        rule.selector = selectorParser((selectors) => {
-          selectors.walkClasses((classNode) => {
-            if (!session.prunableClasses.has(classNode.toString().slice(1))) return
-            if (session.viewTransitionClasses.has(classNode.value)) transitionClasses.add(classNode.value)
-            classNode.value = session.allocateClassString(classNode.value)
-          })
-        }).processSync(rule.selector)
-      } catch {
-        // Authored selectors that cannot be parsed are unrelated to compiler-owned atoms.
-      }
-
-      if (transitionClasses.size) {
-        rule.walkDecls('view-transition-class', (declaration) => {
-          if (!transitionClasses.has(declaration.value)) return
-          declaration.value = session.allocateClassString(declaration.value)
-        })
-      }
-    })
-  }
-
   return root.toString()
 }

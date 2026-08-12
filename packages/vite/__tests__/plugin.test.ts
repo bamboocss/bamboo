@@ -155,7 +155,7 @@ describe('compiler', () => {
       export const cls = cx(badge(), css({ display: 'flex', color: 'blue.500' }))
     `
 
-    const code = await fold({ denseClassNames: false }, source, 'src/static-composition.tsx')
+    const code = await fold({}, source, 'src/static-composition.tsx')
     expect(code).toContain('"d_flex c_blue.500"')
     expect(code).not.toContain('cx(badge()')
   })
@@ -187,7 +187,6 @@ describe('compiler', () => {
     const plugin = plugins({
       cwd,
       reportSummary: false,
-      denseClassNames: false,
     }).fold
     const buildStart = typeof plugin.buildStart === 'function' ? plugin.buildStart : plugin.buildStart?.handler
     const buildEnd = typeof plugin.buildEnd === 'function' ? plugin.buildEnd : plugin.buildEnd?.handler
@@ -209,26 +208,18 @@ describe('compiler', () => {
     await expect(Promise.resolve().then(() => buildEnd?.call({} as never, undefined as never))).resolves.toBeUndefined()
   })
 
-  test('static composition uses compact stable atom names by default', async () => {
+  // Compaction belongs to the core `hash` option, which applies to every build path rather
+  // than only this one. The compiler emits the names the stylesheet is written under, so the
+  // two cannot disagree — which is what a second, Vite-only renaming layer kept getting wrong.
+  test('static composition emits the atom names the stylesheet uses', async () => {
     const code = await fold(
       {},
       `import { css } from 'styled-system/css'\nexport const className = css({ display: 'flex', color: 'blue.500' })`,
-      'src/static-composition-dense.tsx',
+      'src/static-composition-names.tsx',
     )
 
-    expect(code).toMatch(/"_[A-Za-z]+ _[A-Za-z]+"/)
-    expect(code).not.toContain('d_flex')
-    expect(code).not.toContain('c_blue.500')
-  })
-
-  test('local dense naming is available for a single HTML-and-CSS build', async () => {
-    const code = await fold(
-      { denseClassNames: 'local' },
-      `import { css } from 'styled-system/css'\nexport const className = css({ display: 'flex', color: 'blue.500' })`,
-      'src/static-composition-local-dense.tsx',
-    )
-
-    expect(code).toContain('"_a _b"')
+    expect(code).toContain('d_flex')
+    expect(code).toContain('c_blue.500')
   })
 
   test('keeps cx as a tiny joiner when external arguments cannot be analyzed', async () => {

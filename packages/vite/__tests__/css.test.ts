@@ -108,7 +108,7 @@ describe('the virtual stylesheet', () => {
       const css = (await load(VIRTUAL_CSS_ID, 'serve'))!.css
 
       expect(css).not.toMatch(/@layer recipes\{/)
-      expect(css).toMatch(/\._[A-Za-z]+\s*\{/)
+      expect(css).toContain('width: 456.789px')
       expect(css).toContain('width: 456.789px')
     } finally {
       rmSync(fixtureDir, { recursive: true, force: true })

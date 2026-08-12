@@ -170,14 +170,13 @@ export const title = css({ fontSize: 'lg', fontWeight: 'bold' })
 export const title = '_4p9d _7bc2'
 ```
 
-| option            | default | what it does                                                                      |
-| ----------------- | ------- | --------------------------------------------------------------------------------- |
-| `denseClassNames` | `true`  | Use stable compact atom names; use `'local'` for the shortest single-build names. |
-| `maxRecipeStates` | `65536` | Bound exact build-time enumeration for runtime recipe axes.                       |
-| `reportSummary`   | `true`  | Print a compiler coverage summary when a build finishes.                          |
-| `reportSkipped`   | `false` | Report every call site the compiler rejected, and why, per file.                  |
-| `configPath`      | –       | Path to `bamboo.config.ts`, resolved the same way as the CLI.                     |
-| `cwd`             | –       | Directory the config is resolved from.                                            |
+| option            | default | what it does                                                     |
+| ----------------- | ------- | ---------------------------------------------------------------- |
+| `maxRecipeStates` | `65536` | Bound exact build-time enumeration for runtime recipe axes.      |
+| `reportSummary`   | `true`  | Print a compiler coverage summary when a build finishes.         |
+| `reportSkipped`   | `false` | Report every call site the compiler rejected, and why, per file. |
+| `configPath`      | –       | Path to `bamboo.config.ts`, resolved the same way as the CLI.    |
+| `cwd`             | –       | Directory the config is resolved from.                           |
 
 Compilation and strict rejection are not options. A style-producing call that cannot be represented by the emitted CSS
 fails instead of retaining a runtime fallback. See [Source compilation](/docs/guides/source-transformation) for the

@@ -281,8 +281,7 @@ For the [shared example](#prefix), the emitted class and variable are:
 | `{ cssVar: false, className: true }` | `.dOFUTE`         | `var(--colors-blue-500)` |
 
 This option controls extraction-only semantic class names. Vite's compiler composes StyleSets before naming and then
-applies its independent [`denseClassNames`](/docs/installation/vite#plugin-options) mode, so hashing cannot change `cx`
-semantics there.
+emits the names the stylesheet is written under, so hashing cannot change `cx` semantics there.
 
 ## File system options
 

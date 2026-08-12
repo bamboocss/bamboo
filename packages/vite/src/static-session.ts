@@ -1,4 +1,4 @@
-import { esc, toHash } from '@bamboocss/shared'
+import { esc } from '@bamboocss/shared'
 
 /** Shared state between the build-time fold and the virtual CSS module. */
 export interface StaticCompilationSession {
@@ -18,34 +18,10 @@ export interface StaticCompilationSession {
   viewTransitionClasses: Set<string>
   /** Escaped selectors the transformed Rollup graph can actually emit. */
   usedClasses: Set<string>
-  /** Semantic atom name -> compact stable or build-local name. */
-  denseClasses: Map<string, string>
-  /** Compact name -> semantic atom name, used when the fold reports reachability. */
-  semanticClasses: Map<string, string>
-  denseClassNames: boolean
-  allocateClassString(className: string): string
   markClassUsed(className: string): void
 }
 
-const ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-const denseName = (index: number) => {
-  let value = index
-  let result = ''
-  do {
-    result = ALPHABET[value % ALPHABET.length]! + result
-    value = Math.floor(value / ALPHABET.length) - 1
-  } while (value >= 0)
-  // A namespace keeps build-local atom names out of the overwhelmingly common unprefixed
-  // author class space while retaining two-character names for the first 52 atoms.
-  return `_${result}`
-}
-
-export type DenseClassNameMode = boolean | 'stable' | 'local'
-
-export const createStaticCompilationSession = (
-  denseClassNames: DenseClassNameMode = true,
-): StaticCompilationSession => {
-  const mode = denseClassNames === true ? 'stable' : denseClassNames
+export const createStaticCompilationSession = (): StaticCompilationSession => {
   const session: StaticCompilationSession = {
     utilityLayer: 'utilities',
     sourcemap: false,
@@ -55,34 +31,8 @@ export const createStaticCompilationSession = (
     prunableClasses: new Set(),
     viewTransitionClasses: new Set(),
     usedClasses: new Set(),
-    denseClasses: new Map(),
-    semanticClasses: new Map(),
-    denseClassNames: Boolean(mode),
-    allocateClassString(className) {
-      if (!mode) return className
-      return className
-        .split(' ')
-        .filter(Boolean)
-        .map((semantic) => {
-          let dense = session.denseClasses.get(semantic)
-          if (!dense) {
-            dense = mode === 'local' ? denseName(session.denseClasses.size) : `_${toHash(semantic)}`
-            const collision = session.semanticClasses.get(dense)
-            if (collision && collision !== semantic) {
-              throw new Error(
-                `Bamboo compact class collision between ${JSON.stringify(collision)} and ${JSON.stringify(semantic)}. ` +
-                  `Disable \`denseClassNames\` for this build.`,
-              )
-            }
-            session.denseClasses.set(semantic, dense)
-            session.semanticClasses.set(dense, semantic)
-          }
-          return dense
-        })
-        .join(' ')
-    },
     markClassUsed(className) {
-      // Split, like `allocateClassString` above. A folded call reports one entry per call
+      // Split on whitespace. A folded call reports one entry per call
       // site, and a call producing several atoms reports them space-joined — every property
       // under one condition, which is why `_before: { content, width }` arrives as a single
       // string. Escaping that whole string yielded one key containing a space, matching no
@@ -96,9 +46,8 @@ export const createStaticCompilationSession = (
       // which is why some of the rules were still there.
       for (const token of className.split(' ')) {
         if (!token) continue
-        const semantic = session.semanticClasses.get(token) ?? token
         // Stored in selector form because the CSS reachability pass reads escaped selectors.
-        session.usedClasses.add(esc(semantic))
+        session.usedClasses.add(esc(token))
       }
     },
   }
@@ -112,6 +61,4 @@ export const resetStaticCompilationSession = (session: StaticCompilationSession)
   session.prunableClasses.clear()
   session.viewTransitionClasses.clear()
   session.usedClasses.clear()
-  session.denseClasses.clear()
-  session.semanticClasses.clear()
 }

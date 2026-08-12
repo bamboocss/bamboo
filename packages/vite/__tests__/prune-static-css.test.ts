@@ -49,53 +49,9 @@ describe('static stylesheet reachability', () => {
     expect(result).not.toContain('color:red')
   })
 
-  test('renames retained semantic selectors to compact stable names', () => {
-    const session = createStaticCompilationSession()
-    const compact = session.allocateClassString('d_flex c_red.300').split(' ')
-    expect(compact).toHaveLength(2)
-    session.prunableClasses.add('d_flex')
-    session.prunableClasses.add(esc('c_red.300'))
-    session.usedClasses.add('d_flex')
-    session.usedClasses.add(esc('c_red.300'))
-
-    const result = pruneStaticCss(stylesheet('.d_flex{display:flex}.c_red\\.300{color:red}'), session)
-    expect(result).toContain(`.${compact[0]}{display:flex}`)
-    expect(result).toContain(`.${compact[1]}{color:red}`)
-    expect(result).not.toContain('.d_flex')
-    expect(result).not.toContain('.c_red')
-  })
-
-  test('stable compact names do not depend on module discovery order', () => {
-    const first = createStaticCompilationSession()
-    const second = createStaticCompilationSession()
-    const a = first.allocateClassString('d_flex c_red.300')
-    second.allocateClassString('p_4')
-    const b = second.allocateClassString('d_flex c_red.300')
-    expect(a).toBe(b)
-  })
-
-  test('renames a view-transition selector, pseudo argument, and declaration together', () => {
-    const session = createStaticCompilationSession()
-    const semantic = 'vt_semantic'
-    const compact = session.allocateClassString(semantic)
-    session.viewTransitionClasses.add(semantic)
-    session.prunableClasses.add(esc(semantic))
-    session.markClassUsed(compact)
-
-    const result = pruneStaticCss(
-      stylesheet(`.${semantic}{view-transition-class:${semantic}}::view-transition-old(.${semantic}){opacity:0}`),
-      session,
-    )
-
-    expect(result).toContain(`.${compact}{view-transition-class:${compact}}`)
-    expect(result).toContain(`::view-transition-old(.${compact}){opacity:0}`)
-    expect(result).not.toContain(semantic)
-  })
-
-  test('does not prune or rename an authored class outside the utility layer', () => {
+  test('does not prune an authored class outside the utility layer', () => {
     const session = createStaticCompilationSession()
     session.prunableClasses.add('d_flex')
-    session.allocateClassString('d_flex')
 
     const css = `@layer reset, base, tokens, recipes, utilities;@layer base{.d_flex{color:red}}:root{--made-with-bamboo:🌱}`
     const result = pruneStaticCss(css, session)
@@ -103,16 +59,15 @@ describe('static stylesheet reachability', () => {
   })
 
   test('uses the configured utility layer name', () => {
-    const session = createStaticCompilationSession('local')
+    const session = createStaticCompilationSession()
     session.utilityLayer = 'atomic'
-    const compact = session.allocateClassString('d_flex')
     session.prunableClasses.add('d_flex')
-    session.markClassUsed(compact)
+    session.markClassUsed('d_flex')
 
     const css = `@layer utilities{.d_flex{display:grid}}@layer atomic{.d_flex{display:flex}}:root{--made-with-bamboo:🌱}`
     const result = pruneStaticCss(css, session)
 
     expect(result).toContain('@layer utilities{.d_flex{display:grid}}')
-    expect(result).toContain(`@layer atomic{.${compact}{display:flex}}`)
+    expect(result).toContain('@layer atomic{.d_flex{display:flex}}')
   })
 })

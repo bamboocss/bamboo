@@ -8,11 +8,7 @@ import { asError, bamboocssCss, VIRTUAL_CSS_ID } from './css'
 import { foldSource, type ForeignRecipes, type SkipReason, type SkippedCall } from './fold'
 import { createRuntimeCss, type RuntimeCss } from './runtime-css'
 import { createStaticStyleSetCompiler, type StaticStyleSetCompiler } from './style-set'
-import {
-  createStaticCompilationSession,
-  resetStaticCompilationSession,
-  type DenseClassNameMode,
-} from './static-session'
+import { createStaticCompilationSession, resetStaticCompilationSession } from './static-session'
 
 export interface BambooVitePluginOptions {
   /** Path to `bamboo.config.ts`. Resolved the same way the CLI resolves it. */
@@ -34,12 +30,6 @@ export interface BambooVitePluginOptions {
    * @default true
    */
   reportSummary?: boolean
-  /**
-   * Compact atom names. `true`/`stable` is deterministic across
-   * client and SSR builds. `local` uses the shortest names and is safe only when one build
-   * produces both HTML and CSS. @default true
-   */
-  denseClassNames?: DenseClassNameMode
   /**
    * Maximum complete selections compiled for one runtime `cva`/`sva` call. This bounds
    * build time and memory for the exact compound-variant decision table. @default 65536
@@ -137,7 +127,6 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
     cwd,
     reportSkipped = false,
     reportSummary = true,
-    denseClassNames = true,
     maxRecipeStates,
     renameCssAsset = true,
   } = options
@@ -148,7 +137,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
 
   /** Totals across the build, for the summary. */
   const totals = { folded: 0, files: 0, filesWithFolds: 0, skipped: new Map<string, number>() }
-  const staticSession = createStaticCompilationSession(denseClassNames)
+  const staticSession = createStaticCompilationSession()
 
   type Survivor = { file: string; line: number; name: string; reason: SkipReason }
   const survivors: Survivor[] = []
@@ -226,8 +215,8 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
       setup = loadConfigAndCreateContext({ configPath, cwd }).then((loaded) => {
         ctx = loaded
         const semanticCss = createRuntimeCss(loaded)
-        runtimeCss = (...styles: Parameters<RuntimeCss>) => staticSession.allocateClassString(semanticCss(...styles))
-        styleCompiler = createStaticStyleSetCompiler(loaded, runtimeCss, staticSession.allocateClassString)
+        runtimeCss = semanticCss
+        styleCompiler = createStaticStyleSetCompiler(loaded, runtimeCss)
       })
     }
     await setup

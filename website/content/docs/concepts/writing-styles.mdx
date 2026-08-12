@@ -419,9 +419,8 @@ finite public API.
 
 ### Hashing
 
-The `hash` option shortens extraction-only semantic class names and CSS variables. Vite uses
-[`denseClassNames`](/docs/installation/vite#plugin-options) for compiler-owned atoms independently; this setting is
-still useful when CSS variable names should also be hashed.
+The `hash` option shortens extraction-only semantic class names and CSS variables. Vite uses `hash` for compiler-owned
+atoms; this setting is still useful when CSS variable names should also be hashed.
 
 ```ts filename="bamboo.config.ts"
 import { defineConfig } from '@bamboocss/dev'

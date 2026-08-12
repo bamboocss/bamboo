@@ -96,7 +96,8 @@ describe('mandatory compiler bundle size', () => {
     )
 
     expect(runtime.code).toContain('red600')
-    expect(compiled.code).not.toContain('red600')
+    // The engine leaves; the atom names stay, since compaction is core `hash`'s job now.
+    expect(compiled.code).not.toContain('createCss')
     expect(compiled.raw).toBeLessThan(runtime.raw)
     expect(compiled.gzip).toBeLessThan(runtime.gzip)
   }, 120_000)

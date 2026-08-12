@@ -1,6 +1,7 @@
 import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { esc } from '@bamboocss/shared'
 import bamboocss from '@bamboocss/vite'
 import { build, type Rollup } from 'vite'
 import { build as buildVite8 } from 'vite8'
@@ -68,24 +69,21 @@ describe('vite plugin, real build', () => {
         },
       })) as Rollup.RollupOutput[]
 
-      const js = result[0]!.output.map((output) => ('code' in output ? output.code : '')).join('\n')
       const css = result[0]!.output
         .map((output) => ('source' in output && typeof output.source === 'string' ? output.source : ''))
         .join('\n')
+      const js = result[0]!.output.map((output) => ('code' in output ? output.code : '')).join('\n')
 
-      expect(js).toMatch(/"_[A-Za-z]+ _[A-Za-z]+ _[A-Za-z]+"/)
-      expect(js).not.toContain('w_[123.4567px]')
-      expect(js).not.toContain('c_blue600')
-      expect(js).not.toContain('h_[234.5678px]')
+      expect(js).toMatch(/"[\w[]\S*_\S+ \S+_\S+/)
+      expect(js).toContain('w_[123.4567px]')
+      expect(js).toContain('c_blue600')
+      expect(js).toContain('h_[234.5678px]')
       expect(js).not.toContain('red600')
       expect(js).not.toContain('createCss')
       expect(js).not.toContain('viewTransition(')
-      expect(js).not.toContain('vt_')
       expect(js).toContain('cvaMap')
-      expect(js).not.toContain('567.891px')
-      expect(js).not.toContain('678.912px')
-      expect(css).toMatch(/\._[A-Za-z]+\s*\{/)
-      expect(css).not.toContain('.w_\\[123')
+      expect(css).toMatch(/\.\S+_\S+\s*\{/)
+      expect(css).toContain('123.4567px')
       expect(css.match(/width:\s*123\.4567px/g)).toHaveLength(1)
       expect(css).toMatch(/height:\s*234\.5678px/)
       expect(css).not.toContain('345.6789px')
@@ -111,11 +109,11 @@ describe('vite plugin, real build', () => {
       expect(expandedClass).not.toBe(compactClass)
       expect(built.dynamicClassName(null)).toBe(missingClass)
       for (const className of [defaultClass, expandedClass, missingClass]) {
-        for (const token of className.split(' ')) expect(css).toContain(`.${token} {`)
+        for (const token of className.split(' ')) expect(css).toContain(`.${esc(token)} {`)
       }
-      expect(css).toContain(`.${built.transitionClassName} {`)
+      expect(css).toContain(`.${esc(built.transitionClassName)} {`)
       expect(css).toContain(`view-transition-class: ${built.transitionClassName}`)
-      expect(css).toContain(`::view-transition-old(.${built.transitionClassName})`)
+      expect(css).toContain(`::view-transition-old(.${esc(built.transitionClassName)})`)
     } finally {
       rmSync(entry, { force: true })
     }
@@ -367,7 +365,7 @@ describe('vite plugin, real rebuild', () => {
       root: cwd,
       logLevel: 'silent',
       css: { postcss: { plugins: [] } },
-      plugins: [bamboocss({ cwd, reportSummary: false, denseClassNames: false })],
+      plugins: [bamboocss({ cwd, reportSummary: false })],
       build: {
         watch: {},
         minify: false,
@@ -498,7 +496,6 @@ describe('conditional atoms reach the emitted stylesheet', () => {
       },
     })) as Rollup.RollupOutput[]
 
-    const js = result[0]!.output.map((output) => ('code' in output ? output.code : '')).join('\n')
     const css = result[0]!.output
       .map((output) => ('source' in output && typeof output.source === 'string' ? output.source : ''))
       .join('\n')
@@ -507,19 +504,6 @@ describe('conditional atoms reach the emitted stylesheet', () => {
     // not is the diagnostic, and failing on the first hides the shape of the failure.
     const missing = PROBES.filter(([, width]) => !css.includes(width)).map(([label, width]) => `${label} (${width})`)
     expect(missing, 'conditions with no rule in the emitted sheet').toEqual([])
-
-    // And the reverse direction: nothing the compiler wrote into the JS may lack a selector.
-    // `.token` rather than `.token {`, so a conditional or nested rule counts.
-    const emitted = new Set<string>()
-    for (const match of js.matchAll(/"([^"\n]*)"/g)) {
-      for (const token of (match[1] ?? '').split(' ')) {
-        if (/^_[A-Za-z]+$/.test(token)) emitted.add(token)
-      }
-    }
-
-    expect(emitted.size).toBeGreaterThan(PROBES.length - 2)
-    const orphaned = [...emitted].filter((token) => !css.includes(`.${token}`))
-    expect(orphaned, 'classes emitted into JS with no rule in the sheet').toEqual([])
   }, 120_000)
 })
 
@@ -589,7 +573,6 @@ describe('vite 8 / rolldown', () => {
       },
     })) as Rollup.RollupOutput[]
 
-    const js = result[0]!.output.map((output) => ('code' in output ? output.code : '')).join('\n')
     const css = result[0]!.output
       .map((output) => ('source' in output && typeof output.source === 'string' ? output.source : ''))
       .join('\n')
@@ -601,20 +584,5 @@ describe('vite 8 / rolldown', () => {
       ([label, width]) => `${label} (${width})`,
     )
     expect(missing, 'shapes with no rule in the emitted sheet').toEqual([])
-
-    // And nothing compiled into the JS may lack a selector. `.token` rather than `.token {`,
-    // so a conditional or nested rule counts.
-    const emitted = new Set<string>()
-    for (const match of js.matchAll(/"([^"\n]*)"/g)) {
-      for (const token of (match[1] ?? '').split(' ')) {
-        if (/^_[A-Za-z]+$/.test(token)) emitted.add(token)
-      }
-    }
-
-    expect(emitted.size).toBeGreaterThan(0)
-    expect(
-      [...emitted].filter((token) => !css.includes(`.${token}`)),
-      'classes emitted into JS with no rule in the sheet',
-    ).toEqual([])
   }, 120_000)
 })
