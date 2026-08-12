@@ -308,12 +308,38 @@ export class Project {
   }
 
   addSourceFile = (filePath: string, content: string): SourceFile => {
-    // Resolutions memoized against other files' nodes can now be out of date.
     // Path-qualified, because `getSourceFile` falls back to a suffix search for a bare
     // filename — so `styles.ts` would match an existing `/app/styles.ts`, report the tree
     // unchanged, and leave a negative resolution cached against the `/styles.ts` this then
     // creates.
-    this.invalidate(!(filePath.includes('/') && this.project.getSourceFile(filePath)))
+    const existing = filePath.includes('/') ? this.project.getSourceFile(filePath) : undefined
+
+    /**
+     * Re-adding a file the text it already holds is a no-op, and saying so is what makes the
+     * bundler transform path affordable.
+     *
+     * That path adds every module before parsing it, handing back what the extractor already
+     * read off disk — measured on a 6,307-file build, 6,001 of 6,001 `addSourceFile` calls
+     * from the vite transform passed byte-identical content, with none differing and none
+     * absent. Each paid twice: `createSourceFile` overwrites, which re-parses the file and
+     * forgets every node previously taken from it, and `invalidate` drops both caches
+     * memoized against *other* files' contents. The second is what actually hurt — the
+     * imported-recipe walk runs one line later, in `parseSourceFile`, so emptying its memo
+     * here meant every module re-walked the whole export closure of every barrel it imports.
+     * On that build: 1,866,610 `walkExports` and 3,734,123 module resolutions, against 36,610
+     * and 98,123 once the memo survives.
+     *
+     * Nothing changed, so nothing needs invalidating, and the file's existing tree is not
+     * merely reusable but strictly better — a caller holding one of its nodes keeps it.
+     *
+     * Compared against `getFullText` rather than the bytes on disk, because `parseSourceFile`
+     * may have replaced this file's text through a `parser:before` hook. Such a file no longer
+     * matches its own source, falls through, and is overwritten exactly as before.
+     */
+    if (existing && existing.getFullText() === content) return existing
+
+    // Resolutions memoized against other files' nodes can now be out of date.
+    this.invalidate(!existing)
     return this.project.createSourceFile(filePath, content, {
       overwrite: true,
       scriptKind: scriptKindFor(filePath),

@@ -150,3 +150,90 @@ describe('watch invalidation', () => {
     expect(ctx.project.getUnresolvedImporters()).toEqual([])
   })
 })
+
+/**
+ * A bundler adds every module before parsing it, handing back the text the extractor
+ * already read off disk — so a re-add that changes nothing is the whole transform path,
+ * once per module. What it must not do is behave like an edit.
+ */
+describe('re-adding a file the text it already holds', () => {
+  test('keeps the file, so a node taken before the re-add is still readable', () => {
+    const source = `export const base = { color: 'red.500' }`
+    const ctx = createProject({ 'app/src/styles.ts': source })
+
+    const before = ctx.project.getSourceFile('app/src/styles.ts')!
+    const statement = before.getStatements()[0]!
+
+    const after = ctx.project.addSourceFile('app/src/styles.ts', source)
+
+    expect(after).toBe(before)
+    // Overwriting forgets a file's whole tree, and callers hold its nodes across a build.
+    expect(() => statement.getText()).not.toThrow()
+  })
+
+  test('a changed file is still overwritten, however small the change', () => {
+    const ctx = createProject({
+      'app/src/styles.ts': `${CSS_IMPORT}
+       export const base = css.raw({ color: 'red.500' })`,
+      'app/src/app.tsx': `${CSS_IMPORT}
+       import { base } from './styles'
+       export const App = () => <div className={css(base, { margin: '2' })} />`,
+    })
+
+    // Whitespace only: the comparison is textual, so this still has to invalidate. A
+    // semantic one would be free to conclude nothing changed and serve the old value.
+    ctx.project.addSourceFile(
+      'app/src/styles.ts',
+      `${CSS_IMPORT}
+       export const base = css.raw({ color: 'blue.500' })
+      `,
+    )
+
+    expect(stylesOf(ctx, 'app/src/app.tsx')).toEqual([{ color: 'blue.500' }, { margin: '2' }])
+  })
+
+  /**
+   * Counted rather than timed, so it runs in CI.
+   *
+   * Resolving a specifier is what walking a barrel is made of, and the walk is memoized per
+   * target precisely so a barrel imported by two hundred modules is walked once. It was not:
+   * the memo is dropped whenever a file is invalidated, and every module went through that on
+   * its way to being parsed — 3.7M resolutions on a 6,307-file build, against 98k.
+   */
+  test('a second consumer of a barrel reads the walk rather than repeating it', () => {
+    const consumer = `import { badge } from './barrel'
+     export const c = badge()`
+    const ctx = createContext({})
+    const files: Record<string, string> = {
+      'app/src/design/recipes.ts': `import { cva } from '../../styled-system/css'
+       export const badge = cva({ base: { color: 'red.500' } })`,
+      'app/src/design/index.ts': `export * from './recipes'`,
+      'app/src/barrel.ts': `export * from './design/index'`,
+      'app/src/a.tsx': consumer,
+      'app/src/b.tsx': consumer,
+    }
+    for (const [path, code] of Object.entries(files)) ctx.project.addSourceFile(path, code)
+
+    const project = (ctx.project as unknown as { project: { getSourceFile: (...args: never[]) => unknown } }).project
+    const lookUp = project.getSourceFile.bind(project)
+    let lookups = 0
+    project.getSourceFile = ((...args: never[]) => {
+      lookups++
+      return lookUp(...args)
+    }) as typeof project.getSourceFile
+
+    /** One module's turn through the transform hook. */
+    const transform = (path: string) => {
+      ctx.project.addSourceFile(path, consumer)
+      lookups = 0
+      ctx.project.parseSourceFile(path)
+      return lookups
+    }
+
+    const first = transform('app/src/a.tsx')
+    const second = transform('app/src/b.tsx')
+
+    expect(first).toBeGreaterThan(0)
+    expect(second).toBeLessThan(first)
+  })
+})
