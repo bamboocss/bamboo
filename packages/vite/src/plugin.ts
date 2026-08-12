@@ -4,7 +4,7 @@ import { logger } from '@bamboocss/logger'
 import { truncateList } from '@bamboocss/shared'
 import { loadConfigAndCreateContext } from '@bamboocss/node'
 import type { Plugin } from 'vite'
-import { bamboocssCss, VIRTUAL_CSS_ID } from './css'
+import { asError, bamboocssCss, VIRTUAL_CSS_ID } from './css'
 import { foldSource, type ForeignRecipes, type SkipReason, type SkippedCall } from './fold'
 import { createRuntimeCss, type RuntimeCss } from './runtime-css'
 import { createStaticStyleSetCompiler, type StaticStyleSetCompiler } from './style-set'
@@ -350,9 +350,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
           // dedupe it, which throws `TypeError: Invalid value used in weak set` on anything
           // that is not an object. The real failure is then lost behind a message about weak
           // sets, in the one mode where the user is watching the terminal for it.
-          throw error instanceof Error
-            ? error
-            : new Error(`bamboocss: failed to compile ${filePath}: ${String(error)}`, { cause: error })
+          throw asError(error, `failed to compile ${filePath}`)
         }
         return null
       }

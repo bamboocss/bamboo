@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { esc } from '@bamboocss/shared'
 import { describe, expect, test } from 'vitest'
-import { bamboocssCss, optimizeStaticCssAssets, VIRTUAL_CSS_ID } from '../src/css'
+import { asError, bamboocssCss, optimizeStaticCssAssets, VIRTUAL_CSS_ID } from '../src/css'
 import { createStaticCompilationSession } from '../src/static-session'
 
 /**
@@ -214,5 +214,35 @@ describe('late CSS asset renaming', () => {
     optimizeStaticCssAssets(bundle as never, createStaticCompilationSession())
 
     expect(Object.keys(bundle)).toContain(CSS_NAME)
+  })
+})
+
+/**
+ * Whatever a hook throws while the dev server is serving must be an object.
+ *
+ * Vite's dev error middleware puts what it is handed into a `WeakSet` to deduplicate it, and
+ * `WeakSet.add` throws `TypeError: Invalid value used in weak set` for a primitive. The real
+ * failure is then replaced by a stack trace about weak sets, in the one mode where the
+ * terminal is where the user would have read it. It surfaced twice: once from `transform`
+ * compiling a module, once from `load` answering a request for the stylesheet.
+ */
+describe('thrown values are always objects', () => {
+  test.each([['a string' as unknown], [undefined], [null], [42], [Symbol('nope')]])(
+    'normalizes %p into an Error carrying the original',
+    (thrown) => {
+      const error = asError(thrown, 'failed to compile app/x.tsx')
+
+      expect(error).toBeInstanceOf(Error)
+      // The whole point: an object, so Vite can deduplicate it rather than crash on it.
+      expect(() => new WeakSet().add(error)).not.toThrow()
+      expect(error.message).toContain('failed to compile app/x.tsx')
+      expect(error.message).toContain(String(thrown))
+      expect((error as Error & { cause?: unknown }).cause).toBe(thrown)
+    },
+  )
+
+  test('an Error passes through untouched, keeping its stack', () => {
+    const original = new TypeError('the real problem')
+    expect(asError(original, 'context')).toBe(original)
   })
 })

@@ -22,6 +22,21 @@ export const VIRTUAL_CSS_ID = 'virtual:bamboo.css'
  */
 const RESOLVED_ID = `\0${VIRTUAL_CSS_ID}`
 
+/**
+ * A thrown value Vite can actually report.
+ *
+ * `catch` binds `unknown`, and anything under compilation — a dependency, a config hook, a
+ * bare `throw 'string'` — may throw a primitive. Vite's dev error middleware puts what it is
+ * handed into a `WeakSet` to deduplicate it, which throws `TypeError: Invalid value used in
+ * weak set` for anything that is not an object, and the real failure is lost behind that.
+ *
+ * Shared by every hook that can throw while the dev server is serving, so the two cannot
+ * drift: a request for the stylesheet reaches `load`, and a request for a module reaches
+ * `transform`, and both are answered by the same middleware.
+ */
+export const asError = (error: unknown, context: string): Error =>
+  error instanceof Error ? error : new Error(`bamboocss: ${context}: ${String(error)}`, { cause: error })
+
 const INLINE_SOURCE_MAP = /\n?\/\/# sourceMappingURL=data:application\/json[^\n]*$/
 
 /** Rewrite one generated chunk without invalidating all mappings after the changed string. */
@@ -277,7 +292,12 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
     async load(id) {
       if (id !== RESOLVED_ID) return null
 
-      const css = await generate()
+      let css: string
+      try {
+        css = await generate()
+      } catch (error) {
+        throw asError(error, `failed to generate ${VIRTUAL_CSS_ID}`)
+      }
 
       // Every file the extractor reads is a source for this module, so editing one has to
       // invalidate it. In build this is what makes `vite build --watch` correct; in dev the
