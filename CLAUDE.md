@@ -205,6 +205,13 @@ pnpm bench:baseline           # Record a baseline to bench/baseline.json
 pnpm bench:compare            # Re-run and diff against that baseline
 ```
 
+**Emitted CSS size is asserted, not benchmarked.** `sandbox/runtime-perf/__tests__/bundle-size.test.ts` builds a fixture
+that authors the same declarations through `css()`, a recipe base, a recipe variant and a second recipe, then asserts
+each reaches the stylesheet once and that the sheet stays under a byte ceiling. Bytes are deterministic, so this belongs
+in CI where a wall-clock measurement would only be flaky. The duplication counts are the stable half — they hold
+regardless of formatting or token values, and they fail the moment global atom sharing breaks. The ceiling is loose on
+purpose and prints the real figure, so raising it is a one-line decision.
+
 **Benchmarks are reported, not asserted.** Wall-clock numbers depend on the machine and its load, so they are
 deliberately excluded from `pnpm check` and CI — a threshold would fail on a busy runner rather than on a real
 regression. Where behaviour must not regress, lock it down by counting the work instead of timing it — e.g.

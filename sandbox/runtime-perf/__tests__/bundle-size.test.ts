@@ -102,3 +102,96 @@ describe('mandatory compiler bundle size', () => {
     expect(compiled.gzip).toBeLessThan(runtime.gzip)
   }, 120_000)
 })
+
+/**
+ * The size of the emitted stylesheet, and the property that keeps it small.
+ *
+ * Nothing measured CSS output. Every change to atomisation, pruning or naming moves it, and
+ * the only way anyone noticed was by grepping a shipped bundle — which is how a bug that
+ * deleted every `::before` rule reached production.
+ *
+ * Two assertions, doing different jobs. The duplication counts are the stable one: global atom
+ * sharing means a declaration authored five ways still has exactly one rule, and that holds
+ * regardless of formatting, minifier or token values. The byte ceiling is the tracked one; it
+ * is deliberately loose, because its job is to catch a step change rather than to police
+ * ordinary drift, and it prints the real figure so raising it is a one-line decision rather
+ * than an investigation.
+ *
+ * Asserted rather than benchmarked on purpose: bytes are deterministic, so this belongs in CI,
+ * where a wall-clock measurement would only be flaky. Same reasoning as `memo.test.ts`
+ * counting serialization calls instead of timing them.
+ */
+const cssEntry = join(cwd, 'src/__css-size.tsx')
+
+/**
+ * Bytes the fixture's stylesheet must stay under.
+ *
+ * Roughly double what it currently emits (695B raw / 409B gzip). Loose on purpose: the job is
+ * to catch a step change — atom sharing breaking, a layer emitted twice, pruning stopping —
+ * not to police ordinary drift, and a tight bound would fail on every legitimate token edit.
+ * Raise it deliberately, with the number the failure prints and a reason.
+ */
+const CSS_CEILING = { raw: 1_400, gzip: 800 }
+
+describe('emitted stylesheet size', () => {
+  test('shares declarations globally and stays within budget', async () => {
+    // The same declarations authored five ways: a bare call, a recipe base, a recipe variant,
+    // a second recipe, and a conditional. Global atom sharing means one rule each.
+    writeFileSync(
+      cssEntry,
+      `
+      import 'virtual:bamboo.css'
+      import { css, cva } from '../styled-system/css'
+
+      export const a = css({ display: 'flex', color: 'red600' })
+      const row = cva({
+        base: { display: 'flex', color: 'red600' },
+        variants: { tone: { loud: { display: 'flex', color: 'red600' } } },
+      })
+      const stack = cva({ base: { display: 'flex' } })
+      export const b = row({ tone: 'loud' })
+      export const c = stack()
+      export const d = css({ _hover: { display: 'flex' } })
+      `,
+    )
+
+    try {
+      const result = (await build({
+        root: cwd,
+        logLevel: 'silent',
+        css: { postcss: { plugins: [] } },
+        plugins: [bamboocss({ cwd, reportSummary: false })],
+        build: {
+          write: false,
+          minify: true,
+          lib: { entry: cssEntry, formats: ['es'], fileName: 'css-size' },
+          rollupOptions: { external: [/^react/] },
+        },
+      })) as Rollup.RollupOutput[]
+
+      const css = result[0]!.output
+        .map((output) => ('source' in output && typeof output.source === 'string' ? output.source : ''))
+        .join('\n')
+
+      expect(css, 'no emitted asset carries the stylesheet').toContain('--made-with-bamboo')
+
+      const occurrences = (needle: string) => css.split(needle).length - 1
+      console.log(
+        `\n  stylesheet ${Buffer.byteLength(css)}B raw / ${gzipSync(css).length}B gzip` +
+          `\n  display:flex x${occurrences('display:flex')}` +
+          ` | color declarations x${occurrences('color:var(--colors-red600)')}\n`,
+      )
+
+      // Authored five times across two recipes and a bare call; the unconditional form is one
+      // rule. The conditional one is a different declaration — same property, different
+      // condition — so it is legitimately its own.
+      expect(occurrences('display:flex'), 'display:flex is duplicated').toBe(2)
+      expect(occurrences('color:var(--colors-red600)'), 'the colour is duplicated').toBe(1)
+
+      expect(Buffer.byteLength(css), 'stylesheet grew past its ceiling').toBeLessThan(CSS_CEILING.raw)
+      expect(gzipSync(css).length, 'stylesheet grew past its gzip ceiling').toBeLessThan(CSS_CEILING.gzip)
+    } finally {
+      rmSync(cssEntry, { force: true })
+    }
+  }, 120_000)
+})
