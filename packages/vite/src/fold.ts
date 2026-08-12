@@ -16,7 +16,7 @@ import {
   type DynamicStyleMap,
   type RecipeEntry,
 } from './fold-recipe'
-import { accountsForSource, isStaticBox, localReferencesTo } from './fold-analysis'
+import { accountsForSource, identifierIndex, isStaticBox, localReferencesTo } from './fold-analysis'
 import { createRuntimeCss, createRuntimeToken, createRuntimeTokenValue, type RuntimeCss } from './runtime-css'
 import type { StaticStyleSetCompiler } from './style-set'
 
@@ -1899,6 +1899,10 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       (parserResult as { importedRecipes?: Map<string, unknown> }).importedRecipes?.keys() ?? [],
     )
 
+    // One walk for every binding in this module. Built here rather than cached across passes:
+    // it holds nodes, and a node does not outlive its source file being replaced.
+    const identifiers = identifierIndex(sourceFile)
+
     for (const binding of new Set([...recipeConfigs.keys(), ...importedRecipeBindings])) {
       const entry = recipeConfigs.get(binding)
       if (entry === AMBIGUOUS) continue
@@ -1920,7 +1924,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
 
       // Syntactic, so no language service is involved. See `localReferencesTo` for why that
       // matters: one query binds the project's whole `.d.ts` closure into the bundler's heap.
-      const references = localReferencesTo(sourceFile, binding, nameNode)
+      const references = localReferencesTo(identifiers, binding, nameNode)
 
       const declined = skipped
         .filter((item) => SURVIVES_TO_RUNTIME.has(item.reason) && item.end > item.start)

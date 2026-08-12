@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterAll, afterEach, describe, expect, test } from 'vitest'
 import { bamboocss } from '../src/plugin'
+import { createFoldFixture } from './fixture'
 
 /**
  * What happens to a folded literal when the module it was read from changes.
@@ -102,4 +103,40 @@ describe('watch rebuilds', () => {
     // folding the contents of one that changed.
     expect(await fold()).toBeNull()
   }, 60_000)
+})
+
+/**
+ * Nodes must not be cached across passes.
+ *
+ * A module is re-transformed constantly — a watch rebuild, a second environment, a re-request
+ * in dev — and `addSourceFile` overwrites, which forgets every node previously taken from that
+ * file. An index of nodes memoized against the source text therefore hits on identical text
+ * and hands back forgotten nodes, which throw
+ * `Attempted to get information from a node that was removed or forgotten` on the next read.
+ *
+ * Identical text is the dangerous case, not the changed one: a changed file misses the cache
+ * and rebuilds, so this only bites when nothing appears to have happened.
+ */
+describe('re-transforming a module', () => {
+  const source = `import { cva } from 'styled-system/css'
+const badge = cva({ base: { display: 'flex' } })
+const other = cva({ base: { color: 'red.300' } })
+export const passed = badge
+export const alias = other
+`
+
+  test('does not read nodes forgotten by the previous pass', () => {
+    const fixture = createFoldFixture()
+
+    // Byte-identical each time, which is what makes a text-keyed cache hit.
+    const first = fixture.fold(source, 'app/repeat.tsx', true)
+    const second = fixture.fold(source, 'app/repeat.tsx', true)
+    const third = fixture.fold(source, 'app/repeat.tsx', true)
+
+    for (const result of [first, second, third]) {
+      expect(result.skipped.filter((entry) => entry.reason === 'runtime-binding')).toHaveLength(2)
+    }
+    expect(second.code).toBe(first.code)
+    expect(third.code).toBe(first.code)
+  })
 })
