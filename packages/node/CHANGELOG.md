@@ -1,5 +1,21 @@
 # @bamboocss/node
 
+## 1.37.6
+
+### Patch Changes
+
+- @bamboocss/config@1.37.6
+- @bamboocss/core@1.37.6
+- @bamboocss/generator@1.37.6
+- @bamboocss/logger@1.37.6
+- @bamboocss/parser@1.37.6
+- @bamboocss/plugin-svelte@1.37.6
+- @bamboocss/plugin-vue@1.37.6
+- @bamboocss/reporter@1.37.6
+- @bamboocss/shared@1.37.6
+- @bamboocss/token-dictionary@1.37.6
+- @bamboocss/types@1.37.6
+
 ## 1.37.5
 
 ### Patch Changes
