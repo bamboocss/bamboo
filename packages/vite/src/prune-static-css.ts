@@ -7,6 +7,20 @@ import type { StaticCompilationSession } from './static-session'
 const SENTINEL = '--made-with-bamboo'
 
 /**
+ * A class name with its CSS escapes removed, which is the only spelling both sides agree on.
+ *
+ * The same class reaches the stylesheet either escaped or not — `--bottom-mask-size_16px` is a
+ * valid selector as written, since a CSS ident may begin with `--`, while `esc` produces the
+ * escaped `\--…` form that reachability keys are stored in. Comparing raw spellings therefore
+ * missed a rule written the other way, and pruning removed an atom whose rule was in the sheet
+ * all along. It could only ever affect names needing an escape, which is why it presented as
+ * every custom property and vendor-prefixed declaration losing its rule at once.
+ *
+ * Stripping backslashes is unambiguous here: a semantic atom name never contains a literal one.
+ */
+const bare = (className: string) => className.replaceAll('\\', '')
+
+/**
  * Remove source-graph atoms no transformed module can emit.
  *
  * `prunableClasses` contains only atoms extracted from the source graph. Explicit `staticCss`
@@ -21,6 +35,10 @@ export const pruneStaticCss = (
   if (!css.includes(SENTINEL)) return css
 
   const root = postcss.parse(css)
+  // Canonicalised once. Both sets are built elsewhere in selector form; the sheet may spell a
+  // class either way, so every comparison below is on the escape-free name.
+  const prunable = new Set([...session.prunableClasses].map(bare))
+  const used = new Set([...session.usedClasses].map(bare))
   const isUtilityRule = (rule: postcss.Rule) => {
     let parent = rule.parent as postcss.Node | undefined
     while (parent) {
@@ -39,7 +57,11 @@ export const pruneStaticCss = (
       try {
         selectorParser((selectors) => {
           selectors.walkClasses((classNode) => {
-            classes.add(classNode.toString().slice(1))
+            // Both spellings, because a class can reach the sheet either way and they denote
+            // the same class. `--bottom-mask-size_16px` needs no escape to be valid CSS — an
+            // ident may begin with `--` — while `esc` produces the escaped `\--…` form, so a
+            // set keyed on one spelling misses a rule written in the other.
+            classes.add(bare(classNode.toString().slice(1)))
           })
         }).processSync(rule.selector)
       } catch {
@@ -49,7 +71,7 @@ export const pruneStaticCss = (
 
       if (classes.size !== 1) return
       const [className] = classes
-      if (!className || !session.prunableClasses.has(className) || session.usedClasses.has(className)) return
+      if (!className || !prunable.has(className) || used.has(className)) return
       rule.remove()
     })
   }
@@ -85,7 +107,7 @@ export const pruneStaticCss = (
       try {
         selectorParser((selectors) => {
           selectors.walkClasses((classNode) => {
-            present.add(classNode.toString().slice(1))
+            present.add(bare(classNode.toString().slice(1)))
           })
         }).processSync(rule.selector)
       } catch {
@@ -104,8 +126,8 @@ export const pruneStaticCss = (
         orphaned.push(className)
         continue
       }
-      if (!session.prunableClasses.has(className)) continue
-      if (present.has(className)) continue
+      if (!prunable.has(bare(className))) continue
+      if (present.has(bare(className))) continue
       orphaned.push(className)
     }
 

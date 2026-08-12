@@ -71,3 +71,49 @@ describe('static stylesheet reachability', () => {
     expect(result).toContain('@layer atomic{.d_flex{display:flex}}')
   })
 })
+
+/**
+ * A class reaches the sheet under either spelling, and both denote the same class.
+ *
+ * `--bottom-mask-size_16px` needs no escape to be a valid selector — a CSS ident may begin
+ * with `--` — while `esc` produces the escaped `\--…` form that reachability keys are stored
+ * in. Matching on one spelling therefore missed a rule written in the other, and the atom was
+ * pruned with its rule sitting in the stylesheet the whole time.
+ *
+ * It only ever affected names needing an escape, which is why it presented as every custom
+ * property and vendor-prefixed declaration losing its rule while flat ones were untouched.
+ */
+describe('a class spelled with or without its escape', () => {
+  const sheet = (body: string) =>
+    `@layer reset, base, tokens, utilities;@layer utilities{${body}}:root{--made-with-bamboo:🌱}`
+
+  test('is kept when the rule is unescaped and the key is escaped', () => {
+    const session = createStaticCompilationSession()
+    session.prunableClasses.add(esc('--bottom-mask-size_16px'))
+    session.markClassUsed('--bottom-mask-size_16px')
+
+    const result = pruneStaticCss(sheet('.--bottom-mask-size_16px{--bottom-mask-size:16px}'), session)
+
+    expect(result).toContain('--bottom-mask-size:16px')
+  })
+
+  test('is kept when both sides are escaped', () => {
+    const session = createStaticCompilationSession()
+    session.prunableClasses.add(esc('--bottom-mask-size_16px'))
+    session.markClassUsed('--bottom-mask-size_16px')
+
+    const result = pruneStaticCss(sheet('.\\--bottom-mask-size_16px{--bottom-mask-size:16px}'), session)
+
+    expect(result).toContain('--bottom-mask-size:16px')
+  })
+
+  // The point of pruning still has to work for these names.
+  test('is still removed when nothing uses it', () => {
+    const session = createStaticCompilationSession()
+    session.prunableClasses.add(esc('--unused-size_4px'))
+
+    const result = pruneStaticCss(sheet('.--unused-size_4px{--unused-size:4px}'), session)
+
+    expect(result).not.toContain('--unused-size:4px')
+  })
+})
