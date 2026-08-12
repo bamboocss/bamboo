@@ -23,6 +23,24 @@ export const VIRTUAL_CSS_ID = 'virtual:bamboo.css'
 const RESOLVED_ID = `\0${VIRTUAL_CSS_ID}`
 
 /**
+ * The queries Vite appends to a CSS module — `?url`, `?raw`, `?inline`, and the
+ * `?transform-only` that its own `?url` handling rewrites to.
+ *
+ * None of them resolved here, so asking the stylesheet for its URL failed as an unresolvable
+ * path. Rather than answering each one, the query is carried onto the resolved id and the CSS
+ * is served for whatever it is: Vite's CSS pipeline already knows what each means, and
+ * answering them here would be a second, worse copy of it.
+ *
+ * `?url` in particular makes the sheet an asset of its own rather than part of whatever
+ * stylesheet the importer belongs to. That is what `?url` means rather than a shortcoming, but
+ * it is not what a project concatenating Bamboo's CSS into one global stylesheet wants.
+ */
+const queryOf = (id: string) => {
+  const at = id.indexOf('?')
+  return at === -1 ? '' : id.slice(at)
+}
+
+/**
  * A thrown value Vite can actually report.
  *
  * `catch` binds `unknown`, and anything under compilation — a dependency, a config hook, a
@@ -303,12 +321,18 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
     },
 
     resolveId(id) {
-      if (id === VIRTUAL_CSS_ID) return RESOLVED_ID
-      return null
+      const query = queryOf(id)
+      const base = id.slice(0, id.length - query.length)
+      // Both spellings. Vite's own `?url` handling re-imports the *resolved* id with a
+      // different query, so declining that leaves it unresolvable and the build fails naming
+      // an import nobody wrote.
+      if (base !== VIRTUAL_CSS_ID && base !== RESOLVED_ID) return null
+      return `${RESOLVED_ID}${query}`
     },
 
     async load(id) {
-      if (id !== RESOLVED_ID) return null
+      const query = queryOf(id)
+      if (id.slice(0, id.length - query.length) !== RESOLVED_ID) return null
 
       servedEnvironments.add((this as { environment?: { name?: string } }).environment?.name ?? 'default')
 

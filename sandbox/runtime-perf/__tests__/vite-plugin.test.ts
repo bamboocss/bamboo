@@ -647,3 +647,56 @@ describe('two build environments, one plugin instance', () => {
     expect(css).toContain('31.1px')
   }, 180_000)
 })
+
+/**
+ * `virtual:bamboo.css?url` through a real build.
+ *
+ * Vite's convention for asking any CSS module for its URL rather than its contents. It did not
+ * resolve here at all, so requesting it failed as an unresolvable path.
+ *
+ * The sheet becomes an asset of its own, which is what `?url` means rather than a shortcoming:
+ * a project concatenating Bamboo's CSS into one global stylesheet does not want it. It is for
+ * a `<link>` written by hand, a preload hint, or an href handed outside the bundler.
+ */
+const urlEntry = join(cwd, 'src/__url-entry.tsx')
+
+describe('the stylesheet URL', () => {
+  afterEach(() => {
+    rmSync(urlEntry, { force: true })
+  })
+
+  test('resolves, and points at an asset carrying the stylesheet', async () => {
+    writeFileSync(
+      urlEntry,
+      `import href from 'virtual:bamboo.css?url'\nimport { css } from '../styled-system/css'\nexport const a = css({ width: '[51.1px]' })\nexport const url = href\n`,
+    )
+
+    const result = (await build({
+      root: cwd,
+      logLevel: 'silent',
+      css: { postcss: { plugins: [] } },
+      plugins: [bamboocss({ cwd, reportSummary: false })],
+      build: {
+        write: false,
+        minify: false,
+        lib: { entry: urlEntry, formats: ['es'], fileName: 'url' },
+        rollupOptions: { external: [/^react/] },
+      },
+    })) as Rollup.RollupOutput[]
+
+    const outputs = result[0]!.output
+    const js = outputs.map((output) => ('code' in output ? output.code : '')).join('\n')
+    const assets = outputs.filter((output) => 'source' in output && typeof output.source === 'string') as unknown as {
+      fileName: string
+      source: string
+    }[]
+
+    const sheet = assets.find((asset) => asset.source.includes('--made-with-bamboo'))
+    expect(sheet, 'no emitted asset carries the stylesheet').toBeDefined()
+    expect(sheet!.source).toContain('51.1px')
+
+    // The module exports the emitted asset's name, not the virtual id.
+    expect(js).not.toContain('virtual:bamboo.css')
+    expect(js).toContain(sheet!.fileName.split('/').pop()!)
+  }, 120_000)
+})
