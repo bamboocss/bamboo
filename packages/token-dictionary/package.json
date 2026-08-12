@@ -1,6 +1,6 @@
 {
   "name": "@bamboocss/token-dictionary",
-  "version": "1.36.5",
+  "version": "1.37.0",
   "description": "Common error messages for css bamboo",
   "homepage": "https://bamboocss.com",
   "license": "MIT",
