@@ -143,7 +143,7 @@ export const optimizeStaticCssAssets = (
 ) => {
   const { rename = true } = options
 
-  for (const [bundleName, output] of Object.entries(bundle)) {
+  for (const output of Object.values(bundle)) {
     if (!carriesGeneratedCss(output)) continue
     const source = typeof output.source === 'string' ? output.source : Buffer.from(output.source).toString()
     if (!source.includes('--made-with-bamboo')) continue
@@ -152,12 +152,17 @@ export const optimizeStaticCssAssets = (
     output.source = optimized
     if (optimized === source) continue
 
-    // Renaming means replacing an entry in `bundle`, which Rolldown does not support: it
-    // logs that the assignment is ignored and the asset is *dropped*, so the build exits 0
-    // having shipped no stylesheet at all. Pruning in place is the safe subset — the bytes
-    // are still correct, only the cache key is weaker. See `emitsMarkerAsset`, which turns
-    // any remaining way to lose the sheet into a hard error rather than a silent one.
-    if (!rename) continue
+    // Renaming and pruning are one operation, never half of one. `[hash]` is expanded before
+    // this runs, so pruned bytes under the original name is the worst outcome available: a
+    // change to *reachability alone* — which is what a Bamboo upgrade is — leaves identical
+    // source CSS under an identical name with different content, and a CDN holding that key
+    // serves the old stylesheet past the deploy. One user hit that twice and worked around it
+    // by versioning the filename themselves. So when the name cannot move, the bytes do not
+    // either.
+    if (!rename) {
+      output.source = source
+      continue
+    }
 
     const nextName = output.fileName.replace(/\.css$/, `.b-${toHash(optimized)}.css`)
     if (nextName === output.fileName) continue
@@ -165,11 +170,14 @@ export const optimizeStaticCssAssets = (
       throw new Error(`bamboocss: final CSS asset name collision at ${JSON.stringify(nextName)}.`)
     }
 
+    // `fileName` is mutated in place rather than by re-keying `bundle`. Replacing an entry is
+    // what Rolldown refuses — it logs that the assignment is ignored and drops the asset, so
+    // the build shipped no stylesheet at all — while the rename itself is fine there. Rollup
+    // and Rolldown both write an asset to its `fileName`, and `replaceAssetReferences` carries
+    // the recorded references across, so nothing needs the key to move.
     const previous = output.fileName
     output.fileName = nextName
     replaceAssetReferences(bundle, previous, nextName, session.sourcemap)
-    delete bundle[bundleName]
-    bundle[nextName] = output
   }
 }
 
@@ -337,12 +345,7 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
     generateBundle: {
       order: 'post',
       handler(_, bundle) {
-        // Rolldown ignores writes to `bundle` and drops the asset with them, so the rename is
-        // only safe where replacing an entry is. Detected rather than configured: a user who
-        // has to discover an opt-out has already shipped the unstyled build once.
-        const rolldown = Boolean((this.meta as { rolldownVersion?: string } | undefined)?.rolldownVersion)
-
-        optimizeStaticCssAssets(bundle, session, { rename: renameCssAsset && !rolldown })
+        optimizeStaticCssAssets(bundle, session, { rename: renameCssAsset })
 
         // A stylesheet that vanishes between here and disk is the worst shape a failure takes:
         // the build is green, every class in the markup is real, and nothing is styled. The

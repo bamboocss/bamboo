@@ -38,17 +38,15 @@ export interface BambooVitePluginOptions {
   /**
    * Give the pruned stylesheet a final name derived from its own bytes.
    *
-   * Rollup expands `[hash]` before `generateBundle`, so pruning after it can leave two
-   * different reachable subsets under one CDN key. Renaming closes that, at the cost of
-   * replacing an entry in the output bundle — which not every consumer of the bundle
-   * tolerates. Rolldown drops the asset outright (detected automatically, no flag needed),
-   * and a framework that relocates assets itself, such as react-router's SSR build, can
-   * lose track of the new name.
+   * Rollup and Rolldown both expand `[hash]` before `generateBundle`, so pruning after it can
+   * leave two different reachable subsets under one CDN key. Renaming the pruned stylesheet to
+   * a hash of its own bytes closes that.
    *
-   * Turning it off keeps the pruned bytes and Vite's own content hash. That hash is computed
-   * before pruning, so it stops describing the file exactly; in practice it still changes
-   * whenever the extracted CSS does, and only a change that alters *reachability alone*
-   * can now reuse a key. Prefer that over an asset your framework cannot find.
+   * Turning it off does not merely skip the rename — it skips the pruning with it. The two are
+   * one operation: pruned bytes under a name describing the unpruned ones is how a stale
+   * stylesheet outlives a deploy, which is worse than shipping a larger sheet. Reach for this
+   * only when something downstream cannot follow a renamed asset, and expect the full
+   * extracted stylesheet when you do.
    *
    * @default true
    */

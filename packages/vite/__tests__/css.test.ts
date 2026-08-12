@@ -167,18 +167,18 @@ describe('late CSS asset renaming', () => {
     entry,
   })
 
-  const renamedKey = (bundle: Record<string, unknown>) =>
-    Object.keys(bundle).find((name) => name !== CHUNK_NAME && name.endsWith('.css'))
+  /** The rename moves `fileName` in place; re-keying `bundle` is what Rolldown refuses. */
+  const renamedName = (bundle: Record<string, unknown>) =>
+    (bundle[CSS_NAME] as { fileName: string } | undefined)?.fileName
 
   test('renames the asset and rewrites chunk code when referencedFiles is absent', () => {
     const { bundle, entry } = bundleWith(chunk())
 
     expect(() => optimizeStaticCssAssets(bundle as never, sessionWithPruning())).not.toThrow()
 
-    const next = renamedKey(bundle)
+    const next = renamedName(bundle)
     expect(next).toBeDefined()
     expect(next).not.toBe(CSS_NAME)
-    expect(bundle[CSS_NAME]).toBeUndefined()
     // The rename is worthless if the importer still points at the old name.
     expect(entry.code).toContain(next!)
     expect(entry.code).not.toContain(CSS_NAME)
@@ -189,22 +189,22 @@ describe('late CSS asset renaming', () => {
 
     optimizeStaticCssAssets(bundle as never, sessionWithPruning())
 
-    expect(entry.referencedFiles).toEqual([renamedKey(bundle)])
+    expect(entry.referencedFiles).toEqual([renamedName(bundle)])
   })
 
-  // Renaming replaces an entry in `bundle`, which Rolldown does not support: it logs that the
-  // assignment is ignored and drops the asset, so the build exits 0 having shipped no
-  // stylesheet at all and the app renders unstyled. Pruning without renaming is the safe
-  // subset — correct bytes, weaker cache key.
-  test('prunes without renaming when renaming is not available', () => {
+  // Pruning and renaming are one operation. Pruned bytes under a name describing the unpruned
+  // ones is how a stale stylesheet outlives a deploy: a change to reachability alone leaves
+  // identical source CSS under an identical name with different content, and a CDN keeps
+  // serving the old one. Shipping a larger sheet is the better failure.
+  test('does not prune either when renaming is unavailable', () => {
     const { bundle, entry } = bundleWith(chunk())
 
     optimizeStaticCssAssets(bundle as never, sessionWithPruning(), { rename: false })
 
-    expect(Object.keys(bundle)).toContain(CSS_NAME)
-    expect(String((bundle[CSS_NAME] as { source: string }).source)).not.toContain('345.6789px')
-    // Still carries the marker, so the emitted-asset guard does not read this as a lost sheet.
-    expect(String((bundle[CSS_NAME] as { source: string }).source)).toContain('--made-with-bamboo')
+    const asset = bundle[CSS_NAME] as { source: string; fileName: string }
+    expect(asset.fileName).toBe(CSS_NAME)
+    expect(String(asset.source)).toContain('345.6789px')
+    expect(String(asset.source)).toContain('--made-with-bamboo')
     expect(entry.code).toContain(CSS_NAME)
   })
 
