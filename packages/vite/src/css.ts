@@ -103,6 +103,18 @@ const replaceAssetReferences = (
 }
 
 /**
+ * Could this bundle entry be the generated stylesheet?
+ *
+ * The filename is checked before the bytes because the alternative decodes every asset in the
+ * bundle to a UTF-8 string in order to search it — fonts, images and sourcemaps included. On an
+ * app with a large asset graph that is seconds of decode and a lot of garbage, twice over, to
+ * answer a question the extension already answers. The marker is a CSS custom property, so it
+ * cannot occur anywhere but CSS.
+ */
+const carriesGeneratedCss = (output: Rollup.OutputBundle[string]): output is Rollup.OutputAsset =>
+  output.type === 'asset' && output.fileName.endsWith('.css')
+
+/**
  * Prune and rename compiler-owned CSS, then give changed assets a hash of their final bytes.
  *
  * Rollup has already expanded `[hash]` when `generateBundle` runs. Mutating only `source`
@@ -117,7 +129,7 @@ export const optimizeStaticCssAssets = (
   const { rename = true } = options
 
   for (const [bundleName, output] of Object.entries(bundle)) {
-    if (output.type !== 'asset') continue
+    if (!carriesGeneratedCss(output)) continue
     const source = typeof output.source === 'string' ? output.source : Buffer.from(output.source).toString()
     if (!source.includes('--made-with-bamboo')) continue
 
@@ -320,7 +332,7 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
         if (!session.transformedFiles.size) return
 
         const emitsMarkerAsset = Object.values(bundle).some((output) => {
-          if (output.type !== 'asset') return false
+          if (!carriesGeneratedCss(output)) return false
           const source = typeof output.source === 'string' ? output.source : Buffer.from(output.source).toString()
           return source.includes('--made-with-bamboo')
         })
