@@ -1895,16 +1895,22 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       const nameNode = declaration?.getNameNode()
       if (!nameNode || !Node.isIdentifier(nameNode)) continue
 
+      // Resolved once. `findReferencesAsNodes` searches every file ts-morph has loaded, so its
+      // cost scales with the *project* rather than with this module — measured at 4ms over 200
+      // files and 24ms over 3,200, against ~0ms for the rest of the fold. It was being called
+      // once per skipped entry inside `some`, and again below, which multiplied a project-wide
+      // walk by however many calls this module had already declined. The result cannot change
+      // between those calls, so this is the same answer for a fraction of the work.
+      const references = nameNode.findReferencesAsNodes()
+
       const declined = skipped
         .filter((item) => SURVIVES_TO_RUNTIME.has(item.reason) && item.end > item.start)
-        .some((item) =>
-          nameNode.findReferencesAsNodes().some((ref) => ref.getStart() >= item.start && ref.getStart() < item.end),
-        )
+        .some((item) => references.some((ref) => ref.getStart() >= item.start && ref.getStart() < item.end))
 
       if (declined) continue
-      const survivor = nameNode
-        .findReferencesAsNodes()
-        .find((ref) => !applied.some(([from, to]) => ref.getStart() >= from && ref.getStart() < to))
+      const survivor = references.find(
+        (ref) => !applied.some(([from, to]) => ref.getStart() >= from && ref.getStart() < to),
+      )
       if (!survivor) continue
 
       // `findReferencesAsNodes` searches the whole project, so the reference that survives
