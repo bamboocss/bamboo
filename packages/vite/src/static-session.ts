@@ -82,9 +82,24 @@ export const createStaticCompilationSession = (
         .join(' ')
     },
     markClassUsed(className) {
-      const semantic = session.semanticClasses.get(className) ?? className
-      // Stored in selector form because the CSS reachability pass reads escaped selectors.
-      session.usedClasses.add(esc(semantic))
+      // Split, like `allocateClassString` above. A folded call reports one entry per call
+      // site, and a call producing several atoms reports them space-joined — every property
+      // under one condition, which is why `_before: { content, width }` arrives as a single
+      // string. Escaping that whole string yielded one key containing a space, matching no
+      // class, so both atoms were left unmarked and reachability pruning deleted them.
+      //
+      // It read as "conditional styles are compiled into class names whose rules are never
+      // emitted", and it fell hardest on pseudo-elements: `content` almost always travels
+      // with another property, so `::before` and `::after` disappeared outright, while
+      // single-declaration hovers and breakpoints survived and multi-declaration ones did
+      // not. An atom that merged into a multi-class selector escaped the prune by accident,
+      // which is why some of the rules were still there.
+      for (const token of className.split(' ')) {
+        if (!token) continue
+        const semantic = session.semanticClasses.get(token) ?? token
+        // Stored in selector form because the CSS reachability pass reads escaped selectors.
+        session.usedClasses.add(esc(semantic))
+      }
     },
   }
   return session

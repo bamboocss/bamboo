@@ -1,3 +1,4 @@
+import { truncateList } from '@bamboocss/shared'
 import postcss from 'postcss'
 import selectorParser from 'postcss-selector-parser'
 import type { StaticCompilationSession } from './static-session'
@@ -62,6 +63,61 @@ export const pruneStaticCss = (
       rule.remove()
       removed = true
     })
+  }
+
+  // Every atom the compiler emitted must still have a rule.
+  //
+  // Checked here rather than after the whole pass because this is the one point where both
+  // sides are spelled the same way: `usedClasses` holds escaped semantic names, and dense
+  // renaming below rewrites the sheet out of that space.
+  //
+  // Scoped to `prunableClasses`, so only atoms this pass could have removed are asserted —
+  // a `staticCss` safelist entry is not graph-owned and is not its business.
+  //
+  // The failure this exists for is silent: class names reach the JS and the markup, the sheet
+  // is present and carries the marker, the build exits 0, and the app renders unstyled. It
+  // was found by grepping a shipped bundle. `markClassUsed` not splitting a space-joined
+  // class string took every `::before` and `::after` rule out of one application's CSS.
+  if (prune) {
+    const present = new Set<string>()
+    root.walkRules((rule) => {
+      if (!isUtilityRule(rule)) return
+      try {
+        selectorParser((selectors) => {
+          selectors.walkClasses((classNode) => {
+            present.add(classNode.toString().slice(1))
+          })
+        }).processSync(rule.selector)
+      } catch {
+        // Unparseable authored selectors carry no compiler-owned atom to account for.
+      }
+    })
+
+    const orphaned: string[] = []
+    for (const className of session.usedClasses) {
+      // A class name cannot contain whitespace, so an entry that does is a malformed key
+      // rather than a class — and every atom it was meant to stand for is unmarked and about
+      // to be pruned. Checked before the `prunableClasses` filter precisely because such an
+      // entry matches nothing there, which is how the original bug slipped past this guard
+      // when it was first written.
+      if (/\s/.test(className)) {
+        orphaned.push(className)
+        continue
+      }
+      if (!session.prunableClasses.has(className)) continue
+      if (present.has(className)) continue
+      orphaned.push(className)
+    }
+
+    if (orphaned.length) {
+      throw new Error(
+        `bamboocss: ${orphaned.length} compiled class(es) have no rule in the emitted stylesheet. ` +
+          `Elements carrying them would render unstyled.\n\n` +
+          `${truncateList(orphaned, { unit: 'class', separator: '\n' })}\n\n` +
+          `This is a compiler bug rather than anything to fix in your source — please report it ` +
+          `with the class names above.`,
+      )
+    }
   }
 
   if (session.denseClassNames) {

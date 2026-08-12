@@ -422,3 +422,102 @@ describe('vite plugin, real rebuild', () => {
     }
   }, 120_000)
 })
+
+/**
+ * Every class the compiler emits must have a rule, including conditional ones.
+ *
+ * The assertions above check `.${token} {`, which only matches a *flat* rule — a conditional
+ * atom is `.x:hover {`, `.x::before {`, or nested inside `@media`, so none were covered by
+ * anything. A report that conditional styles compiled into class names whose rules never
+ * reached the sheet had nothing in the suite that could confirm or refute it, and the cause
+ * turned out to be real: reachability pruning deleted them.
+ *
+ * Kept in this file rather than its own so the heavy real builds stay on one worker; as a
+ * separate file it ran concurrently with them and starved the CLI suite's subprocesses.
+ */
+const conditionalEntry = join(cwd, 'src/__conditional-atoms-test.tsx')
+
+/** Widths are unique per condition, so a missing rule names the shape that lost it. */
+const PROBES: Array<[string, string]> = [
+  ['flat', '11.1px'],
+  ['_hover', '22.2px'],
+  ['_before', '33.3px'],
+  ['_after', '44.4px'],
+  ['_focus', '55.5px'],
+  ['md', '66.6px'],
+  ['[data-open]', '77.7px'],
+  ['recipe base', '88.8px'],
+  ['recipe _hover', '99.9px'],
+  ['recipe _before', '12.34px'],
+  ['recipe variant _focus', '56.78px'],
+]
+
+describe('conditional atoms reach the emitted stylesheet', () => {
+  afterEach(() => {
+    rmSync(conditionalEntry, { force: true })
+  })
+
+  test('every emitted class has a rule, and every condition survives', async () => {
+    writeFileSync(
+      conditionalEntry,
+      `
+      import 'virtual:bamboo.css'
+      import { css, cva } from '../styled-system/css'
+
+      export const flat = css({ width: '[11.1px]' })
+      export const hover = css({ _hover: { width: '[22.2px]' } })
+      export const before = css({ _before: { content: '""', width: '[33.3px]' } })
+      export const after = css({ _after: { content: '""', width: '[44.4px]' } })
+      export const focus = css({ _focus: { width: '[55.5px]' } })
+      export const media = css({ md: { width: '[66.6px]' } })
+      export const dataAttr = css({ '&[data-open]': { width: '[77.7px]' } })
+
+      const box = cva({
+        base: {
+          width: '[88.8px]',
+          _hover: { width: '[99.9px]' },
+          _before: { content: '""', width: '[12.34px]' },
+        },
+        variants: { tone: { loud: { _focus: { width: '[56.78px]' } } } },
+      })
+      export const recipe = box({ tone: 'loud' })
+      `,
+    )
+
+    const result = (await build({
+      root: cwd,
+      logLevel: 'silent',
+      css: { postcss: { plugins: [] } },
+      plugins: [bamboocss({ cwd, reportSummary: false })],
+      build: {
+        write: false,
+        minify: false,
+        lib: { entry: conditionalEntry, formats: ['es'], fileName: 'conditional-atoms' },
+        rollupOptions: { external: [/^react/] },
+      },
+    })) as Rollup.RollupOutput[]
+
+    const js = result[0]!.output.map((output) => ('code' in output ? output.code : '')).join('\n')
+    const css = result[0]!.output
+      .map((output) => ('source' in output && typeof output.source === 'string' ? output.source : ''))
+      .join('\n')
+
+    // Collected rather than asserted one at a time: which conditions survive and which do
+    // not is the diagnostic, and failing on the first hides the shape of the failure.
+    const missing = PROBES.filter(([, width]) => !css.includes(width)).map(([label, width]) => `${label} (${width})`)
+    expect(missing, 'conditions with no rule in the emitted sheet').toEqual([])
+
+    // And the reverse direction: nothing the compiler wrote into the JS may lack a selector.
+    // `.token` rather than `.token {`, so a conditional or nested rule counts.
+    const emitted = new Set<string>()
+    for (const match of js.matchAll(/"([^"\n]*)"/g)) {
+      for (const token of (match[1] ?? '').split(' ')) {
+        if (/^_[A-Za-z]+$/.test(token)) emitted.add(token)
+      }
+    }
+
+    expect(emitted.size).toBeGreaterThan(PROBES.length - 2)
+    const orphaned = [...emitted].filter((token) => !css.includes(`.${token}`))
+    expect(orphaned, 'classes emitted into JS with no rule in the sheet').toEqual([])
+  }, 120_000)
+})
