@@ -82,7 +82,17 @@ const replaceAssetReferences = (
     }
 
     replaceChunkReference(output, bundle, previous, next, sourcemap)
-    output.referencedFiles = output.referencedFiles.map(replace)
+
+    // Rollup's type declares this as required, so the guard reads as redundant and is not.
+    // Our peer range is `vite: ">=5"`, which covers a Rollup-compatible bundler driving the
+    // build, and a plugin may also put a chunk-shaped entry in the bundle without it. A
+    // client hit exactly that and shipped a patched `dist`.
+    //
+    // Skipping is correct rather than a workaround: the list mirrors references the chunk's
+    // own code already carries, and `replaceChunkReference` above rewrote those. An absent
+    // list means there is no second copy to keep in step.
+    const referencedFiles = (output as typeof output & { referencedFiles?: string[] }).referencedFiles
+    if (referencedFiles) output.referencedFiles = referencedFiles.map(replace)
 
     // Vite's HTML, manifest, preload, and SSR-manifest passes consume this metadata. It is
     // deliberately not in Rollup's public type.

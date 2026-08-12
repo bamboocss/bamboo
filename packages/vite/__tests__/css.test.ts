@@ -1,8 +1,9 @@
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { esc } from '@bamboocss/shared'
 import { describe, expect, test } from 'vitest'
-import { bamboocssCss, VIRTUAL_CSS_ID } from '../src/css'
+import { bamboocssCss, optimizeStaticCssAssets, VIRTUAL_CSS_ID } from '../src/css'
 import { createStaticCompilationSession } from '../src/static-session'
 
 /**
@@ -113,4 +114,89 @@ describe('the virtual stylesheet', () => {
       rmSync(fixtureDir, { recursive: true, force: true })
     }
   }, 60_000)
+})
+
+/**
+ * `optimizeStaticCssAssets` walks a bundle Vite handed us, not one we built. Rollup's types
+ * promise every field these touch, but the peer range is `vite: ">=5"` — which covers a
+ * Rollup-compatible bundler — and any plugin can put a chunk-shaped entry in the bundle
+ * before this runs. A client hit an undefined `referencedFiles` and shipped a patched `dist`.
+ *
+ * These drive the function over hand-built bundles, so a shape Rollup never produces can be
+ * asserted. The end-to-end rename is covered against real Rollup in
+ * `sandbox/runtime-perf/__tests__/vite-plugin.test.ts`; that path cannot express this one.
+ */
+describe('late CSS asset renaming', () => {
+  const CSS_NAME = 'assets/index-aaaaaaaa.css'
+
+  const prunableSheet = () =>
+    `@layer reset, base, tokens, recipes, utilities;` +
+    `@layer utilities{.h_\\[345\\.6789px\\]{height:345.6789px}}` +
+    `:root{--made-with-bamboo:🌱}`
+
+  const sessionWithPruning = () => {
+    const session = createStaticCompilationSession()
+    session.prunableClasses.add(esc('h_[345.6789px]'))
+    return session
+  }
+
+  const CHUNK_NAME = 'assets/entry-bbbbbbbb.js'
+
+  interface TestChunk {
+    type: 'chunk'
+    fileName: string
+    code: string
+    map: null
+    referencedFiles?: string[]
+  }
+
+  const cssAsset = () => ({ type: 'asset' as const, fileName: CSS_NAME, names: [], source: prunableSheet() })
+
+  /** `referencedFiles` omitted entirely, which is the shape Rollup's type says cannot happen. */
+  const chunk = (referencedFiles?: string[]): TestChunk => ({
+    type: 'chunk',
+    fileName: CHUNK_NAME,
+    code: `import ${JSON.stringify(`./${CSS_NAME}`)}\n`,
+    map: null,
+    ...(referencedFiles ? { referencedFiles } : {}),
+  })
+
+  /** The bundle is mutated in place, so the entry is held rather than read back out by key. */
+  const bundleWith = (entry: TestChunk) => ({
+    bundle: { [CSS_NAME]: cssAsset(), [CHUNK_NAME]: entry } as Record<string, unknown>,
+    entry,
+  })
+
+  const renamedKey = (bundle: Record<string, unknown>) =>
+    Object.keys(bundle).find((name) => name !== CHUNK_NAME && name.endsWith('.css'))
+
+  test('renames the asset and rewrites chunk code when referencedFiles is absent', () => {
+    const { bundle, entry } = bundleWith(chunk())
+
+    expect(() => optimizeStaticCssAssets(bundle as never, sessionWithPruning())).not.toThrow()
+
+    const next = renamedKey(bundle)
+    expect(next).toBeDefined()
+    expect(next).not.toBe(CSS_NAME)
+    expect(bundle[CSS_NAME]).toBeUndefined()
+    // The rename is worthless if the importer still points at the old name.
+    expect(entry.code).toContain(next!)
+    expect(entry.code).not.toContain(CSS_NAME)
+  })
+
+  test('rewrites referencedFiles when the bundler does provide it', () => {
+    const { bundle, entry } = bundleWith(chunk([CSS_NAME]))
+
+    optimizeStaticCssAssets(bundle as never, sessionWithPruning())
+
+    expect(entry.referencedFiles).toEqual([renamedKey(bundle)])
+  })
+
+  test('leaves the asset name alone when pruning changed nothing', () => {
+    const { bundle } = bundleWith(chunk())
+
+    optimizeStaticCssAssets(bundle as never, createStaticCompilationSession())
+
+    expect(Object.keys(bundle)).toContain(CSS_NAME)
+  })
 })
