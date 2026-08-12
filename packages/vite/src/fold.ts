@@ -16,7 +16,7 @@ import {
   type DynamicStyleMap,
   type RecipeEntry,
 } from './fold-recipe'
-import { accountsForSource, isStaticBox } from './fold-analysis'
+import { accountsForSource, isStaticBox, localReferencesTo } from './fold-analysis'
 import { createRuntimeCss, createRuntimeToken, createRuntimeTokenValue, type RuntimeCss } from './runtime-css'
 import type { StaticStyleSetCompiler } from './style-set'
 
@@ -66,16 +66,6 @@ export interface SkippedCall {
   reason: SkipReason
   start: number
   end: number
-  /**
-   * Where the surviving reference actually is, when that is not the module being folded.
-   *
-   * A recipe declared in one module and referenced from another is found through the
-   * project-wide symbol graph, so `start`/`end` index the *referencing* file. Reporting them
-   * against the folded module produced a line number derived from the wrong text — one past
-   * EOF in the case that surfaced this — and named the declaration rather than the call site
-   * that has to change. Both are carried so the diagnostic can point at the real one.
-   */
-  origin?: { filePath: string; line: number }
 }
 
 export interface FoldResult {
@@ -1875,6 +1865,20 @@ export const foldSource = (options: FoldOptions): FoldResult => {
    * also allowed to remain when it joins an arbitrary external class; only fully analyzable
    * arguments receive Bamboo's semantic composition guarantee.
    */
+  /** The specifier this module imported `binding` through, if it did. */
+  function importSpecifierFor(sourceFile: SourceFile, binding: string) {
+    for (const declaration of sourceFile.getImportDeclarations()) {
+      if (declaration.isTypeOnly()) continue
+      for (const named of declaration.getNamedImports()) {
+        if (named.isTypeOnly()) continue
+        if ((named.getAliasNode() ?? named.getNameNode()).getText() === binding) {
+          return named.getAliasNode() ?? named.getNameNode()
+        }
+      }
+    }
+    return undefined
+  }
+
   function reportRuntimeBindings() {
     // Not `parserResult`'s boxes: one can carry a node from any module the extractor resolved
     // through, and this reports offsets against *this* module's text.
@@ -1887,21 +1891,36 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     // declaration's symbol references and require every value read to sit inside a range the
     // compiler actually replaced. Otherwise a static build could remove the recipe layer
     // while silently retaining an API whose result still depends on it.
-    for (const [binding, entry] of recipeConfigs) {
+    // Bindings this module imported that are inline recipes, whether or not it calls one.
+    // `recipeConfigs` only learns about an imported recipe while lowering a *call*, so a
+    // module that merely reads one — `export const alias = badge`, `badge.raw(...)` — knew
+    // nothing about it. That read is exactly the unsafe shape this scan exists to catch.
+    const importedRecipeBindings = new Set<string>(
+      (parserResult as { importedRecipes?: Map<string, unknown> }).importedRecipes?.keys() ?? [],
+    )
+
+    for (const binding of new Set([...recipeConfigs.keys(), ...importedRecipeBindings])) {
+      const entry = recipeConfigs.get(binding)
       if (entry === AMBIGUOUS) continue
-      const definition = entry.box?.getNode?.()
-      if (!definition || definition.getSourceFile() !== sourceFile) continue
-      const declaration = definition.getFirstAncestorByKind(SyntaxKind.VariableDeclaration)
-      const nameNode = declaration?.getNameNode()
+      if (!entry && !importedRecipeBindings.has(binding)) continue
+
+      // Where this module binds the name: the variable it declares, or the import specifier it
+      // arrived through. A recipe declared elsewhere used to be skipped entirely, which left
+      // the *declaring* module answering for reads it cannot see and reporting a position in
+      // another file's text. Each module now answers only about its own, so a consumer that
+      // reads the binding unsafely reports itself, and one whose calls all compiled reports
+      // nothing.
+      const definition = entry?.box?.getNode?.()
+      const declaredHere = definition?.getSourceFile() === sourceFile
+      const nameNode = declaredHere
+        ? definition?.getFirstAncestorByKind(SyntaxKind.VariableDeclaration)?.getNameNode()
+        : importSpecifierFor(sourceFile, binding)
+
       if (!nameNode || !Node.isIdentifier(nameNode)) continue
 
-      // Resolved once. `findReferencesAsNodes` searches every file ts-morph has loaded, so its
-      // cost scales with the *project* rather than with this module — measured at 4ms over 200
-      // files and 24ms over 3,200, against ~0ms for the rest of the fold. It was being called
-      // once per skipped entry inside `some`, and again below, which multiplied a project-wide
-      // walk by however many calls this module had already declined. The result cannot change
-      // between those calls, so this is the same answer for a fraction of the work.
-      const references = nameNode.findReferencesAsNodes()
+      // Syntactic, so no language service is involved. See `localReferencesTo` for why that
+      // matters: one query binds the project's whole `.d.ts` closure into the bundler's heap.
+      const references = localReferencesTo(sourceFile, binding, nameNode)
 
       const declined = skipped
         .filter((item) => SURVIVES_TO_RUNTIME.has(item.reason) && item.end > item.start)
@@ -1913,19 +1932,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       )
       if (!survivor) continue
 
-      // `findReferencesAsNodes` searches the whole project, so the reference that survives
-      // is often in another module. Its offsets index *that* file, and reporting them against
-      // this one yields a position in text they do not describe. Carry the reference's own
-      // file and line, and let the offsets stay local so nothing else has to special-case them.
-      const survivorFile = survivor.getSourceFile()
-      const foreign = survivorFile !== sourceFile
-      skipped.push({
-        name: binding,
-        reason: 'runtime-binding',
-        start: foreign ? nameNode.getStart() : survivor.getStart(),
-        end: foreign ? nameNode.getEnd() : survivor.getEnd(),
-        ...(foreign ? { origin: { filePath: survivorFile.getFilePath(), line: survivor.getStartLineNumber() } } : {}),
-      })
+      skipped.push({ name: binding, reason: 'runtime-binding', start: survivor.getStart(), end: survivor.getEnd() })
     }
 
     const bambooModules = [

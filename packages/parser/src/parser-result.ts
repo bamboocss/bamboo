@@ -29,6 +29,17 @@ export class ParserResult implements ParserResultInterface {
   unresolved: UnresolvedStyle[] = []
 
   /**
+   * Inline recipe bindings this module imported, whether or not it ever calls one.
+   *
+   * `origin` on a `cva-call` only exists for a call. A module that merely *reads* an imported
+   * recipe — `export const alias = badge`, `badge.raw(...)` — produces no call, so nothing
+   * downstream could tell that the binding was a recipe at all. The declaring module used to
+   * answer for those reads through a project-wide symbol search; now that each module answers
+   * only about its own text, the consumer needs to know which of its imports are recipes.
+   */
+  importedRecipes: Map<string, { filePath: string; name: string }> = new Map()
+
+  /**
    * Calls to a name the pattern or recipe entrypoint no longer exports.
    *
    * Separate from `unresolved`, which grades a call the build *did* see and could only

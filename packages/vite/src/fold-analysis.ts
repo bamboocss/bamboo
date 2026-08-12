@@ -497,3 +497,98 @@ const collectModuleScopeNames = (sourceFile: SourceFile): Set<string> => {
 
   return names
 }
+
+/**
+ * Every identifier in this module that reads the binding `name` declared at `declaration`.
+ *
+ * Replaces `nameNode.findReferencesAsNodes()`, which is a TypeScript *language-service*
+ * query. The first such query forces `synchronizeHostData` -> `createProgram`, binding the
+ * whole transitive `.d.ts` closure of the project — the exact cost `createTsProject`'s
+ * `skipAddingFilesFromTsConfig`, `skipFileDependencyResolution` and `skipLoadingLibFiles`
+ * exist to avoid, and which none of them govern. On a 2,278-file app it loaded 24,081 source
+ * files and 4.4 GB of AST and symbols, 80% of the heap, and OOMed the build. The retained
+ * strings were `googleapis` and `typescript`; none of it can reference a recipe binding.
+ *
+ * A recipe binding is module-scoped or imported, so every read of it is in this file. A
+ * syntactic walk answers the same question over one AST the parser has already built.
+ *
+ * ## Where this deliberately over-reports
+ *
+ * Shadowing is not resolved. If any nested scope declares the same name, every matching
+ * identifier is returned rather than only the ones that bind to `declaration`. That direction
+ * is chosen on purpose: over-reporting fails the build with a diagnostic naming a real line,
+ * while under-reporting ships an element whose class has no rule behind it and says nothing.
+ * Shadowing a recipe binding is rare; silently shipping unstyled markup is not recoverable.
+ */
+export const localReferencesTo = (sourceFile: SourceFile, name: string, declaration: Node): Node[] => {
+  const references: Node[] = []
+
+  for (const identifier of sourceFile.getDescendantsOfKind(SyntaxKind.Identifier)) {
+    if (identifier.getText() !== name) continue
+    // The declaration itself is not a read of it. For a local recipe that is the variable's
+    // name node; for an imported one it is the import specifier, which stays in the module
+    // and would otherwise read as a surviving reference in every consumer.
+    if (identifier === declaration) continue
+
+    const parent = identifier.getParent()
+    if (!parent) continue
+
+    // `x.name` names a property, not this binding. Shorthand `{ name }` is a read and is
+    // deliberately not excluded here.
+    if (Node.isPropertyAccessExpression(parent) && parent.getNameNode() === identifier) continue
+    if (Node.isPropertyAssignment(parent) && parent.getNameNode() === identifier) continue
+    if (Node.isBindingElement(parent) && parent.getPropertyNameNode() === identifier) continue
+
+    // A JSX tag is an intrinsic element or a component, never this binding — and a recipe
+    // named after an element it styles (`button`, `input`) is the common case, not an edge
+    // one. `<button className={button(...)} />` must not read as a reference to itself.
+    if (
+      (Node.isJsxOpeningElement(parent) || Node.isJsxSelfClosingElement(parent) || Node.isJsxClosingElement(parent)) &&
+      parent.getTagNameNode() === identifier
+    ) {
+      continue
+    }
+    if (Node.isJsxAttribute(parent) && parent.getNameNode() === identifier) continue
+
+    // A member's *name* is not a read of a module binding, however it is spelled.
+    if (
+      (Node.isMethodDeclaration(parent) ||
+        Node.isPropertyDeclaration(parent) ||
+        Node.isGetAccessorDeclaration(parent) ||
+        Node.isSetAccessorDeclaration(parent) ||
+        Node.isMethodSignature(parent) ||
+        Node.isPropertySignature(parent) ||
+        Node.isEnumMember(parent)) &&
+      parent.getNameNode() === identifier
+    ) {
+      continue
+    }
+
+    // Another declaration of the same name shadows this binding rather than reading it.
+    if (
+      (Node.isVariableDeclaration(parent) ||
+        Node.isParameterDeclaration(parent) ||
+        Node.isFunctionDeclaration(parent) ||
+        Node.isClassDeclaration(parent) ||
+        Node.isBindingElement(parent)) &&
+      parent.getNameNode() === identifier
+    ) {
+      continue
+    }
+    // A declaration of the same name elsewhere — including the import specifier's own
+    // `propertyName` in `import { name as other }` — is not a read either.
+    if (Node.isImportSpecifier(parent) || Node.isExportSpecifier(parent)) {
+      if (parent.getNameNode() !== identifier) continue
+      // `export { name }` re-exports the binding, which is a read that escapes the module.
+      if (Node.isExportSpecifier(parent)) {
+        references.push(identifier)
+        continue
+      }
+      continue
+    }
+
+    references.push(identifier)
+  }
+
+  return references
+}

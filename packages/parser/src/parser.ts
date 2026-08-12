@@ -79,6 +79,8 @@ export function createParser(context: ParserOptions) {
       return parserResult
     }
 
+    parserResult.importedRecipes = importedRecipes
+
     for (const binding of importedRecipes.keys()) {
       file.addLocalRecipe(binding)
     }

@@ -429,7 +429,20 @@ export const f = () => {
  * that does not contain it. A client saw `app/styles.ts:841` on a file with fewer lines than
  * that, and the call that actually had to change was in a different module entirely.
  */
-describe('a surviving reference in another module', () => {
+/**
+ * Which module answers for a reference that survives.
+ *
+ * It used to be the declaring one, through a project-wide symbol search. That search is a
+ * TypeScript language-service query, and the first one binds the project's whole `.d.ts`
+ * closure into the bundler's heap — 24,081 source files and 4.4 GB on a 2,278-file app, which
+ * OOMed the build. It also reported another file's offsets against the declaring module's
+ * text, giving a line number past its end.
+ *
+ * Each module now answers only about its own text. The declaring module reports its own
+ * unsafe reads; a consumer reports its own. A consumer whose calls all compiled reports
+ * nothing, which is the false positive that made an exported recipe unusable.
+ */
+describe('who reports a surviving reference', () => {
   const DEFINITION = `import { cva } from 'styled-system/css'
 export const heading = cva({
   base: { display: 'flex' },
@@ -437,38 +450,70 @@ export const heading = cva({
 })
 `
 
-  test('is reported against the file it is in, not the one being folded', () => {
+  const survivorOf = (result: { skipped: Array<{ reason: string; start: number; end: number }> }) =>
+    result.skipped.find((entry) => entry.reason === 'runtime-binding')
+
+  test('a consumer that reads the binding reports itself', () => {
     const fixture = createFoldFixture()
-    // Padded so an offset from this file cannot coincidentally be a valid one in the smaller
-    // definition module — which is the whole failure being pinned.
+    fixture.addFiles({ 'app/styles.ts': DEFINITION })
+
+    const consumer = `import { heading } from './styles'\nexport const alias = heading\n`
+    const result = fixture.fold(consumer, 'app/consumer.tsx', true)
+    const survivor = survivorOf(result)
+
+    expect(survivor).toBeDefined()
+    // Offsets index the module being folded, which is the whole point of moving the report here.
+    expect(survivor!.start).toBeLessThan(consumer.length)
+    expect(survivor!.end).toBeLessThanOrEqual(consumer.length)
+  })
+
+  test('a consumer reaching the recipe through a member reports itself', () => {
+    const fixture = createFoldFixture()
+    fixture.addFiles({ 'app/styles.ts': DEFINITION })
+
+    const result = fixture.fold(
+      `import { heading } from './styles'\nexport const raw = heading.raw({ tone: 'loud' })\n`,
+      'app/member.tsx',
+      true,
+    )
+
+    expect(survivorOf(result)).toBeDefined()
+  })
+
+  test('a consumer whose call compiled reports nothing', () => {
+    const fixture = createFoldFixture()
+    fixture.addFiles({ 'app/styles.ts': DEFINITION })
+
+    const result = fixture.fold(
+      `import { heading } from './styles'\nexport const cls = (t) => heading({ tone: t })\n`,
+      'app/ok.tsx',
+      true,
+    )
+
+    expect(survivorOf(result)).toBeUndefined()
+  })
+
+  test('the declaring module does not answer for another file', () => {
+    const fixture = createFoldFixture()
     fixture.addFiles({
       'app/faraway.tsx': `${'// filler\n'.repeat(400)}import { heading } from './styles'\nexport const passed = heading\n`,
     })
 
     const result = fixture.fold(DEFINITION, 'app/styles.ts', true)
-    const survivor = result.skipped.find((entry) => entry.reason === 'runtime-binding')
 
-    expect(survivor).toBeDefined()
-    expect(survivor!.origin?.filePath).toContain('faraway.tsx')
-    expect(survivor!.origin?.line).toBeGreaterThan(400)
-
-    // The local offsets have to stay inside the folded module, or every consumer of them —
-    // `lineAt`, sourcemaps, range checks — is reading text that does not contain them.
-    expect(survivor!.start).toBeLessThan(DEFINITION.length)
-    expect(survivor!.end).toBeLessThanOrEqual(DEFINITION.length)
+    expect(survivorOf(result)).toBeUndefined()
   })
 
-  test('a same-module reference carries no origin and stays local', () => {
+  test('a same-module reference is still reported, locally', () => {
     const fixture = createFoldFixture()
     const local = `import { cva } from 'styled-system/css'
 const heading = cva({ base: { display: 'flex' } })
 export const passed = heading
 `
     const result = fixture.fold(local, 'app/local.tsx', true)
-    const survivor = result.skipped.find((entry) => entry.reason === 'runtime-binding')
+    const survivor = survivorOf(result)
 
     expect(survivor).toBeDefined()
-    expect(survivor!.origin).toBeUndefined()
     expect(survivor!.start).toBeLessThan(local.length)
   })
 })
