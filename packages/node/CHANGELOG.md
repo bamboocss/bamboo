@@ -1,5 +1,34 @@
 # @bamboocss/node
 
+## 1.35.0
+
+### Minor Changes
+
+- 9bfcf31: Replace Vite's runtime styling and named-recipe output with mandatory whole-program compilation.
+
+  The compiler resolves `css`, `cva`, `sva`, config recipes, static `viewTransition` bags, and statically analyzable
+  `cx` composition before allocating classes. Recipe identity no longer enters declaration identity, so identical
+  declarations share one global atom across every API and source file. Production builds omit recipe layers, prune
+  unreachable graph atoms and transition rules, compile finite runtime recipe selections into reduced decision tables,
+  and use deterministic or build-local compact class names. Compilation now runs in development too, and unresolved
+  runtime styling is always an error. The former transform, partial-folding, runtime-fallback, and opt-in compatibility
+  options have been removed.
+
+### Patch Changes
+
+- Updated dependencies [9bfcf31]
+  - @bamboocss/core@1.35.0
+  - @bamboocss/generator@1.35.0
+  - @bamboocss/types@1.35.0
+  - @bamboocss/reporter@1.35.0
+  - @bamboocss/parser@1.35.0
+  - @bamboocss/config@1.35.0
+  - @bamboocss/logger@1.35.0
+  - @bamboocss/plugin-svelte@1.35.0
+  - @bamboocss/plugin-vue@1.35.0
+  - @bamboocss/token-dictionary@1.35.0
+  - @bamboocss/shared@1.35.0
+
 ## 1.34.1
 
 ### Patch Changes
