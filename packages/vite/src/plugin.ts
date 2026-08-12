@@ -343,7 +343,17 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
         totals.files++
         totals.skipped.set('compile-failed', (totals.skipped.get('compile-failed') ?? 0) + 1)
         addSurvivor({ file: filePath, line: 1, name: 'compiler', reason: 'compile-failed' })
-        if (command === 'serve') throw error
+        if (command === 'serve') {
+          // Normalized, never rethrown as caught. `catch` binds `unknown`, and anything under
+          // the fold — a config hook, a dependency, a bare `throw 'string'` — may throw a
+          // primitive. Vite's dev error middleware puts what it is given into a `WeakSet` to
+          // dedupe it, which throws `TypeError: Invalid value used in weak set` on anything
+          // that is not an object. The real failure is then lost behind a message about weak
+          // sets, in the one mode where the user is watching the terminal for it.
+          throw error instanceof Error
+            ? error
+            : new Error(`bamboocss: failed to compile ${filePath}: ${String(error)}`, { cause: error })
+        }
         return null
       }
 
