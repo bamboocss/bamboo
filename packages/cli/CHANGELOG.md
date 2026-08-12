@@ -1,5 +1,19 @@
 # @bamboocss/dev
 
+## 1.37.2
+
+### Patch Changes
+
+- Updated dependencies [35a689c]
+  - @bamboocss/node@1.37.2
+  - @bamboocss/postcss@1.37.2
+  - @bamboocss/logger@1.37.2
+  - @bamboocss/preset-bamboo@1.37.2
+  - @bamboocss/preset-base@1.37.2
+  - @bamboocss/shared@1.37.2
+  - @bamboocss/token-dictionary@1.37.2
+  - @bamboocss/types@1.37.2
+
 ## 1.37.1
 
 ### Patch Changes

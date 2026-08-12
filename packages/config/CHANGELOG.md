@@ -1,5 +1,15 @@
 # @bamboocss/config
 
+## 1.37.2
+
+### Patch Changes
+
+- @bamboocss/logger@1.37.2
+- @bamboocss/preset-bamboo@1.37.2
+- @bamboocss/preset-base@1.37.2
+- @bamboocss/shared@1.37.2
+- @bamboocss/types@1.37.2
+
 ## 1.37.1
 
 ### Patch Changes
