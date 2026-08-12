@@ -22,6 +22,7 @@ export const createFoldFixture = (userConfig?: Parameters<typeof createContext>[
       parserResult,
       filePath,
       runtimeCss,
+      styleCompiler,
       parseModule: (path) => ctx.project.parseSourceFile(path),
       reportSurvivors,
       sourceFile,
@@ -89,6 +90,7 @@ export const createFoldFixture = (userConfig?: Parameters<typeof createContext>[
       parserResult,
       filePath,
       runtimeCss,
+      styleCompiler,
       parseModule: (path) => ctx.project.parseSourceFile(path),
       recipeConfigCache,
     })

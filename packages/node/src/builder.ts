@@ -290,12 +290,21 @@ export class Builder {
   }: { layerParams?: boolean; includeRecipes?: boolean } = {}) => {
     const ctx = this.getContextOrThrow()
     const sheet = ctx.createSheet()
-    if (layerParams) ctx.appendLayerParams(sheet)
+    if (layerParams) {
+      if (includeRecipes) {
+        ctx.appendLayerParams(sheet)
+      } else {
+        const recipeLayer = ctx.config.layers?.recipes ?? 'recipes'
+        sheet.layers.root.prepend(
+          `@layer ${sheet.layers.layerNames.filter((name) => name !== recipeLayer).join(', ')};`,
+        )
+      }
+    }
     ctx.appendBaselineCss(sheet)
 
     // A strict static-style build lowers every recipe selection to ordinary shared atoms.
     // Its encoder has already interned those atoms before this method is called, so retaining
-    // the legacy recipe rules would ship both representations. Clear all four staging layers
+    // the extraction-only recipe rules would ship both representations. Clear all four staging layers
     // before reachability scans: tokens referenced only by removed recipe rules should leave
     // with them, while the atomized utility rules keep the declarations they actually use.
     if (!includeRecipes) {

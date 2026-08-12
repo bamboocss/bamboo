@@ -25,29 +25,47 @@ export interface StaticStyleSetCompiler {
   resolveRecipe(config: StyleSetRecipeConfig, selection?: Dict, slot?: string): Dict | undefined
   /** Allocate the ordinary globally shared utility atoms for a style set. */
   className(...styles: Dict[]): string
+  /** Allocate a compact class for a non-atomic compiler surface such as `viewTransition()`. */
+  allocateClassString(className: string): string
 }
 
 const isRecord = (value: unknown): value is Dict => Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 
-/** A compound selection matches before its `css` payload is read. */
-const matchesCompound = (compound: Record<string, unknown>, selection: Dict) => {
+/** A compound selector matches only through variant classes the recipe actually emits. */
+const matchesCompound = (
+  compound: Record<string, unknown>,
+  selection: Dict,
+  variants: StyleSetRecipeConfig['variants'],
+) => {
   for (const [key, expected] of Object.entries(compound)) {
     if (key === 'css') continue
+    const declared = variants?.[key]
+    const selected = selection[key]
+    // The named-rule representation has no class for an absent or undeclared value, so a
+    // compound selector requiring it can never match. Preserve that behavior when replacing
+    // the selector with a complete StyleSet; this also makes static and finite-miss paths agree.
+    if (selected == null || !declared || !Object.hasOwn(declared, String(selected))) return false
     const alternatives = Array.isArray(expected) ? expected : [expected]
-    if (!alternatives.some((value) => selection[key] === value)) return false
+    // Variant classes are named through property-key coercion. A boolean `false` selection
+    // and a compound value written as `'false'` therefore select the same CSS conjunction.
+    if (!alternatives.some((value) => value != null && String(selected) === String(value))) return false
   }
   return true
 }
 
 /**
- * Resolve the style fragments one recipe call contributes, in runtime merge order.
+ * Resolve the style fragments one recipe call contributes, in emitted-rule precedence.
  *
  * This intentionally rejects conditional variant *selections*. A scalar selects a style
  * object; an object such as `{ base: 'sm', md: 'lg' }` selects several objects under
- * conditions and needs a separate lowering. Returning `undefined` keeps that call on the
- * established recipe path instead of silently compiling only one branch.
+ * conditions and needs a separate lowering. Returning `undefined` rejects that call instead
+ * of silently compiling only one branch.
  */
-export const createStaticStyleSetCompiler = (ctx: Context, runtimeCss: RuntimeCss): StaticStyleSetCompiler => {
+export const createStaticStyleSetCompiler = (
+  ctx: Context,
+  runtimeCss: RuntimeCss,
+  allocateClassString: (className: string) => string = (className) => className,
+): StaticStyleSetCompiler => {
   const { mergeCssUncached } = createMergeCss(createCssContext(ctx))
 
   const compose = (...styles: Dict[]) => mergeCssUncached(...styles)
@@ -69,15 +87,19 @@ export const createStaticStyleSetCompiler = (ctx: Context, runtimeCss: RuntimeCs
 
     take(config.base)
 
-    // Preserve the runtime's selection order: existing default keys keep their position,
-    // and newly supplied keys append in the order the caller wrote them.
-    for (const [variant, value] of Object.entries(selection)) {
+    // Recipe rules are emitted in declaration order, and later variant axes therefore win
+    // when two selected axes write the same property. A call site's object-key order never
+    // changes that CSS precedence. Resolve in the config's order as well, so replacing those
+    // rules with one complete StyleSet is behavior-preserving and an opaque props object does
+    // not make precedence depend on how a caller happened to construct it.
+    for (const variant of Object.keys(config.variants ?? {})) {
+      const value = selection[variant]
       if (value == null) continue
       take(config.variants?.[variant]?.[String(value)])
     }
 
     for (const compound of config.compoundVariants ?? []) {
-      if (!isRecord(compound) || !matchesCompound(compound, selection)) continue
+      if (!isRecord(compound) || !matchesCompound(compound, selection, config.variants)) continue
       take(compound.css)
     }
 
@@ -88,5 +110,6 @@ export const createStaticStyleSetCompiler = (ctx: Context, runtimeCss: RuntimeCs
     compose,
     resolveRecipe,
     className: (...styles) => runtimeCss(...styles),
+    allocateClassString,
   }
 }

@@ -6,10 +6,6 @@ export function generateCssFn(ctx: Context) {
 
   const { separator } = utility
 
-  // The one reference that decides whether a bundle can drop the css engine. See
-  // `leafFallback` in the config for what turning it off asserts about your source.
-  const leafFallback = ctx.config.leafFallback ?? true
-
   return {
     dts: outdent`
     ${ctx.file.importType('SystemStyleObject, ViewTransitionFn', '../types/index')}
@@ -58,15 +54,10 @@ export function generateCssFn(ctx: Context) {
      */
     export declare const viewTransition: ViewTransitionFn;
 
-    /**
-     * Internal. Emitted for the source transform, which rewrites a single dynamic style
-     * leaf into a call to this. Not part of the authoring API.
-     */
-    export declare const cssLeaf: (prefix: string, prop: string, value: unknown) => string;
     `,
     js: outdent`
     ${ctx.file.import(
-      'cloneStyles, createCssUncached, hypenateProperty, leafClass, memo, viewTransitionClassName, withoutSpace',
+      'cloneStyles, createCssUncached, hypenateProperty, memo, viewTransitionClassName, withoutSpace',
       '../helpers',
     )}
     ${ctx.file.import('sortConditions, finalizeConditions', './conditions')}
@@ -106,43 +97,6 @@ export function generateCssFn(ctx: Context) {
     // above it. The merged result is cached and shared, so a caller mutating a nested
     // condition object would otherwise poison it for everyone after them.
     css.raw = (...styles) => cloneStyles(mergeCss(...styles))
-
-
-    // Emitted for the source transform, which rewrites a single dynamic style leaf into a
-    // call to this rather than leaving a \`css()\` behind. \`prefix\` is the class up to the
-    // value, resolved at build time; \`prop\` names the property for the shapes \`leafClass\`
-    // declines.
-    ${
-      leafFallback
-        ? `export const cssLeaf = (prefix, prop, value) => {
-      const className = leafClass(prefix, value)
-      return className === undefined ? css({ [prop]: value }) : className
-    }`
-        : // \`leafFallback: false\`. The reference to \`css\` is gone, which is the whole point —
-          // it is the only edge from a fully-lowered module to the engine, and without it the
-          // bundler drops \`createCss\`, the merge, the utility table and the conditions.
-          //
-          // Nothing emitted below may contain the substring the tests assert against, comments
-          // included — a note *about* avoiding that reference reads to a substring check
-          // exactly like the reference would. Keep such notes here, in the generator.
-          //
-          // Throws rather than guessing. \`leafClass\` declines exactly two shapes, a condition
-          // object and a responsive array, and both mean one class per entry rather than one
-          // class — so there is no string to return that is not wrong. Returning \`''\` would
-          // drop the style silently, which is the failure this project spends most of its
-          // diagnostics trying to prevent.
-          `export const cssLeaf = (prefix, prop, value) => {
-      const className = leafClass(prefix, value)
-      if (className === undefined) {
-        throw new Error(
-          \`[bamboocss] \\\`\${prop}\\\` got a \${Array.isArray(value) ? 'responsive array' : 'condition object'} from a \` +
-            \`runtime value, and \\\`leafFallback\\\` is off. Write the conditions as a literal at the call site, so \` +
-            \`the build resolves each branch, or set \\\`leafFallback: true\\\` to keep the runtime.\`,
-        )
-      }
-      return className
-    }`
-    }
 
     // Sugar for the string form, so the feature has an import to discover, a signature to
     // hover and a name the editor can complete. The extractor evaluates the call, so the

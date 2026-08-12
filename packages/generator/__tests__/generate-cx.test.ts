@@ -4,7 +4,6 @@ import { describe, expect, test } from 'vitest'
 import { generateCx } from '../src/artifacts/js/cx'
 
 type Cx = (...args: unknown[]) => string
-type CvaPick = (value: unknown, classNameByValue: Record<string, string>, fallback?: string) => string
 type CvaMap = (
   values: unknown[],
   nodes: Array<[unknown, unknown, unknown[]]>,
@@ -16,15 +15,15 @@ type CvaMap = (
  * Evaluate the emitted artifact rather than a copy of it. These ship to the browser as this
  * exact string, and a test that reimplemented them would be free to drift from them.
  */
-const compile = (): { cx: Cx; cvaMap: CvaMap; cvaPick: CvaPick } => {
+const compile = (): { cx: Cx; cvaMap: CvaMap } => {
   const { js } = generateCx(createGeneratorContext())
   // `splitProps` is re-exported from helpers, so the import is dropped rather than resolved —
   // nothing here exercises it, and the two functions defined in this module are the point.
-  const body = js.replace(/^import[^\n]*\n/m, '').replace(/export\s*\{[^}]*\}/, 'return { cx, cvaMap, cvaPick }')
-  return new Function(body)() as { cx: Cx; cvaMap: CvaMap; cvaPick: CvaPick }
+  const body = js.replace(/^import[^\n]*\n/m, '').replace(/export\s*\{[^}]*\}/, 'return { cx, cvaMap }')
+  return new Function(body)() as { cx: Cx; cvaMap: CvaMap }
 }
 
-const { cx, cvaMap, cvaPick } = compile()
+const { cx, cvaMap } = compile()
 
 describe('generated cvaMap', () => {
   // root 1 -> tone, then node 0 -> size. A miss and null take edge 0;
@@ -47,53 +46,6 @@ describe('generated cvaMap', () => {
   test('can return a whole slot object from one selector evaluation', () => {
     const slots = { root: 'd_flex', label: 'c_gray' }
     expect(cvaMap(['quiet'], [[~0, ~0, ['quiet', ~1]]], ['', slots], 0)).toEqual(slots)
-  })
-})
-
-/**
- * The helper the fold emits for a variant chosen at runtime.
- *
- * It stands in for what `cvaFn` would have decided, so it has to make the same three
- * distinctions: `undefined` means the property was never passed and the recipe's default
- * applies; a declared value selects its class; anything else selects nothing — including
- * `null`, which `compact` deliberately keeps rather than treating as absent.
- */
-describe('generated cvaPick', () => {
-  const table = { a: ' badge--tone_a', b: ' badge--tone_b' }
-
-  test('selects the class a declared value names', () => {
-    expect(cvaPick('a', table)).toBe(' badge--tone_a')
-    expect(cvaPick('b', table)).toBe(' badge--tone_b')
-  })
-
-  test('falls back only for undefined, which is what compact drops', () => {
-    expect(cvaPick(undefined, table, ' badge--tone_b')).toBe(' badge--tone_b')
-    expect(cvaPick(null, table, ' badge--tone_b')).toBe('')
-  })
-
-  test('selects nothing for a value the config does not declare', () => {
-    for (const value of ['zzz', '', 0, false, Number.NaN]) {
-      expect(cvaPick(value, table, ' badge--tone_b')).toBe('')
-    }
-  })
-
-  test('with no fallback, an absent value selects nothing', () => {
-    expect(cvaPick(undefined, table)).toBe('')
-  })
-
-  /**
-   * The table is an object literal, so a plain lookup would find `Object.prototype` and
-   * concatenate a *function* into the class attribute.
-   */
-  test.each(['toString', 'constructor', 'hasOwnProperty', 'valueOf', '__proto__'])(
-    'a value of %s selects nothing rather than a prototype member',
-    (value) => {
-      expect(cvaPick(value, table)).toBe('')
-    },
-  )
-
-  test('a variant genuinely named like a prototype member still works', () => {
-    expect(cvaPick('toString', { toString: ' badge--tone_toString' })).toBe(' badge--tone_toString')
   })
 })
 

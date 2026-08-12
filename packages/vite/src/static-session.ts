@@ -14,6 +14,8 @@ export interface StaticCompilationSession {
   extractedFiles: Set<string>
   /** Escaped selectors emitted from the source graph and therefore safe to tree-shake. */
   prunableClasses: Set<string>
+  /** Raw semantic classes used by `view-transition-class` declarations as well as selectors. */
+  viewTransitionClasses: Set<string>
   /** Escaped selectors the transformed Rollup graph can actually emit. */
   usedClasses: Set<string>
   /** Semantic atom name -> compact stable or build-local name. */
@@ -51,6 +53,7 @@ export const createStaticCompilationSession = (
     transformedFiles: new Set(),
     extractedFiles: new Set(),
     prunableClasses: new Set(),
+    viewTransitionClasses: new Set(),
     usedClasses: new Set(),
     denseClasses: new Map(),
     semanticClasses: new Map(),
@@ -92,6 +95,7 @@ export const resetStaticCompilationSession = (session: StaticCompilationSession)
   session.transformedFiles.clear()
   session.extractedFiles.clear()
   session.prunableClasses.clear()
+  session.viewTransitionClasses.clear()
   session.usedClasses.clear()
   session.denseClasses.clear()
   session.semanticClasses.clear()

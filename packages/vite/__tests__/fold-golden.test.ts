@@ -39,7 +39,7 @@ export const solid = css({ bg: 'blue.500', color: 'white' })
 `,
   },
   {
-    name: 'recipes-untouched',
+    name: 'recipe-definitions-erased',
     code: `import { css, cva, sva } from 'styled-system/css'
 
 export const button = cva({

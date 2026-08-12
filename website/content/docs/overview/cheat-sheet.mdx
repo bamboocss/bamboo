@@ -4,8 +4,8 @@ description: Every Bamboo API on one page.
 ---
 
 Everything below is a function call that returns a class string. There is no JSX factory and no template literal syntax
-— one way to write a style, which is also what lets the [build-time fold](/docs/guides/source-transformation) resolve so
-much of it.
+— one way to write a style, which is also what lets the [build-time compiler](/docs/guides/source-transformation)
+resolve it completely.
 
 ## Styling
 
@@ -21,13 +21,14 @@ css({ color: { base: 'red.500', _hover: 'red.700' } }) // …or per property
 css({ fontSize: { base: 'sm', md: 'lg' } }) // responsive, mobile first
 css({ color: { base: 'black', _dark: 'white' } }) // theming condition
 
-cx('a', cond && 'b') // joins class names, never merges
+cx('external', cond && 'another') // unknown external inputs remain a tiny runtime join
 ```
 
 ## Composing styles
 
-`cx` concatenates — it does not resolve conflicts. Merge the **objects** instead, where the last write wins per
-property:
+The compiler semantically composes statically analyzable Bamboo classes passed to `cx`. With unknown external inputs,
+`cx` is only a string join and makes no conflict guarantee. Merge the **objects** when the inputs are available as
+styles, where the last write wins per property:
 
 ```jsx
 css({ padding: '4' }, { padding: '8' }) // → padding 8
@@ -43,31 +44,33 @@ See [Merging styles](/docs/concepts/merging-styles).
 import { cva, sva } from '../styled-system/css'
 
 const button = cva({
-  className: 'button', // optional; hashed from the config if omitted
+  className: 'button', // optional extraction metadata; ignored by Vite atom identity
   base: { borderRadius: 'md' },
   variants: { size: { sm: { padding: '2' }, lg: { padding: '4' } } },
   defaultVariants: { size: 'sm' },
   compoundVariants: [{ size: 'lg', tone: 'brand', css: { fontWeight: 'bold' } }],
 })
 
-button({ size: 'lg' }) // 'button button--size_lg'
-button.raw({ size: 'lg' }) // the style object instead
+button({ size: 'lg' }) // shared atoms for this complete selection
 const [variantProps, rest] = button.splitVariantProps(props)
 ```
 
-A recipe's classes land in the `recipes` [cascade layer](/docs/concepts/cascade-layers), so a consumer's `css()` in
-`utilities` overrides them by layer rather than by source order. Declaring the same shape in `theme.recipes` generates
-only the variants you use, apart from an axis passed dynamically — see
-[inline vs config recipes](/docs/concepts/recipes#should-i-use-an-inline-or-config-recipe).
+The Vite compiler resolves the selected recipe and any statically analyzable `cx()` composition before allocating
+globally shared atoms in `utilities`. Declaring the same shape in `theme.recipes` generates only reachable finite
+variant states — see [inline vs config recipes](/docs/concepts/recipes#should-i-use-an-inline-or-config-recipe).
 
-`sva` is the same for multi-part components, and its variants are [scoped](/docs/concepts/slot-recipes#variant-scoping)
-so only the enclosing slot takes props:
+`sva` is the same for multi-part components. Under Vite, each selected slot receives its complete atom string:
 
 ```jsx
-const checkbox = sva({ className: 'checkbox', slots: ['root', 'control'] /* … */ })
-checkbox({ size: 'md' }).root // 'checkbox__root checkbox__root--size_md'
-checkbox({ size: 'md' }).control // 'checkbox__control' — a constant
+const checkbox = sva({ slots: ['root', 'control'] /* … */ })
+const classes = checkbox({ size: 'md' })
+classes.root // shared atoms for the selected root styles
+classes.control // shared atoms for the selected control styles
 ```
+
+CLI/PostCSS extraction can instead use
+[`scopeRoots`](/docs/concepts/slot-recipes#variant-scoping-in-extraction-only-output) to deliver variants through
+`@scope`.
 
 ## Patterns
 

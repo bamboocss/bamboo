@@ -7,10 +7,9 @@ import type { BambooContext } from '../src/create-context'
  * Nothing under `outdir` is the author's to rewrite, so nothing under `outdir` is reported.
  *
  * `include` conventionally covers a source tree that `outdir` sits inside — `./src/**` and
- * `src/styled-system` — so the build routinely parses its own output. The generated
- * `css.mjs` defines `cssLeaf` as `css({ [prop]: value })`, a computed key and so unenumerable
- * by construction, which warned on every build of every such project. There was no edit that
- * would silence it: the file is regenerated from bamboo's own template.
+ * `src/styled-system` — so the build routinely parses its own output. A generated helper can
+ * contain a computed style key that is unenumerable by construction. There is no authored edit
+ * that can silence a diagnostic in a file Bamboo regenerates.
  *
  * That is worse than noise. It sits in the same channel as the losses that do matter and
  * have fixes — an unresolvable value, a recipe whose hash the browser will not agree with —
@@ -21,12 +20,7 @@ import type { BambooContext } from '../src/create-context'
  * overlap is load-bearing elsewhere: the token and keyframe reference scans read whatever
  * `include` covers.
  */
-const CSS_LEAF = `
-  export const cssLeaf = (prefix, prop, value) => {
-    const className = leafClass(prefix, value)
-    return className === undefined ? css({ [prop]: value }) : className
-  }
-`
+const GENERATED = `export const generated = (prop, value) => css({ [prop]: value })`
 
 const AUTHORED = `
   import { css } from '../styled-system/css'
@@ -50,7 +44,7 @@ const warningsFor = (file: string, source: string) => {
 
 describe('diagnostics for generated files', () => {
   test('says nothing about a call in the output directory', () => {
-    expect(warningsFor('styled-system/css/css.mjs', CSS_LEAF)).toHaveLength(0)
+    expect(warningsFor('styled-system/css/css.mjs', GENERATED)).toHaveLength(0)
   })
 
   test('still reports the same shape in authored source', () => {

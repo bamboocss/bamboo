@@ -42,6 +42,16 @@ describe('a binding the rewrite left behind', () => {
     expect(reasons(foldStrict(code))).toContain('runtime-binding')
   })
 
+  test.each([
+    ['a dynamic import', `export const styles = import('styled-system/css')\n`],
+    ['a CommonJS require', `export const styles = require('styled-system/css')\n`],
+    ['an import-equals declaration', `import styles = require('styled-system/css')\nexport { styles }\n`],
+  ])('%s keeps the runtime module alive', (_label, code) => {
+    const { foldStrict } = createFoldFixture()
+
+    expect(reasons(foldStrict(code))).toContain('runtime-binding')
+  })
+
   /**
    * The same wrapper written in two statements, and the more common spelling — a barrel that
    * also uses the binding has to import it. The identifier walk cannot see this one, because
@@ -76,51 +86,14 @@ export function local({ css }) {
     expect(survivors(result)).toContain('css')
   })
 
-  /**
-   * The half a partial fold keeps.
-   *
-   * A split is a real gain — the static properties become a literal — but what is left is
-   * still `css(...)`, so the engine is still in the bundle. It is written through
-   * magic-string rather than into the AST, so the identifier walk cannot see it, and the call
-   * produced no skip entry because it *did* fold. It was the last shape that kept the engine
-   * while `strict` reported a clean build.
-   */
-  test('the runtime half of a partial fold', () => {
-    const { foldStrict } = createFoldFixture()
-    const result = foldStrict(
-      `import { css } from 'styled-system/css'\nexport const f = (tone) => css({ color: 'red.300', _hover: { color: tone } })\n`,
-    )
-
-    expect(result.folded).toHaveLength(1)
-    expect(result.code).toContain('css({')
-    expect(survivors(result)).toEqual(['css'])
-  })
-
-  test('is reported under the imported name, as every other survivor is', () => {
+  test('a dynamic call is reported once by the compiler ledger', () => {
     const { foldStrict } = createFoldFixture()
     const result = foldStrict(
       `import { css as c } from 'styled-system/css'\nexport const f = (tone) => c({ color: 'red.300', _hover: { color: tone } })\n`,
     )
 
-    expect(survivors(result)).toEqual(['css'])
-  })
-
-  /**
-   * The complement: a split that leaves no call behind emits no `css(` at all, so there is
-   * nothing to report and the build must still pass. Reporting every partial fold regardless
-   * would fail exactly the builds the split exists to make possible.
-   */
-  test('is not reported when the split leaves no runtime call', () => {
-    const { foldStrict } = createFoldFixture()
-    const result = foldStrict(
-      `import { css } from 'styled-system/css'
-declare const flag: boolean
-export const cls = css({ color: 'red.300', display: flag ? 'flex' : 'grid' })
-`,
-    )
-
-    expect(result.folded).toHaveLength(1)
-    expect(result.code).not.toContain('css(')
+    expect(result.folded).toHaveLength(0)
+    expect(reasons(result)).toContain('dynamic')
     expect(survivors(result)).toEqual([])
   })
 
@@ -202,11 +175,8 @@ describe('what is not a surviving reference', () => {
     expect(survivors(result)).toEqual(['css'])
   })
 
-  /**
-   * A recipe *definition* keeps the recipe runtime, not the css engine, and `strict` has
-   * always accepted that — `SURVIVES_TO_RUNTIME` omits `not-foldable` for the same reason.
-   */
-  test('a cva definition and its calls', () => {
+  /** A recipe definition is compile-time data once all of its calls are lowered. */
+  test('an erased cva definition and its calls', () => {
     const { foldStrict } = createFoldFixture()
     const result = foldStrict(
       `import { cva } from 'styled-system/css'

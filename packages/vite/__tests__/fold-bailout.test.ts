@@ -5,16 +5,8 @@ import { createFoldFixture } from './fixture'
  * Bailout guards, ported from the constructs Panda v2 covers in
  * `crates/pandacss_project/tests/transform/{advanced,css_mixed,edges,recipe_inline}.rs`.
  *
- * Partial folding has since landed, and it relaxed the first of the two rules these were
- * written to guard: a top-level static sibling now splits away from a dynamic one instead
- * of the whole call bailing. Those two cases were updated in place, and the detailed
- * coverage of the split lives in `fold-partial.test.ts`.
- *
- * What remains here is the spread rule and the shapes that still bail outright — plus the
- * one case that still reaches `accountsForSource` through the partial path, since after
- * the split landed most nested shapes are rejected earlier, for having no static key at
- * all. Read this file as "these must never fold", with the split's own coverage in
- * `fold-partial.test.ts`.
+ * The compiler is deliberately all-or-nothing for `css()`: an open runtime value has no
+ * finite rule set to emit, so the whole call is rejected. No runtime leaf fallback exists.
  *
  * A wrong fold is silent. It does not throw, it does not fail a build, it ships a
  * component with missing styles. That asymmetry is why the declining cases get more
@@ -44,16 +36,8 @@ describe('partially dynamic objects', () => {
   // The extractor omits what it cannot evaluate rather than flagging it, so a
   // partially dynamic object looks fully static from the box alone. Each nesting
   // depth is a separate opportunity to lose that check.
-  test('a dynamic value at the top level splits rather than bailing', () => {
-    const { fold } = createFoldFixture()
-    const result = fold(withImport(`export const f = (t) => css({ padding: '2', color: t })`))
-
-    // Partial folding is what changed here. The static half becomes a literal and the
-    // dynamic half is lowered to the leaf helper — nothing is dropped, which is what the
-    // bail was protecting against. The nested cases below still keep their runtime call,
-    // because only top-level properties are partitioned.
-    expect(result.folded).toHaveLength(1)
-    expect(result.code).toContain('cx("p_2", cssLeaf("c_", "color", t))')
+  test('a dynamic value at the top level rejects the whole call', () => {
+    expectUnchanged(withImport(`export const f = (t) => css({ padding: '2', color: t })`))
   })
 
   test('a dynamic value inside a condition bails', () => {
@@ -64,53 +48,26 @@ describe('partially dynamic objects', () => {
     expectUnchanged(withImport(`export const f = (t) => css({ _hover: { _dark: { color: t } } })`))
   })
 
-  test('a static sibling splits away from a dynamic nested value rather than absorbing it', () => {
-    const { fold } = createFoldFixture()
-    const result = fold(withImport(`export const f = (t) => css({ padding: '2', _hover: { color: t } })`))
-
-    // Once partial folding exists this is a split, not a bail — and the distinction that
-    // matters is that the `_hover` branch survives as a runtime call rather than being
-    // dropped, which is what a careless "enough of this resolved" check would have done.
-    expect(result.folded).toHaveLength(1)
-    expect(result.code).toContain('cx("p_2", css({ _hover: { color: t } }))')
+  test('a static sibling does not hide a dynamic nested value', () => {
+    expectUnchanged(withImport(`export const f = (t) => css({ padding: '2', _hover: { color: t } })`))
   })
 
   test('a dynamic value inside a nested selector bails', () => {
     expectUnchanged(withImport(`export const f = (t) => css({ '& > p': { color: t } })`))
   })
 
-  test('a spread nested under a static sibling is routed to the runtime, not absorbed', () => {
-    const { fold } = createFoldFixture()
-    const result = fold(
+  test('a spread nested under a static sibling rejects the whole call', () => {
+    expectUnchanged(
       withImport(`export const f = (rest) => css({ padding: '2', _hover: { color: 'red.300', ...rest } })`),
     )
-
-    // The one shape that still reaches `accountsForSource` through the partial path. The
-    // `_hover` box looks fully resolvable — the spread contributed nothing to it — so
-    // only comparing it against the source reveals that something is missing. That check
-    // is what sends `_hover` to the dynamic half; without it the split would keep the
-    // resolved half of `_hover` and drop whatever `rest` carried.
-    expect(result.code).toContain(`cx("p_2", css({ _hover: { color: 'red.300', ...rest } }))`)
   })
 
-  // These two used to bail. They lower now, and what makes that safe is that the value is
-  // moved verbatim into the argument position rather than being read: a member expression
-  // that is a getter, and a template literal holding a call, are each evaluated exactly
-  // once, where they were written.
-  test('a member expression value is lowered, and read once', () => {
-    const { fold } = createFoldFixture()
-    const result = fold(withImport(`export const f = (theme) => css({ color: theme.color })`))
-
-    expect(result.code).toContain('cx(cssLeaf("c_", "color", theme.color))')
-    expect(result.code.match(/theme\.color/g)).toHaveLength(1)
+  test('a member expression value rejects the whole call', () => {
+    expectUnchanged(withImport(`export const f = (theme) => css({ color: theme.color })`))
   })
 
-  test('a dynamic template literal value is lowered, and evaluated once', () => {
-    const { fold } = createFoldFixture()
-    const result = fold(withImport('export const f = (x) => css({ width: `${x}px` })'))
-
-    expect(result.code).toContain('cx(cssLeaf("w_", "width", `${x}px`))')
-    expect(result.code.match(/\$\{x\}px/g)).toHaveLength(1)
+  test('a dynamic template literal rejects the whole call', () => {
+    expectUnchanged(withImport('export const f = (x) => css({ width: `${x}px` })'))
   })
 
   test('a getter bails', () => {
@@ -207,23 +164,10 @@ describe('values the extractor resolves to nothing', () => {
    * call folded and the property vanished from the output.
    */
   test('a dynamic template literal beside a static value is not dropped', () => {
-    const { fold } = createFoldFixture()
-    const result = fold(withImport('export const f = (x) => css({ color: `red.300`, width: `${x}px` })'))
-
-    // The whole-call path used to fold this to `"c_red.300"` and lose `width` entirely.
-    // It declines now, and the partial path lowers `width` rather than dropping it —
-    // which is the outcome that keeps the property rather than merely refusing to act.
-    expect(result.code).toContain('cx("c_red.300", cssLeaf("w_", "width", `${x}px`))')
+    expectUnchanged(withImport('export const f = (x) => css({ color: `red.300`, width: `${x}px` })'))
   })
 
   test('the single-property spelling keeps its value too', () => {
-    const { fold } = createFoldFixture()
-    const result = fold(withImport('export const f = (x) => css({ width: `${x}px` })'))
-
-    // Previously this bailed only because the resulting class string was empty, which is
-    // why it never caught the case above. Now nothing is skipped and nothing is lost:
-    // the property is lowered with its expression intact.
-    expect(result.skipped).toHaveLength(0)
-    expect(result.code).toContain('cssLeaf("w_", "width", `${x}px`)')
+    expectUnchanged(withImport('export const f = (x) => css({ width: `${x}px` })'))
   })
 })

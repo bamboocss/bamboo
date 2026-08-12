@@ -200,9 +200,10 @@ which pre-generates rules with no call site.
 
 #### `@bamboocss/vite` (packages/vite)
 
-- **Purpose**: Vite plugin — emits the stylesheet and folds static `css()`, pattern and recipe calls into plain class
-  strings at build time
-- **Key responsibilities**: the build-time fold, `failOnUnfolded` coverage reporting, virtual `virtual:bamboo.css`
+- **Purpose**: Vite plugin — emits the stylesheet and compiles `css()`, pattern and recipe calls into globally shared
+  atomic classes at build time
+- **Key responsibilities**: strict whole-program compilation, finite recipe decision tables, graph pruning and the
+  virtual `virtual:bamboo.css` module
 
 #### `@bamboocss/mcp` (packages/mcp)
 
@@ -560,8 +561,9 @@ import { css } from './styled-system/css'
 ;<div className={css({ color: 'red.500' })} />
 ```
 
-That is what makes the build-time fold possible: the call is visible to the compiler, so `@bamboocss/vite` can replace
-it with the string it would have returned. See `packages/vite` and the source-transformation guide.
+That is what makes whole-program compilation possible: the call is visible to `@bamboocss/vite`, which resolves its
+declarations into the global atom pool and replaces it with the resulting compact class value. See `packages/vite` and
+the source-compilation guide.
 
 ### Framework-Specific Parsing
 

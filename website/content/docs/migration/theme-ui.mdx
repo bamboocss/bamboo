@@ -159,9 +159,9 @@ export default {
 <button sx={{ variant: 'buttons.primary' }} />
 ```
 
-In Bamboo, multi-variant styles are called recipes. Both kinds of recipe emit a named class per variant into the
-`recipes` cascade layer, so a consumer's `css()` in the `utilities` layer overrides them by cascade. What you choose is
-where the recipe lives.
+In Bamboo, multi-variant styles are called recipes. Under Vite, inline and configured recipes resolve into the same
+globally shared declaration atoms as `css()`. What you choose is where the recipe lives and how its typed API is
+generated; recipe identity does not affect emitted CSS identity.
 
 Colocated with the component, using the `cva` function:
 

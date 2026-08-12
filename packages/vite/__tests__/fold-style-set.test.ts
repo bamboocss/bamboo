@@ -1,3 +1,4 @@
+import { viewTransitionClassName } from '@bamboocss/shared'
 import { describe, expect, test } from 'vitest'
 import { createFoldFixture, selectorsFor } from './fixture'
 
@@ -22,7 +23,7 @@ describe('static style-set folding', () => {
       'app/src/utility.ts',
     )
 
-    expect(recipe.folded).toHaveLength(1)
+    expect(recipe.folded).toHaveLength(2)
     expect(utility.folded).toHaveLength(1)
     expect(recipe.folded[0]!.className).toBe(utility.folded[0]!.className)
 
@@ -45,8 +46,62 @@ describe('static style-set folding', () => {
       export const className = badge({ tone: 'quiet' })
     `)
 
-    expect(result.folded).toHaveLength(1)
+    expect(result.folded).toHaveLength(2)
     expect(result.folded[0]!.className).toBe(fixture.runtimeCss({ display: 'flex', color: 'gray.500', opacity: 0.8 }))
+  })
+
+  test('recipe axis precedence follows declaration order, not call-site object order', () => {
+    const fixture = createFoldFixture()
+    const result = fixture.foldStyleSets(`
+      import { cva } from 'styled-system/css'
+      const badge = cva({
+        variants: {
+          tone: { quiet: { color: 'gray.500' } },
+          size: { sm: { color: 'blue.500' } },
+        },
+      })
+      export const a = badge({ tone: 'quiet', size: 'sm' })
+      export const b = badge({ size: 'sm', tone: 'quiet' })
+    `)
+
+    const expected = fixture.runtimeCss({ color: 'blue.500' })
+    expect(result.folded.filter((entry) => entry.kind === 'class').map((entry) => entry.className)).toEqual([
+      expected,
+      expected,
+    ])
+  })
+
+  test('an undeclared variant value cannot activate a compound selector with no backing class', () => {
+    const fixture = createFoldFixture()
+    const result = fixture.foldStyleSets(`
+      import { cva } from 'styled-system/css'
+      const badge = cva({
+        base: { display: 'flex' },
+        variants: { tone: { quiet: { color: 'gray.500' } } },
+        compoundVariants: [{ tone: 'missing', css: { color: 'red.500' } }],
+      })
+      export const className = badge({ tone: 'missing' })
+    `)
+
+    expect(result.folded.find((entry) => entry.kind === 'class')?.className).toBe(
+      fixture.runtimeCss({ display: 'flex' }),
+    )
+  })
+
+  test('compound matching follows the emitted variant class key coercion', () => {
+    const fixture = createFoldFixture()
+    const result = fixture.foldStyleSets(`
+      import { cva } from 'styled-system/css'
+      const badge = cva({
+        variants: { selected: { false: { opacity: 0.5 } } },
+        compoundVariants: [{ selected: 'false', css: { color: 'red.500' } }],
+      })
+      export const className = badge({ selected: false })
+    `)
+
+    expect(result.folded.find((entry) => entry.kind === 'class')?.className).toBe(
+      fixture.runtimeCss({ opacity: 0.5, color: 'red.500' }),
+    )
   })
 
   test('cx composes recipe and css declarations before either becomes a class string', () => {
@@ -151,7 +206,10 @@ describe('static style-set folding', () => {
     const cx = result.folded.find((entry) => entry.name === 'cx')
     expect(cx?.classNames).toContain('c_blue.500')
     expect(cx?.classNames).not.toContain('c_gray.500')
-    expect(result.code).toContain('cvaMap([tone]')
+    // The later static color makes every recipe state identical, so the reduced map itself
+    // disappears instead of shipping a one-leaf runtime lookup.
+    expect(result.code).toContain('=> "c_blue.500"')
+    expect(result.code).not.toContain('cvaMap(')
   })
 
   test('inline sva slot accesses share atoms with css, including finite runtime variants', () => {
@@ -200,5 +258,31 @@ describe('static style-set folding', () => {
     )
     expect(result.code).toContain('cvaMap([tone]')
     expect(result.folded.filter((entry) => entry.kind === 'slots')).toHaveLength(2)
+  })
+
+  test('a static viewTransition bag becomes its extracted class literal', () => {
+    const fixture = createFoldFixture()
+    const options = { old: { animationName: 'fade-out' }, new: { animationName: 'fade-in' } }
+    const result = fixture.foldStrict(`
+      import { cx, viewTransition } from 'styled-system/css'
+      export const transition = cx('external', viewTransition(${JSON.stringify(options)}))
+    `)
+
+    const className = viewTransitionClassName(options, fixture.ctx.utility.prefix)
+    expect(result.code).toContain(JSON.stringify(`external ${className}`))
+    expect(result.code).not.toContain('viewTransition(')
+    expect(result.code).not.toContain('cx(')
+    expect(result.skipped).not.toContainEqual(expect.objectContaining({ reason: 'runtime-binding' }))
+    expect(fixture.getStyleSetCss()).toContain(`view-transition-class: ${className}`)
+  })
+
+  test('rejects an open viewTransition bag instead of retaining its runtime', () => {
+    const fixture = createFoldFixture()
+    const result = fixture.foldStrict(`
+      import { viewTransition } from 'styled-system/css'
+      export const transition = (duration) => viewTransition({ old: { animationDuration: duration } })
+    `)
+
+    expect(result.skipped).toContainEqual(expect.objectContaining({ name: 'viewTransition', reason: 'dynamic' }))
   })
 })

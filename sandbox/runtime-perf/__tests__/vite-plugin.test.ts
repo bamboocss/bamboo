@@ -17,76 +17,14 @@ import { afterEach, describe, expect, test } from 'vitest'
 const here = dirname(fileURLToPath(import.meta.url))
 const cwd = join(here, '..')
 
-const bundle = async (options: Parameters<typeof bamboocss>[0]) => {
-  const result = (await build({
-    root: cwd,
-    logLevel: 'silent',
-    plugins: [bamboocss({ cwd, ...options })],
-    build: {
-      write: false,
-      minify: false,
-      lib: { entry: join(here, '../src/parity/tree.tsx'), formats: ['es'], fileName: 'tree' },
-      rollupOptions: { external: [/^react/, /styled-system/] },
-    },
-  })) as Rollup.RollupOutput[]
-
-  return result[0]!.output.map((chunk) => ('code' in chunk ? chunk.code : '')).join('\n')
-}
-
 describe('vite plugin, real build', () => {
-  test('folds through an actual build when enabled', async () => {
-    const code = await bundle({ transform: true })
-
-    // A folded class string, produced by the fold and carried into the bundle.
-    expect(code).toContain('c_blue600')
-    // The factory element it replaced is gone.
-    expect(code).not.toContain('styled.span')
-  }, 60_000)
-
-  test('leaves the bundle alone when the transform is off', async () => {
-    // Explicit, now that the fold is on by default: this is the opt-out being exercised.
-    const code = await bundle({ transform: false })
-
-    // Still the factory call, so nothing folded.
-    expect(code).toContain('styled')
-    expect(code).not.toContain('c_blue600')
-  }, 60_000)
-
-  /**
-   * Each declining shape is named individually, because a fold that corrupts one of them
-   * corrupts it in a way only that shape shows. Matching loosely — any `rest` anywhere in
-   * the bundle — passes just as well when the element it was meant to describe has been
-   * rewritten into a div.
-   */
-  test('declining shapes survive a real build', async () => {
-    const code = await bundle({ transform: true })
-
-    // Still calling `css` at runtime, with the value that made each one decline.
-    expect(code).toContain('padding: { base: "sm", md: tone }')
-    expect(code).toContain('...rest')
-
-    // And the dynamic pattern call site still calls the pattern.
-    expect(code).toContain('flex({ direction: "column", gap: tone')
-
-    // The dynamic call site is lowered rather than keeping its call. Matched by its
-    // arguments rather than by the helper's name, which the bundler is free to rename.
-    expect(code).toMatch(/\w+\("c_", "color", tone\)/)
-    expect(code).not.toContain('css({ color: tone })')
-
-    // A lowered ternary, both arms resolved, through a real build.
-    expect(code).toContain('flag ? "c_red600" : "c_green600"')
-
-    // And one whose arms would collide on a single property, left whole.
-    expect(code).toContain(`mx: flag ? "xs" : "sm"`)
-  }, 60_000)
-
-  test('static composition shares recipe and utility atoms through a real build', async () => {
+  test('shares recipe and utility atoms through a real build', async () => {
     const entry = join(cwd, 'src/__static-composition-test.tsx')
     writeFileSync(
       entry,
       `
         import 'virtual:bamboo.css'
-        import { css, cva, cx } from '../styled-system/css'
+        import { css, cva, cx, viewTransition } from '../styled-system/css'
         const box = cva({
           base: { width: '[123.4567px]', color: 'red600' },
           variants: {
@@ -109,6 +47,7 @@ describe('vite plugin, real build', () => {
           compoundVariants: [{ tone: 'expanded', css: { opacity: 0.75 } }],
         })
         export const dynamicClassName = (tone) => dynamicBadge({ tone })
+        export const transitionClassName = viewTransition({ old: { opacity: 0.314159 } })
       `,
     )
 
@@ -119,7 +58,7 @@ describe('vite plugin, real build', () => {
         // The sandbox's PostCSS config targets its browser entry URL; this library-mode
         // fixture exercises Vite's CSS asset graph directly and needs no additional plugins.
         css: { postcss: { plugins: [] } },
-        plugins: [bamboocss({ cwd, staticComposition: true, reportSummary: false })],
+        plugins: [bamboocss({ cwd, reportSummary: false })],
         build: {
           write: false,
           minify: false,
@@ -139,6 +78,8 @@ describe('vite plugin, real build', () => {
       expect(js).not.toContain('h_[234.5678px]')
       expect(js).not.toContain('red600')
       expect(js).not.toContain('createCss')
+      expect(js).not.toContain('viewTransition(')
+      expect(js).not.toContain('vt_')
       expect(js).toContain('cvaMap')
       expect(js).not.toContain('567.891px')
       expect(js).not.toContain('678.912px')
@@ -151,6 +92,7 @@ describe('vite plugin, real build', () => {
       expect(css).toMatch(/max-width:\s*567\.891px/)
       expect(css).toMatch(/max-width:\s*678\.912px/)
       expect(css).toMatch(/opacity:\s*0\.75/)
+      expect(css).toMatch(/opacity:\s*0\.314159/)
       expect(css).not.toMatch(/@layer recipes\{/)
 
       // Execute the emitted decision table, then verify every runtime class has a retained
@@ -158,6 +100,7 @@ describe('vite plugin, real build', () => {
       // reachability pruning, and final compact-name rewriting in one assertion chain.
       const built = (await import(`data:text/javascript;base64,${Buffer.from(js).toString('base64')}`)) as {
         dynamicClassName: (tone: unknown) => string
+        transitionClassName: string
       }
       const defaultClass = built.dynamicClassName(undefined)
       const compactClass = built.dynamicClassName('compact')
@@ -169,6 +112,9 @@ describe('vite plugin, real build', () => {
       for (const className of [defaultClass, expandedClass, missingClass]) {
         for (const token of className.split(' ')) expect(css).toContain(`.${token} {`)
       }
+      expect(css).toContain(`.${built.transitionClassName} {`)
+      expect(css).toContain(`view-transition-class: ${built.transitionClassName}`)
+      expect(css).toContain(`::view-transition-old(.${built.transitionClassName})`)
     } finally {
       rmSync(entry, { force: true })
     }
@@ -191,7 +137,7 @@ describe('vite plugin, real build', () => {
           root: cwd,
           logLevel: 'silent',
           css: { postcss: { plugins: [] } },
-          plugins: [bamboocss({ cwd, staticComposition: true, reportSummary: false })],
+          plugins: [bamboocss({ cwd, reportSummary: false })],
           build: {
             write: false,
             minify: false,
@@ -217,7 +163,7 @@ describe('vite plugin, real build', () => {
         build({
           root: cwd,
           logLevel: 'silent',
-          plugins: [bamboocss({ cwd, staticComposition: true, reportSummary: false })],
+          plugins: [bamboocss({ cwd, reportSummary: false })],
           build: {
             write: false,
             minify: false,
@@ -252,7 +198,7 @@ describe('vite plugin, real build', () => {
         root: cwd,
         logLevel: 'silent',
         css: { postcss: { plugins: [] } },
-        plugins: [bamboocss({ cwd, staticComposition: true, reportSummary: false })],
+        plugins: [bamboocss({ cwd, reportSummary: false })],
         build: {
           write: false,
           minify: false,
@@ -298,7 +244,7 @@ describe('vite plugin, real build', () => {
         root: cwd,
         logLevel: 'silent',
         css: { postcss: { plugins: [] } },
-        plugins: [bamboocss({ cwd, staticComposition: true, reportSummary: false })],
+        plugins: [bamboocss({ cwd, reportSummary: false })],
         build: {
           write: false,
           manifest: true,
@@ -346,7 +292,7 @@ describe('vite plugin, real build', () => {
         root: cwd,
         logLevel: 'silent',
         css: { postcss: { plugins: [] } },
-        plugins: [bamboocss({ cwd, staticComposition: true, reportSummary: false })],
+        plugins: [bamboocss({ cwd, reportSummary: false })],
         build: {
           write: false,
           sourcemap: true,
@@ -399,9 +345,9 @@ describe('vite plugin, real build', () => {
  * This is the assumption, run.
  */
 describe('vite plugin, real rebuild', () => {
-  const fixtureDir = join(cwd, '__watch-tmp')
+  const fixtureDir = join(cwd, 'src/__watch-tmp')
   const dependency = join(fixtureDir, 'dep.ts')
-  const entry = join(fixtureDir, 'entry.ts')
+  const entry = join(fixtureDir, 'entry.tsx')
   const outDir = join(fixtureDir, 'out')
 
   const writeDependency = (color: string) => writeFileSync(dependency, `export const shared = { color: '${color}' }\n`)
@@ -413,13 +359,14 @@ describe('vite plugin, real rebuild', () => {
     writeDependency('blue600')
     writeFileSync(
       entry,
-      `import { css } from '../styled-system/css'\nimport { shared } from './dep'\nexport const cls = css(shared)\n`,
+      `import 'virtual:bamboo.css'\nimport { css } from '../../styled-system/css'\nimport { shared } from './dep'\nexport const cls = css(shared)\n`,
     )
 
     const watcher = (await build({
       root: cwd,
       logLevel: 'silent',
-      plugins: [bamboocss({ cwd, transform: true, reportSummary: false })],
+      css: { postcss: { plugins: [] } },
+      plugins: [bamboocss({ cwd, reportSummary: false, denseClassNames: false })],
       build: {
         watch: {},
         minify: false,

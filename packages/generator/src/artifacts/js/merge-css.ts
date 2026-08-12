@@ -4,9 +4,8 @@ import { outdent } from 'outdent'
 /**
  * `mergeCss` and friends, plus the shorthand table they need.
  *
- * Split out of `css.mjs` because `cva` needs the merge and nothing else. While it lived
- * there, `cva` imported `createCss`, `cssLeaf`, `viewTransition` and the rest of the engine
- * to reach one function.
+ * Split out of `css.mjs` because `cva` needs the merge and nothing else. Keeping it separate
+ * prevents recipe-only imports from reaching the class-naming engine.
  *
  * The shorthand table lives here rather than beside the class names, and that is the second
  * half of the same problem. `cva` reaches `mergeCss` through `raw()` and `merge()` — both
@@ -17,8 +16,7 @@ import { outdent } from 'outdent'
  *
  * Separating them costs about 402 B gzipped in a bundle that still calls `css()` at runtime,
  * because the two halves share every property name and each now spells the list. That is the
- * trade, and it is the right way round: a `css()` call surviving to runtime already costs
- * 1,684 B for the engine behind it, and `failOnUnfolded` exists to drive that count to zero.
+ * trade, and it is the right way round: the Vite compiler removes authored runtime calls.
  *
  * Nothing here reaches the `styled-system/css` barrel. `css.raw(...)` is the authoring API
  * for merging style objects, and it is `mergeCss` plus the defensive clone that makes a

@@ -3,12 +3,7 @@ import { defineConfig } from '@bamboocss/dev'
 export default defineConfig({
   preflight: false,
   include: ['./src/**/*.{tsx,jsx}'],
-  // `render-parity.test.ts` writes `tree.folded.tsx` and `tree.broken.tsx` beside their
-  // source so the relative imports resolve identically, then deletes them when it finishes.
-  // Any context built while one exists globs it, and the glob reads each matched path with
-  // no guard — so a context created in one test file and a cleanup running in another race,
-  // and the loser fails with `ENOENT` somewhere unrelated. Matched by suffix rather than by
-  // name so the next scratch artifact is covered without another debugging session.
+  // Scratch compiler fixtures are written beside source so relative imports resolve.
   exclude: ['**/*.folded.tsx', '**/*.broken.tsx'],
   outdir: 'styled-system',
   theme: {

@@ -5,25 +5,23 @@ description: Bamboo is build-time, type-safe, zero-runtime CSS-in-JS
 
 ## Why Bamboo?
 
-Bamboo [folds](/docs/guides/source-transformation) each call into the string it would have returned:
+Bamboo's Vite integration [compiles](/docs/guides/source-transformation) each style call into globally shared
+declaration atoms:
 
 ```tsx
 // you write
 <div className={css({ fontSize: 'lg', fontWeight: 'bold' })}>Title</div>
-<div className={css({ fontSize: 'lg', fontWeight: active ? 'bold' : 'normal' })}>Title</div>
+const title = cva({ variants: { weight: { bold: { fontWeight: 'bold' }, normal: { fontWeight: 'normal' } } } })
+<div className={title({ weight: active ? 'bold' : 'normal' })}>Title</div>
 
 // the bundle gets
-<div className="fs_lg fw_bold">Title</div>
-<div className={cx('fs_lg', active ? 'fw_bold' : 'fw_normal')}>Title</div>
+<div className="_4p9d _7bc2">Title</div>
+<div className={cvaMap(/* finite precompiled class leaves */)}>Title</div>
 ```
 
-Once every call folds, nothing imports `styled-system/css` and the engine drops out of the bundle.
-[`failOnUnfolded`](/docs/guides/source-transformation#failonunfolded) fails the build if one call survives, so zero
-runtime is something you can hold rather than hope for.
-
-Even a value the build cannot see lowers: `css({ color: tone })` becomes `cssLeaf('c_', 'color', tone)`, which builds
-the class from the prefix already known here. See
-[partly static calls](/docs/guides/source-transformation#partly-static-calls) for where the line falls.
+Recipe names and files do not enter atom identity, so identical declarations from `css()`, `cva()`, `sva()`, and config
+recipes produce one CSS rule. Recipe declarations are erased, finite runtime variant choices become small decision
+tables, and any open runtime style value fails compilation. There is no runtime styling fallback to retain the engine.
 
 Bamboo [fails](/docs/concepts/build-diagnostics) the build when a call names a pattern or token that does not exist:
 
@@ -47,8 +45,9 @@ differently beyond the smaller surface — see [why Bamboo](/docs/overview/why-b
 
 ## How it works
 
-Bamboo scans your JavaScript and TypeScript for style function calls, and generates atomic CSS for the call sites it
-finds. It runs as a Vite plugin, a CLI or a PostCSS plugin — only the Vite plugin folds calls into class strings.
+Bamboo scans your JavaScript and TypeScript for style function calls and generates CSS for the call sites it finds. The
+Vite integration additionally compiles those calls, globally pools recipe and utility atoms, and prunes against the
+module graph. CLI and PostCSS are extraction-only integrations.
 
 You author styles as plain objects. Tokens, recipes and variants are generated from your config as types, so the editor
 autocompletes them and the compiler checks them.
@@ -56,8 +55,8 @@ autocompletes them and the compiler checks them.
 ## Features
 
 - ✨ Modern CSS output – cascade layers (`@layer`) and custom properties
-- 🎯 [Predictable overrides](/docs/concepts/cascade-layers) – precedence comes from cascade layers rather than source
-  order, so a consumer's `css()` wins over a component's `cva`/`sva` recipe
+- 🎯 [Predictable composition](/docs/concepts/cascade-layers) – analyzable style sets merge before class allocation;
+  cascade layers still define precedence between Bamboo and authored CSS
 - 🚀 [Recipes and variants](/docs/concepts/recipes) – composable style variants, an API inspired by Stitches
 - 💪 Type-safe styles and autocomplete, generated from your config
 - 🎨 Design tokens with simultaneous themes
@@ -76,9 +75,11 @@ Every API on one page, with the class strings each call returns — see [Cheat S
 
 ### General Guides
 
-- [Bamboo CLI](/docs/installation/cli): the simplest way to get started.
+- [Using Vite](/docs/installation/vite): the compiled, globally deduplicated integration.
 
-- [Using PostCSS](/docs/installation/postcss): (**Recommended**) integrate Bamboo into your existing PostCSS pipeline.
+- [Bamboo CLI](/docs/installation/cli): generate artifacts and extraction-only CSS without Vite.
+
+- [Using PostCSS](/docs/installation/postcss): integrate extraction-only output into an existing PostCSS pipeline.
 
 ### Framework Guides
 

@@ -77,41 +77,40 @@ const Checkbox = () => {
 }
 ```
 
-Bamboo emits the recipe into the `recipes.slots` layer: one constant class per slot, and each variant's rules `@scope`d
-by the class the root slot carries for it.
+Bamboo compiles each selected slot to shared declaration atoms. Slot and recipe names do not enter class identity, so
+the same `display: flex`, border, or typography declaration is reused across slot recipes, ordinary recipes, and `css()`
+calls.
 
 ```css
-@layer recipes.slots {
-  .sva_gCdRhI__root {
+@layer utilities {
+  ._a {
     gap: var(--spacing-2);
+  }
+
+  ._b {
     display: flex;
+  }
+
+  ._c {
     align-items: center;
   }
 
-  .sva_gCdRhI__control {
+  ._d {
     border-width: 1px;
+  }
+
+  ._e {
     border-radius: var(--radii-sm);
   }
 
-  .sva_gCdRhI__label {
+  ._f {
     margin-inline-start: var(--spacing-2);
   }
-
-  @scope (.sva_gCdRhI__root--size_sm) to (.sva_gCdRhI__root) {
-    .sva_gCdRhI__control {
-      width: var(--sizes-8);
-      height: var(--sizes-8);
-    }
-
-    .sva_gCdRhI__label {
-      font-size: var(--font-sizes-sm);
-    }
-  }
-  /* ... and the same block for size_md */
 }
 ```
 
-The non-root slots carry no variant class of their own — see [Variant scoping](#variant-scoping) for why.
+The selected slot object contains only the atoms each slot needs. Finite dynamic selections become a lookup table of
+precompiled slot objects; no slot-specific recipe rule is required.
 
 ### Compound Variants
 
@@ -149,9 +148,8 @@ const checkbox = sva({
 
 ### Targeting slots
 
-You can set an optional `className` property in the `sva` config which can be used to target slots in the DOM.
-
-> Each slot will contain a `${className}__${slotName}` class in addition to the atomic styles.
+Vite atoms deliberately carry no slot or recipe identity. Add a semantic data attribute when one slot must target
+another in the DOM.
 
 Let's say you want to apply a different border color to the button text directly from the `root` slot. Here's how you
 would do it:
@@ -160,24 +158,27 @@ would do it:
 import { sva } from '../styled-system/css'
 
 const button = sva({
-  className: 'btn',
   slots: ['root', 'text'],
   base: {
     root: {
       bg: 'blue.500',
       _hover: {
         // v--- 🎯 this will target the `text` slot
-        '& .btn__text': {
+        '& [data-slot="text"]': {
           color: 'white',
         },
       },
     },
   },
 })
+
+const classes = button()
+;<button className={classes.root}>
+  <span data-slot="text" className={classes.text} />
+</button>
 ```
 
-> Note: This doesn't work when you have the `hash: true` option in your bamboo config. We recommend using `data-x`
-> selectors to target slots.
+The selector is stable across compact-name modes and does not couple application behavior to generated CSS names.
 
 ### TypeScript Guide
 
@@ -208,11 +209,13 @@ const Checkbox = (props: CheckboxVariants) => {
 }
 ```
 
-## Variant scoping
+## Variant scoping in extraction-only output
 
-Everything below applies to **both** kinds of slot recipe — the `sva()` above and the
-[config slot recipe](#config-slot-recipe) further down. It is the same emission either way; only the API differs, and
-the examples show both.
+This section applies only to CLI/PostCSS extraction without the Vite source compiler. Vite does not emit named slot
+rules or `@scope`: every selected slot is a complete shared atom string, and a finite dynamic selection returns a
+precompiled slot object. `scopeRoots` has no effect on Vite output.
+
+For extraction-only output, the behavior below applies to both `sva()` and [config slot recipes](#config-slot-recipe).
 
 ### Only the root takes variants
 
@@ -428,18 +431,17 @@ In React that makes the file a client component, so add `'use client'` at the to
 
 ## Config Slot Recipe
 
-Config slot recipes are very similar to inline recipes. Both store their styles in the `recipes` cascade layer and name
-their classes from the config; a config recipe is declared in `theme.slotRecipes` under a key, so it gets a readable
-name and a generated module to import.
+Config slot recipes are declared in `theme.slotRecipes`, can be shared through presets, and get a generated typed module
+to import. Under Vite their selected slots use the same shared atoms and finite decision tables as inline `sva()`.
 
 The config slot recipe takes the following additional properties:
 
-- `className`: The name of the recipe. Used in the generated class name
+- `className`: Authoring metadata used by extraction-only integrations; it does not enter Vite atom identity
 - `jsx`: An array of JSX components that use the recipe. Defaults to the uppercase version of the recipe name
 - `description`: An optional description of the recipe (used in the js-doc comments)
 
-Both kinds accept `scopeRoots`, which names the slots that enclose other slots — see
-[Variant scoping](#variant-scoping).
+Extraction-only output also accepts `scopeRoots` for its named-rule scoping model; Vite ignores it because selected slot
+styles are returned directly as atoms.
 
 ### Defining the recipe
 
@@ -523,37 +525,33 @@ const Checkbox = () => {
 }
 ```
 
-The generated css is registered under the `recipes.slots` [cascade layer](/docs/concepts/cascade-layers). Every slot
-carries a constant `<recipe-className>__<slot-name>` class; the anchor slot additionally carries
-`<recipe-className>__<slot-name>--<variant-name>_<variant-value>`, which scopes the other slots' variant rules — see
-[Variant scoping](#variant-scoping).
+The selected slots compile to the same shared utility atom pool as `css()` and inline recipes. Only atoms reachable from
+the application graph are kept in a production Vite build.
 
 ```css
-@layer recipes.slots {
-  .checkbox__root {
+@layer utilities {
+  ._a {
     gap: var(--spacing-2);
+  }
+
+  ._b {
     display: flex;
+  }
+
+  ._c {
     align-items: center;
   }
 
-  .checkbox__control {
+  ._d {
     border-width: 1px;
+  }
+
+  ._e {
     border-radius: var(--radii-sm);
   }
 
-  .checkbox__label {
+  ._f {
     margin-inline-start: var(--spacing-2);
-  }
-
-  @scope (.checkbox__root--size_sm) to (.checkbox__root) {
-    .checkbox__control {
-      width: var(--sizes-8);
-      height: var(--sizes-8);
-    }
-
-    .checkbox__label {
-      font-size: var(--font-sizes-sm);
-    }
   }
 }
 ```

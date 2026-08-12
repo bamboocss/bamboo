@@ -1,8 +1,6 @@
-import { classFormatter, type ClassFormatterContext } from '@bamboocss/core'
-import { compact, getRecipeClassNames, getRecipeIdentity, withoutSpace } from '@bamboocss/shared'
 import type { ParserResultInterface, ResultItem } from '@bamboocss/types'
 import { Node, SyntaxKind } from 'ts-morph'
-import { declaredAtModuleScope } from './fold-partial'
+import { declaredAtModuleScope } from './fold-analysis'
 import type { StaticStyleSetCompiler, StyleSetRecipeConfig } from './style-set'
 
 /**
@@ -14,9 +12,8 @@ import type { StaticStyleSetCompiler, StyleSetRecipeConfig } from './style-set'
  * is lowered, the binding is unreferenced and a bundler drops the config with it — measured at
  * 81 kB gzipped across one application's 1,297 inline recipes, against 4.5 kB for the runtime.
  *
- * Correct by construction rather than by a matching reimplementation: the class names come from
- * `getRecipeIdentity` and `getRecipeClassNames`, the same functions the browser runs, and the
- * prefixing and hashing from `classFormatter`, which is what the encoder emitted rules under.
+ * Recipe identity never enters the compiled representation. Only the selected authored
+ * declarations and the finite decision graph survive.
  */
 
 type Dict = Record<string, unknown>
@@ -35,18 +32,12 @@ export interface RecipeConfig {
 /**
  * A recipe the fold can lower against.
  *
- * `name` is hashed once here rather than per call site: `getRecipeIdentity` serialises the
- * whole config to hash it, which measured as 91% of the per-call work when it sat inside
- * `lowerRecipeCall`. The runtime does it once per `cva()` for the same reason.
- *
  * `box` is the *definition's* node, carried so the fold can register the module the config
  * came from as a watch dependency. Without it, editing a config in another module leaves
- * every literal folded against it stale — the stylesheet gets a new identity and the element
- * keeps the old class.
+ * every compiled consumer stale.
  */
 export interface RecipeEntry {
   config: RecipeConfig
-  name: string
   box: ResultItem['box']
 }
 
@@ -57,17 +48,12 @@ export interface RecipeEntry {
  * that names it. The parser records a definition under the name it was *imported* as (`cva`),
  * and a call under the name the file *bound* (`badge`); this is what joins the two.
  *
- * Slot recipes are included only for the symbolic compiler. The legacy fold cannot replace an
- * `sva` call (it returns an object), while the symbolic path can replace a direct `.slot` access
- * with that slot's shared StyleSet.
+ * Slot and ordinary recipes share one representation.
  */
-export const collectRecipeConfigs = (
-  parserResult: ParserResultInterface,
-  includeSlotRecipes = false,
-): Map<string, RecipeEntry> => {
+export const collectRecipeConfigs = (parserResult: ParserResultInterface): Map<string, RecipeEntry> => {
   const configs = new Map<string, RecipeEntry>()
 
-  const definitions = includeSlotRecipes ? [...parserResult.cva, ...parserResult.sva] : parserResult.cva
+  const definitions = [...parserResult.cva, ...parserResult.sva]
   for (const definition of definitions) {
     const node = definition.box?.getNode?.()
     if (!node) continue
@@ -94,14 +80,11 @@ export const collectRecipeConfigs = (
       continue
     }
 
-    configs.set(nameNode.getText(), { config, name: getRecipeIdentity(config), box: definition.box })
+    configs.set(nameNode.getText(), { config, box: definition.box })
   }
 
   return configs
 }
-
-/** The generated binding a lowered dynamic axis calls. Lives in `cx`, which pulls no engine. */
-export const RECIPE_PICK_HELPER = 'cvaPick'
 
 /** Pick a complete precompiled StyleSet for one or more runtime recipe axes. */
 export const RECIPE_MAP_HELPER = 'cvaMap'
@@ -112,10 +95,8 @@ export const DEFAULT_MAX_RECIPE_STATES = 65_536
 /** What `recipe.splitVariantProps` calls, reached directly once the call is lowered. */
 export const SPLIT_PROPS_HELPER = 'splitProps'
 
-const HELPER = RECIPE_PICK_HELPER
-
 /** Marker for a binding the fold must never resolve — declared twice, or unresolvable. */
-export const AMBIGUOUS: RecipeEntry = Object.freeze({ config: {}, name: '', box: undefined })
+export const AMBIGUOUS: RecipeEntry = Object.freeze({ config: {}, box: undefined })
 
 /** `.size`, or `["x-large"]` when the variant is not a valid identifier. */
 const IDENTIFIER = /^[A-Za-z_$][\w$]*$/
@@ -164,10 +145,9 @@ const propertyKey = (nameNode: Node): string | undefined => {
 }
 
 /**
- * Make `cvaPick` callable at this call site, by whatever name the file gives it.
+ * Make a generated compile helper callable at this call site, by whatever name the file gives it.
  *
- * Not `ensureCxImport`: that one resolves `cx` and finds the declaration to extend by
- * matching the *callee* against an import. An inline recipe's callee is a local binding, so
+ * Unlike `cx`, an inline recipe's callee is a local binding, so
  * there is nothing to match — the host here is any import of the generated css module, which
  * a file defining a recipe necessarily has, since `cva` came from it.
  */
@@ -198,7 +178,7 @@ export const ensureRecipeHelperImport = (
       if (named.isTypeOnly()) continue
 
       if (named.getNameNode().getText() === imported) {
-        // Somebody else's `cvaPick`, or one shadowed here, is not the one this calls.
+        // Somebody else's helper, or one shadowed here, is not the one this calls.
         if (!isBambooCssModule(mod)) return undefined
         const local = (named.getAliasNode() ?? named.getNameNode()).getText()
         return isShadowed(call, local) ? undefined : { name: local }
@@ -241,25 +221,6 @@ export type LowerResult =
       helper?: typeof RECIPE_MAP_HELPER
       dynamic: boolean
     }
-  /**
-   * An expression, for a selection with an axis the build could not resolve.
-   *
-   * `badge({ tone })` becomes `"cva_x" + cvaPick(tone, {a:" cva_x--tone_a"}, " cva_x--tone_b")`.
-   * Every class the recipe can produce is known — only which of them applies is not — so the
-   * choice is what ships rather than the config it would have been derived from.
-   *
-   * `classNames` is every class the expression can emit, so a consumer checking that the CSS
-   * backs what was folded sees all of them rather than only the branch taken. `staticClasses`
-   * is the part that is unconditionally present — what `className` means elsewhere, where the
-   * whole call resolved.
-   */
-  | {
-      kind: 'expression'
-      expression: string
-      classNames: string[]
-      staticClasses: string
-      helper: typeof RECIPE_PICK_HELPER | typeof RECIPE_MAP_HELPER
-    }
   | { kind: 'dynamic-style'; map: DynamicStyleMap }
   | { kind: 'decline'; reason: 'dynamic' | 'unsupported-shape' | 'unknown-recipe' }
 
@@ -268,6 +229,8 @@ export interface CompiledStyleMap {
   classNames: string[]
   staticClasses: string
   outputKind: 'class' | 'slots'
+  /** Whether `expression` actually calls `cvaMap`; reduced constant maps do not. */
+  usesHelper: boolean
 }
 
 /** A finite recipe state space kept symbolic until an enclosing `cx()` has composed it. */
@@ -286,7 +249,7 @@ export interface DynamicStyleMap {
 export const lowerRecipeCall = (
   call: Node,
   entry: RecipeEntry | undefined,
-  ctx: ClassFormatterContext,
+  styleCompiler: StaticStyleSetCompiler,
   /**
    * Whether an expression can be evaluated without doing anything observable.
    *
@@ -304,11 +267,6 @@ export const lowerRecipeCall = (
    * here was dropped, and the call declines.
    */
   resolvedSelection?: Dict,
-  /**
-   * The strict build compiler. When present, a fully-known recipe resolves to the same
-   * global utility atoms as `css()` instead of materialising recipe-specific selectors.
-   */
-  styleCompiler?: StaticStyleSetCompiler,
   /** A directly-accessed slot of an inline `sva()` invocation. */
   slot?: string,
   /** Maximum complete selections an exact runtime decision table may inspect. */
@@ -316,12 +274,11 @@ export const lowerRecipeCall = (
 ): LowerResult => {
   if (!entry || entry === AMBIGUOUS) return { kind: 'decline', reason: 'unknown-recipe' }
 
-  const { config, name } = entry
+  const { config } = entry
 
-  // A slot recipe call itself returns an object. A direct `.slot` access is a string and the
-  // static compiler can resolve it; the legacy fold deliberately keeps its old behaviour.
+  // A slot recipe call itself returns an object. A direct `.slot` access is a string.
   if (config.slots !== undefined) {
-    if (!styleCompiler || !Array.isArray(config.slots) || (slot !== undefined && !config.slots.includes(slot))) {
+    if (!Array.isArray(config.slots) || (slot !== undefined && !config.slots.includes(slot))) {
       return { kind: 'decline', reason: 'unsupported-shape' }
     }
   } else if (slot) {
@@ -358,16 +315,13 @@ export const lowerRecipeCall = (
     /**
      * `input(variantProps)` — a selection the build cannot see inside.
      *
-     * Inline recipes only. `cva` resolves a selection with `getRecipeClassNames`, which reads
-     * a variant value as a key and so cannot take a conditional — a `{ base, md }` object finds
-     * no entry and names no class, exactly as `cvaPick` does. A **config** recipe routes its
-     * selection through `createCss`, which *expands* conditions into one class per breakpoint,
-     * so a scalar lookup silently drops them. That is why this lowering is not applied to
-     * config recipes: for a dynamic axis the build cannot know which kind of value arrives.
+     * The compiled recipe contract accepts scalar declared variant values. A conditional
+     * object is not a finite selection value; responsiveness belongs inside a variant's style
+     * declaration, where the compiler can materialize its conditions ahead of time.
      *
-     * The classes are still knowable: a recipe emits one per declared variant, so the call is
-     * one term per variant reading that binding. This is the shape a wrapper component takes,
-     * where the variants are the component's public API and cannot be literals by definition.
+     * The complete StyleSets are knowable: the config declares every scalar value each axis
+     * accepts. This is the shape a wrapper component takes, where variants are its public API
+     * and therefore cannot be literals by definition.
      *
      * An identifier only. Each variant reads the binding again, and re-reading anything else —
      * a call, a property access — would evaluate it once per axis instead of once.
@@ -466,13 +420,7 @@ export const lowerRecipeCall = (
    */
   const everyEffectSurvives = () => effectful.every(({ key, text }) => dynamicAxes.get(key) === text)
 
-  // Exactly what `cvaFn` does: defaults first, then the selection with `undefined` dropped.
-  const merged = { ...(config.defaultVariants ?? {}), ...compact(selection) }
-  const format = classFormatter(ctx)
-
   const compiledSelection = (selected: Dict) => {
-    if (!styleCompiler) return undefined
-
     if (Array.isArray(config.slots) && slot === undefined) {
       const slots: Record<string, string> = {}
       const classNames = new Set<string>()
@@ -495,23 +443,16 @@ export const lowerRecipeCall = (
   if (dynamicAxes.size === 0) {
     if (!everyEffectSurvives()) return { kind: 'decline', reason: 'dynamic' }
 
-    if (styleCompiler) {
-      const compiled = compiledSelection(selection)
-      if (!compiled) return { kind: 'decline', reason: 'dynamic' }
-      if (typeof compiled.value === 'string') {
-        return { kind: 'class', className: compiled.value, styles: compiled.styles }
-      }
-      return {
-        kind: 'slots',
-        expression: JSON.stringify(compiled.value),
-        classNames: compiled.classNames,
-        dynamic: false,
-      }
+    const compiled = compiledSelection(selection)
+    if (!compiled) return { kind: 'decline', reason: 'dynamic' }
+    if (typeof compiled.value === 'string') {
+      return { kind: 'class', className: compiled.value, styles: compiled.styles }
     }
-
     return {
-      kind: 'class',
-      className: getRecipeClassNames(name, config.variants, merged, ctx.utility.separator, format),
+      kind: 'slots',
+      expression: JSON.stringify(compiled.value),
+      classNames: compiled.classNames,
+      dynamic: false,
     }
   }
 
@@ -534,199 +475,139 @@ export const lowerRecipeCall = (
   }
 
   if (dynamicAxes.size === 0) {
-    if (styleCompiler) {
-      const compiled = compiledSelection(selection)
-      if (!compiled) return { kind: 'decline', reason: 'dynamic' }
-      if (typeof compiled.value === 'string') {
-        return { kind: 'class', className: compiled.value, styles: compiled.styles }
-      }
-      return {
-        kind: 'slots',
-        expression: JSON.stringify(compiled.value),
-        classNames: compiled.classNames,
-        dynamic: false,
-      }
+    const compiled = compiledSelection(selection)
+    if (!compiled) return { kind: 'decline', reason: 'dynamic' }
+    if (typeof compiled.value === 'string') {
+      return { kind: 'class', className: compiled.value, styles: compiled.styles }
     }
-
     return {
-      kind: 'class',
-      className: getRecipeClassNames(name, config.variants, merged, ctx.utility.separator, format),
+      kind: 'slots',
+      expression: JSON.stringify(compiled.value),
+      classNames: compiled.classNames,
+      dynamic: false,
     }
   }
 
-  if (styleCompiler) {
-    /**
-     * Compile the finite recipe state space into a reduced decision table.
-     *
-     * Each leaf is a *complete* final StyleSet. This matters for declarations overridden by
-     * variants and compounds: selecting independent per-axis atoms would put both values in
-     * the utility layer and let stylesheet order, rather than the recipe's merge order, pick
-     * the winner. Complete leaves retain the same precedence while sharing their atoms with
-     * every `css()` and recipe in the build.
-     *
-     * `undefined` is its own edge because it restores a default variant. `null` and any
-     * undeclared value take the miss edge and explicitly suppress that default. Declared
-     * values use string keys, matching JavaScript's property-key coercion in the recipe
-     * runtime. A flat alternating key/value array avoids the special `__proto__` semantics
-     * of an object literal.
-     */
-    const axes = Object.keys(config.variants ?? {}).filter((key) => dynamicAxes.has(key))
-    const stateCount = axes.reduce(
-      (product, axis) => product * (Object.keys(config.variants?.[axis] ?? {}).length + 2),
-      1,
-    )
-    if (stateCount > maxRecipeStates) {
-      throw new Error(
-        `Static recipe compilation would inspect ${stateCount.toLocaleString('en-US')} selections across ` +
-          `${axes.length} runtime variant axes, above maxRecipeStates=${maxRecipeStates.toLocaleString('en-US')}. ` +
-          `Make one or more axes statically known, split the recipe, or raise the limit explicitly.`,
-      )
-    }
-    type SlotClasses = Record<string, string>
-    type Leaf = string | SlotClasses
-    type Ref = number
-
-    const expressions = axes.map((axis) => dynamicAxes.get(axis)!)
-    const wholeSlots = Array.isArray(config.slots) && slot === undefined
-
-    const map: DynamicStyleMap = {
-      outputKind: wholeSlots ? 'slots' : 'class',
-      compile(before = [], after = []) {
-        const nodes: Array<[Ref, Ref, Array<string | Ref>]> = []
-        const nodeByShape = new Map<string, number>()
-        const leaves: Leaf[] = []
-        const leafByShape = new Map<string, number>()
-        const emittedClasses = new Set<string>()
-
-        const leaf = (dynamicSelection: Dict): Ref => {
-          const selected = { ...selection, ...dynamicSelection }
-
-          if (wholeSlots) {
-            const compiled = compiledSelection(selected)
-            if (!compiled || typeof compiled.value === 'string') return internLeaf('')
-            for (const token of compiled.classNames) emittedClasses.add(token)
-            return internLeaf(compiled.value)
-          }
-
-          const styles = styleCompiler.resolveRecipe(config as StyleSetRecipeConfig, selected, slot)
-          if (!styles) return internLeaf('')
-          const className = styleCompiler.className(styleCompiler.compose(...before, styles, ...after))
-          for (const token of className.split(' ')) if (token) emittedClasses.add(token)
-          return internLeaf(className)
-        }
-
-        // Leaves are referenced as bitwise-complemented indices (-1, -2, ...), while node
-        // indices are non-negative. Complete class strings therefore appear once even when
-        // many variant combinations resolve to the same StyleSet.
-        function internLeaf(value: Leaf): Ref {
-          const shape = JSON.stringify(value)
-          const known = leafByShape.get(shape)
-          if (known !== undefined) return ~known
-          const id = leaves.length
-          leaves.push(value)
-          leafByShape.set(shape, id)
-          return ~id
-        }
-
-        const buildNode = (index: number, dynamicSelection: Dict): Ref => {
-          if (index === axes.length) return leaf(dynamicSelection)
-
-          const axis = axes[index]!
-          const values = Object.keys(config.variants?.[axis] ?? {})
-          const miss = buildNode(index + 1, { ...dynamicSelection, [axis]: null })
-          const absentSelection = { ...dynamicSelection }
-          delete absentSelection[axis]
-          const absent = buildNode(index + 1, absentSelection)
-
-          const byValue: Array<string | Ref> = []
-          for (const value of values) {
-            byValue.push(value, buildNode(index + 1, { ...dynamicSelection, [axis]: value }))
-          }
-
-          const refs = [miss, absent, ...byValue.filter((_, valueIndex) => valueIndex % 2 === 1)] as Ref[]
-          if (refs.every((ref) => ref === refs[0])) return refs[0]!
-
-          const node: [Ref, Ref, Array<string | Ref>] = [miss, absent, byValue]
-          const shape = JSON.stringify(node)
-          const known = nodeByShape.get(shape)
-          if (known !== undefined) return known
-
-          const id = nodes.length
-          nodes.push(node)
-          nodeByShape.set(shape, id)
-          return id
-        }
-
-        const root = buildNode(0, {})
-        return {
-          expression: `${RECIPE_MAP_HELPER}([${expressions.join(', ')}], ${JSON.stringify(nodes)}, ${JSON.stringify(leaves)}, ${root})`,
-          classNames: [...emittedClasses],
-          staticClasses: root < 0 && typeof leaves[~root] === 'string' ? (leaves[~root] as string) : '',
-          outputKind: wholeSlots ? 'slots' : 'class',
-        }
-      },
-    }
-
-    return { kind: 'dynamic-style', map }
-  }
-
-  // Emitted in the config's variant order, which is the order `getRecipeClassNames` appends
-  // in. Grouping the static classes first and the runtime ones after would put a dynamic axis
-  // declared before a static one on the wrong side, so the same element would carry a
-  // different `class` string in dev — where `cva` still runs — than in the build.
-  const ownClass = format(name)
-  const parts: string[] = [JSON.stringify(ownClass)]
-  const classNames: string[] = [ownClass]
-
-  for (const key of Object.keys(config.variants ?? {})) {
-    const expression = dynamicAxes.get(key)
-
-    if (expression === undefined) {
-      // Resolved: the same three conditions `getRecipeClassNames` applies before appending.
-      const value = merged[key]
-      if (value == null) continue
-
-      // The same three conditions `getRecipeClassNames` applies, including its own-key check —
-      // without it a value of `'toString'` names a class the runtime never emits and no rule
-      // backs, which is exactly the dev-versus-build divergence this ordering exists to avoid.
-      const declared = config.variants?.[key]
-      if (!declared || !Object.hasOwn(declared, value as string) || declared[value as string] == null) continue
-
-      const className = format(`${name}--${key}${ctx.utility.separator}${withoutSpace(value as string)}`)
-      parts.push(JSON.stringify(` ${className}`))
-      classNames.push(className)
-      continue
-    }
-
-    const values = config.variants![key]!
-    const table: Record<string, string> = {}
-
-    for (const value of Object.keys(values)) {
-      const className = format(`${name}--${key}${ctx.utility.separator}${withoutSpace(value)}`)
-      table[value] = ` ${className}`
-      classNames.push(className)
-    }
-
-    // What the default contributes when the property is absent at runtime, resolved here.
-    const fallbackValue = config.defaultVariants?.[key]
-    const fallback =
-      fallbackValue != null && values[fallbackValue as string] != null
-        ? ` ${format(`${name}--${key}${ctx.utility.separator}${withoutSpace(fallbackValue as string)}`)}`
-        : undefined
-
-    parts.push(
-      `${HELPER}(${expression}, ${JSON.stringify(table)}${fallback === undefined ? '' : `, ${JSON.stringify(fallback)}`})`,
+  /**
+   * Compile the finite recipe state space into a reduced decision table.
+   *
+   * Each leaf is a *complete* final StyleSet. This matters for declarations overridden by
+   * variants and compounds: selecting independent per-axis atoms would put both values in
+   * the utility layer and let stylesheet order, rather than the recipe's merge order, pick
+   * the winner. Complete leaves retain the same precedence while sharing their atoms with
+   * every `css()` and recipe in the build.
+   *
+   * `undefined` is its own edge because it restores a default variant. `null` and any
+   * undeclared value take the miss edge and explicitly suppress that default. Declared
+   * values use string keys, matching JavaScript's property-key coercion in the recipe
+   * runtime. A flat alternating key/value array avoids the special `__proto__` semantics
+   * of an object literal.
+   */
+  const axes = Object.keys(config.variants ?? {}).filter((key) => dynamicAxes.has(key))
+  const stateCount = axes.reduce(
+    (product, axis) => product * (Object.keys(config.variants?.[axis] ?? {}).length + 2),
+    1,
+  )
+  if (stateCount > maxRecipeStates) {
+    throw new Error(
+      `Static recipe compilation would inspect ${stateCount.toLocaleString('en-US')} selections across ` +
+        `${axes.length} runtime variant axes, above maxRecipeStates=${maxRecipeStates.toLocaleString('en-US')}. ` +
+        `Make one or more axes statically known, split the recipe, or raise the limit explicitly.`,
     )
   }
+  type SlotClasses = Record<string, string>
+  type Leaf = string | SlotClasses
+  type Ref = number
 
-  // Every axis turned out to name no variant, so nothing runtime survived.
-  if (parts.length === 1) return { kind: 'class', className: ownClass }
+  const expressions = axes.map((axis) => dynamicAxes.get(axis)!)
+  const wholeSlots = Array.isArray(config.slots) && slot === undefined
 
-  return {
-    kind: 'expression',
-    expression: parts.join(' + '),
-    classNames,
-    staticClasses: ownClass,
-    helper: RECIPE_PICK_HELPER,
+  const map: DynamicStyleMap = {
+    outputKind: wholeSlots ? 'slots' : 'class',
+    compile(before = [], after = []) {
+      const nodes: Array<[Ref, Ref, Array<string | Ref>]> = []
+      const nodeByShape = new Map<string, number>()
+      const leaves: Leaf[] = []
+      const leafByShape = new Map<string, number>()
+      const emittedClasses = new Set<string>()
+
+      const leaf = (dynamicSelection: Dict): Ref => {
+        const selected = { ...selection, ...dynamicSelection }
+
+        if (wholeSlots) {
+          const compiled = compiledSelection(selected)
+          if (!compiled || typeof compiled.value === 'string') return internLeaf('')
+          for (const token of compiled.classNames) emittedClasses.add(token)
+          return internLeaf(compiled.value)
+        }
+
+        const styles = styleCompiler.resolveRecipe(config as StyleSetRecipeConfig, selected, slot)
+        if (!styles) return internLeaf('')
+        const className = styleCompiler.className(styleCompiler.compose(...before, styles, ...after))
+        for (const token of className.split(' ')) if (token) emittedClasses.add(token)
+        return internLeaf(className)
+      }
+
+      // Leaves are referenced as bitwise-complemented indices (-1, -2, ...), while node
+      // indices are non-negative. Complete class strings therefore appear once even when
+      // many variant combinations resolve to the same StyleSet.
+      function internLeaf(value: Leaf): Ref {
+        const shape = JSON.stringify(value)
+        const known = leafByShape.get(shape)
+        if (known !== undefined) return ~known
+        const id = leaves.length
+        leaves.push(value)
+        leafByShape.set(shape, id)
+        return ~id
+      }
+
+      const buildNode = (index: number, dynamicSelection: Dict): Ref => {
+        if (index === axes.length) return leaf(dynamicSelection)
+
+        const axis = axes[index]!
+        const values = Object.keys(config.variants?.[axis] ?? {})
+        const miss = buildNode(index + 1, { ...dynamicSelection, [axis]: null })
+        const absentSelection = { ...dynamicSelection }
+        delete absentSelection[axis]
+        const absent = buildNode(index + 1, absentSelection)
+
+        const byValue: Array<string | Ref> = []
+        for (const value of values) {
+          byValue.push(value, buildNode(index + 1, { ...dynamicSelection, [axis]: value }))
+        }
+
+        const refs = [miss, absent, ...byValue.filter((_, valueIndex) => valueIndex % 2 === 1)] as Ref[]
+        if (refs.every((ref) => ref === refs[0])) return refs[0]!
+
+        const node: [Ref, Ref, Array<string | Ref>] = [miss, absent, byValue]
+        const shape = JSON.stringify(node)
+        const known = nodeByShape.get(shape)
+        if (known !== undefined) return known
+
+        const id = nodes.length
+        nodes.push(node)
+        nodeByShape.set(shape, id)
+        return id
+      }
+
+      const root = buildNode(0, {})
+      const staticLeaf = root < 0 ? leaves[~root] : undefined
+      // A variant may not affect the requested slot (or every state may reduce to the
+      // same complete StyleSet). When the discarded selector expressions are inert, emit
+      // that leaf directly: no helper import, lookup table, or runtime read is necessary.
+      const expression =
+        root < 0 && effectful.length === 0
+          ? JSON.stringify(staticLeaf)
+          : `${RECIPE_MAP_HELPER}([${expressions.join(', ')}], ${JSON.stringify(nodes)}, ${JSON.stringify(leaves)}, ${root})`
+      return {
+        expression,
+        classNames: [...emittedClasses],
+        staticClasses: typeof staticLeaf === 'string' ? staticLeaf : '',
+        outputKind: wholeSlots ? 'slots' : 'class',
+        usesHelper: !(root < 0 && effectful.length === 0),
+      }
+    },
   }
+
+  return { kind: 'dynamic-style', map }
 }

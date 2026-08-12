@@ -4,22 +4,22 @@
 
 ## Why Bamboo?
 
-Bamboo [folds](https://bamboocss.com/docs/guides/source-transformation) each call into the string it would have
-returned:
+Bamboo [compiles](https://bamboocss.com/docs/guides/source-transformation) each call into shared atomic classes:
 
 ```tsx
 // you write
 <div className={css({ fontSize: 'lg', fontWeight: 'bold' })}>Title</div>
-<div className={css({ fontSize: 'lg', fontWeight: active ? 'bold' : 'normal' })}>Title</div>
+const title = cva({ variants: { weight: { bold: { fontWeight: 'bold' }, normal: { fontWeight: 'normal' } } } })
+<div className={title({ weight: active ? 'bold' : 'normal' })}>Title</div>
 
 // the bundle gets
-<div className="fs_lg fw_bold">Title</div>
-<div className={cx('fs_lg', active ? 'fw_bold' : 'fw_normal')}>Title</div>
+<div className="_4p9d _7bc2">Title</div>
+<div className={cvaMap(/* finite compact-class leaves */)}>Title</div>
 ```
 
-Once every call folds, nothing imports `styled-system/css` and the engine drops out of the bundle.
-[`failOnUnfolded`](https://bamboocss.com/docs/guides/source-transformation#failonunfolded) fails the build if one call
-survives, so zero runtime is something you can hold rather than hope for.
+The Vite compiler rejects style calls it cannot analyze, so nothing imports the styling engine and zero-runtime styling
+is enforced rather than optional. Dynamic `cx()` remains a tiny string join; Bamboo only guarantees semantic style
+composition when its arguments are statically analyzable.
 
 Bamboo [fails](https://bamboocss.com/docs/concepts/build-diagnostics) the build when a call names a pattern or token
 that does not exist:
@@ -59,7 +59,7 @@ npm i -D @bamboocss/dev @bamboocss/vite
 npx bamboo init
 ```
 
-Add the plugin. It emits the stylesheet and folds your calls into class strings — without it you get neither:
+Add the plugin. It emits the stylesheet and compiles your calls into class strings — without it you get neither:
 
 ```ts
 // vite.config.ts
@@ -88,8 +88,8 @@ import { flex } from '../styled-system/patterns'
 <div className={css({ fontSize: 'lg', color: 'red.400' })}>Box 2</div>
 ```
 
-Not on Vite? [PostCSS](https://bamboocss.com/docs/installation/postcss) works too, but only the Vite plugin folds calls
-into class strings.
+Not on Vite? [PostCSS](https://bamboocss.com/docs/installation/postcss) provides extraction-only output, but only the
+Vite integration compiles calls and globally deduplicates recipe declarations.
 
 ## Directory Structure
 
@@ -98,7 +98,7 @@ Installed by you:
 | Package                                             | Description                                                   |
 | --------------------------------------------------- | ------------------------------------------------------------- |
 | [cli](packages/cli)                                 | The `@bamboocss/dev` package and the `bamboo` command         |
-| [vite](packages/vite)                               | Vite plugin: emits the stylesheet and folds static calls      |
+| [vite](packages/vite)                               | Strict whole-program source and CSS compiler                  |
 | [postcss](packages/postcss)                         | PostCSS plugin                                                |
 | [eslint-plugin](packages/eslint-plugin)             | Lint rules for token paths, escape hatches and recipe usage   |
 | [mcp](packages/mcp)                                 | MCP server exposing tokens, recipes and usage to assistants   |

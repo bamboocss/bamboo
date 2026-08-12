@@ -2,6 +2,7 @@ import { createContext } from '@bamboocss/fixture'
 import { describe, expect, test } from 'vitest'
 import { foldSource } from '../src/fold'
 import { createRuntimeCss } from '../src/runtime-css'
+import { createStaticStyleSetCompiler } from '../src/style-set'
 import { createFoldFixture, FILE_PATH } from './fixture'
 
 /**
@@ -443,7 +444,15 @@ describe('fold: token() table construction', () => {
     ctx.project.addSourceFile(path, code)
     const parserResult = ctx.project.parseSourceFile(path)
     if (!parserResult) return
-    foldSource({ ctx, code, parserResult, filePath: path, runtimeCss: createRuntimeCss(ctx) })
+    const runtimeCss = createRuntimeCss(ctx)
+    foldSource({
+      ctx,
+      code,
+      parserResult,
+      filePath: path,
+      runtimeCss,
+      styleCompiler: createStaticStyleSetCompiler(ctx, runtimeCss),
+    })
   }
 
   test('a module with no token() call never builds the table', () => {

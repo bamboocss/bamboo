@@ -260,13 +260,13 @@ describe('syntactic positions', () => {
 })
 
 describe('degenerate arguments', () => {
-  test('css() with no arguments is left alone', () => {
+  test('css() with no arguments compiles to the empty class string', () => {
     const { fold } = createFoldFixture()
 
     const code = `import { css } from 'styled-system/css'\nexport const cls = css()\n`
     const result = fold(code)
 
-    expect(result.code).toBe(code)
+    expect(result.code).toContain('export const cls = ""')
   })
 
   test('css({}) does not produce a broken literal', () => {

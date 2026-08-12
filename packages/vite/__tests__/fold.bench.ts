@@ -5,6 +5,7 @@ import { createContext } from '@bamboocss/fixture'
 import { bench, describe } from 'vitest'
 import { foldSource } from '../src/fold'
 import { createRuntimeCss } from '../src/runtime-css'
+import { createStaticStyleSetCompiler } from '../src/style-set'
 
 /**
  * What a build pays per module to fold it.
@@ -133,6 +134,7 @@ export const mixed${index} = (tone) => recipe${index}({ tone, size: 'lg' })
 
 const ctx = createContext()
 const runtimeCss = createRuntimeCss(ctx)
+const styleCompiler = createStaticStyleSetCompiler(ctx, runtimeCss)
 
 let counter = 0
 /** A fresh path per iteration, so nothing is served from a per-file cache. */
@@ -149,7 +151,7 @@ const parseAndFold = (code: string) => {
   ctx.project.addSourceFile(filePath, code)
   const parserResult = ctx.project.parseSourceFile(filePath)
   if (!parserResult) return null
-  return foldSource({ ctx, code, parserResult, filePath, runtimeCss })
+  return foldSource({ ctx, code, parserResult, filePath, runtimeCss, styleCompiler })
 }
 
 describe('per-module transform cost', () => {

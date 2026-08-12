@@ -37,24 +37,6 @@ const declaration = outdent`
    export declare function cx(...args: Argument[]): string
 
    /**
-    * Pick a recipe variant's class for a value only known at runtime.
-    *
-    * Emitted by the build when it folds an inline recipe call whose selection it could not
-    * fully resolve — \`badge({ tone })\` becomes \`"badge" + cvaPick(tone, { … }, " badge--tone_a")\`.
-    * Written by the transform, not by hand.
-    *
-    * The three cases are the ones \`cva\` itself distinguishes: \`undefined\` means the property
-    * was never passed, so the recipe's default applies; a value the config declares selects
-    * its class; anything else — including \`null\`, which \`compact\` deliberately keeps — selects
-    * nothing, exactly as \`getRecipeClassNames\` skips a value it cannot find.
-    */
-   export declare function cvaPick(
-     value: unknown,
-     classNameByValue: Record<string, string>,
-     fallback?: string,
-   ): string
-
-   /**
     * Select a complete build-precompiled recipe StyleSet from a reduced decision table.
     * Written by the source transform, not by hand.
     */
@@ -100,17 +82,6 @@ export function generateCx(ctx: Context) {
     return str
   }
 
-  // \`hasOwn\`, not a plain lookup: the table is an object literal, so \`cvaPick(v, t)\` with
-  // \`v\` of "toString" or "constructor" would otherwise find the prototype's method and
-  // concatenate a function into the class attribute. See the declaration for the cases.
-  const cvaPick = (value, classNameByValue, fallback = '') => {
-    if (value === undefined) return fallback
-    // \`null\` before the lookup, because \`getRecipeClassNames\` rejects it on \`value == null\`
-    // and a config may genuinely declare a variant value spelled "null".
-    if (value === null) return ''
-    return Object.hasOwn(classNameByValue, value) ? classNameByValue[value] : ''
-  }
-
   // Each node is [miss, undefined, [key, child, key, child, ...]]. Children are either
   // another non-negative node index or a negative leaf reference. Arrays avoid object-literal
   // \`__proto__\` semantics, while string coercion matches a recipe's property lookup.
@@ -143,7 +114,7 @@ export function generateCx(ctx: Context) {
     return current < 0 ? (leaves[~current] ?? '') : ''
   }
 
-  export { cx, cvaMap, cvaPick, splitProps }
+  export { cx, cvaMap, splitProps }
 `,
     dts: declaration,
   }

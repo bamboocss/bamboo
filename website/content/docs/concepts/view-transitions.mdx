@@ -177,9 +177,9 @@ Import it anywhere. The CSS is emitted once, from wherever the extractor found t
 - **Not resolvable inside a style object.** `css({ viewTransitionClass: viewTransition({ … }) })` is a call expression
   where a static value is expected, so the declaration is dropped. Assign the class to a variable and pass it as a
   `className`.
-- **Not folded.** [Source transformation](/docs/guides/source-transformation) does not yet rewrite static
-  `viewTransition()` calls to string literals, so a call costs a serialization and a hash at runtime. Hoist shared bags
-  to module scope so that happens once.
+- **Compiled by Vite.** A static `viewTransition()` bag becomes its compact class literal. Its carrier selector,
+  pseudo-element selectors, and `view-transition-class` value are renamed and pruned as one unit. An open runtime bag
+  fails compilation because no finite emitted transition rule can back it.
 - **No view-transition-type conditions.** Styling by transition type (`:active-view-transition-type()`) is not exposed
   as a condition yet.
 

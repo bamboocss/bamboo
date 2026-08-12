@@ -35,17 +35,17 @@ The styles generated at build time will look like this:
 
 ## Why didn't my `className` override the component's styles?
 
-`cx` joins class names; it does not resolve conflicts between them. If a component styles itself with `css()` and joins
-your `className`, both classes are in the `utilities` layer and the browser picks by stylesheet order.
+With Vite, `cx()` resolves conflicts only when the compiler can see every Bamboo argument. An arbitrary `className` prop
+remains a runtime string, so `cx(componentStyles, props.className)` is only a join and the browser picks between
+same-layer declarations by stylesheet order.
 
-The fix is to give the two styles different origins, or to stop overriding through a class name at all.
+The reliable fix is to stop expressing the override as an opaque class name. Accept a style object and compile
+`css(base, props.css)`, where later properties win before class allocation. A declared recipe variant is another good
+fit when the choices are finite.
 
-Declaring the component's styles as a **recipe** — `cva()` or `sva()`, inline or in `theme.recipes` — puts them in the
-`recipes` layer, so a consumer's `css()` in `utilities` wins by [cascade layer](/docs/concepts/cascade-layers) in every
-build.
-
-The alternative needs no layer at all — accept a style object rather than a class name. `css(base, props.css)` merges
-per property before any class name exists, so it resolves the same way in every build.
+If both arguments are analyzable at the call site, `cx(css(base), css(override))` is also composed semantically and
+losing declarations are never allocated. Extraction-only CLI/PostCSS output retains the older recipe-layer override
+model; Vite recipes and utilities intentionally share the global atom layer.
 
 ---
 
@@ -283,33 +283,24 @@ Bamboo deliberately has one way to write a style, rather than several.
   are what those components wrapped — see [patterns](/docs/concepts/patterns) for the set that survives.
 - **There is no template literal syntax.** ``css`color: red` `` is not supported; write the object form.
 
-The result is that a class name in Bamboo always comes from a function call you can see, which is also what makes the
-[build-time fold](/docs/guides/source-transformation) able to resolve so much of it.
+The result is that a class name in Bamboo always comes from a function call you can see, which is what makes the
+[build-time compiler](/docs/guides/source-transformation) able to resolve the complete style graph.
 
 ### Different behaviour
 
 These compile unchanged and do something else, so they are worth checking on migration.
 
-- **`cx` joins, it does not merge.** Panda's `cx` resolves conflicts between atomic classes. Bamboo's concatenates, in
-  every build — under [`hash`](/docs/references/config#hash) a class is an opaque digest with no property to compare, so
-  a `cx` that merged only when it could would behave differently in development and production. Precedence is decided by
-  [cascade layer](/docs/concepts/cascade-layers) instead. See
-  [`cx` joins, in both tools](/docs/migration/panda#cx-joins-in-both-tools).
-- **Recipes are named, not atomic.** An inline `cva()`/`sva()` emits one class per variant into the `recipes` layer
-  rather than atomic classes into `utilities`. A component written with `cva` is therefore reliably overridable by a
-  consumer's `css()`, which wins by layer. See
-  [Recipes are named, not atomic](/docs/migration/panda#recipes-are-named-not-atomic).
-- **Slot recipes scope their variants.** A slot recipe declaring a slot named `root` is scoped automatically: only the
-  root takes variants, and every other slot's variant styles become `@scope` rules anchored on it. A slot deep in a
-  compound component then needs nothing delivered to it — no context, no provider. It also means
-  `.checkbox__control--size_md` is no longer emitted, and that `@scope` sets the Firefox floor of Bamboo's
-  [browser baseline](/docs/overview/browser-support) at 146; the rest of that baseline – Chrome 123, Safari 17.5 – comes
-  from `light-dark()`. This is the change most likely to affect a migrating app, and it is silent; see
-  [Slot recipes scope their variants](/docs/migration/panda#slot-recipes-scope-their-variants) and
-  [Variant scoping](/docs/concepts/slot-recipes#variant-scoping). `scopeRoots: []` opts out of the scoping, not of the
-  baseline.
-- **Compound variants are a compound selector.** `.btn--size_sm.btn--tone_a` rather than atomic classes joined at
-  runtime, which keeps the whole recipe in one layer and leaves the runtime nothing to compute.
+- **`cx` composes what the compiler can see.** Fully analyzable Bamboo arguments are merged as StyleSets before atom
+  allocation. With an arbitrary external class, `cx` remains a tiny string joiner and makes no semantic conflict
+  guarantee. See [`cx` joins external classes](/docs/migration/panda#cx-joins-in-both-tools).
+- **Vite compiles recipes to shared atoms.** An inline or config recipe selection resolves into the same declaration
+  pool as `css()`. Recipe identity does not enter class identity, and analyzable `cx()` composition is resolved before
+  classes are allocated. See
+  [Vite compiles recipes to shared atoms](/docs/migration/panda#vite-compiles-recipes-to-shared-atoms).
+- **Slot recipes return compiled slot atoms.** Static selections become literal slot objects; finite runtime axes become
+  reduced lookups of complete slot objects. No named slot selector or `@scope` is emitted by Vite.
+- **Compound variants are resolved into complete leaves.** They add no selector or runtime matcher; each selected leaf
+  already contains the precedence-correct declarations.
 
 ### Less CSS
 
@@ -337,37 +328,34 @@ else, so an element rendered by a dependency, by `dangerouslySetInnerHTML`, or b
 - There is no JSX factory to import at all, so `styled-system/jsx` — previously the largest generated barrel — is not
   generated.
 
-### Optional zero-runtime output
+### Compiled zero-runtime styling
 
-[`@bamboocss/vite`](/docs/guides/source-transformation) rewrites statically-resolvable calls into the class string they
-would have returned, so they cost nothing at runtime:
+[`@bamboocss/vite`](/docs/guides/source-transformation) compiles style calls to globally shared declaration atoms in
+development and production:
 
 ```tsx
 // you write
 export const title = css({ fontSize: 'lg', fontWeight: 'bold' })
 
 // the bundle gets
-export const title = 'fs_lg fw_bold'
+export const title = '_4p9d _7bc2'
 ```
 
-A style that varies does not put the call back either. Both branches of a top-level ternary are known, so each resolves
-at build time and only the choice is left behind – two such properties give two ternaries rather than four combinations:
+A style that varies is expressed as a finite recipe axis. The build resolves compound variants and precedence for every
+reachable state and emits a reduced decision table:
 
 ```tsx
-// you write
-css({ fontSize: 'lg', fontWeight: active ? 'bold' : 'normal' })
+const title = cva({
+  base: { fontSize: 'lg' },
+  variants: { weight: { bold: { fontWeight: 'bold' }, normal: { fontWeight: 'normal' } } },
+})
 
-// the bundle gets
-cx('fs_lg', active ? 'fw_bold' : 'fw_normal')
+title({ weight })
 ```
 
-Even a value the build cannot see lowers, since the class is the property's prefix plus whatever the value holds, and
-the prefix is known now – `css({ color: tone })` becomes `cssLeaf('c_', 'color', tone)`, which falls back to the engine
-only for a non-scalar such as a condition object.
-
-It also folds pattern calls, config recipe calls, and inline and imported `cva` recipe calls – following named imports
-across files – and splits a partly static call so the half that resolves becomes a literal. CSS output is unchanged –
-only the JavaScript changes. It is on by default, build-only, and reports how much of your source it managed to fold.
+Recipe identity is discarded after selection, so the same declaration in this recipe, another recipe, or `css()` uses
+one atom. Recipe declarations are erased from JavaScript and the named recipe CSS layer is not emitted. Open runtime
+style values are compiler errors; there is no option that restores a runtime styling fallback.
 
 ---
 
@@ -434,37 +422,36 @@ There is a detailed guide on how to do this [here](/docs/guides/component-librar
 
 ## Can I use dynamic styles with Bamboo?
 
-Yes, you can use dynamic styles with Bamboo. More on that [here](/docs/guides/dynamic-styling#runtime-conditions).
+Yes, when the set of styles is finite. Declare runtime choices as recipe variants; Bamboo compiles the possible states
+to a reduced decision table. Open values such as `css({ color: userValue })` are rejected because they have no finite
+build-known CSS rule set. See [Source compilation](/docs/guides/source-transformation#what-compiles).
 
 ---
 
 ## Can Bamboo resolve styles at build time instead of at runtime?
 
-Yes, for the parts it can see. `@bamboocss/vite` rewrites statically-resolvable style calls into the class string they
-would have returned, so those calls cost nothing on render:
+Yes. `@bamboocss/vite` compiles style calls to shared declaration atoms in development and production:
 
 ```tsx
 export const title = css({ fontSize: 'lg' })
-export const title = 'fs_lg'
+export const title = '_4p9d'
 ```
 
-It covers `css()`, pattern and config recipe calls, and the static half of anything only partly static. The CSS is
-unchanged; only the JavaScript is. On by default and build-only – see
-[Source Transformation](/docs/guides/source-transformation).
+It covers `css()`, patterns, recipes, finite runtime recipe axes, tokens, static `viewTransition()` bags, and analyzable
+`cx()`. Open runtime style values fail compilation instead of retaining the style engine. See
+[Source compilation](/docs/guides/source-transformation).
 
 ---
 
 ## Should I use atomic or config recipes ?
 
-Both emit the same kind of CSS — one class per variant, in the `recipes` cascade layer. The difference is where the name
-comes from and how much gets generated:
+Under the Vite compiler both resolve to the same globally shared declaration atoms. The difference is where the recipe
+is declared and whether Bamboo can build a finite runtime decision table:
 
-- A **config recipe** is declared in `theme.recipes` under a key, so it is known before extraction starts and only the
-  variants your code actually uses are generated.
-- An **inline recipe** (`cva`) is colocated with the component. It is scattered through your source, so finding which
-  variants are used would mean scanning the app repeatedly — instead every variant it declares is generated.
+- A **config recipe** is declared in `theme.recipes` under a key and can be shared through presets.
+- An **inline recipe** (`cva`) is colocated with the component.
 
-Colocation against leaner CSS, in other words. See
+Both support finite runtime axes under Vite. The choice is preset sharing versus colocation. See
 [Should I use an inline or config recipe?](/docs/concepts/recipes#should-i-use-an-inline-or-config-recipe) for the full
 comparison table — kept there rather than duplicated here, since a copy of it in this page went stale once already.
 

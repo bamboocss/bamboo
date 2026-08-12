@@ -3,9 +3,9 @@ title: Styled System
 description: What is the styled-system folder and how does it work?
 ---
 
-While Bamboo generates your CSS at **build-time** using static extraction, we still need a lightweight runtime to
-transform the [CSS-in-JS syntax](/docs/concepts/writing-styles#atomic-styles) to class names strings. This is where the
-`styled-system` folder comes in.
+The generated `styled-system` folder is Bamboo's typed authoring interface. Under Vite, its style functions are
+compile-time syntax: the compiler replaces them before the browser bundle and the styling engine tree-shakes away.
+CLI/PostCSS integrations execute the generated functions at runtime instead.
 
 When running the `bamboo` or `bamboo codegen` commands, the [`config.outdir`](/docs/references/config#outdir) will be
 used as output path to generate the `styled-system` in.
@@ -16,14 +16,12 @@ This is the core of what the `styled-system` does:
 css({ color: 'blue.300' }) // => "c_blue.300"
 ```
 
-The runtime is the fallback, not the only path. The [Vite plugin](/docs/guides/source-transformation) folds static call
-sites at build time — it is on by default and rewrites `css({ color: 'blue.300' })` to the string literal `"c_blue.300"`
-in the emitted bundle. Call sites the fold cannot resolve statically keep calling the runtime, which is why it still
-ships.
+The [Vite compiler](/docs/guides/source-transformation) resolves that call into a compact shared atom. A call it cannot
+represent statically or as a finite recipe choice is a build error; there is no styling-runtime fallback.
 
 The same principles apply to `patterns` and `recipes`, as they all use the `css` function under the hood.
 
-If you look inside your `styled-system` folder, you should see the main entrypoints for the runtime:
+If you look inside your `styled-system` folder, you should see the generated authoring entrypoints:
 
 <FileTree>
   <FileTree.Folder name="styled-system" defaultOpen>
@@ -54,18 +52,18 @@ When running the `bamboo` command or with the postcss plugin, here's what's happ
 
 2. **Generating artifacts**:
 
-- Write lightweight JS runtime and types to output directory
+- Write JavaScript authoring helpers and types to the output directory. Vite removes style-engine helpers from the
+  application bundle after compilation.
 
 3. **Extracting used styles in app code**:
 
 - Run parser on each user's file: identify and extract styles, compute CSS, write to styles.css.
 
-That `2. Generating artifacts` step is where the `styled-system` folder is generated, using the resolved config that
-contains all your tokens, patterns, recipes, utilities etc. We generate a tailored runtime for your app, so that it only
-contains enough code (and types!) to support the styles you're using.
+That `2. Generating artifacts` step uses the resolved tokens, patterns, recipes, and utilities to create a tailored
+authoring API. Extraction-only integrations execute it; Vite treats its style surfaces as compiler intrinsics.
 
 ## Pre-rendering
 
-If you use some way to pre-render your components to static HTML, for example using Astro or RSC, the `styled-system`
-functions like `css` and others will be removed at build-time and replaced by the generated class names, so that you
-don't have to ship the runtime to your users.
+Vite compilation removes `styled-system` style functions whether rendering happens in the browser, Astro, RSC, or
+another pre-renderer. Use stable compact names (the default) when server and client are built separately so their HTML
+and CSS agree.

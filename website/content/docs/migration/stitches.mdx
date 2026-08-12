@@ -102,11 +102,12 @@ const Button = styled('button', {
 // => <button class="c-coNKBW c-coNKBW-dnSdJM-variant-primary">Button</button>
 ```
 
-Bamboo has no `styled` factory. Base styles go under the `base` key of a recipe, and both kinds of recipe emit a named
-class per variant, into the `recipes` cascade layer. What you choose is where the recipe lives, and what that costs.
+Bamboo has no `styled` factory. Base styles go under the `base` key of a recipe. With Vite, inline and configured
+recipes compile into the same globally shared atom pool; the choice is about organization and generated API, not CSS
+identity.
 
-- **Colocated** with the component, using the `cva` function. Every variant it declares is generated, because the build
-  cannot cheaply find which ones your code uses.
+- **Colocated** with the component, using the `cva` function. Static selections compile directly; finite runtime axes
+  compile to reduced decision tables containing only complete reachable style sets.
 
 ```tsx
 import { cva } from '../styled-system/css'
@@ -121,10 +122,10 @@ const button = cva({
 // => <button class="button">Button</button>
 ```
 
-`className` is optional — without it the class is derived by hashing the config, which is stable but not readable.
+`className` is optional extraction metadata. It does not enter Vite's declaration identity or compact atom names.
 
-- **In the config**, by defining the recipe in `bamboo.config.ts`. This approach only generates the classes and css for
-  the variants that are used in the project.
+- **In the config**, by defining the recipe in `bamboo.config.ts`. It uses the same Vite lowering as an inline recipe,
+  while codegen exposes a named import and its variant types.
 
 ```ts
 import { defineConfig, defineRecipe } from '@bamboocss/dev'

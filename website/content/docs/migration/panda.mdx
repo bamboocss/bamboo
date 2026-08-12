@@ -11,10 +11,11 @@ For most projects this is a find-and-replace of `panda` with `bamboo`, plus a re
 
 ## What stays the same
 
-- `css`, `cva`, `sva`, `cx` and the pattern functions – same names, same signatures. `cva`/`sva` are the exception: they
-  emit into the `recipes` cascade layer rather than atomic classes ([below](#recipes-are-named-not-atomic)).
-- Recipes, variants, compound variants and default variants. **Slot recipes are the exception** – their output changes
-  shape, and it changes silently; see [below](#slot-recipes-scope-their-variants).
+- `css`, `cva`, `sva`, `cx` and the pattern functions – same names and authoring signatures. Under Vite they are
+  compile-time APIs: recipe selections share the same global declaration atoms as `css()`
+  ([below](#vite-compiles-recipes-to-shared-atoms)).
+- Recipes, variants, compound variants and default variants. **Slot recipes are the exception** – their output compiles
+  to one atom string per selected slot; see [below](#vite-compiles-slot-selections-directly).
 - Tokens, semantic tokens, conditions, breakpoints, themes, `staticCss`, cascade layers.
 - The config shape, minus five keys. Every key you have in `panda.config.ts` is valid in `bamboo.config.ts` except
   `studio`, `jsxFramework`, `jsxFactory`, `jsxStyleProps` and `syntax`, none of which have an equivalent – delete them.
@@ -135,93 +136,47 @@ pnpm bamboo codegen
 
 ## `cx` joins, in both tools
 
-Panda's `cx` joins classnames and so does Bamboo's, so this needs no migration. Two atomic classes for the same property
-both end up on the element and the browser picks by stylesheet order.
-
-What differs is the advice about what to do instead. A **recipe** — `cva()` or `sva()`, inline or declared in
-`theme.recipes` — lands in the `recipes` layer, so a consumer's `css()` in `utilities` overrides it deterministically.
-This is a difference from Panda, where an inline `cva()` emits atomic classes. See
+At runtime, both helpers join arbitrary class strings. Bamboo's Vite compiler additionally recognizes analyzable Bamboo
+style arguments: it composes their declarations in argument order before allocating atoms, so overridden declarations do
+not ship. A `cx()` containing an unknown external class remains the tiny joining helper. See
 [Merging styles](/docs/concepts/merging-styles).
 
-## Slot recipes scope their variants
+## Vite compiles slot selections directly
 
-The largest behavioural change in the migration, and the one most likely to bite, because nothing about your config has
-to change for it to happen.
+Panda's slot recipe output carries recipe- and variant-specific classes. Bamboo's Vite compiler resolves the selection
+first, then returns one shared atom string per slot:
 
-In Panda, every slot of a slot recipe carries its own variant class:
-
-```html
-<div class="checkbox__root checkbox__root--size_md">
-  <div class="checkbox__control checkbox__control--size_md">
-    <span class="checkbox__label checkbox__label--size_md"></span>
+```tsx
+const classes = checkbox({ size })
+return (
+  <div className={classes.root}>
+    <span className={classes.label} />
   </div>
-</div>
+)
 ```
 
-In Bamboo, **a slot recipe that declares a slot named `root` is scoped automatically**. The root keeps its variant
-class; every other slot's variant styles become `@scope` rules anchored on it, and those slots carry a constant class:
+A static selection becomes a literal object. A finite runtime selection becomes a reduced lookup whose leaves are
+complete slot objects. Recipe names, slot names, `scopeRoots`, and DOM shape do not enter the emitted selectors, so
+portals require no CSS scoping accommodation. Use a stable `data-slot` attribute if application CSS or tests need a
+semantic slot selector; generated atom names are intentionally opaque.
 
-```html
-<div class="checkbox__root checkbox__root--size_md">
-  <div class="checkbox__control">
-    <span class="checkbox__label"></span>
-  </div>
-</div>
-```
+## Vite compiles recipes to shared atoms
 
-```css
-@scope (.checkbox__root--size_md) to (.checkbox__root) {
-  .checkbox__control {
-    width: 10;
-  }
-}
-```
-
-The upside is that a slot arbitrarily deep in a compound component needs nothing delivered to it — no context, no
-provider, no wrapper. See [Slot recipes](/docs/concepts/slot-recipes#only-the-root-takes-variants).
-
-### What this means for a migrating app
-
-- **Selectors you wrote against a non-root slot's variant class no longer match.** `.checkbox__control--size_md` is not
-  emitted any more. Anything targeting one — a test, a Playwright locator, a global stylesheet, a snapshot — needs
-  updating.
-- **The browser floor moves.** `@scope` needs Chrome 118, Firefox 146, Safari 17.4, and there is no polyfill. Of those
-  it is Firefox that binds: Bamboo's [browser baseline](/docs/overview/browser-support) is Chrome ≥ 123, Safari ≥ 17.5
-  and Firefox ≥ 146, with the first two set by `light-dark()` rather than by `@scope`. It is not something a recipe can
-  opt out of — `scopeRoots: []` stops the scoping, but the baseline is what Bamboo supports either way.
-- **A portaled slot needs a second anchor.** A `<Select>` whose listbox renders through a portal is outside the root's
-  subtree, so a scope opened at the root cannot reach it — its base styles still apply, so it renders _nearly_ right.
-  Name both enclosing slots:
-
-  ```ts
-  scopeRoots: ['root', 'positioner']
-  ```
-
-  An anchor is callable, so the variant still has to reach the positioner — that is one context per portaled component,
-  against one per slot in Panda. See
-  [Components that span a portal](/docs/concepts/slot-recipes#components-that-span-a-portal).
-
-If you would rather migrate without any of this and revisit it later, `scopeRoots: []` on each slot recipe reproduces
-Panda's output exactly.
-
-## Recipes are named, not atomic
-
-`cva()` and `sva()` emit one class per variant, into the `recipes` cascade layer:
+With `@bamboocss/vite`, `cva()` and `sva()` are compile-time declarations. A selected recipe is resolved to authored
+styles and shares declaration atoms with every other recipe and `css()` call:
 
 ```js
 cva({ base: { padding: '4' }, variants: { size: { sm: { fontSize: 'sm' } } } })
-// panda:  'p_4'                                  in @layer utilities
-// bamboo: 'cva_a1b2c3' + 'cva_a1b2c3--size_sm'   in @layer recipes
+// panda:  'p_4 fs_sm'
+// bamboo: compact global atoms for padding:4 and fontSize:sm
 ```
 
-The class name is derived from the config — set `className: 'button'` for a readable one. The practical difference is
-that a component written with `cva` is reliably overridable: its styles are in a lower layer than a consumer's `css()`,
-so the consumer wins by cascade rather than by stylesheet order. In Panda an inline `cva` is atomic and sits in the same
-layer as its consumer.
+The recipe name, source file, and `className` do not enter declaration identity. For analyzable `cx(recipe(), css())`,
+Bamboo composes the StyleSets in argument order before allocating classes, so overrides do not depend on stylesheet
+order.
 
-Compound variants change shape with it. Panda joins atomic classes for them at runtime; Bamboo emits a compound selector
-— `.button--size_sm.button--tone_a` — so the whole recipe sits in one layer and the runtime computes nothing. No class
-is added for a compound variant, because the rule matches on the variant classes the element already has.
+Finite runtime axes become a reduced lookup whose leaves already include matching compound variants. The recipe config
+and recipe-specific selectors do not ship. Extraction-only CLI and PostCSS output retains Bamboo's named recipe model.
 
 ## Things that are easy to miss
 
@@ -286,8 +241,8 @@ is added for a compound variant, because the rule matches on the variant classes
 
 These are documented in full elsewhere, and none of them are required to get a migrated project building:
 
-- [Source transformation](/docs/guides/source-transformation) – `@bamboocss/vite` folds statically-resolvable `css()`
-  and pattern calls into plain class strings at build time, so they cost nothing at runtime.
+- [Source compilation](/docs/guides/source-transformation) – `@bamboocss/vite` resolves every style API into shared
+  atoms or a finite recipe table, and rejects open runtime styling.
 - [`prune.tokens`](/docs/references/config#prune) – drops token CSS variables nothing can reach, which is usually the
   largest single saving in render-blocking CSS. On by default.
 - [`preflight.prune`](/docs/references/config#preflightprune) – drops the parts of the reset that style elements your

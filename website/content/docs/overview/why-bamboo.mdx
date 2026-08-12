@@ -5,34 +5,31 @@ description: From the endless list of CSS-in-JS libraries, why should you choose
 
 ## Styles that resolve before they ship
 
-Bamboo is a build-time CSS-in-JS engine. You write style objects; it reads them out of your source, emits atomic CSS,
-and — wherever the value is knowable — rewrites the call into the class string it would have returned. Nothing generates
-styles in the browser or injects them into the `<head>`.
+Bamboo is a build-time CSS-in-JS engine. You write style objects; the Vite compiler resolves them into globally shared
+atoms and replaces every style-producing call with a literal or finite lookup. Open runtime styling is rejected. Nothing
+generates styles in the browser or injects them into the `<head>`.
 
 Three things follow from that, and they are what Bamboo is for.
 
 ### The call disappears
 
 Every class name comes from a function call the compiler can see. There is no JSX factory, no template literal syntax
-and no style props, so a production build can [fold the call away entirely](/docs/guides/source-transformation):
+and no style props, so the compiler can [remove the call entirely](/docs/guides/source-transformation):
 
 ```tsx
 // you write
 export const title = css({ fontSize: 'lg', fontWeight: 'bold' })
 
 // the bundle gets
-export const title = 'fs_lg fw_bold'
+export const title = '_4p9d _7bc2'
 ```
 
-A style that varies does not put the call back. Both branches of a ternary are known, so each resolves at build time and
-only the choice is left behind — and even a value the build cannot see lowers, because the class is the property's
-prefix plus whatever the value holds, and the prefix is known now.
+A style that varies uses a declared, finite recipe axis. Bamboo precompiles every reachable StyleSet and leaves only a
+small decision table behind. An open value such as `css({ color: tone })` is rejected because no finite stylesheet can
+back every value it might produce.
 
-The payoff is not the CPU that saves per call. It is that a bundle where everything lowered stops importing
-`styled-system/css` at all, and the engine drops out of your app. On one sandbox here, with
-[`leafFallback: false`](/docs/references/config#leaffallback) asserting that runtime values are scalars, a module with a
-dynamic style goes from 7,542 bytes gzipped to 1,077 — because the last reference to the engine is gone rather than
-merely unused.
+The payoff is larger than the CPU saved per call. Recipe configs and the style engine disappear from the production
+graph, while identical declarations from every recipe and `css()` call share one atom and one CSS rule.
 
 ### A green build means a complete stylesheet
 
@@ -68,9 +65,9 @@ multiplied by five figures, so optimizations too small to notice elsewhere are p
 chase them further than a general-purpose library reasonably would.
 
 It began as a fork of [Panda CSS](https://panda-css.com/) and keeps its authoring primitives: `css`, `cva`, `sva`, `cx`,
-patterns and recipes. The API is smaller and several behaviours differ — `cx` joins rather than merges, recipes are
-named rather than atomic, and slot recipes scope their variants — so if you are coming from Panda, read
-[what changed](/docs/overview/faq#how-is-bamboo-css-different-from-panda-css) before you
+patterns and recipes. The API is smaller and several behaviours differ — analyzable `cx` calls compose StyleSets,
+recipes share global atoms, and slot selections compile directly to per-slot atom strings — so if you are coming from
+Panda, read [what changed](/docs/overview/faq#how-is-bamboo-css-different-from-panda-css) before you
 [migrate](/docs/migration/panda).
 
 ## When to use Bamboo?

@@ -64,17 +64,13 @@ export interface RecipeDefinition<T extends RecipeVariantRecord = RecipeVariantR
    */
   base?: SystemStyleObject
   /**
-   * The prefix every class this recipe emits is built from — `button` gives `button` for
-   * the base styles and `button--size_sm` for a variant.
+   * Semantic recipe name used by extraction-only integrations.
    *
    * Required for a recipe declared in `theme.recipes`, where it is the key it is declared
-   * under. Optional for an inline `cva`, which is otherwise named by hashing its own
-   * config: `cva_a1b2c3--size_sm`. Setting it buys readable class names and nothing else —
-   * the CSS is identical either way.
+   * under. Optional for an inline `cva`.
    *
-   * It has to be unique across every recipe in the build. Two recipes sharing a name emit
-   * rules under the same selectors, and the later one wins for any variant they both
-   * declare.
+   * The Vite compiler ignores this field when allocating declaration atoms: recipe identity
+   * is not style identity, so identical declarations share one class across recipes.
    */
   className?: string
   /**
@@ -117,7 +113,10 @@ interface RecipeConfigMeta {
 
 export interface RecipeConfig<T extends RecipeVariantRecord = RecipeVariantRecord>
   extends RecipeDefinition<T>, RecipeConfigMeta {
-  /** Optional on `RecipeDefinition`, where an inline `cva` falls back to hashing its config. A recipe declared in `theme.recipes` always has one — the key it is declared under. */
+  /**
+   * Required extraction metadata for a configured recipe: the key under which it is
+   * declared in `theme.recipes`. The Vite compiler does not use it as style identity.
+   */
   className: string
 }
 
@@ -169,16 +168,13 @@ export interface SlotRecipeDefinition<
   T extends SlotRecipeVariantRecord<S> = SlotRecipeVariantRecord<S>,
 > {
   /**
-   * The prefix every class this recipe emits is built from, and the name to target its
-   * slots in the DOM by — `checkbox` gives `checkbox__control` for a slot and
-   * `checkbox__control--size_md` for that slot under a variant.
+   * Semantic recipe name used by extraction-only integrations.
    *
    * Required for a recipe declared in `theme.slotRecipes`, where it is the key it is
-   * declared under. Optional for an inline `sva`, which is otherwise named by hashing its
-   * own config. Setting it buys readable class names and nothing else — the CSS is
-   * identical either way.
+   * declared under. Optional for an inline `sva`.
    *
-   * It has to be unique across every recipe in the build.
+   * The Vite compiler ignores this field when allocating declaration atoms: recipe and slot
+   * identity do not enter generated class names.
    */
   className?: string
   /**
@@ -190,9 +186,10 @@ export interface SlotRecipeDefinition<
    */
   slots: S[] | Readonly<S[]>
   /**
-   * The slots that enclose other slots, used to scope their variant styles.
+   * The slots that enclose other slots in extraction-only named-rule output.
    *
-   * A slot recipe's variants are chosen once, at the top, but the slots that react to them
+   * The Vite compiler returns selected atoms directly for every slot and ignores this field.
+   * In extraction-only output, a slot recipe's variants are chosen once at the top, but the slots that react to them
    * are authored by the consumer somewhere below. Naming the enclosing slots lets the build
    * emit their variant styles as rules scoped by a class those slots already carry, so
    * nothing has to be delivered to a slot at runtime and every other slot's class is a
@@ -247,6 +244,9 @@ export type SlotRecipeConfig<
   T extends SlotRecipeVariantRecord<S> = SlotRecipeVariantRecord<S>,
 > = SlotRecipeDefinition<S, T> &
   RecipeConfigMeta & {
-    /** Optional on `SlotRecipeDefinition`, where an inline `sva` falls back to hashing its config. A recipe declared in `theme.slotRecipes` always has one — the key it is declared under. */
+    /**
+     * Required extraction metadata for a configured recipe: the key under which it is
+     * declared in `theme.slotRecipes`. The Vite compiler does not use it as style identity.
+     */
     className: string
   }

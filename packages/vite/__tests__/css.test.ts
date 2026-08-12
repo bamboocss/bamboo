@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { describe, expect, test } from 'vitest'
 import { bamboocssCss, VIRTUAL_CSS_ID } from '../src/css'
+import { createStaticCompilationSession } from '../src/static-session'
 
 /**
  * The css plugin is the integration: without it nothing emits a stylesheet and every class
@@ -17,10 +18,10 @@ const cwd = join(dirname(fileURLToPath(import.meta.url)), '../../../sandbox/code
 const hookOf = <T>(hook: T | { handler: T } | undefined): T | undefined =>
   typeof hook === 'function' ? hook : (hook as { handler: T } | undefined)?.handler
 
-const load = async (id: string, options: Parameters<typeof bamboocssCss>[0] = {}) => {
-  const plugin = bamboocssCss({ cwd, ...options })
+const load = async (id: string, command: 'build' | 'serve' = 'build') => {
+  const plugin = bamboocssCss({ cwd, session: createStaticCompilationSession() })
   const resolvedConfig = hookOf(plugin.configResolved)
-  await resolvedConfig?.call({} as never, { command: 'build' } as never)
+  await resolvedConfig?.call({} as never, { command, build: { sourcemap: false } } as never)
   const resolved = hookOf(plugin.resolveId)!.call({} as never, id, undefined, {} as never)
   if (typeof resolved !== 'string') return null
 
@@ -33,7 +34,7 @@ const load = async (id: string, options: Parameters<typeof bamboocssCss>[0] = {}
 
 describe('the virtual stylesheet', () => {
   test('resolves only its own id', () => {
-    const plugin = bamboocssCss({ cwd })
+    const plugin = bamboocssCss({ cwd, session: createStaticCompilationSession() })
     const resolve = hookOf(plugin.resolveId)!
 
     expect(resolve.call({} as never, VIRTUAL_CSS_ID, undefined, {} as never)).toBe(`\0${VIRTUAL_CSS_ID}`)
@@ -50,7 +51,8 @@ describe('the virtual stylesheet', () => {
 
     // The layer statement is what orders bamboo against a project's own css, and the
     // sentinel is what every other integration uses to recognise a generated sheet.
-    expect(css).toContain('@layer reset, base, tokens, recipes, utilities')
+    expect(css).toContain('@layer reset, base, tokens, utilities')
+    expect(css).not.toContain('@layer reset, base, tokens, recipes, utilities')
     expect(css).toContain('--made-with-bamboo')
     // Real utilities, from the sandbox's real source rather than from a fixture.
     expect(css).toMatch(/@layer utilities\{/)
@@ -67,7 +69,7 @@ describe('the virtual stylesheet', () => {
     expect(result!.watched.some((file) => file.endsWith('.tsx'))).toBe(true)
   }, 60_000)
 
-  test('static composition emits recipe declarations as atoms and omits recipe rules', async () => {
+  test('recipe declarations are atoms and recipe rules are never emitted', async () => {
     const fixtureDir = join(cwd, 'src/__static-composition-css-test')
     const fixture = join(fixtureDir, 'styles.ts')
     mkdirSync(fixtureDir, { recursive: true })
@@ -82,14 +84,9 @@ describe('the virtual stylesheet', () => {
     )
 
     try {
-      const legacy = (await load(VIRTUAL_CSS_ID))!.css
-      const compiled = (await load(VIRTUAL_CSS_ID, { staticComposition: true }))!.css
+      const compiled = (await load(VIRTUAL_CSS_ID))!.css
 
-      // The same declaration is physically present once for the recipe class and once for
-      // the utility in the legacy sheet, but only once in the shared atom pool.
-      expect(legacy.match(/width:\s*123\.4567px/g)).toHaveLength(2)
       expect(compiled.match(/width:\s*123\.4567px/g)).toHaveLength(1)
-      expect(legacy).toMatch(/@layer recipes\{/)
       expect(compiled).not.toMatch(/@layer recipes\{/)
       expect(compiled).toMatch(/@layer utilities\{/)
     } finally {
@@ -97,7 +94,7 @@ describe('the virtual stylesheet', () => {
     }
   }, 60_000)
 
-  test('static composition keeps the recipe sheet in dev where source is not folded', async () => {
+  test('development emits the same atom representation without a recipe sheet', async () => {
     const fixtureDir = join(cwd, 'src/__static-composition-dev-test')
     const fixture = join(fixtureDir, 'styles.ts')
     mkdirSync(fixtureDir, { recursive: true })
@@ -107,17 +104,10 @@ describe('the virtual stylesheet', () => {
     )
 
     try {
-      const plugin = bamboocssCss({ cwd, staticComposition: true })
-      const resolvedConfig = hookOf(plugin.configResolved)
-      await resolvedConfig?.call({} as never, { command: 'serve' } as never)
-      const resolved = hookOf(plugin.resolveId)!.call({} as never, VIRTUAL_CSS_ID, undefined, {} as never)
-      const css = await hookOf(plugin.load)!.call(
-        { addWatchFile() {} } as never,
-        resolved as string,
-        undefined as never,
-      )
+      const css = (await load(VIRTUAL_CSS_ID, 'serve'))!.css
 
-      expect(css).toMatch(/@layer recipes\{/)
+      expect(css).not.toMatch(/@layer recipes\{/)
+      expect(css).toMatch(/\._[A-Za-z]+\s*\{/)
       expect(css).toContain('width: 456.789px')
     } finally {
       rmSync(fixtureDir, { recursive: true, force: true })

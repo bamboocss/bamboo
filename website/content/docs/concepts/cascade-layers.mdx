@@ -11,7 +11,7 @@ to define styles in a modular way, using CSS rules that are scoped to specific c
 
 ## Layer Types
 
-Bamboo supports five types of cascade layers out of the box:
+Bamboo's Vite compiler emits four cascade layers:
 
 - `@layer reset` - The reset layer is used to reset the default styles of HTML elements. This is used when
   `preflight: true` is set in the config. You can also use this layer to add your own reset styles.
@@ -44,25 +44,9 @@ The generated CSS for the base layer looks like this:
 }
 ```
 
-- `@layer recipes` - The recipes layer contains styles for recipes: `cva()` and `sva()` calls as well as recipes
-  declared in `theme.recipes`. A recipe's classes are named from its config, so this layer is where component styles
-  live, below the `utilities` layer a consumer's `css()` lands in. You can also use this layer to add your own component
-  styles.
-
-The generated CSS for the recipes layer looks like this:
-
-```css
-@layer recipes {
-  .button {
-    /* ... */
-  }
-
-  .button--variant_primary {
-    /* ... */
-  }
-  /* ... */
-}
-```
+Recipe declarations are resolved before CSS is materialized. Their declarations use the same global atoms as `css()` and
+therefore live in `@layer utilities`; no named recipe layer is emitted by Vite. When analyzable styles are composed, the
+compiler resolves later-wins precedence before allocating those atoms.
 
 - `@layer tokens` - The tokens layer contains css variables for tokens and semantic tokens. You can also use this layer
   to add your own design tokens.
@@ -89,21 +73,23 @@ The generated CSS for the tokens layer looks like this:
 The cascade layers are applied in the following order:
 
 - `@layer utilities` (Highest priority)
-- `@layer recipes`
 - `@layer tokens`
 - `@layer base`
 - `@layer reset` (Lowest priority)
 
-This means that styles defined in the `@layer utilities` will take precedence over styles defined in the
-`@layer recipes`. This is useful when you want to override the default styles of a component.
+Recipe and utility styles share this layer under Vite. Use `cx(recipe(), css())` or compose style objects in the desired
+order so the compiler can remove overridden declarations before CSS is emitted.
 
 ## Layer CSS
 
 The first line of the generated CSS declares the layer order:
 
 ```css
-@layer reset, base, tokens, recipes, utilities;
+@layer reset, base, tokens, utilities;
 ```
+
+Extraction-only CLI and PostCSS output retains the named `recipes` layer because it has no source compiler to resolve
+recipe selections into shared atoms.
 
 ## Customize layers
 
@@ -112,7 +98,8 @@ customizing layers [here](/docs/references/config#layers).
 
 ## Polyfills
 
-In event that you need to support older browsers, you can use the following postcss plugin in your PostCSS config:
+The Vite compiler rejects cascade-layer polyfills: flattening layers destroys the boundary its reachability and atom
+renaming pass relies on. For extraction-only PostCSS output, you can use:
 
 - [postcss-cascade-layers](https://www.npmjs.com/package/@csstools/postcss-cascade-layers): Adds support for CSS Cascade
   Layers.

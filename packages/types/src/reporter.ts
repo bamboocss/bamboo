@@ -1,6 +1,6 @@
 import type { ParserResultInterface } from './parser'
 
-export type ReportItemType = 'css' | 'cva' | 'sva' | 'token' | 'pattern' | 'recipe' | 'jsx-recipe'
+export type ReportItemType = 'css' | 'cva' | 'sva' | 'token' | 'viewTransition' | 'pattern' | 'recipe' | 'jsx-recipe'
 
 type ComponentKind = 'component' | 'function'
 

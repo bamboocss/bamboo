@@ -276,8 +276,7 @@ function setupCssIndex(ctx: Context): Artifact {
   // during the bundler's transform and never typechecked, so a declaration here would buy
   // nothing but an autocomplete entry advertising them as API. Each stays fully typed in
   // the module that defines it, for anyone deep-importing on purpose.
-  ${ctx.file.reExport('cssLeaf', './css')}
-  ${ctx.file.reExport('cvaMap, cvaPick, splitProps', './cx')}
+  ${ctx.file.reExport('cvaMap, splitProps', './cx')}
  `,
     dts: outdent`
   ${ctx.file.reExportDts('css, fallback, viewTransition', './css')}

@@ -555,9 +555,9 @@ export class StyleEncoder {
    * Recipe identity is deliberately absent from the hashes written here, so a declaration
    * already reached through `css()` is reused rather than emitted again.
    *
-   * Kept explicit rather than run during normal extraction: the legacy runtime still returns
-   * recipe-specific classes and needs the recipe layer. A strict static build calls this once
-   * after extraction, when it is also prepared to erase that layer.
+   * Kept explicit rather than run during normal extraction: CLI/PostCSS extraction still emits
+   * named recipe rules. The Vite compiler calls this once after extraction, when it also erases
+   * that layer.
    */
   atomizeObservedRecipes = () => {
     const atomize = (value: unknown) => {

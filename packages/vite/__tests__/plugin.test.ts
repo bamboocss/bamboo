@@ -9,15 +9,13 @@ import { bamboocss, isGeneratedOutput } from '../src/plugin'
  * The plugin wrapper, separate from the fold itself.
  *
  * `bamboocss()` returns two plugins: the css emitter, which is the integration and runs in
- * dev and build alike, and the fold, which is an optimisation and is build-only. These
- * assert the contract a user relies on before any config is even loaded — including that
- * turning the fold off costs nothing, since a project that sets `transform: false` must not
- * pay for config resolution it does not need.
+ * dev and build alike, and the compiler, which runs in both modes. These assert the strict
+ * contract a user relies on before any config is loaded.
  */
 const plugins = (options?: Parameters<typeof bamboocss>[0]) => {
   const list = bamboocss(options)
   const css = list.find((p) => p.name === 'bamboocss:css')!
-  const fold = list.find((p) => p.name === 'bamboocss:fold')!
+  const fold = list.find((p) => p.name === 'bamboocss:compiler')!
   return { list, css, fold }
 }
 
@@ -35,7 +33,7 @@ describe('plugin contract', () => {
     const { list } = plugins()
 
     // The css plugin owns the extraction the fold's context reads from, so it goes first.
-    expect(list.map((p) => p.name)).toEqual(['bamboocss:css', 'bamboocss:fold'])
+    expect(list.map((p) => p.name)).toEqual(['bamboocss:css', 'bamboocss:compiler'])
   })
 
   test('the fold runs before other plugins', () => {
@@ -44,10 +42,8 @@ describe('plugin contract', () => {
     expect(plugins().fold.enforce).toBe('pre')
   })
 
-  test('the fold applies to build only, the css emitter to both', () => {
-    expect(plugins().fold.apply).toBe('build')
-    expect(plugins({ transform: true }).fold.apply).toBe('build')
-    // No `apply` at all: nothing styles without it, in either mode.
+  test('the compiler and css emitter both apply in development and builds', () => {
+    expect(plugins().fold.apply).toBeUndefined()
     expect(plugins().css.apply).toBeUndefined()
   })
 
@@ -59,32 +55,13 @@ describe('plugin contract', () => {
     expect(resolve.call({} as never, './styles.css')).toBeNull()
   })
 
-  test('transform: false rewrites nothing', async () => {
-    // No config is loaded and nothing is rewritten. If this ever returned a result the
-    // opt-out would have stopped working.
-    await expect(callTransform(plugins({ transform: false }).fold, SOURCE, '/app/src/a.tsx')).resolves.toBeNull()
-  })
-
-  test('static composition cannot disable the transform that makes its stylesheet safe', () => {
-    expect(() => plugins({ transform: false, staticComposition: true })).toThrow('requires the build transform')
-  })
-
   test('recipe state limits must be positive safe integers', () => {
     expect(() => plugins({ maxRecipeStates: 0 })).toThrow('positive safe integer')
     expect(() => plugins({ maxRecipeStates: 1.5 })).toThrow('positive safe integer')
     expect(() => plugins({ maxRecipeStates: 1 })).not.toThrow()
   })
 
-  test('buildStart does not load config when the transform is off', async () => {
-    const hook = plugins({ transform: false }).fold.buildStart
-    const handler = typeof hook === 'function' ? hook : hook?.handler
-
-    // Would throw trying to resolve a bamboo config if it did any work.
-    await expect(handler?.call({} as never, {} as never)).resolves.toBeUndefined()
-  })
-
-  /** The default itself, so flipping it back is a deliberate edit rather than a silent one. */
-  test('transform is on by default', async () => {
+  test('the compiler cannot be disabled', async () => {
     const plugin = plugins().fold
     const hook = plugin.buildStart
     const handler = typeof hook === 'function' ? hook : hook?.handler
@@ -108,8 +85,8 @@ describe('file filtering', () => {
     '\0plugin-virtual:entry.ts',
   ]
 
-  test.each(ignored)('%s is not transformed even when enabled', async (id) => {
-    const plugin = plugins({ transform: true }).fold
+  test.each(ignored)('%s is not transformed', async (id) => {
+    const plugin = plugins().fold
 
     // Returns before touching the context, so no config resolution is attempted.
     await expect(callTransform(plugin, SOURCE, id)).resolves.toBeNull()
@@ -158,20 +135,11 @@ describe('generated output', () => {
   })
 })
 
-/**
- * `partial` is a documented escape hatch, and for a while it existed only on the internal
- * `FoldOptions` — the plugin accepted it in a user's config and silently folded anyway.
- * This asserts the option a user writes is the option the fold receives.
- *
- * Needs a real config, since nothing folds without one; `sandbox/codegen` has one.
- */
-describe('fold toggles', () => {
+describe('compiler', () => {
   const cwd = join(dirname(fileURLToPath(import.meta.url)), '../../../sandbox/codegen')
 
-  const PARTIAL = `import { css } from 'styled-system/css'\nexport const cls = (pad: string) => css({ color: 'red.300', padding: pad })\n`
-
   const fold = async (options: Parameters<typeof bamboocss>[0], code: string, file: string) => {
-    const plugin = plugins({ transform: true, cwd, reportSummary: false, ...options }).fold
+    const plugin = plugins({ cwd, reportSummary: false, ...options }).fold
     const buildStart = typeof plugin.buildStart === 'function' ? plugin.buildStart : plugin.buildStart?.handler
 
     await buildStart?.call({} as never, {} as never)
@@ -180,29 +148,22 @@ describe('fold toggles', () => {
     return typeof result === 'object' && result !== null ? result.code : null
   }
 
-  test('partial: false declines a call the split would have folded', async () => {
-    expect(await fold({}, PARTIAL, 'src/toggle-partial-on.tsx')).toContain('c_red.300')
-    expect(await fold({ partial: false }, PARTIAL, 'src/toggle-partial-off.tsx')).toBeNull()
-  })
-
-  test('static composition merges recipe and css styles before class allocation', async () => {
+  test('merges recipe and css styles before class allocation', async () => {
     const source = `
       import { css, cva, cx } from 'styled-system/css'
       const badge = cva({ base: { display: 'flex', color: 'red.300' } })
       export const cls = cx(badge(), css({ display: 'flex', color: 'blue.500' }))
     `
 
-    const code = await fold({ staticComposition: true, denseClassNames: false }, source, 'src/static-composition.tsx')
+    const code = await fold({ denseClassNames: false }, source, 'src/static-composition.tsx')
     expect(code).toContain('"d_flex c_blue.500"')
     expect(code).not.toContain('cx(badge()')
   })
 
   test('static composition lowers a finite dynamic recipe to a StyleSet lookup', async () => {
     const plugin = plugins({
-      transform: true,
       cwd,
       reportSummary: false,
-      staticComposition: true,
     }).fold
     const buildStart = typeof plugin.buildStart === 'function' ? plugin.buildStart : plugin.buildStart?.handler
     const buildEnd = typeof plugin.buildEnd === 'function' ? plugin.buildEnd : plugin.buildEnd?.handler
@@ -222,12 +183,10 @@ describe('fold toggles', () => {
     await expect(Promise.resolve().then(() => buildEnd?.call({} as never, undefined as never))).resolves.toBeUndefined()
   })
 
-  test('static composition merges cx styles into every runtime StyleSet leaf', async () => {
+  test('the compiler removes a recipe decision table when cx makes every leaf identical', async () => {
     const plugin = plugins({
-      transform: true,
       cwd,
       reportSummary: false,
-      staticComposition: true,
       denseClassNames: false,
     }).fold
     const buildStart = typeof plugin.buildStart === 'function' ? plugin.buildStart : plugin.buildStart?.handler
@@ -244,14 +203,15 @@ describe('fold toggles', () => {
       join(cwd, 'src/static-composition-dynamic-cx.tsx'),
     )
 
-    expect(result?.code).toContain('cvaMap([tone]')
+    expect(result?.code).not.toContain('cvaMap(')
+    expect(result?.code).toContain('=> "c_blue.500"')
     expect(result?.code).toContain('c_blue.500')
     await expect(Promise.resolve().then(() => buildEnd?.call({} as never, undefined as never))).resolves.toBeUndefined()
   })
 
   test('static composition uses compact stable atom names by default', async () => {
     const code = await fold(
-      { staticComposition: true },
+      {},
       `import { css } from 'styled-system/css'\nexport const className = css({ display: 'flex', color: 'blue.500' })`,
       'src/static-composition-dense.tsx',
     )
@@ -263,7 +223,7 @@ describe('fold toggles', () => {
 
   test('local dense naming is available for a single HTML-and-CSS build', async () => {
     const code = await fold(
-      { staticComposition: true, denseClassNames: 'local' },
+      { denseClassNames: 'local' },
       `import { css } from 'styled-system/css'\nexport const className = css({ display: 'flex', color: 'blue.500' })`,
       'src/static-composition-local-dense.tsx',
     )
@@ -271,25 +231,24 @@ describe('fold toggles', () => {
     expect(code).toContain('"_a _b"')
   })
 
-  test('static composition rejects cx arguments whose provenance cannot be analyzed', async () => {
-    const plugin = plugins({ transform: true, cwd, reportSummary: false, staticComposition: true }).fold
+  test('keeps cx as a tiny joiner when external arguments cannot be analyzed', async () => {
+    const plugin = plugins({ cwd, reportSummary: false }).fold
     const buildStart = typeof plugin.buildStart === 'function' ? plugin.buildStart : plugin.buildStart?.handler
     const buildEnd = typeof plugin.buildEnd === 'function' ? plugin.buildEnd : plugin.buildEnd?.handler
 
     await buildStart?.call({} as never, {} as never)
-    await callTransform(
+    const transformed = await callTransform(
       plugin,
       `import { cx } from 'styled-system/css'\nexport const className = (external) => cx(external, 'selected')`,
       join(cwd, 'src/static-composition-dynamic-cx.tsx'),
     )
 
-    await expect(Promise.resolve().then(() => buildEnd?.call({} as never, undefined as never))).rejects.toThrow(
-      'cx() — dynamic',
-    )
+    expect(transformed).toBeNull()
+    await expect(Promise.resolve().then(() => buildEnd?.call({} as never, undefined as never))).resolves.not.toThrow()
   })
 
   test('static composition rejects a runtime css value', async () => {
-    const plugin = plugins({ transform: true, cwd, reportSummary: false, staticComposition: true }).fold
+    const plugin = plugins({ cwd, reportSummary: false }).fold
     const buildStart = typeof plugin.buildStart === 'function' ? plugin.buildStart : plugin.buildStart?.handler
     const buildEnd = typeof plugin.buildEnd === 'function' ? plugin.buildEnd : plugin.buildEnd?.handler
 
@@ -306,7 +265,7 @@ describe('fold toggles', () => {
   })
 
   test('static composition rejects reflective reads of an inline recipe', async () => {
-    const plugin = plugins({ transform: true, cwd, reportSummary: false, staticComposition: true }).fold
+    const plugin = plugins({ cwd, reportSummary: false }).fold
     const buildStart = typeof plugin.buildStart === 'function' ? plugin.buildStart : plugin.buildStart?.handler
     const buildEnd = typeof plugin.buildEnd === 'function' ? plugin.buildEnd : plugin.buildEnd?.handler
 
@@ -338,18 +297,18 @@ describe('coverage summary', () => {
   test('is on by default and off when asked', () => {
     // The option exists so a build can opt out; the default is on, because without it
     // there is no signal that the transform did anything at all.
-    expect(() => bamboocss({ transform: true })).not.toThrow()
-    expect(() => bamboocss({ transform: true, reportSummary: false })).not.toThrow()
+    expect(() => bamboocss()).not.toThrow()
+    expect(() => bamboocss({ reportSummary: false })).not.toThrow()
   })
 
-  test('says nothing when the transform is off', async () => {
+  test('says nothing before any module is transformed', async () => {
     await expect(callBuildEnd(plugins().fold)).resolves.toBeUndefined()
   })
 
   test('says nothing when no module was transformed', async () => {
     // A build that folded nothing and declined nothing has no coverage to report, and a
     // "0/0" line would be noise in every project not using the transform.
-    await expect(callBuildEnd(plugins({ transform: true }).fold)).resolves.toBeUndefined()
+    await expect(callBuildEnd(plugins().fold)).resolves.toBeUndefined()
   })
 
   /**
@@ -363,7 +322,7 @@ describe('coverage summary', () => {
    */
   test('counts are reset per build, so a watch rebuild reports only itself', async () => {
     const cwd = join(dirname(fileURLToPath(import.meta.url)), '../../../sandbox/codegen')
-    const plugin = plugins({ transform: true, cwd }).fold
+    const plugin = plugins({ cwd }).fold
 
     const logged: string[] = []
     const info = logger.info

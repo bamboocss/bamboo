@@ -1,6 +1,6 @@
 import { Builder } from '@bamboocss/node'
 import { logger } from '@bamboocss/logger'
-import { toHash } from '@bamboocss/shared'
+import { esc, toHash } from '@bamboocss/shared'
 import remapping from '@ampproject/remapping'
 import MagicString from 'magic-string'
 import type { Plugin, Rollup, ViteDevServer } from 'vite'
@@ -123,13 +123,11 @@ export const optimizeStaticCssAssets = (bundle: Rollup.OutputBundle, session: St
   }
 }
 
-export interface BambooCssPluginOptions {
+interface BambooCssPluginOptions {
   configPath?: string
   cwd?: string
-  /** Emit recipe declarations as shared atoms and omit the legacy recipe layers. */
-  staticComposition?: boolean
-  /** Internal state supplied by `bamboocss()` when the fold and CSS emitter are paired. */
-  session?: StaticCompilationSession
+  /** Internal state supplied by `bamboocss()`; the CSS emitter is not a standalone mode. */
+  session: StaticCompilationSession
 }
 
 /**
@@ -145,14 +143,12 @@ export interface BambooCssPluginOptions {
  * `styles.css` and asking the project to import it means the build reads a file the same
  * process just wrote, which is a race on any watch rebuild.
  */
-export const bamboocssCss = (options: BambooCssPluginOptions = {}): Plugin => {
-  const { configPath, cwd, staticComposition = false, session } = options
+export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
+  const { configPath, cwd, session } = options
 
   const builder = new Builder()
   let server: ViteDevServer | undefined
-  // The companion fold is build-only. Dev must keep the legacy recipe sheet because the
-  // source still calls the generated recipe runtime there.
-  let compileStatically = false
+  let command: 'build' | 'serve' = 'build'
 
   /**
    * Serialised, because both `load` and the watcher can reach it and `Builder` keeps one
@@ -171,14 +167,14 @@ export const bamboocssCss = (options: BambooCssPluginOptions = {}): Plugin => {
 
     builder.extract()
 
-    if (compileStatically && builder.context?.config.polyfill) {
+    if (builder.context?.config.polyfill) {
       throw new Error(
-        'bamboocss: `staticComposition` cannot currently be combined with the cascade-layer polyfill. ' +
+        'bamboocss: the cascade-layer polyfill is incompatible with compiled atomic styles. ' +
           'The polyfill removes the utility-layer boundary required for safe atom reachability and renaming.',
       )
     }
 
-    if (session && builder.context) {
+    if (builder.context) {
       session.cssLoaded = true
       session.utilityLayer = builder.context.config.layers?.utilities ?? 'utilities'
       session.extractedFiles.clear()
@@ -188,7 +184,7 @@ export const bamboocssCss = (options: BambooCssPluginOptions = {}): Plugin => {
     }
 
     let graphAtomHashes: Set<string> | undefined
-    if (compileStatically && builder.context) {
+    if (builder.context) {
       builder.context.encoder.atomizeObservedRecipes()
       // Captured before baseline/staticCss generation. Graph atoms can be removed when no
       // transformed module emits them; explicit staticCss atoms remain outside this set and
@@ -197,16 +193,25 @@ export const bamboocssCss = (options: BambooCssPluginOptions = {}): Plugin => {
     }
 
     // The whole stylesheet, so it carries the `@layer` order statement itself.
-    const css = builder.toCss({ layerParams: true, includeRecipes: !compileStatically })
+    const css = builder.toCss({ layerParams: true, includeRecipes: false })
 
-    if (session && graphAtomHashes && builder.context) {
+    session.prunableClasses.clear()
+    session.viewTransitionClasses.clear()
+    if (graphAtomHashes && builder.context) {
       const decoder = builder.context.decoder.collect(builder.context.encoder)
       for (const atom of decoder.atomic) {
         if (graphAtomHashes.has(atom.hash)) session.prunableClasses.add(atom.className)
       }
+      for (const transition of decoder.view_transitions) {
+        session.viewTransitionClasses.add(transition.className)
+        session.prunableClasses.add(esc(transition.className))
+      }
     }
 
-    return css
+    // Development cannot tree-shake against a complete Rollup graph because modules arrive
+    // lazily. It still uses the exact same global atom names and omits every recipe rule;
+    // only the final production reachability removal waits for `generateBundle`.
+    return command === 'serve' ? pruneStaticCss(css, session, { prune: false }) : css
   }
 
   const generate = () => {
@@ -219,12 +224,12 @@ export const bamboocssCss = (options: BambooCssPluginOptions = {}): Plugin => {
   return {
     name: 'bamboocss:css',
 
-    // Both `serve` and `build`. The fold beside this is build-only; emitting css is not
-    // optional in either.
+    // Both `serve` and `build`: source compilation and virtual CSS use one representation in
+    // both commands.
 
     configResolved(config) {
-      compileStatically = staticComposition && config.command === 'build'
-      if (session) session.sourcemap = config.build.sourcemap
+      command = config.command
+      session.sourcemap = config.build.sourcemap
     },
 
     resolveId(id) {
@@ -263,10 +268,7 @@ export const bamboocssCss = (options: BambooCssPluginOptions = {}): Plugin => {
         if (!mod) return
 
         server?.moduleGraph.invalidateModule(mod)
-        // Vite reloads a css module from `load` on the next request, so the invalidation is
-        // the whole update. Asking for a full reload here would throw away component state
-        // on every style edit.
-        server?.ws.send({ type: 'update', updates: [] })
+        void server?.reloadModule(mod)
         logger.debug('vite', `styles invalidated by ${file}`)
       }
 
@@ -275,13 +277,11 @@ export const bamboocssCss = (options: BambooCssPluginOptions = {}): Plugin => {
       devServer.watcher.on('unlink', invalidate)
     },
 
-    generateBundle: session
-      ? {
-          order: 'post',
-          handler(_, bundle) {
-            optimizeStaticCssAssets(bundle, session)
-          },
-        }
-      : undefined,
+    generateBundle: {
+      order: 'post',
+      handler(_, bundle) {
+        optimizeStaticCssAssets(bundle, session)
+      },
+    },
   }
 }

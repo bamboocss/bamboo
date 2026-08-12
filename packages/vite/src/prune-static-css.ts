@@ -12,7 +12,11 @@ const SENTINEL = '--made-with-bamboo'
  * additions are absent and survive as a safelist; graph atoms are governed by the transformed
  * module reachability set, regardless of whether they originated in `css()` or a recipe.
  */
-export const pruneStaticCss = (css: string, session: StaticCompilationSession): string => {
+export const pruneStaticCss = (
+  css: string,
+  session: StaticCompilationSession,
+  { prune = true }: { prune?: boolean } = {},
+): string => {
   if (!css.includes(SENTINEL)) return css
 
   const root = postcss.parse(css)
@@ -27,25 +31,27 @@ export const pruneStaticCss = (css: string, session: StaticCompilationSession): 
     }
     return false
   }
-  root.walkRules((rule) => {
-    if (!isUtilityRule(rule)) return
-    const classes = new Set<string>()
-    try {
-      selectorParser((selectors) => {
-        selectors.walkClasses((classNode) => {
-          classes.add(classNode.toString().slice(1))
-        })
-      }).processSync(rule.selector)
-    } catch {
-      // An authored selector the parser cannot understand is not a compiler-owned atom.
-      return
-    }
+  if (prune) {
+    root.walkRules((rule) => {
+      if (!isUtilityRule(rule)) return
+      const classes = new Set<string>()
+      try {
+        selectorParser((selectors) => {
+          selectors.walkClasses((classNode) => {
+            classes.add(classNode.toString().slice(1))
+          })
+        }).processSync(rule.selector)
+      } catch {
+        // An authored selector the parser cannot understand is not a compiler-owned atom.
+        return
+      }
 
-    if (classes.size !== 1) return
-    const [className] = classes
-    if (!className || !session.prunableClasses.has(className) || session.usedClasses.has(className)) return
-    rule.remove()
-  })
+      if (classes.size !== 1) return
+      const [className] = classes
+      if (!className || !session.prunableClasses.has(className) || session.usedClasses.has(className)) return
+      rule.remove()
+    })
+  }
 
   // Removing the last rule from a condition or layer should remove its wrappers as well.
   let removed = true
@@ -58,19 +64,27 @@ export const pruneStaticCss = (css: string, session: StaticCompilationSession): 
     })
   }
 
-  if (session.denseClassNames && session.denseClasses.size > 0) {
+  if (session.denseClassNames) {
     root.walkRules((rule) => {
       if (!isUtilityRule(rule)) return
+      const transitionClasses = new Set<string>()
       try {
         rule.selector = selectorParser((selectors) => {
           selectors.walkClasses((classNode) => {
             if (!session.prunableClasses.has(classNode.toString().slice(1))) return
-            const dense = session.denseClasses.get(classNode.value)
-            if (dense) classNode.value = dense
+            if (session.viewTransitionClasses.has(classNode.value)) transitionClasses.add(classNode.value)
+            classNode.value = session.allocateClassString(classNode.value)
           })
         }).processSync(rule.selector)
       } catch {
         // Authored selectors that cannot be parsed are unrelated to compiler-owned atoms.
+      }
+
+      if (transitionClasses.size) {
+        rule.walkDecls('view-transition-class', (declaration) => {
+          if (!transitionClasses.has(declaration.value)) return
+          declaration.value = session.allocateClassString(declaration.value)
+        })
       }
     })
   }

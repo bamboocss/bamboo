@@ -1,7 +1,6 @@
 import { createGeneratorContext } from '@bamboocss/fixture'
 import { describe, expect, test } from 'vitest'
-import { LEAF_HELPER } from '../src/fold-partial'
-import { RECIPE_PICK_HELPER, SPLIT_PROPS_HELPER } from '../src/fold-recipe'
+import { RECIPE_MAP_HELPER, SPLIT_PROPS_HELPER } from '../src/fold-recipe'
 
 /**
  * The names a fold can write into a `styled-system/css` import.
@@ -9,7 +8,7 @@ import { RECIPE_PICK_HELPER, SPLIT_PROPS_HELPER } from '../src/fold-recipe'
  * The transform extends whatever import of that module the file already has rather than
  * writing its own, so the barrel is the specifier its emitted calls resolve against.
  */
-const INJECTED = [LEAF_HELPER, RECIPE_PICK_HELPER, SPLIT_PROPS_HELPER]
+const INJECTED = [RECIPE_MAP_HELPER, SPLIT_PROPS_HELPER]
 
 /** The authoring API the barrel exists to expose. */
 const AUTHORING = ['css', 'cx', 'cva', 'sva', 'fallback', 'viewTransition', 'auditSlotScopes']

@@ -10,7 +10,7 @@ Bamboo supports the latest, stable releases of major browsers that support the f
 - [CSS Cascade Layers](https://caniuse.com/css-cascade-layers)
 - Modern selectors, such as [`:where()`](https://caniuse.com/mdn-css_selectors_where) and
   [`:is()`](https://caniuse.com/css-matches-pseudo)
-- [`@scope`](https://caniuse.com/css-cascade-scope)
+- [`@scope`](https://caniuse.com/css-cascade-scope) for CLI/PostCSS slot-recipe extraction
 - [`light-dark()`](https://caniuse.com/mdn-css_types_color_light-dark)
 
 ## Browserlist
@@ -27,9 +27,9 @@ Android >= 123
 Opera >= 109
 ```
 
-Two features set these numbers and nothing else comes close. [`light-dark()`](#semantic-tokens-and-light-dark) fixes
-every one of them except Firefox, where [`@scope`](#slot-recipes-and-scope) lands much later — 146 against 120 — and
-sets the floor instead.
+These numbers describe Bamboo's complete output surface. [`light-dark()`](#semantic-tokens-and-light-dark) fixes most of
+them; extraction-only slot recipes additionally depend on [`@scope`](#slot-recipes-and-scope-in-extraction-only-builds).
+A Vite-compiled application emits no `@scope` for slot recipes, so that feature does not set its application baseline.
 
 Bamboo reads this baseline when it minifies, so it is what decides whether a selector list may be folded into `:is()`.
 It is deliberately fixed rather than taken from your `browserslist` config, so that the same source always compiles to
@@ -70,10 +70,14 @@ stays a rule of its own; reach for `color-scheme` on that subtree instead of res
 If you redefine the `osDark` condition to something that is not `@media (prefers-color-scheme: dark)` — a selector, say
 — nothing folds, because `light-dark()` cannot express it.
 
-## Slot recipes and `@scope`
+## Slot recipes and `@scope` in extraction-only builds
 
-A [slot recipe](/docs/concepts/slot-recipes) that declares a slot named `root` emits its non-root slots' variant styles
-inside an `@scope` rule, so that no slot has to be handed the variant at runtime:
+The Vite compiler does not emit `@scope`: it returns the selected shared atoms directly for every slot. Consequently,
+Vite slot recipes add no `@scope` requirement to the browser baseline.
+
+CLI/PostCSS extraction is different. There, a [slot recipe](/docs/concepts/slot-recipes) that declares a slot named
+`root` emits its non-root slots' variant styles inside an `@scope` rule, so that no slot has to be handed the variant at
+runtime:
 
 ```css
 @scope (.checkbox__root--size_md) to (.checkbox__root) {
@@ -83,15 +87,16 @@ inside an `@scope` rule, so that no slot has to be handed the variant at runtime
 }
 ```
 
-That is the only place Bamboo emits `@scope`, and it is what sets the baseline above.
+That is the only place Bamboo emits `@scope`, and it sets the baseline above when using extraction-only output.
 
 There is no polyfill, and there will not be one. `@scope` decides between two matching rules by DOM proximity, which a
 build step cannot compute and a stylesheet cannot express — the whole point is that the nearest root wins over an outer
 one. Anything claiming to polyfill it either ignores nesting or needs a runtime.
 
-Slot recipes do accept [`scopeRoots`](/docs/concepts/slot-recipes#variant-scoping), and `scopeRoots: []` emits no
-`@scope`. That is a cost and layout control — it is what you reach for when a slot renders through a portal — and not a
-supported way to run Bamboo on an older browser. The baseline above is the baseline whichever way you set it.
+Extraction-only slot recipes accept
+[`scopeRoots`](/docs/concepts/slot-recipes#variant-scoping-in-extraction-only-output), and `scopeRoots: []` emits no
+`@scope`. That is a cost and layout control — it is what you reach for when a slot renders through a portal. Prefer the
+Vite compiler when the application must avoid `@scope` altogether.
 
 ## Polyfills
 

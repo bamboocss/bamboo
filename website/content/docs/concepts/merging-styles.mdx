@@ -161,28 +161,26 @@ const className = css(
 
 ## Merging config recipe and style object
 
-Due to the fact that the generated styles of a config recipe are saved in the `@layer recipes` cascade layer, they can
-be overridden with any atomic styles. Use the `cx` function to achieve that.
-
-> The `utilities` layer has more precedence than the `recipes` layer.
+With the Vite compiler, an analyzable `cx()` composes the recipe and utility StyleSets before allocating shared atoms.
+Later arguments win, and losing declarations are not emitted for that composition.
 
 ```js
 import { css, cx } from 'styled-system/css'
 import { button } from 'styled-system/recipes'
 
 const className = cx(
-  // returns the resolved class name: `button button--size_small`
+  // resolves the selected recipe declarations
   button({ size: 'small' }),
   // add the override styles
   css({ bg: 'red' }), // => 'bg_red'
 )
 
-// => 'button button--size_small bg_red'
+// => a shared atom string containing the final red background
 ```
 
-That override works because of the layer, not because of `cx`. `cx` joins class names and does not resolve conflicts
-between them — see [Classname concatenation](/docs/concepts/writing-styles#classname-concatenation) for why, and for how
-to decide precedence by origin instead.
+That override works because Vite can see and compose both Bamboo StyleSets. If one argument is an arbitrary runtime
+class, `cx` remains a string join and makes no conflict guarantee — see
+[Classname concatenation](/docs/concepts/writing-styles#classname-concatenation).
 
 ## Merging within JSX component
 

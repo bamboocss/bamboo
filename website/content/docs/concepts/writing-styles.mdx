@@ -373,7 +373,10 @@ See [Slot recipes](/docs/concepts/slot-recipes) for the recipe this comes from.
 
 ### Classname concatenation
 
-Bamboo provides a `cx` function to join classnames. It accepts a list of classnames and returns a string.
+Bamboo provides a `cx` function for combining class names. Vite gives it two deliberately different contracts:
+
+- when every Bamboo argument is analyzable, the compiler merges their StyleSets before allocating classes;
+- when an arbitrary runtime class is present, the generated helper is a tiny string join with no conflict guarantee.
 
 ```jsx
 import { css, cx } from '../styled-system/css'
@@ -391,45 +394,34 @@ const Card = ({ className, ...props }) => {
 }
 ```
 
-**`cx` joins, it does not resolve conflicts.** Two atomic classes for the same property both land on the element, and
-the browser picks by their order in the stylesheet rather than the order you passed them:
+With fully analyzable Bamboo arguments, later declarations win and the losing atom is never allocated:
 
 ```js
 cx(css({ paddingX: '4' }), css({ paddingX: '2' }))
-// 'px_4 px_2' – both survive
+// one compact atom for padding-inline: 2
 ```
 
-This is deliberate, and it is the same in every build. `cx` could only ever compare classes whose property is still
-visible in the name — with [`hash`](#hashing) it is not. Resolving where it could and joining where it could not would
-mean the same source behaving one way in development and another in a minified production build, with no error either
-way.
+The compiler cannot infer the declarations behind `className` in the component example. Take a style object when a
+component needs a reliable override: `css(base, props.css)` merges per property before any class name exists.
 
-Precedence is decided by origin instead:
+```jsx
+const Card = ({ css: cssProp, ...rest }) => <div className={css({ p: '4' }, cssProp)} {...rest} />
+```
 
-- **A component you want reliably overridable** needs its styles in a lower cascade layer than the consumer's. A
-  **recipe** puts them there: `cva()` and `sva()` name their classes from the config — `button--size_sm` — and emit them
-  into `recipes`, whether you declare them inline or in `theme.recipes`. A consumer's `css()` is in `utilities`, so it
-  wins by layer in every build.
-- **Or take a style object instead of a class name.** `css(base, props.css)` merges per property before any class name
-  exists, so it resolves the same way in every build and needs no layer at all:
-
-  ```jsx
-  const Card = ({ css: cssProp, ...rest }) => <div className={css({ p: '4' }, cssProp)} {...rest} />
-  ```
-
-- **Two `css()` calls you own** are in the same layer, so merge the objects rather than the classes: `css(a, b)`.
+Use `css(a, b)` directly when both style objects are already available. Use a recipe variant when the choices form a
+finite public API.
 
 <Callout type="warning">
   A component that styles itself with bare `css()` and accepts a `className` is the case to watch. Both end up in
-  `utilities`, so which one applies is decided by stylesheet order rather than by the caller. Use `cva` for anything
-  meant to be overridden.
+  `utilities`, and an opaque runtime class cannot be composed by the compiler. Prefer a style-object prop or a declared
+  variant for an intentional override.
 </Callout>
 
 ### Hashing
 
-When debugging or previewing DOM elements in the browser, the length of the generated atomic `className` can get quite
-long, and a bit annoying. If you prefer to have terser classnames, use the `hash` option to enable className and css
-variable name hashing.
+The `hash` option shortens extraction-only semantic class names and CSS variables. Vite uses
+[`denseClassNames`](/docs/installation/vite#plugin-options) for compiler-owned atoms independently; this setting is
+still useful when CSS variable names should also be hashed.
 
 ```ts filename="bamboo.config.ts"
 import { defineConfig } from '@bamboocss/dev'

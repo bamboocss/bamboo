@@ -1,6 +1,7 @@
 import { resolveTsPathPattern } from '@bamboocss/config/ts-path'
 import type { Context } from '@bamboocss/core'
-import { type BoxNode, box, unbox } from '@bamboocss/extractor'
+import { type BoxNode, box } from '@bamboocss/extractor'
+import { viewTransitionClassName } from '@bamboocss/shared'
 import type { Dict, ParserResultInterface, ResultItem } from '@bamboocss/types'
 import MagicString from 'magic-string'
 import { dirname, relative, resolve as resolvePath } from 'node:path'
@@ -11,46 +12,29 @@ import {
   ensureRecipeHelperImport,
   lowerRecipeCall,
   RECIPE_MAP_HELPER,
-  RECIPE_PICK_HELPER,
   SPLIT_PROPS_HELPER,
   type DynamicStyleMap,
   type RecipeEntry,
 } from './fold-recipe'
-import {
-  accountsForSource,
-  ensureCxImport,
-  findBambooBinding,
-  isStaticBox,
-  LEAF_HELPER,
-  planPartialFold,
-} from './fold-partial'
-import {
-  createConstantSlotCheck,
-  createRuntimeCss,
-  createRuntimeRecipe,
-  createRuntimeToken,
-  createRuntimeTokenValue,
-  type RuntimeCss,
-} from './runtime-css'
-import type { StaticStyleSetCompiler, StyleSetRecipeConfig } from './style-set'
+import { accountsForSource, isStaticBox } from './fold-analysis'
+import { createRuntimeCss, createRuntimeToken, createRuntimeTokenValue, type RuntimeCss } from './runtime-css'
+import type { StaticStyleSetCompiler } from './style-set'
 
 /**
- * Why a call site was left alone. Surfaced through `panda`-style diagnostics so a
- * user can tell the difference between "this folded" and "this silently didn't".
+ * Why a call site could not be compiled. Surfaced through diagnostics so a user can tell
+ * which part of the finite-style contract a source shape violates.
  */
 export type SkipReason =
   | 'dynamic' // some part of the arguments could not be resolved at build time
   | 'raw-call' // `css.raw(...)` returns a style object, not a class string
-  | 'not-foldable' // the call cannot evaluate to a class string at all (cva/sva)
-  | 'recipe-call' // an inline recipe call whose selection the build could not fully resolve
-  | 'unsupported-kind' // could fold in principle, but this phase does not (config recipes)
+  | 'recipe-call' // a recipe call whose selection the build could not represent finitely
+  | 'unsupported-kind' // a recognized API/member whose result shape is not compilable
   | 'not-imported' // the callee is not a Bamboo import — a local function of the same name
   | 'no-call-expression' // could not locate the enclosing call to replace
   | 'overlapping' // nested inside another fold
-  | 'empty' // resolved to no class names at all
   | 'unresolved-token' // `token(...)` resolves to no usable string, so the call has to stay
   | 'runtime-binding' // a bamboo import still referenced after the rewrite, whoever left it
-  | 'fold-failed' // the fold threw on this module, so nothing about it was established
+  | 'compile-failed' // compilation threw on this module, so nothing about it was established
 
 export interface FoldedCall {
   name: string
@@ -62,7 +46,7 @@ export interface FoldedCall {
    * not interchangeable, and a consumer that checks folded classes against the emitted
    * stylesheet has to skip the latter — there is no rule named after a variable reference.
    */
-  kind: 'class' | 'slots' | 'value'
+  kind: 'class' | 'slots' | 'value' | 'definition'
   /** The class string resolved outright, empty when the whole call lowered to ternaries. */
   className: string
   /**
@@ -108,15 +92,10 @@ export interface FoldOptions {
   filePath: string
   /** Reuse one runtime `css` across files in a build. */
   runtimeCss?: RuntimeCss
-  /** Compile recipes to the same symbolic/atomic representation as `css()`. */
-  styleCompiler?: StaticStyleSetCompiler
+  /** Compile every style surface to the shared symbolic/atomic representation. */
+  styleCompiler: StaticStyleSetCompiler
   /** Maximum finite recipe selections the static compiler may enumerate for one call. */
   maxRecipeStates?: number
-  /**
-   * Split a `css()` call that is only partly static, keeping the dynamic half at runtime.
-   * On by default.
-   */
-  partial?: boolean
   /**
    * Parse another module, for a recipe whose `cva` config lives outside this one.
    *
@@ -151,7 +130,7 @@ export interface FoldOptions {
    *
    * This asks what the guarantee actually claims: after the rewrite, is anything from a
    * bamboo module still referenced? Off by default because it costs an identifier walk, and
-   * only `failOnUnfolded` needs an answer it can fail a build on.
+   * the strict compiler needs an answer it can fail a build on.
    */
   reportSurvivors?: boolean
   /**
@@ -164,39 +143,23 @@ export interface FoldOptions {
 }
 
 /**
- * `cva`/`sva` return a function, so neither *definition* can collapse to a class string.
- * `token` also resolves to no class, but it does resolve to a literal, so it folds through
- * its own path rather than being declined outright.
+ * `cva`/`sva` return a function, so their definitions are compile-time declarations rather
+ * than class-producing calls; once their uses are lowered, the factory calls are erased.
+ * `token` also resolves to no class, but it does resolve to a literal, so it compiles through
+ * its own path rather than being declined outright. A static `viewTransition` bag resolves to
+ * its extracted class and uses the ordinary class candidate path.
  *
- * Their invocations are a different matter and do fold — `cva`'s through `fold-recipe`,
- * which is a separate set because the call is recorded under the name the file bound rather
- * than the name it imported. `sva`'s do not: a slot recipe resolves to one class per slot.
+ * Recipe invocations compile through `fold-recipe`. Inline calls
+ * are recorded under the name the file bound; config calls arrive as `recipe`. Routing both
+ * through one exact finite-state lowering keeps their selection contract identical.
  */
-const FOLDABLE_TYPES = new Set(['css', 'pattern', 'recipe'])
-
-/**
- * The class strings inside a lowered ternary — `e ? "c_red" : "c_blue"` gives both arms.
- *
- * They are read back out of the emitted text rather than threaded through the planner,
- * because the planner's product *is* that text: anything it did not write cannot appear
- * here, and anything it did cannot be missed.
- */
-const literalsIn = (expression: string): string[] =>
-  [...expression.matchAll(/"((?:[^"\\]|\\.)*)"/g)].flatMap((match) => JSON.parse(match[0]).split(' ')).filter(Boolean)
-
-/**
- * The kinds reported as `not-foldable`, which is permanent rather than a limit of this
- * phase — hence separate from `unsupported-kind`, where a slot recipe lands because it
- * resolves to one class per slot rather than to a single string.
- */
-const UNFOLDABLE_TYPES = new Set(['cva', 'sva'])
+const FOLDABLE_TYPES = new Set(['css', 'pattern', 'viewTransition'])
 
 /**
  * The skip reasons that leave a `css()`-family call in the output.
  *
  * `overlapping` is handled by the enclosing fold, and `not-imported` is somebody else's
- * function of the same name — neither leaves a call of ours. `not-foldable` is a `cva`/`sva`
- * definition, which keeps the recipe runtime rather than the css engine; see `failOnUnfolded`.
+ * function of the same name — neither leaves a call of ours.
  */
 export const SURVIVES_TO_RUNTIME = new Set<SkipReason>([
   'dynamic',
@@ -207,13 +170,12 @@ export const SURVIVES_TO_RUNTIME = new Set<SkipReason>([
   'raw-call',
   'unsupported-kind',
   'no-call-expression',
-  'empty',
   'unresolved-token',
   // A module the fold threw on. Nothing was established about it either way — its calls were
-  // neither folded nor declined — so it counted towards neither column and `failOnUnfolded`
-  // saw a module that did not exist. Unknown has to read as survives: the guarantee is that
+  // neither folded nor declined, so it counted towards neither column and the compiler saw a
+  // module that did not exist. Unknown has to read as survives: the guarantee is that
   // *nothing* still calls `css()`, and a module nobody checked cannot support it.
-  'fold-failed',
+  'compile-failed',
 ])
 
 /**
@@ -309,23 +271,10 @@ const isValueReference = (identifier: Node): boolean => {
 /**
  * Imports a surviving reference to is not a failure.
  *
- * The first four are what the fold itself writes; all live in `cx` and pull no engine, so a
+ * These are what the compiler itself writes; all live in `cx` and pull no engine, so a
  * reference to one is the fold having worked.
- *
- * `cva` and `sva` are there for the reason `SURVIVES_TO_RUNTIME` omits `not-foldable`: a
- * recipe *definition* cannot fold to a class string and never could, and what it keeps is the
- * recipe runtime rather than the css engine — which `failOnUnfolded` accepts. Their unfoldable
- * invocations are reported separately, as `recipe-call`.
  */
-const PERMITTED_BINDINGS = new Set([
-  'cx',
-  'cva',
-  'sva',
-  RECIPE_PICK_HELPER,
-  RECIPE_MAP_HELPER,
-  SPLIT_PROPS_HELPER,
-  LEAF_HELPER,
-])
+const PERMITTED_BINDINGS = new Set(['cx', RECIPE_MAP_HELPER, SPLIT_PROPS_HELPER])
 
 /** Where an imported recipe was declared, as the parser recorded it on the call. */
 type RecipeOrigin = NonNullable<ResultItem['origin']>
@@ -708,7 +657,6 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     ctx,
     code,
     parserResult,
-    partial: partial_ = true,
     runtimeCss = createRuntimeCss(ctx),
     styleCompiler,
     maxRecipeStates,
@@ -718,125 +666,6 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     sourceFile: ownSourceFile,
   } = options
 
-  /**
-   * Recover the static half of a call the whole-call path gave up on. Only a
-   * single-argument `css()` qualifies: a pattern or recipe call takes props rather than a
-   * style object, and a multi-argument `css` is later-wins across the whole object.
-   */
-  const tryPartial = (item: ResultItem, call: Node, rootName: string | undefined) => {
-    if (item.type !== 'css' || !rootName) return undefined
-    if (!Node.isCallExpression(call)) return undefined
-
-    const args = call.getArguments()
-    if (args.length !== 1) return undefined
-
-    // `item.data` is `[...conditions, raw, ...spreadConditions]`, so `data[0]` is a
-    // *condition projection* rather than the object as written whenever a ternary is
-    // present. The partition therefore reads `raw` directly rather than trusting the
-    // first entry — attributing one branch's values to the static half is exactly the
-    // bug that made ternaries unsafe here before.
-    const unboxed = box.isMap(item.box) ? (unbox(item.box) as { raw?: Dict; spreadConditions?: unknown[] }) : undefined
-    if (!unboxed?.raw) return undefined
-    // Bound so the narrowing survives into the planning closure below.
-    const raw = unboxed.raw
-
-    // A spread whose contribution could not be attributed is still out of reach.
-    if (unboxed.spreadConditions?.length) return undefined
-
-    const argument = args[0]
-    if (!argument || !Node.isObjectLiteralExpression(argument)) return undefined
-
-    // The local name an already-imported leaf helper goes by, so a plan can call it by the
-    // name this file gave it. A scan of the import declarations only — no binder — because
-    // this runs for every candidate, foldable or not.
-    const leafName = findBambooBinding(call, LEAF_HELPER, isBambooCssModule, isShadowed)
-
-    const plan_ = (allowLeaf: boolean) => {
-      try {
-        return planPartialFold(argument, item.box, raw, {
-          ctx,
-          runtimeCss,
-          isAccounted: accountsForSource,
-          isStatic: (boxNode) => isStaticBox(boxNode),
-          allowLeaf,
-          leafName: leafName ?? LEAF_HELPER,
-        })
-      } catch {
-        // The whole-call path downgrades a throwing resolve to a skip; do the same here
-        // rather than letting one call take down the file.
-        return undefined
-      }
-    }
-
-    // Planned before the bindings are resolved, because resolving them can mean adding one,
-    // and that decision is only needed once a plan exists. The rare case where a lowered
-    // leaf turns out to be unimportable re-plans without it, which keeps the static half
-    // rather than abandoning the split.
-    let plan = plan_(true)
-    if (!plan) return undefined
-
-    const usesLeaf = () => plan!.finite.some((entry) => !entry.emitsLiterals)
-
-    let cx = ensureCxImport(
-      call,
-      rootName,
-      isBambooCssModule,
-      isGeneratedCssModule,
-      isShadowed,
-      usesLeaf() ? [LEAF_HELPER] : [],
-    )
-
-    if (!cx && usesLeaf()) {
-      plan = plan_(false)
-      if (!plan) return undefined
-      cx = ensureCxImport(call, rootName, isBambooCssModule, isGeneratedCssModule, isShadowed)
-    }
-
-    if (!cx) return undefined
-
-    const callee = call.getExpression().getText()
-
-    // Static literal, then one ternary per finite property, then whatever is genuinely
-    // left for the runtime. Each part is omitted when it has nothing to contribute, so a
-    // call that is entirely static plus finite emits no `css()` at all.
-    const runtimePart = plan.dynamicText ? `${callee}(${plan.dynamicText})` : undefined
-    const runtimeParts = runtimePart ? [runtimePart] : []
-    const lowered = plan.finite.map((entry) => entry.expression)
-    const parts = [
-      // The literal first: it holds no expressions, so it cannot be observed out of order.
-      ...(plan.className ? [JSON.stringify(plan.className)] : []),
-      // The rest keeps the order the properties were written in, since a condition and a
-      // dynamic value are both arbitrary expressions.
-      ...(plan.finiteFirst ? [...lowered, ...runtimeParts] : [...runtimeParts, ...lowered]),
-    ]
-
-    // Nothing gained if the only thing produced is the call that was already there. A
-    // lone ternary is a gain, though: it is the call, removed.
-    if (!parts.length || (parts.length === 1 && runtimePart)) return undefined
-
-    // `cx` is kept even around a single ternary. Splicing a bare conditional in would put
-    // it wherever the call sat, and `css(x) + y` does not mean `a ? b : c + y`.
-
-    return {
-      className: plan.className,
-      // Both arms of every ternary, so nothing the fold wrote is invisible downstream. A
-      // lowered leaf contributes nothing: its literals are a class prefix and a property
-      // name, and the class it builds is only known at runtime.
-      classNames: [
-        plan.className,
-        ...plan.finite.filter((entry) => entry.emitsLiterals).flatMap((entry) => literalsIn(entry.expression)),
-      ].filter(Boolean),
-      replacement: `${cx.name}(${parts.join(', ')})`,
-      insert: cx.insert,
-      // The half that stays a call. A split is a real gain — the static properties become a
-      // literal — but this is still `css(...)` in the output, so the engine is still in the
-      // bundle. It reaches the module through magic-string rather than the AST, which is why
-      // the identifier walk cannot see it and why the plan has to say so here.
-      runtimeCallee: runtimePart ? callee : undefined,
-    }
-  }
-  const runtimeRecipe = createRuntimeRecipe(ctx)
-  const isConstantSlot = createConstantSlotCheck(ctx)
   const runtimeToken = createRuntimeToken(ctx)
   const runtimeTokenValue = createRuntimeTokenValue(ctx)
 
@@ -850,7 +679,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
    *
    * A tsconfig path alias is resolved first, the same way `ImportMap.match` does. Without
    * that, `@site/styled-system/css` — the spelling this repo's own website uses — fails
-   * the check and silently loses partial folding, which is indistinguishable in the
+   * the check and silently loses helper lowering, which is indistinguishable in the
    * diagnostics from a genuinely dynamic call.
    */
   const cssModules = ctx.imports.matchers.css?.mods ?? []
@@ -915,10 +744,35 @@ export const foldSource = (options: FoldOptions): FoldResult => {
   const isGeneratedCssModule = (mod: string) => matchesModule(mod, [generatedCssModule])
 
   /**
+   * The generated css entry as spelled beside an imported config recipe.
+   *
+   * A decision table needs only `cvaMap`, but a module importing a config recipe often has
+   * no css import to extend. Preserve a relative/aliased styled-system spelling by replacing
+   * its `/recipes` suffix; falling back to the configured generated entry covers bare imports.
+   */
+  const configRecipeCssSpecifier = (call: Node, binding: string): string => {
+    for (const declaration of call.getSourceFile().getImportDeclarations()) {
+      if (declaration.isTypeOnly()) continue
+      const namesBinding = declaration.getNamedImports().some((named) => {
+        if (named.isTypeOnly()) return false
+        return (named.getAliasNode() ?? named.getNameNode()).getText() === binding
+      })
+      if (!namesBinding) continue
+
+      const mod = declaration.getModuleSpecifierValue().replaceAll('\\', '/')
+      const marker = '/recipes'
+      const at = mod.lastIndexOf(marker)
+      if (at >= 0) return `${mod.slice(0, at)}/css`
+    }
+
+    return generatedCssModule
+  }
+
+  /**
    * How *this* module would have to spell the css module, learnt from one that already does.
    *
    * A file calling an imported recipe need not import the css module at all, so when the
-   * lowering needs `cvaPick` there is no spelling in the file to copy. The declaring module
+   * lowering needs a decision-table helper there is no spelling in the file to copy. The declaring module
    * necessarily has one — `cva` came from it — and that is the spelling reused here.
    *
    * A bare or aliased specifier resolves identically from any file, so it is taken as
@@ -978,9 +832,8 @@ export const foldSource = (options: FoldOptions): FoldResult => {
    * either end. Each hop is an alias symbol, so following them to a non-alias lands on the
    * declaration wherever it lives.
    *
-   * The class names do not depend on which module the call is in — `getRecipeIdentity` hashes
-   * the config — so a recipe lowered here produces exactly the string its own module's call
-   * sites produce, and exactly the one the runtime would have.
+   * The selected declarations do not depend on which module the call is in. A recipe lowered
+   * here therefore reaches the same globally shared atoms as a call in its declaring module.
    */
   const resolveImportedRecipe = (call: Node, name: string, origin: RecipeOrigin): RecipeEntry | undefined => {
     if (importedRecipes.has(name)) return importedRecipes.get(name)
@@ -999,7 +852,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
         const result = parseModule(origin.filePath)
         if (!result) return undefined
 
-        const collected = collectRecipeConfigs(result, Boolean(styleCompiler))
+        const collected = collectRecipeConfigs(result)
         const declaring = [...collected.values()]
           .find((entry) => entry.box)
           ?.box?.getNode?.()
@@ -1012,7 +865,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
         // is registered from the path below, which is what it needed the node for.
         const configs = new Map<string, RecipeEntry>()
         for (const [key, entry] of collected) {
-          configs.set(key, entry === AMBIGUOUS ? entry : { config: entry.config, name: entry.name, box: undefined })
+          configs.set(key, entry === AMBIGUOUS ? entry : { config: entry.config, box: undefined })
         }
 
         foreign = { configs, cssSpecifier: declaring ? cssModuleSpecifierFrom(declaring) : undefined }
@@ -1024,8 +877,8 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       const entry = foreign.configs.get(origin.name)
       if (!entry || entry === AMBIGUOUS) return undefined
 
-      // The class is hashed from the config, so editing that module renames the rule and
-      // leaves this literal pointing at one that no longer exists.
+      // Editing the declaration can change the selected StyleSet and therefore the atoms this
+      // literal needs, so every compiled consumer must be invalidated with it.
       foreignDependencies.add(origin.filePath)
 
       helperModules.set(
@@ -1066,14 +919,13 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     subsumed?: boolean
     /** The replacement evaluates to a slot-name → class-string object. */
     outputKind?: 'slots'
-    /** Replacement text for a partially folded call, in place of a bare class string. */
+    /** Replacement text for a compiled call, in place of a bare class string. */
     replacement?: string
     /**
-     * The node of the *definition* a recipe call was folded against.
+     * The node of the *definition* a recipe call was compiled against.
      *
-     * Registered as a watch dependency alongside the call's own module: an inline recipe's
-     * class names are hashed from its config, so a config living in another file has to
-     * re-transform this one when it changes.
+     * Registered as a watch dependency alongside the call's own module: a config living in
+     * another file selects this call's declarations, so changing it has to recompile this one.
      */
     configBox?: ResultItem['box']
     /** The resolved value, for a `token()` call. Its presence is what marks one. */
@@ -1089,29 +941,25 @@ export const foldSource = (options: FoldOptions): FoldResult => {
      * string — and what gets replaced — is the property access rather than the call.
      */
     slot?: string
-    /** The slot's class does not depend on the props, so the call folds however dynamic they are. */
-    constantSlot?: boolean
   }
 
   const candidates: Candidate[] = []
   const seenRanges = new Set<string>()
-  /** Built on first use: most modules declare no inline recipe. */
-  let recipeConfigs: Map<string, RecipeEntry> | undefined
+  const recipeConfigs = collectRecipeConfigs(parserResult)
+  const recipeDefinitions: Array<{ name: string; call: Node }> = []
 
-  /**
-   * Per inline recipe binding: calls seen, calls lowered.
-   *
-   * A binding whose every call lowered is no longer read, so its `cva({ … })` config can leave
-   * the bundle — which is the whole point, the config being far larger than the runtime. But a
-   * bundler will not drop the call on its own: `cva` closes over the config and builds an
-   * object, and Rollup cannot prove that is side-effect free, so it keeps the expression and
-   * the module ends up *larger* than before folding. The annotation below is what makes the
-   * saving real, and it is only correct to claim it once nothing reads the binding.
-   */
-  const recipeCalls = new Map<string, { seen: number; lowered: number }>()
-
-  /** Bindings whose `splitVariantProps` was rewritten, so that access no longer reads them. */
-  const loweredSplitProps = new Set<string>()
+  // Recipe factories are a compile-time declaration form. Once the config has been
+  // extracted, the executable factory and its style object have no runtime meaning.
+  for (const [name, entry] of recipeConfigs) {
+    if (entry === AMBIGUOUS) continue
+    const definition = entry.box?.getNode?.()
+    if (!definition) continue
+    const call = Node.isCallExpression(definition)
+      ? definition
+      : definition.getFirstAncestorByKind(SyntaxKind.CallExpression)
+    if (!call || code.slice(call.getStart(), call.getEnd()) !== call.getText()) continue
+    recipeDefinitions.push({ name, call })
+  }
 
   /** Ranges already reported as declined, so one call is never counted twice. */
   const reportedRanges = new Set<string>()
@@ -1242,10 +1090,6 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     }
 
     if (!FOLDABLE_TYPES.has(type)) {
-      // Only report kinds that are calls at all; JSX entries are a different surface.
-      if (call && UNFOLDABLE_TYPES.has(type)) {
-        skipped.push({ name, reason: 'not-foldable', start: call.getStart(), end: call.getEnd() })
-      }
       // Not when a nearer scope binds the name. The parser registers an inline recipe for
       // the whole file, so `const badge = cva(...)` at module scope makes every `badge(...)`
       // look like a recipe call — including one inside a function that declared its own. That
@@ -1254,7 +1098,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       //
       // Deduped on its own range, for the reason the fold path is: the parser can record one
       // call more than once, and this branch reports above where that check happens.
-      if (call && type === RECIPE_CALL_TYPE && !isShadowed(call, name)) {
+      if (call && (type === RECIPE_CALL_TYPE || type === 'recipe') && !isShadowed(call, name)) {
         const start = call.getStart()
         const end = call.getEnd()
         const rangeKey = `${start}:${end}`
@@ -1270,17 +1114,31 @@ export const foldSource = (options: FoldOptions): FoldResult => {
             continue
           }
 
-          recipeConfigs ??= collectRecipeConfigs(parserResult, Boolean(styleCompiler))
-          // Declared elsewhere and imported here. Resolved lazily and only for a name the
-          // local pass did not claim, so a file whose recipes are all its own pays nothing.
-          if (!recipeConfigs.has(name) && item.origin) {
-            const imported = resolveImportedRecipe(call, name, item.origin)
-            if (imported) recipeConfigs.set(name, imported)
+          // `recipe.raw()` returns style data, not the selected class value. It is a live
+          // runtime API and cannot be mistaken for an invocation of the recipe itself.
+          if (isRawCall(call)) {
+            skipped.push({ name, reason: 'raw-call', start, end })
+            continue
           }
 
-          const tally = recipeCalls.get(name) ?? { seen: 0, lowered: 0 }
-          tally.seen++
-          recipeCalls.set(name, tally)
+          if (!recipeConfigs.has(name)) {
+            if (type === 'recipe') {
+              // Config recipes expose the same finite variant map as inline declarations.
+              // Their configured class name is metadata only; selected authored styles are
+              // resolved through the shared StyleSet compiler below.
+              const config = ctx.recipes.getConfig(name) as RecipeEntry['config'] | undefined
+              if (config) {
+                recipeConfigs.set(name, { config, box: undefined })
+                helperModules.set(name, configRecipeCssSpecifier(call, name))
+              }
+            } else if (item.origin) {
+              // Inline declaration in another module. Resolved lazily and only for a name
+              // the local pass did not claim, so local-only files pay nothing.
+              const imported = resolveImportedRecipe(call, name, item.origin)
+              if (imported) recipeConfigs.set(name, imported)
+            }
+          }
+
           // One resolution only: a ternary yields several candidate selections, and there is
           // no single literal that stands for all of them.
           const resolvedSelection = item.data?.length === 1 ? (item.data[0] as Dict) : undefined
@@ -1291,7 +1149,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
           const entry = recipeConfigs.get(name)
           let inlineSlot: string | undefined
           let inlineEnd = end
-          if (styleCompiler && Array.isArray(entry?.config.slots)) {
+          if (Array.isArray(entry?.config.slots)) {
             const parent = call.getParent()
             if (Node.isPropertyAccessExpression(parent) && parent.getExpression() === call) {
               const accessed = parent.getName()
@@ -1318,10 +1176,9 @@ export const foldSource = (options: FoldOptions): FoldResult => {
           const lowered = lowerRecipeCall(
             call,
             entry,
-            ctx,
+            styleCompiler,
             isInertExpression,
             resolvedSelection,
-            styleCompiler,
             inlineSlot,
             maxRecipeStates,
           )
@@ -1337,7 +1194,6 @@ export const foldSource = (options: FoldOptions): FoldResult => {
             )
 
             if (helper) {
-              tally.lowered++
               candidates.push({
                 item,
                 call,
@@ -1359,42 +1215,6 @@ export const foldSource = (options: FoldOptions): FoldResult => {
             continue
           }
 
-          if (lowered.kind === 'expression') {
-            // The helper has to be callable here by whatever name this file gives it, and
-            // adding an import is only safe against the module bamboo generates.
-            const helper = ensureRecipeHelperImport(
-              lowered.helper,
-              call,
-              isBambooCssModule,
-              isGeneratedCssModule,
-              isShadowed,
-              helperModules.get(name),
-            )
-
-            if (helper) {
-              tally.lowered++
-              candidates.push({
-                item,
-                call,
-                node: call,
-                start,
-                end: inlineEnd,
-                replacement:
-                  helper.name === lowered.helper
-                    ? lowered.expression
-                    : lowered.expression.replaceAll(`${lowered.helper}(`, `${helper!.name}(`),
-                className: lowered.staticClasses,
-                classNames: lowered.classNames,
-                insert: helper.insert,
-                configBox: entry?.box,
-              })
-              continue
-            }
-
-            skipped.push({ name, reason: 'recipe-call', start, end })
-            continue
-          }
-
           if (lowered.kind === 'slots') {
             const helper = lowered.helper
               ? ensureRecipeHelperImport(
@@ -1408,7 +1228,6 @@ export const foldSource = (options: FoldOptions): FoldResult => {
               : undefined
 
             if (!lowered.helper || helper) {
-              tally.lowered++
               const replacement =
                 lowered.helper && helper && helper.name !== lowered.helper
                   ? lowered.expression.replaceAll(`${lowered.helper}(`, `${helper.name}(`)
@@ -1434,7 +1253,6 @@ export const foldSource = (options: FoldOptions): FoldResult => {
           }
 
           if (lowered.kind === 'class') {
-            tally.lowered++
             // `replacement`, not `value`: this is a class string, and the `value` path is
             // `token()`'s — it records an empty `className`, which is what a consumer checks
             // for a backing rule.
@@ -1448,9 +1266,8 @@ export const foldSource = (options: FoldOptions): FoldResult => {
               className: lowered.className,
               classNames: lowered.className.split(' ').filter(Boolean),
               styleSet: lowered.styles,
-              // The *definition's* node, not just the call's. A config imported from another
-              // module is what the class name is hashed from, so editing it has to
-              // re-transform this one or the literal here goes stale against a renamed rule.
+              // The *definition's* node, not just the call's. Editing an imported config can
+              // change this complete StyleSet, so the consumer must be recompiled with it.
               configBox: entry?.box,
             })
             continue
@@ -1517,43 +1334,12 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       continue
     }
 
-    // A constant slot resolves the same whatever the props are, so it folds before the
-    // static-argument check the rest of the class path depends on — but only when deleting
-    // the arguments deletes nothing observable. `checkbox({ size: log() }).control` has a
-    // constant class and a call in its props; folding past it drops the call. Same doctrine
-    // as `token()`'s fallback argument above.
-    if (
-      !styleCompiler &&
-      slot &&
-      isConstantSlot(name, slot) &&
-      Node.isCallExpression(call) &&
-      call.getArguments().every(isInertExpression)
-    ) {
-      candidates.push({ item, call, node: call, start, end: foldEnd, slot, constantSlot: true })
-      continue
-    }
-
     // A call written with no arguments has no argument box to be static about: the parser
     // stores a fallback, which `isStaticBox` rejects. The selection is still fully known —
     // it is every default — so `buttonStyle()` folds like the `buttonStyle({})` it means.
     const noArguments = Node.isCallExpression(call) && call.getArguments().length === 0 && item.data.length === 1
 
     if ((!noArguments && !isStaticBox(item.box)) || !hasStyles(item.data) || !argumentsAccountedFor(call, item.box)) {
-      const partial = partial_ ? tryPartial(item, call, rootName) : undefined
-
-      if (partial) {
-        // Reported before the candidate, so the range is in the ledger by the time the
-        // identifier walk reads it and the callee is not counted a second time.
-        if (reportSurvivors && partial.runtimeCallee) {
-          // Under the *imported* name, as every other `runtime-binding` is — `css as c`
-          // reports `css`, matching the `dynamic` entry a neighbouring call would produce.
-          skipped.push({ name, reason: 'runtime-binding', start, end })
-        }
-
-        candidates.push({ item, call, node: call, start, end, ...partial })
-        continue
-      }
-
       skipped.push({ name, reason: 'dynamic', start, end })
       continue
     }
@@ -1568,7 +1354,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
    * composition cannot: an enclosing `cx()` needs the declarations of its arguments so it can
    * discard overridden values before any string exists.
    */
-  if (styleCompiler) {
+  {
     for (const candidate of candidates) {
       if (candidate.styleSet || candidate.value !== undefined || candidate.replacement) continue
 
@@ -1585,12 +1371,17 @@ export const foldSource = (options: FoldOptions): FoldResult => {
         continue
       }
 
-      if (item.type === 'recipe') {
-        const config = ctx.recipes.getConfig(item.name ?? '') as StyleSetRecipeConfig | undefined
-        const selection = candidate.constantSlot ? {} : item.data.length === 1 ? (item.data[0] as Dict) : undefined
-        candidate.styleSet =
-          config && selection ? styleCompiler.resolveRecipe(config, selection, candidate.slot) : undefined
+      if (item.type === 'viewTransition') {
+        const semantic = viewTransitionClassName(item.data[0], ctx.utility.prefix)
+        candidate.className = styleCompiler.allocateClassString(semantic)
+        candidate.classNames = [candidate.className]
+        candidate.replacement = JSON.stringify(candidate.className)
+        continue
       }
+
+      // Recipes already carry either a complete StyleSet or a finite decision map from the
+      // exact lowering above. Keeping them out of this generic static-box path prevents the
+      // parser's lossy dynamic data from being mistaken for an empty selection.
     }
 
     const sourceFile = ownSourceFile ?? candidates[0]?.node.getSourceFile()
@@ -1616,9 +1407,10 @@ export const foldSource = (options: FoldOptions): FoldResult => {
         const parts: Array<
           | { kind: 'style'; candidate: Candidate }
           | { kind: 'dynamic'; candidate: Candidate }
-          | { kind: 'class'; value: string }
+          | { kind: 'class'; value: string; candidate?: Candidate }
         > = []
         const dynamic: Candidate[] = []
+        const constantCandidates: Candidate[] = []
         let supported = true
 
         const take = (arg: Node): boolean => {
@@ -1631,6 +1423,11 @@ export const foldSource = (options: FoldOptions): FoldResult => {
           if (candidate?.styleSet) {
             matched.push(candidate)
             parts.push({ kind: 'style', candidate })
+            return true
+          }
+          if (candidate?.item.type === 'viewTransition' && candidate.replacement && candidate.className) {
+            constantCandidates.push(candidate)
+            parts.push({ kind: 'class', value: candidate.className, candidate })
             return true
           }
 
@@ -1692,7 +1489,9 @@ export const foldSource = (options: FoldOptions): FoldResult => {
             .map((part) => part.candidate.styleSet!)
           const compiled = dynamicCandidate.styleMap!.compile(before, after)
           const expression =
-            dynamicCandidate.mapHelperName && dynamicCandidate.mapHelperName !== RECIPE_MAP_HELPER
+            compiled.usesHelper &&
+            dynamicCandidate.mapHelperName &&
+            dynamicCandidate.mapHelperName !== RECIPE_MAP_HELPER
               ? compiled.expression.replaceAll(`${RECIPE_MAP_HELPER}(`, `${dynamicCandidate.mapHelperName}(`)
               : compiled.expression
 
@@ -1727,15 +1526,38 @@ export const foldSource = (options: FoldOptions): FoldResult => {
             styleSet: undefined,
             styleMap: undefined,
             outputKind: undefined,
-            insert: dynamicCandidate.insert,
+            insert: compiled.usesHelper ? dynamicCandidate.insert : undefined,
             sourceBoxes: styleParts
               .flatMap((part) => [part.candidate.item.box, part.candidate.configBox])
+              .concat(constantCandidates.map((candidate) => candidate.item.box))
               .filter(Boolean),
           })
           continue
         }
 
-        if (matched.length === 0) continue
+        if (matched.length === 0) {
+          if (constantCandidates.length === 0) continue
+
+          const className = parts
+            .filter((part): part is { kind: 'class'; value: string; candidate?: Candidate } => part.kind === 'class')
+            .map((part) => part.value)
+            .filter(Boolean)
+            .join(' ')
+          const first = constantCandidates[0]!
+          candidates.push({
+            ...first,
+            call,
+            node: call,
+            start: call.getStart(),
+            end: call.getEnd(),
+            displayName: 'cx',
+            replacement: JSON.stringify(className),
+            className,
+            classNames: className.split(' ').filter(Boolean),
+            sourceBoxes: constantCandidates.map((candidate) => candidate.item.box).filter(Boolean),
+          })
+          continue
+        }
 
         const merged = styleCompiler.compose(...matched.map((candidate) => candidate.styleSet!))
         const compiled = styleCompiler.className(merged)
@@ -1764,7 +1586,10 @@ export const foldSource = (options: FoldOptions): FoldResult => {
           className: classParts.join(' '),
           classNames: classParts.flatMap((part) => part.split(' ')).filter(Boolean),
           styleSet: merged,
-          sourceBoxes: matched.flatMap((candidate) => [candidate.item.box, candidate.configBox]).filter(Boolean),
+          sourceBoxes: [
+            ...matched.flatMap((candidate) => [candidate.item.box, candidate.configBox]),
+            ...constantCandidates.map((candidate) => candidate.item.box),
+          ].filter(Boolean),
         })
       }
     }
@@ -1775,9 +1600,10 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       if (!candidate.styleMap || candidate.subsumed || candidate.replacement) continue
       const compiled = candidate.styleMap.compile()
       candidate.replacement =
-        candidate.mapHelperName && candidate.mapHelperName !== RECIPE_MAP_HELPER
+        compiled.usesHelper && candidate.mapHelperName && candidate.mapHelperName !== RECIPE_MAP_HELPER
           ? compiled.expression.replaceAll(`${RECIPE_MAP_HELPER}(`, `${candidate.mapHelperName}(`)
           : compiled.expression
+      if (!compiled.usesHelper) candidate.insert = undefined
       candidate.className = compiled.staticClasses
       candidate.classNames = compiled.classNames
       candidate.outputKind = compiled.outputKind === 'slots' ? 'slots' : undefined
@@ -1791,7 +1617,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
    */
   const applied: Array<[number, number]> = []
 
-  if (candidates.length === 0) {
+  if (candidates.length === 0 && recipeDefinitions.length === 0) {
     // Nothing was rewritten, so every reference survives — and a module with no candidate at
     // all is exactly the shape this exists to catch.
     if (reportSurvivors) reportRuntimeBindings()
@@ -1800,7 +1626,10 @@ export const foldSource = (options: FoldOptions): FoldResult => {
 
   // Compare by `SourceFile` identity rather than by path, since `options.filePath`
   // may be spelled differently by the caller than ts-morph spells it.
-  const dependencyScan = createDependencyScan(candidates[0]!.node.getSourceFile())
+  const rewriteSourceFile =
+    ownSourceFile ?? candidates[0]?.node.getSourceFile() ?? recipeDefinitions[0]?.call.getSourceFile()
+  if (!rewriteSourceFile) return { code, map: null, folded, skipped, dependencies: [] }
+  const dependencyScan = createDependencyScan(rewriteSourceFile)
 
   // Outermost-first, so a nested candidate can be detected and dropped rather than
   // producing an overlapping overwrite (which magic-string rejects).
@@ -1886,31 +1715,6 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     try {
       if (item.type === 'pattern') {
         className = runtimeCss(...item.data.map((entry) => ctx.patterns.transform(name, entry as Dict)))
-      } else if (item.type === 'recipe') {
-        // A recipe call takes one variant object; anything else is not a shape the
-        // generated recipe function accepts.
-        if (styleCompiler) {
-          const config = ctx.recipes.getConfig(name) as StyleSetRecipeConfig | undefined
-          const selection = candidate.constantSlot ? {} : item.data.length === 1 ? (item.data[0] as Dict) : undefined
-          const styles =
-            config && selection ? styleCompiler.resolveRecipe(config, selection, candidate.slot) : undefined
-          if (!styles) {
-            skipped.push({ name, reason: 'unsupported-kind', start, end })
-            continue
-          }
-          className = styleCompiler.className(styles)
-        } else {
-          const resolved = candidate.constantSlot
-            ? runtimeRecipe(name, {}, candidate.slot)
-            : item.data.length === 1
-              ? runtimeRecipe(name, item.data[0] as Dict, candidate.slot)
-              : undefined
-          if (resolved == null) {
-            skipped.push({ name, reason: 'unsupported-kind', start, end })
-            continue
-          }
-          className = resolved
-        }
       } else {
         className = runtimeCss(...(item.data as Dict[]))
       }
@@ -1919,16 +1723,11 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       continue
     }
 
-    if (!className) {
-      skipped.push({ name, reason: 'empty', start, end })
-      continue
-    }
-
     // JSON.stringify escapes the backslashes bamboo puts in class names for escaped
     // characters, and any quote an arbitrary value introduced.
     magic.overwrite(start, end, JSON.stringify(className))
     applied.push(...ranges)
-    folded.push({ name, kind: 'class', className, classNames: [className], start, end })
+    folded.push({ name, kind: 'class', className, classNames: className ? [className] : [], start, end })
     collectSourceFiles(item.box, dependencyScan)
   }
 
@@ -1969,7 +1768,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
         local && local !== AMBIGUOUS
           ? local
           : importedConfig
-            ? ({ config: importedConfig, name: '', box: undefined } satisfies RecipeEntry)
+            ? ({ config: importedConfig, box: undefined } satisfies RecipeEntry)
             : undefined
 
       if (!entry) continue
@@ -2002,35 +1801,20 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       magic.overwrite(start, end, `${helper.name}(${args[0]!.getText()}, ${JSON.stringify(keys)})`)
       applyInsert(helper.insert)
       applied.push([start, end])
-      loweredSplitProps.add(target.getText())
     }
   }
 
-  // A binding nothing reads any more: mark its config pure so the bundler can drop it.
-  //
-  // `cva(config)` hashes the config, memoizes and builds an object — no side effect, but not
-  // one Rollup can prove, so without this it keeps the whole style object as a bare expression
-  // statement and folding makes the module *larger* rather than smaller. The config is the
-  // prize here; the runtime it feeds is a fraction of its size.
-  //
-  // Only when every call lowered. While one survives the binding is still read, so the
-  // annotation would change nothing — and claiming the saving would be wrong.
-  for (const [binding, tally] of recipeCalls) {
-    if (!tally.seen || tally.lowered !== tally.seen) continue
-
-    const definition = recipeConfigs?.get(binding)?.box?.getNode?.()
-    if (!definition) continue
-
-    const call = Node.isCallExpression(definition)
-      ? definition
-      : definition.getFirstAncestorByKind(SyntaxKind.CallExpression)
-    if (!call) continue
-
-    // Offsets are only meaningful against the module being rewritten.
+  // Erase every successfully extracted recipe declaration. Calls and supported metadata
+  // operations above no longer read the binding; any other read is reported below and makes
+  // the compilation fail. Replacing the whole factory call also deletes the style config,
+  // allowing the now-unused `cva`/`sva` import to disappear under tree-shaking.
+  for (const { name, call } of recipeDefinitions) {
     const start = call.getStart()
-    if (code.slice(start, call.getEnd()) !== call.getText()) continue
-
-    magic.appendLeft(start, '/*#__PURE__*/')
+    const end = call.getEnd()
+    if (collides([[start, end]])) continue
+    magic.overwrite(start, end, 'undefined')
+    applied.push([start, end])
+    folded.push({ name, kind: 'definition', className: '', classNames: [], start, end })
   }
 
   /**
@@ -2039,16 +1823,17 @@ export const foldSource = (options: FoldOptions): FoldResult => {
    * Deliberately not driven by `parserResult`: that is the recogniser, and the point here is
    * to catch what it did not see. A namespace import called as `s.cva(...)`, a default
    * import, a specifier that resolved to nothing — each leaves a live reference and no ledger
-   * entry at all, which is how `failOnUnfolded` came to pass a build that still shipped the engine.
+   * entry at all, which used to let a build silently ship the engine.
    *
-   * The helpers the fold itself writes are excluded: `cx`, `cvaPick`, `splitProps` and the
-   * leaf helper live in `cx` and pull no engine, so a reference to one is the fold working
-   * rather than failing.
+   * The helpers the compiler writes are excluded because they pull no style engine. `cx` is
+   * also allowed to remain when it joins an arbitrary external class; only fully analyzable
+   * arguments receive Bamboo's semantic composition guarantee.
    */
   function reportRuntimeBindings() {
     // Not `parserResult`'s boxes: one can carry a node from any module the extractor resolved
     // through, and this reports offsets against *this* module's text.
-    const sourceFile = ownSourceFile ?? candidates[0]?.node.getSourceFile()
+    const sourceFile =
+      ownSourceFile ?? candidates[0]?.node.getSourceFile() ?? recipeDefinitions[0]?.call.getSourceFile()
     if (!sourceFile) return
 
     // Inline recipe bindings are local variables, so the import scan below cannot see reads
@@ -2056,7 +1841,6 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     // declaration's symbol references and require every value read to sit inside a range the
     // compiler actually replaced. Otherwise a static build could remove the recipe layer
     // while silently retaining an API whose result still depends on it.
-    recipeConfigs ??= collectRecipeConfigs(parserResult, Boolean(styleCompiler))
     for (const [binding, entry] of recipeConfigs) {
       if (entry === AMBIGUOUS) continue
       const definition = entry.box?.getNode?.()
@@ -2085,6 +1869,49 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       ...(ctx.imports.matchers.pattern?.mods ?? []),
       ...(ctx.imports.matchers.tokens?.mods ?? []),
     ]
+
+    // Imports that do not create a static ES binding bypass the binding walk below while
+    // still retaining the generated runtime module. There is no useful fallback contract for
+    // them: the compiler cannot rewrite an API selected from an opaque namespace at runtime.
+    for (const call of sourceFile.getDescendantsOfKind(SyntaxKind.CallExpression)) {
+      const callee = call.getExpression()
+      const argument = call.getArguments()[0]
+      if (!argument || (!Node.isStringLiteral(argument) && !Node.isNoSubstitutionTemplateLiteral(argument))) {
+        continue
+      }
+      if (!matchesModule(argument.getLiteralValue(), bambooModules)) continue
+
+      const isDynamicImport = callee.getKind() === SyntaxKind.ImportKeyword
+      const isRequire = Node.isIdentifier(callee) && callee.getText() === 'require' && !isShadowed(call, 'require')
+      if (!isDynamicImport && !isRequire) continue
+
+      skipped.push({
+        name: isDynamicImport ? 'import' : 'require',
+        reason: 'runtime-binding',
+        start: call.getStart(),
+        end: call.getEnd(),
+      })
+    }
+
+    for (const declaration of sourceFile.getDescendantsOfKind(SyntaxKind.ImportEqualsDeclaration)) {
+      if (declaration.isTypeOnly()) continue
+      const reference = declaration.getModuleReference()
+      if (!Node.isExternalModuleReference(reference)) continue
+      const expression = reference.getExpression()
+      if (
+        !expression ||
+        !Node.isStringLiteral(expression) ||
+        !matchesModule(expression.getLiteralValue(), bambooModules)
+      ) {
+        continue
+      }
+      skipped.push({
+        name: declaration.getName(),
+        reason: 'runtime-binding',
+        start: declaration.getStart(),
+        end: declaration.getEnd(),
+      })
+    }
 
     /** Local name -> what to call it in the report. */
     const watched = new Map<string, string>()
@@ -2157,7 +1984,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     // Suppressed by *range* rather than by name. The ledger records the name a binding was
     // imported under and this walk sees the name the file bound, which `css as c` makes
     // different — matching on the name reported one call site twice, under two reasons. Only
-    // reasons that fail the build suppress: `not-imported` and `not-foldable` pass, so
+    // reasons that fail the build suppress; `not-imported` passes, so
     // treating them as covered would hide the survivor this exists to find.
     const declined = skipped
       .filter((entry) => SURVIVES_TO_RUNTIME.has(entry.reason) && entry.end > entry.start)

@@ -1,7 +1,7 @@
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { afterAll, afterEach, describe, expect, test, vi } from 'vitest'
+import { afterAll, afterEach, describe, expect, test } from 'vitest'
 import { bamboocss } from '../src/plugin'
 
 /**
@@ -37,7 +37,9 @@ const hookOf = <T>(hook: T | { handler: T } | undefined): T | undefined =>
   typeof hook === 'function' ? hook : (hook as { handler: T } | undefined)?.handler
 
 const driver = () => {
-  const plugin = bamboocss({ transform: true, cwd, reportSummary: false }).find((p) => p.name === 'bamboocss:fold')!
+  const plugin = bamboocss({ cwd, denseClassNames: false, reportSummary: false }).find(
+    (p) => p.name === 'bamboocss:compiler',
+  )!
 
   const buildStart = hookOf(plugin.buildStart)
   const transform = hookOf(plugin.transform)
@@ -102,23 +104,4 @@ describe('watch rebuilds', () => {
     // folding the contents of one that changed.
     expect(await fold()).toBeNull()
   }, 60_000)
-
-  test('the hook touches no parser when the transform is off', async () => {
-    const plugin = bamboocss().find((p) => p.name === 'bamboocss:fold')!
-    const watchChange = hookOf(plugin.watchChange)
-
-    // Asserting it does not throw would pass with the hook deleted outright, which is the
-    // one thing this has to tell apart from working. So it asserts the effect: a plugin
-    // present only for its CSS handling loads no config and clears no cache, however many
-    // files change.
-    const loader = await import('@bamboocss/node')
-    const spy = vi.spyOn(loader, 'loadConfigAndCreateContext')
-
-    try {
-      watchChange?.call({} as never, DEPENDENCY, { event: 'update' } as never)
-      expect(spy).not.toHaveBeenCalled()
-    } finally {
-      spy.mockRestore()
-    }
-  })
 })

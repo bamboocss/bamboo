@@ -18,9 +18,12 @@ export const textInput = cva({
 })
 `
 
+const compiledClass = (result: { folded: Array<{ kind: string; className: string }> }) =>
+  result.folded.find((entry) => entry.kind === 'class')?.className
+
 describe('a recipe imported from another module', () => {
   test('folds to the class its own module would produce', () => {
-    const { fold, addFiles, getCss } = createFoldFixture()
+    const { fold, addFiles, getStyleSetCss } = createFoldFixture()
     addFiles({ 'app/styles.ts': STYLES })
 
     const result = fold(
@@ -32,14 +35,13 @@ describe('a recipe imported from another module', () => {
     expect(result.skipped).toHaveLength(0)
 
     const className = result.folded[0]!.className
-    const css = getCss()
+    const css = getStyleSetCss()
     for (const selector of selectorsFor(className)) expect(css).toContain(selector)
   })
 
   /**
-   * The identity is hashed from the config, not from where the call is, so the two must agree
-   * exactly. If they ever diverged, the same recipe would carry one class in the module that
-   * declares it and another in every module that imports it.
+   * Declaration atoms depend only on the selected styles, not on which module called the
+   * recipe, so local and imported compilation must agree exactly.
    */
   test('the class matches the same config declared locally', () => {
     const imported = createFoldFixture()
@@ -51,7 +53,7 @@ describe('a recipe imported from another module', () => {
 
     const local = createFoldFixture().fold(`${STYLES}export const cls = textInput({ size: 'sm' })\n`, 'app/local.tsx')
 
-    expect(across.folded[0]!.className).toBe(local.folded[0]!.className)
+    expect(compiledClass(across)).toBe(compiledClass(local))
   })
 
   test.each([
@@ -80,7 +82,7 @@ describe('a recipe imported from another module', () => {
     )
 
     expect(result.folded).toHaveLength(1)
-    expect(result.folded[0]!.className).toContain('size_lg')
+    expect(result.folded[0]!.className).toContain('p_8')
   })
 
   /**
@@ -127,8 +129,8 @@ describe('the helper import a lowered axis needs', () => {
     const result = fold(dynamic, 'app/use.tsx')
 
     expect(result.folded).toHaveLength(1)
-    expect(result.code).toContain(`import { cvaPick } from 'styled-system/css'`)
-    expect(result.code).toContain('cvaPick(size,')
+    expect(result.code).toContain(`import { cvaMap } from 'styled-system/css'`)
+    expect(result.code).toContain('cvaMap([size]')
   })
 
   /**
@@ -144,7 +146,7 @@ describe('the helper import a lowered axis needs', () => {
 
     expect(result.folded).toHaveLength(1)
     expect(result.code.startsWith(`'use client'`)).toBe(true)
-    expect(result.code.indexOf('cvaPick')).toBeGreaterThan(result.code.indexOf(`from './styles'`))
+    expect(result.code.indexOf('cvaMap')).toBeGreaterThan(result.code.indexOf(`from './styles'`))
   })
 
   test('an existing css import is extended rather than duplicated', () => {
@@ -154,7 +156,7 @@ describe('the helper import a lowered axis needs', () => {
     const result = fold(`import { css } from 'styled-system/css'\n${dynamic}`, 'app/use.tsx')
 
     expect(result.folded).toHaveLength(1)
-    expect(result.code).toContain(`import { css, cvaPick } from 'styled-system/css'`)
+    expect(result.code).toContain(`import { css, cvaMap } from 'styled-system/css'`)
     expect(result.code.match(/from 'styled-system\/css'/g)).toHaveLength(1)
   })
 
@@ -174,7 +176,7 @@ export const b = (size) => textInput({ size })
     )
 
     expect(result.folded).toHaveLength(2)
-    expect(result.code.match(/import \{ cvaPick \}/g)).toHaveLength(1)
+    expect(result.code.match(/import \{ cvaMap \}/g)).toHaveLength(1)
   })
 
   /**
@@ -186,7 +188,7 @@ export const b = (size) => textInput({ size })
     addFiles({ 'app/styles.ts': STYLES })
 
     const result = fold(
-      `import { textInput } from './styles'\nconst cvaPick = 1\nexport const cls = (size) => textInput({ size })\n`,
+      `import { textInput } from './styles'\nconst cvaMap = 1\nexport const cls = (size) => textInput({ size })\n`,
       'app/use.tsx',
     )
 
@@ -216,7 +218,7 @@ describe('which declaration a name resolves to', () => {
     const local = createFoldFixture().fold(`${STYLES}export const cls = textInput({ size: 'sm' })\n`, 'app/local.tsx')
 
     expect(across.folded).toHaveLength(1)
-    expect(across.folded[0]!.className).toBe(local.folded[0]!.className)
+    expect(compiledClass(across)).toBe(compiledClass(local))
   })
 
   /**
@@ -306,7 +308,7 @@ describe('the shared config cache', () => {
     )
 
     expect(second.folded).toHaveLength(1)
-    expect(second.code).toContain(`import { cvaPick } from 'styled-system/css'`)
+    expect(second.code).toContain(`import { cvaMap } from 'styled-system/css'`)
   })
 })
 

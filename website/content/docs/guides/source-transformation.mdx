@@ -1,703 +1,192 @@
 ---
-title: Source Transformation
-description: Fold static css() and pattern calls into literal class strings at build time
+title: Source compilation
+description: How Bamboo compiles style APIs to shared atoms and rejects runtime styling.
 ---
 
-Bamboo resolves styles at runtime: `css({ color: 'red.300' })` runs on every render and returns a class string. The
-result is cached, but the call still costs something – and for a call whose arguments never change, that cost buys
-nothing.
-
-Source transformation removes it. During a production build, `@bamboocss/vite` rewrites statically-resolvable calls into
-the string they would have returned:
+The Vite integration is a compiler, not an optional optimization. It runs in development and production, and Bamboo
+style APIs in application source are compile-time syntax. There is no switch that restores runtime styling.
 
 ```tsx
-// you write
-export const title = css({ fontSize: 'lg', fontWeight: 'bold' })
+// source
+export const title = css({ display: 'flex', color: 'red.300' })
 
-// the bundle gets
-export const title = 'fs_lg fw_bold'
+// transformed module
+export const title = '_4p9d _7bc2'
 ```
 
-The default fold leaves CSS unchanged. The opt-in [static composition](#static-composition) compiler changes both sides
-so recipes and utilities can share declarations globally.
+The virtual stylesheet contains the two shared declaration atoms. A second `css()` call or any recipe selecting either
+declaration reuses the same class and rule.
 
-## Setup
+## Why compilation is mandatory
 
-Install the plugin and add it to your Vite config. The fold is **on by default**, and build-only – it never runs in
-`vite dev`. Set `transform: false` to turn it off.
+A fallback model has two expensive properties:
 
-```bash
-pnpm add -D @bamboocss/vite
+- one unresolved call retains the generated style engine and its lookup tables;
+- recipe-specific classes prevent declarations such as `display: flex` from being shared with other recipes or `css()`
+  calls.
+
+Bamboo instead gives the build one contract: every style-producing call must be compiled, or the build fails. This makes
+JavaScript removal, global CSS deduplication, and graph-based CSS pruning reliable rather than best-effort.
+
+## The compiled representation
+
+Recipe identity is not style identity. The compiler resolves a recipe selection to authored declarations, merges them in
+recipe order, and only then allocates global atoms.
+
+```tsx
+const row = cva({ base: { display: 'flex' } })
+
+export const fromRecipe = row()
+export const fromCss = css({ display: 'flex' })
 ```
 
-```ts
-// vite.config.ts
-import { defineConfig } from 'vite'
-import bamboocss from '@bamboocss/vite'
+Both values contain the same class for `display: flex`, and the stylesheet contains that rule once. The source filename,
+recipe variable, configured recipe name, slot name, and call site do not enter the declaration identity.
 
-export default defineConfig({
-  plugins: [bamboocss({ transform: true })],
+The production CSS emitter:
+
+1. converts observed recipe declarations to utility atoms;
+2. omits the recipe layer and all named recipe rules;
+3. keeps explicit `staticCss` atoms as a safelist;
+4. removes source-graph atoms no transformed module can emit;
+5. compacts the remaining class names; and
+6. hashes the final CSS bytes after pruning.
+
+Development uses the same atoms and compact naming. It keeps the full extracted atom set because Vite loads modules
+lazily, and hot-replaces the virtual stylesheet when source changes.
+
+## What compiles
+
+### `css()` and patterns
+
+All arguments and style values must be statically recoverable. Multiple arguments are merged before atoms are allocated,
+so later values preserve normal `css(a, b)` precedence.
+
+```tsx
+css({ color: 'red.300' }, { color: 'blue.500', display: 'flex' })
+// emits only the blue color atom and the display atom
+```
+
+An open runtime style value has no finite CSS rule set and is rejected:
+
+```tsx
+// rejected: `tone` can be any CSS value
+const className = css({ color: tone })
+```
+
+Express runtime choices as declared recipe variants, or make a finite choice explicit in source. Use `staticCss` when
+classes are constructed outside Bamboo's analyzable source graph.
+
+`css.raw()` deliberately does not compile to a class: it returns a style object. A live use of it fails the strict
+compiler contract because it retains the style runtime.
+
+### Inline `cva()` and `sva()` recipes
+
+The recipe declaration is extracted and erased from the transformed module. Static selections resolve directly to shared
+atoms:
+
+```tsx
+const badge = cva({
+  base: { display: 'flex' },
+  variants: {
+    tone: {
+      quiet: { color: 'gray.500' },
+      loud: { color: 'red.500' },
+    },
+  },
 })
+
+badge({ tone: 'quiet' })
 ```
 
-<Callout type="info">
-  The fold is not this package's only job: it also emits the stylesheet, as the virtual module `virtual:bamboo.css`, in
-  dev and in build. A PostCSS setup for Bamboo is not required alongside it – see [Vite](/docs/installation/vite) for
-  the import and the ambient declaration.
-</Callout>
-
-## Static composition
-
-The normal extractor preserves recipe identity: two recipes that both contain `display: 'flex'` need different classes
-because their runtime selects by recipe class. `staticComposition` changes that representation instead of trying to
-minify it after the fact:
-
-```ts filename="vite.config.ts"
-bamboocss({
-  staticComposition: true,
-})
-```
-
-Every analyzable style value first becomes a symbolic style set. Bamboo composes those sets with later-wins semantics,
-then allocates ordinary global utility atoms. Recipe name and source file are not part of an atom's identity:
+When a declared variant axis is chosen at runtime, Bamboo enumerates its finite state space at build time. Each leaf is
+a complete, precedence-correct StyleSet, and a small `cvaMap` decision table selects among those precompiled class
+strings. The style config and recipe engine do not ship.
 
 ```tsx
-const layout = cva({ base: { display: 'flex', color: 'red.300' } })
-
-layout() // display:flex and color:red
-css({ display: 'flex' }) // reuses the same display:flex atom
-cx(layout(), css({ color: 'blue.500' })) // allocates only display:flex and color:blue
+export const className = (tone) => badge({ tone })
+// becomes a cvaMap lookup whose leaves are complete shared class strings
 ```
 
-The production stylesheet omits the legacy recipe layers. Unreachable source-graph atoms are removed, while
-`staticCss.css` remains an explicit safelist. Development keeps the legacy runtime and layers so hot updates stay fast.
-Because reachability is only complete after Rollup has expanded its ordinary `[hash]`, Bamboo adds a final `.b-<hash>`
-segment to changed CSS assets and rewrites Vite's HTML, manifest, and chunk references to that cache-safe name.
+`undefined` remains distinct from `null` and unknown values so defaults behave correctly. Compound variants are resolved
+in every leaf. Slot recipes can return either one selected slot or a precompiled slot object.
 
-This is a strict build contract, not a best-effort optimization. The build fails if a Bamboo value can still manufacture
-unknown CSS at runtime, if an `cx()` argument's provenance cannot be analyzed, if a recipe binding is used reflectively,
-if `virtual:bamboo.css` is not imported, or if a compiled Vite module is outside `include`. A silent fallback would need
-the recipe layer back and would give up the cross-recipe deduplication the mode exists to provide. The mode currently
-rejects `polyfill: true`, because flattening cascade layers removes the boundary used to distinguish compiler-owned
-utility selectors from authored selectors during reachability pruning.
+The Cartesian product is bounded by `maxRecipeStates` (65,536 by default). Make axes static, split an unusually large
+recipe, or raise the bound deliberately when a recipe exceeds it.
 
-Runtime `cva` and `sva` selections are supported when their state space is finite. Bamboo compiles each complete result
-into a reduced decision table, preserving defaults, misses, compound variants, slots, and declaration precedence without
-shipping the recipe config. `maxRecipeStates` bounds the exact Cartesian analysis before it can consume unbounded build
-time or memory; make more axes static, split the recipe, or raise the limit deliberately.
+Spreads, computed selection keys, unresolved recipe configs, and reflective reads such as `recipe.config` are rejected.
+`recipe.splitVariantProps(props)` is compiled to the generated `splitProps` helper and does not retain the recipe
+object.
 
-`denseClassNames: true` (the default in this mode) hashes each semantic atom to a compact deterministic name, so
-separate SSR and client builds agree. `denseClassNames: 'local'` assigns `_a`, `_b`, and so on; it is smaller, but only
-safe when one build produces both the markup and CSS. Set it to `false` to retain readable semantic atom names.
+### Config recipes
 
-On a synthetic fixture with 200 declaration-heavy recipes, 180 static call sites, and 20 runtime selections, the local
-name mode changed the production artifacts as follows:
+Config recipes use the same lowering as inline recipes. Static selections become literal atom strings; scalar variant
+props become a finite `cvaMap` decision table; config slot recipes become precompiled slot objects. Responsive or
+conditional values belong inside the recipe's style declarations, not in a runtime variant selection.
 
-| artifact                     | legacy gzip | static gzip | change |
-| ---------------------------- | ----------: | ----------: | -----: |
-| JavaScript                   |     4,345 B |     2,248 B |   -48% |
-| CSS                          |     8,663 B |     1,643 B |   -81% |
-| rendered class strings proxy |     2,559 B |       568 B |   -78% |
+### `cx()`
 
-Warm builds moved from a 236 ms median to 262 ms (+11%) on that fixture. The result depends on repetition, call-site
-reachability, minification, and whether stable or local names are used; it is a direction and a regression fixture, not
-a promise for every application.
-
-## What folds
-
-A call folds when every argument can be resolved at build time and the call evaluates to a class string.
+When every Bamboo style argument and external class literal is statically analyzable, `cx()` is resolved semantically:
+the compiler merges the StyleSets before allocating classes, removes overridden declarations, and preserves literal
+third-party classes.
 
 ```tsx
-// ✅ literal styles
-css({ color: 'red.300', padding: '4' })
-
-// ✅ conditions, responsive values, conditional value maps
-css({ color: 'red.300', _hover: { color: 'blue.500' } })
-css({ fontSize: { base: 'sm', md: 'lg' } })
-
-// ✅ several arguments – merged later-wins first, exactly as the runtime merges them
-css({ color: 'red.300', padding: '2' }, { color: 'blue.500' })
-
-// ✅ pattern calls
-flex({ direction: 'column', gap: '4', align: 'center' })
-
-// ✅ config recipe calls, default and compound variants included — when the selection resolves
-buttonStyle({ size: 'sm' })
-buttonStyle(variantProps) // ❌ a runtime selection does not lower; see below
-
-// ✅ inline recipe calls — `const badge = cva({ … })` — resolved or not
-badge({ tone: 'info' }) // → a literal
-badge({ tone }) // → a choice among the classes the config declares
-
-// ✅ the same, for a recipe declared in another module and imported here
-textInput({ size: 'sm' })
-
-// ✅ inside a JSX expression, which is still a call site
-<div className={css({ px: '4' })} />
+cx(css({ color: 'red.300' }), css({ color: 'blue.500' }))
+// contains only the blue declaration atom
 ```
 
-### `token()` calls
+For a finite dynamic recipe plus static Bamboo styles, the static styles are composed into every decision-table leaf. A
+`cx()` whose arbitrary class inputs are runtime values remains the tiny string-joining helper; Bamboo makes no
+conflict-resolution guarantee for that shape.
 
-`token()` is the one fold that produces a value rather than a class. It is what you reach for when a design token is
-needed somewhere Bamboo emits no CSS – an inline style, a canvas, a chart config:
+### Tokens
 
-```tsx
-// you write
-const chart = { grid: token('colors.red.300') }
+`token()` and `token.value()` calls with a statically known path compile to string literals. Unknown paths and dynamic
+paths fail rather than retaining the complete runtime token dictionary.
 
-// the bundle gets
-const chart = { grid: 'var(--colors-red-300)' }
+### View transitions
+
+A static `viewTransition()` bag compiles to its compact class literal. The CSS optimizer treats its carrier selector,
+`::view-transition-*` selectors, and `view-transition-class` declaration as one renamable, prunable unit. A dynamic bag
+is rejected because its runtime hash would name CSS the build could not emit.
+
+## Compiler errors
+
+The compiler scans the output plan as well as recognized calls. A Bamboo import passed around, re-exported, used
+reflectively, or missed because a transform threw is still a survivor and fails the build.
+
+```text
+bamboocss: 2 call(s) could not be compiled.
+
+  src/card.tsx
+    18: css() — dynamic
+  src/styles.ts
+    7: badge — runtime-binding
 ```
 
-`token.value()` folds the same way, to the resolved literal instead:
+Common reasons:
 
-```tsx
-const chart = { grid: token.value('colors.red.300') } // → '#fca5a5'
-```
+| reason             | meaning                                                                    |
+| ------------------ | -------------------------------------------------------------------------- |
+| `dynamic`          | The call contains an open value or source shape the compiler cannot prove. |
+| `recipe-call`      | An inline recipe selection is not a finite analyzable shape.               |
+| `raw-call`         | The API returns a style object rather than a class.                        |
+| `unsupported-kind` | The result shape cannot be represented as the requested class value.       |
+| `runtime-binding`  | A Bamboo runtime binding remains referenced after planned rewrites.        |
+| `compile-failed`   | Compilation of the module threw; no clean result can be claimed.           |
 
-What each folds to is exactly what the runtime would have returned. `token()` is the trivial case — the variable
-reference, for every token — which is what makes it always foldable.
+`not-imported` is not an error: it means a local or third-party function happened to use the same name. An `overlapping`
+inner candidate is owned by the enclosing compiled expression.
 
-`token.value()` only accepts a token that _has_ a literal. A conditional or semantic token resolves to a variable rather
-than to either branch, a virtual one has none of its own, and a negative one resolves to a `calc()` over its
-counterpart, so those are a type error at the call rather than a reference handed to something that cannot resolve it.
+Use `reportSkipped: true` for per-file diagnostics. The summary is enabled by default.
 
-When every `token()` call in a module folds, its import of the generated token map – every token in your project – is
-left unused, and your bundler drops it. The fold does not remove the import statement itself; the generated
-`styled-system/package.json` declares `sideEffects` narrowly enough that Rollup and Vite can.
+## Required graph agreement
 
-Aliased and namespaced imports fold. The path has to be **one resolved string literal** – a conditional is not one, even
-when every branch of it is a real token:
+Import `virtual:bamboo.css` exactly once. A build fails if compiled classes exist without that virtual stylesheet, or if
+a transformed source module is outside Bamboo's configured `include` graph. Both cases would otherwise produce class
+values with no backing rules.
 
-```tsx
-token('colors.red.300') // ✅
-token(dark ? 'colors.a' : 'colors.b') // ❌ declines – folding a branch would delete the condition
-token(chosen || 'colors.red.300') // ❌ declines – for the same reason
-```
+The cascade-layer polyfill is incompatible with compiled atom pruning and is rejected. The compiler emits the layer
+order itself; because named recipe rules are absent, the order is `reset, base, tokens, utilities`.
 
-`token()` takes only a path. A fallback is `token(path) ?? fallback`, which the fold leaves alone – it rewrites the call
-and not the expression around it.
-
-A path the fold cannot resolve to a usable string is reported as `unresolved-token`: the path names no token, or the
-resolved value is empty, or it is not a string at all – a numeric `fontWeights` token stays a number, and no string
-literal stands in for that. The runtime returns `undefined` in those cases, which is exactly what declining preserves.
-
-## What does not fold
-
-Everything else is left byte-identical. A call Bamboo cannot fully resolve keeps its runtime behaviour.
-
-```tsx
-// ❌ a value only known at runtime
-css({ color: tone })
-
-// ❌ a spread whose contribution cannot be accounted for
-css({ color: 'red.300', ...rest })
-
-// ❌ a computed key
-css({ [key]: { color: 'red.300' } })
-
-// ❌ several arguments where one is dynamic – later-wins across the whole object, so the
-//    static half cannot be hoisted out without reproducing the merge
-css({ display: 'block' }, extra)
-```
-
-### Composed across files
-
-A value imported from another module folds, as long as the extractor can resolve it statically:
-
-```tsx
-// styles.ts
-export const button = css.raw({ display: 'inline-flex', padding: '4' })
-
-// button.tsx
-import { button } from './styles'
-export const cls = css(button, { background: 'blue.500' })
-// → "d_inline-flex p_4 bg_blue.500"
-```
-
-The same holds for plain exported objects, aliased imports, re-exports, and pure local helpers – including function
-declarations, default parameters, helpers composed from other helpers, and IIFEs:
-
-```tsx
-const pad = (n) => ({ padding: n })
-css(pad('4')) // → "p_4"
-```
-
-"Pure" is a description of how style helpers are written, not something the fold verifies. A helper is inlined for the
-value it returns, so a side effect in its body goes with the call:
-
-```tsx
-let count = 0
-const pad = (n) => {
-  count++
-  return { padding: n }
-}
-css(pad('4')) // → "p_4", and `count` is never incremented
-```
-
-Keep effects out of the helpers you style with.
-
-When a fold reads from another module, the plugin registers that module as a watch dependency, so editing it
-re-transforms the files that folded against it rather than leaving a stale literal behind.
-
-Under `vite build --watch` that takes a second step. A consumer is transformed _before_ the module it imports – that is
-how a bundler discovers imports at all – so re-transforming it is not enough on its own: the parser would still be
-holding the previous contents and would fold the same stale class again. The plugin re-reads a changed module as the
-rebuild starts, before anything folds against it.
-
-A spread of an imported static object folds too, and registers that module as a dependency – see [Spreads](#spreads) for
-the one shape that still declines.
-
-### Never folded
-
-Two kinds of call never fold, because they do not evaluate to anything a literal can stand in for:
-
-- **`css.raw()`**, `recipe.raw()`, and `pattern.raw()` return a _style object_ so callers can compose them. Folding one
-  to a string would break every consumer.
-- **`cva()` and `sva()`** return a function. Their definitions stay as they are.
-
-### Spreads
-
-A spread folds when the extractor walked it structurally, which covers a static object whether it is local or imported:
-
-```tsx
-const known = { padding: '4' }
-css({ color: 'red.300', ...known }) // → "c_red.300 p_4"
-
-// styles.ts
-export const shared = { padding: '4' }
-// use.tsx
-css({ color: 'red.300', ...shared }) // → "c_red.300 p_4", and styles.ts becomes a watch dependency
-```
-
-Order is preserved, so a spread still overrides what it lands on: `css({ color: 'red.300', ...override })` folds to
-whatever `override.color` says.
-
-A spread declines when its contribution cannot be accounted for. That is the case for a runtime value, a conditional
-spread, and one inside a condition block – and also for a spread of an object that is _itself_ not fully accounted for:
-
-```tsx
-const partial = { padding: '4', ...rest } // rest is unknown
-css({ color: 'red.300', ...partial }) // ❌ declines
-
-const computed = { padding: '4', [key]: '2' } // key is unknown
-css({ color: 'red.300', ...computed }) // ❌ declines
-```
-
-The distinction matters because a spread the extractor flattened and one it silently skipped look identical in the
-result: both simply contribute keys, or fail to. So the extractor records the ones it walked, and anything not on that
-list declines. Being walked is not the same as being complete, though – the extractor omits what it cannot evaluate at
-any depth – so a recorded spread gets the same audit the call itself gets, rather than being trusted for having been
-seen.
-
-One case declines despite resolving: a spread the extractor _evaluated_ rather than walked, such as an imported
-`css.raw()` value spread inside a nested selector. Its keys are re-boxed against the spread site, so the module they
-came from is no longer recoverable, and the build cannot name the file it would have to watch.
-
-## Partly static calls
-
-A single-argument `css()` call does not have to be entirely static. The part that resolves becomes a literal and the
-rest keeps its runtime call:
-
-```tsx
-css({ color: 'red.300', padding: p })
-cx('c_red.300', css({ padding: p }))
-```
-
-A top-level ternary is neither half. Both its branches are known, so each resolves now and the choice becomes a ternary
-between two literals:
-
-```tsx
-css({ margin: '2', color: isError ? 'red.500' : 'green.500' })
-cx('m_2', isError ? 'c_red.500' : 'c_green.500')
-```
-
-Independent conditionals stay linear – two of them give two ternaries, not four combinations. One branch that does not
-resolve makes the choice open-ended again, and the property goes back to the runtime. The ternary has to be written at
-the call site: one reached through a variable stays where it was declared, so its condition is neither copied into a
-scope that cannot see it nor re-evaluated on every call.
-
-A value that resolves to nothing at all still lowers, because the class is the property's prefix plus whatever the value
-holds – and the prefix is known now:
-
-```tsx
-css({ margin: '2', color: tone })
-cx('m_2', cssLeaf('c_', 'color', tone))
-```
-
-This changes nothing about which classes have CSS behind them: `css()` already built the class from the value alone, so
-a value the extractor never saw already produced a class with no rule. A condition object and any other non-scalar fall
-back to `css()` at runtime, and `null` produces no class. It applies to a top-level property; `hash` declines it, since
-it does not append the value to a prefix.
-
-Splitting is refused when two halves could produce a class for the same property: a shorthand facing its longhand, a
-top-level `base` block, and multi-argument `css()`. `cx` concatenates rather than merging, so both classes would reach
-the element and the cascade would pick between them by stylesheet order — where `css()` resolves per property before
-naming anything, and could keep the other one. A property counts as static only if the extractor resolved every leaf
-_and_ accounted for everything the source declared, so a dynamic array element, a nested dynamic value and a spread all
-keep their whole property at runtime. A ternary nested inside a condition block stays there too – lowering it would mean
-carrying the condition's path into each branch.
-
-Element splitting needs both `css` and `cx`, so a file that does not already import `css` is left alone. Turn splitting
-off with `partial: false`.
-
-## Knowing whether a call folded
-
-A build prints a coverage summary when it finishes:
-
-```txt
-Folded 184/213 (86%) across 41/58 files — declined: dynamic=22 raw-call=5 not-imported=2
-```
-
-That is the number to watch. It tells you the transform ran, how much of the project it reached, and what the remainder
-is waiting on – a project sitting at 40% `dynamic` is a different problem from one sitting at 40% `not-imported`. Turn
-it off with `reportSummary: false`.
-
-For per-file detail, turn on `reportSkipped` to have every declined call reported with a reason:
-
-```ts
-bamboocss({ transform: true, reportSkipped: true })
-```
-
-```txt
-src/Button.tsx: dynamic=2 raw-call=1
-```
-
-The reasons are:
-
-| Reason               | Meaning                                                                             |
-| -------------------- | ----------------------------------------------------------------------------------- |
-| `dynamic`            | Some part of the arguments could not be resolved at build time.                     |
-| `raw-call`           | A `.raw()` call, which must keep returning a style object.                          |
-| `not-foldable`       | `cva` or `sva` – returns a function, not a class string.                            |
-| `recipe-call`        | An inline recipe call whose classes are not knowable (see below).                   |
-| `unsupported-kind`   | A bare slot-recipe call with no slot access, or a shape this phase does not handle. |
-| `not-imported`       | The callee is not a Bamboo import (see below).                                      |
-| `empty`              | Resolved, but produced no class names.                                              |
-| `overlapping`        | Nested inside another folded call.                                                  |
-| `unresolved-token`   | A `token()` path resolving to no usable string (see above).                         |
-| `no-call-expression` | The call site could not be located in the source.                                   |
-| `runtime-binding`    | A Bamboo import still referenced after the rewrite (see below).                     |
-| `fold-failed`        | The fold threw on this module, so nothing about it was established (see below).     |
-
-`runtime-binding` and `fold-failed` are reported only under [`failOnUnfolded`](#failonunfolded) — the first because it
-costs an extra walk of the module, and neither because anything else acts on them. `fold-failed` also never appears in
-`reportSkipped`, which lists declined _call sites_: a module that threw produced none.
-
-`not-foldable` and `unsupported-kind` are deliberately separate. The first is permanent – `cva` and `sva` return
-functions, so there is no class string to fold to. The second is a limitation of this phase, such as a bare slot-recipe
-call, which resolves to one class per slot rather than to a single string.
-
-You can also just read the output bundle: a folded call is a string literal, an unfolded one still says `css(`.
-
-### `recipe-call`, specifically
-
-An **inline recipe** is one you bind yourself, rather than declaring in the config:
-
-```ts
-const badge = cva({ base: { rounded: 'full' }, variants: { tone: { info: { bg: 'blue.100' } } } })
-
-// ↓ this call
-badge({ tone: 'info' })
-```
-
-The `cva(...)` definition is reported as `not-foldable` – it returns a function, so there is no class string to fold it
-to. The **calls** fold, whether or not the build can resolve the selection:
-
-```ts
-badge({ tone: 'info' })
-// → 'cva_1a2b3c cva_1a2b3c--tone_info'
-
-badge({ tone })
-// → 'cva_1a2b3c' + cvaPick(tone, { info: ' cva_1a2b3c--tone_info', warn: ' cva_1a2b3c--tone_warn' })
-```
-
-A recipe's classes are **additive** – one per variant, never one per combination – so a call with three runtime variants
-lowers to three terms rather than to every pairing of their values. Terms are emitted in the order the config declares
-the variants, which is the order the runtime appends them, so a folded module and a dev build produce the same `class`
-attribute rather than the same set in a different order.
-
-`cvaPick` is a ~45-byte helper exported from the generated `cx` module, which pulls none of the style engine. It makes
-the three distinctions `cva` itself makes: a value the config declares selects its class; `undefined` means the property
-was never passed, so the recipe's default applies; anything else – including `null` – selects nothing.
-
-Once _every_ call of a binding lowers, nothing reads the binding, and the build marks the definition `/*#__PURE__*/` so
-your bundler can drop the config with it. Measured on an application with 1,271 inline recipe bindings, **1,266 lowered
-completely and took 76.9 kB gzipped of config with them**. Bundling one module with a single dynamic recipe call:
-**10,347 B → 139 B** minified.
-
-A call is still reported as `recipe-call`, and left alone, when the classes it can produce are not knowable:
-
-```ts
-badge({ ...rest }) // ❌ the selection cannot be enumerated
-badge({ [key]: 'info' }) // ❌ a computed key names no variant the build can see
-badge({ tone: a(), size: b() }) // ❌ two properties that could run something, in an order the
-//    emitted terms would swap
-```
-
-A selection that could _run_ something is otherwise fine – `badge({ tone: getTone() })` lowers with `getTone()` intact
-as the helper's argument, evaluated exactly once, where it was.
-
-### A recipe declared in another module
-
-Nothing above requires the recipe to be bound in the file that calls it. A `cva(...)` in `app/styles.ts` folds at every
-call site that imports it:
-
-```ts
-// app/styles.ts
-export const textInput = cva({ base: { rounded: 'md' }, variants: { size: { sm: {}, lg: {} } } })
-
-// app/Field.tsx
-import { textInput } from './styles'
-textInput({ size: 'sm' }) // → a literal, exactly as if it were declared here
-```
-
-The binding is followed through `export { x } from './m'`, `export * from './m'`, `import { x } … export { x }`, and an
-alias at either end, so a barrel is transparent. A class name is hashed from the config rather than from where the call
-is, so a recipe lowered in a consuming module produces the same string its own module does.
-
-If the lowering needs `cvaPick` and the file imports nothing from the generated css module – which it need not, since it
-imports the binding rather than the factory – the import is written in, after the last existing one so a `'use client'`
-prologue stays first.
-
-Three things stop a name resolving that way: a namespace import (`import * as s`, then `s.textInput(…)`), a default
-export, and a recipe outside the project's `include`, which is never parsed and so has no rules to fold against. Two
-`export *`s carrying the same name are ambiguous and resolve to neither.
-
-### Config recipes, and a runtime selection
-
-Everything above is about **inline** recipes. A _config_ recipe – declared in `theme.recipes` and imported from
-`styled-system/recipes` – folds when the build can resolve the selection, and does not lower when it cannot:
-
-```ts
-buttonStyle({ size: 'sm' }) // ✅ → "button button--size_sm", named from the recipe's `className`
-buttonStyle(variantProps) // ❌ reported as `dynamic`, left for the runtime
-```
-
-The asymmetry is deliberate, and it comes from the two runtimes resolving a selection differently. `cva` reads a variant
-value as a **key**, so a conditional value finds no entry and names no class – which is exactly what `cvaPick` does, so
-lowering an inline recipe reproduces its runtime. A config recipe routes its selection through `createCss`, which
-_expands_ a conditional into one class per condition:
-
-```ts
-buttonStyle({ size: { base: 'sm', md: 'lg' } }) // responsive, documented, and type-permitted
-```
-
-For a **dynamic** axis the build cannot know which of the two kinds of value will arrive, so a scalar lookup would
-silently drop every class a responsive variant produces. It declines rather than risk that.
-
-## `failOnUnfolded`
-
-A coverage percentage cannot tell you whether you won anything. The fold's real prize is not the per-call CPU it saves –
-it is that a bundle where _every_ `css()` call folded stops importing `styled-system/css`, and the engine behind it
-drops out. One survivor keeps the whole thing. `failOnUnfolded` fails the build instead:
-
-```ts
-bamboocss({ transform: true, failOnUnfolded: true })
-```
-
-```txt
-bamboocss: 2 call(s) could not be folded, and `failOnUnfolded` is on.
-
-  src/Chart.tsx
-    41: css() — dynamic
-    58: cssLeaf() — lowered-leaf
-
-Each one keeps `styled-system/css` in the bundle, so the engine cannot be dropped however many
-other calls folded. Make the values static, move the variation into a `cva` variant, or generate
-them with `staticCss` — or set `failOnUnfolded: false` to accept the runtime.
-```
-
-`lowered-leaf` is the case that would otherwise slip past you. `css({ color: tone })` _does_ fold, to a
-`cssLeaf("c_", "color", tone)` call, so it reports no skip at all – but `cssLeaf` falls back to the full engine for a
-value that is not a scalar, such as a condition object, and the build cannot prove your `tone` never is one. So it
-imports the engine, and the bundle keeps it.
-
-### Config recipes cannot pass it
-
-A config recipe whose variants arrive at runtime cannot pass `failOnUnfolded` – and that is the shape a design system
-takes, because its variants are the component's public API and so are props by definition:
-
-```tsx
-const [variantProps, rest] = buttonStyle.splitVariantProps(props)
-return <button className={cx(buttonStyle(variantProps), rest.className)} />
-```
-
-That call does not lower, [for the reason above](#config-recipes-and-a-runtime-selection), and the `buttonStyle` import
-it leaves behind keeps `styled-system/css` in the bundle.
-
-Writing the same recipe **inline** does pass. A `cva`/`sva` definition is reported as `not-foldable`, which the gate
-accepts on purpose: it keeps the much smaller recipe runtime rather than the css engine, and its calls lower even when
-the selection is dynamic.
-
-```tsx
-const buttonStyle = cva({ base: { … }, variants: { size: { sm: { … }, lg: { … } } } })
-
-const [variantProps, rest] = buttonStyle.splitVariantProps(props)
-return <button className={cx(buttonStyle(variantProps), rest.className)} /> // → cvaPick, no engine
-```
-
-So the gate does not ask you to give up recipes – it asks you to stop importing the engine, and an inline recipe never
-did. For a design system that wants zero runtime, that makes
-[config recipe versus `cva`](/docs/concepts/recipes#should-i-use-an-inline-or-config-recipe) a decision about the gate
-rather than about where the file lives. A config recipe called with a **resolvable** selection is unaffected, and folds
-like anything else.
-
-### What it checks beyond the declined calls
-
-A skip reason only exists for a call something _recognised_, and a shape nothing looks at appears in neither the folded
-nor the declined column – so the ledger alone can read clean while the module still imports the engine.
-
-So `failOnUnfolded` also asks the question the guarantee actually makes, of the output rather than the ledger: once
-every rewrite is applied, is anything from a Bamboo module still referenced? Anything that is gets reported as
-`runtime-binding`. It catches a binding passed on rather than called, one handed to a function the build cannot follow,
-a module whose only Bamboo usage produced no parse result at all, a wrapper re-exporting the css API – and the half a
-**partial fold** keeps, which is the one most projects will meet:
-
-```ts
-css({ color: 'red.300', _hover: { color: tone } })
-// → cx("c_red.300", css({ _hover: { color: tone } }))
-```
-
-That call _folds_, so it declines nothing, and its runtime half is written straight into the output rather than into the
-module the walk reads – it was invisible in both directions. A split that resolves everything leaves no call and reports
-nothing.
-
-Three things are excluded from that walk: the helpers the fold itself writes (`cx`, `cvaPick`, `splitProps`), `cssLeaf`
-(already reported as `lowered-leaf`), and any reference inside a range the fold rewrote.
-
-### `leafFallback`, and reaching zero runtime with dynamic styles
-
-`cssLeaf` is reported as `lowered-leaf` for one reason: it falls back to `css()` when the value turns out to be a
-condition object or a responsive array, which no class-name concatenation describes. That single reference is the only
-edge from a fully-lowered module to the engine, and it is worth the entire prize:
-
-| `sandbox/runtime-perf`, one dynamic leaf | raw      | gzip    | top-level bindings |
-| ---------------------------------------- | -------- | ------- | ------------------ |
-| `leafFallback: true` (default)           | 22,154 B | 7,542 B | 39                 |
-| `leafFallback: false`                    | 2,094 B  | 1,077 B | 10                 |
-
-So with the fallback on, `failOnUnfolded` can only pass an app with **no dynamic styling at all** — which is a much
-narrower target than it sounds, and not one most apps can hit.
-
-Setting [`leafFallback: false`](/docs/references/config#leaffallback) in your Bamboo config removes the reference, and
-`failOnUnfolded` stops reporting a lowered leaf. The two together make zero runtime reachable for an app whose dynamic
-values are **scalars** — a string, a number, a boolean, or nothing:
-
-```ts
-// ✅ folds to cssLeaf, keeps nothing
-css({ color: tone })
-
-// ✅ both branches resolve at build time
-css({ color: active ? 'red.300' : 'blue.300' })
-
-// ❌ throws at runtime under `leafFallback: false`
-const styles = { base: 'red.300', _hover: 'blue.300' }
-css({ color: styles })
-
-// ✅ the same thing written where the build can read it
-css({ color: { base: 'red.300', _hover: 'blue.300' } })
-```
-
-The last shape throws rather than guessing, naming the property. `leafClass` declines exactly two things — a condition
-object and a responsive array — and both mean one class per entry rather than one class, so there is no string to return
-that is not silently wrong.
-
-### A module the fold threw on
-
-The last shape the ledger cannot describe is a module the fold **failed** on. If the transform throws – on a retired
-token spelling in a `cva`, say – the module is left as it was, which is safe: its runtime call still works. What it is
-not is _checked_. It contributed to neither the folded column nor the declined one, so a coverage summary reported 100%
-over the files that did not throw, and the survivor check saw a file that was never there.
-
-That reads as `fold-failed`, and it fails the build under `failOnUnfolded`:
-
-```txt
-  src/Timeline.tsx
-    1: fold — fold-failed
-```
-
-Unknown has to count as survives here. The guarantee is that _nothing_ still calls `css()`, and a module nobody was able
-to look at cannot support it. The error logged for the module itself is the thing to fix; without `failOnUnfolded` it
-stays a logged error and a declined module, not a build failure.
-
-### What it does not check
-
-**`failOnUnfolded` is deliberately silent about inline recipes.** A `cva(...)` definition returns a function and can
-never collapse to a class string, so it does not fail the build – and neither do its invocations, whether they lowered
-or were declined as `recipe-call`. A project full of recipes can pass `failOnUnfolded` while shipping plenty of Bamboo
-runtime.
-
-Being silent about recipes is the intended trade rather than an oversight, because the two runtimes are not the same
-size. Measured as tree-shaken production bundles of `sandbox/vite-ts`:
-
-| entry point   | gzipped |
-| ------------- | ------- |
-| `cx` only     | 216 B   |
-| `cva` + `cx`  | 4,477 B |
-| `css` + `cva` | 8,546 B |
-
-So what `failOnUnfolded` guarantees is narrower than "no runtime", and it is the half worth guaranteeing: **nothing
-still reaches the css engine** – not a call, not a re-export, not a binding handed somewhere the build cannot follow.
-Recipes keep a runtime roughly half the size, and their invocations are not verified at all – which is why `recipe-call`
-exists in the report even though it does not fail the build.
-
-One edge is worth knowing because it does not follow that rule: a bare **config** slot recipe call is reported as
-`unsupported-kind`, which _does_ fail `failOnUnfolded`, while the equivalent inline `sva(...)` call is reported as
-`recipe-call`, which does not. Neither keeps the `css()` engine, so by the rule above neither should fail.
-`unsupported-kind` is a catch-all that also covers shapes which are genuinely unresolved, and it is treated as a
-survivor on their account.
-
-### `not-imported`, specifically
-
-Bamboo's extractor matches style calls **by name** and does not require an import – a deliberate choice, since the worst
-case for CSS extraction is a handful of unused rules. A source transform cannot be that relaxed: your own
-`const css = (styles) => JSON.stringify(styles)` would otherwise be rewritten into a class string.
-
-So the fold asks for more than the extractor does. The callee's name must be imported at file level, and no enclosing
-scope may shadow it. A call that merely looks like a Bamboo call is reported as `not-imported` and left alone.
-
-## Build only, and why
-
-The plugin declares `apply: 'build'`. It does not run in `vite dev`.
-
-Folding a module means re-parsing it with `ts-morph`. In a build that cost is paid once per module and amortizes across
-the whole pass. Measured on `sandbox/vite-ts`, it is roughly **0.3 ms for a small component and 3 ms for a 147-line file
-with 24 call sites** – the parse dominates, and the fold itself adds about 10% on top of it. For a 500-module app that
-is somewhere under a second and a half added to a production build.
-
-In dev the trade is bad in both directions: the same parse lands on every hot update, feeding a source file back into
-the project invalidates cross-file resolutions that other modules memoized, and a dev bundle gains nothing from having
-its style calls pre-resolved. So the transform stays where it pays for itself.
-
-## What it does not do
-
-- **It does not remove the runtime from your bundle.** Dropping `createCss` and the utility tables requires _every_ call
-  site in the module graph to fold, which realistically does not happen in an app with dynamic components. You get the
-  per-call CPU saving; the runtime still ships. Bundle size barely moves either way, and gzipped it moves slightly
-  against you – on `sandbox/runtime-perf`, -0.8% raw and +1.0% gzipped, because class literals are all distinct where
-  the repeated `css({ … })` calls they replace compressed almost to nothing.
-- **It does not remove the now-unused import.** `import { css } from 'styled-system/css'` stays after its last call
-  folds. Bundlers tree-shake it.
-- **It does not fold recipe elements.** A config recipe's `jsx` components – `<Button size="sm" />`, which you write
-  yourself – keep their runtime path, even though the equivalent `buttonStyle({ size: 'sm' })` call folds. A recipe
-  element is not counted in the coverage summary either, so a project using them reads as having fewer sites than it
-  has.
-- **It does not fold a bare slot recipe call.** One resolves to a class per slot rather than to a single string, so
-  there is no single literal to substitute; it is reported as `unsupported-kind`. A slot access – `recipe(props).slot` –
-  does fold, and a slot that takes no variants of its own folds even when the props are fully dynamic.
-- **It does not hoist repeated class literals.** Two call sites resolving to the same string each get their own literal.
-  Measured on `sandbox/runtime-perf`, a folded module repeats seven strings, most of them short leaf-helper prefixes —
-  and the compression cost noted above comes from literals being _distinct_, which hoisting cannot address. Across
-  modules, where real design-system duplication lives, a per-module hoist would not reach it anyway.
-
-## How it stays correct
-
-The folded string is computed through the same runtime `css` your app would have called, rebuilt in-process from your
-resolved config – so the substitution is behaviour-preserving by construction rather than by a reimplementation that
-could drift.
-
-That leaves one thing to verify, and the test suite verifies it: that every class in a folded string is backed by a rule
-in the CSS the build emits. `packages/vite/__tests__` checks this across conditions, responsive values, `!important`,
-multiline values, arbitrary values containing quotes and backslashes, shorthand and longhand conflicts, and
-multi-argument merge order – plus a parity test asserting the emitted CSS is byte-identical whether or not folding ran.
+See [Using Vite](/docs/installation/vite#plugin-options) for the remaining tuning and diagnostic options.

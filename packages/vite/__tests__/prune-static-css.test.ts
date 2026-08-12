@@ -74,6 +74,24 @@ describe('static stylesheet reachability', () => {
     expect(a).toBe(b)
   })
 
+  test('renames a view-transition selector, pseudo argument, and declaration together', () => {
+    const session = createStaticCompilationSession()
+    const semantic = 'vt_semantic'
+    const compact = session.allocateClassString(semantic)
+    session.viewTransitionClasses.add(semantic)
+    session.prunableClasses.add(esc(semantic))
+    session.markClassUsed(compact)
+
+    const result = pruneStaticCss(
+      stylesheet(`.${semantic}{view-transition-class:${semantic}}::view-transition-old(.${semantic}){opacity:0}`),
+      session,
+    )
+
+    expect(result).toContain(`.${compact}{view-transition-class:${compact}}`)
+    expect(result).toContain(`::view-transition-old(.${compact}){opacity:0}`)
+    expect(result).not.toContain(semantic)
+  })
+
   test('does not prune or rename an authored class outside the utility layer', () => {
     const session = createStaticCompilationSession()
     session.prunableClasses.add('d_flex')

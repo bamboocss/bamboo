@@ -280,9 +280,9 @@ For the [shared example](#prefix), the emitted class and variable are:
 | `{ cssVar: true, className: false }` | `.text_blue\.500` | `var(--cgpxvS)`          |
 | `{ cssVar: false, className: true }` | `.dOFUTE`         | `var(--colors-blue-500)` |
 
-Hashing also turns off [`cx` merging](/docs/concepts/writing-styles#classname-concatenation), since the property it
-compares is no longer in the class name. Watch for this if you hash in production only: the merge holds in development
-and is gone from the build you ship.
+This option controls extraction-only semantic class names. Vite's compiler composes StyleSets before naming and then
+applies its independent [`denseClassNames`](/docs/installation/vite#plugin-options) mode, so hashing cannot change `cx`
+semantics there.
 
 ## File system options
 
@@ -503,40 +503,6 @@ Whether to allow shorthand properties.
 | ------- | ----------------------------------------------- |
 | `true`  | `css({ bgColor: 'gainsboro', p: '10px 15px' })` |
 | `false` | longhand only – `backgroundColor`, `padding`    |
-
-### leafFallback
-
-**Type**: `boolean`
-
-**Default**: `true`
-
-Whether a lowered style leaf falls back to `css()` for a value that is not a scalar.
-
-Only the [build-time fold](/docs/guides/source-transformation) reaches the helper this governs. `css({ color: tone })`
-lowers to `cssLeaf('c_', 'color', tone)`, which builds the class by concatenation — and hands the value to `css()` when
-it turns out to be a condition object or a responsive array, which no concatenation describes.
-
-That fallback is the single edge keeping the css engine in a bundle:
-
-| `sandbox/runtime-perf`, one dynamic leaf | raw      | gzip    | top-level bindings |
-| ---------------------------------------- | -------- | ------- | ------------------ |
-| `true`                                   | 22,154 B | 7,542 B | 39                 |
-| `false`                                  | 2,094 B  | 1,077 B | 10                 |
-
-Turning it off asserts something about your source: **a style value that varies at runtime is a scalar** — a string, a
-number, a boolean, or nothing. Write conditions and responsive values as literals at the call site, where the fold reads
-them and resolves each branch, rather than assembling them into a variable. A value that breaks the assertion throws and
-names the property, rather than silently producing a class with no rule behind it.
-
-Pairs with [`failOnUnfolded`](/docs/guides/source-transformation#failonunfolded): with the fallback off, a lowered leaf
-no longer keeps the engine, so that option stops reporting one as a survivor. Together they are what makes zero runtime
-reachable for an app that has any dynamic styling at all — with the fallback on, it requires an app with none.
-
-```ts filename="bamboo.config.ts"
-export default defineConfig({
-  leafFallback: false,
-})
-```
 
 ### prune
 

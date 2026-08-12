@@ -11,7 +11,17 @@ export interface ResultItem {
    * Both live in `ParserResult.token`, since every consumer that reads a token *path* out of
    * a result wants both.
    */
-  type?: 'css' | 'cva' | 'sva' | 'token' | 'tokenValue' | 'pattern' | 'recipe' | 'jsx-recipe' | 'cva-call'
+  type?:
+    | 'css'
+    | 'cva'
+    | 'sva'
+    | 'token'
+    | 'tokenValue'
+    | 'viewTransition'
+    | 'pattern'
+    | 'recipe'
+    | 'jsx-recipe'
+    | 'cva-call'
   box?: BoxNodeMap | BoxNodeLiteral | BoxNodeArray
   /**
    * For a `cva-call`, the module the recipe was declared in when that is not this one.

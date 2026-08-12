@@ -3,7 +3,8 @@ title: Recipes
 description: Bamboo provides a way to write CSS-in-JS with better performance, developer experience, and composability.
 ---
 
-Recipes are a way to create multi-variant styles with a type-safe runtime API.
+Recipes are a way to create multi-variant styles with a type-safe selection API. With the Vite integration, both the
+recipe definition and its selections are compiled; the recipe object and styling runtime do not ship.
 
 A recipe consists of four properties:
 
@@ -19,13 +20,12 @@ A recipe consists of four properties:
 
 ## Inline Recipe (or cva)
 
-Inline recipes are a way to create multi-variant styles with a type-safe runtime API, colocated with the component
-rather than declared in your config.
+Inline recipes are a way to create multi-variant styles with a type-safe API, colocated with the component rather than
+declared in your config.
 
-> These were called _atomic_ recipes, which described neither their input nor their output. `cva` does not emit atomic
-> classes: its output is named from the config — `button--size_sm` — and lands in the `recipes`
-> [cascade layer](/docs/concepts/cascade-layers), exactly like a recipe declared in `theme.recipes`. What distinguishes
-> the two is where the recipe is written, which is what "inline" says.
+Under Vite, `cva` resolves the selected styles into the same global declaration pool as `css()`. What distinguishes an
+inline recipe from a config recipe is where it is written and which dynamic selections the compiler can currently
+enumerate, not its CSS identity.
 
 They are defined using the `cva` function which was inspired by [Class Variance Authority](https://cva.style/). The
 `cva` function which takes an object as its argument.
@@ -68,34 +68,28 @@ const Button = () => {
 }
 ```
 
-When a recipe is created, Bamboo extracts and generates CSS for every variant and compound variant ahead of time — one
-rule per variant, in the `recipes` layer.
+The compiler resolves this selection to declaration atoms. Identical declarations from another recipe or `css()` call
+reuse the same class and rule; the names below are illustrative.
 
 ```css
-@layer recipes {
-  .cva_dtkzrK {
+@layer utilities {
+  ._a {
     display: flex;
   }
 
-  .cva_dtkzrK--visual_solid {
+  ._b {
     background: var(--colors-red-200);
-    color: var(--colors-white);
   }
 
-  .cva_dtkzrK--visual_outline {
-    border-width: 1px;
-    border-color: var(--colors-red-200);
+  ._c {
+    color: var(--colors-white);
   }
-  /* ... */
 }
 ```
 
 ### Naming the recipe
 
-`cva_dtkzrK` above is derived by hashing the config, because an inline recipe has no name to take. Both the stylesheet
-and the browser derive it the same way from the same object, so it is stable — but it is not readable.
-
-Set `className` when you want it to be:
+`className` is authoring metadata and remains accepted for shared configs and extraction-only tooling:
 
 ```jsx
 const button = cva({
@@ -107,20 +101,8 @@ const button = cva({
 })
 ```
 
-```css
-@layer recipes {
-  .button {
-    display: flex;
-  }
-
-  .button--size_lg {
-    padding: 2rem;
-  }
-}
-```
-
-The CSS is otherwise identical — this buys readable class names and nothing else. The name has to be unique across every
-recipe in the build; two recipes sharing one emit rules under the same selectors.
+It does not affect Vite output. Recipe names, variable names, filenames, slots, and call sites are deliberately absent
+from atom identity, so two independently declared recipes can share every identical declaration.
 
 ### Setting the default variants
 
@@ -321,23 +303,19 @@ Then you can use the component in JSX
 <Button size="large">Click me</Button>
 ```
 
-A consumer's `className` only reliably beats the component's own styles when those styles are in a lower cascade layer,
-and a recipe puts them there. `cva()` names its classes from the config — `button--size_large` — and emits them into
-`recipes`, so a consumer's `css()` in `utilities` wins by layer in every build. Declaring the recipe in the config
-behaves identically; it only changes where the name comes from.
+When the external class is analyzable, `cx(buttonStyle(variantProps), props.className)` composes Bamboo StyleSets in
+argument order before allocating atoms. An arbitrary runtime `className` is joined as an opaque string; Bamboo makes no
+conflict-resolution guarantee for declarations hidden inside it.
 
 ## Config Recipe
 
-Config recipes are extracted and generated just in time, this means regardless of the number of recipes in the config,
-only the recipes and variants you use will exist in the generated CSS.
-
-The exception is a variant the build cannot read. `button({ size })`, where `size` is a prop, could select any value at
-runtime — so every value that axis declares is emitted, or the class the browser picks would have no rule behind it.
-Only the axes a call site leaves dynamic are affected; a recipe called with literals emits exactly what it selects.
+Config recipes are known when Bamboo evaluates the config. A literal selection compiles directly to atoms;
+`button({ size })`, where `size` is a scalar prop, becomes a reduced decision table over the values that axis declares.
+Only complete StyleSet leaves reachable from that table enter the atom pool.
 
 The config recipe takes the following additional properties:
 
-- `className`: The name of the recipe. Used in the generated class name
+- `className`: Authoring metadata used by extraction-only integrations; it does not enter Vite atom identity
 - `jsx`: An array of JSX components that use the recipe. Defaults to the uppercase version of the recipe name
 - `description`: An optional description of the recipe (used in the js-doc comments)
 
@@ -423,28 +401,32 @@ function App() {
 }
 ```
 
-The generated css is registered under the `recipes` [cascade layer](/docs/concepts/cascade-layers) with the class name
-that matches the recipe-variant name pattern `<recipe-className>--<variant-name>_<variant-value>`.
-
-> **Technical Notes 📝:** Only the recipe and variants used in your application are generated. Not more!
+Vite resolves each observed selection to shared utility atoms and prunes graph atoms that no transformed module can
+emit. The generated recipe config and recipe-specific selectors are absent from the production bundle.
 
 ```css
-@layer recipes {
-  .button {
+@layer utilities {
+  ._a {
     display: flex;
   }
 
-  .button--visual_funky {
+  ._b {
     background: var(--colors-red-200);
+  }
+
+  ._c {
     color: var(--colors-white);
   }
 
-  .button--size_sm {
+  ._d {
     padding: var(--spacing-4);
+  }
+
+  ._e {
     font-size: 12px;
   }
 
-  .button--shape_circle {
+  ._f {
     border-radius: var(--radii-full);
   }
 }
@@ -731,19 +713,21 @@ More information about static CSS can be found [here](/docs/guides/static#genera
 
 ## Should I use an inline or config recipe?
 
-[Config recipes](/docs/concepts/recipes#config-recipe) are generated just in time — only the variants your code uses
-reach the CSS, apart from an axis passed dynamically — because all of `config.recipes` is known when the config is
-evaluated. [Inline recipes](/docs/concepts/recipes#inline-recipe-or-cva) (`cva`) are scattered through your source
-instead, so all of their variants are emitted rather than scanning your app code repeatedly to find which are used.
+[Config recipes](/docs/concepts/recipes#config-recipe) can be shared in presets and inline recipes can be colocated with
+components. Under Vite, both use the same exact StyleSet compiler, reachability pruning, atom pool, and finite dynamic
+selection tables.
 
-|                                                        | Config recipe                                                                                                                                                                                                             | Inline recipe (cva)                                                                                                                                                                                                    |
-| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Can both use any theme tokens, utilities or conditions | ✅ yes                                                                                                                                                                                                                    | ✅ yes                                                                                                                                                                                                                 |
-| Are generated just in time (JIT) based on usage        | ✅ yes, only the recipe variants found in your code will be generated — an axis the build cannot read emits every declared value                                                                                          | ❌ no, all variants found in your `cva` recipes will always be generated                                                                                                                                               |
-| Can be shared in a preset                              | ✅ yes, you can include it in your `preset.theme.recipes`                                                                                                                                                                 | ❌ no                                                                                                                                                                                                                  |
-| Can be applied responsively                            | ✅ yes, `button({ size: { base: 'sm', md: 'lg' } })`                                                                                                                                                                      | ❌ no, only the styles in the recipe can be responsive                                                                                                                                                                 |
-| Can be colocated in your markup code                   | ❌ no, they must be defined or imported in your `bamboo.config`                                                                                                                                                           | ✅ yes, you can place it anywhere in your app                                                                                                                                                                          |
-| Generate atomic classes                                | ❌ no, a specific className will be generated using your `recipe.className`                                                                                                                                               | ❌ no, a specific className is generated too — from `className` when you set one, otherwise hashed from the config                                                                                                     |
-| Land in the `recipes` cascade layer                    | ✅ yes                                                                                                                                                                                                                    | ✅ yes                                                                                                                                                                                                                 |
-| Can be composed/merged at runtime                      | ❌ no, a specific className will be generated using your `recipe.className`, [you need to use `cx` to add each recipe classes](https://bamboocss.com/docs/concepts/merging-styles#merging-config-recipe-and-style-object) | ✅ [yes, you can use the `.raw` function (ex: `button.raw({ size: "md" })`) to get the resolved style object and merge them all in a `css(xxx, yyy, zzz)` call](/docs/concepts/merging-styles#merging-cva--css-styles) |
-| Fold to a literal when the variants arrive at runtime  | ❌ no, only a selection the build can resolve folds — so a wrapper taking its variants from props [cannot pass `failOnUnfolded`](/docs/guides/source-transformation#config-recipes-cannot-pass-it)                        | ✅ yes, `button(variantProps)` lowers to `cvaPick`, which pulls no style engine, so the gate accepts it                                                                                                                |
+|                                                      | Config recipe                                            | Inline recipe (`cva`)                                                |
+| ---------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------- |
+| Can use theme tokens, utilities and conditions       | ✅ yes                                                   | ✅ yes                                                               |
+| Production CSS follows transformed call reachability | ✅ statically selected values survive                    | ✅ selected values or every value of a runtime decision axis survive |
+| Can be shared in a preset                            | ✅ yes                                                   | ❌ no                                                                |
+| Can be colocated in markup code                      | ❌ defined in config or presets                          | ✅ yes                                                               |
+| Emit globally shared declaration atoms with Vite     | ✅ yes                                                   | ✅ yes                                                               |
+| Emit named rules in a `recipes` layer with Vite      | ❌ no                                                    | ❌ no                                                                |
+| Can be merged semantically by analyzable `cx()`      | ✅ yes                                                   | ✅ yes                                                               |
+| Can accept a runtime variant selection under Vite    | ✅ finite axes become a precompiled decision table       | ✅ finite axes become a precompiled decision table                   |
+| Can use a responsive object as the runtime selection | ❌ put responsiveness in the recipe's style declarations | ❌ put responsiveness in the recipe's style declarations             |
+
+These rows describe the Vite compiler. Extraction-only CLI or PostCSS output retains the generated recipe runtime and
+its named recipe representation.

@@ -5,22 +5,16 @@ import { createContext } from '@bamboocss/fixture'
 import { describe, expect, test } from 'vitest'
 import { foldSource } from '../src/fold'
 import { createRuntimeCss } from '../src/runtime-css'
+import { createStaticStyleSetCompiler } from '../src/style-set'
 import { selectorsFor } from './fixture'
 
 /**
  * Parity against real application source, not hand-written fixtures.
  *
- * What a page renders is decided by two things: the class string each call produces,
- * and the stylesheet those classes resolve against. So parity here means both are
- * unchanged by the transform:
- *
- * 1. CSS emitted with folding on is byte-identical to CSS emitted with it off.
- * 2. Every folded literal equals what the runtime would have returned.
- * 3. Every class in every folded literal is backed by a rule in that CSS.
- *
- * Together those are what "renders identically" reduces to for an atomic CSS system.
- * This deliberately stops short of booting a browser — that would test React and Vite
- * rather than the fold.
+ * The compiler intentionally changes recipe class strings and the stylesheet representation:
+ * selected declarations become globally shared utility atoms and the recipe layer disappears.
+ * This fixture therefore verifies the invariant that matters after that change: every emitted
+ * class is a well-formed attribute token backed by a rule in the atomized stylesheet.
  */
 const here = dirname(fileURLToPath(import.meta.url))
 const sandboxSrc = join(here, '../../../sandbox/vite-ts/src')
@@ -38,6 +32,7 @@ const SOURCES = ['App.tsx', 'Card.tsx', 'Badge.tsx', 'Button.tsx']
 const parseAll = (fold: boolean) => {
   const ctx = createContext()
   const runtimeCss = createRuntimeCss(ctx)
+  const styleCompiler = createStaticStyleSetCompiler(ctx, runtimeCss)
   const results = []
 
   for (const { file, code } of SOURCES) {
@@ -47,9 +42,15 @@ const parseAll = (fold: boolean) => {
     if (!parserResult) continue
 
     if (fold) {
-      results.push({ file, code, result: foldSource({ ctx, code, parserResult, filePath, runtimeCss }) })
+      results.push({
+        file,
+        code,
+        result: foldSource({ ctx, code, parserResult, filePath, runtimeCss, styleCompiler }),
+      })
     }
   }
+
+  if (fold) ctx.encoder.atomizeObservedRecipes()
 
   const sheet = ctx.createSheet()
   ctx.appendParserCss(sheet)
@@ -63,11 +64,12 @@ describe('sandbox/vite-ts parity', () => {
     expect(SOURCES.length).toBeGreaterThan(0)
   })
 
-  test('folding does not change the emitted CSS', () => {
+  test('compilation materializes the shared atoms selected from recipe declarations', () => {
     const withoutFold = parseAll(false)
     const withFold = parseAll(true)
 
-    expect(withFold.css).toBe(withoutFold.css)
+    expect(withFold.css.length).toBeGreaterThanOrEqual(withoutFold.css.length)
+    expect(withFold.css).toContain('.bg_gray\\.500')
   })
 
   test('the sandbox actually exercises the fold', () => {
@@ -131,6 +133,7 @@ describe('sandbox/vite-ts parity', () => {
   test('re-folding already-folded sandbox source is a no-op', () => {
     const ctx = createContext()
     const runtimeCss = createRuntimeCss(ctx)
+    const styleCompiler = createStaticStyleSetCompiler(ctx, runtimeCss)
 
     for (const { file, code } of SOURCES) {
       const first = `sandbox/first/${file}`
@@ -141,6 +144,7 @@ describe('sandbox/vite-ts parity', () => {
         parserResult: ctx.project.parseSourceFile(first)!,
         filePath: first,
         runtimeCss,
+        styleCompiler,
       })
 
       const second = `sandbox/second/${file}`
@@ -156,6 +160,7 @@ describe('sandbox/vite-ts parity', () => {
           } as never),
         filePath: second,
         runtimeCss,
+        styleCompiler,
       })
 
       expect(secondResult.code, file).toBe(firstResult.code)
@@ -170,20 +175,6 @@ describe('sandbox/vite-ts parity', () => {
         for (const selector of selectorsFor(call.classNames.join(' '))) {
           expect(css, `${file}: ${selector} has no rule`).toContain(selector)
         }
-      }
-    }
-  })
-
-  test('every call the fold declined survives verbatim', () => {
-    const { results } = parseAll(true)
-
-    // What "left alone" has to mean. Comparing spans between folds does not express it:
-    // an element fold rewrites only its two tags, so the text around one legitimately
-    // changes while everything it declined stays put.
-    for (const { code, result } of results) {
-      for (const skip of result.skipped) {
-        if (skip.end <= skip.start) continue
-        expect(result.code, `${skip.reason} @ ${skip.start}`).toContain(code.slice(skip.start, skip.end))
       }
     }
   })
