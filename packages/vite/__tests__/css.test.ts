@@ -246,3 +246,39 @@ describe('thrown values are always objects', () => {
     expect(asError(original, 'context')).toBe(original)
   })
 })
+
+/**
+ * Reachability keys are escaped at most once.
+ *
+ * `esc` is idempotent for a name that needs no escaping and not otherwise: `d_flex` survives
+ * any number of passes, while `--scrollbar-width_10px` becomes `\--scrollbar-width_10px` and
+ * then `\\--scrollbar-width_10px`. A key escaped twice matches no rule in the sheet, so the
+ * atom is pruned and its elements render unstyled — and it happens *only* to names that need
+ * escaping, which is why it presented as "every custom property and vendor-prefixed property
+ * lost its rule" while flat declarations were untouched.
+ */
+describe('marking a class used', () => {
+  const markedBy = (className: string) => {
+    const session = createStaticCompilationSession()
+    session.markClassUsed(className)
+    return [...session.usedClasses]
+  }
+
+  test.each([
+    ['--scrollbar-width_10px', '\\--scrollbar-width_10px'],
+    ['-webkit-line-clamp_2', '\\-webkit-line-clamp_2'],
+    ['hover:c_red.300', 'hover\\:c_red\\.300'],
+    ['d_flex', 'd_flex'],
+  ])('escapes %p once', (semantic, selector) => {
+    expect(markedBy(semantic)).toEqual([selector])
+  })
+
+  // The same name arriving already in selector form must not be escaped a second time.
+  test.each([['\\--scrollbar-width_10px'], ['hover\\:c_red\\.300']])('leaves %p alone', (selector) => {
+    expect(markedBy(selector)).toEqual([selector])
+  })
+
+  test('splits a multi-atom string and escapes each part once', () => {
+    expect(markedBy('--size_sizes.3 d_flex')).toEqual(['\\--size_sizes\\.3', 'd_flex'])
+  })
+})

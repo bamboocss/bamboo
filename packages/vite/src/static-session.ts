@@ -47,7 +47,18 @@ export const createStaticCompilationSession = (): StaticCompilationSession => {
       for (const token of className.split(' ')) {
         if (!token) continue
         // Stored in selector form because the CSS reachability pass reads escaped selectors.
-        session.usedClasses.add(esc(token))
+        //
+        // Escaped at most once. `esc` is idempotent for a name that needs no escaping —
+        // `d_flex` survives any number of passes — but not otherwise: `--scrollbar-width_10px`
+        // becomes `\--scrollbar-width_10px` and then `\\--scrollbar-width_10px`. A second
+        // pass therefore produces a key matching no rule, and it does so *only* for names that
+        // need escaping: custom properties, vendor-prefixed properties, anything with a
+        // leading dash. Those are exactly the classes one project reported as having no rule
+        // in the sheet while the rule was plainly there.
+        //
+        // A semantic atom name never contains a literal backslash, so one is an unambiguous
+        // signal that this name is already in selector form and must be left alone.
+        session.usedClasses.add(token.includes('\\') ? token : esc(token))
       }
     },
   }
