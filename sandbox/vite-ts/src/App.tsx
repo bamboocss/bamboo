@@ -14,7 +14,12 @@ function App() {
   const className = css({ padding: paddingY, fontSize: paddingY ? '2xl' : '4xl' })
   const panel = css({ padding: '5', ...surface })
 
-  const [color] = useState('lime.300')
+  // Runtime choice between compiled classes, rather than a runtime *value* inside one.
+  // `css({ color })` cannot compile — the class it would return depends on state the build
+  // cannot see — while picking between two calls that each compiled is exactly what the
+  // emitted class strings are for.
+  const [emphasized] = useState(true)
+  const headingColor = emphasized ? css({ color: 'lime.300' }) : css({ color: 'gray.500' })
 
   return (
     <div className={flex({ direction: 'column', gap: '8px', padding: '40px', align: 'stretch', color: 'red.300' })}>
@@ -22,7 +27,7 @@ function App() {
         <p className={css({ fontWeight: 'semibold', mb: '2' })}>CSS - Function</p>
         <div className={css({ maxWidth: '840px', marginX: 'auto', textAlign: 'center' })}>
           <div>
-            <h1 className={css({ color: color, fontSize: '56px', lineHeight: '1.1em' })}>
+            <h1 className={cx(css({ fontSize: '56px', lineHeight: '1.1em' }), headingColor)}>
               Create accessible React apps <span className={css({ color: 'teal' })}>with speed</span>
             </h1>
             <p className={css({ color: 'text', fontSize: '20px', marginTop: '40px' })}>

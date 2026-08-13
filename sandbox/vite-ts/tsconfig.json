@@ -15,7 +15,11 @@
     "jsx": "react-jsx",
     "moduleResolution": "Bundler",
     "module": "ESNext",
-    "customConditions": ["source"]
+    "customConditions": ["source"],
+    // Bamboo's own sources are typechecked here, because `customConditions: ["source"]`
+    // resolves the workspace packages to their TypeScript rather than their `dist`. Some of
+    // them read `process.env` behind a `typeof` guard, which needs the declaration present.
+    "types": ["node"]
   },
   "include": ["src", "./bamboo.config.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]

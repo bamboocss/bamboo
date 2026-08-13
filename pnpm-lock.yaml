@@ -1459,6 +1459,9 @@ importers:
       '@bamboocss/vite':
         specifier: workspace:*
         version: link:../../packages/vite
+      '@types/node':
+        specifier: 24.10.1
+        version: 24.10.1
       '@types/react':
         specifier: 19.2.7
         version: 19.2.7
