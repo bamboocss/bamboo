@@ -1,5 +1,18 @@
 # @bamboocss/dev
 
+## 1.37.13
+
+### Patch Changes
+
+- @bamboocss/logger@1.37.13
+- @bamboocss/node@1.37.13
+- @bamboocss/postcss@1.37.13
+- @bamboocss/preset-bamboo@1.37.13
+- @bamboocss/preset-base@1.37.13
+- @bamboocss/shared@1.37.13
+- @bamboocss/token-dictionary@1.37.13
+- @bamboocss/types@1.37.13
+
 ## 1.37.12
 
 ### Patch Changes
