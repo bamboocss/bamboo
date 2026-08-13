@@ -117,6 +117,15 @@ describe('file filtering', () => {
     // here would have nothing emitting a rule for it.
     '\0virtual:generated.tsx',
     '\0plugin-virtual:entry.ts',
+    // Queries that make Vite serve a wrapper rather than the module's own source. The query
+    // is stripped before the extension is tested, so without this these look like the file
+    // itself — and the wrapper's text then overwrote the real file in the parser, breaking
+    // every later fold that resolved against it.
+    '/app/src/theme.tsx?raw',
+    '/app/src/theme.tsx?url',
+    '/app/src/heavy.ts?worker',
+    '/app/src/heavy.ts?sharedworker',
+    '/app/src/heavy.ts?worker&inline',
   ]
 
   test.each(ignored)('%s is not transformed', async (id) => {
@@ -125,6 +134,32 @@ describe('file filtering', () => {
     // Returns before touching the context, so no config resolution is attempted.
     await expect(callTransform(plugin, SOURCE, id)).resolves.toBeNull()
   })
+
+  /**
+   * The queries that must still fold, which is why the rejection above is a deny list.
+   *
+   * Vite appends `?t=` to a module after an edit, and `?import` when a dynamic import is
+   * rewritten. Rejecting an unrecognised query would stop folding the file a user just saved —
+   * silently, since a declined transform says nothing and pruning then removes the rules its
+   * atoms would have kept — so only the wrappers Vite actually generates are named.
+   *
+   * `?worker_file` is the trap: it is how the dev server serves a worker's *real* source, and
+   * it contains "worker", so it is the obvious thing to add to the list above. Adding it would
+   * stop folding every worker module in dev.
+   */
+  test.each(['?t=1712345678901', '?import', '?worker_file&type=module'])(
+    'a %s id is still the module itself',
+    async (query) => {
+      const cwd = join(dirname(fileURLToPath(import.meta.url)), '../../../sandbox/codegen')
+      const plugin = plugins({ cwd, reportSummary: false }).fold
+      const buildStart = typeof plugin.buildStart === 'function' ? plugin.buildStart : plugin.buildStart?.handler
+      await buildStart?.call({} as never, {} as never)
+
+      const result = await callTransform(plugin, SOURCE, `${join(cwd, 'src/query-suffixed.tsx')}${query}`)
+
+      expect(result, 'the module was folded despite its query').not.toBeNull()
+    },
+  )
 })
 
 /**

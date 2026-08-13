@@ -68,11 +68,51 @@ export interface BambooVitePluginOptions {
 const DEFAULT_EXTENSIONS = /\.(?:[cm]?[jt]sx?)$/
 const NODE_MODULES = /node_modules/
 
+/**
+ * Queries that make Vite serve something other than the module's own source.
+ *
+ * `./theme.tsx?raw` is a module whose text is `export default "…"`, and `?url`, `?worker` and
+ * `?sharedworker` are wrappers of the same kind. The query has to be stripped before the
+ * extension is tested — otherwise nothing matches `.tsx` — and stripping it is what made these
+ * look like the file itself. The transform then handed the wrapper's text to ts-morph *under
+ * the real file's path*, overwriting the parsed module every fold reads for that path.
+ *
+ * That is not theoretical: a module folding `css(shared)` against a sibling the entry also
+ * imported as `?raw` failed the build with "1 call(s) could not be compiled" — the compiler
+ * had read `export default "…"` and found no `shared` to resolve. The advice it prints, to
+ * make the value statically analyzable, is unfollowable, because the source already was.
+ *
+ * Whether it bites depends on which of the two ids Rollup transforms last, so the same project
+ * can build and then stop building because an import moved.
+ *
+ * A deny list rather than an allow list of benign queries: dev ids carry `?t=` after an edit
+ * and `?import` when a dynamic import is rewritten, and rejecting an unrecognised one of those
+ * would silently stop folding a module rather than loudly refuse it.
+ *
+ * Exactly these four, matching Vite's own `SPECIAL_QUERY_RE`. The list was drafted wider —
+ * `?inline`, `?no-inline`, `?worklet`, `?init` — and every one of those was wrong: Vite has no
+ * `worklet` query at all, `?init` is `.wasm` only and that extension is already rejected below,
+ * and `inline`/`no-inline` merely pick base64-versus-file for something that *already* matched
+ * `raw`/`url`, so `./a.tsx?inline` is served as the module's own source. Rejecting an id that
+ * carries real source is the expensive direction: the transform declines, its atoms never reach
+ * the reachability set, pruning removes their rules, and the runtime still returns the class
+ * names — unstyled elements, no error. Only names verified against Vite belong here.
+ *
+ * Note `?worker_file`, which is how dev serves a worker's *real* source, is deliberately absent
+ * and must stay absent. It contains "worker" and is the obvious next entry; adding it would
+ * stop folding every worker module in dev, silently, by the mechanism above.
+ *
+ * Tested against the whole id rather than a split-off query, so it cannot disagree with
+ * `queryOf` in `css.ts` about where the query starts.
+ */
+const WRAPPED_MODULE_QUERY = /[?&](?:raw|url|worker|sharedworker)(?:&|=|$)/
+
 const shouldTransform = (id: string) => {
   // Rollup marks a virtual module by prefixing its id with a NUL. Those have no file
   // on disk, so the CSS extractor never reads them and a class folded here could have
   // no rule behind it — besides which, the id is not a path ts-morph should be given.
   if (id.startsWith('\0')) return false
+  if (WRAPPED_MODULE_QUERY.test(id)) return false
 
   const [filePath] = id.split('?')
   if (!filePath) return false

@@ -296,6 +296,79 @@ describe('vite plugin, real build', () => {
     }
   }, 60_000)
 
+  /**
+   * A `.tsx` the entry also imports as `?raw` must not corrupt the real module.
+   *
+   * The query has to be stripped before the extension is tested, or nothing matches `.tsx` —
+   * and stripping it made `./dep.tsx?raw`, whose text is `export default "…"`, look like the
+   * file itself. The transform handed that wrapper to ts-morph under the real file's path, so
+   * the next module to fold against that file read the wrapper and found none of its exports.
+   *
+   * It presented as a build failure blaming source that was already static: "1 call(s) could
+   * not be compiled … make the values finite and statically analyzable". And it depended on
+   * which of the two ids Rollup transformed last, so moving an import could start it.
+   *
+   * A consumer is imported on each side of the `?raw` line. Only a consumer folded *after* the
+   * wrapper lands is exposed, and which that is depends on the order Rollup happens to
+   * transform in — so with one on each side the test cannot quietly stop covering the bug if
+   * that order changes, which Rolldown is the likeliest thing to do.
+   */
+  test('a ?raw import of a .tsx does not corrupt folding against that module', async () => {
+    const dep = join(cwd, 'src/__static-composition-raw-dep.tsx')
+    const before = join(cwd, 'src/__static-composition-raw-before.tsx')
+    const after = join(cwd, 'src/__static-composition-raw-after.tsx')
+    const entry = join(cwd, 'src/__static-composition-raw.tsx')
+
+    writeFileSync(dep, `export const shared = { width: '[58.8px]' }\n`)
+    const consumer = (height: string) =>
+      `import { css } from '../styled-system/css'\n` +
+      `import { shared } from './__static-composition-raw-dep'\n` +
+      `export const cls = css({ ...shared, height: '[${height}]' })\n`
+    writeFileSync(before, consumer('58.1px'))
+    writeFileSync(after, consumer('58.2px'))
+    writeFileSync(
+      entry,
+      `import 'virtual:bamboo.css'\n` +
+        `import { cls as one } from './__static-composition-raw-before'\n` +
+        `import text from './__static-composition-raw-dep.tsx?raw'\n` +
+        `import { cls as two } from './__static-composition-raw-after'\n` +
+        `export const a = [one, text, two]\n`,
+    )
+
+    try {
+      const result = (await build({
+        root: cwd,
+        logLevel: 'silent',
+        css: { postcss: { plugins: [] } },
+        plugins: [bamboocss({ cwd, reportSummary: false })],
+        build: {
+          write: false,
+          minify: false,
+          lib: { entry, formats: ['es'], fileName: 'static-composition-raw' },
+          rollupOptions: { external: [/^react/] },
+        },
+      })) as Rollup.RollupOutput[]
+
+      const css = result[0]!.output
+        .map((output) => ('source' in output && typeof output.source === 'string' ? output.source : ''))
+        .join('\n')
+      const js = result[0]!.output.map((output) => ('code' in output ? output.code : '')).join('\n')
+
+      // Both cross-file folds resolved `shared` from the real module, whichever order they ran
+      // in relative to the wrapper, and both atoms have rules.
+      expect(js, 'the class folded before the ?raw import').toContain('h_[58.1px]')
+      expect(js, 'the class folded after the ?raw import').toContain('h_[58.2px]')
+      expect(js, 'the property they share, read from the real module').toContain('w_[58.8px]')
+      expect(css).toContain('58.1px')
+      expect(css).toContain('58.2px')
+      expect(css).toContain('58.8px')
+      // The `?raw` module still carries the file as text, which is what it is for.
+      expect(js).toContain('export const shared')
+    } finally {
+      for (const file of [dep, before, after, entry]) rmSync(file, { force: true })
+    }
+  }, 60_000)
+
   test('late CSS asset naming updates HTML and manifest references', async () => {
     const html = join(cwd, '__static-composition-index.html')
     const entry = join(cwd, 'src/__static-composition-html.tsx')
