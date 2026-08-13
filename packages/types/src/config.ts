@@ -391,8 +391,39 @@ interface CodegenOptions {
   hash?: boolean | { cssVar?: boolean; className?: boolean }
   /**
    * Change generated typescript definitions to be more strict for property having a token or utility.
+   *
+   * Three settings, not two:
+   *
+   * - `false` — every property also accepts `string`, so nothing about a value is checked. A
+   *   misspelled token is a value the browser drops at compute time: the declaration ships, the
+   *   style is simply absent, and it surfaces as "this colour never applied" a long way from the
+   *   typo.
+   * - `'unknown-tokens'` — a value must be a token, a keyword the property actually enumerates,
+   *   or *shaped* like a CSS value: it starts with a digit or `#` or `-`, or it contains a space,
+   *   a comma or a function call. `'14px'`, `'100vh'`, `'1px solid red'` and `'rgb(0 0 0)'` all
+   *   pass; `'mutedd'`, `'accnt'` and `'colors.acent'` do not, because a bare identifier that is
+   *   neither a token nor a keyword is nothing else.
+   * - `true` — only tokens, and every raw value has to be written as `'[14px]'`.
+   *
+   * The middle setting exists because the other two are a day-one decision. Turning `true` on
+   * later reports every raw value in the codebase — 468 errors on one otherwise-correct app, of
+   * which 3 were the typo it was turned on for — so a project that did not start with it is
+   * realistically stuck with the unchecked default forever. `'unknown-tokens'` costs no
+   * migration and catches that class of mistake.
+   *
+   * Properties whose values *are* identifiers you invent — `animationName`, `gridArea`,
+   * `counterReset`, `containerName`, `fontFamily`, `content` and the rest — are left out of
+   * it: there is nothing to check them against, and a `@keyframes` name declared in CSS is an
+   * ordinary thing to write.
+   *
+   * Two costs follow from the rule being about shape. A typo that is *also* a plausible value
+   * passes — `'2xll'` starts with a digit like `'2rem'` does. And a value typed `string` is
+   * rejected, since nothing distinguishes it from a misspelled token; write `` `[${value}]` ``,
+   * the same as under `true`, and note the Vite compiler rejects an open runtime value anyway.
+   *
+   * @default false
    */
-  strictTokens?: boolean
+  strictTokens?: boolean | 'unknown-tokens'
   /**
    * Change generated typescript definitions to be more strict for built-in CSS properties to only allow valid CSS values.
    */

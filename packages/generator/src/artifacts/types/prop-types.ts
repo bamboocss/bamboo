@@ -9,8 +9,30 @@ export function generatePropTypes(ctx: Context) {
     ${ctx.file.importType('ConditionalValue', './conditions')}
     ${ctx.file.importType('CssProperties', './system-types')}
     ${ctx.file.importType('Tokens', '../tokens/index')}
-
-    export interface UtilityValues {`,
+    `,
+    // Declared before `UtilityValues`, which references it under `strictTokens:
+    // 'unknown-tokens'` for a custom utility that maps to a CSS property.
+    outdent`
+    /**
+     * A property's own keywords, without the open \`string\` csstype ends every property with.
+     *
+     * That trailing \`(string & {})\` is what makes \`color: 'mutedd'\` type-check: it is a
+     * string, so it is a colour. Removing it leaves what the property actually enumerates —
+     * \`transparent\`, \`currentColor\`, every named colour — which is what
+     * \`strictTokens: 'unknown-tokens'\` keeps.
+     *
+     * \`string extends T\` is the test, so the wide member goes and the literal ones stay. The
+     * second branch is for the *boxed* \`String\`, which \`Properties<String | Number>\` puts on
+     * every length-taking property and which is not assignable to \`string\` — so it survives the
+     * first test and admits every string on its own. \`Number\` is deliberately kept: a number
+     * cannot be a misspelled token path.
+     */
+    export type KnownKeywords<T> =
+      T extends string ? (string extends T ? never : T)
+      : T extends String ? never
+      : T
+    `,
+    'export interface UtilityValues {',
   ]
 
   const types = utility.getTypes()
@@ -23,6 +45,30 @@ export function generatePropTypes(ctx: Context) {
 
   return outdent`
   ${result.join('\n')}
+
+  /**
+   * Values whose *shape* says they are CSS rather than a token path.
+   *
+   * A token path is a bare identifier, possibly dotted. Anything that starts with a digit, a
+   * dot-digit, \`#\` or \`-\`, or that contains a space, a comma or a call, cannot be one — so
+   * these stay allowed under \`strictTokens: 'unknown-tokens'\` while \`'mutedd'\` does not.
+   *
+   * Constant, and not parameterised by the token union: a template literal distributes over a
+   * union in any placeholder, so a shape built from \`\${Token}\` would multiply the property's
+   * union by the size of the palette. These add seven members whatever the theme contains — see
+   * \`WithModifier\` below for what the other arrangement costs.
+   *
+   * The ambiguity this cannot resolve is a typo that is also a plausible value: \`'2xll'\` starts
+   * with a digit exactly as \`'2rem'\` does, and passes.
+   */
+  export type CssValueShape =
+    | \`\${number}\${string}\`
+    | \`.\${number}\${string}\`
+    | \`#\${string}\`
+    | \`-\${string}\`
+    | \`\${string} \${string}\`
+    | \`\${string},\${string}\`
+    | \`\${string}(\${string})\`
 
   type ImportantMark = "!" | "!important"
   type WhitespaceImportant = \` \${ImportantMark}\`

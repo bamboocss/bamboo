@@ -14,7 +14,7 @@ export function generateStyleProps(ctx: Context) {
 
   return outdent`
     ${ctx.file.importType('ConditionalValue', './conditions')}
-    ${ctx.file.importType('OnlyKnown, UtilityValues, WithEscapeHatch', './prop-type')}
+    ${ctx.file.importType('CssValueShape, KnownKeywords, OnlyKnown, UtilityValues, WithEscapeHatch', './prop-type')}
     ${ctx.file.importType('CssProperties', './system-types')}
     ${ctx.file.importType('Token', '../tokens/index')}
 
@@ -38,18 +38,53 @@ export function generateStyleProps(ctx: Context) {
           // `scaleX` isn't a valid css property, will fallback to `string | number`
           const cssFallback = allCssProperties.includes(prop) ? `CssProperties["${prop}"]` : ''
 
+          /**
+           * How much of csstype's own union for this property survives.
+           *
+           * All of it by default. None of it under `strictTokens: true`, where a raw value is
+           * written `[14px]`. Under `'unknown-tokens'`, the keywords it enumerates and not the
+           * open `string` it ends with — which is the member that makes a misspelled token
+           * type-check, and dropping it is the whole of that setting. Keeping the keywords is
+           * what stops `display: 'flex'` needing to be a token.
+           *
+           * Except where the property's values *are* identifiers the author invents, in which
+           * case there is nothing to be strict against and everything to get wrong — see
+           * `authorIdentProperties`.
+           */
+          const narrowable = ctx.config.strictTokens === 'unknown-tokens' && !authorIdentProperties.has(prop)
+          const knownFallback = narrowable && cssFallback ? `KnownKeywords<${cssFallback}>` : ''
+          const gradedFallback = ctx.config.strictTokens === true ? '' : knownFallback || cssFallback
+
+          /**
+           * The token side, held out of the union under `'unknown-tokens'` so `restrict` can
+           * put it back inside `WithEscapeHatch`.
+           *
+           * `WithModifier` is `[T] extends [string] ? … : never`, so one non-string member of
+           * `T` — and csstype supplies `undefined` and a boxed `Number` — turns `'blue.300/40'`
+           * and `'blue.300!'` off for the whole property. Wrapping the tokens alone is what
+           * keeps those working, and listing them in both places instead would repeat one of
+           * the largest members a property has.
+           */
+          let heldOutTokens = ''
+          const separateTokens = ctx.config.strictTokens === 'unknown-tokens'
+
           // has values (utility or tokens)
           if (propTypes.has(prop)) {
-            const utilityValue = `UtilityValues["${prop}"]`
+            const tokenValue = `UtilityValues["${prop}"]`
+            if (separateTokens) heldOutTokens = tokenValue
+            const own = separateTokens ? '' : tokenValue
             if (strictPropertyList.has(key)) {
-              union.push([utilityValue, 'CssVars'].join(' | '))
+              // These carry their own keyword list, which `strictPropertyValues` then narrows
+              // to it exactly. Under `'unknown-tokens'` the list has to be *present* — the
+              // open string is gone, and `AnyString` is not added back below.
+              union.push([own, 'CssVars', knownFallback].filter(Boolean).join(' | '))
             } else {
-              union.push(
-                [utilityValue, 'CssVars', ctx.config.strictTokens ? '' : cssFallback].filter(Boolean).join(' | '),
-              )
+              union.push([own, 'CssVars', gradedFallback].filter(Boolean).join(' | '))
             }
           } else {
-            union.push([strictPropertyList.has(key) ? 'CssVars' : '', cssFallback].filter(Boolean).join(' | '))
+            union.push(
+              [strictPropertyList.has(key) ? 'CssVars' : '', knownFallback || cssFallback].filter(Boolean).join(' | '),
+            )
           }
 
           const filtered = union.filter(Boolean)
@@ -64,7 +99,7 @@ export function generateStyleProps(ctx: Context) {
           }
 
           const value = filtered.filter(Boolean).join(' | ')
-          const line = `${key}?: ${restrict(prop, value, ctx.config)}`
+          const line = `${key}?: ${restrict(prop, value, ctx.config, heldOutTokens)}`
 
           return ' ' + [comment, line].filter(Boolean).join('\n')
         })
@@ -72,6 +107,55 @@ export function generateStyleProps(ctx: Context) {
     }
     `
 }
+
+/**
+ * Properties whose values are identifiers the author invents, not values anything enumerates.
+ *
+ * `strictTokens: 'unknown-tokens'` rejects a bare identifier that names no token and no keyword,
+ * on the reasoning that nothing else is shaped like one. That reasoning stops at a property
+ * whose values *are* bare identifiers by design: a `@keyframes` name written in CSS rather than
+ * in `theme.keyframes`, a grid area, a counter, a container, a view-transition name, a font
+ * family, a property name in `transitionProperty`. csstype types all of these as open strings
+ * for the same reason, so there is nothing to check against and everything to reject wrongly.
+ *
+ * Left alone rather than narrowed, so they behave under this setting exactly as they do under
+ * the default. The cost is that a typo in one of them is not caught — which is what
+ * `strictTokens: true` is for.
+ *
+ * `content` is here because its values are quoted strings, and `''""''` is neither a keyword nor
+ * a shape this can recognise.
+ */
+const authorIdentProperties = new Set([
+  'anchorName',
+  'anchorScope',
+  'animationName',
+  'animationTimeline',
+  'containerName',
+  'content',
+  'counterIncrement',
+  'counterReset',
+  'counterSet',
+  'fontFamily',
+  'fontPalette',
+  'gridArea',
+  'gridColumn',
+  'gridColumnEnd',
+  'gridColumnStart',
+  'gridRow',
+  'gridRowEnd',
+  'gridRowStart',
+  'gridTemplateAreas',
+  'listStyleType',
+  'page',
+  'positionAnchor',
+  'positionTryFallbacks',
+  'scrollTimelineName',
+  'timelineScope',
+  'transitionProperty',
+  'viewTimelineName',
+  'viewTransitionName',
+  'willChange',
+])
 
 const strictPropertyList = new Set([
   'alignContent',
@@ -138,9 +222,32 @@ const strictPropertyList = new Set([
   'writingMode',
 ])
 
-const restrict = (key: string, value: string, config: UserConfig) => {
+const restrict = (key: string, value: string, config: UserConfig, heldOutTokens = '') => {
   if (config.strictPropertyValues && strictPropertyList.has(key)) {
-    return `ConditionalValue<WithEscapeHatch<OnlyKnown<"${key}", ${value}>>>`
+    // The tokens go back in. `'unknown-tokens'` holds them out of `value` for the escape-hatch
+    // wrapping below, and this branch returns before that — which dropped bamboo's own values
+    // for the one property in both lists: `float: 'start'` and `'end'` were rejected under this
+    // combination of settings and accepted under either setting alone.
+    const known = [heldOutTokens, value].filter(Boolean).join(' | ')
+    return `ConditionalValue<WithEscapeHatch<OnlyKnown<"${key}", ${known}>>>`
+  }
+
+  /**
+   * The escape hatch wraps the *tokens*, not the whole value.
+   *
+   * `WithModifier` is `[T] extends [string] ? … : never`, so one non-string member of `T`
+   * turns the modifier forms off for the property entirely — and under this setting `T`
+   * carries csstype's keywords, which include `undefined` and boxed `Number`. Wrapping the
+   * whole union that way silently rejected `color: 'blue.300/40'` and `'blue.300!'`, which
+   * decorate a token and have nothing to do with raw values.
+   *
+   * `CssValueShape` is what keeps raw values writable without an escape hatch: the shapes a
+   * token path cannot have — a leading digit, `#` or `-`, or a space, comma or call anywhere.
+   * A bare identifier that names no token and no keyword matches none of them, which is the
+   * mistake this setting exists to catch.
+   */
+  if (config.strictTokens === 'unknown-tokens') {
+    return `ConditionalValue<WithEscapeHatch<${heldOutTokens || 'never'}> | ${value} | CssValueShape>`
   }
 
   if (config.strictTokens) return `ConditionalValue<WithEscapeHatch<${value}>>`

@@ -96,8 +96,9 @@ import { css } from '../styled-system/css'
 const styles = css({ bg: '|' })
 ```
 
-> You can also enable the `strictTokens: true` setting in the Bamboo configuration. This allows only token values and
-> prevents the use of custom or raw CSS values.
+> You can also enable the `strictTokens` setting in the Bamboo configuration. `true` allows only token values and
+> prevents the use of custom or raw CSS values; [`'unknown-tokens'`](#stricttokens-unknown-tokens) keeps raw values
+> writable and rejects only a value that is neither a token nor CSS.
 
 - `config.strictTokens` will only affect properties that have config tokens, such as `color`, `bg`, `borderColor`, etc.
 - `config.strictPropertyValues` will throw for properties that do not have config tokens, such as `display`, `content`,
@@ -143,6 +144,67 @@ What follows the mark is **not** checked — `bg: 'red.400!nonsense'` typechecks
 templates multiplies every token in the union by five, and it was around half the cost of typechecking a `css()` call
 under `strictTokens`. [`unresolvedToken`](/docs/references/config#unresolvedtoken) resolves the path underneath the
 mark, so the build still reports the value — warning by default, failing the build under `'error'`.
+
+#### strictTokens: 'unknown-tokens'
+
+`strictTokens: true` is realistically a day-one decision. Turning it on later reports every raw CSS value in the
+codebase — one port of a five-page app got 468 errors, of which 3 were the misspelled token it was turned on for — so a
+project that did not start with it keeps the unchecked default, where `color: 'mutedd'` is accepted by TypeScript and by
+the build, ships as `color: mutedd`, and is dropped by the browser at compute time. It surfaces as a colour that never
+applied, a long way from the typo.
+
+`strictTokens: 'unknown-tokens'` is the setting in between. It costs no migration: raw CSS values stay writable, and
+what it rejects is a value that can be neither a token nor CSS.
+
+```ts filename="bamboo.config.ts"
+export default defineConfig({
+  strictTokens: 'unknown-tokens',
+})
+```
+
+```ts
+css({ fontSize: '14px' }) // ✅ raw values are fine
+css({ minHeight: '100vh' }) // ✅
+css({ border: '1px solid red' }) // ✅
+css({ color: 'rgb(0 0 0)' }) // ✅
+css({ display: 'flex' }) // ✅ a keyword the property enumerates
+css({ color: 'blue.300/40' }) // ✅ a token, with a modifier
+
+css({ color: 'mutedd' }) // ❌ neither a token nor a keyword
+css({ color: 'colors.blue' }) // ❌ the category prefix is not part of the path
+css({ position: 'absolut' }) // ❌
+```
+
+The test is **shape**. A token path is a bare identifier, possibly dotted; anything that starts with a digit, `#` or
+`-`, or that contains a space, a comma or a function call, cannot be one and stays allowed.
+
+Properties whose values _are_ identifiers you invent are left out of it, because there is nothing to check them against:
+`animationName`, `gridArea` and the rest of the grid line properties, `counterReset`, `counterIncrement`,
+`containerName`, `viewTransitionName`, `anchorName`, `fontFamily`, `listStyleType`, `transitionProperty`, `willChange`
+and `content`. A `@keyframes` name declared in CSS rather than in `theme.keyframes` is an ordinary thing to write, and
+csstype types all of these as open strings for the same reason. A typo in one of them is what `strictTokens: true` is
+for.
+
+Two costs follow from the rule being about shape, and neither is a bug:
+
+- **A typo shaped like a value passes.** `fontSize: '2xll'` starts with a digit exactly as `2rem` does.
+- **A value typed `string` is rejected**, since nothing distinguishes it from a misspelled token:
+
+  ```ts
+  const color: string = props.color
+  css({ color }) // ❌
+  css({ color: `[${color}]` }) // ✅
+  ```
+
+  This is the same under `strictTokens: true`, and it is not a new restriction under the Vite compiler, which
+  [rejects an open runtime value](/docs/guides/source-transformation) whatever the types say.
+
+It is not free at type-check time. Over 600 `css()` call sites, `tsc` took 0.48s on the default, 0.59s under
+`strictTokens: true` and 0.70s under `'unknown-tokens'` — the cost of TypeScript checking each literal against a union
+rather than short-circuiting on `string`.
+
+The build reports a dotted path that resolves to nothing regardless of this setting, and independently of TypeScript —
+see [`unresolvedToken`](/docs/references/config#unresolvedtoken).
 
 #### strictPropertyValues
 

@@ -8,7 +8,24 @@ describe('generate property types', () => {
       "import type { ConditionalValue } from './conditions';
       import type { CssProperties } from './system-types';
       import type { Tokens } from '../tokens/index';
-
+      /**
+       * A property's own keywords, without the open \`string\` csstype ends every property with.
+       *
+       * That trailing \`(string & {})\` is what makes \`color: 'mutedd'\` type-check: it is a
+       * string, so it is a colour. Removing it leaves what the property actually enumerates —
+       * \`transparent\`, \`currentColor\`, every named colour — which is what
+       * \`strictTokens: 'unknown-tokens'\` keeps.
+       *
+       * \`string extends T\` is the test, so the wide member goes and the literal ones stay. The
+       * second branch is for the *boxed* \`String\`, which \`Properties<String | Number>\` puts on
+       * every length-taking property and which is not assignable to \`string\` — so it survives the
+       * first test and admits every string on its own. \`Number\` is deliberately kept: a number
+       * cannot be a misspelled token path.
+       */
+      export type KnownKeywords<T> =
+        T extends string ? (string extends T ? never : T)
+        : T extends String ? never
+        : T
       export interface UtilityValues {
       	aspectRatio: Tokens["aspectRatios"];
       	top: Tokens["spacing"];
@@ -214,6 +231,30 @@ describe('generate property types', () => {
 
 
 
+      /**
+       * Values whose *shape* says they are CSS rather than a token path.
+       *
+       * A token path is a bare identifier, possibly dotted. Anything that starts with a digit, a
+       * dot-digit, \`#\` or \`-\`, or that contains a space, a comma or a call, cannot be one — so
+       * these stay allowed under \`strictTokens: 'unknown-tokens'\` while \`'mutedd'\` does not.
+       *
+       * Constant, and not parameterised by the token union: a template literal distributes over a
+       * union in any placeholder, so a shape built from \`\${Token}\` would multiply the property's
+       * union by the size of the palette. These add seven members whatever the theme contains — see
+       * \`WithModifier\` below for what the other arrangement costs.
+       *
+       * The ambiguity this cannot resolve is a typo that is also a plausible value: \`'2xll'\` starts
+       * with a digit exactly as \`'2rem'\` does, and passes.
+       */
+      export type CssValueShape =
+        | \`\${number}\${string}\`
+        | \`.\${number}\${string}\`
+        | \`#\${string}\`
+        | \`-\${string}\`
+        | \`\${string} \${string}\`
+        | \`\${string},\${string}\`
+        | \`\${string}(\${string})\`
+
       type ImportantMark = "!" | "!important"
       type WhitespaceImportant = \` \${ImportantMark}\`
       type Important = ImportantMark | WhitespaceImportant
@@ -323,13 +364,54 @@ describe('generate property types', () => {
       "import type { ConditionalValue } from './conditions';
       import type { CssProperties } from './system-types';
       import type { Tokens } from '../tokens/index';
-
+      /**
+       * A property's own keywords, without the open \`string\` csstype ends every property with.
+       *
+       * That trailing \`(string & {})\` is what makes \`color: 'mutedd'\` type-check: it is a
+       * string, so it is a colour. Removing it leaves what the property actually enumerates —
+       * \`transparent\`, \`currentColor\`, every named colour — which is what
+       * \`strictTokens: 'unknown-tokens'\` keeps.
+       *
+       * \`string extends T\` is the test, so the wide member goes and the literal ones stay. The
+       * second branch is for the *boxed* \`String\`, which \`Properties<String | Number>\` puts on
+       * every length-taking property and which is not assignable to \`string\` — so it survives the
+       * first test and admits every string on its own. \`Number\` is deliberately kept: a number
+       * cannot be a misspelled token path.
+       */
+      export type KnownKeywords<T> =
+        T extends string ? (string extends T ? never : T)
+        : T extends String ? never
+        : T
       export interface UtilityValues {
       	mixin: "headline" | "headline.h1" | "headline.h2";
       	animationName: "spin" | "ping" | "pulse" | "bounce";
       }
 
 
+
+      /**
+       * Values whose *shape* says they are CSS rather than a token path.
+       *
+       * A token path is a bare identifier, possibly dotted. Anything that starts with a digit, a
+       * dot-digit, \`#\` or \`-\`, or that contains a space, a comma or a call, cannot be one — so
+       * these stay allowed under \`strictTokens: 'unknown-tokens'\` while \`'mutedd'\` does not.
+       *
+       * Constant, and not parameterised by the token union: a template literal distributes over a
+       * union in any placeholder, so a shape built from \`\${Token}\` would multiply the property's
+       * union by the size of the palette. These add seven members whatever the theme contains — see
+       * \`WithModifier\` below for what the other arrangement costs.
+       *
+       * The ambiguity this cannot resolve is a typo that is also a plausible value: \`'2xll'\` starts
+       * with a digit exactly as \`'2rem'\` does, and passes.
+       */
+      export type CssValueShape =
+        | \`\${number}\${string}\`
+        | \`.\${number}\${string}\`
+        | \`#\${string}\`
+        | \`-\${string}\`
+        | \`\${string} \${string}\`
+        | \`\${string},\${string}\`
+        | \`\${string}(\${string})\`
 
       type ImportantMark = "!" | "!important"
       type WhitespaceImportant = \` \${ImportantMark}\`
@@ -408,5 +490,33 @@ describe('generate property types', () => {
         ? Value
         : Value extends \`\${infer _}\` ? Value : never"
     `)
+  })
+
+  /**
+   * A custom utility that maps to a CSS property inherits that property's values, and under
+   * `'unknown-tokens'` it inherits the keywords without the open string.
+   *
+   * Asserted as a *type* and not a string, which is the whole of the bug this covers: the
+   * generator quotes an entry it does not recognise, so the emitted `UtilityValues` read
+   * `containerName: "KnownKeywords<CssProperties[\"containerName\"]>"` — a string literal,
+   * which rejected `containerName: 'sidebar'` and accepted that sentence.
+   */
+  test('a custom utility inherits keywords as a type, not as a string literal', () => {
+    const generated = generatePropTypes(createContext({ strictTokens: 'unknown-tokens' }))
+    const line = generated.split('\n').find((entry) => entry.trimStart().startsWith('float:'))
+
+    expect(line).toContain('KnownKeywords<CssProperties["float"]>')
+    expect(line, 'quoted, this is a value rather than a type').not.toContain('"KnownKeywords')
+  })
+
+  test('the other settings still inherit the whole property, or none of it', () => {
+    const lineFor = (config?: Parameters<typeof createContext>[0]) =>
+      generatePropTypes(createContext(config))
+        .split('\n')
+        .find((entry) => entry.trimStart().startsWith('float:'))
+
+    expect(lineFor()).toContain('CssProperties["float"]')
+    expect(lineFor()).not.toContain('KnownKeywords')
+    expect(lineFor({ strictTokens: true })).not.toContain('CssProperties["float"]')
   })
 })
