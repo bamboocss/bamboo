@@ -2,7 +2,7 @@ import { resolve } from 'node:path'
 
 import { logger } from '@bamboocss/logger'
 import { truncateList } from '@bamboocss/shared'
-import { loadConfigAndCreateContext } from '@bamboocss/node'
+import { loadConfigAndCreateContext, markStaticCompilerActive } from '@bamboocss/node'
 import type { Plugin } from 'vite'
 import { asError, bamboocssCss, VIRTUAL_CSS_ID } from './css'
 import { foldSource, type ForeignRecipes, type SkipReason, type SkippedCall } from './fold'
@@ -189,6 +189,12 @@ const formatSkipped = (id: string, skipped: SkippedCall[]) => {
  */
 export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
   const { configPath, cwd, reportSkipped = false, reportSummary = true, maxRecipeStates, pruneCss = true } = options
+
+  // Announced here, as the Vite config is evaluated, which is before anything else Bamboo runs
+  // in this process. `@bamboocss/postcss` reads it to tell a project that deliberately emits
+  // CSS through PostCSS from one that has Vite and never added this plugin — the second ships
+  // the style engine to the client, and nothing else about it looks wrong.
+  markStaticCompilerActive()
 
   if (maxRecipeStates !== undefined && (!Number.isSafeInteger(maxRecipeStates) || maxRecipeStates < 1)) {
     throw new Error('bamboocss: `maxRecipeStates` must be a positive safe integer.')

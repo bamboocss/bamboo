@@ -14,3 +14,9 @@ export { setLogStream } from './logstream'
 export { parseDependency } from './parse-dependency'
 export { setupConfig, setupPostcss } from './setup-config'
 export { spec } from './spec'
+export {
+  findViteConfig,
+  hasUncompilableSources,
+  isStaticCompilerActive,
+  markStaticCompilerActive,
+} from './vite-integration'

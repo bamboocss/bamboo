@@ -242,7 +242,19 @@ Bamboo can emit the stylesheet through PostCSS instead of the Vite plugin. Insta
 ```
 
 Import that file from your root component in place of `virtual:bamboo.css`. This is a different integration: it has no
-source compiler, so `css()` calls resolve at runtime and recipes retain their named extraction representation.
+source compiler, so `css()` calls resolve at runtime and recipes retain their named extraction representation — which
+means the generated style engine ships in your client bundle, where the plugin above compiles it away entirely.
+
+Because that is invisible from the outside — both render the same — the PostCSS plugin says so when it finds a Vite
+config. Declare the choice to silence it:
+
+```js filename="postcss.config.cjs"
+module.exports = {
+  plugins: {
+    '@bamboocss/dev/postcss': { runtimeStyling: true },
+  },
+}
+```
 
 <Callout type="warning">
   Use this **or** `@bamboocss/vite`, not both. Each emits a complete stylesheet, so configuring the two together puts

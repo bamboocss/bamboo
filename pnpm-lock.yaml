@@ -637,16 +637,15 @@ importers:
 
   packages/postcss:
     dependencies:
+      '@bamboocss/logger':
+        specifier: workspace:*
+        version: link:../logger
       '@bamboocss/node':
         specifier: workspace:*
         version: link:../node
       postcss:
         specifier: 8.5.26
         version: 8.5.26
-    devDependencies:
-      '@bamboocss/logger':
-        specifier: workspace:*
-        version: link:../logger
 
   packages/preset-atlaskit:
     dependencies:

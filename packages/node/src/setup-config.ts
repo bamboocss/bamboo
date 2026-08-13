@@ -6,8 +6,9 @@ import type { Config } from '@bamboocss/types'
 import fsExtra from 'fs-extra'
 import { lookItUpSync } from 'look-it-up'
 import { outdent } from 'outdent'
-import { join } from 'path'
+import { basename, join } from 'path'
 import { execFileSync } from 'child_process'
+import { findViteConfig, hasUncompilableSources } from './vite-integration'
 
 type SetupOptions = Partial<Config> & {
   force?: boolean
@@ -81,6 +82,20 @@ export default defineConfig({
 }
 
 export async function setupPostcss(cwd: string) {
+  // Said at the moment of choosing, as well as on every build the PostCSS plugin then runs.
+  // This is where a project takes the wrong branch — following a guide, usually — and it is
+  // the one place the choice is still one line away from being a different one.
+  const viteConfig = findViteConfig(cwd)
+  if (viteConfig && !hasUncompilableSources({ cwd })) {
+    logger.warn(
+      'init:postcss',
+      `This project has ${quote(basename(viteConfig))}, so ${quote('@bamboocss/vite')} is the integration to use. ` +
+        `The PostCSS one emits CSS only: it does not compile source, so ${quote('css()')} and ${quote('cva()')} stay ` +
+        `runtime calls and the generated style engine ships in your client bundle. Both render identically, which is ` +
+        `what makes the difference easy to miss. See https://bamboocss.com/docs/installation/vite`,
+    )
+  }
+
   logger.info('init:postcss', `creating postcss config file: ${quote('postcss.config.cjs')}`)
 
   const content = outdent`

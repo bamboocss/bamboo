@@ -1,7 +1,16 @@
 ---
 title: Using PostCSS
-description: Installing Bamboo as a PostCSS plugin is the recommended way to integrate it with your project.
+description: Emit Bamboo's stylesheet from PostCSS, for any bundler without a Bamboo compiler plugin.
 ---
+
+<Callout type="warning">
+  If your project builds with Vite, use [`@bamboocss/vite`](/docs/installation/vite) instead. This plugin emits the
+  stylesheet and nothing else: it does not compile source, so `css()` and `cva()` stay runtime calls and the generated
+  style engine ships in your client bundle. Both setups render identically, which is what makes the difference easy to
+  miss — so Bamboo says so when it finds a Vite config beside your Bamboo config. Pass `{ runtimeStyling: true }` where
+  resolving styles at runtime is what you want, and for a Svelte, Vue or Astro project, where components are not files
+  the compiler transforms, this page is the right one.
+</Callout>
 
 <Steps>
 ### Install Bamboo

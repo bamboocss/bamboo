@@ -38,10 +38,8 @@
     "dev": "pnpm build-fast --watch"
   },
   "dependencies": {
+    "@bamboocss/logger": "workspace:*",
     "@bamboocss/node": "workspace:*",
     "postcss": "8.5.26"
-  },
-  "devDependencies": {
-    "@bamboocss/logger": "workspace:*"
   }
 }

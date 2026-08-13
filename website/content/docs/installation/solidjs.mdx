@@ -3,6 +3,13 @@ title: Using SolidJS
 description: Easily use Bamboo with SolidJS with our dedicated integration.
 ---
 
+<Callout type="warning">
+  This guide sets Bamboo up through PostCSS, which emits the stylesheet without compiling source: `css()` and `cva()`
+  stay runtime calls and the generated style engine ships in your client bundle. Because SolidJS builds with Vite,
+  [`@bamboocss/vite`](/docs/installation/vite) is the better default — it compiles those calls to literal class strings
+  and ships no engine at all. Bamboo says the same thing at build time when it finds a Vite config.
+</Callout>
+
 ## Start a new project
 
 <Steps>
