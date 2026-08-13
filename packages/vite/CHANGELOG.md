@@ -1,5 +1,190 @@
 # @bamboocss/vite
 
+## 1.38.0
+
+### Minor Changes
+
+- ad375b2: Stop compiling a destructuring default as if it were the value.
+
+  A component taking a `css` prop with a default returned the default's classes no matter what its caller passed:
+
+  ```tsx
+  const A = ({ css: cssProp = { color: 'red.300' } }) => css(cssProp)
+
+  A({ css: { color: 'blue.500' } }) // → "c_red.300". Not blue.
+  ```
+
+  Not missing styles — _wrong_ styles, silently. The build was green, the class names in the markup were real, and no
+  skip was recorded, so the survivor check that exists to catch uncompilable calls never saw it. The empty spelling,
+  `({ css: cssProp = {} }) => css(cssProp)`, folded to `""`, which reads like "nothing to do here" rather than like a
+  caller's styles being discarded.
+
+  It is not limited to parameters. The default wins over a source object that plainly carries the key:
+
+  ```ts
+  const source = { tone: 'blue.500' }
+  const { tone = 'red.300' } = source
+  css({ color: tone }) // → c_red.300
+  ```
+
+  The extractor resolves a binding element's default without consulting what is being destructured: its
+  `maybeDefinitionValue` tests for an initializer first and returns the boxed default, never reaching the branch that
+  would read the source object.
+
+  Extraction is left alone, and not only because emitted CSS is sacred — the rule is _wanted_ there. A CLI or PostCSS
+  build ships a runtime `css()`, where the default genuinely does apply when a caller omits the key, so it needs CSS
+  behind it. Being optimistic costs extraction one rule; it costs compilation the right answer, because compilation
+  _replaces_ the call. So the fix is in the compiler's `isStaticBox`, and emitted CSS is unchanged.
+
+  **A call whose value comes from a destructuring default is now declined**, which under mandatory compilation is a
+  build error naming the call. That is the intended outcome: there is no runtime styling fallback to degrade to, so the
+  alternatives are a failed build or wrong styles in production. Move the variation into declared recipe variants, pass
+  a finite set of values, or safelist with `staticCss`.
+
+  Note the direction this had been pointing: `const { tone } = source` was already declined, and adding a default to
+  that same line made it start folding — to the default. More information made the compiler more confident and less
+  correct.
+
+  Two things this does not reach. A call _written inside_ a default — `({ cls = css({ color: 'red.300' }) }) => cls` —
+  still folds, correctly, since its argument is written right there; but a later read of `cls` is not refused, and a
+  caller can still have replaced it. And a default destructured in one module and consumed in another still folds, as
+  the no-default spelling there always did. Both are narrower than what this closes, and neither is new.
+
+  `sandbox/vite-ts/src/Button.tsx` still ships the broken pattern — it is why those call sites were not among the ones
+  that sandbox already failed to build on, and it now declines two more. Fixing the example is separate.
+
+  Measured by counting the work rather than timing it, since this sits on the dev server's per-transform path and
+  wall-clock could not resolve it against a loaded machine: the guard's parent walks over `sandbox/vite-ts/src/App.tsx`
+  are **281**, against 8,416 for a first cut that walked to the root from every stack entry. The walk stops at the first
+  parent that computes rather than composes a value, which is also what keeps a call inside a default foldable.
+
+- 21d1559: Replace `renameCssAsset` with `pruneCss`. **Breaking:** `renameCssAsset` is removed;
+  `bamboocss({ renameCssAsset: false })` becomes `bamboocss({ pruneCss: false })`.
+
+  The option never controlled what its name said. Since 1.37.1, `renameCssAsset: false` skipped the _pruning_ as well —
+  because prune-without-rename is the stale-CDN failure the rename exists to prevent — so the flag's larger effect was
+  the one it did not mention. That mismatch had a cost: a project losing rules to the cross-environment pruning bug
+  fixed in 1.37.13 reached for a rename flag to fix it, which worked, and left the real bug undiagnosed for eleven
+  releases.
+
+  The two operations were never independently meaningful in either direction. Prune-without-rename is unsafe. And
+  rename-without-prune was already a no-op: `optimizeStaticCssAssets` returns early on `optimized === source`, so a
+  sheet nothing was removed from keeps its name because its bytes are unchanged. Renaming is a consequence of having
+  changed the bytes, not a feature. So the `rename` argument is gone from `optimizeStaticCssAssets` too, and the unsafe
+  combination is now unrepresentable rather than merely unreachable.
+
+  Setting the old name now throws instead of being ignored. Vite loads `vite.config.ts` through esbuild, which strips
+  types without checking them, so a removed option is not a type error to anyone who does not separately run `tsc` over
+  their config — it is a key that quietly stops doing anything. A project that set `renameCssAsset: false` because a
+  renamed asset breaks something downstream would otherwise have had both halves switched back on by upgrading, which is
+  the same class of silent reversal this whole change is about.
+
+  Pruning also no longer goes off in silence. A build with `pruneCss: false` prints one line saying so, matching the
+  line 1.37.13 added for an environment that has not compiled yet, and the user's own setting is the one reported when
+  both apply. Four tests cover those branches; before this, deleting either line broke nothing.
+
+  `pruneCss: false` also declines more than `renameCssAsset: false` did, and this is a fix rather than a side effect.
+  The old flag ran the prune pass and then put the original bytes back, so the pass's assertion — every compiled class
+  has a rule in the sheet — still ran and could still fail the build. That made the escape hatch not an escape:
+  1.37.13's advice to reach for it when reachability accounting goes wrong did not actually work. The whole pass is now
+  skipped, so the setting cannot fail a build over reachability. The cost is that a project running with it off forfeits
+  that assertion, which is the right trade for a switch whose purpose is to take this machinery out of the picture.
+
+  The documented reason to reach for it is narrower and more honest than "something cannot follow a renamed asset": what
+  pruning breaks is anything deriving an artifact from the stylesheet's _content_ during `generateBundle` before Bamboo
+  runs. Subresource integrity is the clear case — `integrity` is a digest of the bytes rather than a filename, so the
+  reference rewriting cannot carry it across, and a browser handed a stale digest refuses the stylesheet outright.
+  Renaming is irrelevant there; only declining to prune helps. Where such a consumer can be moved after Bamboo instead
+  (`order: 'post'`, `writeBundle`, `closeBundle`), the docs now say to do that and keep the pruning.
+
+  Emitted CSS is unchanged at the default, and `pruneCss: false` emits what `renameCssAsset: false` emitted.
+
+### Patch Changes
+
+- bb267fd: Count a module once in the compiler's coverage summary, and print the summary once.
+
+  1.37.13 gave both plugins `sharedDuringBuild: true`, so one instance now serves every environment of a build rather
+  than one instance per environment. The summary's totals were accumulated as the transforms arrived, which was correct
+  when each environment had its own counters and is not correct now: both environments transform the modules they have
+  in common, which in a real app is most of them, and each of those was counted once per environment.
+
+  A fixture of one shared module and one entry each — three files, one `css()` call — reported:
+
+  ```
+  Compiled 1/1 (100%) across 1/2 files      <- client, partial
+  Compiled 2/2 (100%) across 2/4 files      <- both, double-counted
+  ```
+
+  It now reports `Compiled 1/1 (100%) across 1/3 files`, once. Coverage describes the source rather than how many times
+  a bundler handed the same file over, so results are kept per file and summed at the end, and the line waits for the
+  last environment the way the reachability judgements beside it already do.
+
+  Two things follow from keeping results per file rather than summing as they arrive.
+
+  **Dev stops inflating too.** Every HMR re-transform of a file counted as another file, so a long session's totals grew
+  without bound. They now describe the modules, however many times each was handed over.
+
+  **Waiting for the last environment is a build-only rule.** Dev satisfies its premise in name only: a resolved config
+  always lists both `client` and `ssr`, so a project configuring `builder` announces two environments — while the dev
+  server only ever starts the client one, since `perEnvironmentStartEndDuringDev` is off by default. Deferring to an
+  environment that was never going to start suppressed the summary outright, for exactly the framework projects that
+  configure `builder`. The gate is scoped to `command === 'build'`, and a test pins it.
+
+  Nothing about compilation changes — this is only what gets printed. The regression was cosmetic but misleading in the
+  one direction that matters for this number: a project reading the summary to find out how much of its source compiles
+  would have seen inflated file counts, and a partial line for the client scrolling past before the real one.
+
+  The summary is still skipped for a build that declares an environment it never builds, which is the same gap the
+  reachability judgements beside it have.
+
+- 5f85489: Stop a `?raw` import of a `.tsx` file from overwriting that file in the compiler.
+
+  Importing a module both normally and as text — `import text from './theme.tsx?raw'` beside
+  `import { shared } from './theme'` — could fail the build with a diagnostic that could not be acted on:
+
+  ```
+  bamboocss: 1 call(s) could not be compiled.
+    src/consumer.tsx
+      3: css() — dynamic
+  Make the values finite and statically analyzable …
+  ```
+
+  The value already was. `./theme.tsx?raw` is a module whose text is `export default "…"`, and the transform's id filter
+  strips the query before testing the extension — it has to, or nothing matches `.tsx` — which made the wrapper look
+  like the file itself. Its text was then handed to ts-morph under the _real_ file's path, replacing the parsed module
+  that every fold resolves against. The next module to fold `css(shared)` read `export default "…"`, found no `shared`,
+  and declined.
+
+  `?url`, `?worker` and `?sharedworker` are the same shape and are rejected too — Vite's own `SPECIAL_QUERY_RE`, and
+  nothing beyond it. They have nothing to fold: they are wrappers Vite generates, not source.
+
+  The list was drafted wider, with `?inline`, `?no-inline`, `?worklet` and `?init`, and all four were wrong. Vite has no
+  `worklet` query; `?init` applies to `.wasm`, an extension already rejected; and `inline`/`no-inline` only pick
+  base64-versus-file for something that already matched `raw`/`url`, so `./a.tsx?inline` is served as the module's own
+  source. Rejecting an id that does carry source is the expensive direction — the transform declines, its atoms never
+  reach the reachability set, pruning removes their rules, and the generated runtime still returns the class names, so
+  elements render unstyled with nothing logged.
+
+  Whether it bit depended on which of the two ids Rollup transformed last, so the same project could build, then stop
+  building because an import moved — and a project that hit it had no way to reach the cause from the message, which
+  names the consumer and blames its source.
+
+  The filter is a deny list of those wrappers rather than an allow list of benign queries, because dev ids carry `?t=`
+  after an edit and `?import` when a dynamic import is rewritten: rejecting an unrecognised query would silently stop
+  folding the file someone just saved, by that same mechanism.
+
+  Three benign ids are pinned by tests beside the rejected ones, `?worker_file` among them — that is how dev serves a
+  worker's _real_ source, it contains "worker", and it is the obvious thing for someone to add to the list later.
+  Removing the guard fails six tests. The real-build test imports a consumer on either side of the `?raw` line, since
+  only a consumer folded after the wrapper lands is exposed and which that is depends on the order Rollup transforms in.
+  - @bamboocss/config@1.38.0
+  - @bamboocss/core@1.38.0
+  - @bamboocss/extractor@1.38.0
+  - @bamboocss/logger@1.38.0
+  - @bamboocss/node@1.38.0
+  - @bamboocss/shared@1.38.0
+  - @bamboocss/types@1.38.0
+
 ## 1.37.13
 
 ### Patch Changes
