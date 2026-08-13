@@ -80,6 +80,57 @@ The cascade layers are applied in the following order:
 Recipe and utility styles share this layer under Vite. Use `cx(recipe(), css())` or compose style objects in the desired
 order so the compiler can remove overridden declarations before CSS is emitted.
 
+## Inside a layer, specificity still decides
+
+Layers decide between rules in **different** layers. Within one layer nothing has changed about CSS: specificity
+decides, and source order breaks the tie. Two `css()` calls are always in the same layer, so one can outrank the other —
+and nesting is what makes their specificity unequal.
+
+```tsx
+const prose = css({
+  '& p': { fontSize: '14.5px' }, //  (0,1,1) — a class and an element
+})
+
+const lede = css({ fontSize: '16px' }) //  (0,1,0) — a class
+
+<article className={prose}>
+  <p className={lede}>This renders at 14.5px.</p>
+</article>
+```
+
+The paragraph carries `lede` directly and still loses, because `& p` is the more specific selector. Neither call knows
+about the other, and nothing in the authoring experience suggests one `css()` can outrank another — the CSS is correct,
+the class is on the element, and the value is simply not the one applied.
+
+A nested selector reaches further than it looks, too. `'& a': { textDecorationLine: 'underline' }` on an article
+underlines every anchor inside it, including ones in a navigation card that styles itself.
+
+Scoping bounds what a selector can reach, and is worth doing at the point you reach for nesting rather than after a
+screenshot diff:
+
+```tsx
+css({
+  '& > p': { fontSize: '14.5px' }, // direct children, not paragraphs anywhere below
+  '& :is(p, li) a': { textDecorationLine: 'underline' }, // anchors in body text, not every anchor in the subtree
+})
+```
+
+It does not draw a component boundary, though — a card nested in that article that renders a `<p>` is still inside
+`& :is(p, li) a` — and it does not change the arithmetic: `& > p` is `(0,1,1)` too, so it still outranks a class on the
+paragraph it matches.
+
+What removes the question is putting the styles on the element itself. That is the
+[recommendation for nested styles](/docs/concepts/writing-styles#native-css-nesting) generally, and this is why.
+
+`@bamboocss/eslint-plugin` reports nested selectors that reach another element — all of them, scoped or not, since all
+of them outrank a class on what they match — for projects that want this enforced rather than remembered:
+
+```js filename="eslint.config.js"
+rules: {
+  'bamboo/no-descendant-selectors': 'warn',
+}
+```
+
 ## Layer CSS
 
 The first line of the generated CSS declares the layer order:

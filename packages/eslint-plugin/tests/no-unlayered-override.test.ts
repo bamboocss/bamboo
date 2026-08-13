@@ -8,10 +8,17 @@ import multiline from 'multiline-ts'
  * classes in the `utilities` layer, and which one applies is decided by stylesheet order
  * rather than by the caller.
  *
- * The fix is a difference in *origin*: a recipe lands in `recipes` and loses to the
- * consumer's `css()` by layer, or the component takes a style object and merges it before
- * any class name exists. `cva` counts either way — inline or declared in `theme.recipes`,
- * its classes are named semantically and emitted into `recipes`.
+ * The fix is a difference in *origin*: the component takes a style object and merges it before
+ * any class name exists, which resolves per property in every build — or, on the extraction
+ * path, a recipe lands in `recipes` and loses to the consumer's `css()` by layer. `cva` counts
+ * either way there, inline or declared in `theme.recipes`, since its classes are named
+ * semantically and emitted into that layer.
+ *
+ * Recipe calls are not reported, and that is a decision about false positives rather than a
+ * claim that they are always safe: the Vite compiler emits no `recipes` layer at all — it
+ * resolves selections into the same `utilities` atoms `css()` uses — so under it a recipe joined
+ * with an opaque class is the same collision. The rule cannot see which build it is linting
+ * for, and reporting the fix it recommends to everyone else is the worse of the two errors.
  */
 eslintTester.run(RULE_NAME, rule, {
   invalid: [
@@ -33,7 +40,8 @@ eslintTester.run(RULE_NAME, rule, {
   ],
   valid: [
     {
-      // A config recipe is in the `recipes` layer, so the consumer's css() wins by layer.
+      // A config recipe is in the `recipes` layer on the extraction path, so the consumer's
+      // css() wins by layer there — and see the note above for why it is unreported regardless.
       code: multiline`
   import { cx } from './bamboo/css';
   import { button } from './bamboo/recipes';
@@ -42,7 +50,7 @@ eslintTester.run(RULE_NAME, rule, {
     },
     {
       // So is an inline cva. Its classes are named from its config — `btn--size_sm` — and
-      // emitted into `recipes`, exactly as a declared recipe's are.
+      // emitted into that same layer, exactly as a declared recipe's are.
       code: multiline`
   import { cva, cx } from './bamboo/css';
 

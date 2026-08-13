@@ -9,10 +9,15 @@ export const RULE_NAME = 'no-unlayered-override'
  * The call whose result is a class string in the `utilities` layer — the same layer a
  * consumer's `css()` is in, so neither can win over the other by cascade.
  *
- * `cva` and `sva` are deliberately absent. Their output is named semantically and emitted
- * into `recipes`, whether they are declared inline or in `theme.recipes`, so a consumer's
- * `css()` beats them by layer in every build. That is the fix this rule points at, and it
- * would be incoherent to report it.
+ * `cva` and `sva` are deliberately absent. On the extraction path their output is named
+ * semantically and emitted into `recipes`, whether they are declared inline or in
+ * `theme.recipes`, so a consumer's `css()` beats them by layer. That is one of the fixes this
+ * rule points at, and it would be incoherent to report it.
+ *
+ * Under the Vite compiler there is no `recipes` layer — selections are resolved to the same
+ * global atoms `css()` uses, in `utilities` — so that fix does not apply there and the style
+ * object one does. The rule cannot tell which build it is linting for, so the message names
+ * both.
  */
 const STYLING_CALLS = new Set(['css'])
 
@@ -68,7 +73,7 @@ const rule = createRule({
       unlayeredOverride: [
         '`cx` joins class names, it does not resolve conflicts between them.',
         'These styles and the ones being joined are both in the `utilities` layer, so which applies is decided by stylesheet order rather than by the caller.',
-        'Declare the component styles with `cva` so they land in the `recipes` layer, or accept a style object and merge it with `css(base, props.css)`.',
+        'Accept a style object and merge it with `css(base, props.css)`, which resolves per property in every build — or, on the extraction path only, declare the component styles with `cva` so they land in the `recipes` layer.',
       ].join(' '),
     },
     schema: [],

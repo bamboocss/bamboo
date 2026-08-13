@@ -18,8 +18,17 @@ const Card = (props) => <div className={cx(css({ padding: '4' }), props.classNam
 
 ## How to fix it
 
-**Give the two styles different origins.** A recipe's classes are named from its config — `button--size_sm` — and
-emitted into the `recipes` layer, so a consumer's `css()` in `utilities` wins by layer, in every build:
+**Accept a style object rather than a class name.** `css()` merges per property before any class name exists, so it
+resolves the same way in every build and needs no layer at all:
+
+```jsx
+const Card = ({ css: cssProp, ...rest }) => <div className={css({ padding: '4' }, cssProp)} {...rest} />
+```
+
+**Or, on the extraction path, give the two styles different origins.** A recipe's classes are named from its config —
+`button--size_sm` — and emitted into the `recipes` layer, so a consumer's `css()` in `utilities` wins by layer. This
+does not apply under the Vite compiler, which resolves recipe selections into the same `utilities` atoms `css()` uses
+and emits no `recipes` layer at all:
 
 ```jsx
 const button = cva({ base: { padding: '4' } })
@@ -34,13 +43,6 @@ declared recipe gets a generated module to import:
 import { button } from '../styled-system/recipes'
 
 const Button = (props) => <button className={cx(button(), props.className)} />
-```
-
-**Or accept a style object rather than a class name.** `css()` merges per property before any class name exists, so it
-resolves the same way in every build and needs no layer at all:
-
-```jsx
-const Card = ({ css: cssProp, ...rest }) => <div className={css({ padding: '4' }, cssProp)} {...rest} />
 ```
 
 ## When not to use it

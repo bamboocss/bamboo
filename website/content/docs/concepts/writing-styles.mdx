@@ -202,7 +202,12 @@ You can also target children and siblings using the `&` syntax.
 />
 ```
 
-We recommend not using descendant selectors as they can lead to specificity issues when managing style overrides.
+We recommend not using descendant selectors, and the reason is worth knowing before you reach for one: `& span` is
+`(0,1,1)` where a class is `(0,1,0)`, so it outranks any `css()` applied to that span directly. Cascade layers do not
+separate the two — both are in `utilities`, where specificity decides — so the span carries the class it was given and
+renders with the other value, with nothing to report. See
+[inside a layer, specificity still decides](/docs/concepts/cascade-layers#inside-a-layer-specificity-still-decides).
+
 Colocating styles directly on the element is the preferred way of writing styles in Bamboo.
 
 ### Using Pseudo Props
