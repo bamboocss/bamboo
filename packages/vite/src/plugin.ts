@@ -153,8 +153,23 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
     )
   }
 
-  /** Totals across the build, for the summary. */
-  const totals = { folded: 0, files: 0, filesWithFolds: 0, skipped: new Map<string, number>() }
+  /**
+   * What each file's transform found, for the summary. Keyed by file rather than summed as it
+   * goes, because a build has more than one environment and they share most of their modules.
+   *
+   * Running totals double-counted every shared module once per environment — a two-environment
+   * build of one shared file and one entry each reported "2/2 across 2/4 files" for three
+   * source modules. Coverage is a property of the source, not of how many times a bundler
+   * handed the same file over. It also grew without bound in dev, where every HMR
+   * re-transform of a file counted as another file.
+   *
+   * A second pass over a file replaces its entry rather than adding to it. Both environments
+   * are assumed to compute the same answer for the same module — true of this compiler, though
+   * not something the plugin can enforce, since another `pre` plugin may hand each environment
+   * different code. Where they disagree the last one wins, which is a cosmetic number either
+   * way.
+   */
+  const perFile = new Map<string, { folded: number; skipped?: Map<string, number> }>()
   const staticSession = createStaticCompilationSession()
 
   type Survivor = { file: string; line: number; name: string; reason: SkipReason }
@@ -272,10 +287,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
       // environment of the run in progress.
       const environment = (this as { environment?: { name?: string } }).environment?.name ?? 'default'
       if (staticSession.startedEnvironments.has(environment)) {
-        totals.folded = 0
-        totals.files = 0
-        totals.filesWithFolds = 0
-        totals.skipped.clear()
+        perFile.clear()
         survivorsByFile.clear()
         recipeConfigCache.clear()
         // Clears `startedEnvironments` too, so the `add` below opens the new run's list.
@@ -380,8 +392,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
       } catch (error) {
         logger.caughtError('vite:transform', `Failed to compile ${filePath}`, error)
 
-        totals.files++
-        totals.skipped.set('compile-failed', (totals.skipped.get('compile-failed') ?? 0) + 1)
+        perFile.set(filePath, { folded: 0, skipped: new Map([['compile-failed', 1]]) })
         addSurvivor({ file: filePath, line: 1, name: 'compiler', reason: 'compile-failed' })
         if (command === 'serve') {
           // Normalized, never rethrown as caught. `catch` binds `unknown`, and anything under
@@ -395,12 +406,18 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
         return null
       }
 
-      totals.files++
-      totals.folded += result.folded.length
-      if (result.folded.length) totals.filesWithFolds++
+      // Left undefined when nothing was declined, which is the common case and this is the
+      // per-module path: a project of ten thousand files would otherwise retain ten thousand
+      // empty maps for the length of the build to say nothing.
+      let skippedHere: Map<string, number> | undefined
       for (const entry of result.skipped) {
-        totals.skipped.set(entry.reason, (totals.skipped.get(entry.reason) ?? 0) + 1)
+        skippedHere ??= new Map()
+        skippedHere.set(entry.reason, (skippedHere.get(entry.reason) ?? 0) + 1)
       }
+      // Replaces rather than adds to any earlier entry for this file. A second environment
+      // transforming the same module recomputes the same answer, and a watch rebuild's answer
+      // supersedes the one before it.
+      perFile.set(filePath, { folded: result.folded.length, skipped: skippedHere })
 
       if (result.folded.some((entry) => entry.kind === 'class' || entry.kind === 'slots')) {
         staticSession.transformedFiles.add(resolve(filePath))
@@ -528,19 +545,44 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
 
       if (!reportSummary) return
 
-      const declined = Array.from(totals.skipped.values()).reduce((sum, count) => sum + count, 0)
-      const total = totals.folded + declined
+      // Once per run, not once per environment. Coverage describes the source, and a build
+      // with a client and an SSR bundle would otherwise print a partial line and then a second
+      // one superseding it — the same shape as the reachability judgements above, and gated on
+      // the same condition.
+      //
+      // Builds only, which the judgements above do not have to say because `generateBundle`
+      // never runs in dev. This does run there, on server close, and dev satisfies the gate's
+      // premise in name only: a resolved config always lists both `client` and `ssr`
+      // environments, so a project configuring `builder` announces two — while dev starts only
+      // the client one, since `perEnvironmentStartEndDuringDev` is off by default. The
+      // remaining environment is one that was never going to start, and gating on it stopped
+      // the summary printing at all for exactly the framework projects this all exists for.
+      if (command === 'build' && remainingEnvironments(staticSession).length) return
+
+      let folded = 0
+      let filesWithFolds = 0
+      const skipped = new Map<string, number>()
+      for (const entry of perFile.values()) {
+        folded += entry.folded
+        if (entry.folded) filesWithFolds++
+        for (const [reason, count] of entry.skipped ?? []) {
+          skipped.set(reason, (skipped.get(reason) ?? 0) + count)
+        }
+      }
+
+      const declined = Array.from(skipped.values()).reduce((sum, count) => sum + count, 0)
+      const total = folded + declined
       if (!total) return
 
-      const share = Math.round((totals.folded / total) * 100)
-      const reasons = Array.from(totals.skipped.entries())
+      const share = Math.round((folded / total) * 100)
+      const reasons = Array.from(skipped.entries())
         .sort((a, b) => b[1] - a[1])
         .map(([reason, count]) => `${reason}=${count}`)
         .join(' ')
 
       logger.info(
         'vite:transform',
-        `Compiled ${totals.folded}/${total} (${share}%) across ${totals.filesWithFolds}/${totals.files} files` +
+        `Compiled ${folded}/${total} (${share}%) across ${filesWithFolds}/${perFile.size} files` +
           (reasons ? ` — declined: ${reasons}` : ''),
       )
     },

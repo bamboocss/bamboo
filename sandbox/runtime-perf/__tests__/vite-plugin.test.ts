@@ -5,7 +5,7 @@ import { esc } from '@bamboocss/shared'
 import bamboocss from '@bamboocss/vite'
 import { build, type Rollup } from 'vite'
 import { build as buildVite8, createBuilder } from 'vite8'
-import { afterEach, beforeEach, describe, expect, test } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 /**
  * The plugin driven by a real Vite build, rather than by calling its hooks directly.
@@ -674,6 +674,7 @@ describe('vite 8 / rolldown', () => {
  */
 const envClientEntry = join(cwd, 'src/__env-client.tsx')
 const envSsrEntry = join(cwd, 'src/__env-ssr.tsx')
+const envSharedModule = join(cwd, 'src/__env-shared.tsx')
 
 /**
  * `builder: {}` is what `vite build --app` sets, and what every framework building more than
@@ -733,6 +734,12 @@ describe('two build environments, one plugin instance', () => {
   afterEach(() => {
     rmSync(envClientEntry, { force: true })
     rmSync(envSsrEntry, { force: true })
+    // Removed here rather than by the one test that writes it. A fixture left in `src/` is not
+    // inert: `include` is `./src/**/*.{tsx,jsx}`, so it becomes a real extraction input for
+    // every later test in the run. `afterEach` fires even when a test times out, which a
+    // `finally` in the test body does not — the body keeps running past the timeout.
+    rmSync(envSharedModule, { force: true })
+    vi.restoreAllMocks()
   })
 
   test('an ssr environment does not have to import the stylesheet', async () => {
@@ -791,6 +798,56 @@ describe('two build environments, one plugin instance', () => {
     const builder = await twoEnvironmentBuilder(false)
 
     await expect(buildBothEnvironments(builder)).rejects.toThrow(/already pruned out of a stylesheet/)
+  }, 180_000)
+
+  /**
+   * The coverage summary counts a shared module once, and prints once.
+   *
+   * Both environments transform the modules they have in common, which in a real app is most of
+   * them. Summing as the transforms arrive therefore counted each of those once per
+   * environment: this fixture — one shared module and one entry each, three files, one `css()`
+   * call — reported "Compiled 2/2 across 2/4 files", and printed a partial line for the client
+   * before a second line quietly superseded it. Coverage describes the source, not how many
+   * times a bundler handed the same file over.
+   */
+  test('reports coverage once per run, counting shared modules once', async () => {
+    writeFileSync(
+      envSharedModule,
+      `import { css } from '../styled-system/css'\nexport const s = css({ width: '[41.1px]' })\n`,
+    )
+    writeFileSync(
+      envClientEntry,
+      `import 'virtual:bamboo.css'\nimport { s } from './__env-shared'\nexport const a = s\n`,
+    )
+    writeFileSync(envSsrEntry, `import { s } from './__env-shared'\nexport const b = s\n`)
+
+    const lines: string[] = []
+    // Restored by `afterEach`, which runs even if this times out — a `finally` here does not,
+    // because the body keeps going past the deadline and would leave `console.log` patched
+    // over whatever runs next.
+    vi.spyOn(console, 'log').mockImplementation((...args) => void lines.push(args.join(' ')))
+
+    const builder = await createBuilder({
+      root: cwd,
+      logLevel: 'silent',
+      css: { postcss: { plugins: [] } },
+      plugins: [bamboocss({ cwd, reportSummary: true })],
+      build: { write: false, minify: false, rollupOptions: { external: [/^react/] } },
+      builder: {},
+      environments: {
+        client: { build: { lib: { entry: envClientEntry, formats: ['es'], fileName: 'env-client' } } },
+        ssr: { build: { ssr: true, lib: { entry: envSsrEntry, formats: ['es'], fileName: 'env-ssr' } } },
+      },
+    })
+    await buildBothEnvironments(builder)
+
+    // Matched on the summary's shape rather than on the word, which the per-file debug line
+    // `Compiled N call(s) in <file>` also carries whenever `BAMBOO_DEBUG` is set.
+    const summaries = lines.filter((line) => /Compiled \d+\/\d+/.test(line))
+    expect(summaries, 'one summary for the run, not one per environment').toHaveLength(1)
+    // Three source modules, one of which folds its single `css()` call. The shared module is
+    // transformed by both environments and must still count as one file and one call.
+    expect(summaries[0]).toContain('Compiled 1/1 (100%) across 1/3 files')
   }, 180_000)
 })
 

@@ -337,13 +337,13 @@ describe('coverage summary', () => {
   })
 
   /**
-   * `vite build --watch` reuses one plugin instance across rebuilds, so totals that are
-   * never cleared describe every build since the first rather than the bundle just
+   * `vite build --watch` reuses one plugin instance across rebuilds, so per-file results that
+   * are never cleared describe every build since the first rather than the bundle just
    * written.
    *
-   * Needs a real config, since the counters are only touched once a module actually
-   * folds — `sandbox/codegen` has one. Without it this would pass whether or not the
-   * reset exists, because a failed context leaves every total at zero.
+   * Needs a real config, since a file is only recorded once a module actually folds —
+   * `sandbox/codegen` has one. Without it this would pass whether or not the reset exists,
+   * because a failed context records nothing either way.
    */
   test('counts are reset per build, so a watch rebuild reports only itself', async () => {
     const cwd = join(dirname(fileURLToPath(import.meta.url)), '../../../sandbox/codegen')
@@ -372,6 +372,57 @@ describe('coverage summary', () => {
       await callBuildEnd(plugin)
 
       expect(logged).toHaveLength(1)
+    } finally {
+      ;(logger as { info: typeof logger.info }).info = info
+    }
+  })
+
+  /**
+   * The summary still prints in dev, even for a project that configures `builder`.
+   *
+   * A build defers the summary until every environment of the run has compiled, so a client
+   * and an SSR bundle produce one line rather than a partial and a total. Dev satisfies that
+   * gate's premise in name only: a resolved config always lists both `client` and `ssr`, so
+   * configuring `builder` announces two environments — while the dev server starts `buildStart`
+   * and `buildEnd` for the client alone. The remaining environment is one that was never going
+   * to start, and waiting for it stopped the summary printing at all, for exactly the framework
+   * projects that configure `builder`.
+   */
+  test('the summary is not deferred in dev, where only one environment ever starts', async () => {
+    const cwd = join(dirname(fileURLToPath(import.meta.url)), '../../../sandbox/codegen')
+    // Both halves of one `bamboocss()` call, so they share the session the gate reads.
+    const { css, fold } = plugins({ cwd })
+
+    const logged: string[] = []
+    const info = logger.info
+    ;(logger as { info: typeof logger.info }).info = (_type: string, message: string) => {
+      logged.push(message)
+    }
+
+    const hook = <T>(h: T | { handler: T } | undefined): T | undefined =>
+      typeof h === 'function' ? h : (h as { handler: T } | undefined)?.handler
+
+    try {
+      // A dev server's resolved config: `builder` configured, and both environments listed —
+      // which is what Vite always resolves, in serve as well as build.
+      await hook(css.configResolved)?.call(
+        {} as never,
+        {
+          command: 'serve',
+          build: { sourcemap: false },
+          builder: {},
+          environments: { client: {}, ssr: {} },
+        } as never,
+      )
+      await hook(fold.configResolved)?.call({} as never, { command: 'serve' } as never)
+
+      // Only the client ever starts: `perEnvironmentStartEndDuringDev` is off by default.
+      await hook(fold.buildStart)?.call({ environment: { name: 'client' } } as never, {} as never)
+      const folded = await callTransform(fold, SOURCE, join(cwd, 'src/dev-summary.tsx'))
+      await callBuildEnd(fold)
+
+      expect(folded).not.toBeNull()
+      expect(logged, 'dev still reports coverage').toHaveLength(1)
     } finally {
       ;(logger as { info: typeof logger.info }).info = info
     }
