@@ -2,7 +2,7 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterAll, afterEach, describe, expect, test } from 'vitest'
-import { bamboocss } from '../src/plugin'
+import { bamboocss, normalizeFsPath } from '../src/plugin'
 import { createFoldFixture } from './fixture'
 
 /**
@@ -37,23 +37,52 @@ export const cls = css(shared)
 const hookOf = <T>(hook: T | { handler: T } | undefined): T | undefined =>
   typeof hook === 'function' ? hook : (hook as { handler: T } | undefined)?.handler
 
+/**
+ * The two members of Vite's module graph that `hotUpdate` reaches, and nothing else.
+ *
+ * Keyed the way the plugin spells a path rather than the way `join` does, so the lookup is
+ * the plugin's and not this file's. They differ on Windows, where a test keyed on `join`
+ * output would fail for a reason that has nothing to do with what it asserts.
+ */
+const stubGraph = (files: Record<string, { id: string }[]>) => {
+  const invalidated: string[] = []
+  const byPath = new Map(Object.entries(files).map(([file, modules]) => [normalizeFsPath(file), modules]))
+  return {
+    invalidated,
+    graph: {
+      getModulesByFile: (file: string) => {
+        const modules = byPath.get(file)
+        return modules && new Set(modules)
+      },
+      invalidateModule: (module: { id: string }) => invalidated.push(module.id),
+    },
+  }
+}
+
 const driver = () => {
   const plugin = bamboocss({ cwd, reportSummary: false }).find((p) => p.name === 'bamboocss:compiler')!
 
   const buildStart = hookOf(plugin.buildStart)
   const transform = hookOf(plugin.transform)
   const watchChange = hookOf(plugin.watchChange)
+  const hotUpdate = hookOf(plugin.hotUpdate)
 
   return {
     plugin,
     start: () => buildStart?.call({} as never, {} as never),
     // `addWatchFile` is stubbed rather than asserted on; what it registers is covered by
     // `fold-cross-file.test.ts`. This is about what the re-transform then produces.
-    fold: async () => {
-      const result = await transform?.call({ addWatchFile() {} } as never, CONSUMER_CODE, CONSUMER, {} as never)
+    fold: async (code = CONSUMER_CODE) => {
+      const result = await transform?.call({ addWatchFile() {} } as never, code, CONSUMER, {} as never)
       return typeof result === 'object' && result !== null ? result.code : null
     },
     change: (event: 'update' | 'delete' | 'create') => watchChange?.call({} as never, DEPENDENCY, { event } as never),
+    /** Vite 6 and up: one graph per environment, reached through the plugin context. */
+    hot: (file: string, graph: ReturnType<typeof stubGraph>['graph'], modules: { id: string }[] = []) =>
+      hotUpdate?.call({ environment: { moduleGraph: graph } } as never, { file, modules } as never),
+    /** Vite 5: one graph, on the server, and no `hotUpdate` hook to prefer over this one. */
+    legacyHot: (file: string, server: object) =>
+      hookOf(plugin.handleHotUpdate)?.call({} as never, { file, modules: [], server } as never),
   }
 }
 
@@ -102,6 +131,82 @@ describe('watch rebuilds', () => {
     // survives. Folding the contents of a file that was removed is the same defect as
     // folding the contents of one that changed.
     expect(await fold()).toBeNull()
+  }, 60_000)
+})
+
+/**
+ * What the dev server is told to re-transform when a folded-from module changes.
+ *
+ * `addWatchFile` is enough for a build, where Rollup discards a module whose watched file
+ * changed. Vite's dev server *soft*-invalidates a module that statically imports the changed
+ * one — it keeps the cached transform result and rewrites only import timestamps — and the
+ * compiled class string lives in exactly that cached result. So the edit never lands, in
+ * silence, until the server restarts.
+ *
+ * A stub graph rather than a real server, which `sandbox/runtime-perf` covers end to end.
+ * What is asserted here is the bookkeeping: which files are named, and that an edge is
+ * dropped when the fold that created it goes away.
+ */
+describe('dev invalidation of modules that folded across files', () => {
+  test('names the consumer, and stops naming it once it no longer folds from the file', async () => {
+    const { start, fold, hot } = driver()
+
+    writeDependency('red.300')
+    await start()
+    expect(await fold()).toContain('"c_red.300"')
+
+    // Alongside the module Vite matched for the edit itself, which this must not disturb.
+    const changed = { id: DEPENDENCY }
+    const first = stubGraph({ [CONSUMER]: [{ id: CONSUMER }] })
+    expect(hot(DEPENDENCY, first.graph, [changed])).toEqual([changed, { id: CONSUMER }])
+    expect(first.invalidated, 'the stale compiled result has to go').toEqual([CONSUMER])
+
+    // The same module, no longer reading anything out of the dependency.
+    expect(
+      await fold(`import { css } from 'styled-system/css'\nexport const cls = css({ color: 'red.300' })\n`),
+    ).toContain('"c_red.300"')
+
+    const second = stubGraph({ [CONSUMER]: [{ id: CONSUMER }] })
+    expect(hot(DEPENDENCY, second.graph), 'no fold reads that file any more').toBeUndefined()
+    expect(second.invalidated).toEqual([])
+  }, 60_000)
+
+  test('says nothing about a file no fold read', async () => {
+    const { start, fold, hot } = driver()
+
+    writeDependency('red.300')
+    await start()
+    await fold()
+
+    const unrelated = join(FIXTURE_DIR, 'elsewhere.ts')
+    const { graph, invalidated } = stubGraph({ [CONSUMER]: [{ id: CONSUMER }] })
+    expect(hot(unrelated, graph)).toBeUndefined()
+    expect(invalidated).toEqual([])
+  }, 60_000)
+
+  /**
+   * The Vite 5 path, which nothing in this repo runs — the workspace is on 7 and 8 — and
+   * which the peer range (`vite: ">=5"`) still promises. Left uncovered, a project on 5 keeps
+   * the staleness this whole change is about, and every green test here says otherwise.
+   *
+   * The guard is what decides: on Vite 6 and up the hook is not called at all when a plugin
+   * also has `hotUpdate`, and if some future version did call it, its `server.moduleGraph` is
+   * a compatibility view over the per-environment graphs rather than the one graph Vite 5 has.
+   */
+  test('the Vite 5 hook names the same consumer, and defers on a newer server', async () => {
+    const { start, fold, legacyHot } = driver()
+
+    writeDependency('red.300')
+    await start()
+    await fold()
+
+    const five = stubGraph({ [CONSUMER]: [{ id: CONSUMER }] })
+    expect(legacyHot(DEPENDENCY, { moduleGraph: five.graph })).toEqual([{ id: CONSUMER }])
+    expect(five.invalidated).toEqual([CONSUMER])
+
+    const six = stubGraph({ [CONSUMER]: [{ id: CONSUMER }] })
+    expect(legacyHot(DEPENDENCY, { environments: {}, moduleGraph: six.graph })).toBeUndefined()
+    expect(six.invalidated).toEqual([])
   }, 60_000)
 })
 

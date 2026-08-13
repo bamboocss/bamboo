@@ -147,6 +147,22 @@ export const isGeneratedOutput = (filePath: string, ctx: { config: { cwd: string
 /** 1-indexed line of a source offset, for an error a user can navigate to. */
 const lineAt = (code: string, offset: number) => code.slice(0, offset).split('\n').length
 
+/**
+ * One spelling for a path used as a map key against paths from somewhere else.
+ *
+ * The fold reports dependencies as ts-morph sees them and Vite reports a changed file as its
+ * watcher saw it. On Windows those differ by separator, and can differ by the case of the
+ * drive letter alone — chokidar reports what the OS handed it, `path.resolve` preserves
+ * whatever the cwd had. Either would make every lookup below miss and restore the exact
+ * staleness they exist to fix, silently, since a miss is indistinguishable from a module that
+ * folded nothing. Only the drive letter is case-folded: the rest of the path is compared as
+ * written, because elsewhere the filesystem may well be case-sensitive.
+ */
+export const normalizeFsPath = (file: string) =>
+  resolve(file)
+    .replaceAll('\\', '/')
+    .replace(/^[a-z]:\//, (drive) => drive.toUpperCase())
+
 const formatSkipped = (id: string, skipped: SkippedCall[]) => {
   const counts = new Map<string, number>()
   for (const entry of skipped) {
@@ -283,6 +299,99 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
    */
   const recipeConfigCache = new Map<string, ForeignRecipes>()
 
+  /**
+   * Which modules folded a value read out of which other module, for dev invalidation.
+   *
+   * `addWatchFile` reports the same edges, and in a build that is enough — Rollup discards a
+   * module whose watched file changed. Vite's dev server does not: a module that *statically
+   * imports* the changed one is only **soft**-invalidated, which by design keeps its cached
+   * transform result and rewrites nothing but the timestamps on its import specifiers. That
+   * cached result is where the compiled class string lives, so the edit never reaches it.
+   *
+   * The recipe case is the one users meet, because it is the one where the class is compiled
+   * into somebody else's module: an inline `cva` declaration is erased, and each *call site*
+   * becomes a literal in the module that calls it. Editing the recipe then updates the class
+   * in a module Vite has decided not to re-transform, so the browser and the SSR render keep
+   * the old class — with no error, and with Vite and Bamboo both logging as if the edit landed.
+   * A restart applies it, which is what makes it read as "recipes do not hot-reload".
+   *
+   * `css(sharedObject)` across modules fails identically; it is rarer only because a consumer
+   * that folds *nothing but* recipe calls has its import erased, and an erased import is not a
+   * static one, so Vite hard-invalidates it and the bug hides. Import one more value from the
+   * same module — the shape any real `ui.ts` has — and the import survives, and so does the
+   * stale class.
+   *
+   * Keyed by dependency, since "what changed" is the question asked, and tracked in the other
+   * direction as well so a re-transform can retract edges the module no longer has.
+   */
+  const dependentsByDependency = new Map<string, Set<string>>()
+  const dependenciesByFile = new Map<string, Set<string>>()
+
+  const recordFoldDependencies = (file: string, dependencies: readonly string[]) => {
+    const next = new Set(dependencies.map(normalizeFsPath).filter((dependency) => dependency !== file))
+    const previous = dependenciesByFile.get(file)
+
+    for (const dependency of previous ?? []) {
+      if (next.has(dependency)) continue
+      const dependents = dependentsByDependency.get(dependency)
+      if (!dependents?.delete(file)) continue
+      if (!dependents.size) dependentsByDependency.delete(dependency)
+    }
+
+    if (!next.size) {
+      dependenciesByFile.delete(file)
+      return
+    }
+    dependenciesByFile.set(file, next)
+    for (const dependency of next) {
+      const dependents = dependentsByDependency.get(dependency)
+      if (dependents) dependents.add(file)
+      else dependentsByDependency.set(dependency, new Set([file]))
+    }
+  }
+
+  /**
+   * Modules to re-transform because `file` changed, hard-invalidated on the way out.
+   *
+   * Both halves are load-bearing. Invalidating drops the stale compiled result, which is the
+   * defect itself; returning the modules is what makes Vite propagate an update for them, so
+   * the client applies one rather than waiting for whatever request happens next.
+   *
+   * Invalidating here rather than leaving it to `updateModules` also survives another plugin
+   * filtering the list afterwards — a framework's own `hotUpdate` decides what its route
+   * modules do, and the stale bytes have to go either way.
+   *
+   * A consumer Vite already reached costs nothing: `propagateUpdate` skips a module it has
+   * traversed, and every consumer of a *resolvable* dependency is one, since `addWatchFile`
+   * makes it an importer whether or not the import survived the fold. What is left is the
+   * consumer of a dependency with no module of its own, where Vite matched nothing and would
+   * have done nothing at all. That one can end in a page reload, which is the honest outcome:
+   * its compiled classes really did change, and a reload is what Vite does with any update
+   * nothing accepts.
+   */
+  const foldDependentModules = <Module extends { id?: string | null }>(
+    file: string,
+    modules: readonly Module[],
+    graph: {
+      getModulesByFile: (file: string) => Set<Module> | undefined
+      invalidateModule: (module: Module) => void
+    },
+  ) => {
+    const dependents = dependentsByDependency.get(normalizeFsPath(file))
+    if (!dependents?.size) return
+
+    const added: Module[] = []
+    for (const dependent of dependents) {
+      for (const module of graph.getModulesByFile(dependent) ?? []) {
+        if (modules.includes(module) || added.includes(module)) continue
+        graph.invalidateModule(module)
+        added.push(module)
+      }
+    }
+    if (!added.length) return
+    return [...modules, ...added]
+  }
+
   let ctx: Awaited<ReturnType<typeof loadConfigAndCreateContext>> | undefined
   let runtimeCss: RuntimeCss | undefined
   let styleCompiler: StaticStyleSetCompiler | undefined
@@ -330,6 +439,8 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
         perFile.clear()
         survivorsByFile.clear()
         recipeConfigCache.clear()
+        dependentsByDependency.clear()
+        dependenciesByFile.clear()
         // Clears `startedEnvironments` too, so the `add` below opens the new run's list.
         resetStaticCompilationSession(staticSession)
       }
@@ -381,10 +492,52 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
 
       if (change.event === 'delete') {
         ctx.project.removeSourceFile(filePath)
+        // Only as a consumer. Its edges as a *dependency* are the other modules' to retract,
+        // on the re-transform this deletion is about to cause.
+        recordFoldDependencies(normalizeFsPath(filePath), [])
         return
       }
 
       ctx.project.reloadSourceFile(filePath)
+    },
+
+    /**
+     * Re-transform whatever folded a value out of the file that just changed.
+     *
+     * Dev only — `hotUpdate` does not run in a build, where Rollup's own invalidation already
+     * covers this — and additive: the modules Vite matched are returned alongside, so this
+     * decides nothing about them.
+     *
+     * `handleHotUpdate` below stands in on Vite 5, which has no `hotUpdate`. Not quite the
+     * same thing: Vite 5 calls that hook for an update and not for a file appearing or being
+     * deleted, so a recipe file *created* while the server runs leaves its consumers stale
+     * there. Vite 6 and up call `hotUpdate` for all three, and never call `handleHotUpdate`
+     * when a plugin has both — including its deprecation warning — so exactly one of the two
+     * runs on any supported version.
+     *
+     * `environment` optional-chained for the same reason `addWatchFile` is in `transform`:
+     * a harness driving the hook need not supply a full plugin context, and a `TypeError`
+     * here is swallowed into an HMR error payload that a middleware-mode server sends
+     * nowhere.
+     */
+    hotUpdate({ file, modules }) {
+      const graph = this.environment?.moduleGraph
+      if (!graph) return
+      return foldDependentModules(file, modules, graph)
+    },
+
+    handleHotUpdate({ file, modules, server }) {
+      // Read through a cast because we compile against Vite 7's types, where a dev server
+      // always has `environments`, so narrowing on its absence leaves `never`. The peer range
+      // is `>=5`, so the Vite 5 shape this exists for does reach here.
+      const legacy = server as unknown as {
+        environments?: unknown
+        moduleGraph: Parameters<typeof foldDependentModules<(typeof modules)[number]>>[2]
+      }
+      // Guarded rather than trusted: `server.moduleGraph` on Vite 6 and up is a compatibility
+      // layer over the per-environment graphs, and this hook should not be the one touching it.
+      if (legacy.environments) return
+      return foldDependentModules(file, modules, legacy.moduleGraph)
     },
 
     async transform(code, id) {
@@ -432,6 +585,10 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
       } catch (error) {
         logger.caughtError('vite:transform', `Failed to compile ${filePath}`, error)
 
+        // Fold dependencies are deliberately left as they were. A throw establishes nothing
+        // about what this module reads, and keeping the last known edges is the recoverable
+        // direction: fixing the *dependency* then re-transforms this module, which is how a
+        // user gets out of the failure. Retracting would cost that, to save nothing.
         perFile.set(filePath, { folded: 0, skipped: new Map([['compile-failed', 1]]) })
         addSurvivor({ file: filePath, line: 1, name: 'compiler', reason: 'compile-failed' })
         if (command === 'serve') {
@@ -491,6 +648,9 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
       for (const dependency of result.dependencies) {
         this.addWatchFile?.(dependency)
       }
+      // The same edges, kept where `hotUpdate` can read them. `addWatchFile` alone does not
+      // reach the dev server's soft invalidation — see `dependentsByDependency`.
+      recordFoldDependencies(normalizeFsPath(filePath), result.dependencies)
 
       const forFile = survivorsByFile.get(filePath)
       if (command === 'serve' && forFile?.length) {

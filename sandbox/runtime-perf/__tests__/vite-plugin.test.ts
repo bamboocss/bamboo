@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { esc } from '@bamboocss/shared'
 import bamboocss from '@bamboocss/vite'
-import { build, type Rollup } from 'vite'
+import { build, createServer, type Rollup } from 'vite'
 import { build as buildVite8, createBuilder } from 'vite8'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
@@ -974,5 +974,104 @@ describe('the stylesheet URL', () => {
     // The module exports the emitted asset's name, not the virtual id.
     expect(js).not.toContain('virtual:bamboo.css')
     expect(js).toContain(sheet!.fileName.split('/').pop()!)
+  }, 120_000)
+})
+
+/**
+ * An edit reaching a module that compiled somebody else's call.
+ *
+ * This is the one failure with no build-time equivalent, so it needs a running server. In a
+ * build, Rollup discards a module whose `addWatchFile` dependency changed. Vite's dev server
+ * *soft*-invalidates a module that statically imports the changed one: it keeps that module's
+ * cached transform result and rewrites nothing but the timestamps on its import specifiers.
+ * The compiled class string lives in exactly that cached result.
+ *
+ * Recipes are where users meet it, because a recipe is the case where the class is compiled
+ * into somebody else's module — an inline `cva` declaration is erased and each *call site*
+ * becomes a literal where it is called. Editing the recipe therefore has to update a module
+ * Vite decided not to re-transform, and the browser and the SSR render keep the old class
+ * with nothing logged: Vite reports its update, Bamboo reports a fresh extraction, and the
+ * stylesheet does gain the new rule. Only a restart applied the edit.
+ *
+ * The consumer imports a second value from the same module on purpose. A consumer that folds
+ * *nothing but* recipe calls has its import erased, and an erased import is not a static one,
+ * so Vite hard-invalidates it and the bug hides — which is why a minimal reproduction of it
+ * does not reproduce it.
+ */
+describe('vite plugin, real dev server', () => {
+  const recipe = join(cwd, 'src/__hmr-recipe.tsx')
+  const consumer = join(cwd, 'src/__hmr-consumer.tsx')
+
+  const writeRecipe = (color: 'red600' | 'blue600') =>
+    writeFileSync(
+      recipe,
+      `import { css, cva } from '../styled-system/css'
+       export const navLink = cva({
+         base: { display: 'flex' },
+         variants: { active: { true: { color: '${color}' }, false: { color: 'gray500' } } },
+       })
+       export const heading = css({ fontWeight: 'bold' })
+      `,
+    )
+
+  afterEach(() => {
+    rmSync(recipe, { force: true })
+    rmSync(consumer, { force: true })
+  })
+
+  test('a recipe edit reaches the module that compiled a call to it', async () => {
+    writeRecipe('red600')
+    writeFileSync(
+      consumer,
+      `import { heading, navLink } from './__hmr-recipe'
+       export const title = heading
+       export const link = (active: boolean) => navLink({ active })
+      `,
+    )
+
+    const server = await createServer({
+      root: cwd,
+      configFile: false,
+      logLevel: 'silent',
+      css: { postcss: { plugins: [] } },
+      plugins: [bamboocss({ cwd, reportSummary: false })],
+      // A port of its own, so a stray dev server on Vite's default cannot make this hang. A
+      // conflict here is logged and otherwise harmless: nothing below needs the socket.
+      server: { middlewareMode: true, hmr: { port: 24788 } },
+    })
+
+    /**
+     * Both environments, because the report was against server-rendered markup and the client
+     * and SSR module graphs are invalidated separately.
+     */
+    const environments = ['client', 'ssr'] as const
+    const codeOf = async (environment: (typeof environments)[number]) =>
+      (await server.environments[environment].transformRequest('/src/__hmr-consumer.tsx'))?.code ?? ''
+
+    try {
+      for (const environment of environments) {
+        expect(await codeOf(environment), environment).toContain('c_red600')
+      }
+
+      writeRecipe('blue600')
+      // The watcher's own event, so the whole of Vite's update pipeline runs rather than the
+      // one hook this is about. It is dispatched asynchronously and is not awaitable, hence
+      // the poll — which cannot mask the defect: a stale read just polls again, and the
+      // invalidation this tests is not something a read can consume.
+      server.watcher.emit('change', recipe)
+
+      for (const environment of environments) {
+        const deadline = Date.now() + 10_000
+        let code = ''
+        do {
+          code = await codeOf(environment)
+        } while (!code.includes('c_blue600') && Date.now() < deadline)
+
+        expect(code, `${environment}: the recipe edit never reached the module that calls it`).toContain('c_blue600')
+        expect(code, environment).not.toContain('c_red600')
+      }
+    } finally {
+      await server.close()
+    }
   }, 120_000)
 })
