@@ -1,5 +1,5 @@
 ---
-'@bamboocss/vite': major
+'@bamboocss/vite': minor
 ---
 
 Replace `renameCssAsset` with `pruneCss`. **Breaking:** `renameCssAsset` is removed;
