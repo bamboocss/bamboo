@@ -76,6 +76,25 @@ describe('plugin contract', () => {
     expect(() => plugins({ maxRecipeStates: 1 })).not.toThrow()
   })
 
+  /**
+   * The option `pruneCss` replaced, rejected rather than ignored.
+   *
+   * Vite loads `vite.config.ts` through esbuild, which strips types without checking them, so a
+   * removed option reaches this function as an ordinary extra key — no type error unless the
+   * project separately runs `tsc` over its config, which most do not. Ignoring it would switch
+   * pruning and renaming back on for exactly the projects that turned them off on purpose.
+   *
+   * Asserted on `false`, the only value anyone set: `renameCssAsset: true` was the default and
+   * still throws, which is right — the name is gone either way.
+   */
+  test('the removed renameCssAsset option is rejected, not ignored', () => {
+    const removed = { renameCssAsset: false } as unknown as Parameters<typeof bamboocss>[0]
+
+    expect(() => plugins(removed)).toThrow('`renameCssAsset` has been replaced by `pruneCss`')
+    expect(() => plugins({ pruneCss: false })).not.toThrow()
+    expect(() => plugins({})).not.toThrow()
+  })
+
   test('the compiler cannot be disabled', async () => {
     const plugin = plugins().fold
     const hook = plugin.buildStart

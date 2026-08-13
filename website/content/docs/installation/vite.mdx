@@ -177,16 +177,28 @@ export const title = 'fs_lg fw_bold'
 | `reportSkipped`   | `false` | Report every call site the compiler rejected, and why, per file. |
 | `configPath`      | –       | Path to `bamboo.config.ts`, resolved the same way as the CLI.    |
 | `cwd`             | –       | Directory the config is resolved from.                           |
-| `renameCssAsset`  | `true`  | Name the stylesheet after its own pruned bytes. See below.       |
+| `pruneCss`        | `true`  | Remove rules for atoms no compiled module can emit. See below.   |
 
-`renameCssAsset` exists because `[hash]` is expanded before Bamboo prunes unreachable rules, so the name Vite assigns
-describes the stylesheet as it was _before_ pruning. Renaming it afterwards closes that: without it, a change to
-reachability alone — which is what upgrading Bamboo is — can leave identical source CSS under an identical name with
-different content, and a CDN holding that key serves the old stylesheet past the deploy.
+`pruneCss` drops every rule the source graph produced that nothing in the bundle can reach. It applies to builds only —
+the dev server never prunes. Turning it off ships the whole extracted stylesheet: larger, and never wrong _by pruning_.
+It also stands down the assertion that every compiled class has a rule, since that check exists to catch this pass
+removing too much, so `pruneCss: false` is a true escape hatch — it cannot fail a build over reachability.
 
-Turning it off does not merely skip the rename, it skips the pruning with it. The two are one operation, and shipping a
-larger stylesheet is a better failure than shipping a stale one. Reach for it only when something downstream cannot
-follow a renamed asset, and expect the full extracted stylesheet when you do.
+The pruned stylesheet is also renamed to a hash of its own bytes, and that is deliberately not a setting of its own.
+`[hash]` is expanded before Bamboo prunes, so the name Vite assigned describes the sheet as it was _before_ pruning.
+Leaving that name on pruned bytes is how a stale stylesheet outlives a deploy — a change to reachability alone, which is
+what upgrading Bamboo is, leaves identical source CSS under an identical name with different content, and a CDN holding
+that key keeps serving the old one. So the bytes and the name move together, or neither does.
+
+Reach for `pruneCss: false` if something downstream derives an artifact from the stylesheet's _content_ during
+`generateBundle` before Bamboo runs, or to rule pruning out while diagnosing a missing rule. Subresource integrity is
+the clear case: an `integrity` attribute is a digest of the bytes, so no amount of reference rewriting can carry it
+across an edit, and a browser handed a stale digest refuses the stylesheet outright. Note that this is a hazard of the
+_pruning_, not of the rename — Bamboo rewrites the references it can see, and no rename happens unless the bytes already
+moved.
+
+Where the consumer can run after Bamboo instead — `order: 'post'` listed later, or `writeBundle`/`closeBundle` — prefer
+that and keep the pruning. The build prints one line whenever pruning is off, so it is never off silently.
 
 ### Builds with more than one environment
 

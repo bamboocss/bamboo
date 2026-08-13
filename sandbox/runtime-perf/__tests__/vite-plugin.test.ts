@@ -229,6 +229,73 @@ describe('vite plugin, real build', () => {
     }
   }, 60_000)
 
+  /**
+   * `pruneCss: false` is the whole of the opt-out, and it opts out of both halves.
+   *
+   * The rename is not separately declinable, because pruned bytes under the unpruned sheet's
+   * name is the one combination that ships a stylesheet a CDN will serve stale. So the sheet
+   * keeps every rule the source graph produced *and* the name Vite gave it — which is what a
+   * downstream consumer computing integrity hashes or a precache manifest from the asset
+   * needs, since both are invalidated by a late edit rather than by a late rename.
+   */
+  test('pruneCss: false ships the whole sheet under Vite’s own name', async () => {
+    const entry = join(cwd, 'src/__static-composition-unpruned.tsx')
+    writeFileSync(
+      entry,
+      `
+        import 'virtual:bamboo.css'
+        import { cva } from '../styled-system/css'
+        const badge = cva({ variants: { tone: {
+          a: { width: '[733.111px]' },
+          b: { width: '[733.222px]' },
+        } } })
+        export const className = badge({ tone: 'a' })
+      `,
+    )
+
+    const run = async (pruneCss: boolean) => {
+      const result = (await build({
+        root: cwd,
+        logLevel: 'silent',
+        css: { postcss: { plugins: [] } },
+        plugins: [bamboocss({ cwd, reportSummary: false, pruneCss })],
+        build: {
+          write: false,
+          minify: false,
+          lib: { entry, formats: ['es'], fileName: 'static-composition-unpruned' },
+          rollupOptions: {
+            external: [/^react/],
+            output: { assetFileNames: 'assets/[name]-[hash][extname]' },
+          },
+        },
+      })) as Rollup.RollupOutput[]
+      const asset = result[0]!.output.find((output) => output.type === 'asset' && output.fileName.endsWith('.css'))
+      if (!asset) throw new Error('expected a CSS asset')
+      return { fileName: asset.fileName, source: String(asset.source) }
+    }
+
+    try {
+      const pruned = await run(true)
+      const whole = await run(false)
+
+      // The selected variant is in both; only the unselected one distinguishes them.
+      expect(pruned.source).toContain('733.111px')
+      expect(pruned.source, 'the variant nothing selects').not.toContain('733.222px')
+      expect(whole.source).toContain('733.111px')
+      expect(whole.source, 'nothing is removed when pruning is off').toContain('733.222px')
+
+      // Both halves declined together. Asserted as "the pruned name is the unpruned one plus a
+      // segment" rather than merely "no `.b-` segment": the two runs feed identical pre-prune
+      // CSS to the same Rollup, so Vite's own name is identical across them, and stripping the
+      // segment has to land back on it. The weaker form would still pass if the unpruned run
+      // had emitted some entirely different asset.
+      expect(pruned.fileName).toMatch(/\.b-[^.]+\.css$/)
+      expect(pruned.fileName.replace(/\.b-[^.]+\.css$/, '.css'), 'the rename goes with the prune').toBe(whole.fileName)
+    } finally {
+      rmSync(entry, { force: true })
+    }
+  }, 60_000)
+
   test('late CSS asset naming updates HTML and manifest references', async () => {
     const html = join(cwd, '__static-composition-index.html')
     const entry = join(cwd, 'src/__static-composition-html.tsx')

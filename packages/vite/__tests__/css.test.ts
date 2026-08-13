@@ -2,7 +2,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { esc } from '@bamboocss/shared'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import { asError, bamboocssCss, optimizeStaticCssAssets, VIRTUAL_CSS_ID } from '../src/css'
 import { createStaticCompilationSession } from '../src/static-session'
 
@@ -192,22 +192,6 @@ describe('late CSS asset renaming', () => {
     expect(entry.referencedFiles).toEqual([renamedName(bundle)])
   })
 
-  // Pruning and renaming are one operation. Pruned bytes under a name describing the unpruned
-  // ones is how a stale stylesheet outlives a deploy: a change to reachability alone leaves
-  // identical source CSS under an identical name with different content, and a CDN keeps
-  // serving the old one. Shipping a larger sheet is the better failure.
-  test('does not prune either when renaming is unavailable', () => {
-    const { bundle, entry } = bundleWith(chunk())
-
-    optimizeStaticCssAssets(bundle as never, sessionWithPruning(), { rename: false })
-
-    const asset = bundle[CSS_NAME] as { source: string; fileName: string }
-    expect(asset.fileName).toBe(CSS_NAME)
-    expect(String(asset.source)).toContain('345.6789px')
-    expect(String(asset.source)).toContain('--made-with-bamboo')
-    expect(entry.code).toContain(CSS_NAME)
-  })
-
   test('leaves the asset name alone when pruning changed nothing', () => {
     const { bundle } = bundleWith(chunk())
 
@@ -217,12 +201,18 @@ describe('late CSS asset renaming', () => {
   })
 
   /**
-   * `prune: false` is what a build environment that is not the last one of its run passes,
-   * since the environments still to come can each add to reachability.
+   * `prune: false` is what `pruneCss: false` passes, and what a build environment that is not
+   * the last one of its run passes, since the environments still to come can each add to
+   * reachability.
    *
    * Byte-identical rather than reprinted through postcss with removal disabled: the rename is
    * driven by the bytes changing, so a reprint that only moved whitespace would give the
    * stylesheet a new content-hashed name for no change in what it contains.
+   *
+   * This is also the only way to decline the rename, and that is the point. Pruned bytes under
+   * the unpruned sheet's name is how a stale stylesheet outlives a deploy, so a caller that
+   * cannot accept a renamed asset has to give up the pruning too — there is no longer an
+   * argument that asks for the unsafe half.
    */
   test('leaves the sheet untouched, byte for byte, when pruning is held back', () => {
     const { bundle, entry } = bundleWith(chunk())
@@ -235,6 +225,79 @@ describe('late CSS asset renaming', () => {
     expect(entry.code).toContain(CSS_NAME)
     // Reported so the caller can say the sheet was seen and deliberately left whole.
     expect(result.sheets).toBe(1)
+  })
+})
+
+/**
+ * Pruning never goes off in silence.
+ *
+ * It is the difference between the stylesheet a project extracted and the one it ships, and
+ * there are two ways for it not to happen — the user asked, or an environment of this run has
+ * not been compiled yet. Both print, and the docs promise they do. Nothing asserted that until
+ * now: swapping the two branches, or deleting either, broke no test.
+ *
+ * Driven through the real `generateBundle` hook rather than `optimizeStaticCssAssets`, because
+ * the branch under test is the caller's, not the helper's.
+ */
+describe('saying why the stylesheet was not pruned', () => {
+  const sheet =
+    `@layer reset, base, tokens, recipes, utilities;` +
+    `@layer utilities{.h_\\[345\\.6789px\\]{height:345.6789px}}` +
+    `:root{--made-with-bamboo:🌱}`
+
+  const generate = async (options: { pruneCss?: boolean; pending?: string[] }) => {
+    const session = createStaticCompilationSession()
+    session.prunableClasses.add(esc('h_[345.6789px]'))
+    if (options.pending) {
+      session.expectedEnvironments = new Set(['client', ...options.pending])
+      session.startedEnvironments.add('client')
+    }
+
+    const plugin = bamboocssCss({ cwd, session, pruneCss: options.pruneCss })
+    const handler = hookOf(plugin.generateBundle)!
+    const bundle = { 'a.css': { type: 'asset', fileName: 'a.css', names: [], source: sheet } }
+
+    const lines: string[] = []
+    const spy = vi.spyOn(console, 'log').mockImplementation((...args) => void lines.push(args.join(' ')))
+    try {
+      await handler.call({ environment: { name: 'client' } } as never, {} as never, bundle as never, {} as never)
+    } finally {
+      spy.mockRestore()
+    }
+    return { lines: lines.join('\n'), source: String(bundle['a.css']!.source) }
+  }
+
+  test('says so when the user turned it off', async () => {
+    const { lines, source } = await generate({ pruneCss: false })
+
+    expect(lines).toContain('pruneCss: false')
+    expect(source, 'nothing removed').toContain('345.6789px')
+  })
+
+  test('says which environment it is waiting on', async () => {
+    const { lines, source } = await generate({ pending: ['ssr'] })
+
+    expect(lines).toContain('ssr')
+    expect(lines).toContain('not been compiled')
+    expect(source, 'nothing removed').toContain('345.6789px')
+  })
+
+  /**
+   * The user's own setting wins the explanation. Blaming an uncompiled environment for a
+   * choice they made in their config sends them to debug the wrong thing entirely.
+   */
+  test('attributes it to the setting rather than the environment when both apply', async () => {
+    const { lines } = await generate({ pruneCss: false, pending: ['ssr'] })
+
+    expect(lines).toContain('pruneCss: false')
+    expect(lines).not.toContain('not been compiled')
+  })
+
+  test('says nothing when it did prune', async () => {
+    const { lines, source } = await generate({})
+
+    expect(lines).not.toContain('pruning')
+    expect(source, 'the unreachable atom went').not.toContain('345.6789px')
   })
 })
 

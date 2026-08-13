@@ -37,21 +37,32 @@ export interface BambooVitePluginOptions {
    */
   maxRecipeStates?: number
   /**
-   * Give the pruned stylesheet a final name derived from its own bytes.
+   * Remove rules for atoms no compiled module can emit. Builds only; dev never prunes.
    *
-   * Rollup and Rolldown both expand `[hash]` before `generateBundle`, so pruning after it can
-   * leave two different reachable subsets under one CDN key. Renaming the pruned stylesheet to
-   * a hash of its own bytes closes that.
+   * Off ships the whole extracted stylesheet: every rule the source graph produced, including
+   * ones nothing reaches. Larger, and never wrong *by pruning* — it also stands down the
+   * assertion that every compiled class has a rule, since that check exists to catch this pass
+   * removing too much. So this is a true escape hatch: it cannot fail a build over reachability.
    *
-   * Turning it off does not merely skip the rename — it skips the pruning with it. The two are
-   * one operation: pruned bytes under a name describing the unpruned ones is how a stale
-   * stylesheet outlives a deploy, which is worse than shipping a larger sheet. Reach for this
-   * only when something downstream cannot follow a renamed asset, and expect the full
-   * extracted stylesheet when you do.
+   * The pruned sheet is also renamed to a hash of its own bytes, and that is not a separate
+   * setting because it cannot safely be one. Rollup and Rolldown expand `[hash]` before
+   * `generateBundle`, where pruning has to run, so the name Vite assigned describes the sheet
+   * as it was *before* pruning. Leaving that name on pruned bytes is how a stale stylesheet
+   * outlives a deploy — a change to reachability alone, which is what upgrading Bamboo is,
+   * leaves identical source CSS under an identical name with different content, and a CDN
+   * holding that key keeps serving the old one. So the bytes and the name move together or
+   * neither does.
+   *
+   * Reach for this if something downstream derives an artifact from the stylesheet's *content*
+   * during `generateBundle` before Bamboo runs — subresource integrity is the clear case, since
+   * an `integrity` attribute is a digest of the bytes and no amount of reference rewriting can
+   * carry it across an edit — or to rule pruning out while diagnosing a missing rule. Where the
+   * consumer can be moved after Bamboo instead (`order: 'post'`, `writeBundle`, `closeBundle`),
+   * do that and keep the pruning.
    *
    * @default true
    */
-  renameCssAsset?: boolean
+  pruneCss?: boolean
 }
 
 const DEFAULT_EXTENSIONS = /\.(?:[cm]?[jt]sx?)$/
@@ -121,17 +132,25 @@ const formatSkipped = (id: string, skipped: SkippedCall[]) => {
  * with no matching rule.
  */
 export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
-  const {
-    configPath,
-    cwd,
-    reportSkipped = false,
-    reportSummary = true,
-    maxRecipeStates,
-    renameCssAsset = true,
-  } = options
+  const { configPath, cwd, reportSkipped = false, reportSummary = true, maxRecipeStates, pruneCss = true } = options
 
   if (maxRecipeStates !== undefined && (!Number.isSafeInteger(maxRecipeStates) || maxRecipeStates < 1)) {
     throw new Error('bamboocss: `maxRecipeStates` must be a positive safe integer.')
+  }
+
+  // Thrown rather than ignored, because ignoring it silently restores the behaviour the
+  // setting existed to decline. Vite loads `vite.config.ts` through esbuild, which strips
+  // types without checking them, so a removed option is not a type error to anyone who does
+  // not separately run `tsc` over their config — it is a key that stops doing anything. A
+  // project that set this because a renamed asset breaks something downstream would have
+  // pruning *and* renaming quietly switched back on by upgrading.
+  if ('renameCssAsset' in options) {
+    throw new Error(
+      'bamboocss: `renameCssAsset` has been replaced by `pruneCss`. Use `pruneCss: false` for what ' +
+        '`renameCssAsset: false` did — it always disabled the pruning as well, since pruned bytes under the ' +
+        "unpruned sheet's name is what lets a CDN serve a stale stylesheet. The new name says which of the two " +
+        'it is really about.',
+    )
   }
 
   /** Totals across the build, for the summary. */
@@ -463,7 +482,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
             `environment has been compiled. This build did not say how many there would be: it called ` +
             `\`builder.build(environment)\` directly. Run it through \`vite build\`, call \`builder.buildApp()\`, or ` +
             `set \`builder: {}\` in the Vite config so the environments are known before the first one builds. ` +
-            `\`bamboocss({ renameCssAsset: false })\` also turns pruning off entirely.`,
+            `\`bamboocss({ pruneCss: false })\` also turns pruning off entirely.`,
         )
       }
 
@@ -529,5 +548,5 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
 
   // The css plugin first: it owns the extraction the compiler's context reads from, and Vite
   // preserves array order within one `enforce` bucket.
-  return [bamboocssCss({ configPath, cwd, session: staticSession, renameCssAsset }), compiler]
+  return [bamboocssCss({ configPath, cwd, session: staticSession, pruneCss }), compiler]
 }

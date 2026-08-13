@@ -148,18 +148,23 @@ const carriesGeneratedCss = (output: Rollup.OutputBundle[string]): output is Rol
   output.type === 'asset' && output.fileName.endsWith('.css')
 
 /**
- * Prune and rename compiler-owned CSS, then give changed assets a hash of their final bytes.
+ * Prune compiler-owned CSS, then give any sheet whose bytes changed a hash of those bytes.
  *
  * Rollup has already expanded `[hash]` when `generateBundle` runs. Mutating only `source`
  * would therefore leave two different reachable subsets under one CDN key. The extra final
  * hash is not cosmetic: it makes late graph reachability cache-safe.
+ *
+ * Renaming is therefore not a choice this takes. Pruned bytes under the unpruned sheet's name
+ * is the one outcome that must never be reachable, and a sheet nothing was removed from keeps
+ * its name because its bytes are unchanged — so "rename" is a consequence of "the bytes moved",
+ * not a second option. `prune` is the only knob.
  */
 export const optimizeStaticCssAssets = (
   bundle: Rollup.OutputBundle,
   session: StaticCompilationSession,
-  options: { rename?: boolean; prune?: boolean; sourcemap?: StaticCompilationSession['sourcemap'] } = {},
+  options: { prune?: boolean; sourcemap?: StaticCompilationSession['sourcemap'] } = {},
 ) => {
-  const { rename = true, prune = true, sourcemap = session.sourcemap } = options
+  const { prune = true, sourcemap = session.sourcemap } = options
   /** Assets in this bundle that carry the generated stylesheet, pruned or not. */
   let sheets = 0
 
@@ -178,20 +183,18 @@ export const optimizeStaticCssAssets = (
     output.source = optimized
     if (optimized === source) continue
 
-    // Renaming and pruning are one operation, never half of one. `[hash]` is expanded before
-    // this runs, so pruned bytes under the original name is the worst outcome available: a
-    // change to *reachability alone* — which is what a Bamboo upgrade is — leaves identical
-    // source CSS under an identical name with different content, and a CDN holding that key
-    // serves the old stylesheet past the deploy. One user hit that twice and worked around it
-    // by versioning the filename themselves. So when the name cannot move, the bytes do not
-    // either.
-    if (!rename) {
-      output.source = source
-      continue
-    }
-
+    // Unconditional from here. `[hash]` is expanded before this runs, so pruned bytes under
+    // the original name is the worst outcome available: a change to *reachability alone* —
+    // which is what a Bamboo upgrade is — leaves identical source CSS under an identical name
+    // with different content, and a CDN holding that key serves the old stylesheet past the
+    // deploy. One user hit that twice and worked around it by versioning the filename
+    // themselves. A caller that cannot accept the rename declines the prune instead, above.
+    // No "did the name actually change" guard, deliberately. `carriesGeneratedCss` has already
+    // established the `.css` ending and `toHash` never returns empty, so the replacement always
+    // lengthens the name — such a guard would be dead, and dead in the one place where becoming
+    // live would ship the unsafe state: `source` is assigned above, so skipping the rename here
+    // is exactly pruned bytes under the unpruned name.
     const nextName = output.fileName.replace(/\.css$/, `.b-${toHash(optimized)}.css`)
-    if (nextName === output.fileName) continue
     if (bundle[nextName] && bundle[nextName] !== output) {
       throw new Error(`bamboocss: final CSS asset name collision at ${JSON.stringify(nextName)}.`)
     }
@@ -214,8 +217,8 @@ interface BambooCssPluginOptions {
   cwd?: string
   /** Internal state supplied by `bamboocss()`; the CSS emitter is not a standalone mode. */
   session: StaticCompilationSession
-  /** See `BambooVitePluginOptions.renameCssAsset`. @default true */
-  renameCssAsset?: boolean
+  /** See `BambooVitePluginOptions.pruneCss`. @default true */
+  pruneCss?: boolean
 }
 
 /**
@@ -232,7 +235,7 @@ interface BambooCssPluginOptions {
  * process just wrote, which is a race on any watch rebuild.
  */
 export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
-  const { configPath, cwd, session, renameCssAsset = true } = options
+  const { configPath, cwd, session, pruneCss = true } = options
 
   /**
    * Environments whose `load` served the virtual stylesheet.
@@ -444,22 +447,26 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
          * link the pruned copy: one project lost 39% of its atoms that way, presenting as
          * rarely-used classes such as `md:{display:inline-block}` silently not applying.
          *
-         * So the full extracted stylesheet ships instead, exactly as `renameCssAsset: false`
-         * already does. Being the last environment is not the common case — frameworks build
-         * the client first — but it is the only one where the answer is knowable, and a
-         * framework that builds its server bundle first does get pruned output.
+         * So the full extracted stylesheet ships instead, which is what `pruneCss: false` asks
+         * for by hand. Being the last environment is not the common case — frameworks build the
+         * client first — but it is the only one where the answer is knowable, and a framework
+         * that builds its server bundle first does get pruned output.
          */
         const pending = remainingEnvironments(session)
 
         const { sheets } = optimizeStaticCssAssets(bundle, session, {
-          rename: renameCssAsset,
-          prune: pending.length === 0,
+          prune: pruneCss && pending.length === 0,
           // Per environment rather than from the session, which one `configResolved` per
           // environment leaves holding whichever resolved last.
           sourcemap: environment?.config?.build?.sourcemap,
         })
 
-        if (sheets && pending.length) {
+        // Said out loud, both ways. Pruning is the difference between the sheet a project
+        // measures and the one it extracted, and it used to go missing in silence — a build
+        // that quietly stopped pruning looked exactly like one that had nothing to prune.
+        if (sheets && !pruneCss) {
+          logger.info('vite', 'Reachability pruning is off (`pruneCss: false`). The full extracted stylesheet ships.')
+        } else if (sheets && pending.length) {
           // Named rather than counted, and phrased as "not compiled" rather than "builds
           // later": an environment this run declares but never builds also lands here, and
           // saying it comes next would be wrong about the one case a reader cannot check.
