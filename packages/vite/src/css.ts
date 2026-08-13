@@ -1,3 +1,4 @@
+import { findConfig, getConfigDependencies } from '@bamboocss/config'
 import { Builder } from '@bamboocss/node'
 import { logger } from '@bamboocss/logger'
 import { esc, toHash, truncateList } from '@bamboocss/shared'
@@ -343,6 +344,45 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
     configResolved(config) {
       command = config.command
       session.sourcemap = config.build.sourcemap
+
+      /**
+       * Tell Vite that `bamboo.config.ts` is a config file, so editing one restarts the server.
+       *
+       * Tokens live there, and they are what a designer iterates on most — "restart the dev
+       * server to see a colour change" is the wrong instruction for the file most likely to be
+       * edited all afternoon. Nothing watched it: `watch` is the CLI's own watcher, and a
+       * project running `vite dev` never reaches it.
+       *
+       * A restart rather than re-emitting the stylesheet, because this plugin and the compiler
+       * hold *separate* contexts and only this one reloads its config. A token *value* edit
+       * came out right on the next source change, and an edit that changes what compiles —
+       * adding a token, a condition, a utility — left the compiler naming classes from the old
+       * config against a sheet emitted from the new one. Half-updated is worse than stale.
+       *
+       * Through Vite's own list rather than a watcher of ours. Vite adds these paths to the
+       * files it watches, which is what reaches a config *outside* `root` — a monorepo with one
+       * config above `apps/web`, or a preset resolved into `node_modules`, neither of which the
+       * project watcher covers. It also means the restart is Vite's, with its own concurrency
+       * guard and its own error reporting, rather than a second implementation of both.
+       *
+       * The config's own import graph is resolved the way `Builder` resolves it, minus the
+       * tsconfig paths it has not loaded yet at this point. `dependencies` globs are not
+       * expanded here: they are declared as an escape hatch for a *config reload*, and turning
+       * every file matching one into a full server restart is not what a project asking for
+       * that meant.
+       */
+      // Scoped rather than returned early: everything below this runs in a build, and the
+      // environment accounting it sets up is what keeps a two-environment build from pruning
+      // a stylesheet the second one still contributes to.
+      if (config.command === 'serve') {
+        try {
+          const configFile = findConfig({ cwd: cwd ?? config.root, file: configPath })
+          const { deps } = getConfigDependencies(configFile)
+          config.configFileDependencies.push(...deps)
+        } catch {
+          // No config to watch. `load` reports that properly, with the message the CLI uses.
+        }
+      }
 
       // `builder` is defined only when the run drives Vite's environment builder — `vite build
       // --app`, or any framework that sets it, which is how react-router, Nuxt and SvelteKit

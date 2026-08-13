@@ -366,3 +366,41 @@ describe('marking a class used', () => {
     expect(markedBy('--size_sizes.3 d_flex')).toEqual(['\\--size_sizes\\.3', 'd_flex'])
   })
 })
+
+/**
+ * A config edit has to reach a running dev server.
+ *
+ * Tokens live in `bamboo.config.ts`, and they are what a designer iterates on most — so
+ * "restart the dev server to see a colour change" is the wrong instruction for the one file most
+ * likely to be edited all afternoon. Nothing watched it: `watch` is the CLI's own watcher, and a
+ * project running `vite dev` never reaches it.
+ *
+ * Declared through Vite's own config-file list rather than a watcher of ours, which is what
+ * reaches a config *outside* `root` — a monorepo with one config above `apps/web`, or a preset
+ * in `node_modules` — and what makes the restart Vite's, with its concurrency guard and its
+ * error reporting rather than a second copy of both.
+ *
+ * A restart rather than re-emitting the sheet: this plugin and the compiler hold separate
+ * contexts and only this one reloads its config, so an edit that changes what compiles left the
+ * compiler naming classes from the old config against a sheet emitted from the new one.
+ */
+describe('the bamboo config in dev', () => {
+  const resolvedConfig = (command: 'build' | 'serve') => {
+    const plugin = bamboocssCss({ cwd, session: createStaticCompilationSession() })
+    const config = { command, root: cwd, build: { sourcemap: false }, configFileDependencies: [] as string[] }
+    hookOf(plugin.configResolved)?.call({} as never, config as never)
+    return config
+  }
+
+  test('is declared to Vite as a config file, with what it imports', () => {
+    const { configFileDependencies } = resolvedConfig('serve')
+
+    expect(configFileDependencies).toContain(join(cwd, 'bamboo.config.ts'))
+    // The import graph, not only the entry: a preset edit has to restart the server too.
+    expect(configFileDependencies).toContain(join(cwd, 'preset.ts'))
+  })
+
+  test('is not declared in a build, where nothing restarts', () => {
+    expect(resolvedConfig('build').configFileDependencies).toEqual([])
+  })
+})

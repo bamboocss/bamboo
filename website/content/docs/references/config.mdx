@@ -411,6 +411,10 @@ Explicit list of config related files that should trigger a context reload on ch
 
 Whether to watch for changes and regenerate the css.
 
+This is the CLI's own watcher — `bamboo --watch`. A bundler integration does not read it and does not need it:
+`@bamboocss/vite` re-extracts as you edit source, and declares your config to Vite as a config file, so editing it — or
+a preset it imports — restarts the dev server.
+
 ### poll
 
 **Type**: `boolean`

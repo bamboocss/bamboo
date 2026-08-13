@@ -134,7 +134,10 @@ That is the whole setup – no `postcss.config.cjs` entry for Bamboo, and no fil
 the virtual module emits its own. You still need PostCSS for anything else you run through it, autoprefixer included.
 
 In development the stylesheet is served from memory and hot-replaced in place, so editing a style repaints without a
-reload or a loss of component state. In a production build it is hashed into the asset graph like any other CSS.
+reload or a loss of component state. Editing `bamboo.config.ts`, or a preset it imports, restarts the server instead —
+Bamboo declares it to Vite as a config file. A config edit can change what compiles and not only what a value resolves
+to, so everything is rebuilt rather than half of it. In a production build the stylesheet is hashed into the asset graph
+like any other CSS.
 
 > **Note:** Feel free to remove `src/App.css` file as we don't need it anymore, and make sure to remove the import from
 > the `src/App.tsx` file.
