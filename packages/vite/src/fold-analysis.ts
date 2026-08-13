@@ -3,6 +3,114 @@ import { type SourceFile, VariableDeclarationKind } from 'ts-morph'
 import { type BinaryExpression, type ConditionalExpression, type Expression, Node, SyntaxKind } from 'ts-morph'
 
 /**
+ * Nodes that *compose* a value out of their children rather than computing one.
+ *
+ * The boundary of the walk below, and the whole of its precision. Climbing through these
+ * keeps a value's provenance: `'red.300'` inside `{ color: 'red.300' }` inside a default is
+ * still the default's. Anything else — a call, a function body, a JSX element — produces its
+ * value by being evaluated, so what is written inside it is an argument to that evaluation
+ * and not the enclosing default's value.
+ *
+ * Without the boundary, `({ cls = css({ color: 'red.300' }) }) => cls` is rejected: the call's
+ * own literal argument is syntactically inside a default, so an unbounded walk calls it one.
+ * That is correct code, and rejecting it fails the build.
+ */
+const composesValue = (node: Node): boolean =>
+  Node.isObjectLiteralExpression(node) ||
+  Node.isArrayLiteralExpression(node) ||
+  Node.isPropertyAssignment(node) ||
+  Node.isShorthandPropertyAssignment(node) ||
+  Node.isSpreadAssignment(node) ||
+  Node.isSpreadElement(node) ||
+  Node.isAsExpression(node) ||
+  Node.isParenthesizedExpression(node) ||
+  Node.isNonNullExpression(node) ||
+  Node.isTypeAssertion(node) ||
+  Node.isSatisfiesExpression(node)
+
+/** Is `inner` written within `outer`? Positions rather than a walk, so it is O(1). */
+const contains = (outer: Node, inner: Node): boolean =>
+  outer.getSourceFile() === inner.getSourceFile() &&
+  outer.getStart() <= inner.getStart() &&
+  inner.getEnd() <= outer.getEnd()
+
+/**
+ * Did this value come from the `= …` of a destructuring binding?
+ *
+ * `const { tone = 'red.300' } = source` boxes as the literal `'red.300'`: the extractor's
+ * `maybeDefinitionValue` tests for an initializer first and returns the boxed default, never
+ * reaching the branch that would read `source`. So the default is reported as the value whether
+ * or not it is the one that applies.
+ *
+ * For extraction that is merely optimistic, and deliberately so: a CLI or PostCSS build ships a
+ * runtime `css()`, where the default genuinely does apply when the caller omits the key, and it
+ * needs a rule behind it. Folding is where the same resolution turns into a wrong answer,
+ * because the call is *replaced* by that value.
+ *
+ * Stops at the first non-composing parent, so a call written inside a default keeps its own
+ * provenance, and checks that the binding element was reached through its initializer, so
+ * `{ tone = X }`'s name node is not mistaken for its default.
+ */
+const isBindingElementDefault = (node: Node | undefined): boolean => {
+  // A default that is itself a call computes its own value. `{ cls = css({ color: 'red.300' }) }`
+  // is a `css()` call site whose argument is written right there, and folding *it* is correct —
+  // sitting in a default says nothing about what the call returns.
+  //
+  // What this gives up is the other half of that shape: a later `cx(cls, …)` reads `cls`, whose
+  // value the caller may have replaced, and this no longer refuses it. That is the same hole as
+  // before this change rather than a new one, and it is the quiet direction to be wrong in only
+  // because the loud one — failing a build on a call whose argument is a literal — is worse.
+  if (node && Node.isCallExpression(node)) return false
+
+  let current = node
+  while (current) {
+    const parent: Node | undefined = current.getParent()
+    if (!parent) return false
+    if (Node.isBindingElement(parent)) return parent.getInitializer() === current
+    if (!composesValue(parent)) return false
+    current = parent
+  }
+  return false
+}
+
+/**
+ * The same question asked of a whole box, including how it was resolved.
+ *
+ * The node a box reports is not always the one its value came from — an empty `{}` default
+ * boxes against the call rather than against the `{}` — so the resolution stack is consulted
+ * too. A binding element reaches that stack by having been resolved *through*, which is the
+ * signal the extractor itself reads when one of these is a conditional's test.
+ *
+ * Only the entries that are binding elements are examined. Walking up from every other entry
+ * was tried and never once changed a verdict across the default spellings or the sandbox's own
+ * modules, while accounting for most of the parent hops this does — the stack carries nodes
+ * that were never resolved through, including a call's own arguments, so walking from them is
+ * both the expensive half and the one that reaches conclusions it has no basis for.
+ *
+ * A binding element without an initializer carries no default to mistrust: `const { tone } =
+ * source` either resolves from `source` or does not resolve at all.
+ */
+const isFromBindingDefault = (node: BoxNode): boolean => {
+  const own = node.getNode?.()
+  if (isBindingElementDefault(own)) return true
+
+  for (const entry of node.getStack?.() ?? []) {
+    if (!Node.isBindingElement(entry) || !entry.getInitializer()) continue
+
+    // Only when the value was resolved *through* this binding rather than written inside it.
+    // The stack carries a binding element either way, so `({ cls = css({ color: 'red.300' }) })`
+    // — where the call is the default — looks identical to `({ css: p = {} }) => css(p)` until
+    // this asks where the value is written. Inside means the value is the call's own argument
+    // and belongs to it; outside means the binding is what produced it.
+    if (own && contains(entry, own)) continue
+
+    return true
+  }
+
+  return false
+}
+
+/**
  * Statically resolvable means: every box in the tree carries a known value.
  *
  * `unresolvable` is the extractor saying it could not evaluate a node.
@@ -19,6 +127,16 @@ export const isStaticBox = (node: BoxNode | undefined, seen = new Set<BoxNode>()
 
   // `box.fallback` fabricates a shape with no discriminant.
   if (!('type' in node) || node.type == null) return false
+
+  // A destructuring default is a fallback, not a value, and nothing here established that it
+  // is the one that applies. Checked at every level rather than only at the argument, because
+  // provenance belongs to whichever box came from the default: in `css({ color: tone })` the
+  // argument is an ordinary object literal and only the boxed `tone` carries it.
+  //
+  // The extractor already distrusts these in one place — a conditional's test explores both
+  // branches when its value came from a binding element — and this is the same fact applied
+  // where the value is consumed rather than where a branch is chosen.
+  if (isFromBindingDefault(node)) return false
 
   // A value the extractor could not evaluate is not always boxed as `unresolvable`: a
   // template literal with an interpolation comes back as a *literal* carrying

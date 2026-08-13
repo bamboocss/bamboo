@@ -171,3 +171,120 @@ describe('values the extractor resolves to nothing', () => {
     expectUnchanged(withImport('export const f = (x) => css({ width: `${x}px` })'))
   })
 })
+
+/**
+ * A destructuring default is a fallback, not a value.
+ *
+ * `const { tone = 'red.300' } = source` boxes as the literal `'red.300'`: the extractor's
+ * `maybeDefinitionValue` checks for an initializer *first* and returns the boxed default,
+ * never reaching the branch that would read `source`. It is resolved as the value whether or
+ * not it is the one that applies.
+ *
+ * That is only optimistic for extraction, and deliberately so — a CLI or PostCSS build ships a
+ * runtime `css()`, where the default really does apply when the caller omits the key and needs
+ * a rule behind it. Folding *replaces* the call with that value, so the same resolution ships
+ * the wrong styles: a component taking a `css` prop with a default returned the default's
+ * classes no matter what its caller passed, silently, with the build green and no skip recorded
+ * for the survivor check to catch.
+ */
+describe('destructuring defaults', () => {
+  test('a parameter pattern default is not the caller value', () => {
+    expectUnchanged(withImport(`export const A = ({ css: cssProp = { color: 'red.300' } }) => css(cssProp)`))
+  })
+
+  test('an empty default is not the caller value either', () => {
+    // The spelling that made this invisible: folding to `""` reads like "no styles here"
+    // rather than like a caller's value being discarded.
+    expectUnchanged(withImport(`export const B = ({ css: cssProp = {} }) => css(cssProp)`))
+  })
+
+  test('a default reached through a property is not the value', () => {
+    expectUnchanged(withImport(`export const C = ({ tone = 'red.300' }) => css({ color: tone })`))
+  })
+
+  /**
+   * Not a parameter, and still wrong: `source` plainly carries `tone`, two lines up and
+   * statically knowable, and the default won anyway. The rule is not "parameters are dynamic"
+   * but "nothing here established that this default is the one that applies".
+   */
+  test('a local destructure whose source has the key is not the default', () => {
+    expectUnchanged(
+      withImport(
+        `const source = { tone: 'blue.500' }\nconst { tone = 'red.300' } = source\nexport const D = css({ color: tone })`,
+      ),
+    )
+  })
+
+  test('a nested value inside the default is caught too', () => {
+    expectUnchanged(withImport(`export const E = ({ s = { color: 'red.300' } }) => css({ ...s, padding: '2' })`))
+  })
+
+  test('an array pattern default is not the value', () => {
+    expectUnchanged(withImport(`export const H = ([tone = 'red.300']) => css({ color: tone })`))
+  })
+
+  test('a nested pattern default is not the value', () => {
+    expectUnchanged(withImport(`export const I = ({ a: { b = 'red.300' } }) => css({ color: b })`))
+  })
+
+  test('a for-of pattern default is not the value', () => {
+    expectUnchanged(
+      withImport(
+        `export const J = (list) => { for (const { tone = 'red.300' } of list) { return css({ color: tone }) } }`,
+      ),
+    )
+  })
+
+  /**
+   * The other half of the rule, and the expensive half to get wrong.
+   *
+   * A call *written inside* a default is not the default's value being passed around — it is a
+   * call site whose argument is written right there, and folding it is correct. An earlier cut
+   * of this guard walked from the boxed value to any binding-element ancestor, which called
+   * these defaults too and failed the build on code that had always compiled. There is no
+   * runtime fallback, so a false rejection here is not a smaller sheet; it is a build a user
+   * cannot make progress on.
+   */
+  test('a call written inside a default still folds', () => {
+    const result = expectFolded(withImport(`export const K = ({ cls = css({ color: 'red.300' }) }) => cls`))
+    expect(result.code).toContain('"c_red.300"')
+  })
+
+  test('a call inside a local destructure default still folds', () => {
+    const result = expectFolded(
+      withImport(`const o = {}\nconst { cls = css({ color: 'red.300' }) } = o\nexport const M = cls`),
+    )
+    expect(result.code).toContain('"c_red.300"')
+  })
+
+  test('a call inside a default arrow still folds', () => {
+    expectFolded(withImport(`export const L = ({ make = () => css({ color: 'red.300' }) }) => make()`))
+  })
+
+  // A plain parameter default is not a binding element at all, and never resolved this way.
+  test('a plain parameter default still folds', () => {
+    expectFolded(withImport(`export const N = (cls = css({ color: 'red.300' })) => cls`))
+  })
+
+  /**
+   * A destructure with no default is declined, and was before this guard existed — the
+   * extractor's object-pattern branch resolves nothing, so there is no value to fold.
+   *
+   * Pinned because it is the boundary the guard must not move: adding a default to this same
+   * line used to make it *start* folding, to the default, which is the wrong direction for more
+   * information to push a compiler. Both spellings decline now, for different reasons.
+   */
+  test('a destructure with no default is declined, as it always was', () => {
+    expectUnchanged(
+      withImport(`const source = { tone: 'blue.500' }\nconst { tone } = source\nexport const F = css({ color: tone })`),
+    )
+  })
+
+  // Nothing about a defaulted destructure elsewhere in the module may reach an unrelated call.
+  test('an unrelated call beside a defaulted destructure still folds', () => {
+    const result = expectFolded(
+      withImport(`export const P = ({ tone = 'red.300' }) => tone\nexport const Q = css({ color: 'blue.500' })`),
+    )
+    expect(result.code).toContain('"c_blue.500"')
+  })
+})
