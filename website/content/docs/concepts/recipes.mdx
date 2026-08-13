@@ -717,16 +717,21 @@ More information about static CSS can be found [here](/docs/guides/static#genera
 components. Under Vite, both use the same exact StyleSet compiler, reachability pruning, atom pool, and finite dynamic
 selection tables.
 
-|                                                      | Config recipe                         | Inline recipe (`cva`)                                                |
-| ---------------------------------------------------- | ------------------------------------- | -------------------------------------------------------------------- |
-| Can use theme tokens, utilities and conditions       | ✅ yes                                | ✅ yes                                                               |
-| Production CSS follows transformed call reachability | ✅ statically selected values survive | ✅ selected values or every value of a runtime decision axis survive |
-| Can be shared in a preset                            | ✅ yes                                | ❌ no                                                                |
-| Can be imported by another module                    | ✅ yes                                | ✅ yes — see below                                                   |
-| Can be colocated in markup code                      | ❌ defined in config or presets       | ✅ yes                                                               |
-| Emit globally shared declaration atoms with Vite     | ✅ yes                                | ✅ yes                                                               |
-| Emit named rules in a `recipes` layer with Vite      | ❌ no                                 | ❌ no                                                                |
-| Can be merged semantically by analyzable `cx()`      | ✅ yes                                | ✅ yes                                                               |
+|                                                      | Config recipe                          | Inline recipe (`cva`)                                                |
+| ---------------------------------------------------- | -------------------------------------- | -------------------------------------------------------------------- |
+| Can use theme tokens, utilities and conditions       | ✅ yes                                 | ✅ yes                                                               |
+| Production CSS follows transformed call reachability | ✅ statically selected values survive  | ✅ selected values or every value of a runtime decision axis survive |
+| Can be shared in a preset                            | ✅ yes                                 | ❌ no                                                                |
+| Can be imported by another module                    | ✅ yes                                 | ✅ yes — see below                                                   |
+| Can be colocated in markup code                      | ❌ defined in config or presets        | ✅ yes                                                               |
+| Emit globally shared declaration atoms with Vite     | ✅ yes                                 | ✅ yes                                                               |
+| Emit named rules in a `recipes` layer with Vite      | ❌ no                                  | ❌ no                                                                |
+| Can be merged semantically by analyzable `cx()`      | ✅ yes                                 | ✅ yes                                                               |
+| Can accept a runtime variant selection under Vite    | ✅ finite axes become a decision table | ✅ finite axes become a decision table                               |
+| Can use a responsive object as the runtime selection | ❌ put it in the declarations          | ❌ put it in the declarations                                        |
+
+The Vite rows describe the compiler. Extraction-only CLI or PostCSS output retains the generated recipe runtime and its
+named recipe representation.
 
 ### Reading an inline recipe, rather than calling it
 
@@ -746,10 +751,3 @@ badge.raw({ tone: 'loud' }) //  runtime-binding — returns a style object, not 
 
 Each module answers for its own text, so the diagnostic names the file and line of the read that has to change. A module
 that only ever calls the recipe reports nothing, wherever the recipe was declared.
-
-| Can accept a runtime variant selection under Vite | ✅ finite axes become a precompiled decision table | ✅ finite
-axes become a precompiled decision table | | Can use a responsive object as the runtime selection | ❌ put
-responsiveness in the recipe's declarations | ❌ put responsiveness in the recipe's declarations |
-
-These rows describe the Vite compiler. Extraction-only CLI or PostCSS output retains the generated recipe runtime and
-its named recipe representation.

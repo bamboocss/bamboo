@@ -168,6 +168,14 @@ Use the `staticCss` option in the config to pre-generate values for the `colorPa
 
 This is useful when you want to use a color palette that can be changed at runtime (e.g. in Storybook knobs).
 
+<Callout type="warning">
+  Extraction-only. `staticCss` puts the rules in the stylesheet; it does not make a call with a runtime value compile,
+  so the component below is rejected by the Vite compiler as `dynamic`. Under the compiler, declare the choice as a
+  [recipe variant](/docs/concepts/recipes) — its finite states are enumerated at build time — or set
+  `--colors-color-palette-*` from the `style` attribute, which is what a palette chosen from a `<select>` really is. See
+  [dynamic styling](/docs/guides/dynamic-styling).
+</Callout>
+
 > Learn more about [static css generation](/docs/guides/static).
 
 ```tsx

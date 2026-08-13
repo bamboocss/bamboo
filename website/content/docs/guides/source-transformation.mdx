@@ -75,7 +75,10 @@ const className = css({ color: tone })
 ```
 
 Express runtime choices as declared recipe variants, or make a finite choice explicit in source. Use `staticCss` when
-classes are constructed outside Bamboo's analyzable source graph.
+classes are constructed outside Bamboo's analyzable source graph. A value with no finite set of possibilities — a
+progress width, a dragged offset — has no rule a build could emit for it, so it belongs in a CSS variable the compiled
+rule reads, or in the `style` attribute: see
+[dynamic styling](/docs/guides/dynamic-styling#values-that-are-not-a-finite-set).
 
 `css.raw()` deliberately does not compile to a class: it returns a style object. A live use of it fails the strict
 compiler contract because it retains the style runtime.
