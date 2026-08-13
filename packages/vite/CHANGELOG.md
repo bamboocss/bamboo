@@ -1,5 +1,92 @@
 # @bamboocss/vite
 
+## 1.39.0
+
+### Minor Changes
+
+- ae53479: Restart the dev server when `bamboo.config.ts` changes, the way Vite does for its own config.
+
+  Nothing told Vite that file mattered. `watch` is the CLI's own watcher, and a project running `vite dev` never reaches
+  it — so editing a token, which is the thing a designer iterates on most, did nothing until something else happened to
+  touch a source file, and the instruction was to restart the server by hand.
+
+  A restart rather than a re-emitted stylesheet, because the integration holds two contexts — the CSS plugin's
+  `Builder`, which reloads its config, and the compiler's, which does not. A token _value_ edit therefore came out right
+  on the next source change, while an edit that changes what compiles — adding a token, a condition, a utility — left
+  the compiler naming classes from the old config against a sheet emitted from the new one. Half-updated is worse than
+  stale.
+
+  Declared through Vite's own config-file list rather than a watcher of Bamboo's. That list is what reaches a config
+  _outside_ `root` — a monorepo with one config above `apps/web`, or a preset resolved into `node_modules`, neither of
+  which the project watcher covers — and it makes the restart Vite's, with its concurrency guard and its error reporting
+  rather than a second copy of both. The config's import graph is included, so editing a preset restarts too.
+
+### Patch Changes
+
+- 72abce3: Apply an edit to a recipe, or to any module a compiled call reads from, without restarting the dev server.
+
+  The compiler erases an inline `cva`/`sva` declaration and compiles each **call site** into a literal class string, so
+  the class for a recipe lives in the module that calls it. Vite's dev server only _soft_-invalidates a module that
+  statically imports the changed one — it keeps that module's cached transform result and rewrites nothing but the
+  timestamps on its import specifiers — and the class string is inside that cached result. Editing a recipe therefore
+  updated the stylesheet and never the markup: Vite logged its update, Bamboo logged a fresh extraction, the new rule
+  was emitted, and every element kept the class it had before. Only restarting the server applied the edit.
+
+  `css(sharedObject)` across modules failed the same way. It surfaced less often because a consumer that compiles
+  _nothing but_ recipe calls has its import erased, and an erased import is not a static one, so Vite hard-invalidated
+  it and the staleness disappeared — which is also why the smallest reproduction of the bug does not reproduce it.
+
+  The Vite plugin now tracks which modules compiled a value out of which other module, and invalidates those consumers
+  itself when the dependency changes. Builds are unaffected: Rollup already discards a module whose watched dependency
+  changed.
+
+- 2b6a58b: Say what to do with a value that has no finite set of possibilities, and stop describing extraction-only
+  fallbacks as if they applied to the compiler.
+
+  A progress bar's width or a dragged element's offset has no rule a build could emit for it, so it belongs in the
+  `style` attribute — which is smaller than any alternative and needs nothing from Bamboo. Every styling system hands
+  that back to the author eventually; Bamboo's docs did not say so, which left it reading as a gap the reader had missed
+  rather than as the answer.
+
+  The CSS-variable pattern is for the one thing the `style` attribute cannot do, since it sits outside the cascade: a
+  value that has to vary by condition — a dragged width that still collapses on a small screen — or stay overridable by
+  a consumer, which is the one place "a consumer's `css()` wins" otherwise does not hold. The guide now says that, in
+  that order, rather than listing five techniques and leaving the choice to the reader.
+
+  The dynamic-styling guide now opens with which option applies to which kind of value, and the two sections that
+  describe a fallback — `staticCss` pre-generation and "a runtime condition generates the CSS for every branch" — say
+  that they describe the CLI and PostCSS path. Under the Vite compiler both of those calls fail the build instead, which
+  is verified rather than assumed: `css({ color: on ? 'red600' : 'blue600' })` is rejected as `dynamic`, and a recipe
+  variant compiles to a lookup over precompiled class strings.
+
+- 4c66fdb: Say when a Vite project is emitting the stylesheet through PostCSS, which silently ships the style engine.
+
+  `@bamboocss/postcss` emits CSS and nothing else. Under it, `css()` and `cva()` stay runtime calls and the generated
+  style engine goes out in the client bundle — where `@bamboocss/vite` compiles those calls to literal class strings and
+  ships no engine at all. Nothing about the result distinguishes the two: the stylesheet is correct, the app renders,
+  and the engine is the only difference — 20 kB of client JavaScript in one reported app. Bamboo's own React Router
+  guide described the PostCSS setup, so projects reached it by following the docs rather than by choosing it.
+
+  Both entry points now say so. `bamboo init --postcss` warns when the directory already has a Vite config, and the
+  PostCSS plugin warns once per project when it runs in one — suppressed when a Bamboo source compiler is loaded in the
+  same process, so a project that has both installed is not told off for the setup it already has. Pass
+  `{ runtimeStyling: true }` to the plugin where resolving styles at runtime is deliberate.
+
+  A Svelte, Vue or Astro project is the exception and is never warned: `@bamboocss/vite` compiles JavaScript and
+  TypeScript, and their components are templates it leaves alone — moving one onto it would prune every rule only those
+  components reach. The React Router guide now uses `@bamboocss/vite`, and the other Vite-framework guides say which
+  integration they are describing.
+
+- Updated dependencies [4c66fdb]
+- Updated dependencies [4d27ba4]
+  - @bamboocss/node@1.39.0
+  - @bamboocss/types@1.39.0
+  - @bamboocss/core@1.39.0
+  - @bamboocss/config@1.39.0
+  - @bamboocss/logger@1.39.0
+  - @bamboocss/extractor@1.39.0
+  - @bamboocss/shared@1.39.0
+
 ## 1.38.0
 
 ### Minor Changes
