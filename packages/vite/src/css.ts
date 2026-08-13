@@ -1,11 +1,11 @@
 import { Builder } from '@bamboocss/node'
 import { logger } from '@bamboocss/logger'
-import { esc, toHash } from '@bamboocss/shared'
+import { esc, toHash, truncateList } from '@bamboocss/shared'
 import remapping from '@ampproject/remapping'
 import MagicString from 'magic-string'
 import type { Plugin, Rollup, ViteDevServer } from 'vite'
 import { pruneStaticCss } from './prune-static-css'
-import type { StaticCompilationSession } from './static-session'
+import { remainingEnvironments, type StaticCompilationSession } from './static-session'
 
 /**
  * What a project imports to get the stylesheet.
@@ -157,14 +157,22 @@ const carriesGeneratedCss = (output: Rollup.OutputBundle[string]): output is Rol
 export const optimizeStaticCssAssets = (
   bundle: Rollup.OutputBundle,
   session: StaticCompilationSession,
-  options: { rename?: boolean } = {},
+  options: { rename?: boolean; prune?: boolean; sourcemap?: StaticCompilationSession['sourcemap'] } = {},
 ) => {
-  const { rename = true } = options
+  const { rename = true, prune = true, sourcemap = session.sourcemap } = options
+  /** Assets in this bundle that carry the generated stylesheet, pruned or not. */
+  let sheets = 0
 
   for (const output of Object.values(bundle)) {
     if (!carriesGeneratedCss(output)) continue
     const source = typeof output.source === 'string' ? output.source : Buffer.from(output.source).toString()
     if (!source.includes('--made-with-bamboo')) continue
+    sheets++
+
+    // Left byte-identical rather than run through the pass with pruning disabled. That path
+    // still reprints the sheet through postcss, and a differing string is what triggers the
+    // rename below — a new asset name for a stylesheet whose reachable set never changed.
+    if (!prune) continue
 
     const optimized = pruneStaticCss(source, session)
     output.source = optimized
@@ -195,8 +203,10 @@ export const optimizeStaticCssAssets = (
     // the recorded references across, so nothing needs the key to move.
     const previous = output.fileName
     output.fileName = nextName
-    replaceAssetReferences(bundle, previous, nextName, session.sourcemap)
+    replaceAssetReferences(bundle, previous, nextName, sourcemap)
   }
+
+  return { sheets }
 }
 
 interface BambooCssPluginOptions {
@@ -315,9 +325,45 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
     // Both `serve` and `build`: source compilation and virtual CSS use one representation in
     // both commands.
 
+    /**
+     * One instance for every environment of a build, rather than one per environment.
+     *
+     * Vite re-reads the config file once per environment, so a project that lists this plugin
+     * in `vite.config.ts` — every project — got a *fresh* instance per environment, each with
+     * its own compilation session, context and ts-morph project. Nothing an environment
+     * established could then be seen by the next one, which is the premise the reachability
+     * accounting below is built on, and it also meant the whole config load and extraction
+     * happened once per environment.
+     */
+    sharedDuringBuild: true,
+
     configResolved(config) {
       command = config.command
       session.sourcemap = config.build.sourcemap
+
+      // `builder` is defined only when the run drives Vite's environment builder — `vite build
+      // --app`, or any framework that sets it, which is how react-router, Nuxt and SvelteKit
+      // produce a client and an SSR bundle. Absent, exactly one environment is set up and
+      // whatever it reaches is the whole build.
+      //
+      // Read here rather than from the `buildApp` hook alone because a framework builds its
+      // environments from inside its own `buildApp`, and hook order between plugins is not
+      // ours to rely on. This is known before any of that runs.
+      if (config.builder && config.environments) {
+        session.expectedEnvironments = new Set(Object.keys(config.environments))
+      }
+    },
+
+    /**
+     * The definitive environment list, for a run that reaches `builder.buildApp()` without
+     * configuring `builder` — the shape `vite build` itself takes, where exactly one
+     * environment is set up and pruning is therefore safe.
+     */
+    buildApp: {
+      order: 'pre',
+      async handler(builder) {
+        session.expectedEnvironments = new Set(Object.keys(builder.environments))
+      },
     },
 
     resolveId(id) {
@@ -381,7 +427,51 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
     generateBundle: {
       order: 'post',
       handler(_, bundle) {
-        optimizeStaticCssAssets(bundle, session, { rename: renameCssAsset })
+        const environment = (
+          this as {
+            environment?: { name?: string; config?: { build?: { sourcemap?: StaticCompilationSession['sourcemap'] } } }
+          }
+        ).environment
+
+        /**
+         * Every environment of this run has already had its modules compiled.
+         *
+         * Reachability is what pruning removes rules against, and it is only complete once
+         * nothing is left to contribute to it. The stylesheet is emitted and finalized by the
+         * environment that *imports* it, which in an SSR app is the client — and the client
+         * builds first, before the server environment has transformed a single module. Pruning
+         * there deletes every rule for a class only the server graph reaches, and the pages
+         * link the pruned copy: one project lost 39% of its atoms that way, presenting as
+         * rarely-used classes such as `md:{display:inline-block}` silently not applying.
+         *
+         * So the full extracted stylesheet ships instead, exactly as `renameCssAsset: false`
+         * already does. Being the last environment is not the common case — frameworks build
+         * the client first — but it is the only one where the answer is knowable, and a
+         * framework that builds its server bundle first does get pruned output.
+         */
+        const pending = remainingEnvironments(session)
+
+        const { sheets } = optimizeStaticCssAssets(bundle, session, {
+          rename: renameCssAsset,
+          prune: pending.length === 0,
+          // Per environment rather than from the session, which one `configResolved` per
+          // environment leaves holding whichever resolved last.
+          sourcemap: environment?.config?.build?.sourcemap,
+        })
+
+        if (sheets && pending.length) {
+          // Named rather than counted, and phrased as "not compiled" rather than "builds
+          // later": an environment this run declares but never builds also lands here, and
+          // saying it comes next would be wrong about the one case a reader cannot check.
+          logger.info(
+            'vite',
+            `Reachability pruning skipped: the stylesheet is emitted by the ${JSON.stringify(
+              environment?.name ?? 'default',
+            )} environment, and ${truncateList(pending, { unit: 'environment', separator: ', ' })} ` +
+              `${pending.length === 1 ? 'has' : 'have'} not been compiled in this run. The full extracted ` +
+              `stylesheet ships — nothing is missing from it.`,
+          )
+        }
 
         // A stylesheet that vanishes between here and disk is the worst shape a failure takes:
         // the build is green, every class in the markup is real, and nothing is styled. The
@@ -389,7 +479,7 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
         // in the same spirit as the unimported-`virtual:bamboo.css` check, which catches the
         // other way to end up with classes and no rules.
         // Only the environment that served the stylesheet answers for it.
-        if (!servedEnvironments.has((this as { environment?: { name?: string } }).environment?.name ?? 'default')) {
+        if (!servedEnvironments.has(environment?.name ?? 'default')) {
           return
         }
         if (!session.transformedFiles.size) return

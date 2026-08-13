@@ -215,6 +215,27 @@ describe('late CSS asset renaming', () => {
 
     expect(Object.keys(bundle)).toContain(CSS_NAME)
   })
+
+  /**
+   * `prune: false` is what a build environment that is not the last one of its run passes,
+   * since the environments still to come can each add to reachability.
+   *
+   * Byte-identical rather than reprinted through postcss with removal disabled: the rename is
+   * driven by the bytes changing, so a reprint that only moved whitespace would give the
+   * stylesheet a new content-hashed name for no change in what it contains.
+   */
+  test('leaves the sheet untouched, byte for byte, when pruning is held back', () => {
+    const { bundle, entry } = bundleWith(chunk())
+
+    const result = optimizeStaticCssAssets(bundle as never, sessionWithPruning(), { prune: false })
+
+    const asset = bundle[CSS_NAME] as { source: string; fileName: string }
+    expect(asset.source).toBe(prunableSheet())
+    expect(asset.fileName).toBe(CSS_NAME)
+    expect(entry.code).toContain(CSS_NAME)
+    // Reported so the caller can say the sheet was seen and deliberately left whole.
+    expect(result.sheets).toBe(1)
+  })
 })
 
 /**

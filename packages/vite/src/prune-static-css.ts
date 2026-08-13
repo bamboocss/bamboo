@@ -18,7 +18,7 @@ const SENTINEL = '--made-with-bamboo'
  *
  * Stripping backslashes is unambiguous here: a semantic atom name never contains a literal one.
  */
-const bare = (className: string) => className.replaceAll('\\', '')
+export const bare = (className: string) => className.replaceAll('\\', '')
 
 /**
  * Remove source-graph atoms no transformed module can emit.
@@ -85,6 +85,10 @@ export const pruneStaticCss = (
 
             candidate.remove()
             removedAny = true
+            // Recorded so a *later* build environment can tell that a class it has just
+            // compiled was already pruned out of a stylesheet that has been finalized. See
+            // the guard in `plugin.ts`; this pass cannot know about environments at all.
+            session.prunedClasses.add(className)
           })
         }).processSync(rule.selector)
       } catch {

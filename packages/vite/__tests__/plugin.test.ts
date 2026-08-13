@@ -47,6 +47,21 @@ describe('plugin contract', () => {
     expect(plugins().css.apply).toBeUndefined()
   })
 
+  /**
+   * One instance for the whole build, not one per environment.
+   *
+   * Vite re-reads the config file once per environment and calls the plugin factory again, so
+   * without this a project listing `bamboocss()` in `vite.config.ts` — every project — got a
+   * fresh instance per environment: its own compilation session, its own context, its own
+   * ts-morph project. Every cross-environment guarantee here is written against a shared
+   * session, and none of them held. Nothing else can catch the flag going missing, because a
+   * second instance is silently *consistent with itself*.
+   */
+  test('one instance serves every environment of a build', () => {
+    expect(plugins().fold.sharedDuringBuild).toBe(true)
+    expect(plugins().css.sharedDuringBuild).toBe(true)
+  })
+
   test('the css emitter answers only for its own id', () => {
     const { css } = plugins()
     const resolve = css.resolveId as any

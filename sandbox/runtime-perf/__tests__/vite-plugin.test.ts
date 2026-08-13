@@ -5,7 +5,7 @@ import { esc } from '@bamboocss/shared'
 import bamboocss from '@bamboocss/vite'
 import { build, type Rollup } from 'vite'
 import { build as buildVite8, createBuilder } from 'vite8'
-import { afterEach, describe, expect, test } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 
 /**
  * The plugin driven by a real Vite build, rather than by calling its hooks directly.
@@ -596,6 +596,11 @@ describe('vite 8 / rolldown', () => {
  * client build emits it — failed the "not imported" check outright. The reachability sets that
  * pruning consults were emptied by the same reset.
  *
+ * Pruning was the piece that reset left undone, and it is the rest of this block: the
+ * stylesheet is finalized by the environment that imports it, which is not the environment
+ * that finishes last, so reachability was incomplete at exactly the moment it was used to
+ * delete rules.
+ *
  * Driven through `createBuilder` rather than a framework, because the framework is incidental:
  * what matters is two environments sharing one instance, which is the shape react-router,
  * Nuxt and SvelteKit all produce.
@@ -603,48 +608,122 @@ describe('vite 8 / rolldown', () => {
 const envClientEntry = join(cwd, 'src/__env-client.tsx')
 const envSsrEntry = join(cwd, 'src/__env-ssr.tsx')
 
+/**
+ * `builder: {}` is what `vite build --app` sets, and what every framework building more than
+ * one environment configures. It is the signal the plugin reads to know the run has more
+ * environments coming, so the omitting case is a test of its own below.
+ */
+const twoEnvironmentBuilder = (announced: boolean) =>
+  createBuilder({
+    root: cwd,
+    logLevel: 'silent',
+    css: { postcss: { plugins: [] } },
+    plugins: [bamboocss({ cwd, reportSummary: false })],
+    build: { write: false, minify: false, rollupOptions: { external: [/^react/] } },
+    ...(announced ? { builder: {} } : {}),
+    environments: {
+      client: { build: { lib: { entry: envClientEntry, formats: ['es'], fileName: 'env-client' } } },
+      ssr: { build: { ssr: true, lib: { entry: envSsrEntry, formats: ['es'], fileName: 'env-ssr' } } },
+    },
+  })
+
+/** Every asset source both environments emitted, in the order given. */
+const buildBothEnvironments = async (
+  builder: Awaited<ReturnType<typeof createBuilder>>,
+  order: string[] = ['client', 'ssr'],
+) => {
+  const sources: string[] = []
+  for (const name of order) {
+    const built = await builder.build(builder.environments[name]!)
+    for (const bundle of Array.isArray(built) ? built : [built]) {
+      for (const output of (bundle as { output?: unknown[] }).output ?? []) {
+        const asset = output as { source?: unknown }
+        if (typeof asset.source === 'string') sources.push(asset.source)
+      }
+    }
+  }
+  return sources.join('\n')
+}
+
 describe('two build environments, one plugin instance', () => {
+  beforeEach(() => {
+    // The client also declares a recipe variant nothing selects, so a build can be asked
+    // whether pruning ran at all rather than only whether it took too much.
+    writeFileSync(
+      envClientEntry,
+      `import 'virtual:bamboo.css'\n` +
+        `import { css, cva } from '../styled-system/css'\n` +
+        `const box = cva({ variants: { state: { on: { height: '[31.5px]' }, off: { height: '[31.7px]' } } } })\n` +
+        `export const a = css({ width: '[31.1px]' })\n` +
+        `export const b = box({ state: 'on' })\n`,
+    )
+    writeFileSync(
+      envSsrEntry,
+      `import { css } from '../styled-system/css'\nexport const b = css({ md: { display: 'inline-block' }, height: '[31.3px]' })\n`,
+    )
+  })
+
   afterEach(() => {
     rmSync(envClientEntry, { force: true })
     rmSync(envSsrEntry, { force: true })
   })
 
   test('an ssr environment does not have to import the stylesheet', async () => {
-    writeFileSync(
-      envClientEntry,
-      `import 'virtual:bamboo.css'\nimport { css } from '../styled-system/css'\nexport const a = css({ width: '[31.1px]' })\n`,
-    )
-    writeFileSync(
-      envSsrEntry,
-      `import { css } from '../styled-system/css'\nexport const b = css({ width: '[31.3px]' })\n`,
-    )
+    const css = await buildBothEnvironments(await twoEnvironmentBuilder(true))
 
-    const builder = await createBuilder({
-      root: cwd,
-      logLevel: 'silent',
-      css: { postcss: { plugins: [] } },
-      plugins: [bamboocss({ cwd, reportSummary: false })],
-      build: { write: false, minify: false, rollupOptions: { external: [/^react/] } },
-      environments: {
-        client: { build: { lib: { entry: envClientEntry, formats: ['es'], fileName: 'env-client' } } },
-        ssr: { build: { ssr: true, lib: { entry: envSsrEntry, formats: ['es'], fileName: 'env-ssr' } } },
-      },
-    })
-
-    const sources: string[] = []
-    for (const name of ['client', 'ssr']) {
-      const built = await builder.build(builder.environments[name]!)
-      for (const bundle of Array.isArray(built) ? built : [built]) {
-        for (const output of (bundle as { output?: unknown[] }).output ?? []) {
-          const asset = output as { source?: unknown }
-          if (typeof asset.source === 'string') sources.push(asset.source)
-        }
-      }
-    }
-
-    const css = sources.join('\n')
     expect(css).toContain('--made-with-bamboo')
     expect(css).toContain('31.1px')
+  }, 180_000)
+
+  /**
+   * The stylesheet is emitted and pruned by the environment that imports it, and in an SSR app
+   * that is the client — which builds *first*, before the server environment has transformed a
+   * single module. Reachability was therefore incomplete when pruning ran, and every rule for a
+   * class only the server graph reaches was deleted from the one copy the pages link.
+   *
+   * One project lost 39% of its atoms to this. It presented as rarely-used classes silently not
+   * applying, `md:{display:inline-block}` among them — a conditional atom is exactly the kind
+   * only one of the two graphs tends to reach.
+   */
+  test('a class only the later environment reaches keeps its rule', async () => {
+    const css = await buildBothEnvironments(await twoEnvironmentBuilder(true))
+
+    expect(css, 'the client class').toContain('31.1px')
+    expect(css, 'the class only the ssr environment reaches').toContain('31.3px')
+    expect(css, 'the condition only the ssr environment reaches').toContain('inline-block')
+    // The cost of being correct here, asserted rather than implied: nothing is pruned when
+    // the sheet is finalized before the run is, so the unselected variant ships too.
+    expect(css, 'pruning is held back entirely, not selectively').toContain('31.7px')
+  }, 180_000)
+
+  /**
+   * The same two environments with the server bundle built first.
+   *
+   * Reachability is complete by the time the client — which is what imports and finalizes the
+   * stylesheet — reaches `generateBundle`, so pruning goes ahead and is right. This is the
+   * order that keeps both properties at once, and the reason the gate asks "is this the last
+   * environment" rather than "is this a multi-environment build".
+   */
+  test('prunes normally when the environment holding the stylesheet builds last', async () => {
+    const css = await buildBothEnvironments(await twoEnvironmentBuilder(true), ['ssr', 'client'])
+
+    expect(css, 'the client class').toContain('31.1px')
+    expect(css, 'the class only the ssr environment reaches').toContain('31.3px')
+    expect(css, 'the condition only the ssr environment reaches').toContain('inline-block')
+    expect(css, 'the variant nothing selects').not.toContain('31.7px')
+  }, 180_000)
+
+  /**
+   * A run that builds environments itself, without saying how many there are.
+   *
+   * Nothing can tell that first environment it is not the last, so pruning goes ahead and the
+   * class the second one compiles is already gone. Green build, real class names in the markup,
+   * unstyled elements — so the second environment fails the build instead of shipping it.
+   */
+  test('fails loudly when the run never announced its environments', async () => {
+    const builder = await twoEnvironmentBuilder(false)
+
+    await expect(buildBothEnvironments(builder)).rejects.toThrow(/already pruned out of a stylesheet/)
   }, 180_000)
 })
 

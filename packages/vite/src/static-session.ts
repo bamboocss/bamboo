@@ -18,6 +18,24 @@ export interface StaticCompilationSession {
   viewTransitionClasses: Set<string>
   /** Escaped selectors the transformed Rollup graph can actually emit. */
   usedClasses: Set<string>
+  /**
+   * Every environment this run intends to build, when the run says so before building any.
+   *
+   * `undefined` means nothing announced one, which is the single-environment shape: `vite
+   * build` without `builder`, and the `build()` API, each set up exactly one environment.
+   * Reachability is complete the moment that one finishes, so pruning goes ahead.
+   */
+  expectedEnvironments: Set<string> | undefined
+  /** Environments whose `buildStart` has run in the build currently in progress. */
+  startedEnvironments: Set<string>
+  /**
+   * Escape-free class names a completed prune removed from an emitted stylesheet.
+   *
+   * Kept so a later environment can notice that a class it just compiled is already gone from
+   * a sheet that has been finalized. Escape-free because that is the spelling the prune pass
+   * decides on; see `bare` there.
+   */
+  prunedClasses: Set<string>
   markClassUsed(className: string): void
 }
 
@@ -31,6 +49,9 @@ export const createStaticCompilationSession = (): StaticCompilationSession => {
     prunableClasses: new Set(),
     viewTransitionClasses: new Set(),
     usedClasses: new Set(),
+    expectedEnvironments: undefined,
+    startedEnvironments: new Set(),
+    prunedClasses: new Set(),
     markClassUsed(className) {
       // Split on whitespace. A folded call reports one entry per call
       // site, and a call producing several atoms reports them space-joined — every property
@@ -65,6 +86,24 @@ export const createStaticCompilationSession = (): StaticCompilationSession => {
   return session
 }
 
+/**
+ * Environments this run intends to build that have not been compiled yet.
+ *
+ * Empty means everything the run will contribute has been contributed, which is the condition
+ * every whole-run judgement here waits for: pruning the stylesheet against reachability, and
+ * the two guards that ask whether the compiled modules and the extraction graph agree. Each of
+ * those is false about a build in progress and true only about a finished one.
+ *
+ * Empty is also the answer for a single-environment build, where nothing announced an
+ * environment list because there is only ever one — so that path is unchanged.
+ *
+ * An environment a run declares and then never builds leaves this permanently non-empty, and
+ * those judgements are skipped for the run. Every one of them errs towards shipping more CSS
+ * or asserting less, so that is the safe direction to be wrong in.
+ */
+export const remainingEnvironments = (session: StaticCompilationSession): string[] =>
+  [...(session.expectedEnvironments ?? [])].filter((name) => !session.startedEnvironments.has(name))
+
 export const resetStaticCompilationSession = (session: StaticCompilationSession) => {
   session.cssLoaded = false
   session.transformedFiles.clear()
@@ -72,4 +111,9 @@ export const resetStaticCompilationSession = (session: StaticCompilationSession)
   session.prunableClasses.clear()
   session.viewTransitionClasses.clear()
   session.usedClasses.clear()
+  session.startedEnvironments.clear()
+  session.prunedClasses.clear()
+  // `expectedEnvironments` deliberately survives. It describes how the *run* is driven rather
+  // than anything a build produced, and a `vite build --watch` rebuild is the same run: the
+  // hook that announces it fires once, before the first environment builds, and never again.
 }

@@ -188,6 +188,25 @@ Turning it off does not merely skip the rename, it skips the pruning with it. Th
 larger stylesheet is a better failure than shipping a stale one. Reach for it only when something downstream cannot
 follow a renamed asset, and expect the full extracted stylesheet when you do.
 
+### Builds with more than one environment
+
+An SSR framework builds a client bundle and a server bundle, and the stylesheet is emitted and finalized by the one that
+imports it — the client, which finishes before the server environment has compiled anything. Pruning it there would drop
+every rule for a class only the server graph reaches, so Bamboo skips pruning unless the environment holding the
+stylesheet is the last one to build, and says so:
+
+```
+🎋 info [vite] Reachability pruning skipped: the stylesheet is emitted by the "client"
+   environment, which finishes before ssr. The full extracted stylesheet ships — nothing
+   is missing from it.
+```
+
+Nothing to configure: `vite build` announces its environments, and so does any framework that sets `builder`. A script
+driving `builder.build(environment)` itself does not, and Bamboo cannot tell the first environment it is not the last —
+so it prunes, and fails the build if a later environment turns out to compile a class that was pruned. Call
+`builder.buildApp()`, or set `builder: {}` in the Vite config, and the environments are known before the first one
+builds.
+
 ### Seeing every diagnostic
 
 Compiler errors list the first few findings and count the rest, which is right for reading one failure and wrong for

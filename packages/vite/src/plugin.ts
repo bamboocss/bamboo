@@ -6,9 +6,10 @@ import { loadConfigAndCreateContext } from '@bamboocss/node'
 import type { Plugin } from 'vite'
 import { asError, bamboocssCss, VIRTUAL_CSS_ID } from './css'
 import { foldSource, type ForeignRecipes, type SkipReason, type SkippedCall } from './fold'
+import { bare } from './prune-static-css'
 import { createRuntimeCss, type RuntimeCss } from './runtime-css'
 import { createStaticStyleSetCompiler, type StaticStyleSetCompiler } from './style-set'
-import { createStaticCompilationSession, resetStaticCompilationSession } from './static-session'
+import { createStaticCompilationSession, remainingEnvironments, resetStaticCompilationSession } from './static-session'
 
 export interface BambooVitePluginOptions {
   /** Path to `bamboo.config.ts`. Resolved the same way the CLI resolves it. */
@@ -133,9 +134,6 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
     throw new Error('bamboocss: `maxRecipeStates` must be a positive safe integer.')
   }
 
-  /** Environments whose `buildStart` has run in the build currently in progress. */
-  const seenEnvironments = new Set<string>()
-
   /** Totals across the build, for the summary. */
   const totals = { folded: 0, files: 0, filesWithFolds: 0, skipped: new Map<string, number>() }
   const staticSession = createStaticCompilationSession()
@@ -233,6 +231,9 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
     name: 'bamboocss:compiler',
     enforce: 'pre',
 
+    /** See the same declaration on the css plugin: one instance per build, not per environment. */
+    sharedDuringBuild: true,
+
     configResolved(config) {
       command = config.command
     },
@@ -251,17 +252,17 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
       // twice is what distinguishes a new run — a `vite build --watch` rebuild — from another
       // environment of the run in progress.
       const environment = (this as { environment?: { name?: string } }).environment?.name ?? 'default'
-      if (seenEnvironments.has(environment)) {
-        seenEnvironments.clear()
+      if (staticSession.startedEnvironments.has(environment)) {
         totals.folded = 0
         totals.files = 0
         totals.filesWithFolds = 0
         totals.skipped.clear()
         survivorsByFile.clear()
         recipeConfigCache.clear()
+        // Clears `startedEnvironments` too, so the `add` below opens the new run's list.
         resetStaticCompilationSession(staticSession)
       }
-      seenEnvironments.add(environment)
+      staticSession.startedEnvironments.add(environment)
 
       // Normalized here too. `ensureContext` loads and evaluates the user's config file and
       // its hooks, so what it throws is entirely outside this plugin's control — and in dev
@@ -433,12 +434,52 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
         throw createSurvivorError(survivors)
       }
 
+      // A class this environment compiled is already gone from a stylesheet another one
+      // finalized.
+      //
+      // The prune gate in `css.ts` holds pruning back until every environment of the run has
+      // contributed, so reaching this means the run never announced how many that would be —
+      // it drove `builder.build(environment)` itself rather than going through `vite build` or
+      // `builder.buildApp()`, and configured no `builder`. Left alone the build is green, the
+      // markup carries real class names, and the elements render unstyled; that is the exact
+      // failure this whole change is about, so it fails here instead.
+      //
+      // `prunedClasses` is only ever filled by a prune that already ran, and a prune keeps
+      // everything marked used, so an intersection can only mean a marker that arrived after.
+      const lost = [...staticSession.usedClasses].filter((className) =>
+        staticSession.prunedClasses.has(bare(className)),
+      )
+      if (lost.length) {
+        const environment = (this as { environment?: { name?: string } }).environment?.name ?? 'default'
+        throw new Error(
+          `bamboocss: ${lost.length} class(es) compiled in the ${JSON.stringify(environment)} environment were ` +
+            `already pruned out of a stylesheet emitted by an earlier one. Elements carrying them would render ` +
+            `unstyled.\n\n` +
+            `${truncateList(
+              lost.map((className) => `  ${className}`),
+              { unit: 'class', separator: '\n' },
+            )}\n\n` +
+            `The stylesheet is finalized by the environment that imports it, so pruning it is only safe once every ` +
+            `environment has been compiled. This build did not say how many there would be: it called ` +
+            `\`builder.build(environment)\` directly. Run it through \`vite build\`, call \`builder.buildApp()\`, or ` +
+            `set \`builder: {}\` in the Vite config so the environments are known before the first one builds. ` +
+            `\`bamboocss({ renameCssAsset: false })\` also turns pruning off entirely.`,
+        )
+      }
+
       // The symbolic compiler names classes from Vite's live module graph, while CSS is
       // extracted from Bamboo's configured `include`. A strict build must prove those two
       // graphs agree: otherwise a perfectly folded class can have no rule behind it.
       // `getModuleInfo` distinguishes a real Rollup build from unit harnesses that call the
       // hook directly without the companion CSS plugin.
-      if (typeof this.getModuleInfo === 'function') {
+      //
+      // Both are statements about the finished run rather than about one environment, and both
+      // read state the environment that *serves* the stylesheet fills in: `cssLoaded` and
+      // `extractedFiles` are written when the virtual module is loaded. Asked of an
+      // environment that builds before that one, they are not merely early but wrong — a
+      // framework building its server bundle first failed with "virtual:bamboo.css was not
+      // imported" for a client bundle that imports it on the next line.
+      if (typeof this.getModuleInfo === 'function' && !remainingEnvironments(staticSession).length) {
         if (!staticSession.cssLoaded) {
           throw new Error(
             `bamboocss: compiled class values were produced, but ${JSON.stringify(VIRTUAL_CSS_ID)} ` +
