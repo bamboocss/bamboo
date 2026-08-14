@@ -1,4 +1,3 @@
-import { acceptsAuthorIdent, cssPropertyKeywords, isCssProperty } from '@bamboocss/is-valid-prop'
 import { logger } from '@bamboocss/logger'
 import {
   compact,
@@ -16,6 +15,7 @@ import {
   withoutSpace,
 } from '@bamboocss/shared'
 import type { TokenDictionary } from '@bamboocss/token-dictionary'
+import { lexer } from 'css-tree'
 import type {
   AnyFunction,
   CssKeyframes,
@@ -45,6 +45,17 @@ import { withCssUnit } from './stringify'
  * `display: 'flex'`.
  */
 const IDENTIFIER = /^[a-zA-Z][\w-]*(?:\.[a-zA-Z0-9][\w-]*)*$/
+
+/** @see `Utility.matchesCssGrammar` — lowercased, because a CSS keyword is case-insensitive. */
+const DEPRECATED_SYSTEM_COLORS = new Set(
+  (
+    'ActiveBorder,ActiveCaption,AppWorkspace,Background,ButtonHighlight,ButtonShadow,CaptionText,' +
+    'InactiveBorder,InactiveCaption,InactiveCaptionText,InfoBackground,InfoText,Menu,MenuText,Scrollbar,' +
+    'ThreeDDarkShadow,ThreeDFace,ThreeDHighlight,ThreeDLightShadow,ThreeDShadow,Window,WindowFrame,WindowText'
+  )
+    .toLowerCase()
+    .split(','),
+)
 
 /** A style value shaped like a token path that names no token. */
 export interface UnresolvedTokenRef {
@@ -765,62 +776,67 @@ export class Utility {
   }
 
   /**
-   * A bare identifier that is neither a token nor anything the CSS property accepts.
+   * A bare identifier that is neither a token nor a value the CSS property accepts.
    *
-   * This is the half the type layer used to own, and the half it could never do well. csstype
-   * describes `top` and `animationName` identically — both end in `(string & {})`, one because
-   * it takes lengths and the other because it takes a `<custom-ident>` — so narrowing types had
-   * to carry a hand-written list of the properties where an invented name is ordinary. The
-   * grammar says it outright, and `acceptsAuthorIdent` reads the grammar.
+   * Asked of the real grammar, not of csstype's unions. The unions were the obvious source —
+   * they are what the generated types already narrow against — and they cannot answer this:
    *
-   * Three ways to be fine, and a value has to fail all of them:
+   * - csstype describes `top` and `animationName` identically, both ending in `(string & {})`,
+   *   one because it takes lengths and the other because it takes a `<custom-ident>`. Reading
+   *   the enumerated half alone rejects `animationName: 'fadeIn'`;
+   * - that trailing `(string & {})` is csstype saying *this list is not exhaustive*, and it says
+   *   it for 70% of the properties it enumerates. Enforcing those lists as closed rejects
+   *   `width: 'stretch'`, `captionSide: 'inline-start'` and `imageRendering: 'optimizeSpeed'` —
+   *   ordinary CSS that csstype has simply not caught up with;
+   * - and reachability of `<custom-ident>` is not the same as *admitting* one.
+   *   `gridTemplateColumns` reaches it through `<line-names> = '[' <custom-ident>* ']'`, where
+   *   it is only legal inside literal brackets, so exempting that property lets
+   *   `gridTemplateColumns: 'nonsense'` through.
    *
-   * - it is a keyword the property enumerates, `display: 'flex'`;
-   * - the property takes an identifier the author invents, `animationName: 'fadeIn'`,
-   *   `transitionProperty: 'color'`, `gridArea: 'sidebar'`;
-   * - nothing describes the property at all — a custom utility mapping to a CSS variable — in
-   *   which case there is nothing to be wrong against.
+   * `matchProperty` decides all three by matching the value against the property's
+   * value-definition syntax, which is what the question actually is. It also answers for
+   * lengths, colours and functions, and folds keyword case — `color: 'currentcolor'` is valid
+   * CSS and csstype spells it `currentColor`.
    *
-   * What is left is the mistake: `top: 'navH'`, `zIndex: 'overlay'`, `color: 'mutedd'`. Each
-   * ships a declaration that parses and that the browser discards.
+   * An error rather than a failed match is "no opinion": a custom utility named `mixin` or
+   * `textStyle` is not a CSS property, and neither is `--foo`.
    */
   private isUnknownKeyword = (key: string, bare: string) => {
-    const property = this.getCssProperty(key)
-    if (!property) return false
-
-    if (acceptsAuthorIdent(property)) return false
-
-    const keywords = cssPropertyKeywords(property)
-    // Empty is "csstype does not describe this property", which is not the same as "it takes
-    // nothing" — reading it as a rejection would fail every custom utility named after
-    // something CSS has never heard of.
-    if (keywords.size === 0) return false
-
-    // Folded, because a CSS keyword is ASCII case-insensitive: `color: currentcolor` is valid
-    // and csstype spells it `currentColor`. The token lookup above is *not* folded — those names
-    // are the author's.
-    return !keywords.has(bare.toLowerCase())
+    const property = this.configs.get(key)?.property ?? key
+    return !this.matchesCssGrammar(hypenateProperty(property), bare)
   }
 
   /**
-   * The CSS property a utility declares, for asking the grammar about it.
+   * Memoised per `property:value`.
    *
-   * `property` where the utility names one — `spaceX` is `marginInlineStart` — and the key
-   * otherwise, which is how `top` and `display` are declared. Verified against the property
-   * list rather than trusted: a utility may be named anything, and `mixin` or `textStyle`
-   * must reach the grammar as "no such property" rather than as an empty keyword set that
-   * happens to behave the same way today.
+   * A match is ~1µs, which is nothing beside a build but not nothing per declaration — and the
+   * pairs repeat heavily, since `display: flex` and `position: absolute` recur across a project.
+   * Bounded by the distinct pairs a project writes.
    */
-  private cssProperties = new Map<string, string | undefined>()
+  private grammarMatches = new Map<string, boolean>()
 
-  private getCssProperty = (key: string) => {
-    const cached = this.cssProperties.get(key)
-    if (cached !== undefined || this.cssProperties.has(key)) return cached
+  private matchesCssGrammar = (property: string, value: string) => {
+    // CSS Color 4 removed these and browsers still honour them for compatibility, so the lexer
+    // rejects a declaration that is not in fact dropped — which is the one thing this diagnostic
+    // claims. A closed set, named as such by csstype (`DeprecatedSystemColor`) and frozen by
+    // history: nothing is ever added to a list of things a spec deleted.
+    if (DEPRECATED_SYSTEM_COLORS.has(value.toLowerCase())) return true
 
-    const declared = this.configs.get(key)?.property ?? key
-    const property = isCssProperty(declared) ? declared : undefined
-    this.cssProperties.set(key, property)
-    return property
+    const id = `${property}:${value}`
+    const cached = this.grammarMatches.get(id)
+    if (cached !== undefined) return cached
+
+    // `error === null` is the match. The companion `matched` node is not in the published types,
+    // and the absence of an error is the same question.
+    const { error } = lexer.matchProperty(property, value)
+
+    // Only a `SyntaxMatchError` is a verdict on the *value*. A `SyntaxReferenceError` means the
+    // lexer has never heard of the property — a custom utility named `mixin` or `textStyle` —
+    // and a plain `Error` is what a custom property gets. Neither says anything is wrong.
+    const matches = error === null || error.name !== 'SyntaxMatchError'
+
+    this.grammarMatches.set(id, matches)
+    return matches
   }
 
   /**

@@ -45,6 +45,7 @@
     "@bamboocss/types": "workspace:*",
     "@csstools/postcss-cascade-layers": "6.0.0",
     "browserslist": "4.28.7",
+    "css-tree": "3.2.1",
     "lodash.merge": "4.6.2",
     "outdent": "0.8.0",
     "postcss": "8.5.26",
@@ -55,6 +56,7 @@
     "ts-pattern": "5.9.0"
   },
   "devDependencies": {
+    "@types/css-tree": "2.3.11",
     "@types/lodash.merge": "4.6.9",
     "postcss-discard-duplicates": "8.0.2",
     "postcss-discard-empty": "8.0.2"

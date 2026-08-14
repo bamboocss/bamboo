@@ -36,8 +36,7 @@
     "mdn": "tsx scripts/prepare.ts",
     "build": "tsdown src/index.ts --format=esm,cjs --dts",
     "build-fast": "tsdown --dts=false src/index.ts --format=esm,cjs",
-    "dev": "tsdown --dts=false src/index.ts --watch --format=esm,cjs",
-    "values": "tsx scripts/prepare-values.ts"
+    "dev": "tsdown --dts=false src/index.ts --watch --format=esm,cjs"
   },
   "devDependencies": {
     "mdn-data": "^2.15.0"

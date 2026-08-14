@@ -200,6 +200,32 @@ describe('a bare identifier', () => {
    * a union of two hundred members, and guess a near-miss by spelling.
    */
   /**
+   * Why the grammar, and not csstype's unions.
+   *
+   * The unions are what the generated types narrow against, so they were the obvious source, and
+   * each of these is a way they answer wrongly:
+   *
+   * - `(string & {})` at the end of a union is csstype saying *this list is not exhaustive*, and
+   *   it says it for 70% of the properties it enumerates. Read as closed, those lists reject
+   *   ordinary css csstype has not caught up with.
+   * - reaching `<custom-ident>` is not the same as admitting one. `gridTemplateColumns` reaches
+   *   it through `'[' <custom-ident>* ']'`, where it is legal only inside literal brackets.
+   * - `<dashed-ident>` is `--foo`, which cannot be a bare identifier at all, so exempting a
+   *   property for taking one buys nothing and switches the check off.
+   */
+  test.each([
+    ['a keyword newer than csstype', 'width', 'stretch', null],
+    ['another', 'height', 'stretch', null],
+    ['a mixed-case keyword', 'imageRendering', 'optimizeSpeed', null],
+    ['an ident legal only inside brackets', 'gridTemplateColumns', 'nonsense', 'flag'],
+    ['a property taking only a dashed-ident', 'anchorName', 'sidebr', 'flag'],
+  ])('gets %s right', (_label, prop, value, expected) => {
+    const message = warns(prop, value)
+    if (expected === 'flag') expect(message, `${prop}: ${value}`).not.toBeNull()
+    else expect(message, `${prop}: ${value}`).toBeNull()
+  })
+
+  /**
    * A css keyword is ASCII case-insensitive; csstype spells them as the spec does. Comparing as
    * written reported `color: currentcolor` — ordinary, valid css — as a typo against
    * `currentColor`, on this repo's own documentation site.

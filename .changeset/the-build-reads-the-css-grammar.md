@@ -26,10 +26,23 @@ animationName: 'fadeIn'          fine
 gridArea: 'sidebar'              fine
 ```
 
-The last four are the ones a type union cannot get right. csstype describes `top` and `animationName` identically — both
-end in `(string & {})`, one because it takes lengths and the other because it takes a `<custom-ident>` — so
-`strictTokens` had to carry a hand-written list of 29 properties to know the difference, and still rejected
-`transitionProperty: 'color'` while suggesting `'colors'`, which emits seven declarations instead of one.
+The last four are the ones a type union cannot get right, and the reason the question is put to the real grammar —
+`css-tree`'s `matchProperty` — rather than to csstype's unions:
+
+- csstype describes `top` and `animationName` identically, both ending in `(string & {})`, one because it takes lengths
+  and the other because it takes a `<custom-ident>`. `strictTokens` needed a hand-written list of 29 property names to
+  tell them apart, and still rejected `transitionProperty: 'color'` while suggesting `'colors'` — a utility value that
+  emits seven declarations instead of one.
+- That trailing `(string & {})` is csstype declining to say the list is exhaustive, and it declines for **70%** of the
+  properties it enumerates. Read as closed, those lists reject `width: 'stretch'` and `imageRendering: 'optimizeSpeed'`
+  — ordinary css csstype has not caught up with.
+- Reaching `<custom-ident>` is not the same as admitting one: `gridTemplateColumns` reaches it through
+  `'[' <custom-ident>* ']'`, where it is legal only inside literal brackets.
+
+Two known gaps, both in the safe direction for a setting that defaults to `warn`. `css-tree` follows the current spec,
+so a value a spec deleted but browsers still honour is reported — the 23 `DeprecatedSystemColor` names are allowed back
+explicitly, since that set is closed by history, but a value like `userSelect: 'contain'` its data has not reached yet
+is not. Write `[value]` for either.
 
 **The diagnostic is the point.** The resolver knows where a name lives; a type error can only say a string is not
 assignable to a union of two hundred members and guess a near-miss by spelling:
