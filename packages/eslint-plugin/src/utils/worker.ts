@@ -79,6 +79,23 @@ const filterInvalidTokens = (context: Generator, paths: string[]): string[] => {
   return paths.filter((path) => !context.utility.tokens.view.get(path))
 }
 
+/**
+ * The build's own verdict on one property/value pair, for the editor.
+ *
+ * The same predicate and the same sentence the build prints — not a second implementation of
+ * either. The type layer used to give this feedback by narrowing every generated prop type, at
+ * a measured 19% of the types and 28% of the instantiations in a real project, and it could
+ * only ever say "not assignable"; the resolver knows the value is a `sizes` token used on a
+ * property that reads `spacing`, and knowing that is the whole point.
+ */
+const explainUnresolvedValue = (context: Generator, property: string, value: string): string | undefined => {
+  const { utility } = context
+  if (!utility.isUnresolvedTokenValue(property, value)) return undefined
+
+  const key = utility.resolveShorthand(property)
+  return utility.explainUnresolvedToken(utility.unresolvedTokenRef(key, utility.bareTokenPath(key, value)))
+}
+
 // Refactored to arrow function, removed async
 const getPropertyCategory = (context: Generator, _attribute: string) => {
   const longhand = resolveLongHand(context, _attribute)
@@ -105,6 +122,12 @@ type MatchImportResult = {
 }
 
 export function run(action: 'filterInvalidTokens', options: Options, paths: string[]): string[]
+export function run(
+  action: 'explainUnresolvedValue',
+  options: Options,
+  property: string,
+  value: string,
+): string | undefined
 
 export function run(action: 'isColorToken', options: Options, value: string): boolean
 
@@ -127,6 +150,12 @@ export function run(action: string, options: Options, ...args: any[]): any {
 }
 
 export function runAsync(action: 'filterInvalidTokens', options: Options, paths: string[]): Promise<string[]>
+export function runAsync(
+  action: 'explainUnresolvedValue',
+  options: Options,
+  property: string,
+  value: string,
+): Promise<string | undefined>
 export function runAsync(action: 'isColorToken', options: Options, value: string): Promise<boolean>
 export function runAsync(action: 'isColorAttribute', options: Options, attribute: string): Promise<boolean>
 export function runAsync(action: 'isValidFile', options: Options, fileName: string): Promise<string>
@@ -162,6 +191,9 @@ export async function runAsync(action: string, options: Options, ...args: any): 
     case 'filterImports':
       // @ts-expect-error cast
       return filterImports(context, ...args)
+    case 'explainUnresolvedValue':
+      // @ts-expect-error cast
+      return explainUnresolvedValue(context, ...args)
     case 'filterInvalidTokens':
       // @ts-expect-error cast
       return filterInvalidTokens(context, ...args)

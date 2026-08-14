@@ -1,13 +1,14 @@
 import { createRule } from '../utils'
 import {
   getInvalidTokens,
+  getUnresolvedValueMessage,
   getTaggedTemplateCaller,
   isBambooAttribute,
   isBambooProp as isBambooProperty,
   isRecipeVariant,
   isStyledTaggedTemplate,
 } from '../utils/helpers'
-import { isIdentifier, isJSXExpressionContainer, isLiteral, isTemplateLiteral } from '../utils/nodes'
+import { isIdentifier, isJSXExpressionContainer, isJSXIdentifier, isLiteral, isTemplateLiteral } from '../utils/nodes'
 import { AST_NODE_TYPES, type TSESTree } from '@typescript-eslint/utils'
 import { isNodeOfTypes } from '@typescript-eslint/utils/ast-utils'
 
@@ -43,17 +44,37 @@ const rule = createRule({
       }
     }
 
-    const handleLiteralOrTemplate = (node: TSESTree.Node | undefined) => {
+    /**
+     * With the property in hand, ask the resolver the whole question.
+     *
+     * `getInvalidTokens` can only answer "is this dotted path a token", because that is all a
+     * value tells you on its own. The property is what makes `color: 'mutedd'` decidable at all,
+     * and what separates `top: 'navH'` from `animationName: 'fadeIn'` — one is a typo and the
+     * other is a `<custom-ident>` the grammar asks for.
+     */
+    const reportUnresolved = (node: TSESTree.Node, property: string, value: string | undefined) => {
+      if (!value) return
+      const message = getUnresolvedValueMessage(property, value, context)
+      if (message) context.report({ data: { message }, messageId: 'unresolvedValue', node })
+    }
+
+    const handleValue = (node: TSESTree.Node | undefined, property?: string) => {
       if (!node) {
         return
       }
 
+      // Both, because they answer different questions. `sendReport` reads `token(…)` references
+      // out of a composite value — `token(sizes.4000) 20px` — where the value as a whole is
+      // ordinary CSS. `reportUnresolved` judges the value as a whole against the property, which
+      // is the only way `color: 'mutedd'` is decidable. Neither subsumes the other.
       if (isLiteral(node)) {
         const value = node.value?.toString()
         sendReport(node, value)
+        if (property) reportUnresolved(node, property, value)
       } else if (isTemplateLiteral(node) && node.expressions.length === 0) {
         const value = node.quasis[0].value.raw
         sendReport(node.quasis[0], value)
+        if (property) reportUnresolved(node.quasis[0], property, value)
       }
     }
 
@@ -63,10 +84,12 @@ const rule = createRule({
           return
         }
 
+        const property = isJSXIdentifier(node.name) ? node.name.name : undefined
+
         if (isLiteral(node.value)) {
-          handleLiteralOrTemplate(node.value)
+          handleValue(node.value, property)
         } else if (isJSXExpressionContainer(node.value)) {
-          handleLiteralOrTemplate(node.value.expression)
+          handleValue(node.value.expression, property)
         }
       },
 
@@ -80,7 +103,7 @@ const rule = createRule({
           return
         }
 
-        handleLiteralOrTemplate(node.value)
+        handleValue(node.value, node.key.name)
       },
 
       TaggedTemplateExpression(node: TSESTree.TaggedTemplateExpression) {
@@ -142,6 +165,9 @@ const rule = createRule({
     },
     messages: {
       noInvalidTokenPaths: '`{{token}}` is an invalid token path.',
+      // The build's own sentence, passed through rather than restated, so the editor and the
+      // build cannot describe one mistake differently.
+      unresolvedValue: '{{message}}',
     },
     schema: [],
     type: 'problem',

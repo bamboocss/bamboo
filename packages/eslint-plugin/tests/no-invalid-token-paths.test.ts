@@ -7,6 +7,29 @@ const invalidLiteral = 'const className = css`\n  font-size: token(fontSizes.emd
 
 eslintTester.run(RULE_NAME, rule, {
   invalid: [
+    /**
+     * The squiggle the deleted type narrowing used to give, from the resolver instead.
+     *
+     * `mutedd` has no dot, so the token-path extraction below cannot see it — a value only tells
+     * you it is a name, never whether the property accepts one. The build has answered this for
+     * a while; these are the same verdicts, in the editor.
+     */
+    {
+      code: multiline`
+  import { css } from './bamboo/css';
+
+  const styles = css({ color: 'mutedd' })`,
+      errors: [{ messageId: 'unresolvedValue' }],
+    },
+
+    {
+      code: multiline`
+  import { css } from './bamboo/css';
+
+  const styles = css({ display: 'flexx' })`,
+      errors: [{ messageId: 'unresolvedValue' }],
+    },
+
     {
       code: multiline`
   import { css } from './bamboo/css';
@@ -47,6 +70,14 @@ eslintTester.run(RULE_NAME, rule, {
     },
   ],
   valid: [
+    // A keyword the property enumerates, a `<custom-ident>` the grammar asks for, and a raw
+    // value. The type layer needed a hand-written list of 29 property names to get the middle
+    // one right, and still rejected `transitionProperty: 'color'`.
+    `import { css } from './bamboo/css';\nconst a = css({ display: 'flex' })`,
+    `import { css } from './bamboo/css';\nconst b = css({ animationName: 'fadeIn' })`,
+    `import { css } from './bamboo/css';\nconst c = css({ transitionProperty: 'color' })`,
+    `import { css } from './bamboo/css';\nconst d = css({ fontSize: '14px' })`,
+    `import { css } from './bamboo/css';\nconst e = css({ color: 'currentcolor' })`,
     {
       code: multiline`
   import { css } from './bamboo/css';

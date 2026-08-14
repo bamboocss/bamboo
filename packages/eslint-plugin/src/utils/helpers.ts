@@ -441,6 +441,25 @@ export const getInvalidTokens = (value: string, context: RuleContext<any, any>) 
   return invalidTokens
 }
 
+const unresolvedValueCache = new Map<string, string | undefined>()
+
+/**
+ * What the build would say about this property and value, or nothing if it is fine.
+ *
+ * Asked of the resolver rather than reimplemented, so the squiggle and the build agree by
+ * construction. `getInvalidTokens` above answers a narrower question — is this dotted path a
+ * token — and cannot see `color: 'mutedd'` or tell `top: 'navH'` from `animationName: 'fadeIn'`,
+ * because neither is decidable without the property and its CSS grammar.
+ */
+export const getUnresolvedValueMessage = (property: string, value: string, context: RuleContext<any, any>) => {
+  const id = `${property}:${value}`
+  if (unresolvedValueCache.has(id)) return unresolvedValueCache.get(id)
+
+  const message = syncAction('explainUnresolvedValue', getSyncOptions(context), property, value)
+  unresolvedValueCache.set(id, message)
+  return message
+}
+
 // Caching deprecated tokens to avoid redundant computations
 const deprecatedTokensCache = new Map<string, DeprecatedToken[]>()
 
