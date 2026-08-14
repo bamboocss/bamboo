@@ -794,7 +794,7 @@ The global styles for your project.
 At-rules work here too, so `@font-face` written directly in `global.css` does emit. Prefer
 [`global.fontface`](#globalfontface) for fonts anyway: it emits the same rule **and** registers the family name as a
 value `fontFamily` accepts. Declared through `global.css`, the name is a string Bamboo has never heard of — no
-autocomplete, and under [`strictTokens`](#stricttokens) a type error.
+autocomplete, and under [`strictValues`](#strictvalues) a build error.
 
 ```ts
 // fontFamily accepts Tokens["fonts"] | "Roboto"
@@ -977,7 +977,7 @@ which keeps the declarations without emitting anything that uses them.
 
 </Callout>
 
-### strictTokens
+### strictValues
 
 **Type**: `boolean`
 
@@ -985,17 +985,27 @@ which keeps the declarations without emitting anything that uses them.
 
 Require every style value to be a token, so a raw CSS value has to be written `[14px]`.
 
-| setting | `color: 'red.400'` | `fontSize: '14px'` |
-| ------- | ------------------ | ------------------ |
-| `false` | ✅                 | ✅                 |
-| `true`  | ✅                 | ❌ write `[14px]`  |
+```ts
+css({ color: 'red.300' }) // ✅ a token
+css({ display: 'flex' }) // ✅ a keyword — `flex` is the only way to say it
+css({ animationName: 'fadeIn' }) // ✅ an identifier you invented
+css({ transitionProperty: 'color' }) // ✅ a css property name, where the grammar asks for one
 
-This is a design-system policy — "everything goes through the theme" — not a correctness check. On one otherwise-correct
-five-page app it reports 468 errors, all of them raw values, which is what makes it a day-one decision.
+css({ fontSize: '14px' }) // ❌ write `[14px]`
+css({ color: '#fff' }) // ❌
+css({ border: '1px solid red' }) // ❌
+```
 
-It is **not** what catches `color: 'mutedd'`. The build reports that with no setting at all, reading the CSS grammar
-rather than a TypeScript union — see [`unresolvedToken`](#unresolvedtoken) and
-[writing styles](/docs/concepts/writing-styles#a-misspelled-token-is-the-builds-job-not-typescripts).
+This is a design-system policy — "everything goes through the theme" — and the brackets are what make reaching outside
+it visible in the source, where `fontSize: '14px'` reads exactly like using the scale. On one otherwise-correct
+five-page app it reports 468 values, which is what makes it a day-one decision.
+
+It is reported by the build and graded by [`validation`](#validation), against the styles your **source** produced — a
+preset's reset and your own config recipes are not held to a policy about your source. It was a set of TypeScript
+narrowings until 1.x; the grammar is what lets it tell a keyword from a raw value, which the types could not, and it is
+why `transitionProperty: 'color'` is no longer rejected in favour of `'colors'`.
+
+It is **not** what catches a misspelled token — see [`unresolvedToken`](#unresolvedtoken), which is on by default.
 
 ### strictPropertyValues
 
@@ -1052,7 +1062,7 @@ positioning. Each key emits one `@position-try` rule, and a key without a leadin
 `bottom-scrollable` below becomes `--bottom-scrollable`.
 
 Each name is also registered as a value `positionTryFallbacks` and `positionTry` accept, so
-`css({ positionTryFallbacks: '--bottom-scrollable' })` autocompletes and — under [`strictTokens`](#stricttokens) —
+`css({ positionTryFallbacks: '--bottom-scrollable' })` autocompletes and — under [`strictValues`](#strictvalues) —
 typechecks. That is the reason to declare one here rather than as a raw `@position-try` in [`global.css`](#globalcss),
 which emits the same rule but leaves the name unknown.
 

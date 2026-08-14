@@ -20,7 +20,7 @@ const all: ConfigPath[] = [
   'plugins',
 ]
 
-const format: ConfigPath[] = ['hash', 'prefix', 'separator', 'strictTokens', 'strictPropertyValues', 'shorthands']
+const format: ConfigPath[] = ['hash', 'prefix', 'separator', 'strictValues', 'strictPropertyValues', 'shorthands']
 
 const tokens: ConfigPath[] = [
   'utilities',

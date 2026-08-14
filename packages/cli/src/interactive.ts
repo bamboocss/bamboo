@@ -93,13 +93,13 @@ export const interactive = async (options: { cwd?: string } = {}) => {
   return {
     postcss: initFlags.usePostcss === 'yes',
     outExtension: initFlags.useMjsExtension === 'yes' ? 'mjs' : 'js',
-    strictTokens: strictTokensFrom(initFlags.withStrictTokens),
+    strictValues: strictValuesFrom(initFlags.withStrictTokens),
     gitignore: initFlags.shouldUpdateGitignore === 'yes',
   } satisfies InitFlags
 }
 
 /** `'yes'` is the historical spelling of `true`. */
-const strictTokensFrom = (answer: string): Config['strictTokens'] | undefined => (answer === 'yes' ? true : undefined)
+const strictValuesFrom = (answer: string): Config['strictValues'] | undefined => (answer === 'yes' ? true : undefined)
 
 interface InitFlags {
   postcss: boolean
@@ -115,6 +115,6 @@ interface InitFlags {
    * `InitCommandFlags` naming it, and the caller's `options` being typed rather than `{}`, are
    * what close that.
    */
-  strictTokens: Config['strictTokens'] | undefined
+  strictValues: Config['strictValues'] | undefined
   gitignore: boolean
 }

@@ -101,27 +101,27 @@ describe('CLI', () => {
   })
 
   /**
-   * `--strict-tokens` used to be collected and dropped.
+   * `--strict-values` used to be collected and dropped.
    *
    * cac parsed it, `interactive()` returned it, and the init action destructured everything
    * except it — so a project that asked for strict tokens got a config without the key and
    * nothing said so. The flag is documented in the CLI reference, which made it worse: the
    * only way to find out was to write a bad token and watch it not be reported.
    */
-  test('init --strict-tokens', async () => {
+  test('init --strict-values', async () => {
     const cmd = `node ${binPath} init --cwd="${testsCwd}" --force --no-codegen`
 
-    runCommand(`${cmd} --strict-tokens`, { cwd: testsCwd })
-    expect(await fs.readFile(paths.config, 'utf8')).toContain('strictTokens: true')
+    runCommand(`${cmd} --strict-values`, { cwd: testsCwd })
+    expect(await fs.readFile(paths.config, 'utf8')).toContain('strictValues: true')
 
     // Absent unless asked for. This writes a *policy* — every raw css value has to become
     // `[14px]` — and a default cannot make that decision for a team. The mistake it used to
     // exist to catch, a misspelled token, is reported by the build with no setting at all.
     runCommand(cmd, { cwd: testsCwd })
-    expect(await fs.readFile(paths.config, 'utf8')).not.toContain('strictTokens')
+    expect(await fs.readFile(paths.config, 'utf8')).not.toContain('strictValues')
 
-    runCommand(`${cmd} --no-strict-tokens`, { cwd: testsCwd })
-    expect(await fs.readFile(paths.config, 'utf8')).not.toContain('strictTokens')
+    runCommand(`${cmd} --no-strict-values`, { cwd: testsCwd })
+    expect(await fs.readFile(paths.config, 'utf8')).not.toContain('strictValues')
   }, 120_000)
 
   test('codegen', async () => {

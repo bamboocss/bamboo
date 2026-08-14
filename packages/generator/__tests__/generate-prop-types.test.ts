@@ -427,24 +427,4 @@ describe('generate property types', () => {
         : Value extends \`\${infer _}\` ? Value : never"
     `)
   })
-
-  /**
-   * A custom utility that maps to a CSS property inherits that property's values, and under
-   *
-   * Asserted as a *type* and not a string, which is the whole of the bug this covers: the
-   * generator quotes an entry it does not recognise, so the emitted `UtilityValues` read
-   * `containerName: "KnownKeywords<CssProperties[\"containerName\"]>"` — a string literal,
-   * which rejected `containerName: 'sidebar'` and accepted that sentence.
-   */
-
-  test('the other settings still inherit the whole property, or none of it', () => {
-    const lineFor = (config?: Parameters<typeof createContext>[0]) =>
-      generatePropTypes(createContext(config))
-        .split('\n')
-        .find((entry) => entry.trimStart().startsWith('float:'))
-
-    expect(lineFor()).toContain('CssProperties["float"]')
-    expect(lineFor()).not.toContain('KnownKeywords')
-    expect(lineFor({ strictTokens: true })).not.toContain('CssProperties["float"]')
-  })
 })

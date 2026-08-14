@@ -20,6 +20,7 @@ export type BambooErrorCode =
   | 'EXTRACT_FAILED'
   | 'DEAD_IMPORT'
   | 'UNRESOLVED_TOKEN'
+  | 'STRICT_VALUES'
 
 export class BambooError extends Error {
   readonly code: string

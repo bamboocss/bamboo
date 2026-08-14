@@ -33,10 +33,10 @@ Use a `spacing` token, or write `[navH]` to mean it literally.
 **What this costs, measured** on this repo's documentation site with `tsc --extendedDiagnostics`. Deterministic counts,
 not wall clock:
 
-|                | with the narrowing | without        |
-| -------------- | ------------------ | -------------- |
-| Types          | 40,995             | 33,393 (−19%)  |
-| Instantiations | 181,030            | 130,059 (−28%) |
+|                | with the narrowing | without       |
+| -------------- | ------------------ | ------------- |
+| Types          | 40,995             | 18,320 (−55%) |
+| Instantiations | 181,030            | 46,230 (−74%) |
 
 **Migration.** Delete the setting; the check it bought is on by default and needs no configuration. `strictTokens` is
 now a boolean and means only what its `true` always meant — every raw CSS value must be written `[14px]` — which is a

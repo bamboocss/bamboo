@@ -96,19 +96,20 @@ import { css } from '../styled-system/css'
 const styles = css({ bg: '|' })
 ```
 
-> You can also enable the `strictTokens` setting in the Bamboo configuration. `true` allows only token values and
+> You can also enable the `strictValues` setting in the Bamboo configuration. `true` allows only token values and
 > prevents the use of custom or raw CSS values. A _misspelled_ token needs no setting — the build reports it either way;
 > see [below](#a-misspelled-token-is-the-builds-job-not-typescripts).
 
-- `config.strictTokens` will only affect properties that have config tokens, such as `color`, `bg`, `borderColor`, etc.
+- `config.strictValues` asks for `[14px]` around a raw css value. A keyword is not a raw value, so `display: 'flex'` is
+  unaffected.
 - `config.strictPropertyValues` will throw for properties that do not have config tokens, such as `display`, `content`,
   `willChange`, etc. when the value is not a predefined CSS value.
 
 > In both cases, you can use the `[xxx]` escape-hatch syntax to use custom or raw CSS values without TypeScript errors.
 
-#### strictTokens
+#### strictValues
 
-With `config.strictTokens` enabled, you can only use token values in your styles. This prevents the use of custom or raw
+With `config.strictValues` enabled, you can only use token values in your styles. This prevents the use of custom or raw
 CSS values.
 
 ```ts filename="bamboo.config.ts"
@@ -142,7 +143,7 @@ css({ bg: 'rd.400!' }) // ❌ Error: `rd.400` is not a token, mark or no mark
 
 What follows the mark is **not** checked — `bg: 'red.400!nonsense'` typechecks. Spelling that out as a closed set of
 templates multiplies every token in the union by five, and it was around half the cost of typechecking a `css()` call
-under `strictTokens`. [`unresolvedToken`](/docs/references/config#unresolvedtoken) resolves the path underneath the
+under `strictValues`. [`unresolvedToken`](/docs/references/config#unresolvedtoken) resolves the path underneath the
 mark, so the build still reports the value — warning by default, failing the build under `'error'`.
 
 #### A misspelled token is the build's job, not TypeScript's
@@ -653,9 +654,9 @@ Two mistakes it **cannot** catch, because the value is an ordinary string as far
 Both reach the stylesheet verbatim and are ignored by the browser:
 
 - **A misspelled name** – `fallbacks(...)`, or `fallback(...)` used as part of a larger value like
-  `calc(fallback(a, b))` or `1px solid fallback(red, blue)`. Under [`strictTokens`](#stricttokens) a misspelling is a
-  type error; the embedded forms are not.
-- **The candidates themselves aren't type-checked.** `fallback(red.300, rd)` typechecks even under `strictTokens`,
+  `calc(fallback(a, b))` or `1px solid fallback(red, blue)`. Under
+  [`strictValues`](/docs/references/config#strictvalues) a misspelling is a type error; the embedded forms are not.
+- **The candidates themselves aren't type-checked.** `fallback(red.300, rd)` typechecks even under `strictValues`,
   because the whole thing is one string to TypeScript. The `[...]` escape hatch has the same property — the
   `no-escape-hatch` lint rule does still catch it, since it parses each candidate individually.
 

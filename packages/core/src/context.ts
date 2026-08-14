@@ -261,7 +261,7 @@ export class Context {
       config: Object.assign({}, config.utilities),
       separator: config.separator,
       shorthands: config.shorthands,
-      strictTokens: config.strictTokens,
+      strictValues: config.strictValues,
       keyframes: config.theme?.keyframes,
       unresolvedToken: config.unresolvedToken,
     })
@@ -323,7 +323,7 @@ export class Context {
    * The `@position-try` names a config declares, as values the properties that take one accept.
    *
    * The same trade as `registerFontFamily`: declaring the rule is what makes its name known, so
-   * `positionTryFallbacks: '--flip'` autocompletes and — under `strictTokens` — typechecks. A
+   * `positionTryFallbacks: '--flip'` autocompletes and — under `strictValues` — is a build error. A
    * rule written as a raw `@position-try` in `globalCss` still ships, but its name stays unknown.
    *
    * Registered under the dashed spelling because that is what the property takes: `position-try-

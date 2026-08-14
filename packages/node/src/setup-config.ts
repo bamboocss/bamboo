@@ -15,7 +15,7 @@ type SetupOptions = Partial<Config> & {
 }
 
 export async function setupConfig(cwd: string, opts: SetupOptions = {}) {
-  const { force, outExtension, outdir = 'styled-system', strictTokens } = opts
+  const { force, outExtension, outdir = 'styled-system', strictValues } = opts
 
   let configFile: string | undefined
 
@@ -55,10 +55,10 @@ ${
   // The key is absent by default rather than present and `false`, so a config that never
   // mentions it reads as "not a decision I made", which is what `bamboo init` without the
   // flag is.
-  strictTokens
+  strictValues
     ? `\n// Require every style value to be a token, so a raw css value is written \`[14px]\`.\n` +
       `// A misspelled token is reported by the build whether or not this is on.\n` +
-      `strictTokens: ${JSON.stringify(strictTokens)},\n`
+      `strictValues: ${JSON.stringify(strictValues)},\n`
     : ''
 }
 

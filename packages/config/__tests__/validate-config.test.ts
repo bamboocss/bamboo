@@ -834,14 +834,14 @@ describe('validateConfig', () => {
 /**
  * `strictTokens` is a boolean, and a string that is not one is simply *on*.
  *
- * The generated types test it for truthiness, so `strictTokens: 'unknown-tokens'` — which used
+ * The generated types test it for truthiness, so `strictValues: 'unknown-tokens'` — which used
  * to be a setting — turns every raw CSS value in the project into a type error, from a config
  * that reads as though it asked for something milder. A build that exits 0 and then a wall of
  * errors matching nothing in the docs.
  */
-describe('strictTokens', () => {
-  const validate = (strictTokens: unknown) =>
-    validateConfig({ strictTokens, validation: 'error' } as Partial<UserConfig>)
+describe('strictValues', () => {
+  const validate = (strictValues: unknown) =>
+    validateConfig({ strictValues, validation: 'error' } as Partial<UserConfig>)
 
   test('accepts both settings, and absence', () => {
     for (const value of [undefined, true, false]) {
@@ -850,7 +850,7 @@ describe('strictTokens', () => {
   })
 
   test('names a spelling that is not one of them', () => {
-    expect(() => validate('unknown')).toThrow(/strictTokens/)
+    expect(() => validate('unknown')).toThrow(/strictValues/)
     expect(() => validate('unknown')).toThrow(/is not a setting/)
     expect(() => validate('yes')).toThrow(/is not a setting/)
   })

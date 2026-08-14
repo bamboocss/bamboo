@@ -393,17 +393,20 @@ interface CodegenOptions {
    * Require every style value to be a token, so a raw CSS value has to be written `'[14px]'`.
    *
    * A design-system policy rather than a correctness check: it is how a team says "everything
-   * goes through the theme". On one otherwise-correct five-page app it reports 468 errors, all
-   * of them raw values, which is what makes it a day-one decision.
+   * goes through the theme", and the brackets are what make reaching outside it visible in the
+   * source. On one otherwise-correct five-page app it reports 468 values, which is what makes
+   * it a day-one decision.
    *
-   * It is *not* what catches a misspelled token. That is the build's job — see
-   * `unresolvedToken` — and it is on by default, needs no migration, and reads the CSS grammar
-   * rather than a TypeScript union, so it can tell `top: 'navH'` from `animationName: 'fadeIn'`
-   * and say where `navH` is actually declared.
+   * A *keyword* is not a raw value. `display: 'flex'` is the only way to say that, so it is
+   * left alone — a distinction the type-level version of this could not draw, which is why it
+   * did not narrow `display` at all and let `display: 'abc'` through with it.
+   *
+   * Reported by the build, graded by `validation`, and it is not what catches a misspelled
+   * token — see `unresolvedToken`, which is on by default and needs no setting.
    *
    * @default false
    */
-  strictTokens?: boolean
+  strictValues?: boolean
   /**
    * Change generated typescript definitions to be more strict for built-in CSS properties to only allow valid CSS values.
    */

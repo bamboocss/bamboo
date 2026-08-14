@@ -39,22 +39,18 @@ export function generateStyleProps(ctx: Context) {
           const cssFallback = allCssProperties.includes(prop) ? `CssProperties["${prop}"]` : ''
 
           /**
-           * How much of csstype's own union for this property survives.
+           * A utility's own values *extend* what the property accepts; they never replace it.
            *
-           * All of it, unless `strictTokens` is on — where a raw value is written `[14px]` and
-           * nothing csstype describes is offered at all.
+           * Replacing is what `strictTokens` used to do, and it is why `transitionProperty` —
+           * whose utility declares the sugar `common`, `colors`, `size`, `position` and
+           * `background` — rejected `transitionProperty: 'color'`, a real css property name,
+           * and suggested `'colors'`, which emits seven declarations instead of one. A utility
+           * adds vocabulary to a property; it does not take the property's own away.
            *
-           * There used to be a middle setting that kept the keywords and dropped the open
-           * `string` csstype ends every property with, so a misspelled token stopped
-           * type-checking. That question is the build's now, and it answers it against the css
-           * grammar rather than against a union — see `unresolvedToken`. What that buys is not
-           * only cheaper type-checking: the type layer could not tell `top: 'navH'` from
-           * `animationName: 'fadeIn'` without a hand-written list of properties, could not know
-           * that csstype declines to enumerate 70% of what it describes, and could not say
-           * anything more useful than "not assignable".
+           * So nothing here narrows any more. Both questions the narrowing answered are the
+           * build's now, asked of the css grammar rather than of a union: whether a name
+           * resolves (`unresolvedToken`) and whether a raw value is allowed (`strictValues`).
            */
-          const gradedFallback = ctx.config.strictTokens ? '' : cssFallback
-
           // has values (utility or tokens)
           if (propTypes.has(prop)) {
             const own = `UtilityValues["${prop}"]`
@@ -63,7 +59,7 @@ export function generateStyleProps(ctx: Context) {
               // to it exactly.
               union.push([own, 'CssVars'].filter(Boolean).join(' | '))
             } else {
-              union.push([own, 'CssVars', gradedFallback].filter(Boolean).join(' | '))
+              union.push([own, 'CssVars', cssFallback].filter(Boolean).join(' | '))
             }
           } else {
             union.push([strictPropertyList.has(key) ? 'CssVars' : '', cssFallback].filter(Boolean).join(' | '))
@@ -160,6 +156,5 @@ const restrict = (key: string, value: string, config: UserConfig) => {
     return `ConditionalValue<WithEscapeHatch<OnlyKnown<"${key}", ${value}>>>`
   }
 
-  if (config.strictTokens) return `ConditionalValue<WithEscapeHatch<${value}>>`
   return `ConditionalValue<${value} | AnyString>`
 }

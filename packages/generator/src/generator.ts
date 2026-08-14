@@ -379,6 +379,7 @@ export class Generator extends Context {
     }
 
     this.assertNoUnresolvedTokens()
+    this.reportRawValues()
 
     return css
   }
@@ -427,6 +428,54 @@ export class Generator extends Context {
    * exists: those all run during extraction, before anything has been decoded. Every path
    * that emits css comes through `getCss`.
    */
+  /**
+   * Report every raw CSS value in the source, under `strictValues`.
+   *
+   * The policy is "everything goes through the theme", and the brackets are what make reaching
+   * outside it visible: `fontSize: '[14px]'` says so in the source, where `fontSize: '14px'`
+   * reads exactly like using the scale.
+   *
+   * Read off `decoder.atomic` — the styles the *source* produced — so a preset's own reset and
+   * a config recipe are not held to a project's policy about its own code. That is the whole
+   * reason this is a separate pass rather than a branch in `transform`, which sees both.
+   *
+   * A keyword is not a raw value; see `isRawValue` for why that distinction needs the grammar
+   * and is what the type-level version of this setting could never draw.
+   */
+  reportRawValues = () => {
+    if (!this.config.strictValues) return
+
+    const found = new Map<string, { prop: string; value: string }>()
+
+    for (const atom of this.decoder.atomic) {
+      const { prop, value } = atom.entry
+      if (typeof prop !== 'string' || (typeof value !== 'string' && typeof value !== 'number')) continue
+
+      const written = String(value)
+      if (!this.utility.isRawValue(prop, written)) continue
+
+      const key = this.utility.resolveShorthand(prop)
+      // One finding per mistake, matching the unresolved-token pass: the same value under
+      // `base`, `_hover` and two breakpoints is four atoms and one thing to change.
+      found.set(`${key}:${written}`, { prop: key, value: written })
+    }
+
+    if (!found.size) return
+
+    const detail = truncateList(
+      Array.from(found.values(), ({ prop, value }) => `- \`${prop}: ${value}\` — write \`[${value}]\` to mean it.`),
+      { limit: 25, unit: 'value', separator: '\n' },
+    )
+
+    const message =
+      `${found.size} style value(s) are raw css rather than tokens:\n\n${detail}\n\n` +
+      `\`strictValues\` asks every value to come from the theme, so reaching outside it is visible in the ` +
+      `source. Write \`[value]\` to mean one literally, or add it to your tokens.`
+
+    if (this.config.validation === 'error') throw new BambooError('STRICT_VALUES', message)
+    logger.warn('strict-values', message)
+  }
+
   assertNoUnresolvedTokens = () => {
     if (this.config.unresolvedToken !== 'error') return
 

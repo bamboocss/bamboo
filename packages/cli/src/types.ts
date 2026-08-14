@@ -5,11 +5,11 @@ export interface InitCommandFlags extends Pick<
   'cwd' | 'poll' | 'watch' | 'gitignore' | 'outExtension' | 'outdir'
 > {
   /**
-   * `--strict-tokens`, which cac gives as `true` when bare and otherwise as whatever followed
+   * `--strict-values`, which cac gives as `true` when bare and otherwise as whatever followed
    * it — a string, or a number where that looked numeric. `normalizeStrictTokens` is what turns
    * any of those into a setting, or refuses.
    */
-  strictTokens?: boolean | string | number
+  strictValues?: boolean | string | number
   force?: boolean
   postcss?: boolean
   silent?: boolean

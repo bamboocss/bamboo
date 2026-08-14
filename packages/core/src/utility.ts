@@ -80,7 +80,7 @@ export interface UtilityOptions {
   separator?: string
   prefix?: string
   shorthands?: boolean
-  strictTokens?: boolean
+  strictValues?: boolean
   keyframes?: CssKeyframes
   unresolvedToken?: 'off' | 'warn' | 'error'
 }
@@ -149,14 +149,14 @@ export class Utility {
 
   prefix = ''
 
-  /** @see UserConfig.strictTokens */
-  strictTokens = false
+  /** @see UserConfig.strictValues */
+  strictValues = false
 
   /** @see UserConfig.unresolvedToken */
   unresolvedToken: 'off' | 'warn' | 'error' = 'warn'
 
   constructor(private options: UtilityOptions) {
-    const { tokens, config = {}, separator, prefix, shorthands, strictTokens, unresolvedToken } = options
+    const { tokens, config = {}, separator, prefix, shorthands, strictValues, unresolvedToken } = options
 
     if (unresolvedToken) {
       this.unresolvedToken = unresolvedToken
@@ -173,8 +173,8 @@ export class Utility {
       this.prefix = prefix
     }
 
-    if (strictTokens) {
-      this.strictTokens = strictTokens
+    if (strictValues) {
+      this.strictValues = strictValues
     }
 
     if (shorthands) {
@@ -440,9 +440,11 @@ export class Utility {
 
     const set = this.types.get(property) ?? new Set()
 
-    // A custom utility that maps to a CSS property inherits that property's values — all of
-    // them, or none under `strictTokens`, where every raw value is written `[14px]`.
-    if (config.property && !this.strictTokens) {
+    // A custom utility that maps to a CSS property inherits that property's values, always.
+    // Its own `values` are vocabulary *added* to the property, never a replacement for it —
+    // `transitionProperty` declaring `colors` does not stop `transitionProperty: 'color'` being
+    // a css property name.
+    if (config.property) {
       this.types.set(property, set.add(`CssProperties["${config.property}"]`))
     }
   }
@@ -907,6 +909,41 @@ export class Utility {
     if (this.unresolvedToken !== 'warn') return
 
     logger.warn('utility', this.explainUnresolvedToken(ref))
+  }
+
+  /**
+   * A value that is neither a token nor something the property names, under `strictValues`.
+   *
+   * The policy is "everything goes through the theme": a raw CSS value has to be written
+   * `[14px]`, so that reaching outside the design system is visible in the source rather than
+   * indistinguishable from using it.
+   *
+   * A *keyword* is neither a raw value nor a token, and this is the distinction the type layer
+   * could not draw. `display: 'flex'` is not reaching outside anything — `flex` is the only way
+   * to say it — so requiring `[flex]` would be absurd, and the old type-level setting handled
+   * that by not narrowing `display` at all, which also let `display: 'abc'` through. The
+   * grammar separates the two: identifier-shaped and valid for the property is a keyword;
+   * anything with a unit, a `#`, a function or a space is a value.
+   */
+  isRawValue = (prop: string, value: string) => {
+    if (!this.strictValues) return false
+
+    // The escape hatch, which is the entire point of the setting: `[14px]` says "I mean this
+    // literally" and is what it asks an author to write.
+    if (getArbitraryValue(value) !== value) return false
+
+    const key = this.resolveShorthand(prop)
+    const bare = this.bareTokenPath(key, value)
+
+    // A token, by any name it is allowed to wear.
+    if (this.getKnownValues(key)?.has(bare)) return false
+
+    // A keyword or an author identifier. `isUnresolvedTokenValue` reports the ones that are
+    // neither, so a value reaching here identifier-shaped is one the grammar accepted.
+    if (IDENTIFIER.test(bare)) return false
+
+    // Numbers are values. `padding: 4` resolves through the spacing scale and left above.
+    return true
   }
 
   /**

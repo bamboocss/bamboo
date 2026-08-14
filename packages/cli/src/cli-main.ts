@@ -38,16 +38,16 @@ import type {
 
 /**
  * The negative spellings, answered here rather than left to cac, which only recognises
- * `--no-strict-tokens`. A user writing `--strict-tokens=false` means the same thing.
+ * `--no-strict-values`. A user writing `--strict-values=false` means the same thing.
  *
  * Anything unrecognised is refused rather than coerced. Mapping the unknown to `true` is the
- * worst available answer: `--strict-tokens=false` would turn it *on*, and every raw CSS value in
+ * worst available answer: `--strict-values=false` would turn it *on*, and every raw CSS value in
  * the project would become a type error with nothing naming the mistake.
  */
 const OFF = new Set(['false', 'no', 'off', '0', ''])
 
 /**
- * `--strict-tokens` writes a *policy*, so nothing is written unless it is asked for.
+ * `--strict-values` writes a *policy*, so nothing is written unless it is asked for.
  *
  * It used to default to the middle mode, because leaving it off meant `css({ color: 'mutedd' })`
  * type-checked, built, and shipped a declaration the browser discards. The build reports that
@@ -55,7 +55,7 @@ const OFF = new Set(['false', 'no', 'off', '0', ''])
  * really about: must every raw CSS value be written `'[14px]'`? That is a team's decision about
  * their design system, and a default cannot make it for them.
  */
-const normalizeStrictTokens = (value: unknown): Config['strictTokens'] | undefined => {
+const normalizeStrictTokens = (value: unknown): Config['strictValues'] | undefined => {
   if (value === undefined || value === false) return undefined
   if (value === true) return true
   const named = String(value)
@@ -63,7 +63,7 @@ const normalizeStrictTokens = (value: unknown): Config['strictTokens'] | undefin
   if (named === 'true' || named === 'yes' || named === 'on') return true
   throw new BambooError(
     'CONFIG_ERROR',
-    `\`--strict-tokens ${named}\` is not a setting. Pass it bare to require every value to be a token.`,
+    `\`--strict-values ${named}\` is not a setting. Pass it bare to require every value to be a token.`,
   )
 }
 
@@ -84,11 +84,11 @@ export async function main() {
     .option('--no-codegen', "Don't run the codegen logic")
     .option('--out-extension <ext>', "The extension of the generated js files (default: 'mjs')")
     .option('--outdir <dir>', 'The output directory for the generated files')
-    .option('--strict-tokens [mode]', 'Require every style value to be a token, so a raw css value is written `[14px]`')
+    .option('--strict-values [mode]', 'Require every style value to be a token, so a raw css value is written `[14px]`')
     .option('--logfile <file>', 'Outputs logs to a file')
     .action(async (initFlags: Partial<InitCommandFlags> = {}) => {
       // Typed rather than `{}`. Widening the interactive result to an empty object is what let
-      // its `strictTokens` answer be returned, declared, and never read by the destructuring
+      // its `strictValues` answer be returned, declared, and never read by the destructuring
       // below — the field was invisible to the type system at exactly the point that mattered.
       let options: Partial<InitCommandFlags> = {}
 
@@ -100,7 +100,7 @@ export async function main() {
 
       const flags = { ...initFlags, ...options }
 
-      const { force, postcss, silent, gitignore, outExtension, strictTokens, config: configPath } = flags
+      const { force, postcss, silent, gitignore, outExtension, strictValues, config: configPath } = flags
 
       const cwd = resolve(flags.cwd ?? '')
 
@@ -124,10 +124,10 @@ export async function main() {
           force,
           outExtension,
           outdir: flags.outdir,
-          // Both `--strict-tokens` and the interactive answer used to stop here: the value was
+          // Both `--strict-values` and the interactive answer used to stop here: the value was
           // collected, never destructured, and never written — so a project that asked for
           // strict tokens got a config without them and nothing said so.
-          strictTokens: normalizeStrictTokens(strictTokens),
+          strictValues: normalizeStrictTokens(strictValues),
         }),
       )
 
