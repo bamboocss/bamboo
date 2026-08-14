@@ -1,5 +1,22 @@
 # @bamboocss/node
 
+## 1.41.1
+
+### Patch Changes
+
+- Updated dependencies [3b91dce]
+  - @bamboocss/generator@1.41.1
+  - @bamboocss/parser@1.41.1
+  - @bamboocss/reporter@1.41.1
+  - @bamboocss/config@1.41.1
+  - @bamboocss/core@1.41.1
+  - @bamboocss/logger@1.41.1
+  - @bamboocss/plugin-svelte@1.41.1
+  - @bamboocss/plugin-vue@1.41.1
+  - @bamboocss/shared@1.41.1
+  - @bamboocss/token-dictionary@1.41.1
+  - @bamboocss/types@1.41.1
+
 ## 1.41.0
 
 ### Patch Changes
