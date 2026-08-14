@@ -1,5 +1,75 @@
 # @bamboocss/vite
 
+## 1.40.1
+
+### Patch Changes
+
+- 8985e58: Generate `styled-system/` from the build, so a clone does not need the CLI first.
+
+  `Builder.emit` is what puts the generated system on disk for an integration, and on the first call it wrote nothing:
+
+  ```ts
+  if (this.hasEmitted && this.affecteds?.hasConfigChanged) { … }
+  this.hasEmitted = true
+  ```
+
+  The flag it reads is set by the same method, one line down, so the first call could only fall through — artifacts
+  appeared on a _later_ call that also carried a config change. The Vite plugin's call site has always been commented "a
+  fresh clone has to get those files from the first `vite dev`", and it did not: with no `styled-system/` on disk,
+  `vite dev` served an error overlay and `vite build` failed with
+  `Rolldown failed to resolve import "styled-system/css"`. Nothing caught it because every project runs `bamboo codegen`
+  from a `prepare` script, so the directory was always already there.
+
+  Reaching `emit` through `load` would not have been enough either. A module's imports are all resolved before any of
+  them is loaded, so a `root.tsx` importing both `styled-system/css` and `virtual:bamboo.css` has the first resolved
+  while the directory is still absent. The Vite plugin therefore generates in `buildStart` — the first hook Rollup calls
+  — and the first `load` is handed that pass rather than repeating it. The dev watcher drops it when an extracted file
+  changes, so a first load that arrives after an edit still regenerates.
+
+  What this buys is a build step deleted rather than made faster. A project that runs `bamboo codegen && vite build` can
+  drop the first half: on one react-router app that step is 585 ms, of which ~20 ms is generating the files and the rest
+  is a second Node process loading `ts-morph` and the extractor to do it. `prepare` scripts stay useful — `tsc` and the
+  editor want the types before anything builds — and nothing about their output changes: the same 55 artifacts,
+  byte-identical CSS.
+
+  Later emits stay narrow, which is what the original guard was reaching for: a watch rebuild re-emits only the
+  artifacts a config change affected, and one that changed no config writes nothing.
+
+- f481f05: Stop re-announcing HMR updates Vite is already sending.
+
+  One `css()` edit to a module two routes share moved **554 kB** over the dev socket on a five-route react-router app.
+  `root.tsx` and `dashboard.tsx` were each fetched five times, at ~46 kB a copy, and the stylesheet twice — 469 kB of
+  the 554 was duplicates of the other 85. Extraction in the same log took 2.49 ms, so essentially none of the wall clock
+  was Bamboo doing work. It is now **331 kB** and 9 responses instead of 14, with the same modules re-transformed and
+  the edit applying in the same time.
+
+  Two places announced something Vite had in hand:
+  - `hotUpdate` returned the modules that folded a value out of the changed file, alongside invalidating them.
+    Invalidating is the actual fix — Vite _soft_-invalidates a static importer, and a soft invalidation keeps the cached
+    transform, which is where the compiled class string lives. Naming them as well is redundant, because `addWatchFile`
+    already makes each one a direct importer, so `propagateUpdate` reaches all of them by itself. It is also not free: a
+    framework plugin reading the result re-drives HMR _per entry_ — react-router's
+    `react-router-server-change-trigger-client-hmr` calls `reloadModule` once per module, in both its client and its ssr
+    pass — so every extra name was another full round trip. Eight `hmr update` messages for one edit; now three, of
+    which two are react-router duplicating Vite.
+  - The dev watcher forced a reload of the virtual stylesheet for every extracted file. `vite:css-analysis` turns the
+    `addWatchFile` calls in `load` into real importer edges, so the sheet is already a direct importer of every file the
+    extractor read and Vite propagates an edit to it unprompted. Forcing one as well is a second `updateModules`, which
+    the browser answers by refetching the whole stylesheet again — 36 kB a copy, per keystroke.
+
+  Both now defer when Vite has matched a module for the changed file, and both still fire when it has not: a dependency
+  the fold read that never became a module of its own is the case they were written for, and nothing else would repaint
+  at all.
+
+- Updated dependencies [8985e58]
+  - @bamboocss/node@1.40.1
+  - @bamboocss/config@1.40.1
+  - @bamboocss/core@1.40.1
+  - @bamboocss/extractor@1.40.1
+  - @bamboocss/logger@1.40.1
+  - @bamboocss/shared@1.40.1
+  - @bamboocss/types@1.40.1
+
 ## 1.40.0
 
 ### Patch Changes
