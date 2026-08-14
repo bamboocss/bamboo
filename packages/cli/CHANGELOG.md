@@ -1,5 +1,19 @@
 # @bamboocss/dev
 
+## 1.43.0
+
+### Patch Changes
+
+- Updated dependencies [1cef86c]
+  - @bamboocss/types@1.43.0
+  - @bamboocss/node@1.43.0
+  - @bamboocss/logger@1.43.0
+  - @bamboocss/preset-bamboo@1.43.0
+  - @bamboocss/preset-base@1.43.0
+  - @bamboocss/token-dictionary@1.43.0
+  - @bamboocss/postcss@1.43.0
+  - @bamboocss/shared@1.43.0
+
 ## 1.42.0
 
 ### Minor Changes
