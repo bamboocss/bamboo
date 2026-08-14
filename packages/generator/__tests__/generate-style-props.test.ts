@@ -6,7 +6,7 @@ describe('generate property types', () => {
   test('should ', () => {
     expect(generateStyleProps(createContext())).toMatchInlineSnapshot(`
       "import type { ConditionalValue } from './conditions';
-      import type { CssValueShape, KnownKeywords, OnlyKnown, UtilityValues, WithEscapeHatch } from './prop-type';
+      import type { OnlyKnown, UtilityValues, WithEscapeHatch } from './prop-type';
       import type { CssProperties } from './system-types';
       import type { Token } from '../tokens/index';
 
@@ -8097,7 +8097,7 @@ describe('generate property types', () => {
   test('with stricTokens true', () => {
     expect(generateStyleProps(createContext({ strictTokens: true }))).toMatchInlineSnapshot(`
       "import type { ConditionalValue } from './conditions';
-      import type { CssValueShape, KnownKeywords, OnlyKnown, UtilityValues, WithEscapeHatch } from './prop-type';
+      import type { OnlyKnown, UtilityValues, WithEscapeHatch } from './prop-type';
       import type { CssProperties } from './system-types';
       import type { Token } from '../tokens/index';
 
@@ -16213,7 +16213,7 @@ describe('generate property types', () => {
 
     expect(str.slice(0, str.indexOf('WebkitBorderBefore'))).toMatchInlineSnapshot(`
       "import type { ConditionalValue } from './conditions';
-      import type { CssValueShape, KnownKeywords, OnlyKnown, UtilityValues, WithEscapeHatch } from './prop-type';
+      import type { OnlyKnown, UtilityValues, WithEscapeHatch } from './prop-type';
       import type { CssProperties } from './system-types';
       import type { Token } from '../tokens/index';
 
@@ -16243,80 +16243,5 @@ describe('generate property types', () => {
          */
       "
     `)
-  })
-})
-
-/**
- * The setting between "nothing is checked" and "only tokens".
- *
- * Asserted per property rather than as a whole-file snapshot: what matters is the shape of one
- * property's union, and the file is eight thousand lines of the same three decisions.
- *
- * Three things have to be true at once. csstype's keywords survive, so `display: 'flex'` does
- * not have to be a token. The open `string` it ends with does not, since that member is what
- * makes `color: 'mutedd'` type-check. And both the tokens and those keywords go inside
- * `WithEscapeHatch`, because that is what carries `!` and `/` — wrapping the tokens alone made
- * `boxShadow: 'none!'` an error while `color: 'blue.300!'` was fine, decided by whether the
- * value happened to be a token.
- *
- * What must *not* go in is the open string an `authorIdentProperty` keeps: everything outside
- * the wrapper is still accepted plain, and everything inside it is what a mark may decorate, so
- * wrapping an open string would let a mark excuse anything.
- */
-describe('strictTokens: unknown-tokens', () => {
-  const lineFor = (prop: string, config?: Parameters<typeof createContext>[0]) => {
-    const generated = generateStyleProps(createContext({ strictTokens: 'unknown-tokens', ...config }))
-    return generated.split('\n').find((line) => line.trimStart().startsWith(`${prop}?:`))
-  }
-
-  test('keeps a property’s keywords, drops its open string, and wraps both', () => {
-    expect(lineFor('color')).toMatchInlineSnapshot(
-      `"color?: ConditionalValue<WithEscapeHatch<UtilityValues["color"] | KnownKeywords<CssProperties["color"]>> | CssVars | CssValueShape>"`,
-    )
-  })
-
-  test('a property with no tokens still gets its keywords', () => {
-    expect(lineFor('display')).toMatchInlineSnapshot(
-      `"display?: ConditionalValue<WithEscapeHatch<KnownKeywords<CssProperties["display"]>> | CssVars | CssValueShape>"`,
-    )
-  })
-
-  test('`strictPropertyValues` still narrows to the enumerated list', () => {
-    expect(lineFor('position', { strictPropertyValues: true })).toMatchInlineSnapshot(
-      `"position?: ConditionalValue<WithEscapeHatch<OnlyKnown<"position", KnownKeywords<CssProperties["position"]> | CssVars>>>"`,
-    )
-  })
-
-  /**
-   * `float` is the one property in both the strict-property list and bamboo's own utilities,
-   * so it is the only place the two settings meet. The tokens are held out of the union for
-   * the escape-hatch wrapping, and that branch returns before the wrapping — so without
-   * putting them back, `float: 'start'` was rejected under the combination and accepted under
-   * either setting alone.
-   */
-  test('a property in both lists keeps its utility values', () => {
-    expect(lineFor('float', { strictPropertyValues: true })).toContain('UtilityValues["float"]')
-  })
-
-  /**
-   * A property whose values are identifiers the author invents has nothing to be strict
-   * against. csstype types it as an open string for the same reason, and narrowing it rejects
-   * a `@keyframes` name declared in CSS, a grid area, a font family — all of which are the
-   * ordinary way to write those properties.
-   */
-  test('properties whose values are author identifiers are left open', () => {
-    for (const prop of ['animationName', 'gridArea', 'fontFamily', 'content', 'willChange']) {
-      expect(lineFor(prop), prop).toContain(`CssProperties["${prop}"]`)
-      expect(lineFor(prop), prop).not.toContain('KnownKeywords')
-    }
-  })
-
-  test('the other settings are untouched', () => {
-    expect(lineFor('color', { strictTokens: true })).toMatchInlineSnapshot(
-      `"color?: ConditionalValue<WithEscapeHatch<UtilityValues["color"] | CssVars>>"`,
-    )
-    expect(lineFor('color', { strictTokens: false })).toMatchInlineSnapshot(
-      `"color?: ConditionalValue<UtilityValues["color"] | CssVars | CssProperties["color"] | AnyString>"`,
-    )
   })
 })

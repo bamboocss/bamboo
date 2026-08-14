@@ -114,21 +114,12 @@ describe('CLI', () => {
     runCommand(`${cmd} --strict-tokens`, { cwd: testsCwd })
     expect(await fs.readFile(paths.config, 'utf8')).toContain('strictTokens: true')
 
-    // The middle mode has to be reachable from here too, or it is a config-file feature
-    // `bamboo init` cannot produce.
-    runCommand(`${cmd} --strict-tokens unknown-tokens`, { cwd: testsCwd })
-    // Either quote: the template writes JSON and `oxfmt` rewrites it to single quotes where
-    // the binary is on PATH, which it is not everywhere this runs.
-    expect(await fs.readFile(paths.config, 'utf8')).toMatch(/strictTokens: ['"]unknown-tokens['"]/)
-
-    // The default, which used to be nothing at all. A config that never mentions it reads as a
-    // decision nobody made — and the decision nobody makes is the one that ships
-    // `color: mutedd` to a browser that discards it. The middle mode costs no migration, so it
-    // is what a project gets for saying nothing.
+    // Absent unless asked for. This writes a *policy* — every raw css value has to become
+    // `[14px]` — and a default cannot make that decision for a team. The mistake it used to
+    // exist to catch, a misspelled token, is reported by the build with no setting at all.
     runCommand(cmd, { cwd: testsCwd })
-    expect(await fs.readFile(paths.config, 'utf8')).toMatch(/strictTokens: ['"]unknown-tokens['"]/)
+    expect(await fs.readFile(paths.config, 'utf8')).not.toContain('strictTokens')
 
-    // Declining is still a thing a project can do, and must not be read as saying nothing.
     runCommand(`${cmd} --no-strict-tokens`, { cwd: testsCwd })
     expect(await fs.readFile(paths.config, 'utf8')).not.toContain('strictTokens')
   }, 120_000)

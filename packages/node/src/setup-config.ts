@@ -56,9 +56,9 @@ ${
   // mentions it reads as "not a decision I made", which is what `bamboo init` without the
   // flag is.
   strictTokens
-    ? `\n// How much of a style value typescript checks. \`'unknown-tokens'\` rejects a value\n` +
-      `// that is neither a token nor a keyword the property enumerates, while leaving raw\n` +
-      `// css values alone; \`true\` allows only tokens.\nstrictTokens: ${JSON.stringify(strictTokens)},\n`
+    ? `\n// Require every style value to be a token, so a raw css value is written \`[14px]\`.\n` +
+      `// A misspelled token is reported by the build whether or not this is on.\n` +
+      `strictTokens: ${JSON.stringify(strictTokens)},\n`
     : ''
 }
 

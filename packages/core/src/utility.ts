@@ -80,7 +80,7 @@ export interface UtilityOptions {
   separator?: string
   prefix?: string
   shorthands?: boolean
-  strictTokens?: boolean | 'unknown-tokens'
+  strictTokens?: boolean
   keyframes?: CssKeyframes
   unresolvedToken?: 'off' | 'warn' | 'error'
 }
@@ -150,7 +150,7 @@ export class Utility {
   prefix = ''
 
   /** @see UserConfig.strictTokens */
-  strictTokens: boolean | 'unknown-tokens' = false
+  strictTokens = false
 
   /** @see UserConfig.unresolvedToken */
   unresolvedToken: 'off' | 'warn' | 'error' = 'warn'
@@ -440,23 +440,10 @@ export class Utility {
 
     const set = this.types.get(property) ?? new Set()
 
-    // A custom utility that maps to a CSS property inherits that property's values, and how
-    // much of them depends on the setting: everything, the keywords it enumerates, or nothing.
-    //
-    // `'unknown-tokens'` keeps the keywords and drops the open `string` csstype ends every
-    // property with — which is the whole mechanism, here and in the generated style props. The
-    // string is what makes a misspelled token type-check, and the keywords are what stop
-    // `display: 'flex'` from needing to be a token to survive without it.
-    if (config.property) {
-      if (this.strictTokens === 'unknown-tokens') {
-        // `type:` marks this as a type expression. Without it `getTypes` takes the branch that
-        // quotes an unrecognised entry, and the generated `UtilityValues` gets the *string
-        // literal* `"KnownKeywords<CssProperties[\"containerName\"]>"` — which then rejects
-        // `containerName: 'sidebar'` and accepts that sentence as a value.
-        this.types.set(property, set.add(`type:KnownKeywords<CssProperties["${config.property}"]>`))
-      } else if (!this.strictTokens) {
-        this.types.set(property, set.add(`CssProperties["${config.property}"]`))
-      }
+    // A custom utility that maps to a CSS property inherits that property's values — all of
+    // them, or none under `strictTokens`, where every raw value is written `[14px]`.
+    if (config.property && !this.strictTokens) {
+      this.types.set(property, set.add(`CssProperties["${config.property}"]`))
     }
   }
 

@@ -979,26 +979,23 @@ which keeps the declarations without emitting anything that uses them.
 
 ### strictTokens
 
-**Type**: `boolean | 'unknown-tokens'`
+**Type**: `boolean`
 
 **Default**: `false`
 
-How much of a style value TypeScript checks. Three settings, not two:
+Require every style value to be a token, so a raw CSS value has to be written `[14px]`.
 
-| setting            | `color: 'red.400'` | `fontSize: '14px'` | `color: 'mutedd'` |
-| ------------------ | ------------------ | ------------------ | ----------------- |
-| `false`            | ✅                 | ✅                 | ✅ ships broken   |
-| `'unknown-tokens'` | ✅                 | ✅                 | ❌ error          |
-| `true`             | ✅                 | ❌ write `[14px]`  | ❌ error          |
+| setting | `color: 'red.400'` | `fontSize: '14px'` |
+| ------- | ------------------ | ------------------ |
+| `false` | ✅                 | ✅                 |
+| `true`  | ✅                 | ❌ write `[14px]`  |
 
-`true` only allows token values, for properties that have config tokens — `color`, `bg`, `borderColor` and so on.
-`'unknown-tokens'` allows raw CSS values as well and rejects only what can be neither: a bare identifier that names no
-token and no keyword the property enumerates. [Learn more.](/docs/concepts/writing-styles#stricttokens-unknown-tokens)
+This is a design-system policy — "everything goes through the theme" — not a correctness check. On one otherwise-correct
+five-page app it reports 468 errors, all of them raw values, which is what makes it a day-one decision.
 
-The default above is what bamboo does when the key is absent, which is what an existing config has. `bamboo init` writes
-`'unknown-tokens'` into a config it creates, because that is the setting a project can still adopt later — `true`
-reports every raw value in the codebase, so it is a day-one decision. `bamboo init --no-strict-tokens` leaves the key
-out.
+It is **not** what catches `color: 'mutedd'`. The build reports that with no setting at all, reading the CSS grammar
+rather than a TypeScript union — see [`unresolvedToken`](#unresolvedtoken) and
+[writing styles](/docs/concepts/writing-styles#a-misspelled-token-is-the-builds-job-not-typescripts).
 
 ### strictPropertyValues
 

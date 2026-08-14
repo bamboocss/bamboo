@@ -95,18 +95,18 @@ export const validateConfig = (config: Partial<UserConfig>) => {
 }
 
 /**
- * `strictTokens` has three settings, and a fourth spelling is not one of them.
+ * `strictTokens` is a boolean, and a string is not one.
  *
- * It reaches the generated types as a comparison against two known values, so anything else is
- * neither: `strictTokens: 'unknown'` emitted a *fourth* prop shape — csstype's keywords without
- * the escape hatch — that no setting asks for, silently. A typo in the middle mode's name is the
- * likely way to get there, and the symptom is type errors that match no documented behaviour.
+ * It reaches the generated types as a truthiness test, so a string that is not a setting is
+ * simply *on* — and being on means every raw CSS value in the project is a type error, from a
+ * config that looked like it was asking for something else. `'unknown-tokens'` in particular
+ * used to be a setting and now is not, so it is the likely way to arrive here.
  */
 const validateStrictTokens = (value: unknown, addError: (scope: string, message: string) => void) => {
-  if (value === undefined || value === true || value === false || value === 'unknown-tokens') return
+  if (value === undefined || typeof value === 'boolean') return
   addError(
     'strictTokens',
-    `\`${JSON.stringify(value)}\` is not a setting. Use \`true\` for tokens only, \`'unknown-tokens'\` to reject a ` +
-      `value that is neither a token nor a css keyword, or omit it.`,
+    `\`${JSON.stringify(value)}\` is not a setting. Use \`true\` to require every value to be a token, or omit it. ` +
+      `A misspelled token is reported by the build — see \`unresolvedToken\` — and needs no setting.`,
   )
 }

@@ -832,20 +832,19 @@ describe('validateConfig', () => {
 })
 
 /**
- * `strictTokens` has three settings, and a fourth spelling silently produced a fourth
- * behaviour.
+ * `strictTokens` is a boolean, and a string that is not one is simply *on*.
  *
- * The generated types compare it against two known values, so `strictTokens: 'unknown'` — a
- * typo of the middle mode — emitted csstype's keywords without the escape hatch: a prop shape
- * no setting asks for, reached by a build that exits 0. The symptom is type errors matching
- * nothing in the docs.
+ * The generated types test it for truthiness, so `strictTokens: 'unknown-tokens'` — which used
+ * to be a setting — turns every raw CSS value in the project into a type error, from a config
+ * that reads as though it asked for something milder. A build that exits 0 and then a wall of
+ * errors matching nothing in the docs.
  */
 describe('strictTokens', () => {
   const validate = (strictTokens: unknown) =>
     validateConfig({ strictTokens, validation: 'error' } as Partial<UserConfig>)
 
-  test('accepts the three settings, and absence', () => {
-    for (const value of [undefined, true, false, 'unknown-tokens']) {
+  test('accepts both settings, and absence', () => {
+    for (const value of [undefined, true, false]) {
       expect(() => validate(value), String(value)).not.toThrow()
     }
   })

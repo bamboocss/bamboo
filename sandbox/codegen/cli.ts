@@ -4,7 +4,7 @@ import cac from 'cac'
 import { spawn } from 'child_process'
 
 const cli = cac('sct')
-const scenarioList = ['strict-tokens', 'unknown-tokens', 'strict-property-values', 'strict', 'format-names']
+const scenarioList = ['strict-tokens', 'strict-property-values', 'strict', 'format-names']
 
 const isValidScenario = (scenario) => {
   if (!scenarioList.includes(scenario)) {

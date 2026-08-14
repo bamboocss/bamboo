@@ -37,57 +37,33 @@ import type {
 } from './types'
 
 /**
- * `--strict-tokens` is three-valued, and cac hands back whatever followed it.
- *
- * Bare is `true`, which is what the flag has always meant, and a named mode is passed through
- * so the middle setting is reachable from the CLI at all — it would otherwise be a config-file
- * feature `bamboo init` could not produce.
- *
- * Anything else is refused rather than coerced. Mapping the unknown to `true` is the worst
- * available answer: `--strict-tokens=false` would turn it *on*, and a typo in the middle mode's
- * name would silently pick the strictest setting there is — every raw CSS value in the project
- * becoming a type error, with nothing naming the mistake. Refusing costs one message and is
- * always readable.
- *
- * The negative spellings are answered here rather than left to cac, which only recognises
+ * The negative spellings, answered here rather than left to cac, which only recognises
  * `--no-strict-tokens`. A user writing `--strict-tokens=false` means the same thing.
+ *
+ * Anything unrecognised is refused rather than coerced. Mapping the unknown to `true` is the
+ * worst available answer: `--strict-tokens=false` would turn it *on*, and every raw CSS value in
+ * the project would become a type error with nothing naming the mistake.
  */
 const OFF = new Set(['false', 'no', 'off', '0', ''])
 
 /**
- * What a new project gets when nothing says otherwise.
+ * `--strict-tokens` writes a *policy*, so nothing is written unless it is asked for.
  *
- * `'unknown-tokens'` rather than nothing, because the default is the setting a project keeps.
- * Unchecked, `css({ color: 'mutedd' })` type-checks, builds, and ships `color: mutedd` — which
- * parses, so nothing objects and the browser drops it at compute time. `true` catches that and
- * rejects every raw value with it, which is a 468-error migration on one five-page app, so it is
- * realistically a day-one decision and a project that did not make it then never will.
- *
- * This one costs no migration: every literal value stays writable, and what it rejects is a bare
- * identifier that names neither a token nor a keyword the property enumerates. Run across this
- * repo's own documentation site it reported four, all of them real — `zIndex: 'overlay'` and
- * `'modal'` against a theme with no `zIndex` tokens, and a `transform: 'auto'` that is not css —
- * each shipping a declaration the browser discards.
- *
- * A new project has nothing written yet, so it starts at zero either way. The default only
- * decides whether the check is there when the first typo is.
+ * It used to default to the middle mode, because leaving it off meant `css({ color: 'mutedd' })`
+ * type-checked, built, and shipped a declaration the browser discards. The build reports that
+ * now — see `unresolvedToken` — so what is left here is the question this setting was always
+ * really about: must every raw CSS value be written `'[14px]'`? That is a team's decision about
+ * their design system, and a default cannot make it for them.
  */
-const DEFAULT_STRICT_TOKENS: Config['strictTokens'] = 'unknown-tokens'
-
 const normalizeStrictTokens = (value: unknown): Config['strictTokens'] | undefined => {
-  if (value === undefined) return DEFAULT_STRICT_TOKENS
-  // Explicitly off — `--no-strict-tokens`, or the interactive answer — which is not the same as
-  // saying nothing, and must not be read as the default.
-  if (value === false) return undefined
+  if (value === undefined || value === false) return undefined
   if (value === true) return true
   const named = String(value)
   if (OFF.has(named)) return undefined
-  if (named === 'unknown-tokens') return 'unknown-tokens'
   if (named === 'true' || named === 'yes' || named === 'on') return true
   throw new BambooError(
     'CONFIG_ERROR',
-    `\`--strict-tokens ${named}\` is not a setting. Pass it bare for tokens only, or ` +
-      `\`--strict-tokens unknown-tokens\` to reject a value that is neither a token nor a css keyword.`,
+    `\`--strict-tokens ${named}\` is not a setting. Pass it bare to require every value to be a token.`,
   )
 }
 
@@ -108,10 +84,7 @@ export async function main() {
     .option('--no-codegen', "Don't run the codegen logic")
     .option('--out-extension <ext>', "The extension of the generated js files (default: 'mjs')")
     .option('--outdir <dir>', 'The output directory for the generated files')
-    .option(
-      '--strict-tokens [mode]',
-      'Set strictTokens. Bare for `true`; `--strict-tokens unknown-tokens` for the middle mode',
-    )
+    .option('--strict-tokens [mode]', 'Require every style value to be a token, so a raw css value is written `[14px]`')
     .option('--logfile <file>', 'Outputs logs to a file')
     .action(async (initFlags: Partial<InitCommandFlags> = {}) => {
       // Typed rather than `{}`. Widening the interactive result to an empty object is what let
