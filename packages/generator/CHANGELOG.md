@@ -1,5 +1,17 @@
 # @bamboocss/generator
 
+## 1.39.1
+
+### Patch Changes
+
+- Updated dependencies [4734709]
+  - @bamboocss/shared@1.39.1
+  - @bamboocss/core@1.39.1
+  - @bamboocss/token-dictionary@1.39.1
+  - @bamboocss/types@1.39.1
+  - @bamboocss/is-valid-prop@1.39.1
+  - @bamboocss/logger@1.39.1
+
 ## 1.39.0
 
 ### Minor Changes
