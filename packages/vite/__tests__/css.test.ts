@@ -404,3 +404,52 @@ describe('the bamboo config in dev', () => {
     expect(resolvedConfig('build').configFileDependencies).toEqual([])
   })
 })
+
+/**
+ * The stylesheet has to reach the bundle, except where a bundle does not carry one.
+ *
+ * A build that compiled classes and emits no stylesheet ships markup full of real class names
+ * and no rules — green, and entirely unstyled. That guard is worth keeping sharp, so both
+ * halves are pinned: it fires when the sheet is gone, and it stands down for an SSR bundle,
+ * which Vite strips CSS assets from unless `ssrEmitAssets` asks otherwise. The second half is
+ * why a Qwik `vite build --ssr` used to fail while its client build was correct.
+ */
+describe('the emitted stylesheet', () => {
+  const finish = async (build: { ssr?: boolean | string; ssrEmitAssets?: boolean }) => {
+    const session = createStaticCompilationSession()
+    const plugin = bamboocssCss({ cwd, session })
+
+    await hookOf(plugin.configResolved)?.call(
+      {} as never,
+      {
+        command: 'build',
+        build: { sourcemap: false, ...build },
+      } as never,
+    )
+
+    // `load` is what records that this environment served the stylesheet, and only an
+    // environment that did answers for it.
+    const environment = { name: 'client', config: { build } }
+    const resolved = hookOf(plugin.resolveId)!.call({} as never, VIRTUAL_CSS_ID, undefined, {} as never)
+    await hookOf(plugin.load)!.call({ addWatchFile() {}, environment } as never, resolved as string, undefined as never)
+    session.transformedFiles.add(join(cwd, 'src/anything.tsx'))
+
+    // An empty bundle is the failure itself: classes were compiled and nothing carries a sheet.
+    const generateBundle = hookOf(plugin.generateBundle)!
+    return () => generateBundle.call({ environment } as never, {} as never, {}, false)
+  }
+
+  test('fails a build that compiled classes and emits no stylesheet', async () => {
+    expect(await finish({})).toThrow('no emitted asset carries the generated stylesheet')
+  }, 60_000)
+
+  test('says nothing to an SSR bundle, which emits no assets by design', async () => {
+    expect(await finish({ ssr: 'entry.tsx' })).not.toThrow()
+  }, 60_000)
+
+  test('still answers for an SSR bundle that does emit assets', async () => {
+    expect(await finish({ ssr: 'entry.tsx', ssrEmitAssets: true })).toThrow(
+      'no emitted asset carries the generated stylesheet',
+    )
+  }, 60_000)
+})

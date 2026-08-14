@@ -1210,6 +1210,9 @@ importers:
       '@bamboocss/dev':
         specifier: workspace:*
         version: link:../../packages/cli
+      '@bamboocss/vite':
+        specifier: workspace:*
+        version: link:../../packages/vite
       '@preact/preset-vite':
         specifier: 2.10.2
         version: 2.10.2(@babel/core@7.29.0)(preact@10.27.2)(vite@7.2.6(@types/node@24.10.1)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.20.6)(yaml@2.9.0))
@@ -1228,6 +1231,9 @@ importers:
       '@bamboocss/dev':
         specifier: workspace:*
         version: link:../../packages/cli
+      '@bamboocss/vite':
+        specifier: workspace:*
+        version: link:../../packages/vite
       '@builder.io/qwik':
         specifier: 1.17.2
         version: 1.17.2(vite@7.2.6(@types/node@24.10.1)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.20.6)(yaml@2.9.0))
@@ -1342,6 +1348,9 @@ importers:
       '@bamboocss/dev':
         specifier: workspace:*
         version: link:../../packages/cli
+      '@bamboocss/vite':
+        specifier: workspace:*
+        version: link:../../packages/vite
       typescript:
         specifier: 6.0.2
         version: 6.0.2

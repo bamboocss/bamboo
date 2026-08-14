@@ -210,3 +210,40 @@ export const f = (p) => css({ color: 'red.300' }, p)
     }, 60_000)
   })
 })
+
+/**
+ * A `token()` call inside a recipe config is not folded, and the diagnostic does not say so.
+ *
+ * The same expression inside `css()` compiles to the variable reference. Inside `cva`/`sva` it
+ * leaves the recipe config unresolved, so the declaration is never erased, so the `cva` import
+ * is still read at runtime — and what the user is shown is `cva — runtime-binding` at the
+ * declaration, with advice about aliases, `.raw()` and re-exports, none of which they wrote.
+ *
+ * Pinned rather than fixed here, because three installation guides now send people to the
+ * compiler and this is the trap they will hit; the string form `'token(colors.x)'` compiles and
+ * is what the docs point at. If the fold learns to resolve a `token()` call in a recipe config,
+ * this test is the one to delete.
+ */
+describe('token() inside a recipe config', () => {
+  const withToken = (body: string) =>
+    `import { cva } from 'styled-system/css'\nimport { token } from 'styled-system/tokens'\n${body}\n`
+
+  test('is not compiled, and reports the recipe rather than the call', async () => {
+    const end = await run(
+      withToken(`const badge = cva({ base: { color: token('colors.red.300') } })\nexport const cls = badge()`),
+      'src/strict-recipe-token.tsx',
+    )
+
+    expect(end).toThrow(/could not be compiled/)
+    expect(end).toThrow(/cva — runtime-binding/)
+  }, 60_000)
+
+  test('the string form compiles, which is what the docs recommend', async () => {
+    const end = await run(
+      withToken(`const badge = cva({ base: { color: 'token(colors.red.300)' } })\nexport const cls = badge()`),
+      'src/strict-recipe-token-string.tsx',
+    )
+
+    expect(end).not.toThrow()
+  }, 60_000)
+})

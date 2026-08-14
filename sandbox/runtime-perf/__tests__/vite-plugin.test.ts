@@ -1075,3 +1075,71 @@ describe('vite plugin, real dev server', () => {
     }
   }, 120_000)
 })
+
+/**
+ * A server bundle emits no CSS, and that is not a missing stylesheet.
+ *
+ * `build.ssrEmitAssets` is off by default, so Vite discards CSS assets from an SSR build — the
+ * client build is what carries the sheet. A server bundle that imports `virtual:bamboo.css`
+ * from shared code, which a root component or a layout does, therefore *serves* the stylesheet
+ * and then emits nothing, and the guard against a vanished stylesheet read that as the failure
+ * it exists to catch.
+ *
+ * It failed a build that was entirely correct. Qwik's `vite build --ssr` is the shape that
+ * showed it: every call compiled, the client bundle carrying the stylesheet, and the server
+ * bundle refusing to finish. React Router escapes it only because its plugin turns
+ * `ssrEmitAssets` on.
+ */
+describe('an SSR bundle', () => {
+  const entry = join(cwd, 'src/__ssr-no-assets.tsx')
+
+  afterEach(() => {
+    rmSync(entry, { force: true })
+  })
+
+  const buildSsr = (ssrEmitAssets: boolean) => {
+    writeFileSync(
+      entry,
+      `import 'virtual:bamboo.css'\nimport { css } from '../styled-system/css'\nexport const cls = css({ width: '[912.3px]' })\n`,
+    )
+
+    return build({
+      root: cwd,
+      logLevel: 'silent',
+      css: { postcss: { plugins: [] } },
+      plugins: [bamboocss({ cwd, reportSummary: false })],
+      build: {
+        write: false,
+        minify: false,
+        ssr: entry,
+        ssrEmitAssets,
+        rollupOptions: { external: [/^react/] },
+      },
+    }) as Promise<Rollup.RollupOutput | Rollup.RollupOutput[]>
+  }
+
+  // An SSR build is not `lib` mode, so Vite hands back one result rather than one per format.
+  const outputsOf = (result: Rollup.RollupOutput | Rollup.RollupOutput[]) =>
+    (Array.isArray(result) ? result : [result]).flatMap((one) => one.output)
+
+  test('compiles without being asked to carry the stylesheet', async () => {
+    const outputs = outputsOf(await buildSsr(false))
+    const js = outputs.map((output) => ('code' in output ? output.code : '')).join('\n')
+
+    // The classes are real; it is the *asset* that an SSR build does not emit.
+    expect(js).toContain('w_[912.3px]')
+    expect(
+      outputs.filter((output) => output.type === 'asset' && output.fileName.endsWith('.css')),
+      'Vite drops CSS assets from an SSR build unless asked',
+    ).toHaveLength(0)
+  }, 120_000)
+
+  test('still answers for the stylesheet when it does emit assets', async () => {
+    const css = outputsOf(await buildSsr(true))
+      .map((output) => ('source' in output && typeof output.source === 'string' ? output.source : ''))
+      .join('\n')
+
+    expect(css).toContain('--made-with-bamboo')
+    expect(css).toContain('912.3px')
+  }, 120_000)
+})

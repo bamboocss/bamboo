@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "prepare": "bamboo codegen",
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
@@ -15,6 +16,7 @@
   },
   "devDependencies": {
     "@bamboocss/dev": "workspace:*",
+    "@bamboocss/vite": "workspace:*",
     "@preact/preset-vite": "2.10.2",
     "typescript": "6.0.2",
     "vite": "7.2.6",

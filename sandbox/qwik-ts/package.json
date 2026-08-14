@@ -3,6 +3,7 @@
   "private": true,
   "description": "Demo App with Routing built-in (recommended)",
   "scripts": {
+    "prepare": "bamboo codegen",
     "build": "qwik build",
     "build.client": "vite build",
     "build.preview": "vite build --ssr src/entry.preview.tsx",
@@ -19,6 +20,7 @@
   },
   "devDependencies": {
     "@bamboocss/dev": "workspace:*",
+    "@bamboocss/vite": "workspace:*",
     "@builder.io/qwik": "1.17.2",
     "@builder.io/qwik-city": "1.17.2",
     "oxlint": "1.66.0",

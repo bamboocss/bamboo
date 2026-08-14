@@ -169,6 +169,20 @@ conflict-resolution guarantee for that shape.
 `token()` and `token.value()` calls with a statically known path compile to string literals. Unknown paths and dynamic
 paths fail rather than retaining the complete runtime token dictionary.
 
+<Callout type="warning">
+  Not inside a recipe config. A `token()` **call** in a `cva`/`sva` config is not resolved, which leaves the recipe
+  declaration standing and reports the `cva` import as `runtime-binding` at the declaration — a diagnostic that names
+  neither the config nor the call. Use the string form, which the utility resolves and the compiler accepts:
+
+```tsx
+cva({ base: { outline: '2px solid token(colors.accent)' } }) // ✅
+cva({ base: { outline: `2px solid ${token('colors.accent')}` } }) // ❌ runtime-binding
+```
+
+A `token()` call inside `css()` is unaffected.
+
+</Callout>
+
 ### View transitions
 
 A static `viewTransition()` bag compiles to its compact class literal. The CSS optimizer treats its carrier selector,

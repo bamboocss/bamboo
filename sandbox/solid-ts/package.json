@@ -5,6 +5,7 @@
   "description": "",
   "license": "MIT",
   "scripts": {
+    "prepare": "bamboo codegen",
     "dev": "vite",
     "build": "vite build",
     "serve": "vite preview",
@@ -16,6 +17,7 @@
   },
   "devDependencies": {
     "@bamboocss/dev": "workspace:*",
+    "@bamboocss/vite": "workspace:*",
     "typescript": "6.0.2",
     "vite": "7.2.6",
     "vite-plugin-solid": "2.11.10"

@@ -3,21 +3,25 @@ import { flex } from 'styled-system/patterns'
 import { btn } from 'styled-system/recipes'
 import { token } from 'styled-system/tokens'
 
+// The string form rather than a `token()` call, which the compiler does not fold inside a
+// recipe config — it leaves the declaration standing and then reports the `cva` import as a
+// `runtime-binding`, naming neither the config nor the call that caused it. A `token()` call
+// in a `css()` compiles, and the one below still covers that.
 const notice = cva({
   base: {
     bg: 'red',
     color: 'white',
     padding: '2',
     borderRadius: 'md',
-    outline: `2px solid ${token('colors.colorPalette.500')}`,
+    outline: '2px solid token(colors.colorPalette.500)',
     fontWeight: 'bold',
   },
   variants: {
     size: {
       lg: {
-        fontSize: token('fontSizes.3xl'),
+        fontSize: 'token(fontSizes.3xl)',
         '&:hover': {
-          fontSize: token('fontSizes.4xl'),
+          fontSize: 'token(fontSizes.4xl)',
         },
       },
     },

@@ -4,10 +4,11 @@ description: How to use Bamboo with Remix with our dedicated integration.
 ---
 
 <Callout type="warning">
-  This guide sets Bamboo up through PostCSS, which emits the stylesheet without compiling source: `css()` and `cva()`
-  stay runtime calls and the generated style engine ships in your client bundle. Because Remix builds with Vite,
-  [`@bamboocss/vite`](/docs/installation/vite) is the better default — it compiles those calls to literal class strings
-  and ships no engine at all. Bamboo says the same thing at build time when it finds a Vite config.
+  **Which Remix?** Anything scaffolded since Remix 2.7 — and everything React Router 7 and later — builds with Vite and
+  has a `vite.config.ts`; follow [React Router](/docs/installation/react-router) for those, since the setup is the same
+  and it uses `@bamboocss/vite`, which compiles every `css()` and `cva()` call away instead of shipping the style
+  engine. The steps below are for the classic compiler — a project with a `remix.config.js` and no Vite config — where
+  PostCSS is the integration Bamboo has, and `css()` and `cva()` resolve at runtime.
 </Callout>
 
 ## Start a new project

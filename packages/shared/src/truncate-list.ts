@@ -46,9 +46,17 @@ export interface TruncateListOptions {
  * Read defensively rather than through a bare `process.env`: this module is exported from
  * `@bamboocss/shared`, which is also the package the generated runtime draws from, and a
  * bare reference would throw in a browser that never sets it.
+ *
+ * Off `globalThis` rather than through `typeof process`, which guards the *value* and still
+ * needs the *name* to exist. An app that type-checks its own source without `@types/node` —
+ * every Vite template does, since the browser has no node types — then fails on this file for
+ * naming a global it has never heard of, which is how two of this repo's own sandboxes had
+ * a broken `tsc` step. It also survives a bundler that rewrites a bare `process.env.X`, which
+ * this must not be: the variable is read where the build runs, not where the bundle does.
  */
 const configuredLimit = (): number | undefined => {
-  const raw = typeof process === 'undefined' ? undefined : process.env?.BAMBOO_DIAGNOSTIC_LIMIT
+  const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env
+  const raw = env?.BAMBOO_DIAGNOSTIC_LIMIT
   if (!raw) return undefined
   if (raw === 'all') return Number.POSITIVE_INFINITY
   const parsed = Number(raw)

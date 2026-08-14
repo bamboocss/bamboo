@@ -251,6 +251,8 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
   const builder = new Builder()
   let server: ViteDevServer | undefined
   let command: 'build' | 'serve' = 'build'
+  /** The run's own `build` options, for a bundler with no per-environment config. */
+  let ssrBuildOptions: { ssr?: boolean | string; ssrEmitAssets?: boolean } | undefined
 
   /**
    * Serialised, because both `load` and the watcher can reach it and `Builder` keeps one
@@ -344,6 +346,7 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
     configResolved(config) {
       command = config.command
       session.sourcemap = config.build.sourcemap
+      ssrBuildOptions = { ssr: config.build.ssr, ssrEmitAssets: config.build.ssrEmitAssets }
 
       /**
        * Tell Vite that `bamboo.config.ts` is a config file, so editing one restarts the server.
@@ -472,7 +475,16 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
       handler(_, bundle) {
         const environment = (
           this as {
-            environment?: { name?: string; config?: { build?: { sourcemap?: StaticCompilationSession['sourcemap'] } } }
+            environment?: {
+              name?: string
+              config?: {
+                build?: {
+                  sourcemap?: StaticCompilationSession['sourcemap']
+                  ssr?: boolean | string
+                  ssrEmitAssets?: boolean
+                }
+              }
+            }
           }
         ).environment
 
@@ -530,6 +542,26 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
           return
         }
         if (!session.transformedFiles.size) return
+
+        /**
+         * An SSR bundle emits no CSS assets, and is not supposed to.
+         *
+         * `build.ssrEmitAssets` is off by default, so Vite discards them: the client build is
+         * what carries the stylesheet, and a server bundle that imports `virtual:bamboo.css`
+         * from shared code — a root component, a layout — still asks this plugin to load it.
+         * Which means the environment *served* the sheet and then emitted nothing, and the
+         * check below read that as the failure it exists to catch.
+         *
+         * It fails a build that is entirely correct. Qwik's `vite build --ssr` is the shape
+         * that showed it: 7/7 calls compiled, the client bundle carrying the stylesheet, and
+         * the server bundle refusing to finish. React Router does not hit it only because its
+         * plugin turns `ssrEmitAssets` on.
+         *
+         * Read per environment where that exists, falling back to the run's own config, so
+         * Vite 5's single-config builds are answered by the same question.
+         */
+        const buildOptions = environment?.config?.build ?? ssrBuildOptions
+        if (buildOptions?.ssr && !buildOptions.ssrEmitAssets) return
 
         const emitsMarkerAsset = Object.values(bundle).some((output) => {
           if (!carriesGeneratedCss(output)) return false
