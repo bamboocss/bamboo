@@ -1,5 +1,12 @@
 # @bamboocss/postcss
 
+## 1.41.1
+
+### Patch Changes
+
+- @bamboocss/node@1.41.1
+- @bamboocss/logger@1.41.1
+
 ## 1.41.0
 
 ### Patch Changes
