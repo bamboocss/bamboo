@@ -1,5 +1,11 @@
 # @bamboocss/extractor
 
+## 1.41.0
+
+### Patch Changes
+
+- @bamboocss/shared@1.41.0
+
 ## 1.40.1
 
 ### Patch Changes
