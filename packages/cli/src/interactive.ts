@@ -60,7 +60,10 @@ export const interactive = async (options: { cwd?: string } = {}) => {
       withStrictTokens: () =>
         p.select({
           message: 'How strictly should typescript check style values?',
-          initialValue: 'no',
+          // The middle mode, matching what the flagless `bamboo init` writes. Pressing Enter
+          // used to pick "not at all", which is the one answer that cannot be revisited later
+          // without a migration — see `DEFAULT_STRICT_TOKENS`.
+          initialValue: 'unknown-tokens',
           options: [
             { value: 'no', label: 'Not at all — any string is accepted' },
             { value: 'unknown-tokens', label: 'Reject a value that is neither a token nor a css keyword' },
@@ -97,11 +100,17 @@ export const interactive = async (options: { cwd?: string } = {}) => {
   } satisfies InitFlags
 }
 
-/** `'yes'` is the historical spelling of `true`; the third mode names itself. */
+/**
+ * `'yes'` is the historical spelling of `true`; the third mode names itself.
+ *
+ * "No" is `false`, not `undefined`. `undefined` now means "nothing was said", which the caller
+ * reads as the default — so returning it here would hand the middle mode to someone who had
+ * just declined it.
+ */
 const strictTokensFrom = (answer: string): Config['strictTokens'] | undefined => {
   if (answer === 'yes') return true
   if (answer === 'unknown-tokens') return 'unknown-tokens'
-  return undefined
+  return false
 }
 
 interface InitFlags {

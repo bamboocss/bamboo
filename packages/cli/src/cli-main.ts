@@ -54,8 +54,31 @@ import type {
  */
 const OFF = new Set(['false', 'no', 'off', '0', ''])
 
+/**
+ * What a new project gets when nothing says otherwise.
+ *
+ * `'unknown-tokens'` rather than nothing, because the default is the setting a project keeps.
+ * Unchecked, `css({ color: 'mutedd' })` type-checks, builds, and ships `color: mutedd` — which
+ * parses, so nothing objects and the browser drops it at compute time. `true` catches that and
+ * rejects every raw value with it, which is a 468-error migration on one five-page app, so it is
+ * realistically a day-one decision and a project that did not make it then never will.
+ *
+ * This one costs no migration: every literal value stays writable, and what it rejects is a bare
+ * identifier that names neither a token nor a keyword the property enumerates. Run across this
+ * repo's own documentation site it reported four, all of them real — `zIndex: 'overlay'` and
+ * `'modal'` against a theme with no `zIndex` tokens, and a `transform: 'auto'` that is not css —
+ * each shipping a declaration the browser discards.
+ *
+ * A new project has nothing written yet, so it starts at zero either way. The default only
+ * decides whether the check is there when the first typo is.
+ */
+const DEFAULT_STRICT_TOKENS: Config['strictTokens'] = 'unknown-tokens'
+
 const normalizeStrictTokens = (value: unknown): Config['strictTokens'] | undefined => {
-  if (value === undefined || value === false) return undefined
+  if (value === undefined) return DEFAULT_STRICT_TOKENS
+  // Explicitly off — `--no-strict-tokens`, or the interactive answer — which is not the same as
+  // saying nothing, and must not be read as the default.
+  if (value === false) return undefined
   if (value === true) return true
   const named = String(value)
   if (OFF.has(named)) return undefined

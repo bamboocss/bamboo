@@ -121,9 +121,15 @@ describe('CLI', () => {
     // the binary is on PATH, which it is not everywhere this runs.
     expect(await fs.readFile(paths.config, 'utf8')).toMatch(/strictTokens: ['"]unknown-tokens['"]/)
 
-    // Absent by default rather than written as `false`: a config that never mentions it reads
-    // as a decision nobody made, which is what this is.
+    // The default, which used to be nothing at all. A config that never mentions it reads as a
+    // decision nobody made — and the decision nobody makes is the one that ships
+    // `color: mutedd` to a browser that discards it. The middle mode costs no migration, so it
+    // is what a project gets for saying nothing.
     runCommand(cmd, { cwd: testsCwd })
+    expect(await fs.readFile(paths.config, 'utf8')).toMatch(/strictTokens: ['"]unknown-tokens['"]/)
+
+    // Declining is still a thing a project can do, and must not be read as saying nothing.
+    runCommand(`${cmd} --no-strict-tokens`, { cwd: testsCwd })
     expect(await fs.readFile(paths.config, 'utf8')).not.toContain('strictTokens')
   }, 120_000)
 

@@ -52,6 +52,24 @@ describe('strictTokens: unknown-tokens', () => {
     assertType(css({ height: 'fallback(100dvh, 100vh)' }))
   })
 
+  /**
+   * A utility declared as tokens *and* keywords used to lose its modifiers entirely.
+   *
+   * `KnownKeywords` keeps `Number` on purpose — a number cannot be a misspelled token path — and
+   * the old `[T] extends [string]` test read that one non-string member as "this is not a string
+   * union" and returned `never` for the whole property. So the same token, with the same mark,
+   * was accepted on `padding` and rejected on `spaceX`, decided by nothing the author can see.
+   */
+  test('a modifier works the same on a utility that also lists keywords', () => {
+    // Same token, same mark, two utilities: `rounded` is declared as tokens alone and always
+    // passed, `roundedBottom` adds `KnownKeywords` and was rejected. Both emit
+    // `var(--radii-lg) !important`. A digit-leading token would not show it — `'4!'` is
+    // accepted by the raw-value shape rule whatever the modifier forms do.
+    assertType(css({ rounded: 'lg!' }))
+    assertType(css({ roundedBottom: 'lg!' }))
+    assertType(css({ roundedBottom: 'lg !important' }))
+  })
+
   test('an identifier that is neither a token nor a keyword is a typo', () => {
     // @ts-expect-error `blue.300` is the token
     assertType(css({ color: 'blue.3000' }))

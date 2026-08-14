@@ -995,6 +995,11 @@ How much of a style value TypeScript checks. Three settings, not two:
 `'unknown-tokens'` allows raw CSS values as well and rejects only what can be neither: a bare identifier that names no
 token and no keyword the property enumerates. [Learn more.](/docs/concepts/writing-styles#stricttokens-unknown-tokens)
 
+The default above is what bamboo does when the key is absent, which is what an existing config has. `bamboo init` writes
+`'unknown-tokens'` into a config it creates, because that is the setting a project can still adopt later — `true`
+reports every raw value in the codebase, so it is a day-one decision. `bamboo init --no-strict-tokens` leaves the key
+out.
+
 ### strictPropertyValues
 
 **Type**: `boolean`

@@ -98,7 +98,17 @@ export function generatePropTypes(ctx: Context) {
    * writes on purpose.
    */
   type Modifier = "/" | "!" | " !"
-  type WithModifier<T> = [T] extends [string] ? \`\${T}\${Modifier}\${string}\` & { __modifier?: true } : never
+  /**
+   * \`Extract\`, not a \`[T] extends [string]\` test, which was the same thing until a utility
+   * carried keywords beside its tokens: \`KnownKeywords\` keeps \`Number\` deliberately, and that
+   * one non-string member turned every modifier form off for the whole property. It rejected
+   * \`roundedBottom: 'lg!'\` while \`rounded: 'lg!'\` passed, purely because the two utilities are
+   * declared differently — both emit \`var(--radii-lg) !important\`.
+   *
+   * Filtering costs nothing the test did not: the same string members distribute either way,
+   * and \`Extract\` of no strings is \`never\`, exactly what the false branch returned.
+   */
+  type WithModifier<T> = \`\${Extract<T, string>}\${Modifier}\${string}\` & { __modifier?: true }
 
   /**
    * A list of candidate values, most-preferred first, emitted as repeated declarations so the
