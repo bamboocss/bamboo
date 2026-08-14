@@ -1,5 +1,7 @@
 # @bamboocss/shared
 
+## 1.40.0
+
 ## 1.39.1
 
 ### Patch Changes
