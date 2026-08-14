@@ -1143,3 +1143,72 @@ describe('an SSR bundle', () => {
     expect(css).toContain('912.3px')
   }, 120_000)
 })
+
+/**
+ * A project with no `styled-system/` on disk, built by the plugin alone.
+ *
+ * This is what the plugin's `emit` call has always claimed to cover, and it did not: `Builder`
+ * read its own "have I emitted" flag before ever setting it, so the first call wrote nothing and
+ * the artifacts appeared only after a *later* config change. Nothing noticed, because every real
+ * project runs `bamboo codegen` from a `prepare` script or a build step, so the directory was
+ * already there — and the cost of that is a whole extra process, ~600 ms of which is module
+ * loading to do ~20 ms of work.
+ *
+ * Reaching `emit` through `load` would not have been enough either. A module's imports are all
+ * resolved before any of them is loaded, so `app.tsx` importing both `styled-system/css` and the
+ * virtual stylesheet has the first resolved while the directory is still absent — a react-router
+ * build failed with "Rolldown failed to resolve import", and `vite dev` served an error overlay.
+ * `buildStart` is the first hook Rollup calls, which is why the emit is anchored there.
+ *
+ * Its own project rather than this sandbox's, because the assertion is about an outdir that does
+ * not exist yet and every other suite here reads the one that does.
+ */
+describe('a project with no generated output yet', () => {
+  const projectDir = join(cwd, '__clean-tree-tmp')
+  const outdir = join(projectDir, 'styled-system')
+  const entry = join(projectDir, 'src/app.tsx')
+
+  beforeEach(() => {
+    mkdirSync(join(projectDir, 'src'), { recursive: true })
+    writeFileSync(
+      join(projectDir, 'bamboo.config.ts'),
+      `export default { preflight: false, include: ['./src/**/*.tsx'], outdir: 'styled-system' }\n`,
+    )
+    writeFileSync(
+      entry,
+      `import 'virtual:bamboo.css'\n` +
+        `import { css } from '../styled-system/css'\n` +
+        `export const cls = css({ display: 'flex' })\n`,
+    )
+  })
+
+  afterEach(() => rmSync(projectDir, { force: true, recursive: true }))
+
+  test('generates it during the build, early enough to import from', async () => {
+    expect(readdirSync(projectDir)).not.toContain('styled-system')
+
+    const result = (await build({
+      root: projectDir,
+      logLevel: 'silent',
+      css: { postcss: { plugins: [] } },
+      plugins: [bamboocss({ cwd: projectDir, reportSummary: false })],
+      build: {
+        write: false,
+        minify: false,
+        lib: { entry, formats: ['es'], fileName: 'clean-tree' },
+      },
+    })) as Rollup.RollupOutput[]
+
+    // Written by the build itself, from nothing.
+    expect(readdirSync(outdir)).toContain('css')
+
+    // And reached: the import resolved, the call folded, and the sheet carries its rule. A
+    // build that merely wrote the files late would still fail one of these.
+    const outputs = [result].flat().flatMap((bundle) => bundle.output)
+    const js = outputs.map((output) => ('code' in output ? output.code : '')).join('\n')
+    const css = outputs.map((output) => ('source' in output ? String(output.source) : '')).join('\n')
+
+    expect(js).toContain('d_flex')
+    expect(css).toContain('display: flex')
+  }, 120_000)
+})

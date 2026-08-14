@@ -121,9 +121,29 @@ export class Builder {
     }
   }
 
+  /**
+   * Write the generated `styled-system`, so an integration can be a project's only codegen.
+   *
+   * The first call writes everything. That looks like the redundant half — a project that ran
+   * `bamboo codegen` already has the files — but it is the only call that ever mattered, and it
+   * used to do nothing: the guard below read `hasEmitted` before it was ever set, so the first
+   * call fell straight through to setting the flag and the artifacts were written only after a
+   * *subsequent* config change. A clone with no `styled-system/` on disk therefore got none from
+   * `vite dev` or `vite build` either, which is what the callers exist to guarantee — the dev
+   * server answered with an error overlay, and the build failed to resolve `styled-system/css`
+   * from the first module that imports it. Every project has had to run the CLI first and pass
+   * for a build step, which on one react-router app is 585 ms of a 2,242 ms build, ~97% of it
+   * spent loading modules to do 21 ms of work.
+   *
+   * Later calls stay narrow, which is what the guard was reaching for. A watch rebuild re-emits
+   * only the artifacts a config change affected, and a rebuild that changed no config writes
+   * nothing at all.
+   */
   async emit() {
-    // ensure emit is only called when the config is changed
-    if (this.hasEmitted && this.affecteds?.hasConfigChanged) {
+    if (!this.hasEmitted) {
+      logger.debug('builder', 'Emit artifacts')
+      await codegen(this.getContextOrThrow())
+    } else if (this.affecteds?.hasConfigChanged) {
       logger.debug('builder', 'Emit artifacts after config change')
       await codegen(this.getContextOrThrow(), Array.from(this.affecteds.artifacts))
     }

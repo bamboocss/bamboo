@@ -264,9 +264,9 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
   const build = async () => {
     await builder.setup({ configPath, cwd })
 
-    // Writes the `styled-system` artifacts. It has to happen here rather than being left
-    // to the CLI: the project imports `styled-system/css`, so a fresh clone has to get
-    // those files from the first `vite dev` or the import fails before any css matters.
+    // Writes the `styled-system` artifacts, which is what lets this plugin be a project's only
+    // codegen. On the first pass it writes all of them; afterwards only what a config change
+    // affected. `buildStart` below is what makes the first pass early enough to count.
     await builder.emit()
 
     builder.extract()
@@ -279,7 +279,6 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
     }
 
     if (builder.context) {
-      session.cssLoaded = true
       session.utilityLayer = builder.context.config.layers?.utilities ?? 'utilities'
       session.extractedFiles.clear()
       for (const file of builder.context.getFiles()) {
@@ -323,6 +322,36 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
       .catch(() => undefined)
       .then(build)
     return pending
+  }
+
+  /**
+   * The pass that runs before Rollup resolves anything, and the sheet it produced.
+   *
+   * `emit` writes `styled-system/`, and reaching it through `load` is too late to be what a
+   * fresh clone needs: `load` runs when the *virtual module* is requested, and a module's
+   * imports are all resolved before any of them is loaded. So `app/root.tsx` importing both
+   * `styled-system/css` and `virtual:bamboo.css` has the first resolved while the directory is
+   * still absent — the client build carried on and externalised it, the ssr build failed with
+   * "Rolldown failed to resolve import", and `vite dev` served an error overlay. `buildStart` is
+   * the first hook Rollup calls, and it precedes all of that.
+   *
+   * Memoised, and consumed by the first `load` rather than regenerated for it. `buildStart` runs
+   * once per environment against this one shared instance, and nothing can have invalidated the
+   * result in between — the modules that would invalidate it have not been transformed yet.
+   * Regenerating would mean a second full extraction on every cold start, to produce the same
+   * bytes.
+   */
+  let prebuilt: Promise<string> | undefined
+  let prebuildStarted = false
+  const prebuild = async () => {
+    // Once per process, not once per environment. `buildStart` fires for each of them against
+    // this one shared instance, and after the first the artifacts are already on disk — which is
+    // the whole point of running here. A `vite build --watch` rebuild is covered for the same
+    // reason, and `emit` re-writes what a config change affected either way.
+    if (prebuildStarted) return
+    prebuildStarted = true
+    prebuilt = generate()
+    await prebuilt
   }
 
   return {
@@ -412,6 +441,21 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
       },
     },
 
+    /**
+     * Put `styled-system/` on disk before anything resolves an import of it.
+     *
+     * Normalized rather than rethrown as caught, for the reason the compiler's `buildStart`
+     * gives: this evaluates the user's config and its hooks, and in dev anything that is not an
+     * object crashes Vite's error middleware instead of being reported.
+     */
+    async buildStart() {
+      try {
+        await prebuild()
+      } catch (error) {
+        throw asError(error, `failed to generate ${VIRTUAL_CSS_ID}`)
+      }
+    },
+
     resolveId(id) {
       const query = queryOf(id)
       const base = id.slice(0, id.length - query.length)
@@ -427,10 +471,18 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
       if (id.slice(0, id.length - query.length) !== RESOLVED_ID) return null
 
       servedEnvironments.add((this as { environment?: { name?: string } }).environment?.name ?? 'default')
+      // Here rather than in `build`, which is no longer only reached by a load: `buildStart`
+      // generates the sheet whether or not anything imports it. The flag means the virtual
+      // module was asked for, and `buildEnd` fails a build that compiled classes without it.
+      session.cssLoaded = true
 
       let css: string
       try {
-        css = await generate()
+        // The `buildStart` pass, the first time. Cleared as it is taken, so a reload in dev —
+        // which is what an invalidation ends in — regenerates rather than replaying it.
+        const first = prebuilt
+        prebuilt = undefined
+        css = await (first ?? generate())
       } catch (error) {
         throw asError(error, `failed to generate ${VIRTUAL_CSS_ID}`)
       }
@@ -472,6 +524,11 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
         const ctx = builder.context
         if (!ctx) return
         if (!ctx.getFiles().some((f) => ctx.runtime.path.abs(ctx.config.cwd, f) === file)) return
+
+        // The `buildStart` pass predates this edit, so it can no longer stand in for a first
+        // load. Before the early return below, which is taken when the stylesheet has never been
+        // requested — exactly the state in which that pass is still waiting to be handed over.
+        prebuilt = undefined
 
         const mod = server?.moduleGraph.getModuleById(RESOLVED_ID)
         if (!mod) return
