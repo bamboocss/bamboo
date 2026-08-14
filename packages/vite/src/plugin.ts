@@ -359,21 +359,33 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
   /**
    * Modules to re-transform because `file` changed, hard-invalidated on the way out.
    *
-   * Both halves are load-bearing. Invalidating drops the stale compiled result, which is the
-   * defect itself; returning the modules is what makes Vite propagate an update for them, so
-   * the client applies one rather than waiting for whatever request happens next.
+   * Invalidating is the fix. It drops the stale compiled result, which is the defect itself,
+   * and it has to happen here rather than being left to `updateModules`: Vite *soft*-
+   * invalidates an importer that statically imports the changed module, and a soft invalidation
+   * keeps the cached transform — the very place the compiled class string lives.
    *
-   * Invalidating here rather than leaving it to `updateModules` also survives another plugin
-   * filtering the list afterwards — a framework's own `hotUpdate` decides what its route
-   * modules do, and the stale bytes have to go either way.
+   * Doing it here also survives another plugin filtering the list afterwards — a framework's
+   * own `hotUpdate` decides what its route modules do, and the stale bytes have to go either
+   * way.
    *
-   * A consumer Vite already reached costs nothing: `propagateUpdate` skips a module it has
-   * traversed, and every consumer of a *resolvable* dependency is one, since `addWatchFile`
-   * makes it an importer whether or not the import survived the fold. What is left is the
-   * consumer of a dependency with no module of its own, where Vite matched nothing and would
-   * have done nothing at all. That one can end in a page reload, which is the honest outcome:
-   * its compiled classes really did change, and a reload is what Vite does with any update
-   * nothing accepts.
+   * *Naming* those modules back to Vite is a different question, and the answer is almost
+   * always no. `addWatchFile` makes every consumer a direct importer of the dependency in the
+   * module graph, so `propagateUpdate` walks to all of them from the changed file by itself and
+   * sends exactly the same update. Returning them as well does not merge into that pass: a
+   * framework plugin downstream reads the list and re-drives HMR per entry — react-router's
+   * `react-router-server-change-trigger-client-hmr` calls `reloadModule` once per module, in
+   * both its client and its ssr pass — and each of those is a separate `updateModules`, a
+   * separate `hmr update`, and a separate refetch of the whole module by the browser.
+   *
+   * Measured on a five-route react-router app, one `css()` edit in a shared `ui.ts`: eight
+   * `hmr update` messages, `root.tsx` and `dashboard.tsx` fetched five times each, 554 kB over
+   * the socket for a one-line edit. Dropping the redundant half takes it to four messages and
+   * 367 kB with the same modules re-transformed and the same edit applied.
+   *
+   * So the list is returned only when Vite has matched nothing for the file and would otherwise
+   * do nothing at all — a dependency the fold read that never became a module of its own. That
+   * one can end in a page reload, which is the honest outcome: its compiled classes really did
+   * change, and a reload is what Vite does with any update nothing accepts.
    */
   const foldDependentModules = <Module extends { id?: string | null }>(
     file: string,
@@ -395,6 +407,10 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
       }
     }
     if (!added.length) return
+    // Gated on the list Vite is about to propagate from rather than on the graph, because that
+    // is the thing being duplicated. An earlier plugin that empties it has left nothing to
+    // propagate, and this is then the only announcement there will be.
+    if (modules.length) return
     return [...modules, ...added]
   }
 

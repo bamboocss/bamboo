@@ -450,6 +450,22 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
     configureServer(devServer) {
       server = devServer
 
+      /**
+       * The graph the stylesheet's own module lives in, which is the one that has to reach it.
+       *
+       * `load` registers every extracted file with `addWatchFile`, and `vite:css-analysis`
+       * turns those into real importer edges — the virtual module ends up a direct importer of
+       * each file the extractor read. So an edit to any of them propagates to the stylesheet on
+       * Vite's own pass, in whichever environment holds that edge.
+       *
+       * The client one, because CSS is a client concern: an ssr environment never applies a
+       * stylesheet update, and asking whether *any* environment matched would skip the forced
+       * reload below for a server-only module whose styles the client still has to be told
+       * about. Vite 5 has one graph and no `environments`, where the question is exact.
+       */
+      const clientGraph: { getModulesByFile: (file: string) => { size: number } | undefined } =
+        devServer.environments?.client?.moduleGraph ?? devServer.moduleGraph
+
       // The extractor's own file list decides what matters, rather than a second glob that
       // could disagree with it. `include` is resolved against the config's cwd.
       const invalidate = (file: string) => {
@@ -459,6 +475,13 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
 
         const mod = server?.moduleGraph.getModuleById(RESOLVED_ID)
         if (!mod) return
+
+        // Already Vite's job. Forcing it as well does not merge with that pass — it is a second
+        // `updateModules`, so the browser is told twice and refetches the whole stylesheet
+        // twice, 36 kB a copy on the app this was measured on. What is left for this watcher is
+        // the case it exists for: a file the extractor reads that never became a module, where
+        // Vite matches nothing and nothing would repaint at all.
+        if (clientGraph.getModulesByFile(file)?.size) return
 
         server?.moduleGraph.invalidateModule(mod)
         void server?.reloadModule(mod)

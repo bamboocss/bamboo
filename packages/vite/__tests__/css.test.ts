@@ -70,6 +70,70 @@ describe('the virtual stylesheet', () => {
     expect(result!.watched.some((file) => file.endsWith('.tsx'))).toBe(true)
   }, 60_000)
 
+  /**
+   * Those same registrations are what make forcing a reload redundant most of the time.
+   *
+   * `vite:css-analysis` turns `addWatchFile` into real importer edges, so the virtual module is
+   * a direct importer of every file the extractor read and Vite propagates an edit to it
+   * unprompted. Forcing one as well is a second `updateModules`, which the browser answers by
+   * refetching the whole stylesheet a second time — 36 kB a copy on the app this was measured
+   * on, on every keystroke.
+   *
+   * The watcher still has to cover the case it was written for: a file the extractor reads that
+   * never became a module, where Vite matches nothing and nothing repaints at all.
+   */
+  test('forces a stylesheet reload only for a file Vite has no module for', async () => {
+    const plugin = bamboocssCss({ cwd, session: createStaticCompilationSession() })
+    await hookOf(plugin.configResolved)?.call(
+      {} as never,
+      { build: { sourcemap: false }, command: 'serve', configFileDependencies: [], root: cwd } as never,
+    )
+    const resolved = hookOf(plugin.resolveId)!.call({} as never, VIRTUAL_CSS_ID, undefined, {} as never) as string
+
+    const watched: string[] = []
+    await hookOf(plugin.load)!.call(
+      { addWatchFile: (file: string) => watched.push(file) } as never,
+      resolved,
+      undefined as never,
+    )
+    const edited = watched.find((file) => file.endsWith('.tsx'))!
+
+    const inGraph = new Set<string>()
+    const reloaded: string[] = []
+    const listeners = new Map<string, (file: string) => void>()
+    hookOf(plugin.configureServer)!.call(
+      {} as never,
+      {
+        // Deliberately not the same object as `moduleGraph`: the sheet is looked up in the mixed
+        // graph and the question of whether Vite already reaches it is the client graph's, since
+        // an ssr environment never applies a stylesheet update.
+        environments: {
+          client: { moduleGraph: { getModulesByFile: (file: string) => inGraph.has(file) && new Set([1]) } },
+        },
+        moduleGraph: {
+          getModuleById: (id: string) => (id === resolved ? { id } : undefined),
+          getModulesByFile: () => undefined,
+          invalidateModule: () => {},
+        },
+        reloadModule: (mod: { id: string }) => void reloaded.push(mod.id),
+        watcher: { on: (event: string, listener: (file: string) => void) => listeners.set(event, listener) },
+      } as never,
+    )
+
+    listeners.get('change')!(edited)
+    expect(reloaded, 'nothing else would repaint').toEqual([resolved])
+
+    reloaded.length = 0
+    inGraph.add(edited)
+    listeners.get('change')!(edited)
+    expect(reloaded, "Vite's own pass already carries the sheet").toEqual([])
+
+    // Still only about the extractor's own files, graph or no graph.
+    inGraph.add(join(cwd, 'not-extracted.tsx'))
+    listeners.get('change')!(join(cwd, 'not-extracted.tsx'))
+    expect(reloaded).toEqual([])
+  }, 60_000)
+
   test('recipe declarations are atoms and recipe rules are never emitted', async () => {
     const fixtureDir = join(cwd, 'src/__static-composition-css-test')
     const fixture = join(fixtureDir, 'styles.ts')

@@ -148,7 +148,7 @@ describe('watch rebuilds', () => {
  * dropped when the fold that created it goes away.
  */
 describe('dev invalidation of modules that folded across files', () => {
-  test('names the consumer, and stops naming it once it no longer folds from the file', async () => {
+  test('invalidates the consumer, and stops once it no longer folds from the file', async () => {
     const { start, fold, hot } = driver()
 
     writeDependency('red.300')
@@ -158,7 +158,7 @@ describe('dev invalidation of modules that folded across files', () => {
     // Alongside the module Vite matched for the edit itself, which this must not disturb.
     const changed = { id: DEPENDENCY }
     const first = stubGraph({ [CONSUMER]: [{ id: CONSUMER }] })
-    expect(hot(DEPENDENCY, first.graph, [changed])).toEqual([changed, { id: CONSUMER }])
+    expect(hot(DEPENDENCY, first.graph, [changed])).toBeUndefined()
     expect(first.invalidated, 'the stale compiled result has to go').toEqual([CONSUMER])
 
     // The same module, no longer reading anything out of the dependency.
@@ -169,6 +169,35 @@ describe('dev invalidation of modules that folded across files', () => {
     const second = stubGraph({ [CONSUMER]: [{ id: CONSUMER }] })
     expect(hot(DEPENDENCY, second.graph), 'no fold reads that file any more').toBeUndefined()
     expect(second.invalidated).toEqual([])
+  }, 60_000)
+
+  /**
+   * Returning the consumers as well is not free, and it is not additive the way it looks.
+   *
+   * `addWatchFile` already makes each of them a direct importer of the dependency, so Vite
+   * walks to all of them from the changed module and sends the same update. A framework plugin
+   * reading `hotUpdate`'s result then re-drives HMR *per entry* — react-router calls
+   * `reloadModule` once per module, in both its client and its ssr pass — so each extra name is
+   * another full round trip. One `css()` edit shared by two routes went over the socket eight
+   * times, refetching both route modules five times each, for 554 kB of a one-line change.
+   *
+   * When Vite matched nothing there is no such pass to duplicate, and this is the only thing
+   * that will announce the change at all.
+   */
+  test('names the consumer only when Vite matched no module for the changed file', async () => {
+    const { start, fold, hot } = driver()
+
+    writeDependency('red.300')
+    await start()
+    await fold()
+
+    const matched = stubGraph({ [CONSUMER]: [{ id: CONSUMER }] })
+    expect(hot(DEPENDENCY, matched.graph, [{ id: DEPENDENCY }])).toBeUndefined()
+    expect(matched.invalidated, 'invalidation is not what is being skipped').toEqual([CONSUMER])
+
+    const unmatched = stubGraph({ [CONSUMER]: [{ id: CONSUMER }] })
+    expect(hot(DEPENDENCY, unmatched.graph, [])).toEqual([{ id: CONSUMER }])
+    expect(unmatched.invalidated).toEqual([CONSUMER])
   }, 60_000)
 
   test('says nothing about a file no fold read', async () => {
