@@ -34,9 +34,10 @@
   },
   "scripts": {
     "mdn": "tsx scripts/prepare.ts",
-    "build": "tsdown src/index.ts --format=esm,cjs --dts && tsx scripts/postbuild.ts",
+    "build": "tsdown src/index.ts --format=esm,cjs --dts",
     "build-fast": "tsdown --dts=false src/index.ts --format=esm,cjs",
-    "dev": "tsdown --dts=false src/index.ts --watch --format=esm,cjs --on-success=\"tsx scripts/postbuild.ts\""
+    "dev": "tsdown --dts=false src/index.ts --watch --format=esm,cjs",
+    "values": "tsx scripts/prepare-values.ts"
   },
   "devDependencies": {
     "mdn-data": "^2.15.0"

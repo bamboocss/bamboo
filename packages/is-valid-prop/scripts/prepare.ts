@@ -16,7 +16,11 @@ const properties = Object.keys(json)
   .map((v) => camelCaseProperty(v))
 
 const run = () => {
-  const outputPath = './src/index.ts'
+  // `properties.ts`, not `index.ts`: the keyword table beside it is generated from csstype and
+  // mdn's grammar on a different cadence, and while both wrote the same file, touching either
+  // forced the other to be regenerated — which quietly swept up whatever `mdn-data` had changed
+  // since the last run into an unrelated commit.
+  const outputPath = './src/properties.ts'
   writeFileSync(
     outputPath,
     `
