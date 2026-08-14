@@ -76,14 +76,14 @@ export class Builder {
     logger.debug('builder', configDeps)
   }
 
-  setup = async (options: { configPath?: string; cwd?: string } = {}) => {
+  setup = async (options: { configPath?: string; cwd?: string; dev?: boolean } = {}) => {
     logger.debug('builder', '🚧 Setup')
 
     const configPath = options.configPath ?? findConfig({ cwd: options.cwd })
     this.setConfigDependencies({ configPath, cwd: options.cwd })
 
     if (!this.context) {
-      return this.setupContext({ configPath, cwd: options.cwd })
+      return this.setupContext({ configPath, cwd: options.cwd, dev: options.dev })
     }
 
     const ctx = this.getContextOrThrow()
@@ -152,9 +152,9 @@ export class Builder {
   }
 
   setupContext = async (options: SetupContextOptions) => {
-    const { configPath, cwd } = options
+    const { configPath, cwd, dev } = options
 
-    const ctx = await loadConfigAndCreateContext({ configPath, cwd })
+    const ctx = await loadConfigAndCreateContext({ configPath, cwd, dev })
 
     const configDeps = uniq([...ctx.conf.dependencies, ...ctx.explicitDeps])
 
@@ -372,4 +372,6 @@ interface FileMeta {
 interface SetupContextOptions {
   configPath: string
   cwd?: string
+  /** Set by the integration; only a dev server knows it is one. @see `hash: 'auto'` */
+  dev?: boolean
 }

@@ -7,6 +7,7 @@ import { shadows } from './shadows'
 import { sizes } from './sizes'
 import { spacing } from './spacing'
 import { fonts, fontSizes, fontWeights, letterSpacings, lineHeights } from './typography'
+import { zIndex } from './z-index'
 
 const defineTokens = <T extends Tokens>(v: T) => v
 
@@ -59,4 +60,5 @@ export const tokens = defineTokens({
   spacing,
   sizes,
   animations,
+  zIndex,
 })

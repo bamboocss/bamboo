@@ -10,6 +10,7 @@ describe('generate property types', () => {
       import type { Tokens } from '../tokens/index';
       export interface UtilityValues {
       	aspectRatio: Tokens["aspectRatios"];
+      	zIndex: Tokens["zIndex"];
       	top: Tokens["spacing"];
       	left: Tokens["spacing"];
       	inset: "auto" | Tokens["spacing"];

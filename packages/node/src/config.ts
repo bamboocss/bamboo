@@ -26,7 +26,9 @@ function getAutoPlugins(): BambooPlugin[] {
  * Load config and create context with auto-injected plugins.
  * Used by the CLI and PostCSS plugin.
  */
-export async function loadConfigAndCreateContext(options: { cwd?: string; config?: Config; configPath?: string } = {}) {
+export async function loadConfigAndCreateContext(
+  options: { cwd?: string; config?: Config; configPath?: string; dev?: boolean } = {},
+) {
   const { config, configPath } = options
 
   const cwd = options.cwd ?? options?.config?.cwd ?? process.cwd()
@@ -38,6 +40,13 @@ export async function loadConfigAndCreateContext(options: { cwd?: string; config
 
   if (options.cwd) {
     conf.config.cwd = options.cwd
+  }
+
+  // The integration's, not the project's: only a dev server knows it is one. Read by
+  // `hash: 'auto'`, and fixed for the life of this context so a class name cannot change
+  // under the sheet that already named it.
+  if (options.dev) {
+    conf.config.dev = true
   }
 
   // Auto plugins run first, then the already-resolved user hooks run after

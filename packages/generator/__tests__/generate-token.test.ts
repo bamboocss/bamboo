@@ -517,6 +517,18 @@ describe('generator', () => {
           --animations-ping: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
           --animations-pulse: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
           --animations-bounce: bounce 1s infinite;
+          --z-index-hide: -1;
+          --z-index-base: 0;
+          --z-index-docked: 10;
+          --z-index-dropdown: 1000;
+          --z-index-sticky: 1100;
+          --z-index-banner: 1200;
+          --z-index-overlay: 1300;
+          --z-index-modal: 1400;
+          --z-index-popover: 1500;
+          --z-index-skip-nav: 1600;
+          --z-index-toast: 1700;
+          --z-index-tooltip: 1800;
           --breakpoints-sm: 640px;
           --breakpoints-md: 768px;
           --breakpoints-lg: 1024px;

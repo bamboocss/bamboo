@@ -6772,7 +6772,7 @@ describe('generate property types', () => {
          *
          * @see https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/z-index
          */
-      zIndex?: ConditionalValue<CssProperties["zIndex"] | AnyString>
+      zIndex?: ConditionalValue<UtilityValues["zIndex"] | CssVars | CssProperties["zIndex"] | AnyString>
        /**
          * Since May 2024, this feature works across the latest devices and browser versions. This feature might not work in older devices or browsers.
          *

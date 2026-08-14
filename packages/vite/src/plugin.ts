@@ -422,7 +422,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
 
   const ensureContext = async () => {
     if (!setup) {
-      setup = loadConfigAndCreateContext({ configPath, cwd }).then((loaded) => {
+      setup = loadConfigAndCreateContext({ configPath, cwd, dev: command === 'serve' }).then((loaded) => {
         ctx = loaded
         const semanticCss = createRuntimeCss(loaded)
         runtimeCss = semanticCss

@@ -262,7 +262,9 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
   let pending: Promise<string> | undefined
 
   const build = async () => {
-    await builder.setup({ configPath, cwd })
+    // `hash: 'auto'` reads this, and nothing else does — a class name may differ between dev
+    // and production, the CSS may not.
+    await builder.setup({ configPath, cwd, dev: command === 'serve' })
 
     // Writes the `styled-system` artifacts, which is what lets this plugin be a project's only
     // codegen. On the first pass it writes all of them; afterwards only what a config change

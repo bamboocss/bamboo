@@ -6,6 +6,7 @@ import type {
   CascadeLayers,
   GlobalVarsDefinition,
   HashOptions,
+  HashSetting,
   LoadConfigResult,
   BambooHooks,
   PrefixOptions,
@@ -228,10 +229,23 @@ export class Context {
     return this.conf.hooks ?? ({} as BambooHooks)
   }
 
+  /**
+   * Resolved to booleans here, once, so nothing downstream has to know about `'auto'`.
+   *
+   * That is also what keeps a name stable: the mode is read at context creation and every class
+   * the sheet and the compiler produce comes from this one answer. Deciding it later, per call
+   * site, is how the emitted CSS and the compiled literal would come to disagree.
+   */
   get hash(): HashOptions {
+    const resolve = (setting: HashSetting | undefined) => (setting === 'auto' ? !this.config.dev : !!setting)
+
     return {
-      tokens: isBoolean(this.config.hash) ? this.config.hash : this.config.hash?.cssVar,
-      className: isBoolean(this.config.hash) ? this.config.hash : this.config.hash?.className,
+      tokens: resolve(
+        isBoolean(this.config.hash) || this.config.hash === 'auto' ? this.config.hash : this.config.hash?.cssVar,
+      ),
+      className: resolve(
+        isBoolean(this.config.hash) || this.config.hash === 'auto' ? this.config.hash : this.config.hash?.className,
+      ),
     }
   }
 

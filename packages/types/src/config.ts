@@ -377,6 +377,9 @@ interface CssgenOptions {
   polyfill?: boolean
 }
 
+/** `'auto'` hashes in production and leaves names readable in development. */
+export type HashSetting = boolean | 'auto'
+
 interface CodegenOptions {
   /**
    * Whether to only emit the `tokens` directory
@@ -385,10 +388,33 @@ interface CodegenOptions {
   emitTokensOnly?: boolean
   /**
    * Whether to hash the generated class names / css variables.
-   * This is useful if want to shorten the class names or css variables.
+   *
+   * Readable names cost nothing for most of what a project writes — `fs_14px` and `c_accent`
+   * gzip to within a rounding error of a hash, because they repeat. What does cost is an
+   * *arbitrary* value, which is escaped into the name whole: one measured project carried a
+   * complete `linear-gradient(…)` as a 105-character class, and escaped names were 20% of all
+   * class-attribute bytes. Those do not compress away, because the redundancy is inside one long
+   * token rather than across repeated short ones.
+   *
+   * `'auto'` is the answer to both: readable while you are looking at them, hashed when nobody
+   * is. The mode comes from the integration — the Vite plugin's dev server is development and
+   * everything else is production — and is fixed for the life of a context, so the emitted CSS
+   * and the compiled class literals cannot disagree about a name.
+   *
    * @default false
    */
-  hash?: boolean | { cssVar?: boolean; className?: boolean }
+  hash?: HashSetting | { cssVar?: HashSetting; className?: HashSetting }
+  /**
+   * Whether this context is serving a development build.
+   *
+   * Set by the integration rather than by a project — the Vite plugin's dev server is the only
+   * thing that knows — and read by `hash: 'auto'`. It is deliberately not a mode switch for
+   * anything else: a class name that differs between dev and prod is one thing, and CSS that
+   * differs is another.
+   *
+   * @default false
+   */
+  dev?: boolean
   /**
    * Require every style value to be a token, so a raw CSS value has to be written `'[14px]'`.
    *

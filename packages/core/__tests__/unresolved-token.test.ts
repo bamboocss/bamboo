@@ -171,7 +171,7 @@ describe('a bare identifier', () => {
   test.each([
     ['names no token and no keyword', 'color', 'mutedd'],
     ['is a keyword with a typo', 'display', 'flexx'],
-    ['names a token category that does not exist', 'zIndex', 'overlay'],
+    ['is a near-miss for a token that does exist', 'zIndex', 'overlayy'],
     ['is sugar the property does not have', 'transform', 'auto'],
   ])('is reported when it %s', (_label, prop, value) => {
     expect(warns(prop, value), `${prop}: ${value}`).not.toBeNull()
