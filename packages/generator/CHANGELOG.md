@@ -1,5 +1,168 @@
 # @bamboocss/generator
 
+## 1.42.0
+
+### Minor Changes
+
+- 6fa8d1a: Remove `strictTokens: 'unknown-tokens'`. The build checks names now, and it is better at it.
+
+  The setting existed to make `css({ color: 'mutedd' })` a type error, by narrowing every generated prop type: keep the
+  keywords csstype enumerates, drop the open `string` it ends with. That worked, and it was the wrong layer.
+  - It could not tell `top: 'navH'` from `animationName: 'fadeIn'`. csstype describes both as `… | (string & {})`, one
+    because it takes lengths and the other because it takes a `<custom-ident>`, so the generator carried a hand-written
+    list of 29 property names to know the difference.
+  - That trailing `(string & {})` is csstype declining to say a list is exhaustive, and it declines for **70%** of the
+    properties it describes. Narrowing them anyway rejects `width: 'stretch'` and `imageRendering: 'optimizeSpeed'`.
+  - It only ever saw TypeScript. Two of the four findings on this repo's own documentation site are in **config
+    recipes**, which `tsc` does not check — and none of it reaches a `.vue` template or a project not using TypeScript.
+  - It could not say anything useful. A type error reports that a string is not assignable to a union of two hundred
+    members and guesses a near-miss by spelling, which is how `transitionProperty: 'color'` came to be rejected in
+    favour of `'colors'` — a utility value that emits seven declarations instead of one.
+
+  The build answers all four, against the real CSS grammar, and says where the name actually lives:
+
+  ```
+  `top: navH` — `navH` is declared under `sizes`, but `top` reads `spacing`.
+  It is emitted as written, and the browser will drop it.
+  Use a `spacing` token, or write `[navH]` to mean it literally.
+  ```
+
+  **What this costs, measured** on this repo's documentation site with `tsc --extendedDiagnostics`. Deterministic
+  counts, not wall clock:
+
+  |                | with the narrowing | without       |
+  | -------------- | ------------------ | ------------- |
+  | Types          | 40,995             | 18,320 (−55%) |
+  | Instantiations | 181,030            | 46,230 (−74%) |
+
+  **Migration.** Delete the setting; the check it bought is on by default and needs no configuration. `strictTokens` is
+  now a boolean and means only what its `true` always meant — every raw CSS value must be written `[14px]` — which is a
+  design-system policy rather than a correctness check, so `bamboo init` no longer writes it. A config still naming
+  `'unknown-tokens'` is reported by validation rather than silently read as `true`, which truthiness would otherwise
+  make it.
+
+  Also gone from the generated `styled-system`: `KnownKeywords`, `CssValueShape`, and the author-identifier property
+  list.
+
+- 5c33622: `strictTokens` is now `strictValues`, and it is a build check.
+
+  Two things were wrong with it as a set of TypeScript narrowings, and both are about the same confusion — it was
+  answering a _policy_ question with a _correctness_ mechanism.
+
+  **A utility's values replaced the property's own.** `transitionProperty` declares the sugar `common`, `colors`,
+  `size`, `position` and `background`, so the setting rejected `transitionProperty: 'color'` — a real CSS property name,
+  and a `<custom-ident>` exactly where the grammar asks for one — and suggested `'colors'`, which emits seven
+  declarations instead of one. A utility adds vocabulary to a property; it does not take the property's own away.
+  Nothing narrows now, so a property always keeps its own values:
+
+  ```ts
+  // styled-system/types/style-props.d.ts
+  transitionProperty?: ConditionalValue<UtilityValues['transitionProperty'] | CssVars | CssProperties['transitionProperty'] | AnyString>
+  ```
+
+  **It could not tell a keyword from a raw value.** `display: 'flex'` is not reaching outside the design system — `flex`
+  is the only way to say it — so the old setting handled `display` by not narrowing it at all, which let
+  `display: 'abc'` through with it. The grammar draws that line:
+
+  ```ts
+  css({ color: 'red.300' }) //               ✅ a token
+  css({ display: 'flex' }) //                ✅ a keyword
+  css({ animationName: 'fadeIn' }) //        ✅ an identifier you invented
+  css({ transitionProperty: 'color' }) //    ✅ a css property name
+
+  css({ fontSize: '14px' }) //               ❌ write `[14px]`
+  css({ color: '#fff' }) //                  ❌
+  css({ border: '1px solid red' }) //        ❌
+  ```
+
+  It reads the styles your **source** produced, so a preset's reset and your own config recipes are not held to a policy
+  about your source — which is why it is a separate pass rather than a branch in the resolver, which sees both. Graded
+  by `validation`: a warning by default, and a failure under `validation: 'error'`.
+
+  **Migration.** Rename `strictTokens` to `strictValues` in your config, and `--strict-tokens` to `--strict-values`. The
+  setting means what `true` always meant; there is no type-level version of it any more, so the errors move from `tsc`
+  to the build.
+
+  Together with removing the middle mode, this takes the whole type-level narrowing out. Measured on this repo's
+  documentation site with `tsc --extendedDiagnostics` — deterministic counts, not wall clock — **Types 40,995 → 18,320
+  and Instantiations 181,030 → 46,230.**
+
+### Patch Changes
+
+- b078253: Stop copying `is-valid-prop` into the generator's artifacts.
+
+  `postbuild` wrote `dist/index.mjs` to `packages/generator/src/artifacts/generated/is-valid-prop.mjs.json` for the JSX
+  factory to import at runtime. The factory is gone, nothing has read the artifact since, and it was still being rebuilt
+  and committed on every release.
+
+- 0ca4f32: The build now catches a misspelled token, and says where the name actually lives.
+
+  `color: 'mutedd'` walked straight through the build. The check required a dot — it saw `color: 'blue.3000'` and
+  nothing else — so the single typo the whole feature is sold on was invisible to it, and only the type layer caught it.
+  That is why checking values has meant narrowing every generated prop type.
+
+  The dot is gone. A bare identifier is a mistake when the property enumerates keywords, does not accept an identifier
+  the author invents, and neither the tokens nor the keywords contain it:
+
+  ```
+  color: 'mutedd'                  reported
+  display: 'flexx'                 reported
+  zIndex: 'overlay'                reported   (no zIndex tokens declared)
+  transform: 'auto'                reported   (bamboo has no such sugar; `transform: auto` is not css)
+
+  display: 'flex'                  fine       (a keyword the property enumerates)
+  color: 'rebeccapurple'           fine
+  top: 'auto'                      fine       (a keyword on a property that also takes tokens)
+  transitionProperty: 'color'      fine       (the grammar asks for a property name here)
+  animationName: 'fadeIn'          fine
+  gridArea: 'sidebar'              fine
+  ```
+
+  The last four are the ones a type union cannot get right, and the reason the question is put to the real grammar —
+  `css-tree`'s `matchProperty` — rather than to csstype's unions:
+  - csstype describes `top` and `animationName` identically, both ending in `(string & {})`, one because it takes
+    lengths and the other because it takes a `<custom-ident>`. `strictTokens` needed a hand-written list of 29 property
+    names to tell them apart, and still rejected `transitionProperty: 'color'` while suggesting `'colors'` — a utility
+    value that emits seven declarations instead of one.
+  - That trailing `(string & {})` is csstype declining to say the list is exhaustive, and it declines for **70%** of the
+    properties it enumerates. Read as closed, those lists reject `width: 'stretch'` and
+    `imageRendering: 'optimizeSpeed'` — ordinary css csstype has not caught up with.
+  - Reaching `<custom-ident>` is not the same as admitting one: `gridTemplateColumns` reaches it through
+    `'[' <custom-ident>* ']'`, where it is legal only inside literal brackets.
+
+  Two known gaps, both in the safe direction for a setting that defaults to `warn`. `css-tree` follows the current spec,
+  so a value a spec deleted but browsers still honour is reported — the 23 `DeprecatedSystemColor` names are allowed
+  back explicitly, since that set is closed by history, but a value like `userSelect: 'contain'` its data has not
+  reached yet is not. Write `[value]` for either.
+
+  **The diagnostic is the point.** The resolver knows where a name lives; a type error can only say a string is not
+  assignable to a union of two hundred members and guess a near-miss by spelling:
+
+  ```
+  `top: sm` — `sm` is declared under `radii`, `fontSizes` and 4 more, but `top` reads `spacing`.
+  It is emitted as written, and the browser will drop it. Use a `spacing` token, or write `[sm]`
+  to mean it literally.
+  ```
+
+  `warn` and `error` now build that sentence from one function, so the two modes cannot describe one mistake differently
+  — which they have done before, over whether `!` was part of the value.
+
+  Perf-neutral on `static-css-real-world`: every case within ±7% and both signs represented, which is noise at this
+  repo's ~5% run-to-run agreement. The check opens with a character-code test, so a value starting with a digit, `#`,
+  `-` or a quote — most CSS — is rejected before anything else runs, and the property lookups behind it are memoised.
+
+- Updated dependencies [4fcae37]
+- Updated dependencies [6fa8d1a]
+- Updated dependencies [b078253]
+- Updated dependencies [5c33622]
+- Updated dependencies [0ca4f32]
+  - @bamboocss/core@1.42.0
+  - @bamboocss/types@1.42.0
+  - @bamboocss/is-valid-prop@1.42.0
+  - @bamboocss/shared@1.42.0
+  - @bamboocss/logger@1.42.0
+  - @bamboocss/token-dictionary@1.42.0
+
 ## 1.41.1
 
 ### Patch Changes

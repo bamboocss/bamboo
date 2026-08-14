@@ -1,5 +1,106 @@
 # @bamboocss/dev
 
+## 1.42.0
+
+### Minor Changes
+
+- 6fa8d1a: Remove `strictTokens: 'unknown-tokens'`. The build checks names now, and it is better at it.
+
+  The setting existed to make `css({ color: 'mutedd' })` a type error, by narrowing every generated prop type: keep the
+  keywords csstype enumerates, drop the open `string` it ends with. That worked, and it was the wrong layer.
+  - It could not tell `top: 'navH'` from `animationName: 'fadeIn'`. csstype describes both as `… | (string & {})`, one
+    because it takes lengths and the other because it takes a `<custom-ident>`, so the generator carried a hand-written
+    list of 29 property names to know the difference.
+  - That trailing `(string & {})` is csstype declining to say a list is exhaustive, and it declines for **70%** of the
+    properties it describes. Narrowing them anyway rejects `width: 'stretch'` and `imageRendering: 'optimizeSpeed'`.
+  - It only ever saw TypeScript. Two of the four findings on this repo's own documentation site are in **config
+    recipes**, which `tsc` does not check — and none of it reaches a `.vue` template or a project not using TypeScript.
+  - It could not say anything useful. A type error reports that a string is not assignable to a union of two hundred
+    members and guesses a near-miss by spelling, which is how `transitionProperty: 'color'` came to be rejected in
+    favour of `'colors'` — a utility value that emits seven declarations instead of one.
+
+  The build answers all four, against the real CSS grammar, and says where the name actually lives:
+
+  ```
+  `top: navH` — `navH` is declared under `sizes`, but `top` reads `spacing`.
+  It is emitted as written, and the browser will drop it.
+  Use a `spacing` token, or write `[navH]` to mean it literally.
+  ```
+
+  **What this costs, measured** on this repo's documentation site with `tsc --extendedDiagnostics`. Deterministic
+  counts, not wall clock:
+
+  |                | with the narrowing | without       |
+  | -------------- | ------------------ | ------------- |
+  | Types          | 40,995             | 18,320 (−55%) |
+  | Instantiations | 181,030            | 46,230 (−74%) |
+
+  **Migration.** Delete the setting; the check it bought is on by default and needs no configuration. `strictTokens` is
+  now a boolean and means only what its `true` always meant — every raw CSS value must be written `[14px]` — which is a
+  design-system policy rather than a correctness check, so `bamboo init` no longer writes it. A config still naming
+  `'unknown-tokens'` is reported by validation rather than silently read as `true`, which truthiness would otherwise
+  make it.
+
+  Also gone from the generated `styled-system`: `KnownKeywords`, `CssValueShape`, and the author-identifier property
+  list.
+
+- 5c33622: `strictTokens` is now `strictValues`, and it is a build check.
+
+  Two things were wrong with it as a set of TypeScript narrowings, and both are about the same confusion — it was
+  answering a _policy_ question with a _correctness_ mechanism.
+
+  **A utility's values replaced the property's own.** `transitionProperty` declares the sugar `common`, `colors`,
+  `size`, `position` and `background`, so the setting rejected `transitionProperty: 'color'` — a real CSS property name,
+  and a `<custom-ident>` exactly where the grammar asks for one — and suggested `'colors'`, which emits seven
+  declarations instead of one. A utility adds vocabulary to a property; it does not take the property's own away.
+  Nothing narrows now, so a property always keeps its own values:
+
+  ```ts
+  // styled-system/types/style-props.d.ts
+  transitionProperty?: ConditionalValue<UtilityValues['transitionProperty'] | CssVars | CssProperties['transitionProperty'] | AnyString>
+  ```
+
+  **It could not tell a keyword from a raw value.** `display: 'flex'` is not reaching outside the design system — `flex`
+  is the only way to say it — so the old setting handled `display` by not narrowing it at all, which let
+  `display: 'abc'` through with it. The grammar draws that line:
+
+  ```ts
+  css({ color: 'red.300' }) //               ✅ a token
+  css({ display: 'flex' }) //                ✅ a keyword
+  css({ animationName: 'fadeIn' }) //        ✅ an identifier you invented
+  css({ transitionProperty: 'color' }) //    ✅ a css property name
+
+  css({ fontSize: '14px' }) //               ❌ write `[14px]`
+  css({ color: '#fff' }) //                  ❌
+  css({ border: '1px solid red' }) //        ❌
+  ```
+
+  It reads the styles your **source** produced, so a preset's reset and your own config recipes are not held to a policy
+  about your source — which is why it is a separate pass rather than a branch in the resolver, which sees both. Graded
+  by `validation`: a warning by default, and a failure under `validation: 'error'`.
+
+  **Migration.** Rename `strictTokens` to `strictValues` in your config, and `--strict-tokens` to `--strict-values`. The
+  setting means what `true` always meant; there is no type-level version of it any more, so the errors move from `tsc`
+  to the build.
+
+  Together with removing the middle mode, this takes the whole type-level narrowing out. Measured on this repo's
+  documentation site with `tsc --extendedDiagnostics` — deterministic counts, not wall clock — **Types 40,995 → 18,320
+  and Instantiations 181,030 → 46,230.**
+
+### Patch Changes
+
+- Updated dependencies [4fcae37]
+- Updated dependencies [6fa8d1a]
+- Updated dependencies [5c33622]
+  - @bamboocss/preset-bamboo@1.42.0
+  - @bamboocss/types@1.42.0
+  - @bamboocss/node@1.42.0
+  - @bamboocss/shared@1.42.0
+  - @bamboocss/logger@1.42.0
+  - @bamboocss/preset-base@1.42.0
+  - @bamboocss/token-dictionary@1.42.0
+  - @bamboocss/postcss@1.42.0
+
 ## 1.41.1
 
 ### Patch Changes
