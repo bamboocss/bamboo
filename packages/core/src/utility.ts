@@ -25,6 +25,7 @@ import type {
   PropertyTransform,
   TokenDataTypes,
   TransformArgs,
+  UnresolvedTokenSeverity,
   UtilityConfig,
 } from '@bamboocss/types'
 import type { TransformResult } from './types'
@@ -66,6 +67,16 @@ export interface UnresolvedTokenRef {
   /** The token category the property draws from, when it draws from exactly one. */
   category?: string
   /**
+   * Which half of the check found it, and therefore how certain it is.
+   *
+   * `token` — the property draws from a token category, or the value is a dotted path. Bamboo's
+   * own bookkeeping says this name is not one of its own, and nothing else is consulted.
+   *
+   * `grammar` — a bare name on a property with no token category, rejected by the css grammar.
+   * Right almost always, and dependent on how fresh that grammar's data is.
+   */
+  kind: 'token' | 'grammar'
+  /**
    * The categories that do declare this name, where the mistake is a value on the wrong shelf.
    *
    * `top: 'navH'` against a theme declaring `navH` under `sizes` is the shape this exists for,
@@ -82,7 +93,7 @@ export interface UtilityOptions {
   shorthands?: boolean
   strictValues?: boolean
   keyframes?: CssKeyframes
-  unresolvedToken?: 'off' | 'warn' | 'error'
+  unresolvedToken?: UnresolvedTokenSeverity | { token?: UnresolvedTokenSeverity; grammar?: UnresolvedTokenSeverity }
 }
 
 export class Utility {
@@ -152,14 +163,22 @@ export class Utility {
   /** @see UserConfig.strictValues */
   strictValues = false
 
-  /** @see UserConfig.unresolvedToken */
-  unresolvedToken: 'off' | 'warn' | 'error' = 'warn'
+  /**
+   * @see UserConfig.unresolvedToken — resolved per half, once, so nothing below has to know the
+   * setting has two shapes.
+   */
+  unresolvedToken: { token: UnresolvedTokenSeverity; grammar: UnresolvedTokenSeverity } = {
+    token: 'error',
+    grammar: 'warn',
+  }
 
   constructor(private options: UtilityOptions) {
     const { tokens, config = {}, separator, prefix, shorthands, strictValues, unresolvedToken } = options
 
     if (unresolvedToken) {
-      this.unresolvedToken = unresolvedToken
+      this.unresolvedToken = isString(unresolvedToken)
+        ? { token: unresolvedToken, grammar: unresolvedToken }
+        : { token: unresolvedToken.token ?? 'error', grammar: unresolvedToken.grammar ?? 'warn' }
     }
 
     this.tokens = tokens
@@ -889,7 +908,7 @@ export class Utility {
    * was set to the value that exists to escalate it.
    */
   private recordUnresolvedToken = (key: string, value: string) => {
-    if (this.unresolvedToken === 'off') return
+    if (this.unresolvedToken.token === 'off' && this.unresolvedToken.grammar === 'off') return
 
     if (!this.isUnresolvedTokenValue(key, value)) return
 
@@ -902,11 +921,14 @@ export class Utility {
     if (this.unresolvedTokens.has(id)) return
 
     const ref = this.unresolvedTokenRef(key, bare)
+    const severity = this.unresolvedToken[ref.kind]
+    if (severity === 'off') return
+
     this.unresolvedTokens.set(id, ref)
 
     // `error` reports the whole set at the end of the build instead — warning here as well
     // would print every finding twice and bury the line that failed it.
-    if (this.unresolvedToken !== 'warn') return
+    if (severity !== 'warn') return
 
     logger.warn('utility', this.explainUnresolvedToken(ref))
   }
@@ -955,7 +977,18 @@ export class Utility {
    */
   unresolvedTokenRef = (key: string, bare: string): UnresolvedTokenRef => {
     const category = this.getTokenCategory(key)
-    return { prop: key, value: bare, category, declaredIn: this.categoriesDeclaring(bare, category) }
+    return {
+      prop: key,
+      value: bare,
+      category,
+      declaredIn: this.categoriesDeclaring(bare, category),
+      // A property that draws from a token category makes this bamboo's own bookkeeping, with no
+      // third party to be wrong about it — and so does a dotted path, which nothing in css is
+      // spelled like. Anything else is the grammar's opinion, and the grammar's data lags the
+      // spec: every one of the 8 disagreements found across 10,128 enumerated keywords was on a
+      // property with no token category.
+      kind: category || bare.includes('.') ? 'token' : 'grammar',
+    }
   }
 
   /**

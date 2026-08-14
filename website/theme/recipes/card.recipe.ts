@@ -106,7 +106,7 @@ export const cardRecipe = defineRecipe({
         },
         content: {
           _dark: {
-            color: 'neutra.200',
+            color: 'neutral.200',
             _hover: { color: 'neutral.50' },
           },
         },

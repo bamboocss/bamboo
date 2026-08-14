@@ -37,7 +37,7 @@ const cases: Array<{ name: string; styles: string }> = [
   { name: 'longhand then shorthand', styles: `{ marginLeft: '2', mx: '4' }` },
   { name: 'numeric value', styles: `{ zIndex: 10, opacity: 0.4 }` },
   { name: 'negative value', styles: `{ marginTop: '-2' }` },
-  { name: 'token reference', styles: `{ boxShadow: 'outline' }` },
+  { name: 'token reference', styles: `{ boxShadow: 'md' }` },
   { name: 'empty-ish value', styles: `{ color: 'red.300', display: undefined }` },
 ]
 

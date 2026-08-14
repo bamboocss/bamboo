@@ -477,7 +477,8 @@ export class Generator extends Context {
   }
 
   assertNoUnresolvedTokens = () => {
-    if (this.config.unresolvedToken !== 'error') return
+    const severity = this.utility.unresolvedToken
+    if (severity.token !== 'error' && severity.grammar !== 'error') return
 
     const found = new Map<string, UnresolvedTokenRef>(this.utility.unresolvedTokens)
 
@@ -501,6 +502,13 @@ export class Generator extends Context {
       // One finding per mistake: the same typo under `base`, `_hover` and two breakpoints is
       // four atoms and one thing to fix.
       found.set(`${key}:${bare}`, this.utility.unresolvedTokenRef(key, bare))
+    }
+
+    // Only the half that is graded `error` fails the build. The other half has already been
+    // warned about as it was transformed; escalating it here would make the setting mean
+    // something different depending on which side of the check noticed.
+    for (const [id, ref] of found) {
+      if (severity[ref.kind] !== 'error') found.delete(id)
     }
 
     if (!found.size) return

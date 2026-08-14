@@ -24,7 +24,10 @@ import { afterEach, describe, expect, test, vi } from 'vitest'
  * already claimed it.
  */
 const setup = () => {
-  const ctx = createGeneratorContext() as any
+  // `'warn'` explicitly, because this suite is about the *message*. The default grades a
+  // token-category finding as `error`, which collects it for the end of the build instead of
+  // printing it — see `unresolved-token-severity.test.ts` for that half.
+  const ctx = createGeneratorContext({ unresolvedToken: 'warn' } as never) as any
   ctx.utility.unresolvedTokens.clear()
   const spy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
   return { utility: ctx.utility, spy }
@@ -264,5 +267,51 @@ describe('a bare identifier', () => {
     expect(message).toContain('`radii`')
     expect(message).toContain('`top` reads `spacing`')
     expect(message).toContain('[sm]')
+  })
+})
+
+/**
+ * Which half found it, and therefore how hard it fails.
+ *
+ * A property that draws from a token category makes an unknown name bamboo's own bookkeeping —
+ * there is no third party to be wrong about it — so that half is an error by default. Everywhere
+ * else the judge is the css grammar, whose data lags the spec: `containerType: 'scroll-state'` is
+ * valid css it has not caught up with. Sweeping every keyword csstype enumerates through the
+ * grammar found 8 disagreements in 10,128 pairs, and every one of them was on a property with no
+ * token category — which is exactly the half kept at `warn`.
+ */
+describe('how certain a finding is', () => {
+  const kindOf = (prop: string, value: string) => {
+    const ctx = createGeneratorContext() as any
+    const key = ctx.utility.resolveShorthand(prop)
+    return ctx.utility.unresolvedTokenRef(key, ctx.utility.bareTokenPath(key, value)).kind
+  }
+
+  test.each([
+    ['a property that draws from a token category', 'color', 'mutedd'],
+    ['another', 'top', 'navH'],
+    ['a dotted path, which nothing in css is spelled like', 'mixin', 'headline.h99'],
+  ])('is bamboo’s own bookkeeping for %s', (_label, prop, value) => {
+    expect(kindOf(prop, value), `${prop}: ${value}`).toBe('token')
+  })
+
+  test.each([
+    ['display', 'flexx'],
+    ['containerType', 'scroll-state'],
+    ['strokeLinejoin', 'arcs'],
+  ])('is the grammar’s opinion for %s: %s', (prop, value) => {
+    expect(kindOf(prop, value), `${prop}: ${value}`).toBe('grammar')
+  })
+
+  test('grades them apart by default, and together when told one severity', () => {
+    const split = (createGeneratorContext() as any).utility.unresolvedToken
+    expect(split).toEqual({ grammar: 'warn', token: 'error' })
+
+    const flat = (createGeneratorContext({ unresolvedToken: 'warn' } as never) as any).utility.unresolvedToken
+    expect(flat).toEqual({ grammar: 'warn', token: 'warn' })
+
+    const partial = (createGeneratorContext({ unresolvedToken: { grammar: 'error' } } as never) as any).utility
+      .unresolvedToken
+    expect(partial).toEqual({ grammar: 'error', token: 'error' })
   })
 })

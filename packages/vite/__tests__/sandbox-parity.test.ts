@@ -30,7 +30,10 @@ const SOURCES = ['App.tsx', 'Card.tsx', 'Badge.tsx', 'Button.tsx']
   .filter((entry): entry is { file: string; code: string } => entry != null)
 
 const parseAll = (fold: boolean) => {
-  const ctx = createContext()
+  // `'warn'`: this folds `sandbox/vite-ts` source against the *fixture's* theme, so a semantic
+  // token declared only in that sandbox — `color: 'text'` — is expected not to resolve here.
+  // What the suite is about is that a folded class has a rule, not where the token came from.
+  const ctx = createContext({ unresolvedToken: 'warn' } as never)
   const runtimeCss = createRuntimeCss(ctx)
   const styleCompiler = createStaticStyleSetCompiler(ctx, runtimeCss)
   const results = []
@@ -131,7 +134,10 @@ describe('sandbox/vite-ts parity', () => {
   })
 
   test('re-folding already-folded sandbox source is a no-op', () => {
-    const ctx = createContext()
+    // `'warn'`: this folds `sandbox/vite-ts` source against the *fixture's* theme, so a semantic
+    // token declared only in that sandbox — `color: 'text'` — is expected not to resolve here.
+    // What the suite is about is that a folded class has a rule, not where the token came from.
+    const ctx = createContext({ unresolvedToken: 'warn' } as never)
     const runtimeCss = createRuntimeCss(ctx)
     const styleCompiler = createStaticStyleSetCompiler(ctx, runtimeCss)
 

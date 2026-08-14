@@ -377,6 +377,8 @@ interface CssgenOptions {
   polyfill?: boolean
 }
 
+export type UnresolvedTokenSeverity = 'off' | 'warn' | 'error'
+
 /** `'auto'` hashes in production and leaves names readable in development. */
 export type HashSetting = boolean | 'auto'
 
@@ -727,9 +729,23 @@ export interface Config
    * entrypoint's own export list rather than inferred, so there is no setting under which it
    * is what someone meant.
    *
-   * @default 'warn'
+   * Two halves, graded apart, because they are not equally certain.
+   *
+   * A property that draws from a token category — `color` from `colors`, `top` from `spacing` —
+   * makes a name that is not a token bamboo's own bookkeeping, and there is no third party to be
+   * wrong about it. That half defaults to `'error'`.
+   *
+   * Everywhere else the judge is the CSS grammar, whose data lags the spec: `containerType:
+   * 'scroll-state'` is valid CSS that the grammar has not caught up with. Sweeping every keyword
+   * csstype enumerates through it found 8 such disagreements in 10,128 pairs — 0.08%, and all 8
+   * on properties with no token category. That half defaults to `'warn'`, so a build is never
+   * failed by how fresh a grammar is.
+   *
+   * A single severity applies to both.
+   *
+   * @default { token: 'error', grammar: 'warn' }
    */
-  unresolvedToken?: 'off' | 'warn' | 'error'
+  unresolvedToken?: UnresolvedTokenSeverity | { token?: UnresolvedTokenSeverity; grammar?: UnresolvedTokenSeverity }
 }
 
 export interface Preset extends ExtendableOptions, PresetOptions {

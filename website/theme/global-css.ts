@@ -119,7 +119,9 @@ export const globalCss = defineGlobalStyles({
     '& code': {
       display: 'grid',
       minW: 'full',
-      rounded: 'none',
+      // `'0'`, not `'none'`: `border-radius: none` is not css, so this declaration was dropped
+      // and the inline-code rounding leaked into fenced blocks.
+      rounded: '0',
       border: 'none',
       bg: 'transparent!',
       p: '0!',

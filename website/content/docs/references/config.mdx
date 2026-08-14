@@ -1122,15 +1122,32 @@ version you have not installed yet. A removed key can only point backwards.
 
 ### unresolvedToken
 
-**Type**: `'off' | 'warn' | 'error'`
+**Type**: `'off' | 'warn' | 'error' | { token?: …; grammar?: … }`
 
-**Default**: `warn`
+**Default**: `{ token: 'error', grammar: 'warn' }`
 
-What to do about a style value shaped like a token path that names no token.
+What to do about a style value that names neither a token nor anything the CSS property accepts.
 
 - `off` says nothing.
 - `warn` logs each one as it is transformed.
 - `error` fails the build, listing every one it found.
+
+**The two halves are graded apart, because they are not equally certain.**
+
+| half      | when                                                                    | decided by               | default |
+| --------- | ----------------------------------------------------------------------- | ------------------------ | ------- |
+| `token`   | the property draws from a token category, or the value is a dotted path | bamboo's own bookkeeping | `error` |
+| `grammar` | a bare name on a property with no token category                        | the CSS grammar          | `warn`  |
+
+`color: 'mutedd'` and `top: 'navH'` are the first: `color` reads `colors` and `top` reads `spacing`, so a name that is
+not one of those is bamboo's own answer and there is nothing else to be wrong about it.
+
+`display: 'flexx'` is the second, and so is `containerType: 'scroll-state'` — which is valid CSS the grammar's data has
+not caught up with. Sweeping every keyword csstype enumerates through the grammar found 8 such disagreements in 10,128
+pairs, 0.08%, and every one of them was on a property with no token category. Keeping that half at `warn` is what stops
+a build failing over how fresh a grammar is.
+
+Pass a single severity to apply it to both:
 
 ```json
 {

@@ -53,13 +53,30 @@ const messages = (spy: ReturnType<typeof vi.spyOn>) => spy.mock.calls.map((c: un
 
 afterEach(() => vi.restoreAllMocks())
 
+/**
+ * The default grades the two halves apart, because they are not equally certain.
+ *
+ * A property drawing from a token category makes an unknown name bamboo's own bookkeeping —
+ * `background` reads `colors`, and `accent.default` is not one — so there is no third party to be
+ * wrong about it. Everywhere else the judge is the css grammar, whose data lags the spec:
+ * sweeping every keyword csstype enumerates through it found 8 disagreements in 10,128 pairs, and
+ * all 8 were on properties with no token category. A build is not failed by how fresh a grammar
+ * is.
+ */
 describe('default', () => {
-  test("is 'warn' — what it did before the option existed", () => {
-    const spy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+  test('fails on a token the theme does not have', () => {
     const { run } = build(undefined, styled('accent.default'))
 
+    expect(() => run()).toThrowError(/`background: accent.default`/)
+  })
+
+  test('only warns when the grammar is the one objecting', () => {
+    const spy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+    // `display` draws from no token category, so `flexx` is rejected by the grammar alone.
+    const { run } = build(undefined, styled('flexx', 'display'))
+
     expect(() => run()).not.toThrow()
-    expect(messages(spy)).toMatch(/`background: accent.default`/)
+    expect(messages(spy)).toMatch(/`display: flexx`/)
   })
 })
 
@@ -317,9 +334,12 @@ describe('styles that never reach the decoder', () => {
     // are reached whether or not a source file mentions them, which is the point of them.
     const source = name === 'a mixin' ? styled('headline.h9', 'mixin') : styled('red.300')
 
-    test(`the default reports an unknown token in ${name}`, () => {
+    // `'warn'` explicitly: `background` draws from `colors`, so the *default* fails on this —
+    // the pair below covers that. What this one is about is the warn path seeing a
+    // config-derived style at all, which is the half `decoder.atomic` cannot.
+    test(`'warn' reports an unknown token in ${name}`, () => {
       const spy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
-      const { run } = build(undefined, source, config)
+      const { run } = build('warn', source, config)
 
       expect(() => run()).not.toThrow()
       expect(messages(spy)).toMatch(/`background: accent.default`/)
@@ -344,9 +364,9 @@ describe('styles that never reach the decoder', () => {
     export const slide = viewTransition({ group: { background: 'accent.default' } })
   `
 
-  test('the default reports an unknown token in a viewTransition slot', () => {
+  test("'warn' reports an unknown token in a viewTransition slot", () => {
     const spy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
-    const { run } = build(undefined, transition)
+    const { run } = build('warn', transition)
 
     expect(() => run()).not.toThrow()
     expect(messages(spy)).toMatch(/`background: accent.default`/)
