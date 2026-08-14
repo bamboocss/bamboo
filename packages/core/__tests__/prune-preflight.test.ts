@@ -150,3 +150,51 @@ describe('prunePreflight with a scoped reset', () => {
     expect(run(`.app table{a:1}`, ['div']).css).toBe('.app table{a:1}')
   })
 })
+
+/**
+ * What went, by name.
+ *
+ * The one objection to this pass is that being wrong is silent: an element rendered by a
+ * dependency's component, by markdown, or through `dangerouslySetInnerHTML` is invisible to the
+ * scan, loses its reset, and reports nothing — the page simply looks slightly off. Counts do
+ * not help a reader check that. Names do, because they know whether their app has a `<table>`
+ * in it and the scan does not.
+ */
+describe('what was removed', () => {
+  test('names every element whose rules went', () => {
+    const { removedElements } = run(`table{border-collapse:collapse}kbd,samp{font-family:monospace}div{margin:0}`, [
+      'div',
+    ])
+
+    expect([...removedElements].sort()).toEqual(['kbd', 'samp', 'table'])
+  })
+
+  test('names an element dropped from a shared selector, where the rule survives', () => {
+    const { css, removedElements } = run(`button,::file-selector-button{appearance:none}`, ['div'])
+
+    // The rule stays for the part that names no element; only `button` is gone.
+    expect(css).toBe('::file-selector-button{appearance:none}')
+    expect([...removedElements]).toEqual(['button'])
+  })
+
+  test('says nothing when nothing went', () => {
+    const { removedElements } = run(`div{margin:0}html{line-height:1.5}`, ['div'])
+
+    expect(removedElements.size).toBe(0)
+  })
+
+  /**
+   * The list says a rule for this element went, not that nothing styles it any more.
+   *
+   * A reset naming `table` twice — once alone, once as `.prose table` — loses only the first,
+   * and `table` is still named, because a rule for it did go and the reader is the one who can
+   * say whether that matters. Nothing the generated reset emits has this shape; a hand-written
+   * one can, which is why the distinction is pinned rather than left to the reading.
+   */
+  test('names an element whose other rules survive, because a rule for it still went', () => {
+    const { css, removedElements } = run(`table{border-collapse:collapse}.prose table{margin:0}`, ['div'])
+
+    expect(css).toBe('.prose table{margin:0}')
+    expect([...removedElements]).toEqual(['table'])
+  })
+})

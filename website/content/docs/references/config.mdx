@@ -126,7 +126,24 @@ nothing about it says which element it reaches.
   element rendered by a dependency's component, by `dangerouslySetInnerHTML`, or by markdown is invisible to it. What
   you get wrong is an element quietly losing its reset – no error, no warning, just a `<table>` that has its browser
   default border spacing back. Reach for it when you control the markup, and check the result.
+
+Bamboo's own documentation site is the example: its `include` covers `./src` and `./app`, its prose lives in `.mdx`
+under `content/`, and the scan therefore sees 49 elements. Turning this on there removes the reset for twenty it never
+sees — including `h5`, which the docs render today, and `input`, which a search dialog renders from a dependency. It
+saves 450 bytes of a 2,973-byte reset, or 165 compressed.
+
 </Callout>
+
+Because being wrong is silent, the build names what it removed — all of it, once per project — whenever this is on:
+
+```
+🎋 info [prune:preflight] Reset rules removed for 20 element(s) your source never renders: abbr, audio, b, canvas,
+dialog, embed, h5, h6, iframe, input, menu, object, optgroup, progress, samp, select, small, sub, sup, textarea.
+Anything rendered by a dependency, by markdown, or through `dangerouslySetInnerHTML` is invisible to this scan —
+check the list, or set `preflight: { prune: false }`.
+```
+
+The list says a rule for that element went, not that nothing styles it any more.
 
 **Check your entry template first.** The scan reads the files [`include`](#include) covers, and `include` conventionally
 covers components rather than markup: `./src/**/*.tsx` does not match `index.html`, where `<noscript>`, a static

@@ -101,6 +101,23 @@ export function prunePreflight(options: PrunePreflightOptions) {
     .filter(Boolean)
   let removedRules = 0
   let removedParts = 0
+  /**
+   * The elements this dropped, for the caller to say out loud.
+   *
+   * The one objection to this pass is that being wrong is silent — an element rendered where
+   * the scan cannot see it loses its reset, and the page just looks slightly off. Counts do
+   * not help with that; names do, because the reader knows whether their app has a `<table>`
+   * in it and the scan does not.
+   *
+   * Exactly what it says: an element named here had a rule or a selector part removed. It is
+   * not a claim that nothing styles it any more — a reset that names `table` twice, once alone
+   * and once as `.prose table`, loses only the first, and `table` is still reported because a
+   * rule for it did go. Subtracting elements that survive elsewhere was tried and is worse: it
+   * can only see a survivor whose selector is *nothing but* an element name, so `.prose table`
+   * would not count and the subtraction would be silently partial. Nothing the generated reset
+   * emits has that shape; a hand-written one, or one rewritten through `cssgen:done`, can.
+   */
+  const removedElements = new Set<string>()
 
   target.walkRules((rule: Rule) => {
     const parts = rule.selectors
@@ -108,7 +125,9 @@ export function prunePreflight(options: PrunePreflightOptions) {
       const element = elementOf(unscope(part, scopes))
       // No element in it at all, so nothing about the source can say it is unreachable.
       if (!element) return true
-      return ALWAYS_KEPT.has(element) || rendered.has(element)
+      if (ALWAYS_KEPT.has(element) || rendered.has(element)) return true
+      removedElements.add(element)
+      return false
     })
 
     if (kept.length === parts.length) return
@@ -122,5 +141,5 @@ export function prunePreflight(options: PrunePreflightOptions) {
     rule.selectors = kept
   })
 
-  return { removedRules, removedParts }
+  return { removedRules, removedParts, removedElements }
 }

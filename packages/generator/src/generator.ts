@@ -159,6 +159,9 @@ export class Generator extends Context {
    * markdown is invisible to a scan of your own source, and the failure is an element quietly
    * losing its reset rather than anything that reports itself.
    */
+  /** Whether this context has already named what the reset lost; see `prunePreflight`. */
+  private reportedPreflightPrune = false
+
   prunePreflight = (sheet: Stylesheet, rendered: Set<string>) => {
     const { preflight } = this.config
     if (!prunesPreflight(preflight)) return
@@ -169,10 +172,36 @@ export class Generator extends Context {
 
     const result = prunePreflight({ target: sheet.layers.reset, rendered, scope })
 
-    logger.debug(
-      'prune:preflight',
-      `Removed ${result.removedRules} reset rule(s) and ${result.removedParts} selector part(s) for unrendered elements`,
-    )
+    /**
+     * Said out loud, and by name.
+     *
+     * `info` rather than `debug` because this only runs for a project that asked for it, so
+     * there is nobody to be noisy at — and because the objection to this pass is that being
+     * wrong is silent. An element rendered by a dependency's component, by markdown, or by
+     * `dangerouslySetInnerHTML` is invisible to the scan, loses its reset, and reports
+     * nothing; a list of what went is the only way a reader can check that against what they
+     * know their own app renders.
+     *
+     * Names rather than counts, for the same reason. "Removed 8 rules" is unverifiable.
+     */
+    // Once per context, not once per build of one. A watch rebuild, a dev-server invalidation
+    // and each environment of a multi-environment build all reach this with the same answer,
+    // and the answer is a static fact about the project: repeating it on every save is how a
+    // line worth reading becomes one nobody does. A config edit builds a new context, which is
+    // exactly when the answer can change.
+    if (result.removedElements.size && !this.reportedPreflightPrune) {
+      this.reportedPreflightPrune = true
+      // Not truncated. The list *is* the feature — a reader checks it against the elements
+      // they know their app renders — and the reset binds 41 elements, so the whole of it is
+      // one short line. `truncateList` caps at ten by default, which hid half of them.
+      logger.info(
+        'prune:preflight',
+        `Reset rules removed for ${result.removedElements.size} element(s) your source never renders: ` +
+          `${[...result.removedElements].sort().join(', ')}. ` +
+          `Anything rendered by a dependency, by markdown, or through \`dangerouslySetInnerHTML\` is invisible ` +
+          `to this scan — check the list, or set \`preflight: { prune: false }\`.`,
+      )
+    }
 
     return result
   }
