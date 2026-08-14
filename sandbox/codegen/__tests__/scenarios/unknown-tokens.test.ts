@@ -70,6 +70,26 @@ describe('strictTokens: unknown-tokens', () => {
     assertType(css({ roundedBottom: 'lg !important' }))
   })
 
+  /**
+   * A mark works the same on a keyword as on a token, which it did not.
+   *
+   * Only what `WithEscapeHatch` wraps carries `!` and `/`, and that was the tokens alone — so
+   * `boxShadow: 'none!'` was an error while `boxShadow: 'none'` and `color: 'blue.300!'` were
+   * both fine. Nothing an author can see decided which: `none` is a csstype keyword and
+   * `blue.300` is a token, and the mark is about neither.
+   *
+   * The keywords are held out and wrapped too now. It costs — the keyword lists are the larger
+   * union, and this repo's own site measured +20.5% instantiations — and it buys back no
+   * looseness: the mark is only allowed on values that were already allowed, so a marked typo
+   * is still a typo.
+   */
+  test('an important mark works on a keyword, not only on a token', () => {
+    assertType(css({ boxShadow: 'none!' }))
+    assertType(css({ display: 'flex!' }))
+    assertType(css({ color: 'blue.300!' }))
+    assertType(css({ color: 'blue.300 !important' }))
+  })
+
   test('an identifier that is neither a token nor a keyword is a typo', () => {
     // @ts-expect-error `blue.300` is the token
     assertType(css({ color: 'blue.3000' }))
@@ -79,6 +99,8 @@ describe('strictTokens: unknown-tokens', () => {
     assertType(css({ display: 'flexx' }))
     // @ts-expect-error not a token and not a keyword
     assertType(css({ position: 'absolut' }))
+    // @ts-expect-error a mark decorates a value that exists; it does not excuse one that does not
+    assertType(css({ color: 'mutedd!' }))
   })
 
   test('a modifier does not launder an unknown token', () => {

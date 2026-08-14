@@ -3,10 +3,14 @@ import { css } from '@/styled-system/css'
 export function ExpandIcon({ isOpen, ...props }: { isOpen?: boolean } & React.ComponentProps<'svg'>) {
   return (
     <svg height="12" width="12" viewBox="0 0 16 16" fill="currentColor" {...props}>
+      {/* `rotate` is bamboo's utility for the standalone `rotate` property, so it applies on its
+          own. It used to be paired with `transform: 'auto'` — Panda's sugar for composing the
+          transform variables, which bamboo does not have: it emitted a literal `transform: auto`,
+          which is not css, so the browser dropped it and it was doing nothing. */}
       <path
         fillRule="evenodd"
         d="M4.177 7.823l2.396-2.396A.25.25 0 017 5.604v4.792a.25.25 0 01-.427.177L4.177 8.177a.25.25 0 010-.354z"
-        className={isOpen ? '' : css({ transform: 'auto', rotate: '180deg' })}
+        className={isOpen ? '' : css({ rotate: '180deg' })}
       />
       <path
         fillRule="evenodd"

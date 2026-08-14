@@ -68,6 +68,20 @@ export function generateStyleProps(ctx: Context) {
           let heldOutTokens = ''
           const separateTokens = ctx.config.strictTokens === 'unknown-tokens'
 
+          /**
+           * The keywords go with them, so a mark does not depend on being a token.
+           *
+           * Only what `WithEscapeHatch` wraps carries `!` and `/`, and that used to be the
+           * tokens alone — so `shadow: 'none!'` was an error while `shadow: 'none'` and
+           * `color: 'red.300!'` were both fine, decided by whether the value happened to be a
+           * token rather than by anything the author can see.
+           *
+           * Held out only where there is a narrowed list to hold: an `authorIdentProperty`
+           * keeps csstype's open string, which must stay outside the wrapper or the property
+           * accepts nothing but marked values.
+           */
+          const heldOutKeywords = separateTokens ? knownFallback : ''
+
           // has values (utility or tokens)
           if (propTypes.has(prop)) {
             const tokenValue = `UtilityValues["${prop}"]`
@@ -77,13 +91,15 @@ export function generateStyleProps(ctx: Context) {
               // These carry their own keyword list, which `strictPropertyValues` then narrows
               // to it exactly. Under `'unknown-tokens'` the list has to be *present* — the
               // open string is gone, and `AnyString` is not added back below.
-              union.push([own, 'CssVars', knownFallback].filter(Boolean).join(' | '))
+              union.push([own, 'CssVars', heldOutKeywords ? '' : knownFallback].filter(Boolean).join(' | '))
             } else {
-              union.push([own, 'CssVars', gradedFallback].filter(Boolean).join(' | '))
+              union.push([own, 'CssVars', heldOutKeywords ? '' : gradedFallback].filter(Boolean).join(' | '))
             }
           } else {
             union.push(
-              [strictPropertyList.has(key) ? 'CssVars' : '', knownFallback || cssFallback].filter(Boolean).join(' | '),
+              [strictPropertyList.has(key) ? 'CssVars' : '', heldOutKeywords ? '' : knownFallback || cssFallback]
+                .filter(Boolean)
+                .join(' | '),
             )
           }
 
@@ -99,7 +115,7 @@ export function generateStyleProps(ctx: Context) {
           }
 
           const value = filtered.filter(Boolean).join(' | ')
-          const line = `${key}?: ${restrict(prop, value, ctx.config, heldOutTokens)}`
+          const line = `${key}?: ${restrict(prop, value, ctx.config, [heldOutTokens, heldOutKeywords].filter(Boolean).join(' | '))}`
 
           return ' ' + [comment, line].filter(Boolean).join('\n')
         })

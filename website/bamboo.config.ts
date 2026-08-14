@@ -8,6 +8,7 @@ import { globalCss } from './theme/global-css'
 import { keyframes } from './theme/keyframes'
 
 export default defineConfig({
+  strictTokens: 'unknown-tokens',
   preflight: true,
   // define the content to scan 👇🏻
   include: ['./src/**/*.{tsx,ts,jsx}', './pages/**/*.{jsx,tsx}', './app/**/*.{jsx,tsx}'],

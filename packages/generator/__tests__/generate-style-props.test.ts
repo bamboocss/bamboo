@@ -16254,10 +16254,14 @@ describe('generate property types', () => {
  *
  * Three things have to be true at once. csstype's keywords survive, so `display: 'flex'` does
  * not have to be a token. The open `string` it ends with does not, since that member is what
- * makes `color: 'mutedd'` type-check. And `WithEscapeHatch` wraps the *tokens* alone —
- * `WithModifier` is `[T] extends [string] ? … : never`, so one non-string member of `T` (which
- * csstype's `undefined` and boxed `Number` supply) turns `color: 'blue.300/40'` off for the
- * whole property.
+ * makes `color: 'mutedd'` type-check. And both the tokens and those keywords go inside
+ * `WithEscapeHatch`, because that is what carries `!` and `/` — wrapping the tokens alone made
+ * `boxShadow: 'none!'` an error while `color: 'blue.300!'` was fine, decided by whether the
+ * value happened to be a token.
+ *
+ * What must *not* go in is the open string an `authorIdentProperty` keeps: everything outside
+ * the wrapper is still accepted plain, and everything inside it is what a mark may decorate, so
+ * wrapping an open string would let a mark excuse anything.
  */
 describe('strictTokens: unknown-tokens', () => {
   const lineFor = (prop: string, config?: Parameters<typeof createContext>[0]) => {
@@ -16265,21 +16269,21 @@ describe('strictTokens: unknown-tokens', () => {
     return generated.split('\n').find((line) => line.trimStart().startsWith(`${prop}?:`))
   }
 
-  test('keeps a property’s keywords, drops its open string, and wraps only the tokens', () => {
+  test('keeps a property’s keywords, drops its open string, and wraps both', () => {
     expect(lineFor('color')).toMatchInlineSnapshot(
-      `"color?: ConditionalValue<WithEscapeHatch<UtilityValues["color"]> | CssVars | KnownKeywords<CssProperties["color"]> | CssValueShape>"`,
+      `"color?: ConditionalValue<WithEscapeHatch<UtilityValues["color"] | KnownKeywords<CssProperties["color"]>> | CssVars | CssValueShape>"`,
     )
   })
 
   test('a property with no tokens still gets its keywords', () => {
     expect(lineFor('display')).toMatchInlineSnapshot(
-      `"display?: ConditionalValue<WithEscapeHatch<never> | CssVars | KnownKeywords<CssProperties["display"]> | CssValueShape>"`,
+      `"display?: ConditionalValue<WithEscapeHatch<KnownKeywords<CssProperties["display"]>> | CssVars | CssValueShape>"`,
     )
   })
 
   test('`strictPropertyValues` still narrows to the enumerated list', () => {
     expect(lineFor('position', { strictPropertyValues: true })).toMatchInlineSnapshot(
-      `"position?: ConditionalValue<WithEscapeHatch<OnlyKnown<"position", CssVars | KnownKeywords<CssProperties["position"]>>>>"`,
+      `"position?: ConditionalValue<WithEscapeHatch<OnlyKnown<"position", KnownKeywords<CssProperties["position"]> | CssVars>>>"`,
     )
   })
 
