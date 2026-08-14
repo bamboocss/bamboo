@@ -1,5 +1,7 @@
 # @bamboocss/types
 
+## 1.43.1
+
 ## 1.43.0
 
 ### Minor Changes

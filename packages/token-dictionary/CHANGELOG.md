@@ -1,5 +1,13 @@
 # @bamboocss/token-dictionary
 
+## 1.43.1
+
+### Patch Changes
+
+- @bamboocss/logger@1.43.1
+- @bamboocss/shared@1.43.1
+- @bamboocss/types@1.43.1
+
 ## 1.43.0
 
 ### Patch Changes
