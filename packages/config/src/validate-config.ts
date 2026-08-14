@@ -13,6 +13,7 @@ import { validateTokens } from './validation/validate-tokens'
 
 /**
  * Validate the config
+ * - Check that `strictTokens` names a setting that exists
  * - Check for duplicate between token & semanticTokens names
  * - Check for duplicate between recipes/patterns/slots names
  * - Check for token / semanticTokens paths (must end/contain 'value')
@@ -61,6 +62,8 @@ export const validateConfig = (config: Partial<UserConfig>) => {
 
   if (config.validation === 'off') return report()
 
+  validateStrictTokens(config.strictTokens, addError)
+
   validateBreakpoints(config.theme?.breakpoints, addError)
 
   validateConditions(config.conditions, addError)
@@ -89,4 +92,21 @@ export const validateConfig = (config: Partial<UserConfig>) => {
   validateArtifactNames(artifacts, addError)
 
   return report()
+}
+
+/**
+ * `strictTokens` has three settings, and a fourth spelling is not one of them.
+ *
+ * It reaches the generated types as a comparison against two known values, so anything else is
+ * neither: `strictTokens: 'unknown'` emitted a *fourth* prop shape — csstype's keywords without
+ * the escape hatch — that no setting asks for, silently. A typo in the middle mode's name is the
+ * likely way to get there, and the symptom is type errors that match no documented behaviour.
+ */
+const validateStrictTokens = (value: unknown, addError: (scope: string, message: string) => void) => {
+  if (value === undefined || value === true || value === false || value === 'unknown-tokens') return
+  addError(
+    'strictTokens',
+    `\`${JSON.stringify(value)}\` is not a setting. Use \`true\` for tokens only, \`'unknown-tokens'\` to reject a ` +
+      `value that is neither a token nor a css keyword, or omit it.`,
+  )
 }

@@ -1,15 +1,48 @@
+import { findViteConfig, hasUncompilableSources } from '@bamboocss/node'
+import type { Config } from '@bamboocss/types'
 import * as p from '@clack/prompts'
 import { version } from '../package.json'
 
-export const interactive = async () => {
+/**
+ * Which integration this project wants, before anybody is asked.
+ *
+ * The question is not really a preference. `@bamboocss/vite` compiles every `css()` and `cva()`
+ * call to a literal class string; `@bamboocss/postcss` emits the stylesheet and compiles
+ * nothing, so those calls stay runtime calls and the style engine ships to the client. Which of
+ * the two applies is decided by the bundler, and the answer is on disk: a Vite config means the
+ * compiler is available.
+ *
+ * Asked cold, with `yes` preselected, this steered every Vite project onto the runtime path by
+ * pressing Enter — and both setups render identically, so nothing afterwards reveals the
+ * choice. That is the same defect the React Router guide had, reached by a different door.
+ *
+ * Svelte, Vue and Astro are the exception in the other direction: their components are
+ * templates the compiler does not transform, so PostCSS is the integration they should be on
+ * and the default stays `yes`.
+ */
+export const suggestPostcss = (cwd: string) => {
+  if (!findViteConfig(cwd)) return 'yes'
+  return hasUncompilableSources({ cwd }) ? 'yes' : 'no'
+}
+
+export const interactive = async (options: { cwd?: string } = {}) => {
+  const cwd = options.cwd ?? process.cwd()
+  const postcssDefault = suggestPostcss(cwd)
+
   p.intro(`bamboo v${version}`)
 
   const initFlags = await p.group(
     {
       usePostcss: () =>
         p.select({
-          message: 'Would you like to use PostCSS ?',
-          initialValue: 'yes',
+          // Named by what it decides rather than by the tool, because "would you like to use
+          // PostCSS?" reads as "do you have PostCSS in this project?" — which most Vite and
+          // Next projects do, for autoprefixer, and which is not the question being asked.
+          message:
+            postcssDefault === 'no'
+              ? 'Emit the stylesheet through PostCSS? This project has a Vite config, and `@bamboocss/vite` compiles your style calls away instead.'
+              : 'Emit the stylesheet through PostCSS?',
+          initialValue: postcssDefault,
           options: [
             { value: 'yes', label: 'Yes' },
             { value: 'no', label: 'No' },
@@ -26,11 +59,12 @@ export const interactive = async () => {
         }),
       withStrictTokens: () =>
         p.select({
-          message: 'Use strict tokens to enforce full type-safety?',
+          message: 'How strictly should typescript check style values?',
           initialValue: 'no',
           options: [
-            { value: 'yes', label: 'Yes' },
-            { value: 'no', label: 'No' },
+            { value: 'no', label: 'Not at all — any string is accepted' },
+            { value: 'unknown-tokens', label: 'Reject a value that is neither a token nor a css keyword' },
+            { value: 'yes', label: 'Only tokens — every raw value is written `[14px]`' },
           ],
         }),
       shouldUpdateGitignore: () =>
@@ -58,13 +92,32 @@ export const interactive = async () => {
   return {
     postcss: initFlags.usePostcss === 'yes',
     outExtension: initFlags.useMjsExtension === 'yes' ? 'mjs' : 'js',
-    strictTokens: initFlags.withStrictTokens === 'yes',
+    strictTokens: strictTokensFrom(initFlags.withStrictTokens),
     gitignore: initFlags.shouldUpdateGitignore === 'yes',
-  } as InitFlags
+  } satisfies InitFlags
+}
+
+/** `'yes'` is the historical spelling of `true`; the third mode names itself. */
+const strictTokensFrom = (answer: string): Config['strictTokens'] | undefined => {
+  if (answer === 'yes') return true
+  if (answer === 'unknown-tokens') return 'unknown-tokens'
+  return undefined
 }
 
 interface InitFlags {
   postcss: boolean
-  outExtension: string
+  /** The two the prompt offers, rather than `string`, which is what the config accepts. */
+  outExtension: 'mjs' | 'js'
+  /**
+   * Declared, which it was not.
+   *
+   * The old shape returned this field and omitted it from the interface, behind an
+   * `as InitFlags` cast. `satisfies` catches that half — returning a field the interface does
+   * not declare is now an error where the cast was silent. It does not catch the other half,
+   * a field declared everywhere and read nowhere, which is what actually dropped the answer:
+   * `InitCommandFlags` naming it, and the caller's `options` being typed rather than `{}`, are
+   * what close that.
+   */
+  strictTokens: Config['strictTokens'] | undefined
   gitignore: boolean
 }

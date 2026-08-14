@@ -1,7 +1,10 @@
 import { execSync } from 'node:child_process'
+import fsSync from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
+import { suggestPostcss } from '../src/interactive'
 import fs from 'node:fs/promises'
 import { afterAll } from 'vitest'
 import { beforeAll } from 'vitest'
@@ -96,6 +99,33 @@ describe('CLI', () => {
     const logFileExists = await fs.access(paths.logFile)
     expect(logFileExists).toBeUndefined()
   })
+
+  /**
+   * `--strict-tokens` used to be collected and dropped.
+   *
+   * cac parsed it, `interactive()` returned it, and the init action destructured everything
+   * except it — so a project that asked for strict tokens got a config without the key and
+   * nothing said so. The flag is documented in the CLI reference, which made it worse: the
+   * only way to find out was to write a bad token and watch it not be reported.
+   */
+  test('init --strict-tokens', async () => {
+    const cmd = `node ${binPath} init --cwd="${testsCwd}" --force --no-codegen`
+
+    runCommand(`${cmd} --strict-tokens`, { cwd: testsCwd })
+    expect(await fs.readFile(paths.config, 'utf8')).toContain('strictTokens: true')
+
+    // The middle mode has to be reachable from here too, or it is a config-file feature
+    // `bamboo init` cannot produce.
+    runCommand(`${cmd} --strict-tokens unknown-tokens`, { cwd: testsCwd })
+    // Either quote: the template writes JSON and `oxfmt` rewrites it to single quotes where
+    // the binary is on PATH, which it is not everywhere this runs.
+    expect(await fs.readFile(paths.config, 'utf8')).toMatch(/strictTokens: ['"]unknown-tokens['"]/)
+
+    // Absent by default rather than written as `false`: a config that never mentions it reads
+    // as a decision nobody made, which is what this is.
+    runCommand(cmd, { cwd: testsCwd })
+    expect(await fs.readFile(paths.config, 'utf8')).not.toContain('strictTokens')
+  }, 120_000)
 
   test('codegen', async () => {
     const cmd = `node ${binPath} codegen --cwd="${testsCwd}"`
@@ -247,5 +277,51 @@ describe('CLI', () => {
     expect(pkg).toMatchObject(owned)
     expect(pkg.exports['./css']).toBeDefined()
     expect(pkg.license).toBeUndefined()
+  })
+})
+
+/**
+ * Which integration the interactive prompt suggests, before anybody is asked.
+ *
+ * "Would you like to use PostCSS?" defaulted to yes for every project, and that question decides
+ * whether style calls are compiled away or the style engine ships to the client. Both render
+ * identically, so pressing Enter picked the heavier one and nothing afterwards said so.
+ *
+ * The prompt itself needs a TTY; this is the decision behind it, which is the part with a wrong
+ * answer.
+ */
+describe('the PostCSS suggestion', () => {
+  const dirs: string[] = []
+
+  const project = (files: Record<string, string>) => {
+    const dir = fsSync.mkdtempSync(path.join(os.tmpdir(), 'bamboo-suggest-'))
+    dirs.push(dir)
+    for (const [name, body] of Object.entries(files)) fsSync.writeFileSync(path.join(dir, name), body)
+    return dir
+  }
+
+  afterAll(() => {
+    for (const dir of dirs) fsSync.rmSync(dir, { force: true, recursive: true })
+  })
+
+  const react = JSON.stringify({ dependencies: { react: '^19' } })
+
+  test('is no for a Vite project whose components the compiler can transform', () => {
+    expect(suggestPostcss(project({ 'vite.config.ts': '', 'package.json': react }))).toBe('no')
+  })
+
+  test('is yes without a Vite config, where the compiler is not an option', () => {
+    expect(suggestPostcss(project({ 'package.json': react }))).toBe('yes')
+    expect(suggestPostcss(project({ 'vitest.config.ts': '', 'package.json': react }))).toBe('yes')
+  })
+
+  test('is yes for Svelte, Vue and Astro, whose components it cannot transform', () => {
+    for (const dependency of ['svelte', '@sveltejs/kit', 'vue', 'nuxt', 'astro']) {
+      const dir = project({
+        'vite.config.ts': '',
+        'package.json': JSON.stringify({ devDependencies: { [dependency]: '*' } }),
+      })
+      expect(suggestPostcss(dir), dependency).toBe('yes')
+    }
   })
 })

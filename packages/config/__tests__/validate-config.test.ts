@@ -830,3 +830,29 @@ describe('validateConfig', () => {
     expect(validateConfig(config)).toMatchInlineSnapshot(`undefined`)
   })
 })
+
+/**
+ * `strictTokens` has three settings, and a fourth spelling silently produced a fourth
+ * behaviour.
+ *
+ * The generated types compare it against two known values, so `strictTokens: 'unknown'` — a
+ * typo of the middle mode — emitted csstype's keywords without the escape hatch: a prop shape
+ * no setting asks for, reached by a build that exits 0. The symptom is type errors matching
+ * nothing in the docs.
+ */
+describe('strictTokens', () => {
+  const validate = (strictTokens: unknown) =>
+    validateConfig({ strictTokens, validation: 'error' } as Partial<UserConfig>)
+
+  test('accepts the three settings, and absence', () => {
+    for (const value of [undefined, true, false, 'unknown-tokens']) {
+      expect(() => validate(value), String(value)).not.toThrow()
+    }
+  })
+
+  test('names a spelling that is not one of them', () => {
+    expect(() => validate('unknown')).toThrow(/strictTokens/)
+    expect(() => validate('unknown')).toThrow(/is not a setting/)
+    expect(() => validate('yes')).toThrow(/is not a setting/)
+  })
+})

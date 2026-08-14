@@ -17,8 +17,8 @@ import {
   startProfiling,
   type CssGenOptions,
 } from '@bamboocss/node'
-import { compact } from '@bamboocss/shared'
-import type { CssArtifactType } from '@bamboocss/types'
+import { BambooError, compact } from '@bamboocss/shared'
+import type { Config, CssArtifactType } from '@bamboocss/types'
 import { cac } from 'cac'
 import { join, resolve } from 'path'
 import { version } from '../package.json'
@@ -35,6 +35,38 @@ import type {
   ShipCommandFlags,
   SpecCommandFlags,
 } from './types'
+
+/**
+ * `--strict-tokens` is three-valued, and cac hands back whatever followed it.
+ *
+ * Bare is `true`, which is what the flag has always meant, and a named mode is passed through
+ * so the middle setting is reachable from the CLI at all — it would otherwise be a config-file
+ * feature `bamboo init` could not produce.
+ *
+ * Anything else is refused rather than coerced. Mapping the unknown to `true` is the worst
+ * available answer: `--strict-tokens=false` would turn it *on*, and a typo in the middle mode's
+ * name would silently pick the strictest setting there is — every raw CSS value in the project
+ * becoming a type error, with nothing naming the mistake. Refusing costs one message and is
+ * always readable.
+ *
+ * The negative spellings are answered here rather than left to cac, which only recognises
+ * `--no-strict-tokens`. A user writing `--strict-tokens=false` means the same thing.
+ */
+const OFF = new Set(['false', 'no', 'off', '0', ''])
+
+const normalizeStrictTokens = (value: unknown): Config['strictTokens'] | undefined => {
+  if (value === undefined || value === false) return undefined
+  if (value === true) return true
+  const named = String(value)
+  if (OFF.has(named)) return undefined
+  if (named === 'unknown-tokens') return 'unknown-tokens'
+  if (named === 'true' || named === 'yes' || named === 'on') return true
+  throw new BambooError(
+    'CONFIG_ERROR',
+    `\`--strict-tokens ${named}\` is not a setting. Pass it bare for tokens only, or ` +
+      `\`--strict-tokens unknown-tokens\` to reject a value that is neither a token nor a css keyword.`,
+  )
+}
 
 export async function main() {
   const cli = cac('bamboo')
@@ -53,18 +85,26 @@ export async function main() {
     .option('--no-codegen', "Don't run the codegen logic")
     .option('--out-extension <ext>', "The extension of the generated js files (default: 'mjs')")
     .option('--outdir <dir>', 'The output directory for the generated files')
-    .option('--strict-tokens', 'Using strictTokens: true')
+    .option(
+      '--strict-tokens [mode]',
+      'Set strictTokens. Bare for `true`; `--strict-tokens unknown-tokens` for the middle mode',
+    )
     .option('--logfile <file>', 'Outputs logs to a file')
     .action(async (initFlags: Partial<InitCommandFlags> = {}) => {
-      let options = {}
+      // Typed rather than `{}`. Widening the interactive result to an empty object is what let
+      // its `strictTokens` answer be returned, declared, and never read by the destructuring
+      // below — the field was invisible to the type system at exactly the point that mattered.
+      let options: Partial<InitCommandFlags> = {}
 
       if (initFlags.interactive) {
-        options = await interactive()
+        // The cwd, so the PostCSS question can be answered from the project rather than asked
+        // cold — a Vite config means the compiler is available, and that decides it.
+        options = await interactive({ cwd: resolve(initFlags.cwd ?? '') })
       }
 
       const flags = { ...initFlags, ...options }
 
-      const { force, postcss, silent, gitignore, outExtension, config: configPath } = flags
+      const { force, postcss, silent, gitignore, outExtension, strictTokens, config: configPath } = flags
 
       const cwd = resolve(flags.cwd ?? '')
 
@@ -88,6 +128,10 @@ export async function main() {
           force,
           outExtension,
           outdir: flags.outdir,
+          // Both `--strict-tokens` and the interactive answer used to stop here: the value was
+          // collected, never destructured, and never written — so a project that asked for
+          // strict tokens got a config without them and nothing said so.
+          strictTokens: normalizeStrictTokens(strictTokens),
         }),
       )
 

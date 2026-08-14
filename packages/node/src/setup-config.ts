@@ -15,7 +15,7 @@ type SetupOptions = Partial<Config> & {
 }
 
 export async function setupConfig(cwd: string, opts: SetupOptions = {}) {
-  const { force, outExtension, outdir = 'styled-system' } = opts
+  const { force, outExtension, outdir = 'styled-system', strictTokens } = opts
 
   let configFile: string | undefined
 
@@ -50,6 +50,17 @@ export default defineConfig({
     ${outExtension ? `\n // The extension for the emitted JavaScript files\noutExtension: '${outExtension}',` : ''}
     // Where to look for your css declarations
     include: ["./src/**/*.{js,jsx,ts,tsx}", "./pages/**/*.{js,jsx,ts,tsx}"],
+${
+  // Written only when asked for, and nothing at all otherwise — including no blank line.
+  // The key is absent by default rather than present and `false`, so a config that never
+  // mentions it reads as "not a decision I made", which is what `bamboo init` without the
+  // flag is.
+  strictTokens
+    ? `\n// How much of a style value typescript checks. \`'unknown-tokens'\` rejects a value\n` +
+      `// that is neither a token nor a keyword the property enumerates, while leaving raw\n` +
+      `// css values alone; \`true\` allows only tokens.\nstrictTokens: ${JSON.stringify(strictTokens)},\n`
+    : ''
+}
 
     // Files to exclude
     exclude: [],
