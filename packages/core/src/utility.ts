@@ -796,7 +796,10 @@ export class Utility {
     // something CSS has never heard of.
     if (keywords.size === 0) return false
 
-    return !keywords.has(bare)
+    // Folded, because a CSS keyword is ASCII case-insensitive: `color: currentcolor` is valid
+    // and csstype spells it `currentColor`. The token lookup above is *not* folded — those names
+    // are the author's.
+    return !keywords.has(bare.toLowerCase())
   }
 
   /**
@@ -945,7 +948,11 @@ export class Utility {
    */
   explainUnresolvedToken = ({ prop, value, category, declaredIn }: UnresolvedTokenRef) => {
     const dropped = `It is emitted as written, and the browser will drop it.`
+    // Two spellings rather than one lowercased on the fly: `literal.toLowerCase()` also folded
+    // the value inside it, so a token named `navH` was reported with the fix written `[navh]` —
+    // advice that does not work.
     const literal = `Write \`[${value}]\` to mean it literally.`
+    const orLiteral = `or write \`[${value}]\` to mean it literally.`
 
     // The good case: the name exists, on another shelf. Saying which shelf *is* the fix, and it
     // is the thing a type error cannot reach — it can only report that a string is not
@@ -960,7 +967,7 @@ export class Utility {
 
       return (
         `\`${prop}: ${value}\` — \`${value}\` is declared under ${where}, but ${reads}. ${dropped} ` +
-        `Use a ${category ? `\`${category}\`` : 'valid'} token, or ${literal.toLowerCase()}`
+        `Use a ${category ? `\`${category}\`` : 'valid'} token, ${orLiteral}`
       )
     }
 

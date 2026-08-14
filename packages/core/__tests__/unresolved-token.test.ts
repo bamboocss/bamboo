@@ -199,6 +199,38 @@ describe('a bare identifier', () => {
    * saying which shelf is the fix. TypeScript can only report that a string is not assignable to
    * a union of two hundred members, and guess a near-miss by spelling.
    */
+  /**
+   * A css keyword is ASCII case-insensitive; csstype spells them as the spec does. Comparing as
+   * written reported `color: currentcolor` — ordinary, valid css — as a typo against
+   * `currentColor`, on this repo's own documentation site.
+   */
+  test.each([
+    ['currentcolor', 'color'],
+    ['currentColor', 'color'],
+    ['BLOCK', 'display'],
+  ])('matches a keyword written as %s', (value, prop) => {
+    expect(warns(prop, value), `${prop}: ${value}`).toBeNull()
+  })
+
+  /**
+   * The advice has to be usable. Lowercasing the sentence to make it read mid-clause also folded
+   * the value inside it, so a `sizes` token named `navH` was reported with the fix written
+   * `[navh]` — which resolves to nothing.
+   */
+  test('keeps the value’s case in the fix it suggests', () => {
+    const { utility } = setup()
+
+    const message = utility.explainUnresolvedToken({
+      prop: 'top',
+      value: 'navH',
+      category: 'spacing',
+      declaredIn: ['sizes'],
+    })
+
+    expect(message).toContain('`[navH]`')
+    expect(message).not.toContain('navh]')
+  })
+
   test('says where the name actually lives', () => {
     const message = warns('top', 'sm')
 
