@@ -1,9 +1,9 @@
 ---
-'@bamboocss/core': major
-'@bamboocss/generator': major
-'@bamboocss/types': major
-'@bamboocss/config': major
-'@bamboocss/dev': major
+'@bamboocss/core': minor
+'@bamboocss/generator': minor
+'@bamboocss/types': minor
+'@bamboocss/config': minor
+'@bamboocss/dev': minor
 '@bamboocss/shared': minor
 ---
 

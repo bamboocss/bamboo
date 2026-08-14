@@ -1,9 +1,9 @@
 ---
-'@bamboocss/generator': major
-'@bamboocss/core': major
-'@bamboocss/types': major
-'@bamboocss/config': major
-'@bamboocss/dev': major
+'@bamboocss/generator': minor
+'@bamboocss/core': minor
+'@bamboocss/types': minor
+'@bamboocss/config': minor
+'@bamboocss/dev': minor
 ---
 
 Remove `strictTokens: 'unknown-tokens'`. The build checks names now, and it is better at it.
