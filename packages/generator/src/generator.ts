@@ -451,7 +451,7 @@ export class Generator extends Context {
 
       // One finding per mistake: the same typo under `base`, `_hover` and two breakpoints is
       // four atoms and one thing to fix.
-      found.set(`${key}:${bare}`, { prop: key, value: bare, category: this.utility.getTokenCategory(key) })
+      found.set(`${key}:${bare}`, this.utility.unresolvedTokenRef(key, bare))
     }
 
     if (!found.size) return
@@ -459,10 +459,9 @@ export class Generator extends Context {
     // One line each, so the cap is generous relative to the block-shaped lists elsewhere: a
     // theme rename can leave a few dozen of these and seeing the shape of them is the point.
     const detail = truncateList(
-      Array.from(found.values(), ({ prop, value, category }) => {
-        const where = category ? ` Check the path against your \`${category}\` tokens.` : ''
-        return `- \`${prop}: ${value}\`.${where}`
-      }),
+      // The same sentence the warning prints, so the two modes cannot describe one mistake
+      // differently — which is the whole reason both go through `explainUnresolvedToken`.
+      Array.from(found.values(), (ref) => `- ${this.utility.explainUnresolvedToken(ref)}`),
       { limit: 25, unit: 'value', separator: '\n' },
     )
 

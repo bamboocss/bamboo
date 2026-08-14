@@ -59,7 +59,7 @@ describe('default', () => {
     const { run } = build(undefined, styled('accent.default'))
 
     expect(() => run()).not.toThrow()
-    expect(messages(spy)).toMatch(/Unknown token `accent.default`/)
+    expect(messages(spy)).toMatch(/`background: accent.default`/)
   })
 })
 
@@ -69,7 +69,7 @@ describe("'off'", () => {
     const { run } = build('off', styled('accent.default'))
 
     expect(() => run()).not.toThrow()
-    expect(messages(spy)).not.toMatch(/Unknown token/)
+    expect(messages(spy)).not.toMatch(/accent\.default/)
   })
 
   test('the css is unchanged — the option grades a report, not the output', () => {
@@ -91,7 +91,7 @@ describe("'error'", () => {
   test('names the category to check the path against', () => {
     const { run } = build('error', styled('accent.default'))
 
-    expect(() => run()).toThrowError(/`colors` tokens/)
+    expect(() => run()).toThrowError(/no such `colors` token/)
   })
 
   test('does not also warn, which would report every finding twice', () => {
@@ -99,7 +99,7 @@ describe("'error'", () => {
     const { run } = build('error', styled('accent.default'))
 
     expect(() => run()).toThrow()
-    expect(messages(spy)).not.toMatch(/Unknown token/)
+    expect(messages(spy)).not.toMatch(/accent\.default/)
   })
 
   test('reports one finding per mistake, not one per condition', () => {
@@ -160,7 +160,7 @@ describe("'error'", () => {
     // values": `fontFamily` draws from `fonts`, so a dotted value it does not enumerate is a
     // real finding rather than a false one.
     const { run } = build('error', styled('Helvetica.Neue', 'fontFamily'))
-    expect(() => run()).toThrowError(/`fonts` tokens/)
+    expect(() => run()).toThrowError(/no such `fonts` token/)
   })
 })
 
@@ -193,7 +193,7 @@ describe('modifiers on the path', () => {
       const { run } = build('warn', styled(value))
 
       expect(() => run()).not.toThrow()
-      expect(messages(spy)).toMatch(/Unknown token `accent.default`/)
+      expect(messages(spy)).toMatch(/`background: accent.default`/)
     })
   }
 
@@ -322,7 +322,7 @@ describe('styles that never reach the decoder', () => {
       const { run } = build(undefined, source, config)
 
       expect(() => run()).not.toThrow()
-      expect(messages(spy)).toMatch(/Unknown token `accent.default`/)
+      expect(messages(spy)).toMatch(/`background: accent.default`/)
     })
 
     test(`'error' fails on an unknown token in ${name}`, () => {
@@ -349,7 +349,7 @@ describe('styles that never reach the decoder', () => {
     const { run } = build(undefined, transition)
 
     expect(() => run()).not.toThrow()
-    expect(messages(spy)).toMatch(/Unknown token `accent.default`/)
+    expect(messages(spy)).toMatch(/`background: accent.default`/)
   })
 
   test("'error' fails on an unknown token in a viewTransition slot", () => {
@@ -363,7 +363,7 @@ describe('styles that never reach the decoder', () => {
     const { run } = build('off', styled('red.300'), cases.globalCss)
 
     expect(() => run()).not.toThrow()
-    expect(messages(spy)).not.toMatch(/Unknown token/)
+    expect(messages(spy)).not.toMatch(/accent\.default/)
   })
 
   test('a resolvable token in the config is not a finding', () => {

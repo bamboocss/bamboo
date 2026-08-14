@@ -148,3 +148,63 @@ describe('unresolved token paths', () => {
     expect(spy).not.toHaveBeenCalled()
   })
 })
+
+/**
+ * The half that used to be the type system's, and the half it could never do well.
+ *
+ * `isUnresolvedTokenValue` required a dot, so the build saw `color: 'blue.3000'` and was blind to
+ * `color: 'mutedd'` — the single typo the whole feature is sold on. Only the type layer caught
+ * that, at the cost of narrowing every generated prop type, and it could not tell `top: 'navH'`
+ * from `animationName: 'fadeIn'` without a hand-written list of 29 properties.
+ *
+ * The grammar decides instead. A bare identifier is a mistake when the property enumerates
+ * keywords, does not accept an identifier the author invents, and neither the tokens nor the
+ * keywords contain it.
+ */
+describe('a bare identifier', () => {
+  const warns = (prop: string, value: string) => {
+    const { utility, spy } = setup()
+    utility.transform(prop, value)
+    return spy.mock.calls.length > 0 ? String(spy.mock.calls[0]![1]) : null
+  }
+
+  test.each([
+    ['names no token and no keyword', 'color', 'mutedd'],
+    ['is a keyword with a typo', 'display', 'flexx'],
+    ['names a token category that does not exist', 'zIndex', 'overlay'],
+    ['is sugar the property does not have', 'transform', 'auto'],
+  ])('is reported when it %s', (_label, prop, value) => {
+    expect(warns(prop, value), `${prop}: ${value}`).not.toBeNull()
+  })
+
+  test.each([
+    ['a keyword the property enumerates', 'display', 'flex'],
+    ['a keyword reached through a shared data type', 'color', 'rebeccapurple'],
+    ['a css-wide keyword', 'color', 'inherit'],
+    ['a keyword on a property that also takes tokens', 'top', 'auto'],
+    ['a token', 'color', 'red.300'],
+    // The grammar takes `<custom-ident>` here, so there is no list to be wrong against. This is
+    // the case the type layer got wrong: it rejected `'color'` and suggested `'colors'`, which
+    // is a utility value that emits seven declarations instead of one.
+    ['a css property name where the grammar asks for one', 'transitionProperty', 'color'],
+    ['an author identifier', 'animationName', 'fadeIn'],
+    ['a grid line name', 'gridArea', 'sidebar'],
+    ['a font family', 'fontFamily', 'Inter'],
+  ])('is left alone when it is %s', (_label, prop, value) => {
+    expect(warns(prop, value), `${prop}: ${value}`).toBeNull()
+  })
+
+  /**
+   * The diagnostic a type error cannot reach. The name exists — it is on another shelf — and
+   * saying which shelf is the fix. TypeScript can only report that a string is not assignable to
+   * a union of two hundred members, and guess a near-miss by spelling.
+   */
+  test('says where the name actually lives', () => {
+    const message = warns('top', 'sm')
+
+    expect(message).toContain('`sm` is declared under')
+    expect(message).toContain('`radii`')
+    expect(message).toContain('`top` reads `spacing`')
+    expect(message).toContain('[sm]')
+  })
+})

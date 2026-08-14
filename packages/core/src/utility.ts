@@ -1,3 +1,4 @@
+import { acceptsAuthorIdent, cssPropertyKeywords, isCssProperty } from '@bamboocss/is-valid-prop'
 import { logger } from '@bamboocss/logger'
 import {
   compact,
@@ -31,11 +32,19 @@ import { colorMix } from './color-mix'
 import { withCssUnit } from './stringify'
 
 /**
- * A value shaped like a token path: dot-separated segments, the first starting with a letter
- * and the rest with a letter or digit. `red.300` matches, `0.5` and `1.5rem` do not, which is
- * the distinction that keeps numeric values out of `recordUnresolvedToken`.
+ * A value shaped like a name rather than like CSS: `red.300`, `navH`, `flex`.
+ *
+ * Dot-separated segments, the first starting with a letter and the rest with a letter or digit,
+ * and the dots are optional. `0.5`, `1.5rem`, `#fff`, `1px solid red` and `rgb(0 0 0)` all fail
+ * it, which is what keeps a raw CSS value out of the check below — nothing here is about
+ * rejecting raw values.
+ *
+ * The dots were mandatory until the check learned to read the CSS grammar. That made
+ * `color: 'mutedd'` — the single typo this whole diagnostic is sold on — invisible to the build,
+ * because with only the token names to compare against there was no way to tell it from
+ * `display: 'flex'`.
  */
-const TOKEN_PATH = /^[a-zA-Z][\w-]*(?:\.[a-zA-Z0-9][\w-]*)+$/
+const IDENTIFIER = /^[a-zA-Z][\w-]*(?:\.[a-zA-Z0-9][\w-]*)*$/
 
 /** A style value shaped like a token path that names no token. */
 export interface UnresolvedTokenRef {
@@ -45,6 +54,13 @@ export interface UnresolvedTokenRef {
   value: string
   /** The token category the property draws from, when it draws from exactly one. */
   category?: string
+  /**
+   * The categories that do declare this name, where the mistake is a value on the wrong shelf.
+   *
+   * `top: 'navH'` against a theme declaring `navH` under `sizes` is the shape this exists for,
+   * and it is the thing a type error structurally cannot say.
+   */
+  declaredIn?: string[]
 }
 
 export interface UtilityOptions {
@@ -727,16 +743,81 @@ export class Utility {
    * literal and none of them can be wrong.
    */
   isUnresolvedTokenValue = (prop: string, value: string) => {
-    // Cheapest test first: this runs for every value the build transforms, and most of them
-    // have no dot at all.
-    if (!value.includes('.')) return false
+    // Cheapest test first: this runs for every value the build transforms, and a CSS value
+    // mostly opens with a digit, a `#`, a `-` or a quote. Only a leading letter can be a name.
+    const first = value.charCodeAt(0)
+    if (!((first >= 97 && first <= 122) || (first >= 65 && first <= 90))) return false
 
     const key = this.resolveShorthand(prop)
     const bare = this.bareTokenPath(key, value)
-    if (!TOKEN_PATH.test(bare)) return false
+    if (!IDENTIFIER.test(bare)) return false
 
+    // Whatever the utility itself enumerates — token names, an array of compositions, the map a
+    // `values` function returns. A hit here is the ordinary case and settles it.
     const known = this.getKnownValues(key)
-    return !!known && known.size > 0 && !known.has(bare)
+    if (known?.has(bare)) return false
+
+    // A dotted path can only be a token path; nothing in CSS is spelled that way. So the
+    // question is just whether this utility enumerates anything to have missed.
+    if (bare.includes('.')) return !!known && known.size > 0
+
+    return this.isUnknownKeyword(key, bare)
+  }
+
+  /**
+   * A bare identifier that is neither a token nor anything the CSS property accepts.
+   *
+   * This is the half the type layer used to own, and the half it could never do well. csstype
+   * describes `top` and `animationName` identically — both end in `(string & {})`, one because
+   * it takes lengths and the other because it takes a `<custom-ident>` — so narrowing types had
+   * to carry a hand-written list of the properties where an invented name is ordinary. The
+   * grammar says it outright, and `acceptsAuthorIdent` reads the grammar.
+   *
+   * Three ways to be fine, and a value has to fail all of them:
+   *
+   * - it is a keyword the property enumerates, `display: 'flex'`;
+   * - the property takes an identifier the author invents, `animationName: 'fadeIn'`,
+   *   `transitionProperty: 'color'`, `gridArea: 'sidebar'`;
+   * - nothing describes the property at all — a custom utility mapping to a CSS variable — in
+   *   which case there is nothing to be wrong against.
+   *
+   * What is left is the mistake: `top: 'navH'`, `zIndex: 'overlay'`, `color: 'mutedd'`. Each
+   * ships a declaration that parses and that the browser discards.
+   */
+  private isUnknownKeyword = (key: string, bare: string) => {
+    const property = this.getCssProperty(key)
+    if (!property) return false
+
+    if (acceptsAuthorIdent(property)) return false
+
+    const keywords = cssPropertyKeywords(property)
+    // Empty is "csstype does not describe this property", which is not the same as "it takes
+    // nothing" — reading it as a rejection would fail every custom utility named after
+    // something CSS has never heard of.
+    if (keywords.size === 0) return false
+
+    return !keywords.has(bare)
+  }
+
+  /**
+   * The CSS property a utility declares, for asking the grammar about it.
+   *
+   * `property` where the utility names one — `spaceX` is `marginInlineStart` — and the key
+   * otherwise, which is how `top` and `display` are declared. Verified against the property
+   * list rather than trusted: a utility may be named anything, and `mixin` or `textStyle`
+   * must reach the grammar as "no such property" rather than as an empty keyword set that
+   * happens to behave the same way today.
+   */
+  private cssProperties = new Map<string, string | undefined>()
+
+  private getCssProperty = (key: string) => {
+    const cached = this.cssProperties.get(key)
+    if (cached !== undefined || this.cssProperties.has(key)) return cached
+
+    const declared = this.configs.get(key)?.property ?? key
+    const property = isCssProperty(declared) ? declared : undefined
+    this.cssProperties.set(key, property)
+    return property
   }
 
   /**
@@ -812,18 +893,82 @@ export class Utility {
     const id = `${key}:${bare}`
     if (this.unresolvedTokens.has(id)) return
 
-    const category = this.getTokenCategory(key)
-    this.unresolvedTokens.set(id, { prop: key, value: bare, category })
+    const ref = this.unresolvedTokenRef(key, bare)
+    this.unresolvedTokens.set(id, ref)
 
     // `error` reports the whole set at the end of the build instead — warning here as well
     // would print every finding twice and bury the line that failed it.
     if (this.unresolvedToken !== 'warn') return
 
-    const where = category ? ` Check the path against your \`${category}\` tokens.` : ''
-    logger.warn(
-      'utility',
-      `Unknown token \`${bare}\` in \`${key}: ${value}\`. It is emitted as written, which the browser will drop.${where} Write \`[${bare}]\` if it is meant as a literal.`,
-    )
+    logger.warn('utility', this.explainUnresolvedToken(ref))
+  }
+
+  /**
+   * Everything known about one finding, built in one place.
+   *
+   * Both modes describe the same mistakes — `warn` as it transforms, `error` from the finished
+   * sheet — and they used to assemble their own descriptions. That is how they came to disagree
+   * about whether `!` was part of the value.
+   */
+  unresolvedTokenRef = (key: string, bare: string): UnresolvedTokenRef => {
+    const category = this.getTokenCategory(key)
+    return { prop: key, value: bare, category, declaredIn: this.categoriesDeclaring(bare, category) }
+  }
+
+  /**
+   * The token categories that *do* declare this name, other than the one being read.
+   *
+   * This is the whole of what a build-time check can say and a type error cannot. `top: 'navH'`
+   * is not a name nobody has heard of — `navH` is a real token, declared under `sizes`, used on
+   * a property that reads `spacing`. A type error can only report that a string is not
+   * assignable to a union of two hundred members and guess a near-miss by spelling; the
+   * resolver knows exactly where the name lives.
+   *
+   * Bounded and only reached when something is already wrong, so the scan is not on any hot
+   * path.
+   */
+  private categoriesDeclaring = (name: string, exclude: string | undefined) => {
+    const found: string[] = []
+    for (const [category, values] of this.tokens.view.valuesByCategory) {
+      if (category === exclude) continue
+      if (values.has(name)) found.push(category)
+    }
+    return found.length ? found : undefined
+  }
+
+  /**
+   * Say what is wrong, where the name actually lives, and what to write instead.
+   *
+   * Shared by the warning and by the error `assertNoUnresolvedTokens` throws, so the two cannot
+   * describe the same finding differently — which they did once before, over whether `!` was
+   * part of the value.
+   */
+  explainUnresolvedToken = ({ prop, value, category, declaredIn }: UnresolvedTokenRef) => {
+    const dropped = `It is emitted as written, and the browser will drop it.`
+    const literal = `Write \`[${value}]\` to mean it literally.`
+
+    // The good case: the name exists, on another shelf. Saying which shelf *is* the fix, and it
+    // is the thing a type error cannot reach — it can only report that a string is not
+    // assignable to a union of two hundred members and guess a near-miss by spelling.
+    if (declaredIn?.length) {
+      // Two is enough to place it. A name declared under six categories is a common word like
+      // `sm`, where listing all six only pushes the useful half of the sentence off the line.
+      const shown = declaredIn.slice(0, 2).map((name) => `\`${name}\``)
+      const rest = declaredIn.length - shown.length
+      const where = rest > 0 ? `${shown.join(', ')} and ${rest} more` : shown.join(' and ')
+      const reads = category ? `\`${prop}\` reads \`${category}\`` : `\`${prop}\` reads no token category`
+
+      return (
+        `\`${prop}: ${value}\` — \`${value}\` is declared under ${where}, but ${reads}. ${dropped} ` +
+        `Use a ${category ? `\`${category}\`` : 'valid'} token, or ${literal.toLowerCase()}`
+      )
+    }
+
+    if (category) {
+      return `\`${prop}: ${value}\` — no such \`${category}\` token. ${dropped} ${literal}`
+    }
+
+    return `\`${prop}: ${value}\` — \`${prop}\` accepts no such value, and it is not a token. ${dropped} ${literal}`
   }
 
   transform = (prop: string, value: string | undefined): TransformResult => {
