@@ -16,7 +16,6 @@ export class Layers {
 
   utilities: AtRule
   compositions: AtRule
-  private utilityRuleMap = new Map<string, AtRule>()
 
   constructor(private names: CascadeLayers) {
     this.root = postcss.root()
@@ -75,11 +74,6 @@ export class Layers {
 
       case 'utilities': {
         if (compositions.nodes?.length) utilities.prepend(compositions)
-
-        this.utilityRuleMap.forEach((rules) => {
-          if (rules.nodes?.length) utilities.append(rules)
-        })
-
         return utilities
       }
 

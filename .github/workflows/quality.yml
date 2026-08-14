@@ -77,6 +77,45 @@ jobs:
       - name: Run codegen tests
         run: pnpm test:codegen
 
+  # A report, not a gate, and only on pull requests.
+  #
+  # `packages/core/src/layers.ts` carried a private `Map` that was declared, iterated once, and
+  # written nowhere — so its loop body could never run. Nothing here saw it: knip 6 has no
+  # class-member analysis at all, and the static tools that do — `tsc --noUnusedLocals`, ESLint's
+  # `no-unused-private-class-members` — ask whether a symbol is *referenced*. It was; the loop read
+  # it. "Never written, therefore always empty" is a dataflow property, and coverage is the only
+  # signal in this repo that can see it.
+  #
+  # Deliberately not a threshold. A percentage gate fails on unrelated drift and teaches people to
+  # route around it, and plenty of uncovered lines are correct — the `INVALID_LAYER` throw in that
+  # same file is meant never to run. Scoped to the files a pull request changed, because a
+  # whole-repo uncovered list is thousands of lines nobody reads.
+  #
+  # Unsharded, unlike the test job: merging per-shard coverage needs a report-merge step, and this
+  # runs in parallel with everything else so it costs wall clock only if it becomes the slowest job.
+  coverage:
+    name: Coverage Report
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        # Full history: the report diffs against the base branch, which a shallow clone cannot see.
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Install
+        uses: ./.github/composite-actions/install
+
+      - name: Run tests with coverage
+        run: pnpm test:coverage
+
+      # Never fails the build; `$GITHUB_STEP_SUMMARY` puts it on the run's summary page, which is
+      # where someone reviewing the change will actually see it.
+      - name: Report uncovered lines in this diff
+        run: node .github/scripts/uncovered-in-diff.mjs origin/${{ github.base_ref }} >> "$GITHUB_STEP_SUMMARY"
+
   build:
     name: Build
     runs-on: ubuntu-latest

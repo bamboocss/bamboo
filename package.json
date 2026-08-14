@@ -34,7 +34,7 @@
     "release-dev": "changeset version --snapshot dev && changeset publish --tag dev",
     "website": "pnpm --filter=./website",
     "mdx-check": "pnpm --filter=website check-links",
-    "test:coverage": "vitest run --coverage.enabled --coverage.provider=v8 --coverage.reporter=text --coverage.reporter=json-summary --coverage.include='packages/*/src/**'"
+    "test:coverage": "vitest run --coverage.enabled --coverage.provider=v8 --coverage.reporter=text --coverage.reporter=json-summary --coverage.reporter=json --coverage.include='packages/*/src/**'"
   },
   "dependencies": {
     "@changesets/changelog-github": "0.5.2",
