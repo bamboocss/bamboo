@@ -295,7 +295,13 @@ export class BambooContext extends Generator {
 
     const detail = truncateList(
       Array.from(
-        groupBy(occurrences, ({ call }) => `${call.entrypoint} ${call.mod} ${call.name} ${call.alias}`),
+        // Joined on NUL because no entrypoint, specifier, export or alias can contain one, so
+        // the composite key cannot be ambiguous the way a space or a comma would be.
+        //
+        // It has to stay the escape sequence. Written as a literal control byte — which is how
+        // it stood until now — ripgrep and grep classify the file as binary and drop every
+        // match in it, so all 545 lines here were invisible to search.
+        groupBy(occurrences, ({ call }) => `${call.entrypoint}\0${call.mod}\0${call.name}\0${call.alias}`),
         ([, group]) => {
           const { call } = group[0]!
           // The imported name when it was renamed, since that is the one the entrypoint would
