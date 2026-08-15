@@ -107,6 +107,71 @@ describe('checkNamingAgreement', () => {
     }
   })
 
+  /**
+   * The tests above pin that the check is silent when the two sides agree, and that its `css`
+   * arm speaks when they do not. Nothing pinned the other two arms, and silence is this
+   * function's success value — so an arm refactored into always returning `undefined` would
+   * leave every test here green while the net caught nothing. These fail on that.
+   *
+   * Each breaks one side only. Every config axis trips the `css` arm first and returns early,
+   * which is why neither of these reaches for a config.
+   */
+  test('the recipe arm still reports when its build side emits nothing', () => {
+    const ctx = createContext({})
+
+    // The check runs on `ctx.encoder.clone()`, so the clone has to be wrapped too. A proxy
+    // that does not survive cloning is bypassed in silence, and the probe then agrees with
+    // itself and proves nothing.
+    const withoutRecipeRules = (encoder: any): any =>
+      new Proxy(encoder, {
+        get: (target: any, key) => {
+          if (key === 'processAtomicRecipe') return () => undefined
+          if (key === 'clone') return () => withoutRecipeRules(target.clone())
+          return typeof target[key] === 'function' ? target[key].bind(target) : target[key]
+        },
+      })
+
+    const result = checkNamingAgreement({
+      config: ctx.config,
+      conditions: ctx.conditions,
+      hash: ctx.hash,
+      decoder: ctx.decoder,
+      recipes: ctx.recipes,
+      utility: ctx.utility,
+      encoder: withoutRecipeRules(ctx.encoder),
+    } as never)
+
+    expect(result).toBeDefined()
+    expect(result!.kind).toBe('recipe')
+    // The runtime still asks for the base and the selected variant; the stylesheet has neither.
+    expect(result!.build).toHaveLength(0)
+    expect(result!.runtime.length).toBeGreaterThan(0)
+  })
+
+  test('the slot-recipe arm still reports when the two sides separate slots differently', () => {
+    const ctx = createContext({})
+
+    // Only the runtime side is given the odd separator: the decoder reads `slotSeparator` off
+    // the real context, so proxying the copy the check holds is what makes the two disagree.
+    // Assigning the field instead would move both sides together and report nothing.
+    const result = checkNamingAgreement({
+      config: ctx.config,
+      conditions: ctx.conditions,
+      hash: ctx.hash,
+      encoder: ctx.encoder,
+      decoder: ctx.decoder,
+      utility: ctx.utility,
+      recipes: new Proxy(ctx.recipes, {
+        get: (target: any, key) => (key === 'slotSeparator' ? '@@' : target[key]),
+      }),
+    } as never)
+
+    expect(result).toBeDefined()
+    expect(result!.kind).toBe('slot-recipe')
+    expect(result!.runtime.every((name) => name.includes('@@'))).toBe(true)
+    expect(result!.build).toHaveLength(0)
+  })
+
   test('the canary never reaches the caller stylesheet', () => {
     const ctx = createContext({})
     checkNamingAgreement(ctx as never)
