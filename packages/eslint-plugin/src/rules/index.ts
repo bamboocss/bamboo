@@ -12,6 +12,7 @@ import noInvalidTokenPaths, { RULE_NAME as NoInvalidTokenPaths } from './no-inva
 import noMarginProperties, { RULE_NAME as NoMarginProperties } from './no-margin-properties'
 import noPhysicalProperties, { RULE_NAME as NoPhysicalProperties } from './no-physical-properties'
 import noPropertyRenaming, { RULE_NAME as NoPropertyRenaming } from './no-property-renaming'
+import noRedundantValue, { RULE_NAME as NoRedundantValue } from './no-redundant-value'
 import noUnlayeredOverride, { RULE_NAME as NoUnlayeredOverride } from './no-unlayered-override'
 import requireLiteralTokenPath, { RULE_NAME as RequireLiteralTokenPath } from './require-literal-token-path'
 import requireRecipeClassName, { RULE_NAME as RequireRecipeClassName } from './require-recipe-class-name'
@@ -37,6 +38,7 @@ export const rules = {
   [NoMarginProperties]: noMarginProperties,
   [NoPhysicalProperties]: noPhysicalProperties,
   [NoPropertyRenaming]: noPropertyRenaming,
+  [NoRedundantValue]: noRedundantValue,
   [NoUnlayeredOverride]: noUnlayeredOverride,
   [RequireLiteralTokenPath]: requireLiteralTokenPath,
   [RequireRecipeClassName]: requireRecipeClassName,
