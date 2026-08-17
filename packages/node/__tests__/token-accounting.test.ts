@@ -165,6 +165,98 @@ describe('unreadable references decline', () => {
     expect(entry!.line).toBe(3)
     expect(entry!.reason).toBe('unresolved-reference')
   })
+})
+
+/**
+ * A local binding named `token` is not the artifact, and reading off one is not a reference the
+ * build cannot follow.
+ *
+ * The walk keyed on the spelling alone, so `items.map((token) => token.value)` — token *objects*,
+ * the obvious name for them — declined once per read. One decline keeps every declaration in the
+ * project, so this was the difference between `accounted` pruning and `accounted` emitting a
+ * byte-identical stylesheet with a wall of warnings. It did exactly that on this repository's own
+ * documentation site: 40 declines across seven components, none of them a token call, holding 500
+ * declarations where 146 are referenced.
+ */
+describe('a local binding of the name is not the artifact', () => {
+  test.each([
+    ['a parameter', `export const a = (token) => token.value`],
+    ['an arrow parameter in a callback', `export const a = (xs) => xs.map((token) => token.extensions.prop)`],
+    ['a destructured parameter', `export const a = ({ token }) => token.value`],
+    ['an array-destructured parameter', `export const a = ([token]) => token.value`],
+    ['a renamed destructured parameter', `export const a = ({ x: token }) => token.value`],
+    ['a function declaration', `function token() {}\nexport const a = token()`],
+    ['a class declaration', `class token {}\nexport const a = new token()`],
+    ['a named function expression', `export const a = function token() { return token }`],
+    ['a catch variable', `export const a = () => { try { f() } catch (token) { return token.message } }`],
+    // Destructured off a parameter — the shape the documentation site's components are written in.
+    ['a destructure off a parameter', `export const a = (props) => { const { token } = props\n  return token.value }`],
+    [
+      'a destructure off a member of a parameter',
+      `export const a = (props) => { const { token } = props.data\n  return token.value }`,
+    ],
+    // A type member names a property and reads nothing.
+    ['a property signature', `interface P { token: Token }\nexport const a = (p: P) => p`],
+    ['a class property', `export class C { token = 1 }`],
+    // The shape that matters most: the artifact is imported *and* a nested scope shadows it.
+    // The inner reads are the parameter, and only the outer call is the artifact.
+    ['a parameter shadowing the imported binding', `${imports}export const a = (xs) => xs.map((token) => token.value)`],
+  ])('%s', (_label, code) => {
+    expect(analyse(code).declined).toEqual([])
+  })
+
+  test('the shadow does not swallow a real reference beside it', () => {
+    const { paths, declined } = analyse(
+      `${imports}export const a = (xs) => xs.map((token) => token.value)\n` +
+        `export const b = token('colors.red.300')`,
+    )
+
+    expect(declined).toEqual([])
+    expect(paths.has('colors.red.300')).toBe(true)
+  })
+
+  /**
+   * The shadow is scoped, not file-wide. A reference outside the shadowing scope is still the
+   * artifact, and still has to be read — accepting it while recording nothing is the one failure
+   * this module exists to make unrepresentable.
+   */
+  test('a reference outside the shadowing scope still declines', () => {
+    const { declined } = analyse(
+      `${imports}export const a = (xs) => xs.map((token) => token.value)\n` + `export const b = (k) => token(k)`,
+    )
+
+    expect(declined.map((entry) => entry.reason)).toEqual(['unresolved-reference'])
+  })
+})
+
+describe('shapes a local binding must not excuse', () => {
+  test.each([
+    // A variable's initializer can be anything, the artifact included, so these keep declining.
+    ['a const assigned from a call', `const { token } = useTheme()\nexport const a = (k) => token(k)`],
+    // A namespace import is not a local binding, and a barrel could make it the artifact. This is
+    // the case the initializer test is rooted at a *local* binding to exclude.
+    [
+      'a destructure off a namespace import',
+      `import * as ui from '@acme/ui'\nconst { token } = ui\nexport const a = (k) => token(k)`,
+    ],
+    [
+      'a destructure off an imported object',
+      `import { theme } from '@acme/ui'\nconst { token } = theme\nexport const a = (k) => token(k)`,
+    ],
+    ['a const assigned the binding', `${imports}const token2 = token\nexport const a = token2('colors.red.300')`],
+    [
+      'a destructured require',
+      `const { token } = require('styled-system/tokens')\nexport const a = token('spacing.4')`,
+    ],
+    // A property *name* is not a use of a local binding, so a `token` parameter elsewhere in the
+    // file says nothing about whether `theme.token(k)` reaches the artifact through a barrel.
+    [
+      'a token member on an untracked object, beside a shadow',
+      `import { theme } from '@acme/ui'\nexport const a = (token) => token.value\nexport const b = (k) => theme.token(k)`,
+    ],
+  ])('%s', (_label, code) => {
+    expect(analyse(code).declined.length).toBeGreaterThan(0)
+  })
 
   /**
    * The syntax pass can only speak for a file it reads exactly as the bundler compiles it.

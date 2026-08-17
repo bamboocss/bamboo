@@ -615,6 +615,26 @@ token(key)
 token('colors.' + shade)
 ```
 
+##### A local `token` is not a token reference
+
+`token` is the obvious name for a token _object_, and binding one shadows nothing:
+
+```ts
+items.map((token) => token.value) // a parameter, not the artifact
+```
+
+Bamboo resolves the binding rather than the spelling, so a parameter (destructuring included), a catch variable, a
+function or class declaration, a named function or class expression, and a variable destructured off one of those are
+all skipped. A type or class member named `token` names a property and reads nothing, so it is skipped too.
+
+What still declines is anything whose value the build cannot see:
+
+```ts
+const { token } = useTheme() // an initializer that could be the artifact, through a barrel
+const { token } = ui // a namespace import, likewise
+theme.token(key) // a member on an object bamboo never bound
+```
+
 #### prune.keepTokens
 
 Token paths to keep whatever the build can see, as exact names or `*` patterns.

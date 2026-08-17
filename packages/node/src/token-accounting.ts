@@ -285,6 +285,10 @@ function accountFile(
     }
   }
 
+  // Built once per file: the walk below asks about a handful of names, and rebuilding the answer
+  // per occurrence would re-scan the tree for every one of them.
+  const shadows = shadowedScopes(sourceFile)
+
   for (const identifier of sourceFile.getDescendantsOfKind(SyntaxKind.Identifier)) {
     const text = nameOf(identifier)
     // Bindings of the artifact, plus the bare name itself — a `token` this pass did not bind
@@ -311,7 +315,13 @@ function accountFile(
       continue
     }
 
-    if (Node.isPropertyAssignment(parent) && parent.getNameNode() === identifier) continue
+    if (isDeclarationName(identifier, parent)) continue
+
+    // A local binding of the same name, which is not this artifact whatever it is called. Tested
+    // here rather than at the top of the loop so a property *name* still declines: `theme.token(k)`
+    // reaches the artifact through an object this pass never bound, and a `token` parameter
+    // elsewhere in the file says nothing about that.
+    if (isShadowed(identifier, shadows.get(text))) continue
 
     const resolved = accountedPath(identifier)
     if (resolved === undefined) {
@@ -357,6 +367,174 @@ function usesTokenMember(sourceFile: SourceFile, namespace: string) {
  * unequal, which let an import of the artifact's export past the checks that key on the name.
  */
 const nameOf = (node: Node) => (Node.isIdentifier(node) ? String(node.compilerNode.escapedText) : node.getText())
+
+/** Every name a binding name binds, following object and array destructuring. */
+function boundNames(name: Node | undefined, bound: (name: string) => void) {
+  if (!name) return
+
+  if (Node.isIdentifier(name)) {
+    bound(nameOf(name))
+    return
+  }
+
+  if (!Node.isObjectBindingPattern(name) && !Node.isArrayBindingPattern(name)) return
+
+  for (const element of name.getElements()) {
+    if (Node.isBindingElement(element)) boundNames(element.getNameNode(), bound)
+  }
+}
+
+/**
+ * Scopes that bind a name to something which cannot be the artifact, keyed by that name.
+ *
+ * A parameter named `token` is not the `token` export. `items.map((token) => token.value)`
+ * iterates token *objects* — from `@bamboocss/token-dictionary`, or from any list — and `token`
+ * is the obvious name to reach for. The identifier walk keyed on the spelling alone, so every
+ * read off such a parameter declined as an `unresolved-reference`, and one decline anywhere
+ * keeps every declaration in the project.
+ *
+ * That is not hypothetical: on this repository's own documentation site it was 40 declines
+ * across seven components, none of them a token call, holding a token layer of 500 declarations
+ * where 146 are referenced. `prune.tokens: 'accounted'` there emitted a byte-identical
+ * stylesheet and a wall of warnings — the feature reporting loudly that it had done nothing.
+ *
+ * Only the forms that *cannot* hold the artifact are collected. A parameter, a catch variable,
+ * and a function or class declaration each bind something this file defines. A `const token = …`
+ * in general does not — its initializer can be anything, including the artifact reached through a
+ * barrel — so it goes on declining. Declining is free; accepting a reference whose path is never
+ * recorded is the failure this module exists to prevent.
+ *
+ * The one variable form that is collected is a read off a binding already known to be local:
+ * `const { token } = props` is whatever `props` holds, and `props` is a parameter. Rooting the
+ * test at a local binding is what keeps `const { token } = ui` — a namespace import, which a
+ * barrel could make the artifact — declining as before.
+ */
+function shadowedScopes(sourceFile: SourceFile) {
+  const scopes = new Map<string, Node[]>()
+
+  const add = (name: string, scope: Node | undefined) => {
+    if (!scope) return
+    const existing = scopes.get(name)
+    if (existing) existing.push(scope)
+    else scopes.set(name, [scope])
+  }
+
+  // One traversal. `getDescendantsOfKind` walks the whole tree per call, and this needs six
+  // kinds — plus the variables, which cannot be resolved until the rest of the map is built.
+  const variables: Node[] = []
+
+  sourceFile.forEachDescendant((node) => {
+    // A parameter is scoped to the function it belongs to, destructuring included.
+    if (Node.isParameterDeclaration(node)) {
+      const scope = node.getParent()
+      boundNames(node.getNameNode(), (name) => add(name, scope))
+      return
+    }
+
+    if (Node.isCatchClause(node)) {
+      boundNames(node.getVariableDeclaration()?.getNameNode(), (name) => add(name, node))
+      return
+    }
+
+    // A declaration's name is bound in the scope that *contains* it.
+    if (Node.isFunctionDeclaration(node) || Node.isClassDeclaration(node)) {
+      const name = node.getNameNode()
+      if (name) add(nameOf(name), node.getParent())
+      return
+    }
+
+    // A named function or class *expression* binds its own name inside itself and nowhere else.
+    if (Node.isFunctionExpression(node) || Node.isClassExpression(node)) {
+      const name = node.getNameNode()
+      if (name) add(nameOf(name), node)
+      return
+    }
+
+    if (Node.isVariableDeclaration(node)) variables.push(node)
+  })
+
+  // Destructuring off something already known to be local, so it runs once the map is complete.
+  // One level only — a chain declines, which costs bytes and never correctness.
+  for (const declaration of variables) {
+    if (!Node.isVariableDeclaration(declaration)) continue
+
+    const root = rootIdentifier(declaration.getInitializer())
+    if (!root || !isShadowed(root, scopes.get(nameOf(root)))) continue
+
+    const scope = declaration.getFirstAncestor(
+      (ancestor) =>
+        Node.isBlock(ancestor) ||
+        Node.isSourceFile(ancestor) ||
+        Node.isModuleBlock(ancestor) ||
+        Node.isCaseClause(ancestor) ||
+        Node.isDefaultClause(ancestor) ||
+        Node.isForStatement(ancestor) ||
+        Node.isForOfStatement(ancestor) ||
+        Node.isForInStatement(ancestor),
+    )
+
+    boundNames(declaration.getNameNode(), (name) => add(name, scope))
+  }
+
+  return scopes
+}
+
+/**
+ * The identifier an expression is rooted at, for the member reads that keep it local.
+ *
+ * `props`, `props.theme` and `props['theme']` all root at `props`. Anything else — a call, an
+ * `await`, a literal — returns nothing, so the variable it initializes is not treated as local.
+ */
+function rootIdentifier(expression: Node | undefined): Node | undefined {
+  let current = expression
+
+  while (current && (Node.isPropertyAccessExpression(current) || Node.isElementAccessExpression(current))) {
+    current = current.getExpression()
+  }
+
+  return current && Node.isIdentifier(current) ? current : undefined
+}
+
+/**
+ * Whether an identifier is the *name* of a declaration rather than a read of one.
+ *
+ * `interface Props { token: Token }` names a member and reads nothing, but reached
+ * `accountedPath`, which cannot read it and so declined — and an `unresolved-reference` is the
+ * one decline that fails a strict build. `PropertyAssignment` was already excluded for this
+ * reason; the type and class members are the same statement about a different node.
+ *
+ * `ShorthandPropertyAssignment` is deliberately absent: `{ token }` names a property *and* reads
+ * the binding, so it is a reference like any other.
+ */
+function isDeclarationName(identifier: Node, parent: Node) {
+  if (
+    Node.isPropertyAssignment(parent) ||
+    Node.isPropertySignature(parent) ||
+    Node.isMethodSignature(parent) ||
+    Node.isPropertyDeclaration(parent) ||
+    Node.isMethodDeclaration(parent) ||
+    Node.isEnumMember(parent)
+  ) {
+    return parent.getNameNode() === identifier
+  }
+
+  return false
+}
+
+/**
+ * Whether an occurrence falls inside one of the scopes that shadow its name.
+ *
+ * Both nodes come from the same file, so containment in the tree is containment in the source
+ * range — which answers it without walking ancestors once per candidate scope.
+ */
+function isShadowed(identifier: Node, scopes: Node[] | undefined) {
+  if (!scopes) return false
+
+  const start = identifier.getStart()
+  const end = identifier.getEnd()
+
+  return scopes.some((scope) => scope.getStart() <= start && end <= scope.getEnd())
+}
 
 /**
  * What one occurrence asks for: an exact path, a prefix it is bounded by, or nothing at all —
