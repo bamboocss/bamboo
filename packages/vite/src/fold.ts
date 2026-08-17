@@ -5,7 +5,7 @@ import { viewTransitionClassName } from '@bamboocss/shared'
 import type { Dict, ParserResultInterface, ResultItem } from '@bamboocss/types'
 import MagicString from 'magic-string'
 import { dirname, relative, resolve as resolvePath } from 'node:path'
-import { Node, type SourceFile, SyntaxKind } from 'ts-morph'
+import { type CallExpression, type ImportEqualsDeclaration, Node, type SourceFile, SyntaxKind } from 'ts-morph'
 import {
   AMBIGUOUS,
   collectRecipeConfigs,
@@ -275,6 +275,17 @@ const isValueReference = (identifier: Node): boolean => {
  * reference to one is the fold having worked.
  */
 const PERMITTED_BINDINGS = new Set(['cx', RECIPE_MAP_HELPER, SPLIT_PROPS_HELPER])
+
+/**
+ * Whether a module's text could hold a `splitVariantProps` property access.
+ *
+ * A necessary condition, deliberately not a sufficient one: the name inside a string or a
+ * comment opens the walk, which costs what the walk always cost. What it must never do is
+ * close on a module that has one, and an identifier may be spelled with unicode escapes —
+ * `badge.splitVariantProps(p)` reads as the name to the compiler and contains none of it
+ * as text. Both escape forms start `\u`, so one test covers every spelling.
+ */
+const mayNameSplitVariantProps = (text: string) => text.includes('splitVariantProps') || text.includes('\\u')
 
 /** Where an imported recipe was declared, as the parser recorded it on the call. */
 type RecipeOrigin = NonNullable<ResultItem['origin']>
@@ -1432,7 +1443,11 @@ export const foldSource = (options: FoldOptions): FoldResult => {
 
       const byRange = new Map(candidates.map((candidate) => [`${candidate.start}:${candidate.end}`, candidate]))
 
-      for (const call of sourceFile.getDescendantsOfKind(SyntaxKind.CallExpression)) {
+      // Nothing below can match when the module imports no `cx`, and the walk is the expensive
+      // half: `getDescendantsOfKind` wraps every call in the file in a ts-morph node, for a
+      // `cxBindings.has(...)` that is false every time. The same reasoning defers the identifier
+      // index in `reportRuntimeBindings`; this walk simply never had the guard.
+      for (const call of cxBindings.size ? sourceFile.getDescendantsOfKind(SyntaxKind.CallExpression) : []) {
         const callee = call.getExpression()
         if (!Node.isIdentifier(callee) || !cxBindings.has(callee.getText()) || isShadowed(call, callee.getText())) {
           continue
@@ -1783,7 +1798,17 @@ export const foldSource = (options: FoldOptions): FoldResult => {
   // rewrite does not apply to.
   const recipeSourceFile = candidates[0]?.node.getSourceFile()
 
-  if (recipeSourceFile) {
+  // Worth a text scan: `recipeSourceFile` is set whenever the module holds any candidate at all,
+  // so without this the walk ran for *every* styled module, wrapping every property access in the
+  // file to ask a question almost none of them answer.
+  //
+  // The escape half is not decoration. `access.getName()` reads the identifier as the compiler
+  // resolves it, not as it is spelled, so `badge.splitVariantProps(p)` matches the loop while
+  // the literal name appears nowhere in the source. Testing the text alone left that call
+  // unlowered against an erased binding. Both escape forms an identifier may use begin with a
+  // backslash and a `u`, so one test covers them, and a `\u` in an ordinary string costs only the
+  // walk it would have done anyway. `token-accounting.ts` guards the same way for the same reason.
+  if (recipeSourceFile && mayNameSplitVariantProps(recipeSourceFile.getFullText())) {
     for (const access of recipeSourceFile.getDescendantsOfKind(SyntaxKind.PropertyAccessExpression)) {
       if (access.getName() !== 'splitVariantProps') continue
 
@@ -1961,7 +1986,22 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     // Imports that do not create a static ES binding bypass the binding walk below while
     // still retaining the generated runtime module. There is no useful fallback contract for
     // them: the compiler cannot rewrite an API selected from an opaque namespace at runtime.
-    for (const call of sourceFile.getDescendantsOfKind(SyntaxKind.CallExpression)) {
+    // Both shapes below are read from one traversal rather than two. `getDescendantsOfKind`
+    // walks the whole tree per call and wraps every node it yields, so asking it twice over the
+    // same file pays for the tree twice to answer two questions about it.
+    //
+    // Collected into separate buckets rather than handled inline, so `skipped` keeps the order
+    // two passes produced — every call in the module, then every import-equals — which is what
+    // the diagnostics print and what the fixtures pin.
+    const runtimeCalls: CallExpression[] = []
+    const importEquals: ImportEqualsDeclaration[] = []
+
+    sourceFile.forEachDescendant((node) => {
+      if (Node.isCallExpression(node)) runtimeCalls.push(node)
+      else if (Node.isImportEqualsDeclaration(node)) importEquals.push(node)
+    })
+
+    for (const call of runtimeCalls) {
       const callee = call.getExpression()
       const argument = call.getArguments()[0]
       if (!argument || (!Node.isStringLiteral(argument) && !Node.isNoSubstitutionTemplateLiteral(argument))) {
@@ -1981,7 +2021,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       })
     }
 
-    for (const declaration of sourceFile.getDescendantsOfKind(SyntaxKind.ImportEqualsDeclaration)) {
+    for (const declaration of importEquals) {
       if (declaration.isTypeOnly()) continue
       const reference = declaration.getModuleReference()
       if (!Node.isExternalModuleReference(reference)) continue
