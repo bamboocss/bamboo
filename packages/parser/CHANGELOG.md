@@ -1,5 +1,17 @@
 # @bamboocss/parser
 
+## 1.44.1
+
+### Patch Changes
+
+- Updated dependencies [632b75c]
+  - @bamboocss/extractor@1.44.1
+  - @bamboocss/types@1.44.1
+  - @bamboocss/config@1.44.1
+  - @bamboocss/core@1.44.1
+  - @bamboocss/logger@1.44.1
+  - @bamboocss/shared@1.44.1
+
 ## 1.44.0
 
 ### Patch Changes
