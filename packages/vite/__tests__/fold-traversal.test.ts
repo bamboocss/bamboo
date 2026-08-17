@@ -32,6 +32,10 @@ import { createStaticStyleSetCompiler } from '../src/style-set'
  * Pinned as exact numbers rather than bounds. A bound drifts upward one walk at a time with
  * nothing failing, which is how these accumulated: before the guards below, every styled module
  * paid two whole-tree reads and every reported one paid five, whatever it contained.
+ *
+ * What this cannot see is a walk over raw compiler nodes — `identifierIndex` is one, deliberately,
+ * and costs about a hundredth of a wrapped walk. So a zero here means "nothing wraps the tree",
+ * not "nothing reads it". That is the right thing to hold: wrapping is the cost.
  */
 const here = dirname(fileURLToPath(import.meta.url))
 
@@ -120,13 +124,14 @@ describe('the fold reads a module as often as it has questions to answer', () =>
   })
 
   /**
-   * Survivor reporting adds the runtime-binding scan and the identifier index. Two reads rather
-   * than three: the call and import-equals shapes are collected in one traversal, since asking
-   * `getDescendantsOfKind` twice over one file pays for the tree twice.
+   * Survivor reporting adds the runtime-binding scan, and that is now the whole of it: the call
+   * and import-equals shapes share one traversal, and the identifier index no longer appears here
+   * at all because it walks compiler nodes directly and wraps only the buckets it is asked for.
+   * HEAD paid five reads for both of these shapes.
    */
-  test('reporting survivors adds the binding scan and the identifier index, once each', () => {
-    expect(foldWithCount(PLAIN, { reportSurvivors: true }).walks).toBe(2)
-    expect(foldWithCount(WITH_CX, { reportSurvivors: true }).walks).toBe(3)
+  test('reporting survivors adds the binding scan, and nothing else', () => {
+    expect(foldWithCount(PLAIN, { reportSurvivors: true }).walks).toBe(1)
+    expect(foldWithCount(WITH_CX, { reportSurvivors: true }).walks).toBe(2)
   })
 
   /**

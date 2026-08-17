@@ -16,7 +16,13 @@ import {
   type DynamicStyleMap,
   type RecipeEntry,
 } from './fold-recipe'
-import { accountsForSource, identifierIndex, isStaticBox, localReferencesTo } from './fold-analysis'
+import {
+  accountsForSource,
+  type IdentifierIndex,
+  identifierIndex,
+  isStaticBox,
+  localReferencesTo,
+} from './fold-analysis'
 import { createRuntimeCss, createRuntimeToken, createRuntimeTokenValue, type RuntimeCss } from './runtime-css'
 import type { StaticStyleSetCompiler } from './style-set'
 
@@ -1937,7 +1943,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
      * ts-morph node to answer a question those modules never ask. It was 11% of a 6,307-file
      * build, most of it spent producing an index nothing read.
      */
-    let identifiers: Map<string, Node[]> | undefined
+    let identifiers: IdentifierIndex | undefined
     const identifiersByName = () => (identifiers ??= identifierIndex(sourceFile))
 
     for (const binding of new Set([...recipeConfigs.keys(), ...importedRecipeBindings])) {
@@ -2127,7 +2133,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     for (const [local, imported] of watched) {
       // Each bucket is in document order, so the first identifier that survives every check is
       // the same one the full pass reported — and one report per name, as before.
-      for (const identifier of identifiersByName().get(local) ?? []) {
+      for (const identifier of identifiersByName().get(local)) {
         const start = identifier.getStart()
         // The import declaration naming it is not a use of it, and neither is anything the
         // rewrite already replaced.

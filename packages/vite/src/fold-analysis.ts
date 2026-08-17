@@ -1,5 +1,5 @@
 import { type BoxContext, type BoxNode, box, maybeBoxNode } from '@bamboocss/extractor'
-import { type SourceFile, VariableDeclarationKind } from 'ts-morph'
+import { type SourceFile, ts, VariableDeclarationKind } from 'ts-morph'
 import { type BinaryExpression, type ConditionalExpression, type Expression, Node, SyntaxKind } from 'ts-morph'
 
 /**
@@ -638,12 +638,38 @@ const collectModuleScopeNames = (sourceFile: SourceFile): Set<string> => {
  * while under-reporting ships an element whose class has no rule behind it and says nothing.
  * Shadowing a recipe binding is rare; silently shipping unstyled markup is not recoverable.
  */
+/** Every identifier in the module, grouped by the name it spells, wrapped only when asked for. */
+export interface IdentifierIndex {
+  get: (name: string) => Node[]
+}
+
 /**
  * Every identifier in the module, grouped by the name it spells.
  *
  * Built once per pass and handed to each lookup, because walking the whole tree per binding
  * made that O(bindings x identifiers): a module declaring ten recipes walked its identifiers
  * ten times.
+ *
+ * ## Why this is a raw walk rather than `getDescendantsOfKind`
+ *
+ * `SyntaxKind.Identifier` sorts *below* `SyntaxKind.FirstNode`, which is what ts-morph tests to
+ * decide whether it may search the parse tree. For a kind below that line it falls back to
+ * materialising the whole **token** tree — every brace, comma and keyword becomes a ts-morph node
+ * on the way to collecting the identifiers. On 55 KB of real tsx that measured 22ms against
+ * 0.22ms for the same collection over compiler nodes, and the node cache does not help: a second
+ * call cost the same 22ms.
+ *
+ * Wrapping is what costs, so only the buckets a caller actually reads are wrapped, on the first
+ * read and cached after. Nothing enumerates this index — both callers ask for one name — so the
+ * rest is never built. `_getNodeFromCompilerNode` is ts-morph's own memoized wrapper factory, so
+ * a node handed back here is the very object `getDescendantsOfKind` would have returned, which
+ * `localReferencesTo` depends on: it compares against the declaration by identity.
+ *
+ * JSDoc is walked explicitly. `ts.forEachChild` does not descend into it, while the token path
+ * this replaces does, so a name mentioned only in a `@type` annotation was previously found and
+ * would otherwise stop being — a silent narrowing of what counts as a surviving reference.
+ * Keyed on `escapedText` because that is what ts-morph's `Identifier.getText()` returns: the name
+ * as the compiler resolves it, so `\u0062adge` and `badge` share a bucket exactly as before.
  *
  * Deliberately *not* memoized across passes, unlike the module-scope names beside it. That
  * cache holds strings, which outlive anything; this one holds nodes, and a node does not
@@ -652,21 +678,44 @@ const collectModuleScopeNames = (sourceFile: SourceFile): Set<string> => {
  * text re-parsed is a fresh tree: the cache hits and returns nodes that throw
  * `Attempted to get information from a node that was removed or forgotten` on the next read.
  */
-export const identifierIndex = (sourceFile: SourceFile): Map<string, Node[]> => {
-  const index = new Map<string, Node[]>()
-  for (const identifier of sourceFile.getDescendantsOfKind(SyntaxKind.Identifier)) {
-    const text = identifier.getText()
-    const known = index.get(text)
-    if (known) known.push(identifier)
-    else index.set(text, [identifier])
+export const identifierIndex = (sourceFile: SourceFile): IdentifierIndex => {
+  const compilerNodes = new Map<string, ts.Node[]>()
+
+  const collect = (node: ts.Node) => {
+    if (node.kind === ts.SyntaxKind.Identifier) {
+      const name = String((node as ts.Identifier).escapedText)
+      const known = compilerNodes.get(name)
+      if (known) known.push(node)
+      else compilerNodes.set(name, [node])
+    }
+
+    const jsDoc = (node as { jsDoc?: ts.Node[] }).jsDoc
+    if (jsDoc) for (const doc of jsDoc) collect(doc)
+
+    ts.forEachChild(node, collect)
   }
-  return index
+
+  ts.forEachChild(sourceFile.compilerNode, collect)
+
+  const wrapped = new Map<string, Node[]>()
+  const wrap = sourceFile as unknown as { _getNodeFromCompilerNode: (node: ts.Node) => Node }
+
+  return {
+    get: (name) => {
+      const known = wrapped.get(name)
+      if (known) return known
+
+      const nodes = (compilerNodes.get(name) ?? []).map((node) => wrap._getNodeFromCompilerNode(node))
+      wrapped.set(name, nodes)
+      return nodes
+    },
+  }
 }
 
-export const localReferencesTo = (index: Map<string, Node[]>, name: string, declaration: Node): Node[] => {
+export const localReferencesTo = (index: IdentifierIndex, name: string, declaration: Node): Node[] => {
   const references: Node[] = []
 
-  for (const identifier of index.get(name) ?? []) {
+  for (const identifier of index.get(name)) {
     // The declaration itself is not a read of it. For a local recipe that is the variable's
     // name node; for an imported one it is the import specifier, which stays in the module
     // and would otherwise read as a surviving reference in every consumer.
