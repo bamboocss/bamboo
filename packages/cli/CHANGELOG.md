@@ -1,5 +1,18 @@
 # @bamboocss/dev
 
+## 1.45.0
+
+### Patch Changes
+
+- @bamboocss/logger@1.45.0
+- @bamboocss/node@1.45.0
+- @bamboocss/postcss@1.45.0
+- @bamboocss/preset-bamboo@1.45.0
+- @bamboocss/preset-base@1.45.0
+- @bamboocss/shared@1.45.0
+- @bamboocss/token-dictionary@1.45.0
+- @bamboocss/types@1.45.0
+
 ## 1.44.1
 
 ### Patch Changes
