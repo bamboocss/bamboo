@@ -97,6 +97,37 @@ const resolveBundledHelperImport = (name: string, node: Node | undefined): Impor
   return
 }
 
+/**
+ * Text a module must contain before either bundled-output walk below can match anything.
+ *
+ * Both walks hunt for *bundler output* — Parcel's module registry, and Vue/Solid/Preact runtime
+ * helpers inlined by a bundler — and both are whole-tree reads that run on every extracted module.
+ * Hand-written source matches neither, which is nearly every module a project has.
+ *
+ * Each entry is a necessary condition of some branch, read off the matchers themselves:
+ * `parcelRegister` is the callee the first walk tests for, and the rest are the substrings
+ * `resolveBundledHelperImport` requires — one per framework it recognises. They are matched against
+ * `node.getText()`, which is a slice of this same text, so if none appears here none can appear in
+ * any declaration.
+ *
+ * `\u` is in the list because the Parcel callee is compared through `getText()`, which returns an
+ * identifier as the compiler resolves it: `\u0070arcelRegister` matches the walk while the plain
+ * name appears nowhere. The helper matchers read source text and need no such allowance, but one
+ * escape anywhere costs only the walk that would have run regardless.
+ */
+const BUNDLED_OUTPUT_MARKERS = [
+  'parcelRegister',
+  'type, props = null, children = null',
+  '_createVNode',
+  'const ret = {}',
+  'Comp(props || {})',
+  'resolveSource',
+  '__v:',
+  '\\u',
+]
+
+const mayHoldBundledOutput = (text: string) => BUNDLED_OUTPUT_MARKERS.some((marker) => text.includes(marker))
+
 const collectImports = (sourceFile: SourceFile): CompiledJsxImportMap => {
   const named = new Map<string, ImportEntry>()
   const defaultImports = new Map<string, string>()
@@ -148,7 +179,9 @@ const collectImports = (sourceFile: SourceFile): CompiledJsxImportMap => {
     return
   }
 
-  sourceFile.getDescendantsOfKind(SyntaxKind.CallExpression).forEach((callExpression) => {
+  const bundledCandidates = mayHoldBundledOutput(sourceFile.getFullText())
+
+  ;(bundledCandidates ? sourceFile.getDescendantsOfKind(SyntaxKind.CallExpression) : []).forEach((callExpression) => {
     const callee = unwrapExpression(callExpression.getExpression())
     if (!MorphNode.isIdentifier(callee) || callee.getText() !== 'parcelRegister') return
 
@@ -236,7 +269,7 @@ const collectImports = (sourceFile: SourceFile): CompiledJsxImportMap => {
     bundledNamespace.set(variableName, mod)
   })
 
-  sourceFile.getDescendantsOfKind(SyntaxKind.FunctionDeclaration).forEach((declaration) => {
+  ;(bundledCandidates ? sourceFile.getDescendantsOfKind(SyntaxKind.FunctionDeclaration) : []).forEach((declaration) => {
     const bundledImport = resolveBundledHelperImport(declaration.getName() ?? '', declaration)
     if (!bundledImport || !declaration.getName()) return
     bundledNamed.set(declaration.getName()!, bundledImport)
