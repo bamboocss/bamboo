@@ -26,9 +26,7 @@ const linesFor = (config: object) => (errorFor(config) ?? '').split('\n').filter
 
 describe('removed config options', () => {
   test('names the replacement rather than reporting an unknown key', () => {
-    expect(errorFor({ pruneUnusedTokens: 'strict' })).toContain(
-      `prune: { tokens: 'accounted', unresolvedPath: 'error' }`,
-    )
+    expect(errorFor({ pruneUnusedTokens: 'strict' })).toContain(`prune: { tokens: true, unresolvedPath: 'error' }`)
   })
 
   /**
@@ -46,7 +44,7 @@ describe('removed config options', () => {
 
   /** The value carries over, so the message is the edit rather than a description of one. */
   test.each([
-    [{ pruneUnusedTokens: false }, "prune: { tokens: 'off' }"],
+    [{ pruneUnusedTokens: false }, 'prune: { tokens: false }'],
     [{ pruneUnusedKeyframes: false }, 'prune: { keyframes: false }'],
     [{ prunePreflight: true }, 'preflight: { prune: true }'],
   ])('%o reports its replacement', (config, expected) => {
@@ -58,14 +56,12 @@ describe('removed config options', () => {
   })
 
   test('says nothing about the option that replaced them', () => {
-    expect(errorFor({ prune: { tokens: 'off', unresolvedPath: 'error' } })).toBeUndefined()
+    expect(errorFor({ prune: { tokens: false, unresolvedPath: 'error' } })).toBeUndefined()
   })
 
   /** The nested rename, which the top-level scan cannot see. */
   test('reports `prune.unresolved`, which moved and split', () => {
-    expect(errorFor({ prune: { unresolved: 'error' } })).toContain(
-      `prune: { tokens: 'accounted', unresolvedPath: 'error' }`,
-    )
+    expect(errorFor({ prune: { unresolved: 'error' } })).toContain(`prune: { tokens: true, unresolvedPath: 'error' }`)
   })
 
   /**
@@ -81,9 +77,25 @@ describe('removed config options', () => {
     expect(errorFor({ preflight: { scope: '.app', prune: true } })).toBeUndefined()
   })
 
-  /** A value change rather than a key removal, so nothing else would notice it either. */
-  test('reports the boolean `prune.tokens` took before it became a strategy', () => {
-    expect(errorFor({ prune: { tokens: true } })).toContain("'reachable'")
+  /**
+   * A value change rather than a key removal, so nothing else would notice it either. `prune.tokens`
+   * was a boolean, then three strategies, and is a boolean again — and a leftover string is the
+   * dangerous direction, because `'off'` asked for no pruning and would silently get the opposite.
+   */
+  test.each([
+    ['off', 'false'],
+    ['reachable', 'true'],
+    ['accounted', 'true'],
+  ])('reports the `%s` strategy `prune.tokens` took, naming `%s`', (strategy, replacement) => {
+    const error = errorFor({ prune: { tokens: strategy } })
+
+    expect(error).toContain('takes a boolean now')
+    expect(error).toContain(`\`${replacement}\``)
+  })
+
+  test('says nothing about a boolean, which is what it takes', () => {
+    expect(errorFor({ prune: { tokens: true } })).toBeUndefined()
+    expect(errorFor({ prune: { tokens: false } })).toBeUndefined()
   })
 
   test("reports `validation: 'none'`, which is now 'off'", () => {
@@ -99,7 +111,7 @@ describe('removed config options', () => {
    */
   test.each(['off', 'warn', 'error'] as const)('throws under validation: %s', (validation) => {
     expect(() => validateConfig({ pruneUnusedTokens: 'strict', validation } as never)).toThrow(
-      /prune: \{ tokens: 'accounted', unresolvedPath: 'error' \}/,
+      /prune: \{ tokens: true, unresolvedPath: 'error' \}/,
     )
   })
 

@@ -36,7 +36,7 @@ describe('pruneTokens', () => {
   })
 
   test('keeps every token declaration when disabled', () => {
-    const css = buildCss({ prune: { tokens: 'off' } })
+    const css = buildCss({ prune: { tokens: false } })
 
     expect(declares(css, '--colors-red-300')).toBe(true)
     expect(declares(css, '--colors-pink-500')).toBe(true)
@@ -52,13 +52,13 @@ describe('pruneTokens', () => {
   test('still drops unreachable @property registrations when disabled', () => {
     const registered = (css: string) => [...css.matchAll(/@property\s+(--[\w-]+)/g)].map((m) => m[1])
 
-    expect(registered(buildCss({ prune: { tokens: 'off' } }))).toEqual([])
+    expect(registered(buildCss({ prune: { tokens: false } }))).toEqual([])
     expect(registered(buildCss())).toEqual([])
   })
 
   test('only ever removes declarations', () => {
-    const before = buildCss({ prune: { tokens: 'off' } })
-    const after = buildCss({ prune: { tokens: 'reachable' } })
+    const before = buildCss({ prune: { tokens: false } })
+    const after = buildCss({ prune: { tokens: true } })
 
     const names = (css: string) => new Set([...css.matchAll(/(--[a-z0-9-]+)\s*:/g)].map((m) => m[1]))
     const added = [...names(after)].filter((name) => !names(before).has(name))
@@ -68,7 +68,7 @@ describe('pruneTokens', () => {
   })
 
   test('keeps a token named only by the caller, standing in for token.value()', () => {
-    const css = buildCss({ prune: { tokens: 'reachable' } }, new Set(['--colors-pink-500']))
+    const css = buildCss({ prune: { tokens: true } }, new Set(['--colors-pink-500']))
 
     expect(declares(css, '--colors-pink-500')).toBe(true)
   })
@@ -83,8 +83,8 @@ describe('pruneTokens', () => {
    * these keeps, because `collectTokenReferences` already kept those paths by name.
    */
   test('the gate keeps everything once js can reach a token', () => {
-    const reached = buildCss({ prune: { tokens: 'reachable' } }, undefined, true)
-    const unreached = buildCss({ prune: { tokens: 'reachable' } }, undefined, false)
+    const reached = buildCss({ prune: { tokens: true } }, undefined, true)
+    const unreached = buildCss({ prune: { tokens: true } }, undefined, false)
 
     expect(declares(reached, '--colors-pink-500')).toBe(true)
     expect(declares(unreached, '--colors-pink-500')).toBe(false)
@@ -98,7 +98,7 @@ describe('pruneTokens', () => {
    */
   test('keeps conditional tokens whatever the css references', () => {
     const config: Config = {
-      prune: { tokens: 'reachable' },
+      prune: { tokens: true },
       theme: {
         extend: {
           semanticTokens: {
@@ -115,7 +115,7 @@ describe('pruneTokens', () => {
 
   test('does not disturb keyframes', () => {
     const config: Config = {
-      prune: { tokens: 'reachable' },
+      prune: { tokens: true },
       theme: { extend: { keyframes: { spin: { to: { transform: 'rotate(360deg)' } } } } },
     }
 

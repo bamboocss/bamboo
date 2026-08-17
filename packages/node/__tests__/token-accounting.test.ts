@@ -1,12 +1,13 @@
+import { logger } from '@bamboocss/logger'
 import { createContext as createFixtureContext } from '@bamboocss/fixture'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import type { PruneOptions } from '@bamboocss/types'
 import type { BambooContext } from '../src/create-context'
 import { accountTokenReferences } from '../src/token-accounting'
-import { pruneTokensForBuild } from '../src/token-references'
+import { pruneTokensForBuild, tokensReachableFromJs } from '../src/token-references'
 
 /**
- * The accounting behind `prune: { tokens: 'accounted', unresolvedPath: 'error' }`, against a real ts-morph project.
+ * The accounting behind `prune: { tokens: true, unresolvedPath: 'error' }`, against a real ts-morph project.
  *
  * Two properties are under test, and only one of them is about bytes:
  *
@@ -79,6 +80,32 @@ describe('accepted references record the path they ask for', () => {
   })
 })
 
+/**
+ * The walk is skipped for a file that cannot name the artifact, which is the common case by a
+ * wide margin. What the fast path must not do is skip a file that declines for a reason having
+ * nothing to do with spelling `token` — a specifier this cannot read *could* be the artifact,
+ * and dropping that decline drops the keep it was standing in for.
+ *
+ * `export const a = 1` pins none of this: it declines either way. These are the shapes that
+ * separate the two.
+ */
+describe('the fast path skips only files with nothing to account for', () => {
+  test.each([
+    ['a dynamic import of a computed specifier', 'export const l = (p) => import(`./pages/${p}`)'],
+    ['a require of a computed specifier', 'export const l = (n) => require(n)'],
+  ])('%s still declines', (_label, code) => {
+    expect(code).not.toContain('token')
+    expect(analyse(code).declined.length).toBeGreaterThan(0)
+  })
+
+  test.each([
+    ['a plain module', `export const a = 1`],
+    ['an unrelated static import', `import { useState } from 'react'\nexport const a = useState`],
+  ])('%s does not', (_label, code) => {
+    expect(analyse(code).declined).toEqual([])
+  })
+})
+
 describe('unreadable references decline', () => {
   test.each([
     ['a path from a constant', `${imports}const K = 'colors.red.300'\nexport const a = token(K)`],
@@ -88,6 +115,12 @@ describe('unreadable references decline', () => {
     ['a call with no argument', `${imports}export const a = token()`],
     ['a computed member', `${imports}export const a = token['value']('colors.red.300')`],
     ['the binding re-exported', `export { token } from 'styled-system/tokens'`],
+    // The same hand-off, written as two statements. The statement walk only sees the spelling
+    // carrying a specifier, and `accountedPath` reads an export specifier as a binding site — so
+    // this recorded nothing, declined nothing, and pruned as though the export were not there.
+    // A sibling package importing the barrel then asked for a declaration the build had deleted.
+    ['the binding re-exported separately', `${imports}export { token }`],
+    ['the binding re-exported under another name', `${imports}export { token as brandToken }`],
     ['a star re-export', `export * from 'styled-system/tokens'`],
     ['a namespace enumerated', `import * as ds from 'styled-system/tokens'\nexport const a = Object.keys(ds)`],
     [
@@ -308,7 +341,7 @@ describe('pruneUnusedTokens: strict', () => {
   const dynamicCall = `${imports}export const a = (p) => token(p)`
 
   test('drops the blanket keep when every reference resolves', () => {
-    const { keep, blanket } = blanketKeepFor(staticCall, { tokens: 'accounted', unresolvedPath: 'error' })
+    const { keep, blanket } = blanketKeepFor(staticCall, { tokens: true, unresolvedPath: 'error' })
 
     expect(blanket).toBe(false)
     // And the token it does ask for survives by name, which is the half that makes dropping
@@ -319,14 +352,43 @@ describe('pruneUnusedTokens: strict', () => {
   test('throws on a reference that does not resolve', () => {
     // `strict` is an assertion. A reference that breaks it fails the build rather than warning
     // and quietly keeping every declaration, which is the same silence the flag removes.
-    expect(() => blanketKeepFor(dynamicCall, { tokens: 'accounted', unresolvedPath: 'error' })).toThrow(
+    expect(() => blanketKeepFor(dynamicCall, { tokens: true, unresolvedPath: 'error' })).toThrow(
       /could not be resolved/,
     )
   })
 
-  test('the default keeps the blanket either way, so strict can only prune more', () => {
-    expect(blanketKeepFor(staticCall, { tokens: 'reachable' }).blanket).toBe(true)
-    expect(blanketKeepFor(dynamicCall, { tokens: 'reachable' }).blanket).toBe(true)
+  /**
+   * The default accounts. It used to keep the blanket whenever javascript reached for a token at
+   * all — one `token()` call anywhere kept every declaration — and the accounting was a thing to
+   * opt into. Now a path it can read is kept by name and only a path it cannot forces the blanket.
+   */
+  test('the default prunes a resolvable call and keeps the blanket for an unresolvable one', () => {
+    const resolvable = blanketKeepFor(staticCall, {})
+
+    expect(resolvable.blanket).toBe(false)
+    expect(resolvable.keep?.has('--colors-red-300')).toBe(true)
+
+    expect(blanketKeepFor(dynamicCall, {}).blanket).toBe(true)
+  })
+
+  /** Silent by default: the fallback is an inference, not an assertion the user asked to check. */
+  test('the default does not report what it could not follow', () => {
+    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => undefined)
+
+    try {
+      blanketKeepFor(dynamicCall, {})
+      expect(warn).not.toHaveBeenCalled()
+
+      warn.mockClear()
+      blanketKeepFor(dynamicCall, { unresolvedPath: 'warn' })
+      expect(warn).toHaveBeenCalled()
+    } finally {
+      warn.mockRestore()
+    }
+  })
+
+  test('keeping everything is still sayable', () => {
+    expect(blanketKeepFor(staticCall, { tokens: false }).blanket).toBeUndefined()
   })
 
   /**
@@ -337,7 +399,7 @@ describe('pruneUnusedTokens: strict', () => {
    */
   test('a file it cannot read warns and falls back rather than throwing', () => {
     const ctx = createFixtureContext({
-      prune: { tokens: 'accounted', unresolvedPath: 'error' },
+      prune: { tokens: true, unresolvedPath: 'error' },
     }) as unknown as BambooContext
     const absolute = ctx.runtime.path.abs(ctx.config.cwd, FILE)
 
@@ -405,19 +467,14 @@ describe('pruneTokensForBuild reads each file once', () => {
   const resolved = `${imports}export const a = token('colors.red.300')`
 
   test.each([
-    ['the default', { tokens: 'reachable' } as PruneOptions, resolved, resolved],
-    [
-      'asserting, everything resolved',
-      { tokens: 'accounted', unresolvedPath: 'error' } as PruneOptions,
-      resolved,
-      resolved,
-    ],
+    ['the default', { tokens: true } as PruneOptions, resolved, resolved],
+    ['asserting, everything resolved', { tokens: true, unresolvedPath: 'error' } as PruneOptions, resolved, resolved],
     // The path that used to read three times: a decline still consults the gate. A *file*
     // decline, since a reference decline now throws before it gets there — the parsed copy
     // differing from disk is how a transformed component arrives.
     [
       'asserting, with a file decline',
-      { tokens: 'accounted', unresolvedPath: 'error' } as PruneOptions,
+      { tokens: true, unresolvedPath: 'error' } as PruneOptions,
       resolved,
       `${imports}export const a = token(RUNTIME)`,
     ],
@@ -477,7 +534,7 @@ describe('a prefix bounds what a dynamic path can reach', () => {
    */
   test('keeps the bounded category and drops the rest', () => {
     const ctx = createFixtureContext({
-      prune: { tokens: 'accounted', unresolvedPath: 'error' },
+      prune: { tokens: true, unresolvedPath: 'error' },
     }) as unknown as BambooContext
     const code = `${imports}export const a = (s) => token(\`colors.\${s}\`)`
     const absolute = ctx.runtime.path.abs(ctx.config.cwd, FILE)
@@ -544,7 +601,7 @@ describe('prefix bounding — the cases that were only checked by hand', () => {
    */
   test('a bounded negative token keeps its positive counterpart', () => {
     const ctx = createFixtureContext({
-      prune: { tokens: 'accounted', unresolvedPath: 'error' },
+      prune: { tokens: true, unresolvedPath: 'error' },
     }) as unknown as BambooContext
     const code = `${imports}export const a = (s) => token(\`spacing.\${s}\`)`
     const absolute = ctx.runtime.path.abs(ctx.config.cwd, FILE)
@@ -586,7 +643,7 @@ describe('prefix bounding — the cases that were only checked by hand', () => {
 describe('strict fails only on an unresolved token reference', () => {
   const run = (code: string) => {
     const ctx = createFixtureContext({
-      prune: { tokens: 'accounted', unresolvedPath: 'error' },
+      prune: { tokens: true, unresolvedPath: 'error' },
     }) as unknown as BambooContext
     const absolute = ctx.runtime.path.abs(ctx.config.cwd, FILE)
 
@@ -636,13 +693,21 @@ describe('strict fails only on an unresolved token reference', () => {
   })
 
   /**
-   * The property the old fallback guaranteed, restored: for anything that only reports, strict
-   * defers to the default's own gate rather than keeping more than it would have.
+   * The property the fallback rests on: a decline defers to what the cheap text scan would have
+   * answered rather than keeping everything. A barrel reaches no token *this scan can see*, so
+   * there is nothing for the blanket to protect and it stays off.
+   *
+   * Compared against `tokensReachableFromJs` rather than against a second accounting run — the
+   * two `prune` values this used to pass differ only in reporting, so it asserted a tautology.
    */
-  test('a reported decline never keeps more than the default would', () => {
+  test('a reported decline never keeps more than the text scan would', () => {
     const barrel = `import { token as t } from '@acme/ui'\nexport const a = (p) => t(p)`
+    const ctx = createFixtureContext() as unknown as BambooContext
+    ctx.project.addSourceFile(ctx.runtime.path.abs(ctx.config.cwd, FILE), barrel)
+    ctx.getFiles = () => [FILE]
+    ctx.runtime = { ...ctx.runtime, fs: { ...ctx.runtime.fs, readFileSync: () => barrel } } as BambooContext['runtime']
 
-    expect(blanketKeepFor(barrel, { tokens: 'accounted', unresolvedPath: 'error' }).blanket).toBe(false)
-    expect(blanketKeepFor(barrel, { tokens: 'reachable' }).blanket).toBe(false)
+    expect(tokensReachableFromJs(ctx)).toBe(false)
+    expect(blanketKeepFor(barrel, { unresolvedPath: 'error' }).blanket).toBe(false)
   })
 })

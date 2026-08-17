@@ -42,14 +42,14 @@ describe('prune.propertyRegistrations', () => {
   })
 
   /**
-   * The pairing that was wrong. `tokens: 'off'` says keep every token declaration; it used to
+   * The pairing that was wrong. `tokens: false` says keep every token declaration; it used to
    * drop the registrations anyway, and now says nothing about them either way.
    */
   test('is independent of prune.tokens', () => {
-    const tokensOff = registrations({ prune: { tokens: 'off' } })
-    const tokensOffKeepRegistrations = registrations({ prune: { tokens: 'off', propertyRegistrations: false } })
+    const tokensOff = registrations({ prune: { tokens: false } })
+    const tokensOffKeepRegistrations = registrations({ prune: { tokens: false, propertyRegistrations: false } })
 
     expect(tokensOff).toBeLessThan(tokensOffKeepRegistrations)
-    expect(tokensOff).toBe(registrations({ prune: { tokens: 'reachable' } }))
+    expect(tokensOff).toBe(registrations({ prune: { tokens: true } }))
   })
 })

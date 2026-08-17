@@ -30,8 +30,9 @@ const STRING_LITERAL = /'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*
 
 /**
  * Whether a token is reached from javascript at all — a call of any shape, or an import of the
- * artifact. Being true keeps every token declaration, so the whole of `prune.tokens` rests
- * on it.
+ * artifact. It no longer decides pruning on its own: the accounting does that, and this is the
+ * gate the *fallback* defers to when the accounting declines. A project reaching for no token at
+ * all is one a decline cannot endanger, so it keeps nothing extra.
  *
  * The awkward part is that a token reference inside a css value is now spelled `token(…)` too,
  * and it must *not* count: `css({ border: '1px solid token(colors.red.300)' })` reaches a token
@@ -167,27 +168,26 @@ export function pruneTokensForBuild(
   sheet: Parameters<BambooContext['pruneTokens']>[0],
   results: ParserResult[],
 ): Set<string> | 'all' {
-  const strategy = ctx.config.prune?.tokens ?? 'reachable'
-
-  if (strategy === 'off') {
+  if (ctx.config.prune?.tokens === false) {
     return ctx.pruneTokens(sheet)?.reachable ?? 'all'
   }
 
-  // `accounted` is an assertion, not a cleverer inference: the user has said every token path
-  // in their project resolves at build time. So the accounting runs, whatever it accepts is
-  // kept by name, and whatever it cannot read is *reported* and falls back to `reachable`.
+  // The accounting always runs. It used to be opt-in behind `tokens: 'accounted'`, beside a
+  // default that asked one cheap boolean — "does any javascript reach for a token" — and threw
+  // away everything else it had read, so a single `token()` call anywhere kept every
+  // declaration in the project. Those were never two strategies so much as two answers to
+  // *what do we do when we cannot tell*, and only one of them is worth defaulting to.
   //
-  // That fallback is what makes this safe to offer. A declined reference leaves the build
-  // exactly where `reachable` would have left it. What it cannot see is a caller outside
-  // `include` — see `accountTokenReferences` — which is the part the user asserted, and the
-  // reason the declines are printed rather than swallowed.
+  // What makes it safe to default is the fallback: a reference this cannot read leaves the
+  // build exactly where the blanket keep would have left it, never short of a declaration
+  // something still asks for. What it cannot see is a caller outside `include` — see
+  // `accountTokenReferences` — which is why `keepTokens` exists and why `unresolvedPath` can
+  // make the declines visible.
   //
   // `unresolvedPath` decides how loudly, and nothing else: the keeps are identical across all
-  // three of its values. It used to be `prune.unresolved`, whose `'off'` also switched the
-  // accounting pass off — one value meaning both "do not account" and "do not report", which
-  // left "account, and stay quiet" unsayable.
-  const accounts = strategy === 'accounted'
-  const unresolved = accounts ? (ctx.config.prune?.unresolvedPath ?? 'warn') : 'off'
+  // three of its values. It defaults to `off` because this is now an inference the build makes
+  // unasked, and a default that reports would be noise in every project that cannot help it.
+  const unresolved = ctx.config.prune?.unresolvedPath ?? 'off'
 
   // One walk. These three answers all come from the same files, and reading them apart meant
   // a strict build opened every file three times: once for the reference set, once to account,
@@ -213,21 +213,16 @@ export function pruneTokensForBuild(
       if (!reachable && reachableFromJs(text)) reachable = true
     }
 
-    if (accounts) accountSnapshot(ctx, snapshot, accounting)
+    accountSnapshot(ctx, snapshot, accounting)
   }
 
   for (const name of tokenVarsFor(ctx, paths)) vars.add(name)
 
-  // Declared keeps apply to every strategy that prunes at all. Under `reachable` that is all
-  // they do — a token nothing in the stylesheet references and no javascript here reads, which
-  // is the sibling-package case. Under `accounted` they also stand in for the blanket keep,
-  // below.
+  // Declared keeps do two things: they keep what they match — a token nothing in the stylesheet
+  // references and no javascript here reads, which is the sibling-package case — and they stand
+  // in for the blanket keep when something could not be followed. See `keepTokens`.
   const declared = declaredKeeps(ctx)
   for (const name of tokenVarsFor(ctx, declared)) vars.add(name)
-
-  if (!accounts) {
-    return ctx.pruneTokens(sheet, vars, reachable)?.reachable ?? 'all'
-  }
 
   for (const name of tokenVarsFor(ctx, accounting.paths)) vars.add(name)
 
@@ -242,7 +237,12 @@ export function pruneTokensForBuild(
   // Skipped when something else already declined *and* nothing was declared, since the blanket
   // keep below then makes every name here redundant. With `keepTokens` there is no blanket
   // keep, so an inferred bound is load-bearing again alongside the declared ones.
-  if (accounting.prefixes.size && (bounded || !accounting.declined.length)) {
+  //
+  // `reachable` has to be part of that, because the blanket below requires it too. The text scan
+  // it comes from cannot see an artifact reached under a configured specifier — `importMap:
+  // { tokens: '@acme/design' }` — so a file bounding `colors.` through such an import, beside one
+  // unrelated decline, skipped the prefix *and* got no blanket, deleting the category it bounded.
+  if (accounting.prefixes.size && (bounded || !accounting.declined.length || !reachable)) {
     const prefixes = Array.from(accounting.prefixes)
     const matched: string[] = []
 
@@ -253,15 +253,15 @@ export function pruneTokensForBuild(
     for (const name of tokenVarsFor(ctx, matched)) vars.add(name)
   }
 
-  // On a decline, fall back to what the default would have answered rather than to an
-  // unconditional keep. Those differ: a project whose only unreadable reference is an import
-  // of a module this pass cannot classify declines here while the default's scan finds no
-  // token call at all, so keeping everything would make `prune.tokens: 'accounted'` ship *more* than `reachable`
-  // — the one case where turning it on could cost bytes. Deferring to the same gate makes
-  // `prune.tokens: 'accounted'` default-or-better in every case rather than in most.
-  // `prune.tokens: 'accounted'` is an assertion, so a token reference that breaks it fails the build rather than
-  // warning and carrying on. Warning was the wrong shape for that one: the user asked for the
-  // token layer to be pruned, did not get it, and nothing stopped to say so.
+  // On a decline, fall back to the same gate the cheap text scan answers rather than to an
+  // unconditional keep. Those differ: a project whose only unreadable reference is an import of a
+  // module this pass cannot classify declines here while the scan finds no token call at all, so
+  // keeping everything would ship *more* than the scan alone would — the one case where accounting
+  // could cost bytes. Deferring to that gate is what makes it safe to do unasked.
+  //
+  // `unresolvedPath: 'error'` is an assertion, so a token reference that breaks it fails the build
+  // rather than warning and carrying on. Warning was the wrong shape for that one: the user asked
+  // to be told the exact set shipped, did not get it, and nothing stopped to say so.
   //
   // Only that one. Every other decline reports and keeps everything, exactly as before — see
   // `failsStrict` for why, and why widening it would fail builds over `import()` calls with
@@ -302,10 +302,10 @@ export function pruneTokensForBuild(
       throw new BambooError(
         'TOKEN_REFERENCE_UNRESOLVED',
         where +
-          `\`prune.tokens: 'accounted'\` asserts that every token path resolves at build time. Spell the path ` +
-          `as a string literal at the call, give a template a static prefix so it can be bounded, name the ` +
+          `\`prune.unresolvedPath: 'error'\` asserts that every token path resolves at build time. Spell the ` +
+          `path as a string literal at the call, give a template a static prefix so it can be bounded, name the ` +
           `category they land in with \`prune: { keepTokens: ['colors.*'] }\` and drop to ` +
-          `\`prune: { unresolvedPath: 'warn' }\`, or set \`prune: { tokens: 'reachable' }\` to stop asserting.`,
+          `\`prune: { unresolvedPath: 'warn' }\`, or set \`prune: { unresolvedPath: 'off' }\` to stop asserting.`,
       )
     }
 
@@ -318,10 +318,10 @@ export function pruneTokensForBuild(
             `landing outside the patterns loses its declaration and resolves to a \`var()\` with nothing ` +
             `behind it. Respell what you can, and widen the patterns for what you cannot.`
         : where +
-            `\`prune.tokens: 'accounted'\` asserts that every token path resolves at build time. Spell the ` +
-            `path as a string literal at the call, give a template a static prefix so it can be bounded, ` +
-            `name the category they land in with \`prune: { keepTokens: ['colors.*'] }\`, or set ` +
-            `\`prune: { tokens: 'reachable' }\` to stop asserting.`,
+            `An unfollowable path keeps every token declaration. Spell the path as a string literal at the ` +
+            `call, give a template a static prefix so it can be bounded, name the category they land in with ` +
+            `\`prune: { keepTokens: ['colors.*'] }\`, or set \`prune: { unresolvedPath: 'off' }\` to stop ` +
+            `reporting it.`,
     )
   }
 
@@ -385,7 +385,7 @@ function declaredKeeps(ctx: BambooContext) {
       `\`prune.keepTokens\` holds only exclusions, so it keeps every token they do not name:\n\n` +
         `${patterns.map((pattern) => `  ${pattern}`).join('\n')}\n\n` +
         `A leading \`!\` subtracts from a selection and there is none here. Add the categories to keep — ` +
-        `\`['colors.*', '!colors.legacy.*']\` — or use \`prune: { tokens: 'off' }\` if keeping everything ` +
+        `\`['colors.*', '!colors.legacy.*']\` — or use \`prune: { tokens: false }\` if keeping everything ` +
         `is the intent.`,
     )
   }

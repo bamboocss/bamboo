@@ -16,8 +16,8 @@ import type { UserConfig } from '@bamboocss/types'
 const REMOVED: Record<string, (value: unknown) => string> = {
   pruneUnusedTokens: (value) =>
     value === 'strict'
-      ? `\`pruneUnusedTokens: 'strict'\` is now \`prune: { tokens: 'accounted', unresolvedPath: 'error' }\`.`
-      : `\`pruneUnusedTokens\` is now \`prune: { tokens: '${value === false ? 'off' : 'reachable'}' }\`.`,
+      ? `\`pruneUnusedTokens: 'strict'\` is now \`prune: { tokens: true, unresolvedPath: 'error' }\`.`
+      : `\`pruneUnusedTokens\` is now \`prune: { tokens: ${value === false ? 'false' : 'true'} }\`.`,
   pruneUnusedKeyframes: (value) =>
     `\`pruneUnusedKeyframes\` is now \`prune: { keyframes: ${value === false ? 'false' : 'true'} }\`.`,
   prunePreflight: (value) =>
@@ -61,7 +61,7 @@ const REMOVED_NESTED: Record<string, Record<string, (value: unknown) => string>>
     preflight: (value) =>
       `\`prune.preflight\` is now \`preflight: { prune: ${value === false ? 'false' : 'true'} }\`. It was a second key named \`preflight\` one level away from the one that emits the reset, so a config asked for a reset in one place and reshaped it in another — and pruning a scoped reset already had to read \`preflight.scope\` to work at all.`,
     unresolved: (value) =>
-      `\`prune.unresolved\` is now \`prune.unresolvedPath\`, and the accounting pass it used to switch on is now \`prune.tokens: 'accounted'\` — write \`prune: { tokens: 'accounted', unresolvedPath: '${value === 'error' ? 'error' : 'warn'}' }\`. They are separate because \`'off'\` used to mean two things at once: no accounting, and no report.`,
+      `\`prune.unresolved\` is now \`prune.unresolvedPath\` — write \`prune: { tokens: true, unresolvedPath: '${value === 'error' ? 'error' : 'warn'}' }\`. The accounting pass it used to switch on runs by default now, so this only decides whether an unfollowable path is reported.`,
   },
   theme: {
     textStyles: COMPOSITION_MOVED('textStyles', 'textStyle'),
@@ -139,13 +139,20 @@ export function validateRemovedOptions(
     if (message) addError('config', message)
   }
 
-  // `prune.tokens` went from a boolean to a strategy. A boolean is not an unknown key, so
-  // nothing else reports it — it would just fail to match any branch and take the default.
-  if (typeof dict.prune?.tokens === 'boolean') {
-    addError(
-      'config',
-      `\`prune.tokens\` takes a strategy now, not a boolean — write \`'${dict.prune.tokens ? 'reachable' : 'off'}'\`. \`'accounted'\` is the new one: keeps computed from the token paths in your source rather than from what the css reaches.`,
-    )
+  // `prune.tokens` was a boolean, then three strategies, and is a boolean again. A string is not
+  // an unknown key, so nothing else reports it — it would fail to match any branch and silently
+  // take the default, which for `'off'` means pruning a project that asked not to be pruned.
+  if (typeof dict.prune?.tokens === 'string') {
+    const strategy = dict.prune.tokens
+    const replacement = strategy === 'off' ? 'false' : 'true'
+    const note =
+      strategy === 'reachable'
+        ? ` \`true\` accounts for each token path individually rather than keeping every declaration the moment javascript reaches for one, so it prunes at least as much and usually far more.`
+        : strategy === 'accounted'
+          ? ` That is what \`true\` does now; it stopped being something to opt into. Reporting moved to \`prune: { unresolvedPath: 'warn' }\`, which \`'accounted'\` used to imply.`
+          : ''
+
+    addError('config', `\`prune.tokens\` takes a boolean now, not a strategy — write \`${replacement}\`.${note}`)
   }
 
   // Per-pattern, so it is missed by every check above.

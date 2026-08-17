@@ -9,9 +9,6 @@ import { keyframes } from './theme/keyframes'
 
 export default defineConfig({
   preflight: true,
-  // Every token path on this site resolves at build time, so the token layer ships the 146
-  // declarations it references rather than all 500 the preset declares.
-  prune: { tokens: 'accounted' },
   // define the content to scan 👇🏻
   include: ['./src/**/*.{tsx,ts,jsx}', './pages/**/*.{jsx,tsx}', './app/**/*.{jsx,tsx}'],
   exclude: [],

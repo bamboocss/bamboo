@@ -22,9 +22,9 @@ export type DeclineReason =
   | 'unresolved-reference'
 
 /**
- * The one decline `prune.tokens: 'accounted'` fails the build on.
+ * The one decline `prune.unresolvedPath: 'error'` fails the build on.
  *
- * `prune.tokens: 'accounted'` asserts that every token path resolves, and this is the reason that says otherwise:
+ * That setting asserts that every token path resolves, and this is the reason that says otherwise:
  * a token binding used in a way the build cannot follow — a path built at runtime, a binding
  * assigned away, a namespace enumerated. It is about the author's *token usage*, and it has a
  * fix at the call site.
@@ -85,14 +85,16 @@ export interface TokenAccounting {
  *   today. So every branch that cannot prove a shape declines, and the accepted set below is
  *   deliberately small.
  *
- * What it cannot see is a caller *outside* `include`, which scopes style extraction rather
- * than everything that may import. That is why this only runs under `prune.tokens:
- * 'accounted'`, where the user has asserted otherwise, and why `declined` is reported rather
- * than swallowed: the build says what it could not account for, instead of quietly deciding.
+ * What it cannot see is a caller *outside* `include`, which scopes style extraction rather than
+ * everything that may import — a script, a config, a sibling workspace package consuming the
+ * output as design tokens. Nothing here declines for those, because nothing here can see them, so
+ * no fallback covers them either: `prune.keepTokens` is the only answer, and `prune.unresolvedPath`
+ * is what makes the declines this *can* see visible.
  *
- * The name in that sentence was `pruneUnusedTokens: 'strict'` for a while after the option
- * stopped existing, which is the hazard of documenting a flag by a word three other flags
- * also used.
+ * That blind spot used to be covered by accident. The old default kept every declaration the
+ * moment any javascript reached for a token at all, so a project with one `token()` call in it
+ * protected its out-of-`include` readers without meaning to — and a project with none did not.
+ * Consistency in the pruning direction is the trade this made deliberately.
  */
 export function accountTokenReferences(ctx: BambooContext): TokenAccounting {
   const accounting: TokenAccounting = { paths: new Set<string>(), prefixes: new Set<string>(), declined: [] }
@@ -125,7 +127,7 @@ export function accountSnapshot(ctx: BambooContext, snapshot: SourceSnapshot, ac
       // A file with no token in either copy cannot reach the artifact, so there is nothing to
       // decline over. Checked here rather than up front because the text is all this branch
       // has — the tree is the wrong copy or missing.
-      const mentions = (onDisk?.includes('token') ?? false) || (parsed?.includes('token') ?? false)
+      const mentions = mentionsToken(ctx, onDisk) || mentionsToken(ctx, parsed)
       if (!mentions) return
 
       declined.push({ filePath, line: 1, reason: onDisk == null || parsed == null ? 'unreadable' : 'transformed' })
@@ -142,13 +144,52 @@ export function accountSnapshot(ctx: BambooContext, snapshot: SourceSnapshot, ac
     // the parser could not read as written. That the check is coarse is the safe direction, and
     // the report says which file to look at.
     if (parseErrorCount(sourceFile!)) {
-      if (!parsed.includes('token')) return
+      if (!mentionsToken(ctx, parsed)) return
       declined.push({ filePath, line: 1, reason: 'unparsed' })
       return
     }
 
+    // A file that cannot name the artifact has nothing to account for, and the walk below costs
+    // a full identifier traversal to discover that. It is the common case by a wide margin —
+    // `sandbox/vite-ts` has six files under `include` and not one of them spells `token` — and
+    // paying for it everywhere is what made the accounting look like something to opt into.
+    if (!mentionsToken(ctx, parsed)) return
+
     accountFile(ctx, sourceFile!, filePath, paths, prefixes, declined)
   }
+}
+
+/**
+ * Whether a file is worth walking — because it can name the artifact, or because a shape in it
+ * declines without naming one.
+ *
+ * The obvious half is the substring `token`, which an import of the default entrypoint, a call,
+ * a member read and a `require` of it all put in the source. Three things defeat it, and each one
+ * is a silent under-keep rather than a slow build, so the test errs wide:
+ *
+ * - **A configured entrypoint need not spell it.** `importMap: { tokens: '@acme/design' }` and a
+ *   tsconfig path mapping both make `isTokensEntrypoint` true for a specifier with no `token` in
+ *   it, so the configured modules are tested for as well.
+ * - **An identifier may be written with unicode escapes.** An import specifier can spell the `t`
+ *   of `token` as a backslash-u escape and still bind the export, which `nameOf` resolves and
+ *   there is a test on. Both escape forms — the four-digit one and the braced one — begin with a
+ *   backslash followed by `u`, so testing for that pair catches every spelling.
+ * - **`require()` and `import()` decline on a specifier this cannot read**, which is a statement
+ *   about the specifier rather than about tokens: `import(`./pages/${name}`)` names nothing and
+ *   declines all the same, because it *could* be the artifact. Skipping the file would drop that
+ *   decline and with it the keep it was standing in for.
+ *
+ * A false positive costs one identifier walk. A false negative deletes a declaration something
+ * still asks for, so anything uncertain belongs on the walking side.
+ */
+const IMPORTING_CALL = /\b(?:require|import)\s*\(/
+
+const mentionsToken = (ctx: BambooContext, text: string | undefined | null) => {
+  if (text == null) return false
+  if (text.includes('token') || text.includes('\\u')) return true
+  if (ctx.imports.value.tokens.some((mod) => text.includes(mod))) return true
+
+  return IMPORTING_CALL.test(text)
 }
 
 /**
@@ -297,6 +338,18 @@ function accountFile(
     if (!bindings.has(text) && text !== 'token') continue
     const parent = identifier.getParent()
 
+    // `export { token }` hands the binding to a module this pass may never visit, exactly as
+    // `export { token } from './tokens'` does. The statement walk only sees the spelling that
+    // carries a specifier, and `accountedPath` reads an export specifier as a binding *site* and
+    // skips it — so the two-statement form recorded nothing, declined nothing, and pruned as
+    // though the export were not there. A sibling package importing that barrel then asked for a
+    // declaration the build had deleted.
+    if (Node.isExportSpecifier(parent)) {
+      const declaration = parent.getFirstAncestorByKind(SyntaxKind.ExportDeclaration)
+      if (declaration && !declaration.getModuleSpecifier()) decline(identifier, 're-exported')
+      continue
+    }
+
     // A property *name* is not a use of a binding — `foo.token` reads a member of `foo`. But
     // it may still be *the* token: `import { theme } from '@acme/ui'` then `theme.token(k)`
     // reaches the artifact through an object this pass never bound, and skipping the name
@@ -395,7 +448,7 @@ function boundNames(name: Node | undefined, bound: (name: string) => void) {
  *
  * That is not hypothetical: on this repository's own documentation site it was 40 declines
  * across seven components, none of them a token call, holding a token layer of 500 declarations
- * where 146 are referenced. `prune.tokens: 'accounted'` there emitted a byte-identical
+ * where 146 are referenced. Token accounting there emitted a byte-identical
  * stylesheet and a wall of warnings — the feature reporting loudly that it had done nothing.
  *
  * Only the forms that *cannot* hold the artifact are collected. A parameter, a catch variable,

@@ -103,7 +103,7 @@ const rule = createRule({
      *
      * A bare `token(…)` counts even with no import to bind it, because the build counts it: its
      * accounting keys on the name, so a local helper of that name declines there too. Staying
-     * quiet about it would mean `prune.tokens: 'accounted'` failing a build the editor called clean.
+     * quiet about it would mean `prune.unresolvedPath: 'error'` failing a build the editor called clean.
      */
     const isTokenCall = (node: TSESTree.CallExpression | TSESTree.TaggedTemplateExpression) => {
       const callee = node.type === 'CallExpression' ? node.callee : node.tag

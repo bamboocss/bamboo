@@ -120,12 +120,15 @@ Nothing under [`outdir`](/docs/references/config#outdir) is reported, because it
 
 ### A token path the prune scan could not follow
 
-[`prune.unresolvedPath`](/docs/references/config#pruneunresolvedpath) — `off` | `warn` | `error`, default `warn`
+[`prune.unresolvedPath`](/docs/references/config#pruneunresolvedpath) — `off` | `warn` | `error`, default `off`
 
-Only under [`prune.tokens: 'accounted'`](/docs/references/config#prune), which is an assertion that every token path in
-your project resolves at build time. A path assembled at runtime does not, and an unfollowable path forces the
-accounting back onto a blanket keep — so `error` is what makes `accounted` worth asking for: it guarantees you are
-shipping the exact set rather than the fallback.
+[Token pruning](/docs/references/config#prunetokens) accounts for each token path individually. A path assembled at
+runtime cannot be followed, and an unfollowable one forces the keep set back onto every declaration — so this is what
+tells you the token layer is larger than it needs to be, and `error` guarantees you are shipping the exact set rather
+than the fallback.
+
+Silent by default, because the fallback is an inference the build makes on its own rather than a claim you asked it to
+check. Turn it to `warn` when the token layer is bigger than you expect.
 
 ### A config that does not validate
 

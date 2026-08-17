@@ -69,7 +69,7 @@ ${
     // by default — worth 36-78% of a new project's stylesheet. If you read tokens from
     // somewhere the build cannot see them — \`token()\` with a computed path, or a
     // hand-written stylesheet outside \`include\` — name the categories they land in with
-    // \`prune: { keepTokens: ['colors.*'] }\`, or set \`prune: { tokens: 'off' }\`.
+    // \`prune: { keepTokens: ['colors.*'] }\`, or set \`prune: { tokens: false }\`.
 
     // Useful for theme customization
     theme: {

@@ -31,7 +31,7 @@ const stubContext = () => ({
   // Pruning off explicitly: this exercises `write`, and the token pass would want a real
   // source tree. It used to be skipped because an absent `prune` read as falsy here, which
   // was an accident of the old boolean rather than the documented default.
-  config: { prune: { tokens: 'off' } },
+  config: { prune: { tokens: false } },
   isValidLayerParams: (params: string) => {
     const names = new Set(params.split(',').map((n) => n.trim()))
     return names.size >= 5 && ['reset', 'base', 'tokens', 'recipes', 'utilities'].every((n) => names.has(n))

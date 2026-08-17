@@ -6,7 +6,7 @@ import type { BambooContext } from '../src/create-context'
 import { pruneTokensForBuild } from '../src/token-references'
 
 /**
- * `prune: { tokens: 'accounted', unresolvedPath: 'error' }` end to end, against the real prune and the emitted css.
+ * `prune: { tokens: true, unresolvedPath: 'error' }` end to end, against the real prune and the emitted css.
  *
  * Every other test of this feature stubs `ctx.pruneTokens` and asserts the arguments it was
  * handed. That proves the accounting decided correctly and nothing about what ships — and no
@@ -18,7 +18,7 @@ import { pruneTokensForBuild } from '../src/token-references'
  */
 const FILE = 'app/src/app.tsx'
 
-const buildCss = (source: string, prune: PruneOptions = { tokens: 'accounted', unresolvedPath: 'error' }) => {
+const buildCss = (source: string, prune: PruneOptions = { tokens: true, unresolvedPath: 'error' }) => {
   const ctx = createFixtureContext({
     prune,
     // Stands in for what extraction would contribute, so the sheet has a utility layer.
@@ -50,11 +50,7 @@ const declarationCount = (css: string) => [...css.matchAll(/(--[a-z0-9-]+)\s*:/g
 
 const imports = "import { token } from 'styled-system/tokens'\n"
 
-describe('prune.unresolved, against the emitted css', () => {
-  /**
-   * The whole point of the flag. Reaching for a token from javascript keeps every declaration
-   * under the default; asserting that the paths resolve keeps only what is asked for.
-   */
+describe('prune.unresolvedPath, against the emitted css', () => {
   /**
    * Through an *aliased* import. The plain spelling proves less than it appears to: the
    * non-strict text scan matches `token('…')` literally and adds the path itself, so the
@@ -71,12 +67,33 @@ describe('prune.unresolved, against the emitted css', () => {
     expect(declares(css, '--colors-teal-500')).toBe(false)
   })
 
-  test('the default keeps everything for the same source', () => {
-    const strict = buildCss(`${imports}export const brand = token('colors.blue.500')`)
-    const relaxed = buildCss(`${imports}export const brand = token('colors.blue.500')`, { tokens: 'reachable' })
+  /**
+   * The default now accounts, so it reaches the same stylesheet the assertion does. What
+   * `unresolvedPath: 'error'` adds is the guarantee that it *did* — a source the accounting
+   * cannot read falls back to keeping everything under the default and fails the build under
+   * the assertion, which is the only difference between them.
+   */
+  test('the default reaches the same css for a source that resolves', () => {
+    const source = `${imports}export const brand = token('colors.blue.500')`
 
-    expect(declares(relaxed, '--colors-teal-500')).toBe(true)
-    expect(declarationCount(strict)).toBeLessThan(declarationCount(relaxed))
+    expect(buildCss(source, {})).toBe(buildCss(source))
+  })
+
+  test('an unfollowable path keeps everything under the default, and throws under the assertion', () => {
+    const source = `${imports}export const brand = (k) => token(k)`
+    const fallback = buildCss(source, {})
+
+    expect(declares(fallback, '--colors-teal-500')).toBe(true)
+    expect(declarationCount(fallback)).toBeGreaterThan(
+      declarationCount(buildCss(`${imports}export const brand = token('colors.blue.500')`, {})),
+    )
+    expect(() => buildCss(source)).toThrow(/could not be resolved/)
+  })
+
+  test('keeping every declaration is still sayable', () => {
+    const source = `${imports}export const brand = token('colors.blue.500')`
+
+    expect(declares(buildCss(source, { tokens: false }), '--colors-teal-500')).toBe(true)
   })
 
   /**
@@ -113,8 +130,8 @@ describe('prune.unresolved, against the emitted css', () => {
   test('warn reports the same reference without failing, and prunes the same way', () => {
     const source = `${imports}export const brand = token('colors.blue.500')`
 
-    const warned = buildCss(source, { tokens: 'accounted', unresolvedPath: 'warn' })
-    const errored = buildCss(source, { tokens: 'accounted', unresolvedPath: 'error' })
+    const warned = buildCss(source, { tokens: true, unresolvedPath: 'warn' })
+    const errored = buildCss(source, { tokens: true, unresolvedPath: 'error' })
 
     expect(warned).toBe(errored)
   })
@@ -128,7 +145,7 @@ describe('prune.unresolved, against the emitted css', () => {
   test('off says nothing at all', () => {
     const warn = vi.spyOn(logger, 'warn').mockImplementation(() => undefined)
 
-    buildCss(`${imports}export const brand = (p) => token(p)`, { tokens: 'accounted', unresolvedPath: 'off' })
+    buildCss(`${imports}export const brand = (p) => token(p)`, { tokens: true, unresolvedPath: 'off' })
 
     expect(warn).not.toHaveBeenCalledWith('tokens:unresolved', expect.anything())
 
@@ -138,8 +155,8 @@ describe('prune.unresolved, against the emitted css', () => {
   test('warn does not throw on the path error rejects', () => {
     const source = `${imports}export const brand = (p) => token(p)`
 
-    expect(() => buildCss(source, { tokens: 'accounted', unresolvedPath: 'warn' })).not.toThrow()
-    expect(() => buildCss(source, { tokens: 'accounted', unresolvedPath: 'error' })).toThrow(/could not be resolved/)
+    expect(() => buildCss(source, { tokens: true, unresolvedPath: 'warn' })).not.toThrow()
+    expect(() => buildCss(source, { tokens: true, unresolvedPath: 'error' })).toThrow(/could not be resolved/)
   })
 
   /**
@@ -182,7 +199,7 @@ describe('prune.keepTokens', () => {
   /** No static head, so nothing bounds it and every declaration used to survive. */
   const UNFOLLOWABLE = `${imports}export const brand = (p) => token(p)`
 
-  const accounted = { tokens: 'accounted', unresolvedPath: 'warn' } as const
+  const accounted = { tokens: true, unresolvedPath: 'warn' } as const
 
   test('bounds a reference the build cannot follow, instead of keeping everything', () => {
     const bounded = buildCss(UNFOLLOWABLE, { ...accounted, keepTokens: ['colors.*'] })
@@ -193,12 +210,16 @@ describe('prune.keepTokens', () => {
     expect(declarationCount(bounded)).toBeLessThan(declarationCount(blanket))
   })
 
-  /** Without it, the same source is the cliff this exists to remove. */
-  test('the same source keeps everything without it', () => {
+  /**
+   * Without it, the same source is the cliff this exists to remove — and the comparison has to be
+   * against `tokens: false`, not against another accounting run. It used to be
+   * `{ tokens: true, unresolvedPath: 'warn' }` versus `{ tokens: true }`, which differ only in
+   * reporting, so it asserted a tautology and would have passed with the blanket keep deleted.
+   */
+  test('without it the same source keeps everything, as if nothing were pruned', () => {
     const blanket = buildCss(UNFOLLOWABLE, accounted)
-    const relaxed = buildCss(UNFOLLOWABLE, { tokens: 'reachable' })
 
-    expect(declarationCount(blanket)).toBe(declarationCount(relaxed))
+    expect(declarationCount(blanket)).toBe(declarationCount(buildCss(UNFOLLOWABLE, { tokens: false })))
   })
 
   test('narrows to a sub-path, not just a category', () => {
@@ -248,9 +269,9 @@ describe('prune.keepTokens', () => {
    * the moment one was added.
    */
   test('does not silence `unresolvedPath: error`', () => {
-    expect(() =>
-      buildCss(UNFOLLOWABLE, { tokens: 'accounted', unresolvedPath: 'error', keepTokens: ['colors.*'] }),
-    ).toThrow(/contradictory/)
+    expect(() => buildCss(UNFOLLOWABLE, { tokens: true, unresolvedPath: 'error', keepTokens: ['colors.*'] })).toThrow(
+      /contradictory/,
+    )
   })
 
   /**
@@ -268,14 +289,14 @@ describe('prune.keepTokens', () => {
       `${imports}export const page = (n) => import(\`./pages/\${n}\`)\n` +
       `export const brand = token('colors.blue.500')\n`
 
-    expect(() =>
-      buildCss(source, { tokens: 'accounted', unresolvedPath: 'error', keepTokens: ['colors.blue.*'] }),
-    ).toThrow(/contradictory/)
+    expect(() => buildCss(source, { tokens: true, unresolvedPath: 'error', keepTokens: ['colors.blue.*'] })).toThrow(
+      /contradictory/,
+    )
   })
 
   /**
    * `!` subtracts from a selection, so a list of only exclusions selects everything they do not
-   * name — the opposite of what a list of keeps reads as, and `tokens: 'off'` with extra steps.
+   * name — the opposite of what a list of keeps reads as, and `tokens: false` with extra steps.
    * Reported rather than reinterpreted.
    */
   test('reports a list that holds only exclusions', () => {
@@ -298,8 +319,8 @@ describe('prune.keepTokens', () => {
   test('keeps a token the stylesheet never references, under reachable', () => {
     const source = 'export const unrelated = 1\n'
 
-    const withKeep = buildCss(source, { tokens: 'reachable', keepTokens: ['fontSizes.*'] })
-    const without = buildCss(source, { tokens: 'reachable' })
+    const withKeep = buildCss(source, { tokens: true, keepTokens: ['fontSizes.*'] })
+    const without = buildCss(source, { tokens: true })
 
     expect(declares(withKeep, '--font-sizes-3xl')).toBe(true)
     expect(declares(without, '--font-sizes-3xl')).toBe(false)

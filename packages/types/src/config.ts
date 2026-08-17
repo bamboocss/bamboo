@@ -523,27 +523,20 @@ export interface PluginsOptions {
  */
 export interface PruneOptions {
   /**
-   * How to decide which token css variables to keep.
+   * Whether to drop token css variables nothing asks for.
    *
    * The token layer declares every token in the theme, and an app typically uses a small
    * fraction of them, so this is usually the largest single saving in render-blocking css.
    *
-   * - `off` keeps every token declaration.
-   * - `reachable` keeps what the generated css reaches. Because `token()` can name any
-   *   token, a project that calls it from javascript *anywhere* keeps every declaration —
-   *   on the default preset that is 468 names against the 68 a narrower exemption kept, and
-   *   a token layer of 442 declarations rather than 2. The exemption is skipped entirely for
-   *   a project that never reaches for a token from javascript, so the saving is
-   *   all-or-nothing: one caller keeps every declaration.
-   * - `accounted` reads the token paths out of your source and keeps only those. `token()`
-   *   and `token.value()` calls are resolved through a constant or a template literal the
-   *   extractor can follow, not only through a path spelled at the call, as is any literal
-   *   `var(--x)` written by hand.
+   * A variable is kept when the generated css references it, when a kept variable's own value
+   * references it, or when javascript under `include` names it — a `token()` or `token.value()`
+   * call, or a literal `var(--x)` written by hand. Paths are read through a constant or a
+   * template literal the extractor can follow, not only from a literal spelled at the call.
    *
-   * Under `accounted`, a path the build cannot follow makes the keep set fall back to
-   * `reachable`'s blanket keep rather than silently dropping a declaration — which is why
-   * `unresolvedPath` exists, and why setting it to `error` is what makes `accounted` worth
-   * asking for: it guarantees you are shipping the exact set rather than the fallback.
+   * A path the build cannot follow falls back to keeping every declaration rather than
+   * silently dropping one, because `token()` hands back a `var()` for every token and an
+   * unreadable path could name any of them. `unresolvedPath` decides whether that fallback is
+   * reported, and `keepTokens` replaces it with a bound you declare.
    *
    * A template literal is bounded rather than declined: `` token(`colors.${shade}`) `` cannot
    * say which token it wants, but it says which it *cannot*, so the `colors` category is kept
@@ -551,26 +544,39 @@ export interface PruneOptions {
    * is a path with no static head — `token(key)`, `token('colors.' + shade)` — and there
    * `keepTokens` is the answer.
    *
-   * Three things stay invisible to `accounted`: a token named by a path assembled from a
-   * value that only exists at runtime, one referenced only from a stylesheet outside
-   * `include`, and one used by a separate package consuming the output as design tokens. The
-   * scan reads `include`, which scopes style extraction rather than everything that may
-   * import — so a script, a config, or a sibling workspace package that calls `token()` is
-   * not covered, nor is a binding renamed away from `token`, as in `const t = token`. Name
-   * them with `keepTokens`.
+   * A local binding named `token` is not the artifact and is not a reference: `token` is the
+   * obvious name for a token *object*, and `items.map((token) => token.value)` reads a
+   * parameter. Parameters, catch variables, function and class declarations, and a variable
+   * destructured off one of those are all resolved rather than matched by spelling.
+   *
+   * Three things stay invisible: a token named by a path assembled from a value that only
+   * exists at runtime, one referenced only from a stylesheet outside `include`, and one used
+   * by a separate package consuming the output as design tokens. The scan reads `include`,
+   * which scopes style extraction rather than everything that may import — so a script, a
+   * config, or a sibling workspace package that calls `token()` is not covered, nor is a
+   * binding renamed away from `token`, as in `const t = token`. Name them with `keepTokens`.
    *
    * A custom property declared by `global.css` or `global.vars` is not one of these cases:
    * the declaration ships whether or not anything in the stylesheet reads it, so whatever it
    * references is kept alongside it.
    *
-   * @default 'reachable'
+   * This was three strategies — `'off' | 'reachable' | 'accounted'` — which conflated two
+   * separate questions: how hard to try, and what to say when it fails. `'reachable'` answered
+   * one cheap boolean ("does any javascript reach for a token") and threw away everything else
+   * it had read, so a single `token()` call anywhere kept all 468 declarations of the default
+   * preset. `'accounted'` did the work but was framed as an assertion, so it reported by
+   * default and had to be asked for. Doing the work is now the default and saying so is
+   * `unresolvedPath`; a file that never spells `token` is skipped, so the accounting costs
+   * nothing where there is nothing to account for.
+   *
+   * @default true
    */
-  tokens?: 'off' | 'reachable' | 'accounted'
+  tokens?: boolean
   /**
    * Token paths to keep whatever the build can see, as exact names or `*` patterns.
    *
    * ```ts
-   * prune: { tokens: 'accounted', keepTokens: ['colors.*'] }
+   * prune: { keepTokens: ['colors.*'] }
    * ```
    *
    * This is the bound the build could not infer, written by hand. It exists because the
@@ -581,16 +587,16 @@ export interface PruneOptions {
    * far smaller answer than keeping everything, and it is the same answer the build already
    * derives for itself from a template literal's static head.
    *
-   * So under `accounted` this does two things: it keeps what it matches, and it stands in for
-   * what could not be followed, in place of the blanket keep. Saying `keepTokens: ['colors.*']`
-   * is saying *the reads you cannot follow land in `colors`* — an assertion about your own
-   * code, which is why nothing infers it for you. Declines are still reported, so you can see
-   * what you are covering; `unresolvedPath: 'error'` still fails, because asserting every path
-   * resolves and declaring a bound for the ones that do not are contradictory requests.
+   * So this does two things: it keeps what it matches, and it stands in for what could not be
+   * followed, in place of the blanket keep. Saying `keepTokens: ['colors.*']` is saying *the
+   * reads you cannot follow land in `colors`* — an assertion about your own code, which is why
+   * nothing infers it for you. Under `unresolvedPath: 'warn'` the declines are still printed, so
+   * you can see what you are covering; `'error'` fails, because asserting every path resolves and
+   * declaring a bound for the ones that do not are contradictory requests.
    *
-   * Under `reachable` it is additive only, for a token nothing in the stylesheet references
-   * and no javascript here reads — one consumed by a sibling package, or by css outside
-   * `include`. It is inert under `tokens: 'off'`, which keeps everything already.
+   * With nothing to stand in for it is additive only, naming a token nothing in the stylesheet
+   * references and no javascript here reads — one consumed by a sibling package, or by css
+   * outside `include`. It is inert under `tokens: false`, which keeps everything already.
    *
    * Patterns match the dotted token *path*, anchored and case-sensitively, with `*` standing
    * for any run of characters and a leading `!` excluding. `colors.*` keeps every colour,
@@ -609,17 +615,25 @@ export interface PruneOptions {
    */
   keepTokens?: string[]
   /**
-   * What to do about a token path `accounted` cannot follow.
+   * What to do about a token path the build cannot follow.
    *
    * A path spelled at the call resolves; one assembled at runtime does not. An unfollowable
-   * path is what forces `accounted` back onto the blanket keep — unless `keepTokens` names
+   * path is what forces the keep set back onto every declaration — unless `keepTokens` names
    * the bound — so this decides whether that happens quietly, loudly, or not at all.
    *
    * - `off` falls back and says nothing.
    * - `warn` falls back and reports what it could not follow.
    * - `error` fails the build, so the fallback can never ship unnoticed.
    *
-   * Inert under `tokens: 'off'` and `tokens: 'reachable'`, which run no accounting pass.
+   * The keeps are identical across all three: this decides how loudly, and nothing else.
+   *
+   * It defaults to `off` because pruning is an inference the build makes on its own rather
+   * than a claim you asked it to check, and a default that reports has to be right about
+   * every project or it is just noise. Reach for `warn` when the token layer is larger than
+   * you expect — it names what is holding the keep set open — and `error` to assert that it
+   * never falls back at all.
+   *
+   * Inert under `tokens: false`, which keeps everything and runs no accounting pass.
    *
    * `error` and `keepTokens` do not combine: one asserts every path resolves, the other
    * declares where the ones that do not will land. A project that cannot make the first
@@ -629,7 +643,7 @@ export interface PruneOptions {
    * here: `strictTokens` and `strictPropertyValues` narrow generated *typescript*, and
    * neither implies nor is implied by this.
    *
-   * @default 'warn'
+   * @default 'off'
    */
   unresolvedPath?: 'off' | 'warn' | 'error'
   /**
@@ -669,7 +683,7 @@ export interface PruneOptions {
    * property can be reached from outside the css entirely — a `token()` call, a `keepTokens`
    * pattern, a theme, a `globalCss` export. Those are exactly the tokens `tokens` keeps, so
    * this defers to that pass rather than asking again: a keyframe is dropped only when the
-   * declarations naming it were dropped too. Under `tokens: 'off'` nothing is removable, so
+   * declarations naming it were dropped too. Under `tokens: false` nothing is removable, so
    * every keyframe a declaration names is kept.
    *
    * @default true

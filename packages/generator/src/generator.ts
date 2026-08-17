@@ -110,7 +110,7 @@ export class Generator extends Context {
     // They were one flag, and the registrations were dropped even when it was off -- so an
     // option documented as keeping every token declaration quietly removed something else,
     // and there was no way at all to keep them.
-    const pruneVars = (this.config.prune?.tokens ?? 'reachable') !== 'off'
+    const pruneVars = this.config.prune?.tokens !== false
     const pruneRegistrations = this.config.prune?.propertyRegistrations ?? true
 
     const layers = sheet.layers
@@ -220,9 +220,9 @@ export class Generator extends Context {
    * deletes the `@keyframes` out from under a declaration that ships. Every caller that
    * prunes both hands it over.
    *
-   * Omitting it falls back to what `prune.tokens` implies. Under `off` that is `'all'`: no
+   * Omitting it falls back to what `prune.tokens` implies. Under `false` that is `'all'`: no
    * token declaration is removable, so each one ships and keeps the keyframe it names —
-   * and `off` is precisely the setting chosen because something outside the stylesheet
+   * and `false` is precisely the setting chosen because something outside the stylesheet
    * reads them. Otherwise it is the css alone, which is what a caller running this pass
    * without the other one is asking for.
    */
@@ -248,7 +248,7 @@ export class Generator extends Context {
       target: layers.tokens,
       keyframeNames,
       keep: new Set([...this.getThemeKeyframeNames(keyframeNames), ...(keep ?? [])]),
-      reachableVars: reachableVars ?? ((this.config.prune?.tokens ?? 'reachable') === 'off' ? 'all' : undefined),
+      reachableVars: reachableVars ?? (this.config.prune?.tokens === false ? 'all' : undefined),
     })
 
     logger.debug('prune:keyframes', `Removed ${result.removed} unused keyframe(s)`)

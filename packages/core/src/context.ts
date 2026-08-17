@@ -44,8 +44,8 @@ const defaults = (config: UserConfig): UserConfig => ({
   // Merged per key rather than spread, so `prune: { keyframes: false }` keeps the other
   // defaults instead of turning token and keyframe pruning off by omission.
   prune: {
-    tokens: 'reachable',
-    unresolvedPath: 'warn',
+    tokens: true,
+    unresolvedPath: 'off',
     propertyRegistrations: true,
     keyframes: true,
     ...config.prune,

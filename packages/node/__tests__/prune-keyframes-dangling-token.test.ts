@@ -76,7 +76,7 @@ const declaresToken = (css: string) => css.includes('--animations-drawer:')
 
 describe('a token that survives keeps its keyframe', () => {
   test('`keepTokens` keeps both, or neither', () => {
-    const css = buildCss({ tokens: 'reachable', keepTokens: ['animations.*'], keyframes: true })
+    const css = buildCss({ tokens: true, keepTokens: ['animations.*'], keyframes: true })
 
     // The reported shape, asserted as a pair rather than as two facts. Either is fine alone;
     // it is the combination — a declaration shipping over a definition that does not — that
@@ -88,7 +88,7 @@ describe('a token that survives keeps its keyframe', () => {
   test('and only that one', () => {
     // The control. Keeping every keyframe is also a way to pass the test above, and it is
     // not a fix — `fade-in` has nothing pointing at it and still has to go.
-    const css = buildCss({ tokens: 'reachable', keepTokens: ['animations.*'], keyframes: true })
+    const css = buildCss({ tokens: true, keepTokens: ['animations.*'], keyframes: true })
 
     expect(declaresKeyframe(css, 'fade-in')).toBe(false)
   })
@@ -97,16 +97,16 @@ describe('a token that survives keeps its keyframe', () => {
     // Without the keep there is no external reader, so the declaration goes and the keyframe
     // goes with it. This is the case that makes the pass worth having, and the one a fix that
     // simply rooted every custom property would have broken.
-    const css = buildCss({ tokens: 'reachable', keyframes: true })
+    const css = buildCss({ tokens: true, keyframes: true })
 
     expect(declaresToken(css)).toBe(false)
     expect(declaresKeyframe(css, 'slide-in-right')).toBe(false)
   })
 
-  test("`tokens: 'off'` keeps every keyframe its declarations name", () => {
+  test('`tokens: false` keeps every keyframe its declarations name', () => {
     // Nothing is removable, so every animation token ships — and `off` is the setting chosen
     // precisely because something outside the stylesheet reads them.
-    const css = buildCss({ tokens: 'off', keyframes: true })
+    const css = buildCss({ tokens: false, keyframes: true })
 
     expect(declaresToken(css)).toBe(true)
     expect(declaresKeyframe(css, 'slide-in-right')).toBe(true)
