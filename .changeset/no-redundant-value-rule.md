@@ -19,8 +19,10 @@ sound: `backgroundPosition: '0 0'` is left-top while `'0'` is left-centre, which
 element position. Values are split with parentheses respected, so `calc(1rem + 2px) calc(1rem + 2px)` reads as two
 identical edges; an unbalanced parenthesis declines.
 
-Reported as a suggestion rather than an autofix, and left out of `recommended` — nothing renders wrongly, the sheet is
-just carrying the drift of a large codebase.
+Autofixing, and the only rule in this plugin that is — every other one reports a preference and leaves the edit to the
+reader, whereas the two spellings here compute to the same thing. It is left out of `recommended` all the same: nothing
+renders wrongly, so this is cleanup rather than a defect. Every fix is asserted to be a fixed point, since `--fix`
+reruns until the source stops changing and a collapse that re-reported would loop.
 
 Measured against the build it was written from, it unifies 24 of those 304 groups. The larger remainder is a design
 token spelled against its own literal — `p: '4'` beside `p: '4px'` — which wants its own rule alongside

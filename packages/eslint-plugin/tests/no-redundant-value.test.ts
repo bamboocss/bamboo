@@ -8,29 +8,21 @@ import { eslintTester } from '../test-utils'
  * written as `16px`, `16px 16px` and `16px 16px 0 16px`, one shadow written four ways. Each spelling
  * earns its own class and its own rule, so the sheet carries the drift.
  *
- * The rule reports rather than fixes: the shorter spelling is what the browser already computes, so
- * a suggestion is the honest severity — nothing is broken, there is just more of it than there needs
- * to be.
+ * The rule fixes rather than suggests, which is the exception in this plugin — every other rule
+ * reports a preference and leaves the edit to the reader. The two spellings here compute to the same
+ * thing, so there is nothing to weigh up, and the drift runs to hundreds of call sites in the
+ * codebase this came from. `output` is therefore what each case asserts: what `--fix` writes back.
  */
 const invalid = (code: string, output: string) => ({
   code: multiline`
     import { css } from './bamboo/css';
 
     const styles = css({ ${code} })`,
-  errors: [
-    {
-      messageId: 'redundant' as const,
-      suggestions: [
-        {
-          messageId: 'replace' as const,
-          output: multiline`
-            import { css } from './bamboo/css';
+  errors: [{ messageId: 'redundant' as const }],
+  output: multiline`
+    import { css } from './bamboo/css';
 
-            const styles = css({ ${output} })`,
-        },
-      ],
-    },
-  ],
+    const styles = css({ ${output} })`,
 })
 
 const valid = (code: string) => ({
@@ -39,6 +31,30 @@ const valid = (code: string) => ({
 
     const styles = css({ ${code} })`,
 })
+
+/**
+ * Every output the invalid cases produce, asserted to report nothing.
+ *
+ * `--fix` reruns the rule until the source stops changing, so a fix that still reports would
+ * either loop or be silently abandoned after ESLint's pass limit. Listing the outputs is the
+ * cheapest way to hold that: a collapse that is not a fixed point fails here rather than in
+ * somebody's pre-commit hook.
+ */
+const FIXED_POINTS = [
+  `padding: '16px'`,
+  `margin: '0 16px'`,
+  `padding: '16px 16px 0'`,
+  `p: '8px'`,
+  `borderWidth: '1px'`,
+  `inset: '0'`,
+  `gap: '8px'`,
+  `padding: '4'`,
+  `padding: 'calc(1rem + 2px)'`,
+  `margin: 'var(--x)'`,
+  `padding: '16px 0'`,
+  `margin: '0'`,
+  `padding: '0 16px'`,
+]
 
 eslintTester.run(RULE_NAME, rule, {
   invalid: [
@@ -76,11 +92,25 @@ eslintTester.run(RULE_NAME, rule, {
     invalid(`margin: '0px'`, `margin: '0'`),
     invalid(`padding: '0px 16px 0 16px'`, `padding: '0 16px'`),
     invalid(`inset: '0% 0'`, `inset: '0'`),
+
+    // The JSX prop path, which reaches the value through a different node shape.
+    {
+      code: multiline`
+        import { styled } from './bamboo/jsx';
+
+        const App = () => <styled.div padding="8px 8px" />`,
+      errors: [{ messageId: 'redundant' as const }],
+      output: multiline`
+        import { styled } from './bamboo/jsx';
+
+        const App = () => <styled.div padding="8px" />`,
+    },
   ],
   valid: [
-    // Already shortest.
-    valid(`padding: '16px'`),
-    valid(`margin: '0 16px'`),
+    // Every fix this rule writes is a fixed point — see FIXED_POINTS.
+    ...FIXED_POINTS.map(valid),
+
+    // Already shortest, and not a shape any fix above produces.
     valid(`padding: '16px 8px 4px 2px'`),
     valid(`gap: '8px 4px'`),
 

@@ -2,8 +2,8 @@
 
 ⚠️ This rule _warns_ in the 🌐 `all` config.
 
-💡 This rule is manually fixable by
-[editor suggestions](https://eslint.org/docs/latest/use/core-concepts#rule-suggestions).
+🔧 This rule is automatically fixable by the
+[`--fix` CLI option](https://eslint.org/docs/latest/use/command-line-interface#--fix).
 
 <!-- end auto-generated rule header -->
 

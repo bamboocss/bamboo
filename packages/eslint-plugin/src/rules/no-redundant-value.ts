@@ -114,21 +114,21 @@ const rule = createRule({
 
       context.report({
         data,
+        // Fixed rather than suggested, which is the exception in this plugin. The rest report a
+        // *preference* — `marginLeft` over `ml` is a choice a reader may disagree with, so the
+        // edit is theirs to make. Here the two spellings compute to the same thing, which is the
+        // rule's whole premise, so there is nothing to weigh up. It also only pays in bulk: the
+        // codebase this was written from holds the drift in the hundreds.
+        fix: (fixer) => {
+          // The quote style is taken from the source rather than assumed, so a fix does not
+          // rewrite `'…'` as `"…"` and fight the formatter. Every value this rule rewrites is a
+          // length, a colour or a keyword, so it cannot contain the quote it is wrapped in.
+          const text = context.sourceCode.getText(node)
+          const quote = text.at(0) === '`' || text.at(0) === '"' || text.at(0) === "'" ? text.at(0) : "'"
+          return fixer.replaceText(node, `${quote}${replacement}${quote}`)
+        },
         messageId: 'redundant',
         node,
-        suggest: [
-          {
-            data,
-            // The quote style is taken from the source rather than assumed, so a fix does not
-            // rewrite `'…'` as `"…"` and fight the formatter.
-            fix: (fixer) => {
-              const text = context.sourceCode.getText(node)
-              const quote = text.at(0) === '`' || text.at(0) === '"' || text.at(0) === "'" ? text.at(0) : "'"
-              return fixer.replaceText(node, `${quote}${replacement}${quote}`)
-            },
-            messageId: 'replace',
-          },
-        ],
       })
     }
 
@@ -179,10 +179,9 @@ const rule = createRule({
       description:
         'Report an edge or pair value written longer than it needs to be, where a shorter spelling sets exactly the same properties.',
     },
-    hasSuggestions: true,
+    fixable: 'code',
     messages: {
       redundant: '`{{value}}` sets the same edges as `{{replacement}}`.',
-      replace: 'Replace `{{value}}` with `{{replacement}}`.',
     },
     schema: [
       {
