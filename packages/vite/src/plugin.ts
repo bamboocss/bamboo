@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto'
+import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 import { logger } from '@bamboocss/logger'
@@ -357,6 +359,106 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
   }
 
   /**
+   * What each cross-file consumer was last handed, and what it last compiled to.
+   *
+   * Editing a shared module re-transforms everything that folded a value out of it, and most of
+   * those re-transforms recompute the bytes they already had: an edit to one export changes the
+   * consumers reading *that* export, not the ones reading something else from the same file.
+   * `foldDependentModules` uses this to tell those two apart.
+   *
+   * Digests, not text. Retaining every consumer's source and compiled output for the life of the
+   * process is the same order of memory as the ts-morph project already holding it; two 44-byte
+   * strings per entry is not, and it does not grow with module size. The set is bounded the way
+   * `dependenciesByFile` is — an entry exists only while a module's fold actually reads another
+   * file, which most modules never do — so a project that folds nothing across a boundary pays
+   * neither the bytes nor the hashing.
+   *
+   * The *input* digest is what makes the output digest safe to act on. The check below re-folds
+   * a consumer from disk, and disk is the right text only if that is what the last transform was
+   * handed: a module built by another plugin's `load`, or one edited in the same save, fails
+   * that comparison and is treated as changed. `path` is the spelling `transform` used, because
+   * ts-morph and the fold both key on it and Windows spells it more than one way.
+   */
+  const foldSignatures = new Map<string, { input: string; output: string; path: string }>()
+
+  const digest = (text: string) => createHash('sha256').update(text).digest('base64')
+
+  /**
+   * Consumers this edit cannot move, resolved once per watcher event.
+   *
+   * `hotUpdate` runs once per environment — client and ssr both — and the answer is a property
+   * of the files, not of which environment is asking. Cleared in `watchChange`, which every Vite
+   * in the peer range calls for every file event, before either update hook.
+   */
+  const unchangedFolds = new Map<string, boolean>()
+
+  /**
+   * Whether re-folding `dependent` now produces exactly the bytes it produced last time.
+   *
+   * Only the fold can answer that. The consumer's own source has not changed, so whether its
+   * compiled output moves depends entirely on what the edited module resolves to *this* time,
+   * and there is no cheaper way to learn that than to resolve it. Doing it here rather than
+   * waiting for the re-transform is the whole point: the decision is needed before the update is
+   * announced, and for a consumer that turns out to be unchanged this fold *replaces* the
+   * re-transform rather than adding to it.
+   *
+   * Conservative in every failure — no recorded signature, a file that will not read, a parse
+   * that returns nothing, a fold that throws — because "changed" is what this path did before,
+   * and a wrong "unchanged" is a stale class string in the browser.
+   */
+  const foldOutputUnchanged = (dependent: string) => {
+    const memoized = unchangedFolds.get(dependent)
+    if (memoized !== undefined) return memoized
+
+    const unchanged = refoldMatchesSignature(dependent)
+    unchangedFolds.set(dependent, unchanged)
+    return unchanged
+  }
+
+  const refoldMatchesSignature = (dependent: string) => {
+    const signature = foldSignatures.get(dependent)
+    if (!signature || !ctx || !runtimeCss || !styleCompiler) return false
+
+    try {
+      const code = readFileSync(signature.path, 'utf8')
+      if (digest(code) !== signature.input) return false
+
+      // `addSourceFile` returns the tree it already holds when the text matches, which it does
+      // here by the line above — so this is a parse and a fold, not a re-parse of the module.
+      const sourceFile = ctx.project.addSourceFile(signature.path, code)
+      const parserResult = ctx.project.parseSourceFile(signature.path)
+      if (!parserResult) return false
+
+      const result = foldSource({
+        ctx,
+        code,
+        parserResult,
+        filePath: signature.path,
+        runtimeCss,
+        styleCompiler,
+        maxRecipeStates,
+        parseModule: (path) => ctx?.project.parseSourceFile(path),
+        recipeConfigCache,
+        // Reaches only `skipped`, and `code` is what is being compared. Left off because the
+        // scan it enables wraps every identifier in the module to build a report nothing here
+        // reads.
+        reportSurvivors: false,
+        sourceFile,
+      })
+
+      // Re-recorded even when the answer is "unchanged", because *which* files a module folds
+      // from can move while the bytes it emits do not — a value now re-exported through a
+      // different module, say. Suppressing the announcement and leaving the old edges in place
+      // would mean the next edit to the new dependency reached nobody.
+      recordFoldDependencies(dependent, result.dependencies)
+
+      return digest(result.code) === signature.output
+    } catch {
+      return false
+    }
+  }
+
+  /**
    * Modules to re-transform because `file` changed, hard-invalidated on the way out.
    *
    * Invalidating is the fix. It drops the stale compiled result, which is the defect itself,
@@ -399,7 +501,43 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
     if (!dependents?.size) return
 
     const added: Module[] = []
-    for (const dependent of dependents) {
+    // Copied before it is walked: re-folding a dependent below re-records its edges, and that
+    // writes to this very set.
+    for (const dependent of [...dependents]) {
+      /**
+       * A consumer whose compiled bytes this edit does not move is left entirely alone.
+       *
+       * Announcing one tells the browser to refetch a module it already has verbatim: a round
+       * trip, and behind it — in a framework that re-drives HMR per entry, as react-router does
+       * with `reloadModule` in both its client and its ssr pass — a router revalidation.
+       *
+       * Skipping the *invalidation* follows from the same fact, and is where the cost actually
+       * sits. Vite only soft-invalidates a module that statically imports the changed one, which
+       * keeps its cached transform result and re-serves it for the price of rewriting import
+       * timestamps; hard-invalidating turns that into a full re-transform through every plugin
+       * in the chain. On a fan-out of twenty consumers of one shared module, editing a runtime
+       * value no fold reads took the transforms Bamboo runs for that edit from 22 to 2.
+       *
+       * How much that is worth depends on whether the consumer's import statement *survives* the
+       * fold. When it imports nothing from the module but the value being folded, the binding
+       * goes dead, esbuild drops the statement, and the only edge left is the non-static one
+       * `addWatchFile` created — which Vite hard-invalidates by itself, so declining to here
+       * saves nothing and the re-fold is pure cost. Import one more thing from the same module,
+       * which is the shape a real shared `ui.ts` has, and the statement stays, the consumer is a
+       * static importer, and Bamboo's invalidation is the only reason it re-transforms at all.
+       *
+       * Safe by what "identical" means. The invalidation exists to drop a compiled class string
+       * that no longer matches the source it was compiled from; when recompiling produces the
+       * same string, there is nothing stale to drop. Whichever way the module is reached next —
+       * Vite's own propagation, a later request, or nothing at all — the bytes it yields are the
+       * bytes this fold just computed.
+       *
+       * Nor can it mask an update Vite would have sent by itself. This only ever withholds a
+       * name Bamboo added; `modules` is passed through untouched. A consumer that also *imports*
+       * the edited module for a runtime value is still reached by `propagateUpdate` exactly as
+       * it would be with no plugin here at all — that direction was never this list's to decide.
+       */
+      if (foldOutputUnchanged(dependent)) continue
       for (const module of graph.getModulesByFile(dependent) ?? []) {
         if (modules.includes(module) || added.includes(module)) continue
         graph.invalidateModule(module)
@@ -478,6 +616,8 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
         recipeConfigCache.clear()
         dependentsByDependency.clear()
         dependenciesByFile.clear()
+        foldSignatures.clear()
+        unchangedFolds.clear()
         // Clears `startedEnvironments` too, so the `add` below opens the new run's list.
         resetStaticCompilationSession(staticSession)
       }
@@ -514,6 +654,12 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
      * the parser still holds the file.
      */
     watchChange(id, change) {
+      // Ahead of both guards below. This is the one hook Vite calls for *every* file event, on
+      // every version in the peer range, and it runs before the update hooks — which makes it
+      // the only point that reliably brackets a content change. A verdict about what a consumer
+      // folds to must not outlive one, whatever the changed file happened to be.
+      unchangedFolds.clear()
+
       if (!ctx) return
       if (!shouldTransform(id)) return
 
@@ -532,6 +678,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
         // Only as a consumer. Its edges as a *dependency* are the other modules' to retract,
         // on the re-transform this deletion is about to cause.
         recordFoldDependencies(normalizeFsPath(filePath), [])
+        foldSignatures.delete(normalizeFsPath(filePath))
         return
       }
 
@@ -627,6 +774,9 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
         // direction: fixing the *dependency* then re-transforms this module, which is how a
         // user gets out of the failure. Retracting would cost that, to save nothing.
         perFile.set(filePath, { folded: 0, skipped: new Map([['compile-failed', 1]]) })
+        // The signature is not, for the reason the edges are. It is a claim about output this
+        // pass did not produce, and acting on a stale one suppresses a real update.
+        foldSignatures.delete(normalizeFsPath(filePath))
         addSurvivor({ file: filePath, line: 1, name: 'compiler', reason: 'compile-failed' })
         if (command === 'serve') {
           // Normalized, never rethrown as caught. `catch` binds `unknown`, and anything under
@@ -687,10 +837,23 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
       }
       // The same edges, kept where `hotUpdate` can read them. `addWatchFile` alone does not
       // reach the dev server's soft invalidation — see `dependentsByDependency`.
-      recordFoldDependencies(normalizeFsPath(filePath), result.dependencies)
+      const dependentKey = normalizeFsPath(filePath)
+      recordFoldDependencies(dependentKey, result.dependencies)
+
+      // In lockstep with those edges. A signature is only ever consulted for a module that
+      // folded across a file boundary, and only meaningful while the edges still say it does.
+      if (result.dependencies.length) {
+        foldSignatures.set(dependentKey, { input: digest(code), output: digest(result.code), path: filePath })
+      } else {
+        foldSignatures.delete(dependentKey)
+      }
 
       const forFile = survivorsByFile.get(filePath)
       if (command === 'serve' && forFile?.length) {
+        // Retracted rather than kept: this module is about to fail to load, so what the browser
+        // ends up holding is an error and not the output just digested. Comparing against it on
+        // a later edit would call a module unchanged that never landed to begin with.
+        foldSignatures.delete(dependentKey)
         throw createSurvivorError(forFile)
       }
 

@@ -67,15 +67,19 @@ const driver = () => {
   const watchChange = hookOf(plugin.watchChange)
   const hotUpdate = hookOf(plugin.hotUpdate)
 
+  // `addWatchFile` is stubbed rather than asserted on; what it registers is covered by
+  // `fold-cross-file.test.ts`. This is about what the re-transform then produces.
+  const foldFile = async (file: string, code: string) => {
+    const result = await transform?.call({ addWatchFile() {} } as never, code, file, {} as never)
+    return typeof result === 'object' && result !== null ? result.code : null
+  }
+
   return {
     plugin,
     start: () => buildStart?.call({} as never, {} as never),
-    // `addWatchFile` is stubbed rather than asserted on; what it registers is covered by
-    // `fold-cross-file.test.ts`. This is about what the re-transform then produces.
-    fold: async (code = CONSUMER_CODE) => {
-      const result = await transform?.call({ addWatchFile() {} } as never, code, CONSUMER, {} as never)
-      return typeof result === 'object' && result !== null ? result.code : null
-    },
+    fold: (code = CONSUMER_CODE) => foldFile(CONSUMER, code),
+    /** The same, for a fixture with more than one consumer of the same dependency. */
+    foldFile,
     change: (event: 'update' | 'delete' | 'create') => watchChange?.call({} as never, DEPENDENCY, { event } as never),
     /** Vite 6 and up: one graph per environment, reached through the plugin context. */
     hot: (file: string, graph: ReturnType<typeof stubGraph>['graph'], modules: { id: string }[] = []) =>
@@ -264,6 +268,67 @@ describe('dev invalidation of modules that folded across files', () => {
     const six = stubGraph({ [CONSUMER]: [{ id: CONSUMER }] })
     expect(legacyHot(DEPENDENCY, { environments: {}, moduleGraph: six.graph })).toBeUndefined()
     expect(six.invalidated).toEqual([])
+  }, 60_000)
+})
+
+/**
+ * What a consumer is told when the edit cannot reach it.
+ *
+ * The invalidation above is correct and has to stay: a class is compiled into the module that
+ * *calls* a recipe or shares a style object, so a consumer's compiled string really can go stale
+ * when the module it read from changes. But "can" is not "did". Editing one export of a shared
+ * module moves the consumers that read *that* export; the ones reading something else from the
+ * same file recompile to the bytes they already have, and both the announcement and the
+ * invalidation for those are pure cost — a round trip for a module the browser holds verbatim,
+ * and a full re-transform in place of the cached result Vite would otherwise have re-served.
+ *
+ * These fixtures write the consumers to disk, which the ones above deliberately do not. That is
+ * load-bearing rather than incidental: the only way to know what a re-fold produces is to re-fold
+ * it, so the check reads the consumer's current source and compares its input against what the
+ * last transform was handed. A module it cannot read that way — a stub, a virtual module, one
+ * built by another plugin's `load` — falls through to "changed", which is what every test above
+ * exercises.
+ */
+describe('a dependent the edit does not actually change', () => {
+  const OTHER_CONSUMER = join(FIXTURE_DIR, 'other-consumer.tsx')
+
+  const consumerOf = (binding: string) =>
+    `import { css } from 'styled-system/css'\nimport { ${binding} } from './dep'\nexport const cls = css(${binding})\n`
+
+  const writePair = (alpha: string, beta: string) => {
+    mkdirSync(FIXTURE_DIR, { recursive: true })
+    writeFileSync(DEPENDENCY, `export const alpha = { color: '${alpha}' }\nexport const beta = { color: '${beta}' }\n`)
+    writeFileSync(CONSUMER, consumerOf('alpha'))
+    writeFileSync(OTHER_CONSUMER, consumerOf('beta'))
+  }
+
+  test('is not announced, and the one that changed still is', async () => {
+    const { start, foldFile, change, hot } = driver()
+
+    writePair('red.300', 'blue.500')
+    await start()
+    expect(await foldFile(CONSUMER, consumerOf('alpha'))).toContain('"c_red.300"')
+    expect(await foldFile(OTHER_CONSUMER, consumerOf('beta'))).toContain('"c_blue.500"')
+
+    // One export moves. `beta` is untouched, so the module reading it folds to the same bytes.
+    writePair('red.400', 'blue.500')
+    change('update')
+
+    const first = stubGraph({ [CONSUMER]: [{ id: CONSUMER }], [OTHER_CONSUMER]: [{ id: OTHER_CONSUMER }] })
+    expect(hot(DEPENDENCY, first.graph, [])).toEqual([{ id: CONSUMER }])
+    expect(first.invalidated, 'identical bytes have nothing stale to drop').toEqual([CONSUMER])
+
+    // What the browser does next with the module that was announced.
+    expect(await foldFile(CONSUMER, consumerOf('alpha'))).toContain('"c_red.400"')
+
+    // The other half of the same claim: suppression is per edit, not a state a module gets stuck
+    // in. Move `beta` this time and the two swap places.
+    writePair('red.400', 'blue.600')
+    change('update')
+
+    const second = stubGraph({ [CONSUMER]: [{ id: CONSUMER }], [OTHER_CONSUMER]: [{ id: OTHER_CONSUMER }] })
+    expect(hot(DEPENDENCY, second.graph, [])).toEqual([{ id: OTHER_CONSUMER }])
+    expect(second.invalidated).toEqual([OTHER_CONSUMER])
   }, 60_000)
 })
 
