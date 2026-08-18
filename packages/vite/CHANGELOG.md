@@ -1,5 +1,18 @@
 # @bamboocss/vite
 
+## 1.45.1
+
+### Patch Changes
+
+- Updated dependencies [2d97c50]
+  - @bamboocss/node@1.45.1
+  - @bamboocss/config@1.45.1
+  - @bamboocss/core@1.45.1
+  - @bamboocss/extractor@1.45.1
+  - @bamboocss/logger@1.45.1
+  - @bamboocss/shared@1.45.1
+  - @bamboocss/types@1.45.1
+
 ## 1.45.0
 
 ### Patch Changes
