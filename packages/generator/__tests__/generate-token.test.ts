@@ -3,11 +3,15 @@ import type { Config } from '@bamboocss/types'
 import postcss from 'postcss'
 import { describe, expect, test } from 'vitest'
 
+import { assertValidLightDark } from './light-dark-arity'
+
 const tokenCss = (config?: Config) => {
   const ctx = createContext(config)
   const sheet = ctx.createSheet()
   ctx.appendCssOfType('tokens', sheet)
-  return sheet.toCss()
+  // Every sheet this suite produces, not just the ones a test reads. See the helper's header:
+  // `toContain('light-dark(')` passes on an invalid three-argument call.
+  return assertValidLightDark(sheet.toCss())
 }
 
 describe('generator', () => {
