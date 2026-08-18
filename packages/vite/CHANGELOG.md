@@ -1,5 +1,17 @@
 # @bamboocss/vite
 
+## 1.45.4
+
+### Patch Changes
+
+- @bamboocss/node@1.45.4
+- @bamboocss/config@1.45.4
+- @bamboocss/core@1.45.4
+- @bamboocss/extractor@1.45.4
+- @bamboocss/logger@1.45.4
+- @bamboocss/shared@1.45.4
+- @bamboocss/types@1.45.4
+
 ## 1.45.3
 
 ### Patch Changes
