@@ -4,7 +4,6 @@
     "allowJs": false,
     "allowSyntheticDefaultImports": true,
     "declaration": true,
-    "downlevelIteration": true,
     "ignoreDeprecations": "6.0",
     "esModuleInterop": true,
     "jsx": "preserve",

@@ -1,11 +1,11 @@
 import type { Context } from '@bamboocss/core'
-import composition from '../generated/composition.d.ts.json' assert { type: 'json' }
-import csstype from '../generated/csstype.d.ts.json' assert { type: 'json' }
-import pattern from '../generated/pattern.d.ts.json' assert { type: 'json' }
-import recipe from '../generated/recipe.d.ts.json' assert { type: 'json' }
-import selectors from '../generated/selectors.d.ts.json' assert { type: 'json' }
-import staticCss from '../generated/static-css.d.ts.json' assert { type: 'json' }
-import system from '../generated/system-types.d.ts.json' assert { type: 'json' }
+import composition from '../generated/composition.d.ts.json' with { type: 'json' }
+import csstype from '../generated/csstype.d.ts.json' with { type: 'json' }
+import pattern from '../generated/pattern.d.ts.json' with { type: 'json' }
+import recipe from '../generated/recipe.d.ts.json' with { type: 'json' }
+import selectors from '../generated/selectors.d.ts.json' with { type: 'json' }
+import staticCss from '../generated/static-css.d.ts.json' with { type: 'json' }
+import system from '../generated/system-types.d.ts.json' with { type: 'json' }
 
 export function getGeneratedTypes(ctx: Context) {
   return {

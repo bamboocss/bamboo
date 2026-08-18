@@ -18,7 +18,7 @@
     "@bamboocss/dev": "workspace:*",
     "@bamboocss/vite": "workspace:*",
     "@preact/preset-vite": "2.10.2",
-    "typescript": "6.0.2",
+    "typescript": "7.0.2",
     "vite": "7.2.6",
     "vite-tsconfig-paths": "5.1.4"
   }

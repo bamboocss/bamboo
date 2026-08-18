@@ -139,13 +139,11 @@ const fixtureDefaults = {
 
 export const createGeneratorContext = (userConfig?: Record<string, unknown>) => {
   const resolvedConfig = mergeConfigs([
-    // @ts-expect-error - TODO explain why this is needed
-    fixtureDefaults.config as unknown,
-    // @ts-expect-error - TODO explain why this is needed
-    sandboxConfig as unknown,
+    fixtureDefaults.config,
+    sandboxConfig,
     { importMap: './bamboo' },
     ...(userConfig ? [userConfig] : []),
-  ]) as unknown as UserConfig
+  ] as unknown as Parameters<typeof mergeConfigs>[0]) as unknown as UserConfig
 
   return new Generator({
     ...fixtureDefaults,

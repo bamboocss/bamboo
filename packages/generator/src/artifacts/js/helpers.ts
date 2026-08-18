@@ -1,5 +1,5 @@
 import { outdent } from 'outdent'
-import helpersMjs from '../generated/helpers.mjs.json' assert { type: 'json' }
+import helpersMjs from '../generated/helpers.mjs.json' with { type: 'json' }
 
 export function generateHelpers() {
   return {

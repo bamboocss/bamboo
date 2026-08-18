@@ -4,7 +4,7 @@ import { unionType } from '@bamboocss/shared'
 import outdent from 'outdent'
 
 import type { UserConfig } from '@bamboocss/types'
-import csstype from '../generated/csstype.d.ts.json' assert { type: 'json' }
+import csstype from '../generated/csstype.d.ts.json' with { type: 'json' }
 
 export function generateStyleProps(ctx: Context) {
   const props = new Set(allCssProperties.concat(ctx.utility.keys()).filter(Boolean))
