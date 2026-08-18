@@ -934,12 +934,18 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
       // A class this environment compiled is already gone from a stylesheet another one
       // finalized.
       //
-      // The prune gate in `css.ts` holds pruning back until every environment of the run has
-      // contributed, so reaching this means the run never announced how many that would be —
-      // it drove `builder.build(environment)` itself rather than going through `vite build` or
-      // `builder.buildApp()`, and configured no `builder`. Left alone the build is green, the
-      // markup carries real class names, and the elements render unstyled; that is the exact
-      // failure this whole change is about, so it fails here instead.
+      // This is the safety net the prune gate in `css.ts` leans on. That gate prunes against
+      // whatever the *emitting* environment compiled rather than waiting for the whole run,
+      // because waiting meant never pruning in any SSR framework — the client emits the
+      // stylesheet and finishes before the server environment starts. The cost of not waiting
+      // is that a class only a later environment reaches can be pruned out from under it.
+      //
+      // Left alone that build is green, the markup carries real class names, and the elements
+      // render unstyled — the one failure shape that survives every other check here. So it
+      // fails instead, naming the classes.
+      //
+      // A styled component that renders only on the server is what trips this; anything the
+      // client also renders is compiled in both environments and never lands here.
       //
       // `prunedClasses` is only ever filled by a prune that already ran, and a prune keeps
       // everything marked used, so an intersection can only mean a marker that arrived after.
@@ -956,11 +962,11 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
               lost.map((className) => `  ${className}`),
               { unit: 'class', separator: '\n' },
             )}\n\n` +
-            `The stylesheet is finalized by the environment that imports it, so pruning it is only safe once every ` +
-            `environment has been compiled. This build did not say how many there would be: it called ` +
-            `\`builder.build(environment)\` directly. Run it through \`vite build\`, call \`builder.buildApp()\`, or ` +
-            `set \`builder: {}\` in the Vite config so the environments are known before the first one builds. ` +
-            `\`bamboocss({ pruneCss: false })\` also turns pruning off entirely.`,
+            `The stylesheet is finalized by the environment that imports it — the client, which builds first — so it ` +
+            `is pruned against what that environment compiled. These classes are reached only from here, so no rule ` +
+            `for them survived.\n\n` +
+            `That usually means a styled component which renders only on the server. Either give the client a path ` +
+            `to it, or set \`bamboocss({ pruneCss: false })\` to ship the whole extracted stylesheet.`,
         )
       }
 

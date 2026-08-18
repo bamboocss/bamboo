@@ -571,25 +571,41 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
         ).environment
 
         /**
-         * Every environment of this run has already had its modules compiled.
+         * Pruned against what this environment compiled, without waiting for the rest.
          *
-         * Reachability is what pruning removes rules against, and it is only complete once
-         * nothing is left to contribute to it. The stylesheet is emitted and finalized by the
-         * environment that *imports* it, which in an SSR app is the client — and the client
-         * builds first, before the server environment has transformed a single module. Pruning
-         * there deletes every rule for a class only the server graph reaches, and the pages
-         * link the pruned copy: one project lost 39% of its atoms that way, presenting as
-         * rarely-used classes such as `md:{display:inline-block}` silently not applying.
+         * The stylesheet is emitted and finalized by the environment that *imports* it, which
+         * in an SSR app is the client — and the client builds first, before the server
+         * environment has transformed a single module. Waiting for a complete answer therefore
+         * meant never pruning at all in any SSR framework: react-router, Remix, Nuxt, SvelteKit
+         * and Qwik all build the client first, and the client's output is on disk before the
+         * server environment starts. That is most production apps, and the feature was inert in
+         * every one of them — silently, since a build with nothing to prune looks identical.
          *
-         * So the full extracted stylesheet ships instead, which is what `pruneCss: false` asks
-         * for by hand. Being the last environment is not the common case — frameworks build the
-         * client first — but it is the only one where the answer is knowable, and a framework
-         * that builds its server bundle first does get pruned output.
+         * The reason for waiting was real: a class only the server graph reaches is not in this
+         * environment's reachability set, so pruning here removes rules the server-rendered
+         * markup still names. What makes it safe to prune anyway is that the mistake is
+         * *detectable* rather than silent — `buildEnd` in `plugin.ts` intersects every later
+         * environment's compiled classes against `prunedClasses` and fails the build naming
+         * them. A styled component that only ever renders on the server is the shape that
+         * trips it, and `pruneCss: false` is the answer when it does.
+         *
+         * So the trade is deliberate: a loud build failure in the rare case, in exchange for
+         * the feature working at all in the common one. It is the same reasoning as the
+         * unimported-`virtual:bamboo.css` check — a class with no rule behind it must never
+         * leave the build quietly.
          */
         const pending = remainingEnvironments(session)
+        if (pending.length) {
+          logger.debug(
+            'vite',
+            `Pruning against the ${JSON.stringify(environment?.name ?? 'default')} environment with ` +
+              `${truncateList(pending, { unit: 'environment', separator: ', ' })} still to compile. A class ` +
+              `only those reach fails the build rather than shipping without its rule.`,
+          )
+        }
 
         const { sheets } = optimizeStaticCssAssets(bundle, session, {
-          prune: pruneCss && pending.length === 0,
+          prune: pruneCss,
           // Per environment rather than from the session, which one `configResolved` per
           // environment leaves holding whichever resolved last.
           sourcemap: environment?.config?.build?.sourcemap,
@@ -600,18 +616,6 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
         // that quietly stopped pruning looked exactly like one that had nothing to prune.
         if (sheets && !pruneCss) {
           logger.info('vite', 'Reachability pruning is off (`pruneCss: false`). The full extracted stylesheet ships.')
-        } else if (sheets && pending.length) {
-          // Named rather than counted, and phrased as "not compiled" rather than "builds
-          // later": an environment this run declares but never builds also lands here, and
-          // saying it comes next would be wrong about the one case a reader cannot check.
-          logger.info(
-            'vite',
-            `Reachability pruning skipped: the stylesheet is emitted by the ${JSON.stringify(
-              environment?.name ?? 'default',
-            )} environment, and ${truncateList(pending, { unit: 'environment', separator: ', ' })} ` +
-              `${pending.length === 1 ? 'has' : 'have'} not been compiled in this run. The full extracted ` +
-              `stylesheet ships — nothing is missing from it.`,
-          )
         }
 
         // A stylesheet that vanishes between here and disk is the worst shape a failure takes:

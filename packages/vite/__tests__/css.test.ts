@@ -296,9 +296,9 @@ describe('late CSS asset renaming', () => {
  * Pruning never goes off in silence.
  *
  * It is the difference between the stylesheet a project extracted and the one it ships, and
- * there are two ways for it not to happen — the user asked, or an environment of this run has
- * not been compiled yet. Both print, and the docs promise they do. Nothing asserted that until
- * now: swapping the two branches, or deleting either, broke no test.
+ * there is now one way for it not to happen: the user asked. Waiting on an uncompiled
+ * environment used to be a second, and made the feature inert in every SSR framework — the
+ * client emits the sheet and finishes before the server environment starts.
  *
  * Driven through the real `generateBundle` hook rather than `optimizeStaticCssAssets`, because
  * the branch under test is the caller's, not the helper's.
@@ -338,23 +338,23 @@ describe('saying why the stylesheet was not pruned', () => {
     expect(source, 'nothing removed').toContain('345.6789px')
   })
 
-  test('says which environment it is waiting on', async () => {
-    const { lines, source } = await generate({ pending: ['ssr'] })
+  /**
+   * `buildEnd` in `plugin.ts` is what catches a class only a later environment reaches, so
+   * this no longer waits for one. Waiting was the whole reason the feature never ran under
+   * react-router, Remix, Nuxt, SvelteKit or Qwik.
+   */
+  test('prunes even with an environment still to compile', async () => {
+    const { source } = await generate({ pending: ['ssr'] })
 
-    expect(lines).toContain('ssr')
-    expect(lines).toContain('not been compiled')
-    expect(source, 'nothing removed').toContain('345.6789px')
+    expect(source, 'the unreachable atom went').not.toContain('345.6789px')
   })
 
-  /**
-   * The user's own setting wins the explanation. Blaming an uncompiled environment for a
-   * choice they made in their config sends them to debug the wrong thing entirely.
-   */
-  test('attributes it to the setting rather than the environment when both apply', async () => {
-    const { lines } = await generate({ pruneCss: false, pending: ['ssr'] })
+  /** The user's own setting still wins, and still stops the pruning outright. */
+  test('honours pruneCss: false regardless of pending environments', async () => {
+    const { lines, source } = await generate({ pruneCss: false, pending: ['ssr'] })
 
     expect(lines).toContain('pruneCss: false')
-    expect(lines).not.toContain('not been compiled')
+    expect(source, 'nothing removed').toContain('345.6789px')
   })
 
   test('says nothing when it did prune', async () => {

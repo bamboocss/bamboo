@@ -210,24 +210,30 @@ that and keep the pruning. The build prints one line whenever pruning is off, so
 ### Builds with more than one environment
 
 An SSR framework builds a client bundle and a server bundle, and the stylesheet is emitted and finalized by the one that
-imports it — usually the client, which finishes before the server environment has compiled anything. Pruning it there
-would drop every rule for a class only the server graph reaches, so Bamboo prunes only once every environment the run
-declared has been compiled, and names the ones outstanding when it does not:
+imports it — usually the client, which finishes before the server environment has compiled anything. The sheet is pruned
+against what that environment compiled, without waiting for the rest.
+
+Waiting was the old behaviour, and it meant never pruning at all: react-router, Remix, Nuxt, SvelteKit and Qwik all
+build the client first, so the feature was inert in most production apps — silently, since a build with nothing to prune
+looks exactly like one that skipped it.
+
+The case that costs is a class only the server graph reaches. Its rule is pruned, and rather than ship markup naming a
+class with no rule behind it, the build fails and names them:
 
 ```
-🎋 info [vite] Reachability pruning skipped: the stylesheet is emitted by the "client"
-   environment, and ssr has not been compiled in this run. The full extracted stylesheet
-   ships — nothing is missing from it.
+bamboocss: 2 class(es) compiled in the "ssr" environment were already pruned out of a
+stylesheet emitted by an earlier one. Elements carrying them would render unstyled.
+
+  md\:d_inline-block
+  h_\[31\.3px\]
 ```
 
-An environment a run declares and then never builds reads the same way, which is why the message says "not compiled in
-this run" rather than "builds later" — that is the one case a reader cannot check for themselves.
+A styled component that renders only on the server is what trips this; anything the client also renders is compiled in
+both environments and never reaches it. Either give the client a path to that component, or set `pruneCss: false` to
+ship the whole extracted stylesheet.
 
-Nothing to configure: `vite build` announces its environments, and so does any framework that sets `builder`. A script
-driving `builder.build(environment)` itself does not, and Bamboo cannot tell the first environment it is not the last —
-so it prunes, and fails the build if a later environment turns out to compile a class that was pruned. Call
-`builder.buildApp()`, or set `builder: {}` in the Vite config, and the environments are known before the first one
-builds.
+Nothing to configure, and nothing about how the run is driven changes the outcome — `vite build`, `builder.buildApp()`
+and a script calling `builder.build(environment)` itself all behave the same way.
 
 ### Seeing every diagnostic
 

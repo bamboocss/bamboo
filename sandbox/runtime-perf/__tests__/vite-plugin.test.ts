@@ -815,7 +815,17 @@ describe('two build environments, one plugin instance', () => {
     vi.restoreAllMocks()
   })
 
+  /**
+   * The subject here is the stylesheet's emission, not its pruning, so the ssr entry is
+   * rewritten to reach only classes the client reaches too. Left as the shared fixture writes
+   * it, this fails on the ssr-only classes instead — a true result about the wrong thing.
+   */
   test('an ssr environment does not have to import the stylesheet', async () => {
+    writeFileSync(
+      envSsrEntry,
+      `import { css } from '../styled-system/css'\nexport const b = css({ width: '[31.1px]' })\n`,
+    )
+
     const css = await buildBothEnvironments(await twoEnvironmentBuilder(true))
 
     expect(css).toContain('--made-with-bamboo')
@@ -825,22 +835,49 @@ describe('two build environments, one plugin instance', () => {
   /**
    * The stylesheet is emitted and pruned by the environment that imports it, and in an SSR app
    * that is the client — which builds *first*, before the server environment has transformed a
-   * single module. Reachability was therefore incomplete when pruning ran, and every rule for a
-   * class only the server graph reaches was deleted from the one copy the pages link.
+   * single module. A class only the server graph reaches is therefore not in the reachability
+   * set the prune consults, and its rule goes.
    *
-   * One project lost 39% of its atoms to this. It presented as rarely-used classes silently not
+   * Holding pruning back until the whole run had contributed was the old answer, and it meant
+   * never pruning at all under react-router, Remix, Nuxt, SvelteKit or Qwik — every one builds
+   * the client first. The feature was inert in most production apps, silently, because a build
+   * with nothing to prune looks exactly the same.
+   *
+   * So it prunes, and this is the case where that is wrong. It has to fail: one project lost
+   * 39% of its atoms to a silent version of this, presenting as rarely-used classes not
    * applying, `md:{display:inline-block}` among them — a conditional atom is exactly the kind
    * only one of the two graphs tends to reach.
    */
-  test('a class only the later environment reaches keeps its rule', async () => {
-    const css = await buildBothEnvironments(await twoEnvironmentBuilder(true))
+  test('a class only the later environment reaches fails the build', async () => {
+    const builder = await twoEnvironmentBuilder(true)
+
+    await expect(buildBothEnvironments(builder)).rejects.toThrow(/already pruned out of a stylesheet/)
+  }, 180_000)
+
+  /**
+   * `pruneCss: false` is the way out, and it has to actually be one — the escape hatch for
+   * this is worthless if the build fails before the user can take it.
+   */
+  test('pruneCss: false keeps a class only the later environment reaches', async () => {
+    const css = await buildBothEnvironments(
+      await createBuilder({
+        root: cwd,
+        logLevel: 'silent',
+        css: { postcss: { plugins: [] } },
+        plugins: [bamboocss({ cwd, reportSummary: false, pruneCss: false })],
+        build: { write: false, minify: false, rollupOptions: { external: [/^react/] } },
+        builder: {},
+        environments: {
+          client: { build: { lib: { entry: envClientEntry, formats: ['es'], fileName: 'env-client' } } },
+          ssr: { build: { ssr: true, lib: { entry: envSsrEntry, formats: ['es'], fileName: 'env-ssr' } } },
+        },
+      }),
+    )
 
     expect(css, 'the client class').toContain('31.1px')
     expect(css, 'the class only the ssr environment reaches').toContain('31.3px')
     expect(css, 'the condition only the ssr environment reaches').toContain('inline-block')
-    // The cost of being correct here, asserted rather than implied: nothing is pruned when
-    // the sheet is finalized before the run is, so the unselected variant ships too.
-    expect(css, 'pruning is held back entirely, not selectively').toContain('31.7px')
+    expect(css, 'nothing is pruned at all').toContain('31.7px')
   }, 180_000)
 
   /**
@@ -863,9 +900,9 @@ describe('two build environments, one plugin instance', () => {
   /**
    * A run that builds environments itself, without saying how many there are.
    *
-   * Nothing can tell that first environment it is not the last, so pruning goes ahead and the
-   * class the second one compiles is already gone. Green build, real class names in the markup,
-   * unstyled elements — so the second environment fails the build instead of shipping it.
+   * Same outcome as the announced case above, and deliberately so: pruning no longer waits on
+   * the environment count, so announcing it cannot change what ships. This stays a test of its
+   * own because the two setups reach the guard by different routes.
    */
   test('fails loudly when the run never announced its environments', async () => {
     const builder = await twoEnvironmentBuilder(false)
