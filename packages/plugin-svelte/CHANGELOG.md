@@ -1,5 +1,11 @@
 # @bamboocss/plugin-svelte
 
+## 1.45.4
+
+### Patch Changes
+
+- @bamboocss/types@1.45.4
+
 ## 1.45.3
 
 ### Patch Changes
