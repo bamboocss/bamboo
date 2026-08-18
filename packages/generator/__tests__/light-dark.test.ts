@@ -37,6 +37,80 @@ describe('light-dark()', () => {
   })
 
   /**
+   * `light-dark()` takes exactly two arguments and CSS cannot group a list into one of them,
+   * so folding a multi-part shadow produced `light-dark(a, b, c)` — invalid, dropped by the
+   * browser, and silent. Every element carrying the token rendered unshadowed while its class
+   * looked right. A realistic elevation token is almost always two shadows, so this hit whole
+   * design systems at once rather than an edge case.
+   */
+  test('leaves a token whose light arm is a comma-separated list alone', () => {
+    const css = tokenCss({
+      theme: {
+        extend: {
+          semanticTokens: {
+            shadows: {
+              sm: {
+                value: {
+                  base: '0 1px 2px rgb(16 19 26 / 0.06), 0 1px 3px rgb(16 19 26 / 0.04)',
+                  _osDark: '0 1px 2px rgb(0 0 0 / 0.3)',
+                },
+              },
+            },
+          },
+        },
+      },
+    } as Config)
+
+    expect(css).not.toContain('light-dark(')
+    expect(css).toContain('prefers-color-scheme: dark')
+  })
+
+  test('leaves a token whose dark arm is a comma-separated list alone', () => {
+    const css = tokenCss({
+      theme: {
+        extend: {
+          semanticTokens: {
+            shadows: {
+              sm: { value: { base: '0 1px 2px rgb(0 0 0 / 0.1)', _osDark: '0 1px 2px red, 0 2px 4px blue' } },
+            },
+          },
+        },
+      },
+    } as Config)
+
+    expect(css).not.toContain('light-dark(')
+    expect(css).toContain('prefers-color-scheme: dark')
+  })
+
+  /**
+   * The guard is depth-aware, not a `includes(',')`. Legacy `rgb()` notation carries its own
+   * commas and is a single value, so it must still fold.
+   */
+  test('still folds a value whose commas are inside a function', () => {
+    const css = tokenCss(semantic({ panel: { value: { base: 'rgb(16, 19, 26)', _osDark: 'rgb(255, 255, 255)' } } }))
+
+    expect(css).toContain('--colors-panel: light-dark(rgb(16, 19, 26), rgb(255, 255, 255))')
+  })
+
+  /** A token that cannot fold must not suppress folding for one that can. */
+  test('folds the foldable token and leaves the list token on the media block', () => {
+    const css = tokenCss({
+      theme: {
+        extend: {
+          semanticTokens: {
+            colors: { panel: { value: { base: '#ffffff', _osDark: '#131211' } } },
+            shadows: { sm: { value: { base: '0 1px 2px red, 0 2px 4px blue', _osDark: '0 1px 2px black' } } },
+          },
+        },
+      },
+    } as Config)
+
+    expect(css).toContain('--colors-panel: light-dark(#ffffff, #131211)')
+    expect(css).toContain('prefers-color-scheme: dark')
+    expect(css).toContain('color-scheme: light dark')
+  })
+
+  /**
    * The light arm and an `@media (prefers-color-scheme: light)` block would both be in play
    * for one var, and the block wins on order — so the arm would be dead code. Three-way
    * tokens keep the mechanism they had.

@@ -14,6 +14,46 @@ const normalize = (condition: ConditionQuery | undefined) =>
   typeof condition === 'string' ? condition.replace(/\s+/g, ' ').trim() : undefined
 
 /**
+ * Does this value carry a comma at the top level?
+ *
+ * `light-dark()` takes exactly two arguments, and CSS offers no way to group a
+ * comma-separated value into one of them — there is no parenthesized form of a shadow list.
+ * So a token whose light or dark arm is itself a list cannot be folded: the arms splat into
+ * three or more arguments, the function is invalid, and the browser drops the whole
+ * declaration. That failure is silent and total — a `--shadows-sm` carrying two shadows
+ * emitted `light-dark(a, b, c)` and every element referencing it rendered with no shadow at
+ * all, while the class naming it looked perfectly correct.
+ *
+ * Multi-part `box-shadow` is the shape that bites, since a realistic elevation token is
+ * almost always two shadows; `transition` and `background` lists are the same story.
+ *
+ * Depth-aware, so `rgb(16, 19, 26)` still folds — its commas are the function's own.
+ * Quote-aware, so a font stack's `"Foo, Bar"` is not mistaken for a separator.
+ */
+const hasTopLevelComma = (value: string) => {
+  let depth = 0
+  let quote: string | undefined
+
+  for (let index = 0; index < value.length; index++) {
+    const char = value[index]
+
+    if (quote) {
+      // Skip the escaped character rather than inspecting it, so `"a\",b"` stays one string.
+      if (char === '\\') index++
+      else if (char === quote) quote = undefined
+      continue
+    }
+
+    if (char === '"' || char === "'") quote = char
+    else if (char === '(') depth++
+    else if (char === ')') depth--
+    else if (char === ',' && depth === 0) return true
+  }
+
+  return false
+}
+
+/**
  * Collapse a token's `base`/`_osDark` pair into a single `light-dark()` declaration.
  *
  * Two declarations and a whole `@media (prefers-color-scheme: dark)` block become one line,
@@ -51,6 +91,9 @@ function foldLightDark(vars: Map<string, Map<string, string>>, conditions: Condi
   for (const [name, darkValue] of osDark) {
     const lightValue = base.get(name)
     if (lightValue === undefined || osLight?.has(name)) continue
+    // Either arm being a list makes the folded function invalid. Such a token keeps the
+    // `@media` mechanism, which expresses a list perfectly well.
+    if (hasTopLevelComma(lightValue) || hasTopLevelComma(darkValue)) continue
     nextBase.set(name, `light-dark(${lightValue}, ${darkValue})`)
     nextDark.delete(name)
   }
