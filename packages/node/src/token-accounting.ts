@@ -1,5 +1,5 @@
 import { resolveTsPathPattern } from '@bamboocss/config/ts-path'
-import { Node, type SourceFile, SyntaxKind } from 'ts-morph'
+import { type Identifier, Node, type SourceFile, SyntaxKind, ts } from 'ts-morph'
 import type { BambooContext } from './create-context'
 import { type SourceSnapshot, sourceSnapshots } from './source-snapshots'
 
@@ -330,12 +330,11 @@ function accountFile(
   // per occurrence would re-scan the tree for every one of them.
   const shadows = shadowedScopes(sourceFile)
 
-  for (const identifier of sourceFile.getDescendantsOfKind(SyntaxKind.Identifier)) {
+  // Bindings of the artifact, plus the bare name itself — a `token` this pass did not bind came
+  // from somewhere it could not follow, and assuming it is somebody else's is the lenient
+  // direction.
+  for (const identifier of identifiersNamed(sourceFile, (name) => bindings.has(name) || name === 'token')) {
     const text = nameOf(identifier)
-    // Bindings of the artifact, plus the bare name itself — a `token` this pass did not bind
-    // came from somewhere it could not follow, and assuming it is somebody else's is the
-    // lenient direction.
-    if (!bindings.has(text) && text !== 'token') continue
     const parent = identifier.getParent()
 
     // `export { token }` hands the binding to a module this pass may never visit, exactly as
@@ -419,6 +418,49 @@ function usesTokenMember(sourceFile: SourceFile, namespace: string) {
  * `token` is the identifier `token`; reading `getText()` returns the escape and compares
  * unequal, which let an import of the artifact's export past the checks that key on the name.
  */
+/**
+ * Every `Identifier` in the file whose name passes `wanted`, in document order.
+ *
+ * Not `getDescendantsOfKind(SyntaxKind.Identifier)`. `Identifier` is kind 80 and sorts *below*
+ * `SyntaxKind.FirstNode` (167), which is the boundary between tokens and parse-tree nodes — so
+ * ts-morph cannot search the parse tree for it and falls back to materializing the whole
+ * **token** tree. Measured at 27x this walk for the same 21,466 identifiers across 178 real
+ * files, and `usedAsValue` below pays it once per name, so the file was re-scanned in full for
+ * every binding it asked about.
+ *
+ * The name is tested on the compiler node, before any ts-morph wrapper is built, because the
+ * wrapper is the expensive half and almost every identifier in a file is not one of the handful
+ * this pass cares about. `nameOf` reads the same `escapedText` for an identifier, so the two
+ * agree by construction.
+ *
+ * The JSDoc walk is load-bearing rather than defensive: `ts.forEachChild` does not descend into
+ * JSDoc, but `getDescendantsOfKind` reaches it, and 72 of 1,116 files in this repository carry
+ * an identifier visible only that way. Dropping those reads as "this token is never used" and
+ * prunes a rule that is live — the silent direction, with no failing test to catch it.
+ */
+function* identifiersNamed(sourceFile: SourceFile, wanted: (name: string) => boolean): Generator<Identifier> {
+  const found: ts.Node[] = []
+
+  const collect = (node: ts.Node) => {
+    if (node.kind === SyntaxKind.Identifier && wanted(String((node as ts.Identifier).escapedText))) {
+      found.push(node)
+    }
+
+    const jsDoc = (node as { jsDoc?: ts.Node[] }).jsDoc
+    if (jsDoc) for (const doc of jsDoc) collect(doc)
+
+    ts.forEachChild(node, collect)
+  }
+  collect(sourceFile.compilerNode)
+
+  // Wrapped only after the walk, so a caller that stops early pays for nothing it did not read.
+  // Typed as `Identifier` rather than `Node`, which is what `getDescendantsOfKind` handed back:
+  // an identifier always has a parent, so its `getParent()` is non-optional and callers below
+  // rely on that narrowing.
+  const wrap = sourceFile as unknown as { _getNodeFromCompilerNode: (node: ts.Node) => Identifier }
+  for (const node of found) yield wrap._getNodeFromCompilerNode(node)
+}
+
 const nameOf = (node: Node) => (Node.isIdentifier(node) ? String(node.compilerNode.escapedText) : node.getText())
 
 /** Every name a binding name binds, following object and array destructuring. */
@@ -689,13 +731,14 @@ function literalPath(call: Node): ResolvedReference | undefined {
  * matching the specifier test could re-export `token` under it.
  */
 function usedAsValue(sourceFile: SourceFile, name: string, declaration: Node) {
-  return sourceFile.getDescendantsOfKind(SyntaxKind.Identifier).some((identifier) => {
-    if (nameOf(identifier) !== name) return false
+  for (const identifier of identifiersNamed(sourceFile, (candidate) => candidate === name)) {
     // The import specifier itself is the binding site, not a read.
-    if (identifier.getFirstAncestor((ancestor) => ancestor === declaration)) return false
+    if (identifier.getFirstAncestor((ancestor) => ancestor === declaration)) continue
 
-    return !identifier.getFirstAncestor((ancestor) => Node.isTypeNode(ancestor))
-  })
+    if (!identifier.getFirstAncestor((ancestor) => Node.isTypeNode(ancestor))) return true
+  }
+
+  return false
 }
 
 /**

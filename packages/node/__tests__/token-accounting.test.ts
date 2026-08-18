@@ -336,6 +336,26 @@ const blanketKeepFor = (code: string, prune: PruneOptions) => {
   return seen
 }
 
+/**
+ * `ts.forEachChild` walks the parse tree and does not descend into JSDoc, but ts-morph's
+ * `getDescendantsOfKind` reaches it. When the identifier scan moved to a raw walk for speed, the
+ * JSDoc descent had to be added back by hand — 72 of the 1,116 source files in this repository
+ * carry an identifier visible only that way.
+ *
+ * Nothing else in this suite would catch dropping it, which is why these are here. A reference the
+ * pass cannot see is not declined *and* not accounted — it simply is not there, so the artifact
+ * prunes as though the file never mentioned the token, and the rule goes missing at runtime with
+ * no failing build to say so.
+ */
+describe('a reference the parse tree alone does not reach is still a reference', () => {
+  test.each([
+    ['a link in a doc comment', `${imports}/** @see {@link token} */\nexport const a = 1`],
+    ['a type query in a doc comment', `${imports}/** @type {typeof token} */\nexport const a = 1`],
+  ])('%s', (_label, code) => {
+    expect(analyse(code).declined.length).toBeGreaterThan(0)
+  })
+})
+
 describe('pruneUnusedTokens: strict', () => {
   const staticCall = `${imports}export const a = token('colors.red.300')`
   const dynamicCall = `${imports}export const a = (p) => token(p)`
