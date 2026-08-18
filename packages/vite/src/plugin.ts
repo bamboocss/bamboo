@@ -387,7 +387,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
    * one can end in a page reload, which is the honest outcome: its compiled classes really did
    * change, and a reload is what Vite does with any update nothing accepts.
    */
-  const foldDependentModules = <Module extends { id?: string | null }>(
+  const foldDependentModules = <Module extends { id?: string | null; isSelfAccepting?: boolean }>(
     file: string,
     modules: readonly Module[],
     graph: {
@@ -407,10 +407,25 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
       }
     }
     if (!added.length) return
-    // Gated on the list Vite is about to propagate from rather than on the graph, because that
-    // is the thing being duplicated. An earlier plugin that empties it has left nothing to
-    // propagate, and this is then the only announcement there will be.
-    if (modules.length) return
+    /**
+     * Gated on whether Vite's own pass will actually *reach* these modules, not merely on whether
+     * it has something to propagate from.
+     *
+     * `propagateUpdate` stops at the first self-accepting module and never walks its importers.
+     * So when every module Vite matched for the changed file accepts itself — which is what React
+     * Fast Refresh makes of any file exporting a component — the consumers that folded a value out
+     * of it are hard-invalidated here and then never announced to anybody. The browser keeps
+     * running the module it already has, with the class string compiled from the *previous*
+     * contents, until something else forces a reload. Editing a component that a sibling folds
+     * from is the ordinary way to meet that.
+     *
+     * A module that does not accept itself does propagate outward, and `addWatchFile` has made
+     * each consumer a direct importer, so Vite sends the same update by itself; naming them again
+     * is the duplication measured in the doc comment above. Hence `some` rather than `length`:
+     * one non-self-accepting module is enough for the walk to arrive. An empty list keeps its old
+     * meaning — nothing to duplicate, so this is the only announcement there will be.
+     */
+    if (modules.some((module) => !module.isSelfAccepting)) return
     return [...modules, ...added]
   }
 

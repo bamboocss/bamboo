@@ -182,9 +182,10 @@ describe('dev invalidation of modules that folded across files', () => {
    * times, refetching both route modules five times each, for 554 kB of a one-line change.
    *
    * When Vite matched nothing there is no such pass to duplicate, and this is the only thing
-   * that will announce the change at all.
+   * that will announce the change at all. The test below covers the other way that walk can fail
+   * to arrive.
    */
-  test('names the consumer only when Vite matched no module for the changed file', async () => {
+  test('stays quiet when Vite matched a module whose own pass will reach the consumer', async () => {
     const { start, fold, hot } = driver()
 
     writeDependency('red.300')
@@ -198,6 +199,33 @@ describe('dev invalidation of modules that folded across files', () => {
     const unmatched = stubGraph({ [CONSUMER]: [{ id: CONSUMER }] })
     expect(hot(DEPENDENCY, unmatched.graph, [])).toEqual([{ id: CONSUMER }])
     expect(unmatched.invalidated).toEqual([CONSUMER])
+  }, 60_000)
+
+  /**
+   * The case the rule above misses, and the one users actually meet.
+   *
+   * `propagateUpdate` stops at the first self-accepting module and never walks its importers, and
+   * React Fast Refresh makes every file exporting a component self-accepting. So editing a
+   * component that a sibling folded a class out of invalidates the sibling here and then tells
+   * nobody: the browser keeps the module it already has, still carrying the class compiled from
+   * the previous contents, until a full reload. It reads as "the edit did not apply", with the
+   * dev server and Bamboo both logging as though it had.
+   *
+   * This is also why the fan-out looks cheap in a React app. It is deferred, not avoided — the
+   * consumers really are re-transformed, just on whatever request comes next.
+   */
+  test('names the consumer when the changed module accepts itself, so nothing else will', async () => {
+    const { start, fold, hot } = driver()
+
+    writeDependency('red.300')
+    await start()
+    await fold()
+
+    const component = { id: DEPENDENCY, isSelfAccepting: true }
+    const { graph, invalidated } = stubGraph({ [CONSUMER]: [{ id: CONSUMER }] })
+
+    expect(hot(DEPENDENCY, graph, [component])).toEqual([component, { id: CONSUMER }])
+    expect(invalidated, 'the stale compiled result still has to go').toEqual([CONSUMER])
   }, 60_000)
 
   test('says nothing about a file no fold read', async () => {
