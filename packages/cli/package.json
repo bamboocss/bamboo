@@ -1,6 +1,6 @@
 {
   "name": "@bamboocss/dev",
-  "version": "1.45.2",
+  "version": "1.45.3",
   "description": "Build-time, type-safe, zero-runtime CSS-in-JS",
   "homepage": "https://bamboocss.com",
   "license": "MIT",
