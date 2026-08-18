@@ -413,12 +413,6 @@ function usesTokenMember(sourceFile: SourceFile, namespace: string) {
 }
 
 /**
- * An identifier's name as the compiler resolves it, not as it is spelled.
- *
- * `token` is the identifier `token`; reading `getText()` returns the escape and compares
- * unequal, which let an import of the artifact's export past the checks that key on the name.
- */
-/**
  * Every `Identifier` in the file whose name passes `wanted`, in document order.
  *
  * Not `getDescendantsOfKind(SyntaxKind.Identifier)`. `Identifier` is kind 80 and sorts *below*
@@ -461,6 +455,12 @@ function* identifiersNamed(sourceFile: SourceFile, wanted: (name: string) => boo
   for (const node of found) yield wrap._getNodeFromCompilerNode(node)
 }
 
+/**
+ * An identifier's name as the compiler resolves it, not as it is spelled.
+ *
+ * `token` is the identifier `token`; reading `getText()` returns the escape and compares
+ * unequal, which let an import of the artifact's export past the checks that key on the name.
+ */
 const nameOf = (node: Node) => (Node.isIdentifier(node) ? String(node.compilerNode.escapedText) : node.getText())
 
 /** Every name a binding name binds, following object and array destructuring. */
