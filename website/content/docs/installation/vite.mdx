@@ -82,6 +82,10 @@ Install bamboo and the Vite plugin, then create your `bamboo.config.ts` file.
 Add `"prepare": "bamboo codegen"` to `scripts`. It runs [codegen](/docs/references/cli#codegen) after every dependency
 install, so the output directory can stay in `.gitignore`.
 
+The build itself no longer needs it. The Vite plugin generates `styled-system/` in `buildStart`, before anything
+resolves an import of it, so a fresh clone builds without a separate codegen step. Keep the script regardless: `tsc` and
+your editor read the generated types without ever running the plugin.
+
 ### Configure the content
 
 Make sure that all of the paths of your React components are included in the `include` section of the `bamboo.config.ts`
@@ -206,15 +210,18 @@ that and keep the pruning. The build prints one line whenever pruning is off, so
 ### Builds with more than one environment
 
 An SSR framework builds a client bundle and a server bundle, and the stylesheet is emitted and finalized by the one that
-imports it — the client, which finishes before the server environment has compiled anything. Pruning it there would drop
-every rule for a class only the server graph reaches, so Bamboo skips pruning unless the environment holding the
-stylesheet is the last one to build, and says so:
+imports it — usually the client, which finishes before the server environment has compiled anything. Pruning it there
+would drop every rule for a class only the server graph reaches, so Bamboo prunes only once every environment the run
+declared has been compiled, and names the ones outstanding when it does not:
 
 ```
 🎋 info [vite] Reachability pruning skipped: the stylesheet is emitted by the "client"
-   environment, which finishes before ssr. The full extracted stylesheet ships — nothing
-   is missing from it.
+   environment, and ssr has not been compiled in this run. The full extracted stylesheet
+   ships — nothing is missing from it.
 ```
+
+An environment a run declares and then never builds reads the same way, which is why the message says "not compiled in
+this run" rather than "builds later" — that is the one case a reader cannot check for themselves.
 
 Nothing to configure: `vite build` announces its environments, and so does any framework that sets `builder`. A script
 driving `builder.build(environment)` itself does not, and Bamboo cannot tell the first environment it is not the last —

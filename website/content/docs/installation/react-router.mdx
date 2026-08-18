@@ -88,6 +88,10 @@ Install bamboo and create your `bamboo.config.ts` file. React Router builds with
 Add `"prepare": "bamboo codegen"` to `scripts`. It runs [codegen](/docs/references/cli#codegen) after every dependency
 install, so the output directory can stay in `.gitignore`.
 
+The build itself no longer needs it. The Vite plugin generates `styled-system/` in `buildStart`, before anything
+resolves an import of it, so a fresh clone builds without a separate codegen step. Keep the script regardless: `tsc` and
+your editor read the generated types without ever running the plugin.
+
 ### Configure the content
 
 Make sure that all of the paths of your React Router components are included in the `include` section of the
