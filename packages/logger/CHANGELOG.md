@@ -1,5 +1,11 @@
 # @bamboocss/logger
 
+## 1.45.2
+
+### Patch Changes
+
+- @bamboocss/types@1.45.2
+
 ## 1.45.1
 
 ### Patch Changes
