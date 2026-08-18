@@ -70,11 +70,31 @@ const prepare = (code: string) => {
   return () => ctx.project.parseSourceFile(filePath, ctx.encoder.clone())
 }
 
+/**
+ * The same file read over and over into one encoder, which is what a watch rebuild does.
+ *
+ * Separate from `prepare` because the encoder is *not* cloned: attribution only costs
+ * anything on the second and later readings, where the previous reading's contribution has to
+ * be handed back. A clone per call measures the first reading forever and would report that
+ * work as free.
+ *
+ * Every repeat encodes the same styles, so this is the cheap case by construction -- nothing
+ * is ever actually removed, only retained and released. An edit that changed every declaration
+ * would remove as many hashes as it added, which is the same order of work.
+ */
+const prepareRepeat = (code: string) => {
+  const ctx = createContext({} as Config)
+  ctx.project.addSourceFile(filePath, code)
+  return () => ctx.project.parseSourceFile(filePath)
+}
+
 describe('extract', () => {
   const css = prepare(source)
   const cva = prepare(cvaSource)
+  const repeat = prepareRepeat(source)
 
   bench('css() calls', () => void css(), { time: 1000 })
   // The control: recipes do not reach the per-property naming path.
   bench('cva only (control)', () => void cva(), { time: 1000 })
+  bench('css() calls, re-read into the same encoder', () => void repeat(), { time: 1000 })
 })

@@ -45,6 +45,22 @@ export interface EncoderScope {
   recipes: Map<string, Set<string>>
   /** recipe keys (`name` or `name{slotSeparator}slot`) whose base belongs to this call */
   recipes_base: Set<string>
+  /**
+   * Recipe names whose compound-variant block this call is responsible for.
+   *
+   * Kept apart from `recipes` on purpose: a compound rule selects on the variant classes the
+   * element already carries and contributes no class of its own, so `filterClassNames` must
+   * not see it (see `hashCompoundVariants`). This field is read only by `withOwner`, which
+   * needs to know what a re-parse is allowed to hand back.
+   *
+   * Lazily allocated, as are the two below. `withScope` runs once per call site and the
+   * common one -- `css({ ... })` -- reaches none of the three.
+   */
+  compound_variants?: Set<string>
+  /** `viewTransition()` classes this call encoded. */
+  view_transitions?: Set<string>
+  /** Recipe names this call observed, which is the list `atomizeObservedRecipes` walks. */
+  observed_recipes?: Set<string>
 }
 
 const createScope = (): EncoderScope => ({
@@ -53,6 +69,13 @@ const createScope = (): EncoderScope => ({
   recipes_base: new Set(),
 })
 
+const mergeSet = <T>(target: Set<T> | undefined, source: Set<T> | undefined) => {
+  if (!source?.size) return target
+  const set = target ?? new Set<T>()
+  source.forEach((value) => set.add(value))
+  return set
+}
+
 const mergeScope = (target: EncoderScope, source: EncoderScope) => {
   source.atomic.forEach((hash) => target.atomic.add(hash))
   source.recipes_base.forEach((key) => target.recipes_base.add(key))
@@ -60,7 +83,74 @@ const mergeScope = (target: EncoderScope, source: EncoderScope) => {
     const set = getOrCreateSet(target.recipes, name)
     hashes.forEach((hash) => set.add(hash))
   })
+  target.compound_variants = mergeSet(target.compound_variants, source.compound_variants)
+  target.view_transitions = mergeSet(target.view_transitions, source.view_transitions)
+  target.observed_recipes = mergeSet(target.observed_recipes, source.observed_recipes)
 }
+
+/** A key nothing may take away: encoded with no owner recording, so no owner can release it. */
+const PINNED = -1
+
+/**
+ * How many owners hold each key of one collection.
+ *
+ * Refcounted rather than scanned. Two files routinely encode the same declaration, so
+ * "does anyone else still want this" has to be answerable without walking the other owners
+ * -- that walk is O(project) per edit, which is the cost this whole mechanism exists to
+ * avoid.
+ */
+class Refs {
+  private counts = new Map<string, number>()
+
+  /** Mark a key as belonging to no owner. Nothing can release it afterwards. */
+  pin = (key: string) => {
+    this.counts.set(key, PINNED)
+  }
+
+  retain = (key: string) => {
+    const count = this.counts.get(key)
+    if (count === PINNED) return
+    this.counts.set(key, (count ?? 0) + 1)
+  }
+
+  /** True when the last owner let go, and the key should leave its collection with it. */
+  release = (key: string): boolean => {
+    const count = this.counts.get(key)
+    // Untracked: pinned, or put there before anything recorded ownership. Either way nothing
+    // here is what added it, so nothing here may remove it.
+    if (count === undefined || count === PINNED) return false
+    if (count > 1) {
+      this.counts.set(key, count - 1)
+      return false
+    }
+    this.counts.delete(key)
+    return true
+  }
+}
+
+/**
+ * The owner key for one entry point's reading of one file.
+ *
+ * Kinds are separate owners over the same path on purpose. A Vite dev server reads a module
+ * twice -- once from disk in the extraction pass, once from the transform pipeline -- and the
+ * two can legitimately see different source (an SFC's sub-modules, a plugin that ran first).
+ * One shared key would let each replace the other's record, and a file's rules would disappear
+ * on whichever read was narrower. Two keys let the refcounts hold the union instead.
+ */
+const ownerKey = (kind: OwnerKind, path: string) => `${kind}:${path.replace(/\\/g, '/')}`
+
+/**
+ * Which entry point read a file.
+ *
+ * `extract` is the CSS extraction pass, which reads every file in `include` off disk.
+ * `parse` is a bundler transform, which reads the module source it is handed.
+ */
+export type FileOwnerKind = 'extract' | 'parse'
+
+type OwnerKind = FileOwnerKind | 'recipe'
+
+/** Every owner kind keyed by a file path, for releasing one whose file was deleted. */
+const FILE_OWNER_KINDS: FileOwnerKind[] = ['extract', 'parse']
 
 export class StyleEncoder {
   static separator = ']___['
@@ -110,6 +200,181 @@ export class StyleEncoder {
     }
     if (parent) mergeScope(parent, scope)
     return scope
+  }
+
+  /** What each owner contributed the last time it was read. @see withOwner */
+  private owners = new Map<string, EncoderScope>()
+  /** The owner `withOwner` is recording for, if any. Nested calls defer to the outermost. */
+  private activeOwner: string | null = null
+
+  private atomicRefs = new Refs()
+  private recipeRefs = new Refs()
+  private recipeBaseRefs = new Refs()
+  private compoundRefs = new Refs()
+  private viewTransitionRefs = new Refs()
+  private observedRefs = new Refs()
+
+  /** A recipe's compound-variant hashes, so releasing the block can find them again. */
+  private compoundHashes = new Map<string, Set<string>>()
+
+  /**
+   * How many times something has actually left a collection.
+   *
+   * Read by `StyleDecoder.collect`, which accumulates the results it decodes: a hash that is
+   * gone from here has to leave there too, or the sheet keeps emitting its rule. Nothing is
+   * ever removed during a build, so this stays at zero and the decoder never rebuilds.
+   */
+  removals = 0
+
+  /**
+   * Attribute everything `fn` encodes to `owner`, replacing whatever it encoded last time.
+   *
+   * This is what keeps a long-lived context from growing forever. The encoder only ever
+   * accumulated, so a dev server's stylesheet kept every class every version of every edited
+   * file had ever produced -- each save added the new atoms and left the old ones behind, for
+   * the life of the process.
+   *
+   * Retain-then-release, rather than a diff of the two scopes. A key held by both readings
+   * goes 1 -> 2 -> 1 and is never briefly absent, which matters because "absent" is what
+   * deletes it; and both halves cost the size of *this owner's* contribution, never the size
+   * of the project.
+   *
+   * Anything encoded outside an owner is pinned instead (see `Refs.pin`) -- `staticCss`
+   * safelists, a restored encoder dump, a `RuleProcessor` call. Those answer to config rather
+   * than to a file, so no file may take them away.
+   *
+   * Reconciled in a `finally`: a parse that throws has still put hashes in the collections,
+   * and leaving them unattributed would make them permanent. The owner ends up holding what
+   * the partial parse reached, and the next successful read replaces it.
+   */
+  withOwner = <T>(kind: FileOwnerKind, path: string, fn: () => T): T => {
+    return this.withOwnerKey(ownerKey(kind, path), fn)
+  }
+
+  private withOwnerKey = <T>(owner: string, fn: () => T): T => {
+    // An outer owner is already accounting for this. Nesting arises where an entry point that
+    // scopes a file calls another that would scope it again, and double-counting would leave
+    // the inner owner holding hashes that only its own next parse could release.
+    if (this.activeOwner !== null) return fn()
+
+    const parent = this.activeScope
+    const scope = createScope()
+    this.activeScope = scope
+    this.activeOwner = owner
+
+    try {
+      return fn()
+    } finally {
+      this.activeScope = parent
+      this.activeOwner = null
+      if (parent) mergeScope(parent, scope)
+
+      const previous = this.owners.get(owner)
+      this.owners.set(owner, scope)
+      this.retainScope(scope)
+      if (previous) this.releaseScope(previous)
+    }
+  }
+
+  /** Drop everything an owner contributed. Its keys leave the collections with it. */
+  releaseOwner = (owner: string) => {
+    const scope = this.owners.get(owner)
+    if (!scope) return
+    this.owners.delete(owner)
+    this.releaseScope(scope)
+  }
+
+  /**
+   * Drop everything a file contributed, whichever entry point read it.
+   *
+   * The deletion half of the same problem: nothing re-parses a file that is gone, so without
+   * this its rules outlive it exactly as an edited file's old rules used to.
+   */
+  releaseFile = (filePath: string) => {
+    for (const kind of FILE_OWNER_KINDS) this.releaseOwner(ownerKey(kind, filePath))
+  }
+
+  private retainScope = (scope: EncoderScope) => {
+    scope.atomic.forEach(this.atomicRefs.retain)
+    scope.recipes.forEach((hashes) => hashes.forEach(this.recipeRefs.retain))
+    scope.recipes_base.forEach(this.recipeBaseRefs.retain)
+    scope.compound_variants?.forEach(this.compoundRefs.retain)
+    scope.view_transitions?.forEach(this.viewTransitionRefs.retain)
+    scope.observed_recipes?.forEach(this.observedRefs.retain)
+  }
+
+  private releaseScope = (scope: EncoderScope) => {
+    scope.atomic.forEach((hash) => {
+      if (this.atomicRefs.release(hash)) this.drop(this.atomic.delete(hash))
+    })
+
+    scope.recipes.forEach((hashes, name) => {
+      const set = this.recipes.get(name)
+      hashes.forEach((hash) => {
+        if (this.recipeRefs.release(hash)) this.drop(set?.delete(hash))
+      })
+      // An empty entry is not merely tidiness: `toJSON` would write the recipe with no
+      // hashes, and `fromJSON` re-encodes a base for every name it reads.
+      if (set && !set.size) this.recipes.delete(name)
+    })
+
+    scope.recipes_base.forEach((key) => {
+      if (this.recipeBaseRefs.release(key)) this.drop(this.recipes_base.delete(key))
+    })
+
+    scope.compound_variants?.forEach((name) => {
+      if (!this.compoundRefs.release(name)) return
+      this.compound_variants.delete(name)
+      // The block's own hashes, which live in the recipe's variant set beside the variants.
+      // Nothing else produces them -- they hash a synthetic `COMPOUND_VARIANT` prop -- so they
+      // are the block's to take back.
+      const hashes = this.compoundHashes.get(name)
+      const set = this.recipes.get(name)
+      hashes?.forEach((hash) => this.drop(set?.delete(hash)))
+      this.compoundHashes.delete(name)
+      if (set && !set.size) this.recipes.delete(name)
+    })
+
+    scope.view_transitions?.forEach((className) => {
+      if (this.viewTransitionRefs.release(className)) this.drop(this.view_transitions.delete(className))
+    })
+
+    scope.observed_recipes?.forEach((name) => {
+      if (!this.observedRefs.release(name)) return
+      this.observedRecipes.delete(name)
+      this.atomizedRecipes.delete(name)
+      // The atoms `atomizeObservedRecipes` interned for it. Held by the recipe rather than by
+      // the files that use it, because that pass runs once per recipe and after extraction.
+      this.releaseOwner(ownerKey('recipe', name))
+    })
+  }
+
+  private drop = (removed: boolean | undefined) => {
+    if (removed) this.removals++
+  }
+
+  /**
+   * Note that the active call encoded `key`.
+   *
+   * With no owner recording, the key is pinned: nothing put it there on a file's behalf, so
+   * no file's next parse may take it away.
+   */
+  private ownRecipeBase = (key: string) => {
+    if (this.activeOwner === null) this.recipeBaseRefs.pin(key)
+    this.activeScope?.recipes_base.add(key)
+  }
+
+  private ownCompound = (name: string) => {
+    if (this.activeOwner === null) this.compoundRefs.pin(name)
+    const scope = this.activeScope
+    if (scope) (scope.compound_variants ??= new Set()).add(name)
+  }
+
+  private observeRecipe = (name: string) => {
+    this.observedRecipes.add(name)
+    if (this.activeOwner === null) this.observedRefs.pin(name)
+    const scope = this.activeScope
+    if (scope) (scope.observed_recipes ??= new Set()).add(name)
   }
 
   constructor(private context: Pick<Context, 'isValidProperty' | 'recipes' | 'patterns' | 'conditions' | 'utility'>) {}
@@ -210,19 +475,19 @@ export class StyleEncoder {
   }
 
   processAtomic = (styles: StyleResultObject) => {
-    const scope = this.activeScope
-    if (!scope) {
-      this.hashStyleObject(this.atomic, styles)
-      return
-    }
-
-    // Hash into a local set first, so this call's contribution stays separable from
-    // whatever the encoder already holds.
+    // Hashed into a local set first, so this call's contribution stays separable from whatever
+    // the encoder already holds. Insertion order into `atomic` is unchanged by the detour: a
+    // hash already there does not move, and a new one still arrives in traversal order.
     const set = new Set<string>()
     this.hashStyleObject(set, styles)
+
+    const scope = this.activeScope
+    const unowned = this.activeOwner === null
+
     set.forEach((hash) => {
       this.atomic.add(hash)
-      scope.atomic.add(hash)
+      if (scope) scope.atomic.add(hash)
+      if (unowned) this.atomicRefs.pin(hash)
     })
   }
 
@@ -249,7 +514,12 @@ export class StyleEncoder {
 
     if (!Object.keys(slots).length) return
 
-    this.view_transitions.set(viewTransitionClassName(options, this.context.utility.prefix), slots)
+    const className = viewTransitionClassName(options, this.context.utility.prefix)
+    this.view_transitions.set(className, slots)
+
+    if (this.activeOwner === null) this.viewTransitionRefs.pin(className)
+    const scope = this.activeScope
+    if (scope) (scope.view_transitions ??= new Set()).add(className)
   }
 
   processStyleProps = (styleProps: StyleProps) => {
@@ -282,7 +552,7 @@ export class StyleEncoder {
 
       // Record before the early return: the base class belongs to this call's result
       // whether or not this call is the one that encoded it.
-      this.activeScope?.recipes_base.add(recipeKey)
+      this.ownRecipeBase(recipeKey)
       if (this.recipes_base.has(recipeKey)) return
 
       const base_set = getOrCreateSet(this.recipes_base, recipeKey)
@@ -306,7 +576,11 @@ export class StyleEncoder {
     this.hashUnresolvedVariants(recipeName, config.variants, unresolved, { recipe: recipeName, variants: true })
 
     // process compound variants
-    if (!config.compoundVariants || this.compound_variants.has(recipeName)) return
+    if (!config.compoundVariants) return
+    // Recorded before the early return, for the same reason the base is: the block belongs to
+    // this call's result whether or not this call is the one that hashed it.
+    this.ownCompound(recipeName)
+    if (this.compound_variants.has(recipeName)) return
     this.compound_variants.add(recipeName)
     this.hashCompoundVariants(
       recipeName,
@@ -336,9 +610,17 @@ export class StyleEncoder {
   ) => {
     const hash = (list: Array<Record<string, any>>, slot?: string) => {
       const set = getOrCreateSet(this.recipes, recipeName)
+      const memo = getOrCreateSet(this.compoundHashes, recipeName)
       list.forEach((compoundVariant, index) => {
         if (!compoundVariant?.css) return
-        this.hashStyleObject(set, { [COMPOUND_VARIANT]: index }, { recipe: recipeName, slot, variants: true })
+        // Through a local set, so releasing the block can find its hashes again -- they share
+        // a set with the variants, which answer to a different owner.
+        const local = new Set<string>()
+        this.hashStyleObject(local, { [COMPOUND_VARIANT]: index }, { recipe: recipeName, slot, variants: true })
+        local.forEach((hashed) => {
+          set.add(hashed)
+          memo.add(hashed)
+        })
       })
     }
 
@@ -360,20 +642,18 @@ export class StyleEncoder {
     baseEntry: Partial<Omit<StyleEntry, 'prop' | 'value' | 'cond'>>,
   ) => {
     const set = getOrCreateSet(this.recipes, recipeName)
-    const scope = this.activeScope
-
-    if (!scope) {
-      this.hashStyleObject(set, computedVariants, baseEntry)
-      return
-    }
 
     const local = new Set<string>()
     this.hashStyleObject(local, computedVariants, baseEntry)
 
-    const scoped = getOrCreateSet(scope.recipes, recipeName)
+    const scope = this.activeScope
+    const scoped = scope ? getOrCreateSet(scope.recipes, recipeName) : undefined
+    const unowned = this.activeOwner === null
+
     local.forEach((hash) => {
       set.add(hash)
-      scoped.add(hash)
+      scoped?.add(hash)
+      if (unowned) this.recipeRefs.pin(hash)
     })
   }
 
@@ -381,7 +661,7 @@ export class StyleEncoder {
     if (!config.base) return
 
     // Record before the early return, for the same reason as the slot variant.
-    this.activeScope?.recipes_base.add(recipeName)
+    this.ownRecipeBase(recipeName)
     if (this.recipes_base.has(recipeName)) return
 
     const base_set = getOrCreateSet(this.recipes_base, recipeName)
@@ -412,7 +692,9 @@ export class StyleEncoder {
     this.hashUnresolvedVariants(recipeName, config.variants, unresolved, { recipe: recipeName, variants: true })
 
     // process compound variants
-    if (!config.compoundVariants || this.compound_variants.has(recipeName)) return
+    if (!config.compoundVariants) return
+    this.ownCompound(recipeName)
+    if (this.compound_variants.has(recipeName)) return
     this.compound_variants.add(recipeName)
     this.hashCompoundVariants(recipeName, config.compoundVariants as Array<Record<string, any>>)
   }
@@ -423,7 +705,7 @@ export class StyleEncoder {
    * `button()` both arrive as `{}` — so the parser has to say which it was.
    */
   processRecipe = (recipeName: string, variants: Record<string, any>, unresolved?: Set<string>) => {
-    this.observedRecipes.add(recipeName)
+    this.observeRecipe(recipeName)
     if (this.context.recipes.isSlotRecipe(recipeName)) {
       this.processConfigSlotRecipe(recipeName, variants, unresolved)
     } else {
@@ -482,7 +764,7 @@ export class StyleEncoder {
    */
   processAtomicRecipe = (recipe: Pick<RecipeDefinition, 'base' | 'variants' | 'compoundVariants' | 'className'>) => {
     const name = getRecipeIdentity(recipe)
-    this.observedRecipes.add(name)
+    this.observeRecipe(name)
     this.context.recipes.registerInline(name, recipe as RecipeConfig)
     this.hashInlineRecipe(name, recipe)
   }
@@ -495,7 +777,7 @@ export class StyleEncoder {
     const { base, variants = {}, compoundVariants = [] } = recipe
 
     if (base) {
-      this.activeScope?.recipes_base.add(name)
+      this.ownRecipeBase(name)
       if (!this.recipes_base.has(name)) {
         this.hashStyleObject(getOrCreateSet(this.recipes_base, name), base, { recipe: name })
       }
@@ -528,7 +810,7 @@ export class StyleEncoder {
     // set here gave the two sides different names, and an `sva` that omits `slots` rendered
     // with no styles at all.
     const name = getRecipeIdentity(recipe, 'sva')
-    this.observedRecipes.add(name)
+    this.observeRecipe(name)
     this.context.recipes.registerInline(name, withSlots as never)
 
     // Base is per slot, so each gets its own `name__slot` rule. Variants are hashed against
@@ -562,7 +844,7 @@ export class StyleEncoder {
   atomizeObservedRecipes = () => {
     const atomize = (value: unknown) => {
       if (!value || typeof value !== 'object' || Array.isArray(value)) return
-      this.hashStyleObject(this.atomic, value as StyleResultObject)
+      this.processAtomic(value as StyleResultObject)
     }
 
     for (const name of this.observedRecipes) {
@@ -580,11 +862,17 @@ export class StyleEncoder {
         for (const slot of slots) atomize((value as Dict)[slot])
       }
 
-      take(config.base)
-      for (const values of Object.values(config.variants ?? {})) {
-        for (const value of Object.values(values ?? {})) take(value)
-      }
-      for (const compound of config.compoundVariants ?? []) take((compound as { css?: unknown })?.css)
+      // Owned by the recipe, not by the files that use it: this runs once per recipe and after
+      // extraction, so a file's own scope is long closed. `releaseScope` hands the owner back
+      // when the last file to name the recipe stops -- which for an inline `cva` is every edit
+      // of it, since its identity is derived from its styles.
+      this.withOwnerKey(ownerKey('recipe', name), () => {
+        take(config.base)
+        for (const values of Object.values(config.variants ?? {})) {
+          for (const value of Object.values(values ?? {})) take(value)
+        }
+        for (const compound of config.compoundVariants ?? []) take((compound as { css?: unknown })?.css)
+      })
 
       this.atomizedRecipes.add(name)
     }
@@ -649,21 +937,35 @@ export class StyleEncoder {
   fromJSON = (json: EncoderJson) => {
     const { styles } = json
 
-    // process atomic styles + compound variants
-    styles.atomic?.forEach((hash) => this.atomic.add(hash))
+    // process atomic styles + compound variants. Pinned: a restored dump is a safelist rather
+    // than a file's work, so no file's re-parse may take it away.
+    styles.atomic?.forEach((hash) => {
+      this.atomic.add(hash)
+      this.atomicRefs.pin(hash)
+    })
 
     Object.entries(styles.recipes ?? {}).forEach(([recipeName, hashes]) => {
       // process base styles
       this.processRecipeBase(recipeName)
       // process variants hashes
       const set = getOrCreateSet(this.recipes, recipeName)
-      hashes.forEach((hash) => set.add(hash))
+      hashes.forEach((hash) => {
+        set.add(hash)
+        this.recipeRefs.pin(hash)
+      })
     })
 
     // Keyed by the finalized class, so this restores the prefix the producing build
     // applied rather than re-deriving it from the consuming config.
+    //
+    // Pinned like the two above, and not merely for symmetry. Nothing could release a restored
+    // transition while nothing counted it -- `Refs.release` declines an untracked key -- but a
+    // local file declaring the *same* transition is what starts counting it, and that file's
+    // next reading then takes the count to zero and deletes it. The dump would lose a rule to
+    // an edit in a file that had nothing to do with it.
     Object.entries(styles.viewTransitions ?? {}).forEach(([className, slots]) => {
       this.view_transitions.set(className, slots)
+      this.viewTransitionRefs.pin(className)
     })
 
     return this

@@ -362,7 +362,10 @@ export class BambooContext extends Generator {
 
     try {
       const encoder = styleEncoder || this.parserOptions.encoder
-      result = this.project.parseSourceFile(file, encoder)
+      // The extraction pass's reading of this file, which replaces whatever its last reading
+      // encoded. A bundler that also parses the module during `transform` records that
+      // separately -- see `StyleEncoder.withOwner` for why the two are not one owner.
+      result = encoder.withOwner('extract', file, () => this.project.parseSourceFile(file, encoder))
       this.parseFailures.delete(file)
     } catch (error) {
       logger.caughtError('file:extract', `Failed to parse ${file}`, error)

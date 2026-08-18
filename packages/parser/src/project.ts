@@ -352,6 +352,9 @@ export class Project {
       // Importers memoized the values this file exported; without dropping them
       // they would keep emitting styles from a file that no longer exists.
       this.invalidate()
+      // Same for the styles themselves. Nothing re-parses a file that is gone, so its rules
+      // would otherwise outlive it for as long as the context does.
+      this.options.parserOptions.encoder.releaseFile(sourceFile.getFilePath())
       return this.project.removeSourceFile(sourceFile)
     }
     return false
@@ -435,7 +438,16 @@ export class Project {
       sourceFile.replaceWithText(transformed)
     }
 
-    const result = this.parser(sourceFile, encoder, options, this.resolveModule)?.setFilePath(filePath)
+    // Attributed to this file, so a later reading of it replaces what this one encoded rather
+    // than adding to it. Keyed off the source file's own path rather than the argument, which
+    // callers spell differently; and under `parse` rather than `extract`, so a bundler
+    // transform and the extraction pass hold their readings of the same module separately.
+    // `withOwner` defers to an owner already recording, which is how `BambooContext.parseFile`
+    // claims the whole parse for `extract` instead.
+    const target = encoder ?? this.options.parserOptions.encoder
+    const result = target
+      .withOwner('parse', sourceFile.getFilePath(), () => this.parser(sourceFile, encoder, options, this.resolveModule))
+      ?.setFilePath(filePath)
 
     hooks['parser:after']?.({ filePath, result })
 

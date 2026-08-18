@@ -337,8 +337,11 @@ export class StaticCss {
       `Generated style objects: ${results.css.length} css, ${results.recipes.length} recipes, ${results.patterns.length} patterns`,
     )
 
+    // `processAtomic` rather than hashing straight into `encoder.atomic`, which is the same
+    // work: it is what marks these as answering to config rather than to a file, so a file
+    // that stops writing the same declaration cannot take the safelisted one with it.
     results.css.forEach((css) => {
-      encoder.hashStyleObject(encoder.atomic, css)
+      encoder.processAtomic(css)
     })
 
     results.recipes.forEach((result) => {
@@ -348,7 +351,7 @@ export class StaticCss {
     })
 
     results.patterns.forEach((result) => {
-      encoder.hashStyleObject(encoder.atomic, result)
+      encoder.processAtomic(result)
     })
 
     sheet.processDecoder(decoder.collect(encoder))

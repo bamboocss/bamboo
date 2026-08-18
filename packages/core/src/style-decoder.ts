@@ -47,6 +47,39 @@ export class StyleDecoder {
     return new StyleDecoder(this.context)
   }
 
+  /** Removals seen the last time this decoder collected. @see forget */
+  private collectedRemovals = 0
+
+  /**
+   * Drop what was decoded from an earlier state of `encoder`, if that state has since shrunk.
+   *
+   * Everything below accumulates: `collect` re-reads the whole encoder each time and adds to
+   * sets that are never emptied, which is why a hash removed from the encoder would otherwise
+   * keep its rule in the sheet for the life of the process.
+   *
+   * Rebuilding rather than deleting the affected results one by one. `collect` already walks
+   * and re-sorts the entire encoder on every call, so refilling costs what the caller was
+   * paying anyway, and it cannot leave a result behind that a surgical delete would have
+   * missed -- several hashes can name the same class. `atomic_cache` survives, since a hash
+   * decodes to the same result whatever else was removed; the two caches keyed by *class*
+   * do not, because a recipe key that leaves and comes back is re-hashed from new styles.
+   *
+   * Nothing is ever removed during a build, so `removals` stays at zero there and this is a
+   * comparison of two numbers.
+   */
+  private forget = (encoder: StyleEncoder) => {
+    if (encoder.removals === this.collectedRemovals) return
+    this.collectedRemovals = encoder.removals
+
+    this.classNames.clear()
+    this.atomic.clear()
+    this.recipes.clear()
+    this.recipes_base.clear()
+    this.view_transitions.clear()
+    this.group_cache.clear()
+    this.recipe_base_cache.clear()
+  }
+
   isEmpty = () => {
     return !this.atomic.size && !this.recipes.size && !this.recipes_base.size && !this.view_transitions.size
   }
@@ -475,6 +508,7 @@ export class StyleDecoder {
    * So that we can just iterate over them and transform resulting CSS objects into CSS strings
    */
   collect = (encoder: StyleEncoder) => {
+    this.forget(encoder)
     this.collectAtomic(encoder)
     this.collectRecipe(encoder)
     this.collectRecipeBase(encoder)
