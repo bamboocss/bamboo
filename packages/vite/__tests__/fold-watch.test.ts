@@ -59,8 +59,8 @@ const stubGraph = (files: Record<string, { id: string }[]>) => {
   }
 }
 
-const driver = () => {
-  const plugin = bamboocss({ cwd, reportSummary: false }).find((p) => p.name === 'bamboocss:compiler')!
+const driver = (options: Parameters<typeof bamboocss>[0] = {}) => {
+  const plugin = bamboocss({ cwd, reportSummary: false, ...options }).find((p) => p.name === 'bamboocss:compiler')!
 
   const buildStart = hookOf(plugin.buildStart)
   const transform = hookOf(plugin.transform)
@@ -81,6 +81,9 @@ const driver = () => {
     /** The same, for a fixture with more than one consumer of the same dependency. */
     foldFile,
     change: (event: 'update' | 'delete' | 'create') => watchChange?.call({} as never, DEPENDENCY, { event } as never),
+    /** The same, for a fixture whose fold reads through more than one file. */
+    changeFile: (file: string, event: 'update' | 'delete' | 'create' = 'update') =>
+      watchChange?.call({} as never, file, { event } as never),
     /** Vite 6 and up: one graph per environment, reached through the plugin context. */
     hot: (file: string, graph: ReturnType<typeof stubGraph>['graph'], modules: { id: string }[] = []) =>
       hotUpdate?.call({ environment: { moduleGraph: graph } } as never, { file, modules } as never),
@@ -90,6 +93,15 @@ const driver = () => {
   }
 }
 
+/**
+ * Writes the dependency and nothing else — the consumer stays off disk on purpose.
+ *
+ * `hotUpdate` decides whether a dependent's compiled bytes actually moved by re-folding it from
+ * disk, so a consumer that is not there throws inside that check and is reported as changed. That
+ * is the conservative branch, and it is what every test in this file except the last group is
+ * exercising. Writing the consumer out here would silently move all of them onto the other branch
+ * and change what they assert without changing a line of their assertions.
+ */
 const writeDependency = (color: string) => {
   mkdirSync(FIXTURE_DIR, { recursive: true })
   writeFileSync(DEPENDENCY, `export const shared = { color: '${color}' }\n`)
@@ -329,6 +341,279 @@ describe('a dependent the edit does not actually change', () => {
     const second = stubGraph({ [CONSUMER]: [{ id: CONSUMER }], [OTHER_CONSUMER]: [{ id: OTHER_CONSUMER }] })
     expect(hot(DEPENDENCY, second.graph, [])).toEqual([{ id: OTHER_CONSUMER }])
     expect(second.invalidated).toEqual([OTHER_CONSUMER])
+  }, 60_000)
+})
+
+/**
+ * The invariants the suppression rests on, each with the way it fails if it goes.
+ *
+ * Three things have to hold for "the bytes did not move" to be safe to act on, and none of them
+ * shows up in the tests above: the re-fold has to be folding the text the *next* transform will
+ * be handed, it has to leave the edge map in a state the next environment's pass can still read,
+ * and it has to write back edges it discovers, since suppressing means no transform will.
+ *
+ * Each test below was checked by removing the line it is about and confirming it fails. Three
+ * properties of the same change are deliberately *not* gated here, because nothing observable
+ * distinguishes them, and a test that cannot fail is worse than none:
+ *
+ * - Retracting a signature on a *survivor* throw. Identical in kind to the failed-compile case
+ *   covered below, but that throw only fires under `command === 'serve'`, which this harness never
+ *   sets — doing so would rebuild the context with `dev: true` and change what every test here
+ *   exercises.
+ * - Not recording a signature for a module with no cross-file edges. Signatures are only ever read
+ *   for modules listed in the dependency map, so an extra one is memory and never behaviour.
+ * - Copying the dependent set before walking it. With edge writes confined to the suppressed
+ *   branch and every verdict memoized, walking the live set reaches the same answers; the copy is
+ *   insurance against a future write, not a fix for a present one.
+ */
+describe('what the unchanged check has to get right', () => {
+  const BASE = join(FIXTURE_DIR, 'base.ts')
+  const OTHER_CONSUMER = join(FIXTURE_DIR, 'other-consumer.tsx')
+
+  /**
+   * Disk is only the right text to re-fold if it is what the last transform was handed.
+   *
+   * A module built by another plugin's `load`, or one whose own edit has landed but whose
+   * re-transform has not, is served from bytes that are not on disk. Re-folding disk then answers
+   * a question about a different module — and it can answer it "unchanged" while the real module
+   * moved, which suppresses an update that was needed. The input digest is the guard, and this is
+   * the shape that walks past it without one.
+   *
+   * Both spellings fold to the same output, because the fold replaces the whole call expression:
+   * `css(values.a)` and `css(values.b)` both become the same literal while `a` and `b` hold the
+   * same value. So the output digest matches whichever one is re-folded, and only the *input*
+   * digest can tell that the module on disk is not the module that was compiled.
+   */
+  test('re-folds only when disk is the text the last transform was handed', async () => {
+    const { start, foldFile, change, hot } = driver()
+
+    const served = `import { css } from 'styled-system/css'\nimport { values } from './dep'\nexport const cls = css(values.a)\n`
+    const onDisk = `import { css } from 'styled-system/css'\nimport { values } from './dep'\nexport const cls = css(values.b)\n`
+
+    mkdirSync(FIXTURE_DIR, { recursive: true })
+    writeFileSync(DEPENDENCY, `export const values = { a: { color: 'red.300' }, b: { color: 'red.300' } }\n`)
+    writeFileSync(CONSUMER, onDisk)
+    await start()
+
+    // What the module was actually compiled from, which is not what the file holds.
+    expect(await foldFile(CONSUMER, served)).toContain('"c_red.300"')
+
+    // `a` moves and `b` does not, so re-folding disk still produces the recorded output while the
+    // module that was really served no longer does.
+    writeFileSync(DEPENDENCY, `export const values = { a: { color: 'red.400' }, b: { color: 'red.300' } }\n`)
+    change('update')
+
+    const { graph, invalidated } = stubGraph({ [CONSUMER]: [{ id: CONSUMER }] })
+    expect(hot(DEPENDENCY, graph, []), 'disk is not this module').toEqual([{ id: CONSUMER }])
+    expect(invalidated).toEqual([CONSUMER])
+  }, 60_000)
+
+  /**
+   * `hotUpdate` runs once per environment against one shared edge map.
+   *
+   * A fold that now yields nothing reports no dependencies at all, so re-recording its edges
+   * during the client pass retracts the only entry the ssr pass had to find the consumer through.
+   * The ssr pass then returns early and invalidates nothing, leaving the stale compiled class in
+   * the SSR cache while the client half updates correctly — one environment's worth of exactly
+   * the staleness this whole path exists to prevent.
+   *
+   * The dependency here is edited into a shape the fold cannot resolve, which is what an export
+   * being renamed or a constant becoming a call looks like halfway through typing it.
+   */
+  test('invalidates for the ssr pass as well as the client pass', async () => {
+    const { start, foldFile, change, hot } = driver()
+
+    writeDependency('red.300')
+    // On disk, so the check gets far enough to re-record anything — see `writeDependency`.
+    writeFileSync(CONSUMER, CONSUMER_CODE)
+    await start()
+    expect(await foldFile(CONSUMER, CONSUMER_CODE)).toContain('"c_red.300"')
+
+    writeFileSync(DEPENDENCY, `declare const make: () => { color: string }\nexport const shared = make()\n`)
+    change('update')
+
+    const client = stubGraph({ [CONSUMER]: [{ id: CONSUMER }] })
+    const ssr = stubGraph({ [CONSUMER]: [{ id: CONSUMER }] })
+
+    expect(hot(DEPENDENCY, client.graph, [])).toEqual([{ id: CONSUMER }])
+    expect(hot(DEPENDENCY, ssr.graph, []), 'the second environment sees the same graph').toEqual([{ id: CONSUMER }])
+    expect(client.invalidated).toEqual([CONSUMER])
+    expect(ssr.invalidated, 'the ssr cache holds the same stale class').toEqual([CONSUMER])
+  }, 60_000)
+
+  /**
+   * Suppressing means no transform runs, so nothing else will notice the edges moved.
+   *
+   * A value that starts local to the dependency and becomes a re-export from somewhere else emits
+   * the same class either way, so the consumer is correctly left alone — but it now folds through
+   * a file it did not read before, and the only pass that can record that is the one that just
+   * declined to announce anything.
+   */
+  test('records edges the suppressed re-fold discovered', async () => {
+    const { start, foldFile, changeFile, hot } = driver()
+
+    mkdirSync(FIXTURE_DIR, { recursive: true })
+    writeFileSync(BASE, `export const shared = { color: 'red.300' }\n`)
+    writeDependency('red.300')
+    // On disk, because the check re-folds from there — see `writeDependency`.
+    writeFileSync(CONSUMER, CONSUMER_CODE)
+    await start()
+    expect(await foldFile(CONSUMER, CONSUMER_CODE)).toContain('"c_red.300"')
+
+    // Same value, reached through `base.ts` now. The consumer's bytes do not move.
+    writeFileSync(DEPENDENCY, `export { shared } from './base'\n`)
+    changeFile(DEPENDENCY)
+
+    const quiet = stubGraph({ [CONSUMER]: [{ id: CONSUMER }] })
+    expect(hot(DEPENDENCY, quiet.graph, []), 'same class either way').toBeUndefined()
+    expect(quiet.invalidated).toEqual([])
+
+    // The edge that only the suppressed re-fold could have learned about.
+    writeFileSync(BASE, `export const shared = { color: 'red.400' }\n`)
+    changeFile(BASE)
+
+    const { graph, invalidated } = stubGraph({ [CONSUMER]: [{ id: CONSUMER }] })
+    expect(hot(BASE, graph, []), 'the fold reads through base.ts now').toEqual([{ id: CONSUMER }])
+    expect(invalidated).toEqual([CONSUMER])
+  }, 60_000)
+
+  /**
+   * A consumer whose last transform threw has edges but no signature, and must count as changed.
+   *
+   * `transform` keeps a failed module's fold edges on purpose — the recoverable direction is that
+   * fixing the *dependency* re-transforms the consumer — and retracts its signature, because a
+   * pass that threw produced no output for a later edit to compare against. Reading that absence
+   * as "unchanged" would suppress the module exactly when it most needs re-transforming: it has
+   * no compiled result on the server at all, so the fix that would restore one never runs.
+   *
+   * The failure is driven by the *dependency* rather than by the consumer's own source, which is
+   * what makes this test load-bearing. If the consumer's text had changed, the input digest would
+   * catch it a step earlier and the retraction would never be reached. Here the consumer is
+   * byte-identical throughout and its compiled output is the same before and after, so the
+   * retraction is the only thing standing between the break and a permanent suppression.
+   */
+  test('treats a dependent whose signature a failed compile dropped as changed', async () => {
+    const { start, foldFile, changeFile, hot } = driver({ maxRecipeStates: 4 })
+
+    const source = `import { css, cva } from 'styled-system/css'
+import { shared, sizes } from './dep'
+export const cls = css(shared)
+const badge = cva({ base: { display: 'flex' }, variants: { size: sizes } })
+export const d = (s: string) => badge({ size: s })
+`
+    const writeSizes = (variants: string) => {
+      mkdirSync(FIXTURE_DIR, { recursive: true })
+      writeFileSync(DEPENDENCY, `export const shared = { color: 'red.300' }\nexport const sizes = ${variants}\n`)
+    }
+    const SMALL = `{ sm: { padding: '2' } }`
+    const BIG = `{ sm: { padding: '2' }, lg: { padding: '8' }, md: { padding: '4' } }`
+
+    writeSizes(SMALL)
+    writeFileSync(CONSUMER, source)
+    await start()
+    expect(await foldFile(CONSUMER, source)).toContain('"c_red.300"')
+
+    // The dependency grows a variant axis past the limit. The consumer is untouched, and its
+    // compile throws.
+    writeSizes(BIG)
+    changeFile(DEPENDENCY)
+    expect(await foldFile(CONSUMER, source), 'the compile failed').toBeNull()
+
+    // The dependency is put back. `css(shared)` folds to what it always did, so an output digest
+    // kept from before the break would match and suppress the one module that has to re-transform.
+    writeSizes(SMALL)
+    changeFile(DEPENDENCY)
+
+    const { graph, invalidated } = stubGraph({ [CONSUMER]: [{ id: CONSUMER }] })
+    expect(hot(DEPENDENCY, graph, []), 'nothing to compare against is not the same as nothing changed').toEqual([
+      { id: CONSUMER },
+    ])
+    expect(invalidated).toEqual([CONSUMER])
+  }, 60_000)
+
+  /**
+   * The cost bound, which is a behaviour and not only a speed.
+   *
+   * The check re-folds every dependent before Vite is told anything, so a shared module with
+   * hundreds of consumers pays for all of them on every edit — including the edits where nothing
+   * can be suppressed. Giving up after a run of consumers that all came back changed bounds that,
+   * and the price is that a consumer sitting behind such a run is reported changed without being
+   * looked at. Conservative, and the reason a single unchanged consumer resets the run.
+   *
+   * Nine consumers, the first eight moved by the edit and the ninth not. Without the bound the
+   * ninth is suppressed; with it, the run has already reached its limit by the time it is reached.
+   */
+  test('stops checking after a run of dependents that all moved', async () => {
+    const { start, foldFile, change, hot } = driver()
+
+    const moved = Array.from({ length: 8 }, (_, index) => join(FIXTURE_DIR, `moved${index}.tsx`))
+    const consumerOf = (binding: string) =>
+      `import { css } from 'styled-system/css'\nimport { ${binding} } from './dep'\nexport const cls = css(${binding})\n`
+
+    mkdirSync(FIXTURE_DIR, { recursive: true })
+    const writeDep = (alpha: string) =>
+      writeFileSync(
+        DEPENDENCY,
+        `export const alpha = { color: '${alpha}' }\nexport const beta = { color: 'blue.500' }\n`,
+      )
+
+    writeDep('red.300')
+    for (const file of moved) writeFileSync(file, consumerOf('alpha'))
+    writeFileSync(CONSUMER, consumerOf('beta'))
+    await start()
+
+    for (const file of moved) expect(await foldFile(file, consumerOf('alpha'))).toContain('"c_red.300"')
+    expect(await foldFile(CONSUMER, consumerOf('beta'))).toContain('"c_blue.500"')
+
+    writeDep('red.400')
+    change('update')
+
+    const entries: Array<[string, { id: string }[]]> = [...moved, CONSUMER].map((file) => [file, [{ id: file }]])
+    const { graph, invalidated } = stubGraph(Object.fromEntries(entries))
+
+    // The eighth moved consumer is what takes the run to its limit, so the ninth dependent — the
+    // one reading `beta`, which the edit did not touch — is reported changed unexamined.
+    expect(hot(DEPENDENCY, graph, [])).toEqual([...moved, CONSUMER].map((file) => ({ id: file })))
+    expect(invalidated).toEqual([...moved, CONSUMER])
+  }, 60_000)
+
+  test('a single unchanged dependent resets the run', async () => {
+    const { start, foldFile, change, hot } = driver()
+
+    const consumerOf = (binding: string) =>
+      `import { css } from 'styled-system/css'\nimport { ${binding} } from './dep'\nexport const cls = css(${binding})\n`
+    // Seven moved, then one that did not, then one more that did not: the reset means the last is
+    // still examined even though eight dependents have been seen.
+    const moved = Array.from({ length: 7 }, (_, index) => join(FIXTURE_DIR, `moved${index}.tsx`))
+
+    mkdirSync(FIXTURE_DIR, { recursive: true })
+    const writeDep = (alpha: string) =>
+      writeFileSync(
+        DEPENDENCY,
+        `export const alpha = { color: '${alpha}' }\nexport const beta = { color: 'blue.500' }\n`,
+      )
+
+    writeDep('red.300')
+    for (const file of moved) writeFileSync(file, consumerOf('alpha'))
+    writeFileSync(CONSUMER, consumerOf('beta'))
+    writeFileSync(OTHER_CONSUMER, consumerOf('beta'))
+    await start()
+
+    for (const file of moved) await foldFile(file, consumerOf('alpha'))
+    await foldFile(CONSUMER, consumerOf('beta'))
+    await foldFile(OTHER_CONSUMER, consumerOf('beta'))
+
+    writeDep('red.400')
+    change('update')
+
+    const entries: Array<[string, { id: string }[]]> = [...moved, CONSUMER, OTHER_CONSUMER].map((file) => [
+      file,
+      [{ id: file }],
+    ])
+    const { graph, invalidated } = stubGraph(Object.fromEntries(entries))
+
+    expect(hot(DEPENDENCY, graph, [])).toEqual(moved.map((file) => ({ id: file })))
+    expect(invalidated, 'both `beta` readers survive the run').toEqual(moved)
   }, 60_000)
 })
 

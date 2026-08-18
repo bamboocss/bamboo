@@ -19,6 +19,12 @@ source, and when recompiling produces the same string there is nothing stale to 
 Bamboo added, never one of the modules Vite matched, so a consumer that imports the edited module for a runtime value is
 still reached by Vite's own propagation exactly as before.
 
-Measured on a twenty-consumer fan-out of one shared module, per edit: editing a runtime value no fold reads went from 22
-Bamboo transforms to 2, editing one variant arm from 22 to 12, and editing the recipe base — where every consumer really
-does move — stayed at 22.
+The check costs a re-fold per dependent on the awaited path, so it gives up after eight consecutive dependents come back
+changed — the signature of an edit that moved everything, where there is nothing to win. Giving up reports the rest as
+changed, which is the pre-existing behaviour, and a single unchanged dependent resets the run.
+
+Measured on a fan-out of one shared module, per edit. At twenty consumers: editing a runtime value no fold reads went
+from 22 Bamboo transforms to 2 and refetch from 88 ms to 28 ms, editing one variant arm from 22 to 12, and editing the
+recipe base — where every consumer really does move — stayed at 22. At three hundred consumers the same runtime-value
+edit went from 715 ms to 183 ms, and the recipe-base edit costs 3.6 ms of checking rather than the 59 ms an unbounded
+check would.

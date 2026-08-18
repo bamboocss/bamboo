@@ -393,6 +393,34 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
   const unchangedFolds = new Map<string, boolean>()
 
   /**
+   * How many dependents in a row may come back changed before the check gives up for this event.
+   *
+   * The check costs a re-fold — ~0.2 ms per dependent measured on a twenty-consumer fan-out — and
+   * it is paid on the awaited path, before Vite is told anything. That is linear in the number of
+   * consumers and does not bound itself: a shared module with three hundred of them adds ~59 ms to
+   * every edit, including the edits where nothing *can* be suppressed because the change moved the
+   * recipe base and every consumer really did recompile.
+   *
+   * The trade is worth it whenever anything is suppressible. Measured on the same fan-out, a
+   * suppressed consumer saves ~2.3 ms of re-transform for the ~0.23 ms its check costs, so the
+   * check pays for itself at about one consumer in ten. What does not pay is the case where the
+   * answer is going to be "changed" for all of them, and that case announces itself: a run of
+   * consumers that all came back changed. Stopping after eight bounds it. On a three-hundred
+   * consumer fan-out, an edit to the recipe base — where nothing can be suppressed — costs 3.6 ms
+   * here rather than the 59 ms checking every one of them would, stacked onto an edit already
+   * spending 600 ms re-transforming. A single unchanged consumer resets the run, so the same
+   * fan-out editing a value no fold reads still checks all three hundred: 49 ms spent against
+   * 520 ms of re-transform not done, and a 715 ms edit reduced to 183 ms.
+   *
+   * Giving up is always the safe direction — an unchecked dependent is treated as changed, which
+   * is what this path did before any of this existed — so the bound can only cost the
+   * optimisation, never correctness. It costs it where the optimisation was worth least: for the
+   * run to reach eight, the consumers seen so far have to be uniformly changed.
+   */
+  const CHANGED_RUN_LIMIT = 8
+  let changedRun = 0
+
+  /**
    * Whether re-folding `dependent` now produces exactly the bytes it produced last time.
    *
    * Only the fold can answer that. The consumer's own source has not changed, so whether its
@@ -410,7 +438,11 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
     const memoized = unchangedFolds.get(dependent)
     if (memoized !== undefined) return memoized
 
-    const unchanged = refoldMatchesSignature(dependent)
+    // Memoized like any other verdict, not merely returned. The second environment's pass has to
+    // reach the same answer as the first, and it would re-derive a *different* one if it started
+    // its own run counter.
+    const unchanged = changedRun < CHANGED_RUN_LIMIT && refoldMatchesSignature(dependent)
+    changedRun = unchanged ? 0 : changedRun + 1
     unchangedFolds.set(dependent, unchanged)
     return unchanged
   }
@@ -446,13 +478,37 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
         sourceFile,
       })
 
-      // Re-recorded even when the answer is "unchanged", because *which* files a module folds
-      // from can move while the bytes it emits do not — a value now re-exported through a
-      // different module, say. Suppressing the announcement and leaving the old edges in place
-      // would mean the next edit to the new dependency reached nobody.
-      recordFoldDependencies(dependent, result.dependencies)
+      const unchanged = digest(result.code) === signature.output
 
-      return digest(result.code) === signature.output
+      /**
+       * Edges re-recorded on the way to suppressing a module, and never on the way to
+       * invalidating one.
+       *
+       * The first is necessary: *which* files a module folds from can move while the bytes it
+       * emits do not — a value now re-exported through a different module, say — and suppressing
+       * the announcement means no transform will run to notice. Leaving the old edges would make
+       * the next edit to the new dependency reach nobody.
+       *
+       * The second would be a bug, and is the reason this is a branch rather than an
+       * unconditional write. `hotUpdate` runs once per environment, client then ssr, against one
+       * shared map. A fold that now yields nothing — an export renamed, a call commented out, any
+       * ordinary mid-edit state — returns `dependencies: []`, so writing it here would retract the
+       * consumer's edge during the *client* pass and leave the *ssr* pass finding an empty set and
+       * returning without invalidating anything: the stale compiled class kept in the SSR cache,
+       * with the client half correctly updated. That is the shape of the bug the self-accepting
+       * fix was about, one environment over. `transform` performs the same retraction, but only
+       * after every environment has already invalidated, which is why it is safe there.
+       *
+       * Confining the write to the unchanged branch removes the hazard rather than sequencing
+       * around it, because a retraction cannot reach that branch: `dependencies` is empty only
+       * when `folded.length === 0`, and a fold that folds nothing returns the module's own source,
+       * which cannot equal an output digest recorded from a pass that replaced a call with a
+       * literal. And where an unchanged verdict *does* narrow the edges, both passes agree anyway
+       * — neither invalidates a module it has just called unchanged.
+       */
+      if (unchanged) recordFoldDependencies(dependent, result.dependencies)
+
+      return unchanged
     } catch {
       return false
     }
@@ -501,8 +557,11 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
     if (!dependents?.size) return
 
     const added: Module[] = []
-    // Copied before it is walked: re-folding a dependent below re-records its edges, and that
-    // writes to this very set.
+    // Copied before it is walked. Re-folding a dependent below can re-record its edges, which
+    // writes to this very set — deleting the entry being visited and, when the dependency is
+    // still among its edges, appending it again for the walk to revisit. The verdict memo makes
+    // that revisit harmless today, so the copy is insurance rather than the fix; the fix for
+    // writes crossing between the per-environment passes is in `refoldMatchesSignature`.
     for (const dependent of [...dependents]) {
       /**
        * A consumer whose compiled bytes this edit does not move is left entirely alone.
@@ -618,6 +677,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
         dependenciesByFile.clear()
         foldSignatures.clear()
         unchangedFolds.clear()
+        changedRun = 0
         // Clears `startedEnvironments` too, so the `add` below opens the new run's list.
         resetStaticCompilationSession(staticSession)
       }
@@ -659,6 +719,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
       // the only point that reliably brackets a content change. A verdict about what a consumer
       // folds to must not outlive one, whatever the changed file happened to be.
       unchangedFolds.clear()
+      changedRun = 0
 
       if (!ctx) return
       if (!shouldTransform(id)) return
