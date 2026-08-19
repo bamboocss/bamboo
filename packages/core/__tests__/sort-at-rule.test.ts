@@ -130,3 +130,99 @@ describe('sort-at-rules with range syntax', () => {
     ])
   })
 })
+
+/**
+ * The length parse used to match `ch|em|ex|px|rem` and fall back to `/(\d)/` — one digit — for
+ * anything else, so a query's rank became its first digit. `(min-width: 100vw)` scored 1 and
+ * `(min-width: 20vw)` scored 2, which for mobile-first `min-` queries is the reverse of the
+ * order the cascade needs: the wider breakpoint lost to the narrower one wherever both applied.
+ *
+ * It reached every unit outside that alternation — every viewport and container unit among
+ * them, which is to say the units a container query is most likely to be written in.
+ */
+describe('sort-at-rules with units beyond px/rem', () => {
+  test('viewport units rank by their number, not their first digit', () => {
+    expect(['(min-width: 100vw)', '(min-width: 20vw)', '(min-width: 50vw)'].sort(sortAtRules)).toEqual([
+      '(min-width: 20vw)',
+      '(min-width: 50vw)',
+      '(min-width: 100vw)',
+    ])
+  })
+
+  test('container units rank by their number too', () => {
+    expect(['(min-width: 100cqw)', '(min-width: 20cqw)', '(min-width: 60cqw)'].sort(sortAtRules)).toEqual([
+      '(min-width: 20cqw)',
+      '(min-width: 60cqw)',
+      '(min-width: 100cqw)',
+    ])
+  })
+
+  test('the dynamic and root-relative spellings rank like the plain ones', () => {
+    expect(['(min-width: 100dvh)', '(min-width: 20svh)', '(min-width: 50lvh)'].sort(sortAtRules)).toEqual([
+      '(min-width: 20svh)',
+      '(min-width: 50lvh)',
+      '(min-width: 100dvh)',
+    ])
+  })
+
+  test('a max- bound in viewport units still ranks descending', () => {
+    expect(['(max-width: 20vw)', '(max-width: 100vw)', '(max-width: 50vw)'].sort(sortAtRules)).toEqual([
+      '(max-width: 100vw)',
+      '(max-width: 50vw)',
+      '(max-width: 20vw)',
+    ])
+  })
+
+  test('absolute units convert and interleave with px', () => {
+    expect(
+      ['(min-width: 768px)', '(min-width: 4in)', '(min-width: 600pt)', '(min-width: 20cm)', '(min-width: 40pc)'].sort(
+        sortAtRules,
+      ),
+    ).toEqual([
+      '(min-width: 4in)', // 384px
+      '(min-width: 40pc)', // 640px
+      '(min-width: 20cm)', // 755.9px
+      '(min-width: 768px)',
+      '(min-width: 600pt)', // 800px
+    ])
+  })
+
+  /**
+   * `ch` and `rch` differ only in which font they resolve against, which nothing here can read,
+   * so both convert against the same 16px root the file has always assumed.
+   */
+  test('font-relative units convert against the assumed root', () => {
+    const ranked = (query: string) =>
+      ['(min-width: 1000px)', query, '(min-width: 100px)'].sort(sortAtRules).indexOf(query)
+
+    expect(ranked('(min-width: 80ch)')).toBe(1) // 711.875px
+    expect(ranked('(min-width: 80rch)')).toBe(1)
+    expect(ranked('(min-width: 40lh)')).toBe(1) // 768px
+  })
+
+  /**
+   * Pinned rather than argued. A `vw` or `cqw` bound has no pixel value to compare against a
+   * `px` breakpoint, so each family is ordered within itself and placed after everything that
+   * does resolve to a length, rather than against an invented reference viewport. Where the
+   * families sit relative to each other is arbitrary under any scheme; this makes it stable.
+   */
+  test('units that resolve to a length rank ahead of units that cannot', () => {
+    expect(['(min-width: 10cqw)', '(min-width: 90vw)', '(min-width: 9999px)'].sort(sortAtRules)).toEqual([
+      '(min-width: 9999px)',
+      '(min-width: 90vw)',
+      '(min-width: 10cqw)',
+    ])
+  })
+
+  test('a number belonging to a feature that is not a length is not read as one', () => {
+    const ranked = (query: string) =>
+      ['(min-width: 1000px)', query, '(min-width: 100px)'].sort(sortAtRules).indexOf(query)
+
+    expect(ranked('(-webkit-min-device-pixel-ratio: 2) and (min-width: 40rem)')).toBe(1)
+    expect(ranked('(min-resolution: 192dpi) and (min-width: 40rem)')).toBe(1)
+  })
+
+  test('a unitless zero is still a zero', () => {
+    expect(['(min-width: 40rem)', '(min-width: 0)'].sort(sortAtRules)).toEqual(['(min-width: 0)', '(min-width: 40rem)'])
+  })
+})

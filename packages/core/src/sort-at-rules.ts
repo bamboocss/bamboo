@@ -24,48 +24,100 @@ const isPrintOnly = /^print$/i
 const maxValue = Number.MAX_VALUE
 
 /**
+ * How many pixels one unit is worth.
+ *
+ * The absolute units are exact. The font-relative ones resolve against the 16px root this file
+ * has always assumed; `ex` and `ch` keep the exact constants inherited from
+ * `sort-css-media-queries`, because they are font metrics rather than derivations and changing
+ * them would reorder stylesheets that sort correctly today. `cap`, `ic` and `lh` are
+ * approximations of the same kind — they resolve against metrics no build step can read, and a
+ * query using one still has to land somewhere deterministic.
+ */
+const pxPerUnit = new Map<string, number>([
+  // Absolute
+  ['px', 1],
+  ['in', 96],
+  ['pc', 16],
+  ['pt', 96 / 72],
+  ['cm', 96 / 2.54],
+  ['mm', 96 / 25.4],
+  ['q', 96 / 25.4 / 4],
+  // Font-relative, against a 16px root
+  ['em', 16],
+  ['rem', 16],
+  ['ex', 8.296875],
+  ['rex', 8.296875],
+  ['ch', 8.8984375],
+  ['rch', 8.8984375],
+  ['ic', 16],
+  ['ric', 16],
+  ['cap', 11.2],
+  ['rcap', 11.2],
+  ['lh', 19.2],
+  ['rlh', 19.2],
+])
+
+/**
+ * Units that are a percentage of something this code cannot know — the viewport for `vw` and
+ * its siblings, the query container for `cq*`.
+ *
+ * There is no pixel value to compare one against a breakpoint written in `px`, so rather than
+ * inventing a reference viewport, each family is ordered within itself and placed after
+ * everything that does resolve to a length. `20vw` and `100vw` then sort the way their numbers
+ * say, which is the whole requirement; where the family sits relative to a `px` breakpoint is
+ * arbitrary under any scheme, and under this one it is at least stable.
+ *
+ * The bases sit far above any real breakpoint and far below `maxValue`, which stays reserved
+ * for "no length in this query at all".
+ */
+const viewportUnit = /^[sld]?v(?:w|h|i|b|min|max)$/
+const containerUnit = /^cq(?:w|h|i|b|min|max)$/
+const viewportBase = 1e9
+const containerBase = 2e9
+
+/** A number and the unit stuck to it, scanned in order so the first real length wins. */
+const lengthToken = /(-?\d*\.?\d+)([a-z]*)/gi
+
+/**
  * Obtain the length of the media request in pixels.
  * Copy from original source `function inspectLength (length)`
+ *
+ * Units are looked up rather than matched by an alternation. The alternation this replaces
+ * listed `ch|em|ex|px|rem` and fell back to `/(\d)/` — a single digit — for everything else, so
+ * `(min-width: 100vw)` scored 1 and sorted ahead of `(min-width: 20vw)`, and `(min-width:
+ * 100cqw)` ahead of `(min-width: 20cqw)`. For mobile-first `min-` queries that is the reverse
+ * of the order the cascade needs, so the wider breakpoint lost to the narrower one at every
+ * viewport where both applied. It covered every viewport and container unit — which is to say
+ * every unit a container query is likely to be written in.
  */
 function getQueryLength(query: string) {
-  let length = /(-?\d*\.?\d+)(ch|em|ex|px|rem)/.exec(query)
+  lengthToken.lastIndex = 0
 
-  if (length === null && (isMinWidth(query) || isMinHeight(query))) {
-    length = /(\d)/.exec(query)
+  let token: RegExpExecArray | null
+  while ((token = lengthToken.exec(query)) !== null) {
+    const value = parseFloat(token[1])
+    const unit = token[2].toLowerCase()
+
+    // Zero is the one length CSS spells without a unit. Any other bare number belongs to a
+    // feature that is not a length — `(-webkit-min-device-pixel-ratio: 2)`, `(min-monochrome: 8)`
+    // — and reading one as a length is how the digit fallback used to score a query by its
+    // device-pixel ratio.
+    if (unit === '') {
+      if (value === 0) return 0
+      continue
+    }
+
+    const px = pxPerUnit.get(unit)
+    if (px !== undefined) return value * px
+
+    if (viewportUnit.test(unit)) return viewportBase + value
+    if (containerUnit.test(unit)) return containerBase + value
+
+    // A unit this does not know: `dpi`, `dppx`, `x`, or one CSS has not shipped yet. Keep
+    // scanning, because a query that mixes one with a real length still has a length to sort on.
   }
 
-  //@ts-expect-error - will fix later
-  if (length === '0') {
-    return 0
-  }
-
-  if (length === null) {
-    return maxValue
-  }
-
-  let number: string | number = length[1]
-  const unit = length[2]
-
-  switch (unit) {
-    case 'ch':
-      number = parseFloat(number) * 8.8984375
-      break
-
-    case 'em':
-    case 'rem':
-      number = parseFloat(number) * 16
-      break
-
-    case 'ex':
-      number = parseFloat(number) * 8.296875
-      break
-
-    case 'px':
-      number = parseFloat(number)
-      break
-  }
-
-  return +number
+  return maxValue
 }
 
 /**
