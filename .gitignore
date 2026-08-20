@@ -33,7 +33,9 @@ ts-import-map-outdir
 storybook-static
 
 ## Benchmark results (machine-specific, see `pnpm bench`)
-bench
+bench/*
+!bench/README.md
+!bench/*.mjs
 dist-parity-*
 
 # Scratch fixture written by packages/vite/__tests__/fold-watch.test.ts

@@ -101,6 +101,7 @@ export async function resolveSolutionTsconfigForFile(
   rootTsconfigPath: string,
   rootParsed: TsConfigJsonResolved,
   getTsconfigModule: typeof import('get-tsconfig'),
+  cache?: Map<string, string>,
 ): Promise<{ tsconfig: TsConfigJsonResolved; tsconfigFile: string }> {
   const { parseTsconfig } = getTsconfigModule
 
@@ -125,7 +126,7 @@ export async function resolveSolutionTsconfigForFile(
     } catch {
       continue
     }
-    const childParsed = parseTsconfig(refPath)
+    const childParsed = parseTsconfig(refPath, cache)
     if (isSourceFileIncludedInTsconfig(absoluteFilename, refPath, childParsed)) {
       return { tsconfig: childParsed, tsconfigFile: refPath }
     }

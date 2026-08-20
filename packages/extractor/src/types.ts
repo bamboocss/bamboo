@@ -86,7 +86,19 @@ export interface ComponentMatchers {
   matchProp: (prop: Pick<MatchTagArgs, 'tagName' | 'tagNode'> & MatchPropArgs) => boolean
 }
 
+/**
+ * Place a module specifier inside the source graph owned by the caller.
+ *
+ * @internal Bamboo's parser supplies its Project resolver. The extractor deliberately has
+ * no filesystem fallback: a cross-file read that bypasses the owner cannot be invalidated or
+ * represented in the owner's dependency graph.
+ */
+export type ResolveModule = (specifier: string, from: SourceFile) => SourceFile | undefined
+
 export interface BoxContext {
+  resolveModule?: ResolveModule
+  /** @internal Receives local source paths crossed by this exact extraction context. */
+  recordDependency?: (filePath: string) => void
   getEvaluateOptions?: (node: Expression, stack: Node[]) => Omit<EvaluateOptions, 'node' | 'policy'> | void
   canEval?: (node: Expression, stack: Node[]) => boolean
   tokens?: {

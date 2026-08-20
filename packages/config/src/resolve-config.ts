@@ -4,6 +4,7 @@ import type { LoadConfigResult, Preset, UserConfig } from '@bamboocss/types'
 import { defaultPresets, getBundledPreset } from './bundled-preset'
 import { getResolvedConfig } from './get-resolved-config'
 import { mergeHooks } from './merge-hooks'
+import { attachConfigResolutionProvenance, takeExternalPresets } from './resolution-provenance'
 import type { BundleConfigResult } from './types'
 import { validateConfig } from './validate-config'
 
@@ -68,6 +69,7 @@ export async function resolveConfig(result: BundleConfigResult, cwd: string): Pr
   const hooks = mergeHooks(result.config.plugins ?? [])
 
   const mergedConfig = await getResolvedConfig(result.config, cwd, hooks)
+  const externalPresets = takeExternalPresets(mergedConfig)
 
   if (mergedConfig.logLevel) {
     logger.level = mergedConfig.logLevel
@@ -103,5 +105,13 @@ export async function resolveConfig(result: BundleConfigResult, cwd: string): Pr
   )
   const deserialize = () => parseJson(serialized)
 
-  return { ...loadConfigResult, serialized, deserialize, hooks }
+  const resolved = { ...loadConfigResult, serialized, deserialize, hooks }
+
+  attachConfigResolutionProvenance(resolved, {
+    baseline: { deserialize, serialized },
+    bundleDependencies: result.dependencies,
+    externalPresets,
+  })
+
+  return resolved
 }

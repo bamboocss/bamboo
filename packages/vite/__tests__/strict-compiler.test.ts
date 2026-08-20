@@ -17,7 +17,21 @@ const run = async (code: string, file: string) => {
 
   await hookOf(plugin.buildStart)?.call({} as never, {} as never)
   await hookOf(plugin.transform)?.call({ addWatchFile: () => {} } as never, code, join(cwd, file), {} as never)
-  return () => hookOf(plugin.buildEnd)?.call({} as never, undefined as never)
+  // A real bundler calls buildEnd once. Cache that outcome so a test can match several parts of
+  // one diagnostic without opening a second lifecycle after the failed generation rolled back.
+  let finished = false
+  let failure: unknown
+  return () => {
+    if (!finished) {
+      finished = true
+      try {
+        hookOf(plugin.buildEnd)?.call({} as never, undefined as never)
+      } catch (error) {
+        failure = error
+      }
+    }
+    if (failure !== undefined) throw failure
+  }
 }
 
 const src = (body: string) => `import { css } from 'styled-system/css'\n${body}\n`

@@ -3,10 +3,19 @@ import type { Expression, Node } from 'ts-morph'
 import { ts } from 'ts-morph'
 import { importedEnvironmentFor } from './resolve-imported-value'
 import type { BoxContext } from './types'
+import { beginDependencyCapture, replayDependencyCache, type DependencyCacheEntry } from './dependency-cache'
 
 const TsEvalError = Symbol('EvalError')
 
-const cacheMap = new WeakMap<Expression, unknown>()
+let cacheMap = new WeakMap<Expression, DependencyCacheEntry<unknown>>()
+let hasCachedEntries = false
+
+/** @internal Drop values whose expression may close over an edited source file. */
+export const clearEvaluateNodeCache = () => {
+  if (!hasCachedEntries) return
+  cacheMap = new WeakMap<Expression, DependencyCacheEntry<unknown>>()
+  hasCachedEntries = false
+}
 
 /** @see https://github.com/wessberg/ts-evaluator#setting-up-policies */
 const POLICY = {
@@ -36,15 +45,45 @@ const evaluateNode = (node: Expression, stack: Node[], ctx: BoxContext, depth = 
 
   // Only the outermost evaluation is cached by node: a nested one is reached through an
   // import and cached against its declaration instead, where every call site shares it.
-  if (depth === 0 && cacheMap.has(node)) {
-    return cacheMap.get(node)
+  const cached = depth === 0 ? cacheMap.get(node) : undefined
+  if (cached) {
+    const replayed = replayDependencyCache(cached, ctx)
+    if (replayed.hit) return replayed.value
   }
 
-  const options = {
+  const capture = depth === 0 ? beginDependencyCapture(ctx) : undefined
+  try {
+    return evaluateNodeUncached(node, stack, ctx, depth, capture?.entry)
+  } finally {
+    capture?.end()
+  }
+}
+
+const evaluateNodeUncached = (
+  node: Expression,
+  stack: Node[],
+  ctx: BoxContext,
+  depth: number,
+  dependencyEntry: (<T>(value: T) => DependencyCacheEntry<T>) | undefined,
+) => {
+  let options = {
     policy: { ...POLICY },
     ...ctx.getEvaluateOptions?.(node, stack),
     node: node.compilerNode as any,
     typescript: ts as any,
+  }
+
+  // A function declaration can evaluate successfully before any of its body runs while still
+  // closing over an imported value. Nested evaluation means we are materialising exactly such
+  // an imported declaration, so bind its closure before producing the function. The ordinary
+  // in-file path remains failure-only.
+  let imported = depth > 0 ? importedEnvironmentFor(node, ctx, stack, depth, safeEvaluateNode) : undefined
+  if (imported) {
+    const environment = (options as { environment?: { extra?: Record<string, unknown> } }).environment
+    options = {
+      ...options,
+      environment: { ...environment, extra: { ...environment?.extra, ...imported } as never },
+    }
   }
 
   let result = evaluate(options)
@@ -59,20 +98,24 @@ const evaluateNode = (node: Expression, stack: Node[], ctx: BoxContext, depth = 
    * the path of every build.
    */
   if (!result.success) {
-    const imported = importedEnvironmentFor(node, ctx, stack, depth, safeEvaluateNode)
+    imported ??= importedEnvironmentFor(node, ctx, stack, depth, safeEvaluateNode)
     if (imported) {
+      const environment = (options as { environment?: { extra?: Record<string, unknown> } }).environment
       result = evaluate({
         ...options,
         // `extra` is typed as a map of the evaluator's own `Literal` union, which is not
         // exported. What resolution produces is whatever the helper returned, so the cast is
         // at the boundary rather than weakening the type it is carried under.
-        environment: { ...(options as { environment?: object }).environment, extra: imported as never },
+        environment: { ...environment, extra: { ...environment?.extra, ...imported } as never },
       })
     }
   }
 
   const expr = result.success ? result.value : TsEvalError
-  if (depth === 0) cacheMap.set(node, expr)
+  if (depth === 0) {
+    cacheMap.set(node, dependencyEntry!(expr))
+    hasCachedEntries = true
+  }
 
   return expr
 }

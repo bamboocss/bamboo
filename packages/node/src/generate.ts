@@ -72,8 +72,12 @@ export async function generate(config: Config, configPath?: string) {
      */
     const bundleStyles = async (ctx: BambooContext, changedFilePaths: string[]) => {
       let parsed = 0
+      const encoder = ctx.parserOptions.encoder
       for (const filePath of changedFilePaths) {
-        if (ctx.project.parseSourceFile(filePath)) parsed++
+        // The initial `build` records this disk extraction under `extract`. Keep watch
+        // rebuilds on the same owner so replacing a file retracts its previous atoms instead
+        // of adding a second, independent `parse` reading beside them.
+        if (encoder.withOwner('extract', filePath, () => ctx.project.parseSourceFile(filePath, encoder))) parsed++
       }
 
       if (parsed === 0) return
@@ -122,15 +126,19 @@ export async function generate(config: Config, configPath?: string) {
         // they have to be re-parsed too or they keep emitting the previous values.
         await bundleStyles(ctx, [filePath, ...ctx.project.getDependents(filePath)])
       } else if (event === 'add') {
+        // Read the pre-add resolution ledger before changing the file tree. A pending
+        // importer may itself feed another file, and rebuilding only that importer leaves
+        // every transitive consumer encoded with the old fallback value.
+        const pendingImporters = ctx.project.getUnresolvedImporters()
+        const pendingClosure = pendingImporters.flatMap((importer) => [
+          importer,
+          ...ctx.project.getDependents(importer),
+        ])
         ctx.project.createSourceFile(filePath)
         // A new file can satisfy an import that previously resolved to nothing.
         // Those importers have no edge to this path yet — the specifier resolved to
         // nowhere when they were parsed — so they are tracked separately.
-        await bundleStyles(ctx, [
-          filePath,
-          ...ctx.project.getDependents(filePath),
-          ...ctx.project.getUnresolvedImporters(),
-        ])
+        await bundleStyles(ctx, [...new Set([filePath, ...ctx.project.getDependents(filePath), ...pendingClosure])])
       }
     })
   }

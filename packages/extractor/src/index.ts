@@ -30,5 +30,6 @@ export type {
   ExtractedFunctionInstance,
   ExtractedFunctionResult,
   PrimitiveType,
+  ResolveModule,
 } from './types'
 export { unbox, type Unboxed } from './unbox'

@@ -20,11 +20,24 @@
   "exports": {
     ".": {
       "source": "./src/index.ts",
-      "types": "./dist/index.d.cts",
-      "require": "./dist/index.cjs",
       "import": {
         "types": "./dist/index.d.mts",
         "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./static-compiler": {
+      "source": "./src/static-compiler.ts",
+      "import": {
+        "types": "./dist/static-compiler.d.mts",
+        "default": "./dist/static-compiler.mjs"
+      },
+      "require": {
+        "types": "./dist/static-compiler.d.cts",
+        "default": "./dist/static-compiler.cjs"
       }
     },
     "./package.json": "./package.json"
@@ -33,8 +46,8 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsdown --tsconfig tsconfig.build.json src/index.ts --format=cjs,esm --shims --dts",
-    "build-fast": "tsdown --dts=false --tsconfig tsconfig.build.json src/index.ts --format=cjs,esm --shims",
+    "build": "tsdown --tsconfig tsconfig.build.json src/index.ts src/static-compiler.ts --format=cjs,esm --shims --dts",
+    "build-fast": "tsdown --dts=false --tsconfig tsconfig.build.json src/index.ts src/static-compiler.ts --format=cjs,esm --shims",
     "dev": "pnpm build-fast --watch"
   },
   "dependencies": {

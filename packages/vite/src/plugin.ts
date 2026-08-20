@@ -1,17 +1,18 @@
-import { createHash } from 'node:crypto'
+import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 import { logger } from '@bamboocss/logger'
 import { truncateList } from '@bamboocss/shared'
-import { loadConfigAndCreateContext, markStaticCompilerActive } from '@bamboocss/node'
+import { markStaticCompilerActive } from '@bamboocss/node/static-compiler'
 import type { Plugin } from 'vite'
 import { asError, bamboocssCss, VIRTUAL_CSS_ID } from './css'
-import { foldSource, type ForeignRecipes, type SkipReason, type SkippedCall } from './fold'
-import { bare } from './prune-static-css'
-import { createRuntimeCss, type RuntimeCss } from './runtime-css'
-import { createStaticStyleSetCompiler, type StaticStyleSetCompiler } from './style-set'
-import { createStaticCompilationSession, remainingEnvironments, resetStaticCompilationSession } from './static-session'
+import { bare } from './class-name'
+import type { FoldResult, ForeignRecipes, SkipReason, SkippedCall } from './fold'
+import { createLazyCompilerState, createRetryableLazy, loadFoldModule, loadNodeModule } from './lazy-modules'
+import type { RuntimeCss } from './runtime-css'
+import type { StaticStyleSetCompiler } from './style-set'
+import { createStaticCompilationSession, remainingEnvironments } from './static-session'
 
 export interface BambooVitePluginOptions {
   /** Path to `bamboo.config.ts`. Resolved the same way the CLI resolves it. */
@@ -42,9 +43,9 @@ export interface BambooVitePluginOptions {
    * Remove rules for atoms no compiled module can emit. Builds only; dev never prunes.
    *
    * Off ships the whole extracted stylesheet: every rule the source graph produced, including
-   * ones nothing reaches. Larger, and never wrong *by pruning* — it also stands down the
-   * assertion that every compiled class has a rule, since that check exists to catch this pass
-   * removing too much. So this is a true escape hatch: it cannot fail a build over reachability.
+   * ones nothing reaches. Larger, and never wrong *by pruning*. Bamboo still refuses a sheet
+   * which lacks a compiler-owned rule named by live JavaScript; disabling pruning cannot make
+   * that mixed-generation output styled.
    *
    * The pruned sheet is also renamed to a hash of its own bytes, and that is not a separate
    * setting because it cannot safely be one. Rollup and Rolldown expand `[hash]` before
@@ -69,6 +70,8 @@ export interface BambooVitePluginOptions {
 
 const DEFAULT_EXTENSIONS = /\.(?:[cm]?[jt]sx?)$/
 const NODE_MODULES = /node_modules/
+const TRANSFORM_META_KEY = 'bamboocss:transform'
+const TRANSFORM_ARTIFACT_VERSION = 3 as const
 
 /**
  * Queries that make Vite serve something other than the module's own source.
@@ -217,49 +220,276 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
     )
   }
 
-  /**
-   * What each file's transform found, for the summary. Keyed by file rather than summed as it
-   * goes, because a build has more than one environment and they share most of their modules.
-   *
-   * Running totals double-counted every shared module once per environment — a two-environment
-   * build of one shared file and one entry each reported "2/2 across 2/4 files" for three
-   * source modules. Coverage is a property of the source, not of how many times a bundler
-   * handed the same file over. It also grew without bound in dev, where every HMR
-   * re-transform of a file counted as another file.
-   *
-   * A second pass over a file replaces its entry rather than adding to it. Both environments
-   * are assumed to compute the same answer for the same module — true of this compiler, though
-   * not something the plugin can enforce, since another `pre` plugin may hand each environment
-   * different code. Where they disagree the last one wins, which is a cosmetic number either
-   * way.
-   */
-  const perFile = new Map<string, { folded: number; skipped?: Map<string, number> }>()
   const staticSession = createStaticCompilationSession()
 
   type Survivor = { file: string; line: number; name: string; reason: SkipReason }
-  /**
-   * Indexed by file, because the only bulk operation on it is "forget this one's".
-   *
-   * A flat array meant every transform scanned every survivor and then rebuilt the dedupe key
-   * set from scratch — O(modules x survivors) across a build, and worst exactly when a build is
-   * already failing and the user is iterating on it. One project had 736 of them across 9,461
-   * modules, which is seven million string builds to discard.
-   */
-  const survivorsByFile = new Map<string, Survivor[]>()
-  const allSurvivors = () => [...survivorsByFile.values()].flat()
-  const addSurvivor = (entry: Survivor) => {
-    const forFile = survivorsByFile.get(entry.file) ?? []
-    // Deduped within the file rather than globally: the key is file-scoped anyway, and a
-    // per-file list is short enough that scanning it beats maintaining a second index.
-    if (forFile.some((seen) => seen.line === entry.line && seen.name === entry.name && seen.reason === entry.reason)) {
-      return
+  interface TransformArtifactPayload {
+    version: typeof TRANSFORM_ARTIFACT_VERSION
+    moduleId: string
+    file: string
+    folded: number
+    skipped: Array<[reason: SkipReason, count: number]>
+    survivors: Array<Omit<Survivor, 'file'>>
+    transformedFile: boolean
+    classNames: string[]
+    dependencies: string[]
+    signature?: { input: string; output: string; path: string }
+  }
+  interface TransformArtifact extends TransformArtifactPayload {
+    integrity: string
+  }
+
+  // Private to this plugin instance and deliberately absent from transform metadata. A later
+  // plugin may read and even replace the serializable artifact, but it cannot mint a valid tag
+  // for changed reachability, diagnostics, dependency edges or signatures.
+  const transformArtifactIntegrityKey = randomBytes(32)
+  const serializeTransformArtifact = (environment: string, artifact: TransformArtifactPayload) =>
+    JSON.stringify([
+      TRANSFORM_META_KEY,
+      environment,
+      artifact.version,
+      artifact.moduleId,
+      artifact.file,
+      artifact.folded,
+      artifact.skipped.map(([reason, count]) => [reason, count]),
+      artifact.survivors.map(({ line, name, reason }) => [line, name, reason]),
+      artifact.transformedFile,
+      [...artifact.classNames],
+      [...artifact.dependencies],
+      artifact.signature ? [artifact.signature.input, artifact.signature.output, artifact.signature.path] : null,
+    ])
+  const transformArtifactIntegrity = (environment: string, artifact: TransformArtifactPayload) =>
+    createHmac('sha256', transformArtifactIntegrityKey)
+      .update(serializeTransformArtifact(environment, artifact))
+      .digest('base64url')
+  const sealTransformArtifact = (environment: string, artifact: TransformArtifactPayload): TransformArtifact => ({
+    ...artifact,
+    integrity: transformArtifactIntegrity(environment, artifact),
+  })
+
+  const skipReasons = new Set<SkipReason>([
+    'dynamic',
+    'raw-call',
+    'recipe-call',
+    'unsupported-kind',
+    'not-imported',
+    'no-call-expression',
+    'overlapping',
+    'unresolved-token',
+    'runtime-binding',
+    'compile-failed',
+  ])
+  const isRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === 'object' && value !== null && !Array.isArray(value)
+  const isNonNegativeInteger = (value: unknown) => Number.isSafeInteger(value) && (value as number) >= 0
+  const isPositiveInteger = (value: unknown) => Number.isSafeInteger(value) && (value as number) > 0
+  const isTransformArtifact = (value: unknown): value is TransformArtifact => {
+    if (!isRecord(value) || value.version !== TRANSFORM_ARTIFACT_VERSION) return false
+    if (typeof value.moduleId !== 'string' || typeof value.file !== 'string') return false
+    if (!isNonNegativeInteger(value.folded) || typeof value.transformedFile !== 'boolean') return false
+    if (typeof value.integrity !== 'string' || !/^[\w-]{43}$/.test(value.integrity)) return false
+    if (!Array.isArray(value.classNames) || !value.classNames.every((entry) => typeof entry === 'string')) return false
+    if (!Array.isArray(value.dependencies) || !value.dependencies.every((entry) => typeof entry === 'string'))
+      return false
+    if (
+      !Array.isArray(value.skipped) ||
+      !value.skipped.every(
+        (entry) =>
+          Array.isArray(entry) &&
+          entry.length === 2 &&
+          typeof entry[0] === 'string' &&
+          skipReasons.has(entry[0] as SkipReason) &&
+          isPositiveInteger(entry[1]),
+      )
+    ) {
+      return false
     }
-    forFile.push(entry)
-    survivorsByFile.set(entry.file, forFile)
+    if (
+      !Array.isArray(value.survivors) ||
+      !value.survivors.every(
+        (entry) =>
+          isRecord(entry) &&
+          Number.isSafeInteger(entry.line) &&
+          (entry.line as number) >= 1 &&
+          typeof entry.name === 'string' &&
+          typeof entry.reason === 'string' &&
+          skipReasons.has(entry.reason as SkipReason),
+      )
+    ) {
+      return false
+    }
+    if (value.signature === undefined) return true
+    return (
+      isRecord(value.signature) &&
+      typeof value.signature.input === 'string' &&
+      typeof value.signature.output === 'string' &&
+      value.signature.path === value.file
+    )
   }
-  const clearSurvivorsFor = (file: string) => {
-    survivorsByFile.delete(file)
+
+  const hasValidTransformArtifactIntegrity = (environment: string, artifact: TransformArtifact) => {
+    const expected = Buffer.from(transformArtifactIntegrity(environment, artifact))
+    const actual = Buffer.from(artifact.integrity)
+    return actual.length === expected.length && timingSafeEqual(actual, expected)
   }
+
+  const cachedArtifactError = (id: string, environment: string, value: unknown, snapshotProblem?: string) => {
+    let problem: string
+    if (snapshotProblem) {
+      problem = snapshotProblem
+    } else if (!isRecord(value) || value.version !== TRANSFORM_ARTIFACT_VERSION) {
+      problem =
+        isRecord(value) && (typeof value.version === 'number' || typeof value.version === 'string')
+          ? `uses version ${JSON.stringify(value.version)}; expected schema version ${TRANSFORM_ARTIFACT_VERSION}`
+          : `is malformed and has no valid version; expected schema version ${TRANSFORM_ARTIFACT_VERSION}`
+    } else if (!isTransformArtifact(value)) {
+      problem = `is malformed for schema version ${TRANSFORM_ARTIFACT_VERSION}`
+    } else if (value.moduleId !== id || value.file !== id.split('?')[0]) {
+      problem = `does not belong to this module id and physical file`
+    } else if (!hasValidTransformArtifactIntegrity(environment, value)) {
+      problem = `failed its schema version ${TRANSFORM_ARTIFACT_VERSION} integrity check`
+    } else {
+      problem = `could not be validated for schema version ${TRANSFORM_ARTIFACT_VERSION}`
+    }
+    return new Error(
+      `bamboocss: cached transform metadata for ${JSON.stringify(id)} in the ${JSON.stringify(environment)} ` +
+        `environment ${problem}.\n\n` +
+        `Bamboo cannot safely rebuild from this entry because cached JavaScript may still name CSS classes whose ` +
+        `rules would be dropped. Restart Vite to invalidate its in-memory transform cache. If this persists, clear ` +
+        `Vite's cache directory and rebuild.`,
+    )
+  }
+
+  /**
+   * One contribution per live bundler module ID, inside one Vite environment.
+   *
+   * Reporting groups these by physical file later, but ownership cannot: query variants share
+   * one parser path while carrying independent transform output, diagnostics, dependencies and
+   * cache entries. Replacing `dual.tsx?a` must not erase `dual.tsx?b`, fresh or cached. Nor can a
+   * client transform replace the SSR contribution for the same ID: an upstream environment-aware
+   * plugin is allowed to hand Bamboo different code in each graph.
+   */
+  interface EnvironmentTransformState {
+    transformArtifactsByModule: Map<string, TransformArtifact>
+    dependentsByDependency: Map<string, Set<string>>
+    dependenciesByModule: Map<string, Set<string>>
+    filesByModule: Map<string, string>
+    foldSignatures: Map<string, { input: string; output: string; path: string }>
+    recipeConfigCache: Map<string, ForeignRecipes>
+    transformedModulesThisRun: Set<string>
+    unchangedFolds: Map<string, boolean>
+    changedRun: number
+    cssLoaded: boolean
+  }
+
+  type EnvironmentContext = {
+    environment?: { name?: string; config?: { build?: { emitAssets?: boolean } } }
+  }
+  // The configured name is Vite's stable identity across hook contexts. Vite 5 has no
+  // environment object and runs one graph, which deliberately shares the `default` state.
+  const transformStateByEnvironment = new Map<string, EnvironmentTransformState>()
+  interface TransformEpoch {
+    id: number
+    state: EnvironmentTransformState
+    /** Atoms this immutable JavaScript generation owns in its extraction generation. */
+    ownedClasses: ReadonlySet<string>
+  }
+  interface LiveOutputSlot {
+    epoch: TransformEpoch
+    prunedClasses?: Set<string>
+  }
+  interface OutputStage {
+    cssDigest?: string
+    prunedClasses?: Set<string>
+  }
+  /** The immutable generation currently occupying each configured output on disk. */
+  const liveOutputSlotsByEnvironment = new Map<string, Map<number, LiveOutputSlot>>()
+  interface PreparedEnvironmentGeneration {
+    state: EnvironmentTransformState
+    epoch: TransformEpoch
+    buildSerial: number
+    outputTokens: Set<number>
+    stagedOutputs: Map<number, OutputStage>
+  }
+  interface PendingOutputCycle {
+    expectedTokens: Set<number>
+    successfulTokens: Set<number>
+    candidatesBySlot: Map<number, LiveOutputSlot>
+    lastBuildSerial: number
+    lastOutputSlot: number
+    mode: 'memory' | 'write'
+  }
+  /** Graphs which passed `buildEnd`, but whose output has not succeeded yet. */
+  const preparedGenerations = new Map<string, PreparedEnvironmentGeneration>()
+  /** Success accumulated across hosts which run one buildStart/buildEnd pair per output. */
+  const pendingOutputCycles = new Map<string, PendingOutputCycle>()
+  /** Last configured output whose render phase actually began, for missing-marker recovery. */
+  const lastStartedOutputSlotByEnvironment = new Map<string, number>()
+  const nextBuildSerialByEnvironment = new Map<string, number>()
+  const observedBuildSerialByEnvironment = new Map<string, number>()
+  const buildSerialByState = new WeakMap<EnvironmentTransformState, number>()
+  /** Output finalizers installed by the `options` hook for the next generation. */
+  const outputTokensByEnvironment = new Map<string, Set<number>>()
+  const OUTPUT_FINALIZER = Symbol('bamboocss-output-finalizer')
+  const OUTPUT_START_MARKER = Symbol('bamboocss-output-start-marker')
+  const DIRECT_OUTPUT_TOKEN = 0
+  let nextOutputToken = 0
+  let nextEpochId = 0
+  interface OutputIdentity {
+    environment: string
+    outputSlot: number
+    outputToken: number
+  }
+  const outputIdentityByBundle = new WeakMap<object, OutputIdentity>()
+  const outputIdentityByOptions = new WeakMap<object, OutputIdentity>()
+  const outputStageByBundle = new WeakMap<object, OutputStage>()
+  const outputStageByOptions = new WeakMap<object, OutputStage>()
+  const environmentOf = (context: unknown) => (context as EnvironmentContext).environment
+  const environmentName = (context: unknown) => environmentOf(context)?.name ?? 'default'
+  const newEnvironmentState = (): EnvironmentTransformState => ({
+    transformArtifactsByModule: new Map(),
+    dependentsByDependency: new Map(),
+    dependenciesByModule: new Map(),
+    filesByModule: new Map(),
+    foldSignatures: new Map(),
+    recipeConfigCache: new Map(),
+    transformedModulesThisRun: new Set(),
+    unchangedFolds: new Map(),
+    changedRun: 0,
+    cssLoaded: false,
+  })
+  const cloneEnvironmentState = (state: EnvironmentTransformState): EnvironmentTransformState => ({
+    transformArtifactsByModule: new Map(state.transformArtifactsByModule),
+    dependentsByDependency: new Map(
+      [...state.dependentsByDependency].map(([dependency, dependents]) => [dependency, new Set(dependents)]),
+    ),
+    dependenciesByModule: new Map(
+      [...state.dependenciesByModule].map(([moduleId, dependencies]) => [moduleId, new Set(dependencies)]),
+    ),
+    filesByModule: new Map(state.filesByModule),
+    foldSignatures: new Map(state.foldSignatures),
+    recipeConfigCache: new Map(state.recipeConfigCache),
+    transformedModulesThisRun: new Set(state.transformedModulesThisRun),
+    unchangedFolds: new Map(state.unchangedFolds),
+    changedRun: state.changedRun,
+    cssLoaded: state.cssLoaded,
+  })
+  const environmentState = (context: unknown) => {
+    const identity = environmentName(context)
+    let state = transformStateByEnvironment.get(identity)
+    if (!state) {
+      state = newEnvironmentState()
+      transformStateByEnvironment.set(identity, state)
+    }
+    return state
+  }
+
+  const allSurvivors = (states: Iterable<EnvironmentTransformState>) =>
+    [...states].flatMap((state) =>
+      [...state.transformArtifactsByModule.values()].flatMap((artifact) =>
+        artifact.survivors.map(({ line, name, reason }) => ({ file: artifact.file, line, name, reason })),
+      ),
+    )
   const createSurvivorError = (entries: Survivor[]) => {
     const byFile = new Map<string, Survivor[]>()
     for (const entry of entries) {
@@ -300,14 +530,6 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
   }
 
   /**
-   * Recipe configs read out of modules other than the one being transformed.
-   *
-   * Per build rather than per module: a recipe declared once and imported by fifty components
-   * would otherwise re-parse its module fifty times, which is the transform path.
-   */
-  const recipeConfigCache = new Map<string, ForeignRecipes>()
-
-  /**
    * Which modules folded a value read out of which other module, for dev invalidation.
    *
    * `addWatchFile` reports the same edges, and in a build that is enough — Rollup discards a
@@ -332,29 +554,34 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
    * Keyed by dependency, since "what changed" is the question asked, and tracked in the other
    * direction as well so a re-transform can retract edges the module no longer has.
    */
-  const dependentsByDependency = new Map<string, Set<string>>()
-  const dependenciesByFile = new Map<string, Set<string>>()
-
-  const recordFoldDependencies = (file: string, dependencies: readonly string[]) => {
-    const next = new Set(dependencies.map(normalizeFsPath).filter((dependency) => dependency !== file))
-    const previous = dependenciesByFile.get(file)
+  const recordFoldDependencies = (
+    state: EnvironmentTransformState,
+    moduleId: string,
+    file: string,
+    dependencies: readonly string[],
+  ) => {
+    const { dependenciesByModule, dependentsByDependency, filesByModule } = state
+    const normalizedFile = normalizeFsPath(file)
+    const next = new Set(dependencies.map(normalizeFsPath).filter((dependency) => dependency !== normalizedFile))
+    const previous = dependenciesByModule.get(moduleId)
+    filesByModule.set(moduleId, file)
 
     for (const dependency of previous ?? []) {
       if (next.has(dependency)) continue
       const dependents = dependentsByDependency.get(dependency)
-      if (!dependents?.delete(file)) continue
+      if (!dependents?.delete(moduleId)) continue
       if (!dependents.size) dependentsByDependency.delete(dependency)
     }
 
     if (!next.size) {
-      dependenciesByFile.delete(file)
+      dependenciesByModule.delete(moduleId)
       return
     }
-    dependenciesByFile.set(file, next)
+    dependenciesByModule.set(moduleId, next)
     for (const dependency of next) {
       const dependents = dependentsByDependency.get(dependency)
-      if (dependents) dependents.add(file)
-      else dependentsByDependency.set(dependency, new Set([file]))
+      if (dependents) dependents.add(moduleId)
+      else dependentsByDependency.set(dependency, new Set([moduleId]))
     }
   }
 
@@ -369,7 +596,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
    * Digests, not text. Retaining every consumer's source and compiled output for the life of the
    * process is the same order of memory as the ts-morph project already holding it; two 44-byte
    * strings per entry is not, and it does not grow with module size. The set is bounded the way
-   * `dependenciesByFile` is — an entry exists only while a module's fold actually reads another
+   * `dependenciesByModule` is — an entry exists only while a module's fold actually reads another
    * file, which most modules never do — so a project that folds nothing across a boundary pays
    * neither the bytes nor the hashing.
    *
@@ -379,18 +606,509 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
    * that comparison and is treated as changed. `path` is the spelling `transform` used, because
    * ts-morph and the fold both key on it and Windows spells it more than one way.
    */
-  const foldSignatures = new Map<string, { input: string; output: string; path: string }>()
-
   const digest = (text: string) => createHash('sha256').update(text).digest('base64')
 
+  /** Fingerprint the generated Bamboo assets after every plugin which may rewrite the bundle. */
+  const bambooCssDigest = (bundle: object) => {
+    const assets: string[] = []
+    for (const output of Object.values(bundle)) {
+      if (!isRecord(output) || output.type !== 'asset') continue
+      const { source } = output
+      if (typeof source !== 'string' && !(source instanceof Uint8Array)) continue
+      const text = typeof source === 'string' ? source : Buffer.from(source).toString()
+      if (!text.includes('--made-with-bamboo')) continue
+      assets.push(text)
+    }
+    if (!assets.length) return undefined
+    // Rolldown resolves asset placeholders between input and output plugin hooks. The bytes are
+    // the safety boundary; a host-only file-name change does not alter which classes the sheet
+    // backs and must not look like a downstream CSS rewrite.
+    return digest(JSON.stringify(assets.sort()))
+  }
+
+  /** Add one detached transform contribution to the global reachability projection. */
+  const applyStaticTransformContribution = (artifact: TransformArtifact) => {
+    if (artifact.transformedFile) staticSession.transformedFiles.add(resolve(artifact.file))
+    for (const className of artifact.classNames) staticSession.markClassUsed(className)
+  }
+
   /**
-   * Consumers this edit cannot move, resolved once per watcher event.
+   * Re-derive the two global sets CSS pruning consumes from environment-owned artifacts.
    *
-   * `hotUpdate` runs once per environment — client and ssr both — and the answer is a property
-   * of the files, not of which environment is asking. Cleared in `watchChange`, which every Vite
-   * in the peer range calls for every file event, before either update hook.
+   * A watch run may rebuild one environment or several at once. The candidate being judged
+   * replaces its own previous contribution; every sibling contributes its committed generation,
+   * even when a replacement for that sibling is already in flight. Its old JavaScript remains
+   * the live output until the replacement succeeds, so pruning against a half-filled candidate
+   * would remove rules that output still names.
    */
-  const unchangedFolds = new Map<string, boolean>()
+  const contributionStates = (
+    candidateEnvironment?: string,
+    candidateState?: EnvironmentTransformState,
+  ): EnvironmentTransformState[] => {
+    const states: EnvironmentTransformState[] = []
+    const seenEpochs = new Set<number>()
+    let candidateIncluded = false
+    for (const [environment, slots] of liveOutputSlotsByEnvironment) {
+      if (environment === candidateEnvironment && candidateState) {
+        states.push(candidateState)
+        candidateIncluded = true
+      } else {
+        for (const { epoch } of slots.values()) {
+          if (seenEpochs.has(epoch.id)) continue
+          seenEpochs.add(epoch.id)
+          states.push(epoch.state)
+        }
+      }
+    }
+    if (candidateEnvironment && candidateState && !candidateIncluded) states.push(candidateState)
+    return states
+  }
+
+  const rebuildStaticTransformContributions = (
+    candidateEnvironment?: string,
+    candidateState?: EnvironmentTransformState,
+  ) => {
+    staticSession.transformedFiles.clear()
+    staticSession.usedClasses.clear()
+    staticSession.cssLoaded = false
+
+    for (const state of contributionStates(candidateEnvironment, candidateState)) {
+      if (state.cssLoaded) staticSession.cssLoaded = true
+      for (const artifact of state.transformArtifactsByModule.values()) {
+        applyStaticTransformContribution(artifact)
+      }
+    }
+  }
+
+  /**
+   * Snapshot which reported classes Bamboo actually extracted for this JavaScript generation.
+   *
+   * Fold artifacts also report literal classes passed through helpers such as `cx('external',
+   * css(...))`. Intersecting with the extraction inventory keeps those useful reachability facts
+   * without later demanding that Bamboo provide a rule it never owned.
+   */
+  const ownedClassesForState = (state: EnvironmentTransformState) => {
+    const extracted = new Map([...staticSession.prunableClasses].map((className) => [bare(className), className]))
+    const owned = new Set<string>()
+    for (const artifact of state.transformArtifactsByModule.values()) {
+      for (const reported of artifact.classNames) {
+        for (const token of reported.split(' ')) {
+          if (!token) continue
+          const extractedClass = extracted.get(bare(token))
+          if (extractedClass !== undefined) owned.add(extractedClass)
+        }
+      }
+    }
+    return owned
+  }
+
+  const createTransformEpoch = (state: EnvironmentTransformState): TransformEpoch => {
+    const detachedState = cloneEnvironmentState(state)
+    return {
+      id: ++nextEpochId,
+      state: detachedState,
+      ownedClasses: ownedClassesForState(detachedState),
+    }
+  }
+
+  /** Apply the same candidate-replaces-its-environment rule as the reachability projection. */
+  const requiredClassesForProjection = (candidateEnvironment: string, candidateOwnedClasses: ReadonlySet<string>) => {
+    const required = new Set<string>()
+    let candidateIncluded = false
+    const seenEpochs = new Set<number>()
+    for (const [environment, slots] of liveOutputSlotsByEnvironment) {
+      if (environment === candidateEnvironment) {
+        for (const className of candidateOwnedClasses) required.add(className)
+        candidateIncluded = true
+        continue
+      }
+      for (const { epoch } of slots.values()) {
+        if (seenEpochs.has(epoch.id)) continue
+        seenEpochs.add(epoch.id)
+        for (const className of epoch.ownedClasses) required.add(className)
+      }
+    }
+    if (!candidateIncluded) {
+      for (const className of candidateOwnedClasses) required.add(className)
+    }
+    return required
+  }
+
+  const currentRequiredClasses = () => {
+    const prunable = new Set([...staticSession.prunableClasses].map(bare))
+    return new Set([...staticSession.usedClasses].filter((className) => prunable.has(bare(className))))
+  }
+
+  /** Derive loss history from the stylesheet outputs which are still observable. */
+  const rebuildLivePrunedClasses = () => {
+    staticSession.prunedClasses.clear()
+    for (const slots of liveOutputSlotsByEnvironment.values()) {
+      for (const slot of slots.values()) {
+        for (const className of slot.prunedClasses ?? []) staticSession.prunedClasses.add(className)
+      }
+    }
+  }
+
+  const observeEnvironmentBuildStart = (environment: string) => {
+    const serial = (nextBuildSerialByEnvironment.get(environment) ?? 0) + 1
+    nextBuildSerialByEnvironment.set(environment, serial)
+    observedBuildSerialByEnvironment.set(environment, serial)
+  }
+
+  /** Open a replacement without discarding the generation a failed rebuild can fall back to. */
+  const beginEnvironmentGeneration = (environment: string) => {
+    // A previous watch generation can fail in a downstream `generateBundle` hook. Neither
+    // Rollup nor Rolldown calls `renderError` or `closeBundle` for that watcher result, so the
+    // next generation is also the cleanup boundary for its unpublished candidate.
+    preparedGenerations.delete(environment)
+    const state = newEnvironmentState()
+    // Real Vite builds are numbered by the private head plugin before any user buildStart can
+    // throw. Direct hook harnesses do not install that plugin, so allocate their serial here.
+    const observedSerial = observedBuildSerialByEnvironment.get(environment)
+    const buildSerial = observedSerial ?? (nextBuildSerialByEnvironment.get(environment) ?? 0) + 1
+    if (observedSerial === undefined) nextBuildSerialByEnvironment.set(environment, buildSerial)
+    else observedBuildSerialByEnvironment.delete(environment)
+    buildSerialByState.set(state, buildSerial)
+    transformStateByEnvironment.set(environment, state)
+    staticSession.participatingEnvironments.add(environment)
+    // A replacement is in progress, but every existing output slot still names a detached,
+    // complete contribution. Whole-run guards may judge that conservative live union; only a
+    // cold environment with no observable output is incomplete.
+    if (liveOutputSlotsByEnvironment.get(environment)?.size) {
+      staticSession.completedEnvironments.add(environment)
+    } else {
+      staticSession.completedEnvironments.delete(environment)
+    }
+    // Until this candidate proves complete, the output on disk is still described by the
+    // committed generation. A concurrently finishing sibling must prune against that stable
+    // view, never against a half-transformed replacement.
+    rebuildStaticTransformContributions()
+    return state
+  }
+
+  /** Collapse an environment to a generation which replaced all of its observable outputs. */
+  const completeEnvironmentGeneration = (environment: string, state: EnvironmentTransformState) => {
+    // A watcher serializes generations for one environment. Keep the identity check anyway:
+    // if a host ever overlaps them, an older buildEnd must not publish over its replacement.
+    if (transformStateByEnvironment.get(environment) !== state) return
+    // Kept detached from the effective state: watchChange may retract deleted modules before
+    // the next buildStart. Those mutations belong to the candidate being prepared, not to the
+    // output snapshot rollback must retain if that candidate fails.
+    const epoch = createTransformEpoch(state)
+    liveOutputSlotsByEnvironment.set(environment, new Map([[DIRECT_OUTPUT_TOKEN, { epoch }]]))
+    staticSession.completedEnvironments.add(environment)
+    rebuildStaticTransformContributions()
+    rebuildLivePrunedClasses()
+  }
+
+  const prepareEnvironmentGeneration = (environment: string, state: EnvironmentTransformState) => {
+    if (transformStateByEnvironment.get(environment) !== state) return
+    preparedGenerations.set(environment, {
+      state,
+      epoch: createTransformEpoch(state),
+      buildSerial: buildSerialByState.get(state) ?? 0,
+      outputTokens: new Set(outputTokensByEnvironment.get(environment) ?? []),
+      stagedOutputs: new Map(),
+    })
+    // `buildEnd` validated the candidate, but the previous output is still the one users have.
+    // Do not leave its reachability projected while rendering or a concurrently finishing
+    // sibling could prune against JavaScript which has not been emitted.
+    rebuildStaticTransformContributions()
+  }
+
+  const sameTokens = (left: Set<number>, right: Set<number>) =>
+    left.size === right.size && [...left].every((token) => right.has(token))
+
+  /** The first configured output is an observable boundary even when its later hooks throw. */
+  const beginOutputCycle = (environment: string, outputSlot: number) => {
+    const previousSlot = lastStartedOutputSlotByEnvironment.get(environment)
+    // Rolldown can keep dispatching later outputs after an earlier one failed in an input
+    // `buildEnd`, before that output reached this marker. In that case the next marker can be
+    // slot one again with no intervening slot zero. A repeated or backwards slot is therefore
+    // just as much an aggregate-cycle boundary as observing slot zero normally.
+    if (outputSlot === 0 || (previousSlot !== undefined && outputSlot <= previousSlot)) {
+      pendingOutputCycles.delete(environment)
+    }
+    lastStartedOutputSlotByEnvironment.set(environment, outputSlot)
+  }
+
+  const completeOutputCycle = (environment: string, cycle: PendingOutputCycle) => {
+    // Candidate slots are authoritative. Rolldown builds configured outputs separately, so an
+    // edit or deletion between them can legitimately give each one a different immutable epoch.
+    // Relabelling every slot as the last epoch would erase classes still named by earlier output.
+    liveOutputSlotsByEnvironment.set(environment, new Map(cycle.candidatesBySlot))
+    pendingOutputCycles.delete(environment)
+    preparedGenerations.delete(environment)
+    staticSession.completedEnvironments.add(environment)
+    rebuildStaticTransformContributions()
+    rebuildLivePrunedClasses()
+  }
+
+  const publishPreparedOutput = (environment: string, outputToken: number, outputSlot: number, wasWritten: boolean) => {
+    const generation = preparedGenerations.get(environment)
+    if (!generation || transformStateByEnvironment.get(environment) !== generation.state) return
+    if (!generation.outputTokens.has(outputToken)) return
+    const mode = wasWritten ? 'write' : 'memory'
+    let cycle = pendingOutputCycles.get(environment)
+    const serialContinues =
+      cycle !== undefined &&
+      outputSlot > cycle.lastOutputSlot &&
+      (generation.buildSerial === cycle.lastBuildSerial ||
+        generation.buildSerial === cycle.lastBuildSerial + (outputSlot - cycle.lastOutputSlot))
+    // Seeing the same output slot/token again means a later aggregate generation started after
+    // an earlier one stopped part-way through. Discard its unpublished bookkeeping; the live
+    // output slots already retain exactly the subset which reached disk.
+    if (
+      !cycle ||
+      cycle.mode !== mode ||
+      !sameTokens(cycle.expectedTokens, generation.outputTokens) ||
+      cycle.successfulTokens.has(outputToken) ||
+      !serialContinues
+    ) {
+      cycle = {
+        expectedTokens: new Set(generation.outputTokens),
+        successfulTokens: new Set(),
+        candidatesBySlot: new Map(),
+        lastBuildSerial: generation.buildSerial,
+        lastOutputSlot: outputSlot,
+        mode,
+      }
+      pendingOutputCycles.set(environment, cycle)
+    }
+
+    const stage = generation.stagedOutputs.get(outputToken)
+    const candidateSlot: LiveOutputSlot = {
+      epoch: generation.epoch,
+      ...(stage?.prunedClasses ? { prunedClasses: new Set(stage.prunedClasses) } : {}),
+    }
+    cycle.successfulTokens.add(outputToken)
+    cycle.candidatesBySlot.set(outputSlot, candidateSlot)
+    cycle.lastBuildSerial = generation.buildSerial
+    cycle.lastOutputSlot = outputSlot
+    const allOutputsSucceeded = cycle.successfulTokens.size === cycle.expectedTokens.size
+
+    // `writeBundle` begins after this one output's files have replaced their predecessors. Its
+    // token is a real output slot: repeated partial failures overwrite that slot rather than
+    // accumulating epochs which no file names any more. Unwritten slots continue to reference
+    // their old epochs, so the projection is the exact conservative union of live JavaScript.
+    if (wasWritten) {
+      const slots = liveOutputSlotsByEnvironment.get(environment) ?? new Map<number, LiveOutputSlot>()
+      slots.set(outputSlot, candidateSlot)
+      liveOutputSlotsByEnvironment.set(environment, slots)
+      // Even a mixed generation is a stable, exact description of the files currently on disk.
+      // Counting that union complete prevents a downstream failure (which has no rollback hook)
+      // from wedging every later sibling guard and coverage report indefinitely.
+      staticSession.completedEnvironments.add(environment)
+      rebuildStaticTransformContributions()
+      rebuildLivePrunedClasses()
+    }
+
+    if (!allOutputsSucceeded || !wasWritten) return
+    completeOutputCycle(environment, cycle)
+  }
+
+  const closePreparedMemoryOutputs = (environment: string) => {
+    const cycle = pendingOutputCycles.get(environment)
+    if (!cycle || cycle.mode !== 'memory' || cycle.successfulTokens.size !== cycle.expectedTokens.size) return
+    completeOutputCycle(environment, cycle)
+  }
+
+  /** Restore the still-live output contribution when the replacement generation fails. */
+  const rollbackEnvironmentGeneration = (environment: string, state: EnvironmentTransformState) => {
+    if (transformStateByEnvironment.get(environment) !== state) return
+    preparedGenerations.delete(environment)
+    // Rolldown may continue with a later configured output after this one fails in `buildEnd`,
+    // before any output-plugin `renderStart` marker could announce a new aggregate cycle. Do not
+    // let that later slot combine with successes retained from an earlier partial generation.
+    // Live slots were published independently at their filesystem boundaries and remain the
+    // authoritative rollback view.
+    pendingOutputCycles.delete(environment)
+    const slots = liveOutputSlotsByEnvironment.get(environment)
+    const liveEpochs = new Map<number, TransformEpoch>()
+    for (const { epoch } of slots?.values() ?? []) liveEpochs.set(epoch.id, epoch)
+    const latestLive = [...liveEpochs.values()].sort((a, b) => a.id - b.id).at(-1)
+    if (latestLive) {
+      transformStateByEnvironment.set(environment, cloneEnvironmentState(latestLive.state))
+      staticSession.completedEnvironments.add(environment)
+    } else {
+      transformStateByEnvironment.delete(environment)
+      staticSession.completedEnvironments.delete(environment)
+    }
+    rebuildStaticTransformContributions()
+    rebuildLivePrunedClasses()
+  }
+
+  staticSession.beginOutputProjection = (environment, outputOptions, bundle, replacesGeneratedStylesheet) => {
+    const generation = preparedGenerations.get(environment)
+    if (!generation || transformStateByEnvironment.get(environment) !== generation.state) {
+      const currentState = transformStateByEnvironment.get(environment)
+      return {
+        cssLoaded: currentState?.cssLoaded ?? staticSession.cssLoaded,
+        requiredClasses: requiredClassesForProjection(
+          environment,
+          currentState ? ownedClassesForState(currentState) : currentRequiredClasses(),
+        ),
+        restore() {},
+      }
+    }
+
+    const committedPrunedClasses = staticSession.prunedClasses
+    staticSession.prunedClasses = new Set(committedPrunedClasses)
+    rebuildStaticTransformContributions(environment, generation.epoch.state)
+    const requiredClasses = requiredClassesForProjection(environment, generation.epoch.ownedClasses)
+    if (replacesGeneratedStylesheet) staticSession.prunedClasses.clear()
+
+    let restored = false
+    return {
+      cssLoaded: generation.epoch.state.cssLoaded,
+      requiredClasses,
+      restore() {
+        if (restored) return
+        restored = true
+        const stage = replacesGeneratedStylesheet
+          ? { cssDigest: bambooCssDigest(bundle), prunedClasses: new Set(staticSession.prunedClasses) }
+          : {}
+        outputStageByBundle.set(bundle, stage)
+        outputStageByOptions.set(outputOptions, stage)
+        staticSession.prunedClasses = committedPrunedClasses
+        rebuildStaticTransformContributions()
+      },
+    }
+  }
+
+  /** Aggregate environment-owned coverage once the participating generation is complete. */
+  const reportTransformCoverage = (states: Iterable<EnvironmentTransformState>) => {
+    // Equivalent coverage for one full module ID is counted once across environments,
+    // preserving the source-coverage contract. If environment-aware transforms disagree on
+    // counts or diagnostics, both contributions remain visible; query variants are distinct IDs.
+    const perFile = new Map<string, { folded: number; skipped: Map<string, number> }>()
+    const reportedCoverageByModule = new Map<string, Set<string>>()
+    for (const state of states) {
+      for (const artifact of state.transformArtifactsByModule.values()) {
+        const coverageKey = JSON.stringify([artifact.file, artifact.folded, artifact.skipped])
+        const reported = reportedCoverageByModule.get(artifact.moduleId)
+        if (reported?.has(coverageKey)) continue
+        if (reported) reported.add(coverageKey)
+        else reportedCoverageByModule.set(artifact.moduleId, new Set([coverageKey]))
+
+        const entry = perFile.get(artifact.file) ?? { folded: 0, skipped: new Map<string, number>() }
+        entry.folded += artifact.folded
+        for (const [reason, count] of artifact.skipped) {
+          entry.skipped.set(reason, (entry.skipped.get(reason) ?? 0) + count)
+        }
+        perFile.set(artifact.file, entry)
+      }
+    }
+
+    let folded = 0
+    let filesWithFolds = 0
+    const skipped = new Map<string, number>()
+    for (const entry of perFile.values()) {
+      folded += entry.folded
+      if (entry.folded) filesWithFolds++
+      for (const [reason, count] of entry.skipped) {
+        skipped.set(reason, (skipped.get(reason) ?? 0) + count)
+      }
+    }
+
+    const declined = Array.from(skipped.values()).reduce((sum, count) => sum + count, 0)
+    const total = folded + declined
+    if (!total) return
+
+    const share = Math.round((folded / total) * 100)
+    const reasons = Array.from(skipped.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([reason, count]) => `${reason}=${count}`)
+      .join(' ')
+
+    logger.info(
+      'vite:transform',
+      `Compiled ${folded}/${total} (${share}%) across ${filesWithFolds}/${perFile.size} files` +
+        (reasons ? ` — declined: ${reasons}` : ''),
+    )
+  }
+
+  /** Restore every per-build fact established by one successful transform. */
+  const applyTransformArtifact = (
+    state: EnvironmentTransformState,
+    value: unknown,
+    expectedModuleId: string,
+    environment: string,
+  ) => {
+    // Snapshot before inspecting even the version. Metadata belongs to another plugin and may
+    // carry accessors or a Proxy: validating it and then reading it again would let those reads
+    // return signed values for the HMAC and different class/dependency facts for state. A
+    // structured clone reads the external graph once and gives every subsequent operation the
+    // same detached plain data. Non-cloneable metadata is not serializable cache metadata and
+    // therefore fails closed too.
+    let snapshot: unknown
+    try {
+      snapshot = structuredClone(value)
+    } catch {
+      throw cachedArtifactError(
+        expectedModuleId,
+        environment,
+        undefined,
+        `could not be snapshotted as serializable schema version ${TRANSFORM_ARTIFACT_VERSION} data`,
+      )
+    }
+
+    // Centralized here so neither fresh transforms nor cache replay can acquire a second,
+    // weaker mutation path as new semantic fields are added to the artifact.
+    if (
+      !isTransformArtifact(snapshot) ||
+      snapshot.moduleId !== expectedModuleId ||
+      snapshot.file !== expectedModuleId.split('?')[0] ||
+      !hasValidTransformArtifactIntegrity(environment, snapshot)
+    ) {
+      throw cachedArtifactError(expectedModuleId, environment, snapshot)
+    }
+    const artifact = snapshot
+    const { file, moduleId } = artifact
+    state.transformArtifactsByModule.set(moduleId, artifact)
+
+    recordFoldDependencies(state, moduleId, file, artifact.dependencies)
+    if (artifact.signature) state.foldSignatures.set(moduleId, artifact.signature)
+    else state.foldSignatures.delete(moduleId)
+  }
+
+  /**
+   * Replay transform metadata for modules Rollup reused from its cache.
+   *
+   * `buildStart` has to clear reachability because a watch rebuild may have a different graph,
+   * but Rollup does not call `transform` again for an unchanged module. The transform result is
+   * still present on that module as serializable metadata, and `buildEnd` is the common Rollup
+   * and Rolldown point where the complete graph can be enumerated while CSS generation is still
+   * ahead of us. Replaying here restores the exact state pruning and the finished-build guards
+   * would have observed after a clean build.
+   *
+   * Freshly transformed module IDs are skipped inside this environment only. Besides avoiding
+   * duplicate work, that makes a failed transform authoritative: an older cached artifact must
+   * not overwrite the diagnostic and signature retraction established by the failing pass.
+   */
+  const replayCachedTransformArtifacts = (
+    pluginContext: EnvironmentContext & {
+      getModuleIds?: () => IterableIterator<string>
+      getModuleInfo?: (id: string) => { meta?: Record<string, unknown> } | null
+    },
+  ) => {
+    if (!pluginContext.getModuleIds || !pluginContext.getModuleInfo) return
+    const state = environmentState(pluginContext)
+
+    for (const id of pluginContext.getModuleIds()) {
+      // Suppression is environment/module-scoped, not file-scoped. `dual.tsx?a` and
+      // `dual.tsx?b` share the parser's filesystem identity but have independent cache entries;
+      // client and SSR independently cache even the same full ID.
+      if (state.transformedModulesThisRun.has(id)) continue
+
+      const meta = pluginContext.getModuleInfo(id)?.meta
+      // Most graph modules are not Bamboo transform candidates. No key is the ordinary case;
+      // a present key is Bamboo claiming ownership and therefore must be safe to replay.
+      if (!meta || !Object.prototype.hasOwnProperty.call(meta, TRANSFORM_META_KEY)) continue
+      const artifact = meta[TRANSFORM_META_KEY]
+      applyTransformArtifact(state, artifact, id, environmentName(pluginContext))
+    }
+  }
 
   /**
    * How many dependents in a row may come back changed before the check gives up for this event.
@@ -418,8 +1136,6 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
    * run to reach eight, the consumers seen so far have to be uniformly changed.
    */
   const CHANGED_RUN_LIMIT = 8
-  let changedRun = 0
-
   /**
    * Whether re-folding `dependent` now produces exactly the bytes it produced last time.
    *
@@ -434,22 +1150,21 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
    * that returns nothing, a fold that throws — because "changed" is what this path did before,
    * and a wrong "unchanged" is a stale class string in the browser.
    */
-  const foldOutputUnchanged = (dependent: string) => {
-    const memoized = unchangedFolds.get(dependent)
+  const foldOutputUnchanged = (state: EnvironmentTransformState, dependent: string) => {
+    const memoized = state.unchangedFolds.get(dependent)
     if (memoized !== undefined) return memoized
 
-    // Memoized like any other verdict, not merely returned. The second environment's pass has to
-    // reach the same answer as the first, and it would re-derive a *different* one if it started
-    // its own run counter.
-    const unchanged = changedRun < CHANGED_RUN_LIMIT && refoldMatchesSignature(dependent)
-    changedRun = unchanged ? 0 : changedRun + 1
-    unchangedFolds.set(dependent, unchanged)
+    // Memoized like any other verdict, not merely returned. Each environment owns its own
+    // signature and counter because an upstream plugin may have handed them different source.
+    const unchanged = state.changedRun < CHANGED_RUN_LIMIT && refoldMatchesSignature(state, dependent)
+    state.changedRun = unchanged ? 0 : state.changedRun + 1
+    state.unchangedFolds.set(dependent, unchanged)
     return unchanged
   }
 
-  const refoldMatchesSignature = (dependent: string) => {
-    const signature = foldSignatures.get(dependent)
-    if (!signature || !ctx || !runtimeCss || !styleCompiler) return false
+  const refoldMatchesSignature = (state: EnvironmentTransformState, dependent: string) => {
+    const signature = state.foldSignatures.get(dependent)
+    if (!signature || !ctx || !foldSourceImpl || !runtimeCss || !styleCompiler) return false
 
     try {
       const code = readFileSync(signature.path, 'utf8')
@@ -461,52 +1176,54 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
       const parserResult = ctx.project.parseSourceFile(signature.path)
       if (!parserResult) return false
 
-      const result = foldSource({
-        ctx,
-        code,
-        parserResult,
-        filePath: signature.path,
-        runtimeCss,
-        styleCompiler,
-        maxRecipeStates,
-        parseModule: (path) => ctx?.project.parseSourceFile(path),
-        recipeConfigCache,
-        // Reaches only `skipped`, and `code` is what is being compared. Left off because the
-        // scan it enables wraps every identifier in the module to build a report nothing here
-        // reads.
-        reportSurvivors: false,
-        sourceFile,
-      })
+      const result = withResolutionClosure(
+        signature.path,
+        foldSourceImpl({
+          ctx,
+          code,
+          parserResult,
+          filePath: signature.path,
+          runtimeCss,
+          styleCompiler,
+          maxRecipeStates,
+          parseModule: (path) => ctx?.project.parseSourceFile(path),
+          recipeConfigCache: state.recipeConfigCache,
+          // Reaches only `skipped`, and `code` is what is being compared. Left off because the
+          // scan it enables wraps every identifier in the module to build a report nothing here
+          // reads.
+          reportSurvivors: false,
+          sourceFile,
+        }),
+        parserResult.getDependencies(),
+        state.dependenciesByModule.get(dependent),
+      )
 
       const unchanged = digest(result.code) === signature.output
 
       /**
-       * Edges re-recorded on the way to suppressing a module, and never on the way to
-       * invalidating one.
+       * Edges re-recorded exactly on the way to suppressing a module. A changed provisional
+       * fold may add newly observed edges, but never retracts the last recoverable ones.
        *
        * The first is necessary: *which* files a module folds from can move while the bytes it
        * emits do not — a value now re-exported through a different module, say — and suppressing
        * the announcement means no transform will run to notice. Leaving the old edges would make
        * the next edit to the new dependency reach nobody.
        *
-       * The second would be a bug, and is the reason this is a branch rather than an
-       * unconditional write. `hotUpdate` runs once per environment, client then ssr, against one
-       * shared map. A fold that now yields nothing — an export renamed, a call commented out, any
-       * ordinary mid-edit state — returns `dependencies: []`, so writing it here would retract the
-       * consumer's edge during the *client* pass and leave the *ssr* pass finding an empty set and
-       * returning without invalidating anything: the stale compiled class kept in the SSR cache,
-       * with the client half correctly updated. That is the shape of the bug the self-accepting
-       * fix was about, one environment over. `transform` performs the same retraction, but only
-       * after every environment has already invalidated, which is why it is safe there.
-       *
-       * Confining the write to the unchanged branch removes the hazard rather than sequencing
-       * around it, because a retraction cannot reach that branch: `dependencies` is empty only
-       * when `folded.length === 0`, and a fold that folds nothing returns the module's own source,
-       * which cannot equal an output digest recorded from a pass that replaced a call with a
-       * literal. And where an unchanged verdict *does* narrow the edges, both passes agree anyway
-       * — neither invalidates a module it has just called unchanged.
+       * A changed result is only a provisional check on the way to a real transform. Its reads
+       * can warm the extractor cache, so the authoritative parse may not cross every nested
+       * module again; retaining the union gives that transform semantic targets to validate
+       * against the current Project ledger. It then records the exact answer. If that pass
+       * throws, the additive update has kept every old edge while also making a fix in a newly
+       * observed dependency able to retry it.
        */
-      if (unchanged) recordFoldDependencies(dependent, result.dependencies)
+      if (unchanged) {
+        recordFoldDependencies(state, dependent, signature.path, result.dependencies)
+      } else {
+        recordFoldDependencies(state, dependent, signature.path, [
+          ...(state.dependenciesByModule.get(dependent) ?? []),
+          ...result.dependencies,
+        ])
+      }
 
       return unchanged
     } catch {
@@ -546,22 +1263,23 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
    * change, and a reload is what Vite does with any update nothing accepts.
    */
   const foldDependentModules = <Module extends { id?: string | null; isSelfAccepting?: boolean }>(
+    state: EnvironmentTransformState,
     file: string,
     modules: readonly Module[],
     graph: {
+      getModuleById?: (id: string) => Module | undefined
       getModulesByFile: (file: string) => Set<Module> | undefined
       invalidateModule: (module: Module) => void
     },
   ) => {
-    const dependents = dependentsByDependency.get(normalizeFsPath(file))
+    const dependents = state.dependentsByDependency.get(normalizeFsPath(file))
     if (!dependents?.size) return
 
     const added: Module[] = []
     // Copied before it is walked. Re-folding a dependent below can re-record its edges, which
     // writes to this very set — deleting the entry being visited and, when the dependency is
     // still among its edges, appending it again for the walk to revisit. The verdict memo makes
-    // that revisit harmless today, so the copy is insurance rather than the fix; the fix for
-    // writes crossing between the per-environment passes is in `refoldMatchesSignature`.
+    // that revisit harmless today, so the copy protects this walk from an in-place edge update.
     for (const dependent of [...dependents]) {
       /**
        * A consumer whose compiled bytes this edit does not move is left entirely alone.
@@ -596,8 +1314,11 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
        * the edited module for a runtime value is still reached by `propagateUpdate` exactly as
        * it would be with no plugin here at all — that direction was never this list's to decide.
        */
-      if (foldOutputUnchanged(dependent)) continue
-      for (const module of graph.getModulesByFile(dependent) ?? []) {
+      if (foldOutputUnchanged(state, dependent)) continue
+      const exact = graph.getModuleById?.(dependent)
+      const dependentFile = state.filesByModule.get(dependent) ?? dependent
+      const candidates = exact ? [exact] : (graph.getModulesByFile(normalizeFsPath(dependentFile)) ?? [])
+      for (const module of candidates) {
         if (modules.includes(module) || added.includes(module)) continue
         graph.invalidateModule(module)
         added.push(module)
@@ -626,22 +1347,210 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
     return [...modules, ...added]
   }
 
-  let ctx: Awaited<ReturnType<typeof loadConfigAndCreateContext>> | undefined
+  let ctx: Awaited<ReturnType<(typeof import('@bamboocss/node'))['loadConfigAndCreateContext']>> | undefined
+  let foldSourceImpl: (typeof import('./fold'))['foldSource'] | undefined
   let runtimeCss: RuntimeCss | undefined
   let styleCompiler: StaticStyleSetCompiler | undefined
   let command: 'build' | 'serve' = 'build'
-  let setup: Promise<void> | undefined
+  let defaultEmitAssets = true
 
-  const ensureContext = async () => {
-    if (!setup) {
-      setup = loadConfigAndCreateContext({ configPath, cwd, dev: command === 'serve' }).then((loaded) => {
-        ctx = loaded
-        const semanticCss = createRuntimeCss(loaded)
-        runtimeCss = semanticCss
-        styleCompiler = createStaticStyleSetCompiler(loaded, runtimeCss)
-      })
+  /**
+   * Expand semantic leaf reads through the Project's exact resolution paths.
+   *
+   * Most boxed values point at their final declaration, which the fold reports directly. An
+   * evaluated imported helper is different: its returned box belongs to the local call node,
+   * while ParserResult records the modules crossed during that evaluation. Seed from both so
+   * neither form can leave compiled JavaScript stale. A re-export or barrel on either path can
+   * change which declaration the same import selects and must be watched too. Supplying only
+   * these semantic leaves back to Project keeps unrelated runtime-import branches out and walks
+   * only the indexed closure rather than scanning the global ledger.
+   */
+  const withResolutionClosure = (
+    filePath: string,
+    result: FoldResult,
+    parserDependencies: readonly string[] = [],
+    previousDependencies: ReadonlySet<string> | undefined = undefined,
+  ): FoldResult => {
+    if (!ctx || !result.folded.length) return result
+
+    const dependencies = new Set(result.dependencies)
+    for (const dependency of parserDependencies) {
+      if (!isGeneratedOutput(dependency, ctx)) dependencies.add(dependency)
     }
-    await setup
+
+    const targets = new Set(dependencies)
+    // A refold can populate the extractor's value cache immediately before Vite runs the real
+    // transform. That parse still reports the directly crossed helper, but it may not revisit a
+    // nested leaf. Only previously semantic targets from byte-identical importer source are
+    // candidates (the caller enforces that digest guard); Project then retains solely those
+    // which remain reachable in the current resolution graph.
+    for (const dependency of previousDependencies ?? []) targets.add(dependency)
+    if (!targets.size) return result
+
+    for (const dependency of ctx.project.getDependencies(filePath, [...targets])) {
+      if (!isGeneratedOutput(dependency, ctx)) dependencies.add(dependency)
+    }
+    const expanded = [...dependencies]
+    if (
+      expanded.length === result.dependencies.length &&
+      expanded.every((dependency, index) => dependency === result.dependencies[index])
+    ) {
+      return result
+    }
+    return { ...result, dependencies: expanded }
+  }
+
+  const loadContext = createRetryableLazy(async () => {
+    const { loadConfigAndCreateContext } = await loadNodeModule()
+    return loadConfigAndCreateContext({ configPath, cwd, dev: command === 'serve' })
+  })
+  const loadCompilerState = createLazyCompilerState(loadContext, loadFoldModule)
+  const ensureContext = async () => {
+    ctx = await loadContext()
+  }
+  const ensureCompilerState = async () => {
+    const loaded = await loadCompilerState()
+    // Published together only after config loading, chunk loading and both derived compilers
+    // have succeeded. A rejected attempt leaves no half-compiler visible to HMR.
+    ctx = loaded.context
+    foldSourceImpl = loaded.foldSource
+    runtimeCss = loaded.runtimeCss
+    styleCompiler = loaded.styleCompiler
+  }
+
+  type OutputOptionsWithPlugins = { plugins?: unknown }
+  type InputOptionsWithOutput = { output?: OutputOptionsWithPlugins | OutputOptionsWithPlugins[] }
+  type TaggedOutputFinalizer = Plugin & {
+    [OUTPUT_FINALIZER]: OutputIdentity
+  }
+  type TaggedOutputStartMarker = Plugin & {
+    [OUTPUT_START_MARKER]: { environment: string; outputSlot: number }
+  }
+
+  const outputFinalizerTag = (value: unknown) => {
+    if (!value || typeof value !== 'object') return undefined
+    return (value as Partial<TaggedOutputFinalizer>)[OUTPUT_FINALIZER]
+  }
+  const outputStartMarkerTag = (value: unknown) => {
+    if (!value || typeof value !== 'object') return undefined
+    return (value as Partial<TaggedOutputStartMarker>)[OUTPUT_START_MARKER]
+  }
+  const findOutputFinalizer = (
+    value: unknown,
+    environment: string,
+    outputSlot: number,
+  ): TaggedOutputFinalizer | undefined => {
+    if (Array.isArray(value)) {
+      for (const entry of value) {
+        const found = findOutputFinalizer(entry, environment, outputSlot)
+        if (found) return found
+      }
+      return undefined
+    }
+    const identity = outputFinalizerTag(value)
+    return identity?.environment === environment && identity.outputSlot === outputSlot
+      ? (value as TaggedOutputFinalizer)
+      : undefined
+  }
+  const findOutputStartMarker = (
+    value: unknown,
+    environment: string,
+    outputSlot: number,
+  ): TaggedOutputStartMarker | undefined => {
+    if (Array.isArray(value)) {
+      for (const entry of value) {
+        const found = findOutputStartMarker(entry, environment, outputSlot)
+        if (found) return found
+      }
+      return undefined
+    }
+    const identity = outputStartMarkerTag(value)
+    return identity?.environment === environment && identity.outputSlot === outputSlot
+      ? (value as TaggedOutputStartMarker)
+      : undefined
+  }
+  const stripOutputLifecyclePlugins = (value: unknown): unknown[] => {
+    if (Array.isArray(value)) return value.flatMap(stripOutputLifecyclePlugins)
+    return value == null || outputFinalizerTag(value) || outputStartMarkerTag(value) ? [] : [value]
+  }
+  const createOutputStartMarker = (environment: string, outputSlot: number): TaggedOutputStartMarker => {
+    return Object.assign(
+      {
+        name: `bamboocss:output-start:${environment}:${outputSlot}`,
+        renderStart: {
+          order: 'pre' as const,
+          sequential: true,
+          handler() {
+            beginOutputCycle(environment, outputSlot)
+          },
+        },
+      },
+      { [OUTPUT_START_MARKER]: { environment, outputSlot } },
+    ) as TaggedOutputStartMarker
+  }
+  const createOutputFinalizer = (environment: string, outputSlot: number): TaggedOutputFinalizer => {
+    const outputToken = ++nextOutputToken
+    return Object.assign(
+      {
+        name: `bamboocss:output-finalizer:${environment}:${outputSlot}`,
+        generateBundle: {
+          order: 'post' as const,
+          handler(outputOptions: unknown, bundle: unknown, isWrite: boolean) {
+            // Appended after every configured output plugin: this is both the last view of the
+            // bundle and the point where one output has finished generating successfully.
+            if (!bundle || typeof bundle !== 'object') return
+            const identity = { environment, outputSlot, outputToken }
+            outputIdentityByBundle.set(bundle, identity)
+            if (outputOptions && typeof outputOptions === 'object') outputIdentityByOptions.set(outputOptions, identity)
+            const generation = preparedGenerations.get(environment)
+            const stage =
+              outputStageByBundle.get(bundle) ??
+              (outputOptions && typeof outputOptions === 'object' ? outputStageByOptions.get(outputOptions) : undefined)
+            if (stage?.cssDigest && bambooCssDigest(bundle) !== stage.cssDigest) {
+              throw new Error(
+                `bamboocss: an output plugin changed or removed the generated stylesheet after Bamboo finalized ` +
+                  `its reachability. The cached prune history would no longer describe the emitted CSS. Preserve ` +
+                  `the Bamboo asset in later \`generateBundle\` hooks, or run that transformation before Bamboo.`,
+              )
+            }
+            if (generation && stage) generation.stagedOutputs.set(outputToken, stage)
+            if (!isWrite) publishPreparedOutput(environment, outputToken, outputSlot, false)
+          },
+        },
+      },
+      { [OUTPUT_FINALIZER]: { environment, outputSlot, outputToken } },
+    ) as TaggedOutputFinalizer
+  }
+
+  const installOutputFinalizers = (inputOptions: InputOptionsWithOutput, environment: string) => {
+    if (!inputOptions.output) {
+      outputTokensByEnvironment.delete(environment)
+      return
+    }
+
+    const outputs = Array.isArray(inputOptions.output) ? inputOptions.output : [inputOptions.output]
+    const outputTokens = new Set<number>()
+    const installed = outputs.map((output, outputSlot) => {
+      const existing = findOutputFinalizer(output.plugins, environment, outputSlot)
+      const existingStart = findOutputStartMarker(output.plugins, environment, outputSlot)
+      if (existing && existingStart) {
+        outputTokens.add(existing[OUTPUT_FINALIZER].outputToken)
+        return output
+      }
+
+      // Mutate the nested output object deliberately. Rollup's watcher copies its top-level input
+      // options before running this hook, while retaining the original output objects it later
+      // passes to `write`; replacing only the copied top-level property would install a finalizer
+      // which never runs. Vite resolves a distinct output object per environment.
+      const finalizer = existing ?? createOutputFinalizer(environment, outputSlot)
+      const startMarker = existingStart ?? createOutputStartMarker(environment, outputSlot)
+      outputTokens.add(finalizer[OUTPUT_FINALIZER].outputToken)
+      output.plugins = [startMarker, ...stripOutputLifecyclePlugins(output.plugins), finalizer]
+      return output
+    })
+
+    inputOptions.output = Array.isArray(inputOptions.output) ? installed : installed[0]
+    outputTokensByEnvironment.set(environment, outputTokens)
   }
 
   const compiler: Plugin = {
@@ -651,37 +1560,51 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
     /** See the same declaration on the css plugin: one instance per build, not per environment. */
     sharedDuringBuild: true,
 
+    options(inputOptions) {
+      installOutputFinalizers(inputOptions as typeof inputOptions & InputOptionsWithOutput, environmentName(this))
+      return inputOptions
+    },
+
     configResolved(config) {
       command = config.command
+      defaultEmitAssets = config.build?.emitAssets ?? (!config.build?.ssr || config.build?.ssrEmitAssets === true)
+      // `closeBundle` has only pre/normal/post ordering. Another post-enforced user plugin may be
+      // declared after Bamboo, so placing the committer last in Bamboo's own returned array would
+      // not make it last globally. At this point Vite has assembled its complete input-plugin
+      // list (including internal build plugins), while environment plugin lists are derived only
+      // after this hook. Move the private committer to the actual tail so its post/sequential
+      // close hook observes every earlier close hook succeeding in both Vite 7 and Vite 8.
+      const plugins = config.plugins as Plugin[] | undefined
+      if (plugins) {
+        for (const finalizer of [outputWriteObserver, memoryOutputCommitter]) {
+          const index = plugins.indexOf(finalizer)
+          if (index !== -1) plugins.splice(index, 1)
+        }
+        // The filesystem observer must run before a peer pre/sequential write hook can reject;
+        // the in-memory committer must run after every peer close hook has succeeded.
+        plugins.unshift(outputWriteObserver)
+        plugins.push(memoryOutputCommitter)
+      }
     },
 
     async buildStart() {
-      // Reset per *run*, not per environment.
+      // Open a transactional generation for this environment only.
       //
-      // `buildStart` fires once per environment, and a framework that builds a client and an
-      // SSR bundle — react-router among them — runs both against this one plugin instance.
-      // Resetting on each meant the second environment discarded everything the first
-      // established: `cssLoaded` went false, so an SSR bundle that legitimately never imports
-      // the stylesheet failed the "not imported" check, and the reachability sets that
-      // pruning consults were emptied halfway through.
+      // Each Vite environment owns an independent watcher. A client edit can start another
+      // client build without starting SSR at all; the SSR bundle and its cached class literals
+      // remain live. Clearing every environment when the client name repeated therefore made
+      // the next client stylesheet prune rules that the untouched SSR JavaScript still named.
       //
-      // Environments of one run each fire this once, in sequence, so seeing the *same* one
-      // twice is what distinguishes a new run — a `vite build --watch` rebuild — from another
-      // environment of the run in progress.
-      const environment = (this as { environment?: { name?: string } }).environment?.name ?? 'default'
-      if (staticSession.startedEnvironments.has(environment)) {
-        perFile.clear()
-        survivorsByFile.clear()
-        recipeConfigCache.clear()
-        dependentsByDependency.clear()
-        dependenciesByFile.clear()
-        foldSignatures.clear()
-        unchangedFolds.clear()
-        changedRun = 0
-        // Clears `startedEnvironments` too, so the `add` below opens the new run's list.
-        resetStaticCompilationSession(staticSession)
-      }
-      staticSession.startedEnvironments.add(environment)
+      // The replacement becomes the effective graph immediately, retracting stale facts while
+      // fresh transforms and cached metadata replay fill it. Its last-good state remains aside:
+      // untouched siblings still contribute, and a failed replacement can restore the output
+      // the application is still running.
+      //
+      // Starting is not completing. Concurrent watcher rebuilds can both reach this hook before
+      // either graph has loaded; the fast environment must not run whole-run guards while the
+      // other is paused here with `cssLoaded: false`.
+      const environment = environmentName(this)
+      const state = beginEnvironmentGeneration(environment)
 
       // Normalized here too. `ensureContext` loads and evaluates the user's config file and
       // its hooks, so what it throws is entirely outside this plugin's control — and in dev
@@ -689,6 +1612,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
       try {
         await ensureContext()
       } catch (error) {
+        rollbackEnvironmentGeneration(environment, state)
         throw asError(error, 'failed to load the bamboo config')
       }
     },
@@ -718,8 +1642,12 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
       // every version in the peer range, and it runs before the update hooks — which makes it
       // the only point that reliably brackets a content change. A verdict about what a consumer
       // folds to must not outlive one, whatever the changed file happened to be.
-      unchangedFolds.clear()
-      changedRun = 0
+      // Vite dev calls this once by default, then `hotUpdate` once per environment. Bracket the
+      // physical edit for every environment so none reuses a verdict from the previous event.
+      for (const state of transformStateByEnvironment.values()) {
+        state.unchangedFolds.clear()
+        state.changedRun = 0
+      }
 
       if (!ctx) return
       if (!shouldTransform(id)) return
@@ -732,14 +1660,23 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
 
       // Whole-map rather than this file's entry: a config is cached under the module that
       // *declares* it, and an edit here can change what any other module re-exports.
-      recipeConfigCache.clear()
+      for (const state of transformStateByEnvironment.values()) state.recipeConfigCache.clear()
 
       if (change.event === 'delete') {
         ctx.project.removeSourceFile(filePath)
-        // Only as a consumer. Its edges as a *dependency* are the other modules' to retract,
-        // on the re-transform this deletion is about to cause.
-        recordFoldDependencies(normalizeFsPath(filePath), [])
-        foldSignatures.delete(normalizeFsPath(filePath))
+        // Only as consumers. Their edges as a *dependency* are the other modules' to retract,
+        // on the re-transform this deletion is about to cause. Every query variant owns its
+        // own contribution even though all of them share this physical path.
+        const deleted = normalizeFsPath(filePath)
+        for (const state of transformStateByEnvironment.values()) {
+          for (const [moduleId, moduleFile] of [...state.filesByModule]) {
+            if (normalizeFsPath(moduleFile) !== deleted) continue
+            recordFoldDependencies(state, moduleId, moduleFile, [])
+            state.foldSignatures.delete(moduleId)
+            state.transformArtifactsByModule.delete(moduleId)
+            state.filesByModule.delete(moduleId)
+          }
+        }
         return
       }
 
@@ -768,7 +1705,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
     hotUpdate({ file, modules }) {
       const graph = this.environment?.moduleGraph
       if (!graph) return
-      return foldDependentModules(file, modules, graph)
+      return foldDependentModules(environmentState(this), file, modules, graph)
     },
 
     handleHotUpdate({ file, modules, server }) {
@@ -777,56 +1714,74 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
       // is `>=5`, so the Vite 5 shape this exists for does reach here.
       const legacy = server as unknown as {
         environments?: unknown
-        moduleGraph: Parameters<typeof foldDependentModules<(typeof modules)[number]>>[2]
+        moduleGraph: Parameters<typeof foldDependentModules<(typeof modules)[number]>>[3]
       }
       // Guarded rather than trusted: `server.moduleGraph` on Vite 6 and up is a compatibility
       // layer over the per-environment graphs, and this hook should not be the one touching it.
       if (legacy.environments) return
-      return foldDependentModules(file, modules, legacy.moduleGraph)
+      return foldDependentModules(environmentState(this), file, modules, legacy.moduleGraph)
     },
 
     async transform(code, id) {
       if (!shouldTransform(id)) return null
 
       try {
-        await ensureContext()
+        await ensureCompilerState()
       } catch (error) {
-        throw asError(error, 'failed to load the bamboo config')
+        throw asError(error, 'failed to initialize the bamboo compiler')
       }
-      if (!ctx || !runtimeCss || !styleCompiler) return null
+      if (!ctx || !foldSourceImpl || !runtimeCss || !styleCompiler) return null
 
       const [filePath] = id.split('?')
-      clearSurvivorsFor(filePath)
 
       // The generated styled-system is bamboo's own runtime, not user code. It is not in
       // the project's `include`, so parsing it fails, and folding it would be meaningless
       // even if it did not.
       if (isGeneratedOutput(filePath, ctx)) return null
 
-      let result: ReturnType<typeof foldSource>
+      const state = environmentState(this)
+      state.transformedModulesThisRun.add(id)
+      let inputDigest: string | undefined
+      const previousSignature = state.foldSignatures.get(id)
+      const previousDependencies =
+        previousSignature && previousSignature.input === (inputDigest ??= digest(code))
+          ? state.dependenciesByModule.get(id)
+          : undefined
+
+      let result: FoldResult
       try {
         const sourceFile = ctx.project.addSourceFile(filePath, code)
         const parserResult = ctx.project.parseSourceFile(filePath)
         // An empty extraction result is not proof that the module has no Bamboo runtime
         // binding. The strict compiler also scans the source AST after planning rewrites.
-        if (!parserResult) return null
+        if (!parserResult) {
+          state.transformArtifactsByModule.delete(id)
+          recordFoldDependencies(state, id, filePath, [])
+          state.foldSignatures.delete(id)
+          return null
+        }
 
-        result = foldSource({
-          ctx,
-          code,
-          parserResult,
+        result = withResolutionClosure(
           filePath,
-          runtimeCss,
-          styleCompiler,
-          maxRecipeStates,
-          // On demand rather than from a registry built at `buildStart`: a consumer is
-          // transformed before the module it imports, so anything accumulated during the
-          // build would make the fold depend on discovery order.
-          parseModule: (path) => ctx?.project.parseSourceFile(path),
-          recipeConfigCache,
-          reportSurvivors: true,
-          sourceFile,
-        })
+          foldSourceImpl({
+            ctx,
+            code,
+            parserResult,
+            filePath,
+            runtimeCss,
+            styleCompiler,
+            maxRecipeStates,
+            // On demand rather than from a registry built at `buildStart`: a consumer is
+            // transformed before the module it imports, so anything accumulated during the
+            // build would make the fold depend on discovery order.
+            parseModule: (path) => ctx?.project.parseSourceFile(path),
+            recipeConfigCache: state.recipeConfigCache,
+            reportSurvivors: true,
+            sourceFile,
+          }),
+          parserResult.getDependencies(),
+          previousDependencies,
+        )
       } catch (error) {
         logger.caughtError('vite:transform', `Failed to compile ${filePath}`, error)
 
@@ -834,11 +1789,22 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
         // about what this module reads, and keeping the last known edges is the recoverable
         // direction: fixing the *dependency* then re-transforms this module, which is how a
         // user gets out of the failure. Retracting would cost that, to save nothing.
-        perFile.set(filePath, { folded: 0, skipped: new Map([['compile-failed', 1]]) })
+        const previousDependencies = [...(state.dependenciesByModule.get(id) ?? [])]
+        const failedArtifact = sealTransformArtifact(environmentName(this), {
+          version: TRANSFORM_ARTIFACT_VERSION,
+          moduleId: id,
+          file: filePath,
+          folded: 0,
+          skipped: [['compile-failed', 1]],
+          survivors: [{ line: 1, name: 'compiler', reason: 'compile-failed' }],
+          transformedFile: false,
+          classNames: [],
+          dependencies: previousDependencies,
+        })
+        applyTransformArtifact(state, failedArtifact, id, environmentName(this))
         // The signature is not, for the reason the edges are. It is a claim about output this
         // pass did not produce, and acting on a stale one suppresses a real update.
-        foldSignatures.delete(normalizeFsPath(filePath))
-        addSurvivor({ file: filePath, line: 1, name: 'compiler', reason: 'compile-failed' })
+        state.foldSignatures.delete(id)
         if (command === 'serve') {
           // Normalized, never rethrown as caught. `catch` binds `unknown`, and anything under
           // the fold — a config hook, a dependency, a bare `throw 'string'` — may throw a
@@ -851,26 +1817,12 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
         return null
       }
 
-      // Left undefined when nothing was declined, which is the common case and this is the
-      // per-module path: a project of ten thousand files would otherwise retain ten thousand
-      // empty maps for the length of the build to say nothing.
-      let skippedHere: Map<string, number> | undefined
+      const skippedHere = new Map<SkipReason, number>()
       for (const entry of result.skipped) {
-        skippedHere ??= new Map()
         skippedHere.set(entry.reason, (skippedHere.get(entry.reason) ?? 0) + 1)
       }
-      // Replaces rather than adds to any earlier entry for this file. A second environment
-      // transforming the same module recomputes the same answer, and a watch rebuild's answer
-      // supersedes the one before it.
-      perFile.set(filePath, { folded: result.folded.length, skipped: skippedHere })
 
-      if (result.folded.some((entry) => entry.kind === 'class' || entry.kind === 'slots')) {
-        staticSession.transformedFiles.add(resolve(filePath))
-      }
-      for (const entry of result.folded) {
-        for (const className of entry.classNames) staticSession.markClassUsed(className)
-      }
-
+      const survivorsHere: Array<Omit<Survivor, 'file'>> = []
       for (const entry of result.skipped) {
         if (entry.reason === 'not-imported' || entry.reason === 'overlapping') {
           continue
@@ -882,8 +1834,27 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
         if (entry.name === 'cx' && entry.reason === 'dynamic') continue
         // Every skipped entry indexes the module being folded: each module reports only about
         // its own text, so there is no foreign offset to translate.
-        addSurvivor({ file: filePath, line: lineAt(code, entry.start), name: entry.name, reason: entry.reason })
+        survivorsHere.push({ line: lineAt(code, entry.start), name: entry.name, reason: entry.reason })
       }
+
+      const artifact = sealTransformArtifact(environmentName(this), {
+        version: TRANSFORM_ARTIFACT_VERSION,
+        moduleId: id,
+        file: filePath,
+        folded: result.folded.length,
+        skipped: [...skippedHere],
+        survivors: survivorsHere,
+        transformedFile: result.folded.some((entry) => entry.kind === 'class' || entry.kind === 'slots'),
+        classNames: [...new Set(result.folded.flatMap((entry) => entry.classNames))],
+        dependencies: [...result.dependencies],
+        ...(result.dependencies.length
+          ? { signature: { input: (inputDigest ??= digest(code)), output: digest(result.code), path: filePath } }
+          : {}),
+      })
+      // Applied through the same serializable boundary a cached rebuild replays below. Keeping
+      // one path for fresh and cached modules is what keeps new per-transform state from being
+      // added to one and silently omitted from the other.
+      applyTransformArtifact(state, artifact, id, environmentName(this))
 
       if (reportSkipped && result.skipped.length) {
         logger.info('vite:transform', formatSkipped(filePath, result.skipped))
@@ -896,162 +1867,229 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
       for (const dependency of result.dependencies) {
         this.addWatchFile?.(dependency)
       }
-      // The same edges, kept where `hotUpdate` can read them. `addWatchFile` alone does not
-      // reach the dev server's soft invalidation — see `dependentsByDependency`.
-      const dependentKey = normalizeFsPath(filePath)
-      recordFoldDependencies(dependentKey, result.dependencies)
 
-      // In lockstep with those edges. A signature is only ever consulted for a module that
-      // folded across a file boundary, and only meaningful while the edges still say it does.
-      if (result.dependencies.length) {
-        foldSignatures.set(dependentKey, { input: digest(code), output: digest(result.code), path: filePath })
-      } else {
-        foldSignatures.delete(dependentKey)
-      }
-
-      const forFile = survivorsByFile.get(filePath)
-      if (command === 'serve' && forFile?.length) {
+      if (command === 'serve' && artifact.survivors.length) {
         // Retracted rather than kept: this module is about to fail to load, so what the browser
         // ends up holding is an error and not the output just digested. Comparing against it on
         // a later edit would call a module unchanged that never landed to begin with.
-        foldSignatures.delete(dependentKey)
-        throw createSurvivorError(forFile)
+        state.foldSignatures.delete(id)
+        throw createSurvivorError(artifact.survivors.map((survivor) => ({ file: filePath, ...survivor })))
       }
 
-      if (!result.folded.length) return null
+      const meta = { [TRANSFORM_META_KEY]: artifact }
+      if (!result.folded.length) {
+        // A real bundler needs a transform result in order to retain metadata for this module,
+        // including the zero-fold entry that makes coverage's file denominator accurate. Tiny
+        // hook harnesses in this package deliberately omit the module graph and retain the old
+        // `null` contract; they have nowhere that metadata could be replayed from.
+        const hasModuleGraph = typeof (this as unknown as { getModuleInfo?: unknown }).getModuleInfo === 'function'
+        return hasModuleGraph ? { code, map: null, meta } : null
+      }
 
       logger.debug('vite:transform', `Compiled ${result.folded.length} call(s) in ${filePath}`)
 
-      return { code: result.code, map: result.map }
+      return { code: result.code, map: result.map, meta }
     },
 
-    buildEnd() {
-      const survivors = allSurvivors()
-      if (survivors.length) {
-        throw createSurvivorError(survivors)
+    buildEnd(buildError) {
+      const environment = environmentName(this)
+      const state = environmentState(this)
+      if (buildError) {
+        rollbackEnvironmentGeneration(environment, state)
+        return
       }
 
-      // A class this environment compiled is already gone from a stylesheet another one
-      // finalized.
-      //
-      // This is the safety net the prune gate in `css.ts` leans on. That gate prunes against
-      // whatever the *emitting* environment compiled rather than waiting for the whole run,
-      // because waiting meant never pruning in any SSR framework — the client emits the
-      // stylesheet and finishes before the server environment starts. The cost of not waiting
-      // is that a class only a later environment reaches can be pruned out from under it.
-      //
-      // Left alone that build is green, the markup carries real class names, and the elements
-      // render unstyled — the one failure shape that survives every other check here. So it
-      // fails instead, naming the classes.
-      //
-      // A styled component that renders only on the server is what trips this; anything the
-      // client also renders is compiled in both environments and never lands here.
-      //
-      // `prunedClasses` is only ever filled by a prune that already ran, and a prune keeps
-      // everything marked used, so an intersection can only mean a marker that arrived after.
-      const lost = [...staticSession.usedClasses].filter((className) =>
-        staticSession.prunedClasses.has(bare(className)),
-      )
-      if (lost.length) {
-        const environment = (this as { environment?: { name?: string } }).environment?.name ?? 'default'
-        throw new Error(
-          `bamboocss: ${lost.length} class(es) compiled in the ${JSON.stringify(environment)} environment were ` +
-            `already pruned out of a stylesheet emitted by an earlier one. Elements carrying them would render ` +
-            `unstyled.\n\n` +
-            `${truncateList(
-              lost.map((className) => `  ${className}`),
-              { unit: 'class', separator: '\n' },
-            )}\n\n` +
-            `The stylesheet is finalized by the environment that imports it — the client, which builds first — so it ` +
-            `is pruned against what that environment compiled. These classes are reached only from here, so no rule ` +
-            `for them survived.\n\n` +
-            `That usually means a styled component which renders only on the server. Either give the client a path ` +
-            `to it, or set \`bamboocss({ pruneCss: false })\` to ship the whole extracted stylesheet.`,
-        )
-      }
+      try {
+        replayCachedTransformArtifacts(this)
 
-      // The symbolic compiler names classes from Vite's live module graph, while CSS is
-      // extracted from Bamboo's configured `include`. A strict build must prove those two
-      // graphs agree: otherwise a perfectly folded class can have no rule behind it.
-      // `getModuleInfo` distinguishes a real Rollup build from unit harnesses that call the
-      // hook directly without the companion CSS plugin.
-      //
-      // Both are statements about the finished run rather than about one environment, and both
-      // read state the environment that *serves* the stylesheet fills in: `cssLoaded` and
-      // `extractedFiles` are written when the virtual module is loaded. Asked of an
-      // environment that builds before that one, they are not merely early but wrong — a
-      // framework building its server bundle first failed with "virtual:bamboo.css was not
-      // imported" for a client bundle that imports it on the next line.
-      if (typeof this.getModuleInfo === 'function' && !remainingEnvironments(staticSession).length) {
-        if (!staticSession.cssLoaded) {
-          throw new Error(
-            `bamboocss: compiled class values were produced, but ${JSON.stringify(VIRTUAL_CSS_ID)} ` +
-              `was not imported. Add \`import ${JSON.stringify(VIRTUAL_CSS_ID)}\` once, from a JavaScript or ` +
-              `TypeScript module in the application entry graph.\n\n` +
-              `It has to be a JS import. \`@import\` from a stylesheet does not reach it: the id names a virtual ` +
-              `module resolved by this plugin, and Vite resolves CSS \`@import\` before plugin resolution, so it ` +
-              `fails as an unresolvable path. A project that ships one preloaded stylesheet imports this from its ` +
-              `entry module instead, and lets Vite emit the CSS asset.`,
-          )
+        let currentWillEmitCss = false
+        if (typeof this.getModuleIds === 'function') {
+          // `load` writes the shared flag, but only the finished module graph can attribute it to
+          // an environment. Keep that ownership so a later partial rebuild can preserve a client
+          // stylesheet while replacing SSR, or retract the client flag if its import disappears.
+          state.cssLoaded = [...this.getModuleIds()].some((id) => id.split('?')[0] === `\0${VIRTUAL_CSS_ID}`)
+
+          // A sheet this environment is about to emit supersedes its previous generation. Old
+          // prune history must not make a newly reachable class fail before generateBundle can
+          // restore its rule. An SSR graph may load CSS while Vite deliberately suppresses its
+          // assets, so use Vite's resolved per-environment decision rather than the `ssr` flag.
+          currentWillEmitCss = state.cssLoaded && (this.environment?.config?.build?.emitAssets ?? defaultEmitAssets)
         }
 
-        const outsideExtraction = [...staticSession.transformedFiles].filter(
-          (file) => !staticSession.extractedFiles.has(file),
-        )
-        if (outsideExtraction.length) {
+        // This candidate is complete enough to judge, but is not published until every
+        // applicable guard below succeeds. Other environments contribute their last-good
+        // generation even while a replacement for one of them is in flight.
+        const states = contributionStates(environment, state)
+        rebuildStaticTransformContributions(environment, state)
+
+        const survivors = allSurvivors(states)
+        if (survivors.length) {
+          throw createSurvivorError(survivors)
+        }
+
+        // A class this environment compiled is already gone from a stylesheet another one
+        // finalized.
+        //
+        // This is the safety net the prune gate in `css.ts` leans on. That gate prunes against
+        // whatever the *emitting* environment compiled rather than waiting for the whole run,
+        // because waiting meant never pruning in any SSR framework — the client emits the
+        // stylesheet and finishes before the server environment starts. The cost of not waiting
+        // is that a class only a later environment reaches can be pruned out from under it.
+        //
+        // Left alone that build is green, the markup carries real class names, and the elements
+        // render unstyled — the one failure shape that survives every other check here. So it
+        // fails instead, naming the classes.
+        //
+        // A styled component that renders only on the server is what trips this; anything the
+        // client also renders is compiled in both environments and never lands here.
+        //
+        // `prunedClasses` is only ever filled by a prune that already ran, and a prune keeps
+        // everything marked used, so an intersection can only mean a marker that arrived after.
+        const lost = currentWillEmitCss
+          ? []
+          : [...staticSession.usedClasses].filter((className) => staticSession.prunedClasses.has(bare(className)))
+        if (lost.length) {
           throw new Error(
-            `bamboocss: ${outsideExtraction.length} statically compiled module(s) are outside the CSS extraction graph:\n\n` +
+            `bamboocss: ${lost.length} class(es) compiled in the ${JSON.stringify(environment)} environment were ` +
+              `already pruned out of a stylesheet emitted by an earlier one. Elements carrying them would render ` +
+              `unstyled.\n\n` +
               `${truncateList(
-                outsideExtraction.map((file) => `  ${file}`),
-                { unit: 'file', separator: '\n' },
+                lost.map((className) => `  ${className}`),
+                { unit: 'class', separator: '\n' },
               )}\n\n` +
-              `Add them to \`include\` in bamboo.config, or no CSS rule can back their emitted classes.`,
+              `The stylesheet is finalized by the environment that imports it — the client, which builds first — so it ` +
+              `is pruned against what that environment compiled. These classes are reached only from here, so no rule ` +
+              `for them survived.\n\n` +
+              `That usually means a styled component which renders only on the server. Either give the client a path ` +
+              `to it, or set \`bamboocss({ pruneCss: false })\` to ship the whole extracted stylesheet.`,
           )
         }
-      }
 
-      if (!reportSummary) return
+        // The symbolic compiler names classes from Vite's live module graph, while CSS is
+        // extracted from Bamboo's configured `include`. A strict build must prove those two
+        // graphs agree: otherwise a perfectly folded class can have no rule behind it.
+        // `getModuleInfo` distinguishes a real Rollup build from unit harnesses that call the
+        // hook directly without the companion CSS plugin.
+        //
+        // Both are statements about the finished run rather than about one environment, and both
+        // read state the environment that *serves* the stylesheet fills in: `cssLoaded` and
+        // `extractedFiles` are written when the virtual module is loaded. Asked of an
+        // environment that builds before that one, they are not merely early but wrong — a
+        // framework building its server bundle first failed with "virtual:bamboo.css was not
+        // imported" for a client bundle that imports it on the next line.
+        const remaining = remainingEnvironments(staticSession, environment)
+        if (typeof this.getModuleInfo === 'function' && !remaining.length) {
+          if (!staticSession.cssLoaded) {
+            throw new Error(
+              `bamboocss: compiled class values were produced, but ${JSON.stringify(VIRTUAL_CSS_ID)} ` +
+                `was not imported. Add \`import ${JSON.stringify(VIRTUAL_CSS_ID)}\` once, from a JavaScript or ` +
+                `TypeScript module in the application entry graph.\n\n` +
+                `It has to be a JS import. \`@import\` from a stylesheet does not reach it: the id names a virtual ` +
+                `module resolved by this plugin, and Vite resolves CSS \`@import\` before plugin resolution, so it ` +
+                `fails as an unresolvable path. A project that ships one preloaded stylesheet imports this from its ` +
+                `entry module instead, and lets Vite emit the CSS asset.`,
+            )
+          }
 
-      // Once per run, not once per environment. Coverage describes the source, and a build
-      // with a client and an SSR bundle would otherwise print a partial line and then a second
-      // one superseding it — the same shape as the reachability judgements above, and gated on
-      // the same condition.
-      //
-      // Builds only, which the judgements above do not have to say because `generateBundle`
-      // never runs in dev. This does run there, on server close, and dev satisfies the gate's
-      // premise in name only: a resolved config always lists both `client` and `ssr`
-      // environments, so a project configuring `builder` announces two — while dev starts only
-      // the client one, since `perEnvironmentStartEndDuringDev` is off by default. The
-      // remaining environment is one that was never going to start, and gating on it stopped
-      // the summary printing at all for exactly the framework projects this all exists for.
-      if (command === 'build' && remainingEnvironments(staticSession).length) return
-
-      let folded = 0
-      let filesWithFolds = 0
-      const skipped = new Map<string, number>()
-      for (const entry of perFile.values()) {
-        folded += entry.folded
-        if (entry.folded) filesWithFolds++
-        for (const [reason, count] of entry.skipped ?? []) {
-          skipped.set(reason, (skipped.get(reason) ?? 0) + count)
+          const outsideExtraction = [...staticSession.transformedFiles].filter(
+            (file) => !staticSession.extractedFiles.has(file),
+          )
+          if (outsideExtraction.length) {
+            throw new Error(
+              `bamboocss: ${outsideExtraction.length} statically compiled module(s) are outside the CSS extraction graph:\n\n` +
+                `${truncateList(
+                  outsideExtraction.map((file) => `  ${file}`),
+                  { unit: 'file', separator: '\n' },
+                )}\n\n` +
+                `Add them to \`include\` in bamboo.config, or no CSS rule can back their emitted classes.`,
+            )
+          }
         }
+
+        // Once per run, not once per environment. Coverage describes the source, and a build
+        // with a client and an SSR bundle would otherwise print a partial line and then a second
+        // one superseding it — the same shape as the reachability judgements above, and gated on
+        // the same condition.
+        //
+        // Builds only, which the judgements above do not have to say because `generateBundle`
+        // never runs in dev. This does run there, on server close, and dev satisfies the gate's
+        // premise in name only: a resolved config always lists both `client` and `ssr`
+        // environments, so a project configuring `builder` announces two — while dev starts only
+        // the client one, since `perEnvironmentStartEndDuringDev` is off by default. The
+        // remaining environment is one that was never going to start, and gating on it stopped
+        // the summary printing at all for exactly the framework projects this all exists for.
+        if (reportSummary && (command !== 'build' || !remaining.length)) reportTransformCoverage(states)
+
+        if (command === 'serve' || !outputTokensByEnvironment.get(environment)?.size) {
+          // Dev has no output phase. The second branch preserves the direct hook-harness contract;
+          // a real Vite build always supplies at least one resolved output to `options`.
+          completeEnvironmentGeneration(environment, state)
+        } else {
+          prepareEnvironmentGeneration(environment, state)
+        }
+      } catch (error) {
+        rollbackEnvironmentGeneration(environment, state)
+        throw error
       }
+    },
 
-      const declined = Array.from(skipped.values()).reduce((sum, count) => sum + count, 0)
-      const total = folded + declined
-      if (!total) return
+    renderError() {
+      // Rendering fails before Bamboo's CSS hook and output finalizer. Unlike a later
+      // `generateBundle` failure, both supported hosts do report this phase explicitly.
+      const environment = environmentName(this)
+      const state = transformStateByEnvironment.get(environment)
+      if (state) rollbackEnvironmentGeneration(environment, state)
+    },
+  }
 
-      const share = Math.round((folded / total) * 100)
-      const reasons = Array.from(skipped.entries())
-        .sort((a, b) => b[1] - a[1])
-        .map(([reason, count]) => `${reason}=${count}`)
-        .join(' ')
+  const outputWriteObserver: Plugin = {
+    name: 'bamboocss:output-write-observer',
+    enforce: 'pre',
+    sharedDuringBuild: true,
+    buildStart: {
+      order: 'pre',
+      sequential: true,
+      handler() {
+        // Number the generation before any peer can abort its input buildStart. Rolldown may
+        // continue with a later configured output after such an abort; the resulting serial gap
+        // keeps that output from completing a pending cycle left by an earlier generation.
+        observeEnvironmentBuildStart(environmentName(this))
+      },
+    },
+    writeBundle: {
+      order: 'pre',
+      sequential: true,
+      handler(outputOptions, bundle) {
+        // Reaching any write hook proves the bundler has already replaced every file for this
+        // output. Publish immediately: a later writeBundle rejection cannot put the old bytes
+        // back, so retaining the old contribution would make Bamboo disagree with the disk in
+        // the opposite direction. Generate/render failures never enter this phase.
+        const identity = outputIdentityByBundle.get(bundle) ?? outputIdentityByOptions.get(outputOptions)
+        if (identity?.environment === environmentName(this)) {
+          publishPreparedOutput(identity.environment, identity.outputToken, identity.outputSlot, true)
+        }
+      },
+    },
+  }
 
-      logger.info(
-        'vite:transform',
-        `Compiled ${folded}/${total} (${share}%) across ${filesWithFolds}/${perFile.size} files` +
-          (reasons ? ` — declined: ${reasons}` : ''),
-      )
+  const memoryOutputCommitter: Plugin = {
+    name: 'bamboocss:output-memory-committer',
+    // Kept out of the compiler's `pre` bucket. A normal user plugin declared after Bamboo can
+    // reject `closeBundle`; Vite orders this post plugin after it, and the sequential hook then
+    // cannot publish an in-memory generation the caller never received.
+    enforce: 'post',
+    sharedDuringBuild: true,
+    closeBundle: {
+      order: 'post',
+      sequential: true,
+      handler() {
+        // `closeBundle` belongs to the input plugin driver; Rollup and Rolldown do not invoke
+        // it on configured output plugins. Vite closes a successful `write: false` result after
+        // all configured outputs have generated. Running last and sequentially means an earlier
+        // input close hook which rejects prevents publication, while a generate failure leaves
+        // the token set incomplete and is therefore a no-op here.
+        closePreparedMemoryOutputs(environmentName(this))
+      },
     },
   }
 

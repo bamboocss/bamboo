@@ -8,6 +8,7 @@ import type { LoadConfigResult, Runtime, WatchOptions, WatcherEventType } from '
 import { debounce } from 'perfect-debounce'
 import { createBox } from './cli-box'
 import { DiffEngine } from './diff-engine'
+import { getTsConfigResolutionFiles } from './load-tsconfig'
 import { nodeRuntime } from './node-runtime'
 import { OutputEngine } from './output-engine'
 
@@ -80,6 +81,7 @@ export class BambooContext extends Generator {
    */
   deadCalls = new Map<string, DeadImport[]>()
 
+  constructor(conf: LoadConfigResult)
   constructor(conf: LoadConfigResult) {
     super(conf)
 
@@ -92,10 +94,15 @@ export class BambooContext extends Generator {
       logger.level = config.logLevel
     }
 
+    // Keep the exact legacy public property: an ordinary own, writable, enumerable and
+    // configurable data property. Only this wrapper's initial source loading is opt-in lazy;
+    // standalone parser Projects retain their eager constructor.
     this.project = new Project({
       ...conf.tsconfig,
-      getFiles: this.getFiles.bind(this),
-      readFile: this.runtime.fs.readFileSync.bind(this),
+      deferInitialSourceFiles: true,
+      resolutionConfigFiles: getTsConfigResolutionFiles(conf),
+      getFiles: () => this.getFiles(),
+      readFile: (filePath) => this.runtime.fs.readFileSync(filePath),
       hooks: conf.hooks,
       parserOptions: {
         ...this.parserOptions,

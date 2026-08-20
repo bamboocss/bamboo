@@ -2,6 +2,7 @@ import { omit, pick, traverse } from '@bamboocss/shared'
 import type { Config, BambooHooks, Preset } from '@bamboocss/types'
 import { bundle } from './bundle-config'
 import { mergeConfigs } from './merge-config'
+import { rememberExternalPreset, type ExternalPresetProvenance } from './resolution-provenance'
 
 type Extendable<T> = T & { extend?: T }
 type ExtendableConfig = Extendable<Config>
@@ -18,6 +19,7 @@ const hookUtils = {
 export async function getResolvedConfig(config: ExtendableConfig, cwd: string, hooks?: Partial<BambooHooks>) {
   const stack: ExtendableConfig[] = [config]
   const configs: ExtendableConfig[] = []
+  const externalPresets: ExternalPresetProvenance[] = []
 
   while (stack.length > 0) {
     const current = stack.pop()!
@@ -31,6 +33,11 @@ export async function getResolvedConfig(config: ExtendableConfig, cwd: string, h
         const presetModule = await bundle(subPreset, cwd)
         presetConfig = presetModule.config
         presetName = subPreset
+        externalPresets.push({
+          dependencies: [...presetModule.dependencies],
+          index: externalPresets.length,
+          specifier: subPreset,
+        })
       } else {
         presetConfig = await subPreset
         presetName = (presetConfig as any).name || 'unknown-preset'
@@ -59,6 +66,8 @@ export async function getResolvedConfig(config: ExtendableConfig, cwd: string, h
 
   // Keep the resolved presets so we can find the origin of a token
   merged.presets = configs.slice(0, -1) as Preset[]
+
+  rememberExternalPreset(merged, externalPresets)
 
   return merged
 }

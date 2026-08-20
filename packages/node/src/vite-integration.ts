@@ -1,35 +1,7 @@
 import { existsSync, readFileSync } from 'fs'
 import { join } from 'path'
 
-/**
- * Whether a Bamboo source compiler is running in this process.
- *
- * Two integrations can emit the stylesheet, and only one of them also compiles source.
- * `@bamboocss/postcss` emits CSS and nothing else, so under it every `css()` and `cva()` call
- * stays a runtime call and the generated style engine ships in the client bundle. That is a
- * legitimate integration for a bundler with no Vite plugin — and a silent downgrade for a
- * project that has Vite and simply did not add `@bamboocss/vite`, which is a setup Bamboo's
- * own React Router guide used to describe. Nothing failed: the stylesheet was correct, the app
- * rendered, and 20 kB of engine went out with it.
- *
- * On `globalThis` under a registered symbol rather than in a module variable, because the two
- * packages that have to agree do not share a module instance. `@bamboocss/postcss` is required
- * as CommonJS by a PostCSS config while `@bamboocss/vite` is imported as ESM by a Vite config,
- * so even one installed copy of a shared dependency is loaded twice, once per format, with a
- * variable each. The symbol is one value per realm regardless.
- *
- * A realm is as far as it goes: a worker thread, or PostCSS run from a separate process
- * alongside the Vite build, sees no flag. Both fail towards saying something rather than
- * staying quiet, and what they say names the option that silences it.
- */
-const FLAG = Symbol.for('bamboocss.static-compiler')
-
-/** Called by an integration that compiles source, as it is constructed. */
-export const markStaticCompilerActive = () => {
-  ;(globalThis as Record<symbol, unknown>)[FLAG] = true
-}
-
-export const isStaticCompilerActive = () => Boolean((globalThis as Record<symbol, unknown>)[FLAG])
+export { isStaticCompilerActive, markStaticCompilerActive } from './static-compiler'
 
 /**
  * Every extension Vite accepts for its config, so "is this a Vite project" is answered by the

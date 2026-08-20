@@ -40,6 +40,10 @@ export default defineConfig({
         replacement: resolve('./packages/config/src/resolve-ts-path-pattern.ts'),
       },
       {
+        find: '@bamboocss/node/static-compiler',
+        replacement: resolve('./packages/node/src/static-compiler.ts'),
+      },
+      {
         find: '@bamboocss/dev',
         replacement: resolve('./packages/cli/src'),
       },

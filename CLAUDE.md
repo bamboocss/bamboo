@@ -199,10 +199,11 @@ This is not hypothetical. A per-call-site import scan added to the vite fold cos
 and was caught only because the change happened to be re-measured. Nothing else would have found it.
 
 ```bash
-pnpm bench                    # Run all benchmarks
+pnpm bench                    # Run the Vitest benchmark suites
 pnpm bench <path>             # Run one suite, e.g. pnpm bench extract-speed
 pnpm bench:baseline           # Record a baseline to bench/baseline.json
 pnpm bench:compare            # Re-run and diff against that baseline
+pnpm bench:vite-import        # Cold-import the built Vite package in fresh processes
 ```
 
 **Emitted CSS size is asserted, not benchmarked.** `sandbox/runtime-perf/__tests__/bundle-size.test.ts` builds a fixture
@@ -225,15 +226,19 @@ git stash && pnpm bench:baseline    # unchanged tree
 git stash pop && pnpm bench:compare # changed tree
 ```
 
-🚨 **`git stash` only reverts source, so a bench that runs through a build measures the same code twice.** Two paths do:
+🚨 **`git stash` only reverts source, so a bench that runs through a build measures the same code twice.** Three paths
+do:
 
 - The `sandbox/*/styled-system` artifacts bundle `@bamboocss/shared` from its **dist**. Editing `packages/shared/src`
   and re-running a sandbox bench changes nothing until
   `pnpm --filter=@bamboocss/shared build && pnpm --filter=./sandbox/<name> exec bamboo codegen`.
 - `bamboo codegen` uses the **built** generator, so stashing `packages/generator/src` does not change what it emits.
+- `pnpm bench:vite-import` imports `packages/vite/dist/index.mjs`, so Vite source changes are invisible until that
+  package is rebuilt. For a reproducible A/B, retain separately named before/after entries as documented in
+  `bench/README.md`.
 
-Both fail silently — identical numbers read as "no regression" rather than as a broken measurement. When the A/B lands
-inside ~1%, assume the harness before believing the result, and confirm the artifact actually differs (`grep` for
+All three fail silently — identical numbers read as "no regression" rather than as a broken measurement. When the A/B
+lands inside ~1%, assume the harness before believing the result, and confirm the artifact actually differs (`grep` for
 something the change added) before trusting either reading. Patching the generated file directly is the reliable A/B.
 
 Read the `rme` and `samples` columns before believing a diff: a bench reporting ±15% cannot show you a 10% regression,

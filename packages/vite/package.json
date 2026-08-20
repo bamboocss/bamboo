@@ -21,11 +21,13 @@
   "exports": {
     ".": {
       "source": "./src/index.ts",
-      "types": "./dist/index.d.cts",
-      "require": "./dist/index.cjs",
       "import": {
         "types": "./dist/index.d.mts",
         "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
       }
     },
     "./package.json": "./package.json",
@@ -35,8 +37,8 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsdown src/index.ts --format=cjs,esm --shims --dts",
-    "build-fast": "tsdown --dts=false src/index.ts --format=cjs,esm --shims",
+    "build": "tsdown --dts",
+    "build-fast": "tsdown --dts=false",
     "dev": "pnpm build-fast --watch"
   },
   "dependencies": {

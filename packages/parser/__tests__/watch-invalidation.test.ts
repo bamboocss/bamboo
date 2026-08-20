@@ -140,6 +140,79 @@ describe('watch invalidation', () => {
     expect(stylesOf(ctx, 'app/src/app.tsx')).toEqual([{ color: 'red.500' }, { margin: '2' }])
   })
 
+  test('the Node add-event rebuild set reparses a consumer waiting on a paths alias', () => {
+    const ctx = createContext({
+      tsconfig: { compilerOptions: { baseUrl: '/', paths: { '~/*': ['app/src/*'] } } },
+    } as never)
+    const app = '/app/src/app.tsx'
+    const styles = '/app/src/styles.ts'
+    ctx.project.project
+      .getFileSystem()
+      .writeFileSync('/node_modules/styled-system/package.json', `{ "name": "styled-system" }`)
+    ctx.project.project
+      .getFileSystem()
+      .writeFileSync('/node_modules/styled-system/css.d.ts', `export declare const css: (...args: any[]) => string`)
+    ctx.project.addSourceFile(
+      app,
+      `import { css } from 'styled-system/css'
+       import { base } from '~/styles'
+       export const App = () => <div className={css(base, { margin: '2' })} />`,
+    )
+
+    expect(stylesOf(ctx, app)).toEqual([{}, { margin: '2' }])
+    expect(ctx.project.getUnresolvedImporters()).toEqual([app])
+
+    ctx.project.addSourceFile(styles, `export const base = { color: 'blue.500' }`)
+    const rebuildSet = [styles, ...ctx.project.getDependents(styles), ...ctx.project.getUnresolvedImporters()]
+    expect(rebuildSet).toContain(app)
+
+    for (const file of rebuildSet) ctx.project.parseSourceFile(file)
+    expect(stylesOf(ctx, app)).toEqual([{ color: 'blue.500' }, { margin: '2' }])
+    expect(ctx.project.getUnresolvedImporters()).toEqual([])
+  })
+
+  test('the Node add-event rebuild set reparses a consumer whose paths fallback already resolved', () => {
+    const ctx = createContext({
+      tsconfig: {
+        compilerOptions: {
+          baseUrl: '/',
+          paths: { '@styles': ['app/src/primary', 'app/src/fallback'] },
+        },
+      },
+    } as never)
+    const app = '/app/src/app.tsx'
+    const primary = '/app/src/primary.ts'
+    const fallback = '/app/src/fallback.ts'
+    const unrelated = '/app/src/unrelated.ts'
+    ctx.project.project
+      .getFileSystem()
+      .writeFileSync('/node_modules/styled-system/package.json', `{ "name": "styled-system" }`)
+    ctx.project.project
+      .getFileSystem()
+      .writeFileSync('/node_modules/styled-system/css.d.ts', `export declare const css: (...args: any[]) => string`)
+    ctx.project.project.getFileSystem().writeFileSync(fallback, `export const base = { color: 'blue.500' }`)
+    ctx.project.addSourceFile(unrelated, `export const untouched = true`)
+    ctx.project.parseSourceFile(unrelated)
+    ctx.project.addSourceFile(
+      app,
+      `import { css } from 'styled-system/css'
+       import { base } from '@styles'
+       export const App = () => <div className={css(base)} />`,
+    )
+
+    expect(stylesOf(ctx, app)).toEqual([{ color: 'blue.500' }])
+    expect(ctx.project.getResolutionLedger().find((fact) => fact.specifier === '@styles')?.target).toBe(fallback)
+
+    ctx.project.addSourceFile(primary, `export const base = { color: 'blue.500' }`)
+    const rebuildSet = [primary, ...ctx.project.getDependents(primary), ...ctx.project.getUnresolvedImporters()]
+    expect(rebuildSet).toContain(app)
+    expect(rebuildSet).not.toContain(unrelated)
+    for (const file of rebuildSet) ctx.project.parseSourceFile(file)
+
+    expect(ctx.project.getResolutionLedger().find((fact) => fact.specifier === '@styles')?.target).toBe(primary)
+    expect(ctx.project.getUnresolvedImporters()).toEqual([])
+  })
+
   test('an importer whose specifiers all resolve is not left pending', () => {
     const ctx = createProject({
       'app/src/styles.ts': `export const base = { color: 'red.500' }`,

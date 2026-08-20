@@ -1,4 +1,5 @@
 import type { ImportMap } from '@bamboocss/core'
+import type { ResolveModule } from '@bamboocss/extractor'
 import { ts, type SourceFile } from 'ts-morph'
 import { getModuleSpecifierValue } from './get-module-specifier-value'
 
@@ -25,7 +26,7 @@ export interface RecipeOrigin {
   name: string
 }
 
-export type ResolveModule = (specifier: string, from: SourceFile) => SourceFile | undefined
+export type { ResolveModule } from '@bamboocss/extractor'
 
 /**
  * A module's exported recipes, memoized.

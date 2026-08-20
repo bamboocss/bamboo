@@ -1,4 +1,4 @@
-import { Project } from 'ts-morph'
+import { Project, ts, type SourceFile } from 'ts-morph'
 import { bench, describe } from 'vitest'
 import { maybeBoxNode } from '../src/maybe-box-node'
 
@@ -54,17 +54,30 @@ const createProject = (crossFile: boolean) => {
     )
   }
 
-  return files
+  const compilerOptions = project.getCompilerOptions()
+  const resolutionCache = ts.createModuleResolutionCache('/', (file) => file, compilerOptions)
+  const resolveModule = (specifier: string, from: SourceFile) => {
+    const resolved = ts.resolveModuleName(
+      specifier,
+      from.getFilePath(),
+      compilerOptions,
+      project.getModuleResolutionHost(),
+      resolutionCache,
+    ).resolvedModule
+    return resolved ? project.getSourceFile(resolved.resolvedFileName) : undefined
+  }
+
+  return { files, resolveModule }
 }
 
 const local = createProject(false)
 const crossFile = createProject(true)
 
-const boxEvery = (files: ReturnType<typeof createProject>) => {
+const boxEvery = ({ files, resolveModule }: ReturnType<typeof createProject>) => {
   for (const file of files) {
     for (const declaration of file.getVariableDeclarations()) {
       const initializer = declaration.getInitializer()
-      if (initializer) maybeBoxNode(initializer, [], { flags: { skipTraverseFiles: false } } as never)
+      if (initializer) maybeBoxNode(initializer, [], { flags: { skipTraverseFiles: false }, resolveModule })
     }
   }
 }

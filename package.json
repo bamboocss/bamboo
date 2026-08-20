@@ -25,6 +25,7 @@
     "bench": "vitest bench --run --no-file-parallelism",
     "bench:baseline": "vitest bench --run --no-file-parallelism --outputJson=bench/baseline.json",
     "bench:compare": "vitest bench --run --no-file-parallelism --compare=bench/baseline.json",
+    "bench:vite-import": "node bench/vite-cold-import.mjs",
     "lint": "oxlint .",
     "knip": "knip",
     "fmt": "oxfmt --check .",

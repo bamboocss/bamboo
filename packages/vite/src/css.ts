@@ -1,11 +1,7 @@
-import { findConfig, getConfigDependencies } from '@bamboocss/config'
-import { Builder } from '@bamboocss/node'
 import { logger } from '@bamboocss/logger'
-import { esc, toHash, truncateList } from '@bamboocss/shared'
-import remapping from '@ampproject/remapping'
-import MagicString from 'magic-string'
-import type { Plugin, Rollup, ViteDevServer } from 'vite'
-import { pruneStaticCss } from './prune-static-css'
+import { esc, truncateList } from '@bamboocss/shared'
+import type { Plugin, ViteDevServer } from 'vite'
+import { createLazyBuilder, createRetryableLazy, loadConfigModule, loadCssOutputModule } from './lazy-modules'
 import { remainingEnvironments, type StaticCompilationSession } from './static-session'
 
 /**
@@ -56,166 +52,15 @@ const queryOf = (id: string) => {
 export const asError = (error: unknown, context: string): Error =>
   error instanceof Error ? error : new Error(`bamboocss: ${context}: ${String(error)}`, { cause: error })
 
-const INLINE_SOURCE_MAP = /\n?\/\/# sourceMappingURL=data:application\/json[^\n]*$/
-
-/** Rewrite one generated chunk without invalidating all mappings after the changed string. */
-const replaceChunkReference = (
-  chunk: Rollup.OutputChunk,
-  bundle: Rollup.OutputBundle,
-  previous: string,
-  next: string,
-  sourcemap: StaticCompilationSession['sourcemap'],
-) => {
-  if (!chunk.code.includes(previous)) return
-
-  const magic = new MagicString(chunk.code)
-  let index = chunk.code.indexOf(previous)
-  while (index !== -1) {
-    magic.overwrite(index, index + previous.length, next)
-    index = chunk.code.indexOf(previous, index + previous.length)
-  }
-  chunk.code = magic.toString()
-
-  if (!chunk.map) return
-  const file = chunk.map.file
-  const debugId = (chunk.map as Rollup.SourceMap & { debugId?: string }).debugId
-  const combined = remapping(
-    [magic.generateMap({ source: chunk.fileName, hires: 'boundary' }), chunk.map] as never,
-    () => null,
-  )
-  if (file) combined.file = file
-  if (debugId) (combined as typeof combined & { debugId?: string }).debugId = debugId
-  const rollupMap = combined as unknown as Rollup.SourceMap
-  rollupMap.toUrl = () =>
-    `data:application/json;charset=utf-8;base64,${Buffer.from(combined.toString()).toString('base64')}`
-  chunk.map = rollupMap
-
-  if (sourcemap === 'inline') {
-    chunk.code = chunk.code.replace(INLINE_SOURCE_MAP, '')
-    chunk.code += `\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,${Buffer.from(combined.toString()).toString('base64')}`
-    return
-  }
-
-  const mapAsset = bundle[`${chunk.fileName}.map`]
-  if (mapAsset?.type === 'asset') mapAsset.source = combined.toString()
-}
-
-/** Replace an emitted filename wherever Vite or Rollup has already recorded it. */
-const replaceAssetReferences = (
-  bundle: Rollup.OutputBundle,
-  previous: string,
-  next: string,
-  sourcemap: StaticCompilationSession['sourcemap'],
-) => {
-  const replace = (value: string) => value.replaceAll(previous, next)
-
-  for (const output of Object.values(bundle)) {
-    if (output.type === 'asset') {
-      if (typeof output.source === 'string') output.source = replace(output.source)
-      continue
-    }
-
-    replaceChunkReference(output, bundle, previous, next, sourcemap)
-
-    // Rollup's type declares this as required, so the guard reads as redundant and is not.
-    // Our peer range is `vite: ">=5"`, which covers a Rollup-compatible bundler driving the
-    // build, and a plugin may also put a chunk-shaped entry in the bundle without it. A
-    // client hit exactly that and shipped a patched `dist`.
-    //
-    // Skipping is correct rather than a workaround: the list mirrors references the chunk's
-    // own code already carries, and `replaceChunkReference` above rewrote those. An absent
-    // list means there is no second copy to keep in step.
-    const referencedFiles = (output as typeof output & { referencedFiles?: string[] }).referencedFiles
-    if (referencedFiles) output.referencedFiles = referencedFiles.map(replace)
-
-    // Vite's HTML, manifest, preload, and SSR-manifest passes consume this metadata. It is
-    // deliberately not in Rollup's public type.
-    const importedCss = (output as typeof output & { viteMetadata?: { importedCss?: Set<string> } }).viteMetadata
-      ?.importedCss
-    if (importedCss?.delete(previous)) importedCss.add(next)
-  }
-}
-
-/**
- * Could this bundle entry be the generated stylesheet?
- *
- * The filename is checked before the bytes because the alternative decodes every asset in the
- * bundle to a UTF-8 string in order to search it — fonts, images and sourcemaps included. On an
- * app with a large asset graph that is seconds of decode and a lot of garbage, twice over, to
- * answer a question the extension already answers. The marker is a CSS custom property, so it
- * cannot occur anywhere but CSS.
- */
-const carriesGeneratedCss = (output: Rollup.OutputBundle[string]): output is Rollup.OutputAsset =>
-  output.type === 'asset' && output.fileName.endsWith('.css')
-
-/**
- * Prune compiler-owned CSS, then give any sheet whose bytes changed a hash of those bytes.
- *
- * Rollup has already expanded `[hash]` when `generateBundle` runs. Mutating only `source`
- * would therefore leave two different reachable subsets under one CDN key. The extra final
- * hash is not cosmetic: it makes late graph reachability cache-safe.
- *
- * Renaming is therefore not a choice this takes. Pruned bytes under the unpruned sheet's name
- * is the one outcome that must never be reachable, and a sheet nothing was removed from keeps
- * its name because its bytes are unchanged — so "rename" is a consequence of "the bytes moved",
- * not a second option. `prune` is the only knob.
- */
-export const optimizeStaticCssAssets = (
-  bundle: Rollup.OutputBundle,
-  session: StaticCompilationSession,
-  options: { prune?: boolean; sourcemap?: StaticCompilationSession['sourcemap'] } = {},
-) => {
-  const { prune = true, sourcemap = session.sourcemap } = options
-  /** Assets in this bundle that carry the generated stylesheet, pruned or not. */
-  let sheets = 0
-
-  for (const output of Object.values(bundle)) {
-    if (!carriesGeneratedCss(output)) continue
-    const source = typeof output.source === 'string' ? output.source : Buffer.from(output.source).toString()
-    if (!source.includes('--made-with-bamboo')) continue
-    sheets++
-
-    // Left byte-identical rather than run through the pass with pruning disabled. That path
-    // still reprints the sheet through postcss, and a differing string is what triggers the
-    // rename below — a new asset name for a stylesheet whose reachable set never changed.
-    if (!prune) continue
-
-    const optimized = pruneStaticCss(source, session)
-    output.source = optimized
-    if (optimized === source) continue
-
-    // Unconditional from here. `[hash]` is expanded before this runs, so pruned bytes under
-    // the original name is the worst outcome available: a change to *reachability alone* —
-    // which is what a Bamboo upgrade is — leaves identical source CSS under an identical name
-    // with different content, and a CDN holding that key serves the old stylesheet past the
-    // deploy. One user hit that twice and worked around it by versioning the filename
-    // themselves. A caller that cannot accept the rename declines the prune instead, above.
-    // No "did the name actually change" guard, deliberately. `carriesGeneratedCss` has already
-    // established the `.css` ending and `toHash` never returns empty, so the replacement always
-    // lengthens the name — such a guard would be dead, and dead in the one place where becoming
-    // live would ship the unsafe state: `source` is assigned above, so skipping the rename here
-    // is exactly pruned bytes under the unpruned name.
-    const nextName = output.fileName.replace(/\.css$/, `.b-${toHash(optimized)}.css`)
-    if (bundle[nextName] && bundle[nextName] !== output) {
-      throw new Error(`bamboocss: final CSS asset name collision at ${JSON.stringify(nextName)}.`)
-    }
-
-    // `fileName` is mutated in place rather than by re-keying `bundle`. Replacing an entry is
-    // what Rolldown refuses — it logs that the assignment is ignored and drops the asset, so
-    // the build shipped no stylesheet at all — while the rename itself is fine there. Rollup
-    // and Rolldown both write an asset to its `fileName`, and `replaceAssetReferences` carries
-    // the recorded references across, so nothing needs the key to move.
-    const previous = output.fileName
-    output.fileName = nextName
-    replaceAssetReferences(bundle, previous, nextName, sourcemap)
-  }
-
-  return { sheets }
+interface CssOutputValidator {
+  pruneStaticCss(css: string, session: StaticCompilationSession, options?: { prune?: boolean }): string
 }
 
 interface BambooCssPluginOptions {
   configPath?: string
   cwd?: string
+  /** Injectable retryable dev-validation boundary for focused lifecycle tests. */
+  loadCssOutput?: () => PromiseLike<CssOutputValidator>
   /** Internal state supplied by `bamboocss()`; the CSS emitter is not a standalone mode. */
   session: StaticCompilationSession
   /** See `BambooVitePluginOptions.pruneCss`. @default true */
@@ -236,23 +81,33 @@ interface BambooCssPluginOptions {
  * process just wrote, which is a race on any watch rebuild.
  */
 export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
-  const { configPath, cwd, session, pruneCss = true } = options
+  const { configPath, cwd, loadCssOutput = loadCssOutputModule, session, pruneCss = true } = options
 
-  /**
-   * Environments whose `load` served the virtual stylesheet.
-   *
-   * The lost-sheet guard below is about an asset that existed and then went missing, so it
-   * can only be asked of an environment that asked for one. An SSR bundle never imports the
-   * stylesheet — the client build emits it — and firing there turned a correct two-environment
-   * build into a hard failure.
-   */
-  const servedEnvironments = new Set<string>()
-
-  const builder = new Builder()
+  let builder: Awaited<ReturnType<ReturnType<typeof createLazyBuilder>>> | undefined
+  const loadBuilder = createLazyBuilder()
+  const ensureBuilder = async () => {
+    const loaded = await loadBuilder()
+    builder = loaded
+    return loaded
+  }
   let server: ViteDevServer | undefined
   let command: 'build' | 'serve' = 'build'
   /** The run's own `build` options, for a bundler with no per-environment config. */
   let ssrBuildOptions: { ssr?: boolean | string; ssrEmitAssets?: boolean } | undefined
+
+  /** Included owners plus local modules their extraction actually resolved and read. */
+  const extractedSourceFiles = () => {
+    const activeBuilder = builder
+    const context = activeBuilder?.context
+    if (!context) return []
+    return [
+      ...new Set(
+        [...context.getFiles(), ...activeBuilder.getResolutionReadFiles()].map((file) =>
+          context.runtime.path.abs(context.config.cwd, file),
+        ),
+      ),
+    ]
+  }
 
   /**
    * Serialised, because both `load` and the watcher can reach it and `Builder` keeps one
@@ -262,6 +117,7 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
   let pending: Promise<string> | undefined
 
   const build = async () => {
+    const builder = await ensureBuilder()
     // `hash: 'auto'` reads this, and nothing else does — a class name may differ between dev
     // and production, the CSS may not.
     await builder.setup({ configPath, cwd, dev: command === 'serve' })
@@ -283,9 +139,7 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
     if (builder.context) {
       session.utilityLayer = builder.context.config.layers?.utilities ?? 'utilities'
       session.extractedFiles.clear()
-      for (const file of builder.context.getFiles()) {
-        session.extractedFiles.add(builder.context.runtime.path.abs(builder.context.config.cwd, file))
-      }
+      for (const file of extractedSourceFiles()) session.extractedFiles.add(file)
     }
 
     let graphAtomHashes: Set<string> | undefined
@@ -313,10 +167,7 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
       }
     }
 
-    // Development cannot tree-shake against a complete Rollup graph because modules arrive
-    // lazily. It still uses the exact same global atom names and omits every recipe rule;
-    // only the final production reachability removal waits for `generateBundle`.
-    return command === 'serve' ? pruneStaticCss(css, session, { prune: false }) : css
+    return css
   }
 
   const generate = () => {
@@ -346,14 +197,54 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
   let prebuilt: Promise<string> | undefined
   let prebuildStarted = false
   const prebuild = async () => {
-    // Once per process, not once per environment. `buildStart` fires for each of them against
-    // this one shared instance, and after the first the artifacts are already on disk — which is
-    // the whole point of running here. A `vite build --watch` rebuild is covered for the same
-    // reason, and `emit` re-writes what a config change affected either way.
-    if (prebuildStarted) return
-    prebuildStarted = true
-    prebuilt = generate()
-    await prebuilt
+    // Once per shared plugin instance, not once per environment. `buildStart` fires for each of
+    // them against this one instance, so every caller joins the first one's generation. Once it
+    // settles the artifacts are already on disk, which is the whole point of running here. A
+    // `vite build --watch` rebuild is covered for the same reason, and `emit` re-writes what a
+    // config change affected either way.
+    if (!prebuildStarted) {
+      prebuildStarted = true
+      prebuilt = generate()
+    }
+    // After the cold sheet is consumed, a later load owns generation through `pending`. A
+    // concurrent environment's buildStart must join that work as well: resolving imports while
+    // `builder.emit()` is still updating generated artifacts races the files this hook exists to
+    // put on disk first.
+    const attempt = prebuilt ?? pending
+    if (!attempt) return
+    try {
+      await attempt
+    } catch (error) {
+      // A failed watch generation must be retryable. Guard the reset by identity: several
+      // environments can observe the same rejection, and a late observer must not clear a newer
+      // attempt another generation has already started.
+      if (prebuilt === attempt || (prebuilt === undefined && pending === attempt)) {
+        prebuildStarted = false
+        prebuilt = undefined
+      }
+      throw error
+    }
+  }
+
+  /**
+   * The dev config graph is independent of Builder setup and is needed one hook earlier. Keep
+   * its module load and graph walk single-flight as well: shared plugins may be resolved for
+   * client and SSR concurrently, but both describe the same Vite config.
+   */
+  const configDependencyLoaders = new Map<string, () => Promise<Set<string>>>()
+  const discoverConfigDependencies = (root: string) => {
+    const projectRoot = cwd ?? root
+    let discover = configDependencyLoaders.get(projectRoot)
+    if (!discover) {
+      const created = createRetryableLazy(async () => {
+        const { findConfig, getConfigDependencies } = await loadConfigModule()
+        const configFile = findConfig({ cwd: projectRoot, file: configPath })
+        return getConfigDependencies(configFile).deps
+      })
+      configDependencyLoaders.set(projectRoot, created)
+      discover = created
+    }
+    return discover()
   }
 
   return {
@@ -374,7 +265,7 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
      */
     sharedDuringBuild: true,
 
-    configResolved(config) {
+    async configResolved(config) {
       command = config.command
       session.sourcemap = config.build.sourcemap
       ssrBuildOptions = { ssr: config.build.ssr, ssrEmitAssets: config.build.ssrEmitAssets }
@@ -410,8 +301,7 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
       // a stylesheet the second one still contributes to.
       if (config.command === 'serve') {
         try {
-          const configFile = findConfig({ cwd: cwd ?? config.root, file: configPath })
-          const { deps } = getConfigDependencies(configFile)
+          const deps = await discoverConfigDependencies(config.root)
           config.configFileDependencies.push(...deps)
         } catch {
           // No config to watch. `load` reports that properly, with the message the CLI uses.
@@ -472,7 +362,6 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
       const query = queryOf(id)
       if (id.slice(0, id.length - query.length) !== RESOLVED_ID) return null
 
-      servedEnvironments.add((this as { environment?: { name?: string } }).environment?.name ?? 'default')
       // Here rather than in `build`, which is no longer only reached by a load: `buildStart`
       // generates the sheet whether or not anything imports it. The flag means the virtual
       // module was asked for, and `buildEnd` fails a build that compiled classes without it.
@@ -480,11 +369,26 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
 
       let css: string
       try {
+        // Resolve the dev validator before taking a generation. Once the generation promise
+        // settles, validation must remain in the same continuation with no intervening await:
+        // Builder serializes its work through `pending`, but the shared session inventory is
+        // replaced on every pass. Waiting for the chunk between those two steps would let a
+        // concurrent environment validate old bytes against a newer rule inventory. A rejected
+        // chunk attempt leaves `prebuilt` untouched for the next request to retry.
+        const validateDevCss = command === 'serve' ? (await loadCssOutput()).pruneStaticCss : undefined
+
         // The `buildStart` pass, the first time. Cleared as it is taken, so a reload in dev —
         // which is what an invalidation ends in — regenerates rather than replaying it.
         const first = prebuilt
         prebuilt = undefined
         css = await (first ?? generate())
+
+        // Development cannot tree-shake against a complete Rollup graph because modules arrive
+        // lazily. It still performs the complete rule-inventory validation before serving the
+        // sheet, uses the exact same global atom names, and omits every recipe rule. Keeping the
+        // parser here means an unimported prebuild never pays for the CSS-output closure; the
+        // final production reachability removal remains in `generateBundle`.
+        if (validateDevCss) css = validateDevCss(css, session, { prune: false })
       } catch (error) {
         throw asError(error, `failed to generate ${VIRTUAL_CSS_ID}`)
       }
@@ -493,9 +397,7 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
       // invalidate it. In build this is what makes `vite build --watch` correct; in dev the
       // watcher below does the same job earlier.
       if (this.addWatchFile) {
-        for (const file of builder.context?.getFiles() ?? []) {
-          this.addWatchFile(builder.context!.runtime.path.abs(builder.context!.config.cwd, file))
-        }
+        for (const file of extractedSourceFiles()) this.addWatchFile(file)
       }
 
       return css
@@ -520,12 +422,13 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
       const clientGraph: { getModulesByFile: (file: string) => { size: number } | undefined } =
         devServer.environments?.client?.moduleGraph ?? devServer.moduleGraph
 
-      // The extractor's own file list decides what matters, rather than a second glob that
-      // could disagree with it. `include` is resolved against the config's cwd.
+      // The extractor's exact read-set decides what matters, rather than a second glob that
+      // misses resolver-loaded values outside `include`.
       const invalidate = (file: string) => {
-        const ctx = builder.context
+        const ctx = builder?.context
         if (!ctx) return
-        if (!ctx.getFiles().some((f) => ctx.runtime.path.abs(ctx.config.cwd, f) === file)) return
+        const absoluteFile = ctx.runtime.path.abs(ctx.config.cwd, file)
+        if (!session.extractedFiles.has(absoluteFile)) return
 
         // The `buildStart` pass predates this edit, so it can no longer stand in for a first
         // load. Before the early return below, which is taken when the stylesheet has never been
@@ -540,11 +443,11 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
         // twice, 36 kB a copy on the app this was measured on. What is left for this watcher is
         // the case it exists for: a file the extractor reads that never became a module, where
         // Vite matches nothing and nothing would repaint at all.
-        if (clientGraph.getModulesByFile(file)?.size) return
+        if (clientGraph.getModulesByFile(absoluteFile)?.size) return
 
         server?.moduleGraph.invalidateModule(mod)
         void server?.reloadModule(mod)
-        logger.debug('vite', `styles invalidated by ${file}`)
+        logger.debug('vite', `styles invalidated by ${absoluteFile}`)
       }
 
       devServer.watcher.on('change', invalidate)
@@ -554,7 +457,11 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
 
     generateBundle: {
       order: 'post',
-      handler(_, bundle) {
+      async handler(outputOptions, bundle) {
+        // Load the complete parser/remapping closure before opening the output projection. A
+        // rejected chunk load therefore publishes no partial reachability or prune state, and
+        // the process-wide retryable loader lets a later rebuild recover.
+        const { containsGeneratedCssAsset, optimizeStaticCssAssets } = await loadCssOutputModule()
         const environment = (
           this as {
             environment?: {
@@ -570,99 +477,110 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
           }
         ).environment
 
-        /**
-         * Pruned against what this environment compiled, without waiting for the rest.
-         *
-         * The stylesheet is emitted and finalized by the environment that *imports* it, which
-         * in an SSR app is the client — and the client builds first, before the server
-         * environment has transformed a single module. Waiting for a complete answer therefore
-         * meant never pruning at all in any SSR framework: react-router, Remix, Nuxt, SvelteKit
-         * and Qwik all build the client first, and the client's output is on disk before the
-         * server environment starts. That is most production apps, and the feature was inert in
-         * every one of them — silently, since a build with nothing to prune looks identical.
-         *
-         * The reason for waiting was real: a class only the server graph reaches is not in this
-         * environment's reachability set, so pruning here removes rules the server-rendered
-         * markup still names. What makes it safe to prune anyway is that the mistake is
-         * *detectable* rather than silent — `buildEnd` in `plugin.ts` intersects every later
-         * environment's compiled classes against `prunedClasses` and fails the build naming
-         * them. A styled component that only ever renders on the server is the shape that
-         * trips it, and `pruneCss: false` is the answer when it does.
-         *
-         * So the trade is deliberate: a loud build failure in the rare case, in exchange for
-         * the feature working at all in the common one. It is the same reasoning as the
-         * unimported-`virtual:bamboo.css` check — a class with no rule behind it must never
-         * leave the build quietly.
-         */
-        const pending = remainingEnvironments(session)
-        if (pending.length) {
-          logger.debug(
-            'vite',
-            `Pruning against the ${JSON.stringify(environment?.name ?? 'default')} environment with ` +
-              `${truncateList(pending, { unit: 'environment', separator: ', ' })} still to compile. A class ` +
-              `only those reach fails the build rather than shipping without its rule.`,
-          )
-        }
+        const environmentName = environment?.name ?? 'default'
+        const replacesGeneratedStylesheet = containsGeneratedCssAsset(bundle)
+        const outputProjection = session.beginOutputProjection(
+          environmentName,
+          outputOptions,
+          bundle,
+          replacesGeneratedStylesheet,
+        )
+        try {
+          /**
+           * Pruned against what this environment compiled, without waiting for the rest.
+           *
+           * The stylesheet is emitted and finalized by the environment that *imports* it, which
+           * in an SSR app is the client — and the client builds first, before the server
+           * environment has transformed a single module. Waiting for a complete answer therefore
+           * meant never pruning at all in any SSR framework: react-router, Remix, Nuxt, SvelteKit
+           * and Qwik all build the client first, and the client's output is on disk before the
+           * server environment starts. That is most production apps, and the feature was inert in
+           * every one of them — silently, since a build with nothing to prune looks identical.
+           *
+           * The reason for waiting was real: a class only the server graph reaches is not in this
+           * environment's reachability set, so pruning here removes rules the server-rendered
+           * markup still names. What makes it safe to prune anyway is that the mistake is
+           * *detectable* rather than silent — `buildEnd` in `plugin.ts` intersects every later
+           * environment's compiled classes against `prunedClasses` and fails the build naming
+           * them. A styled component that only ever renders on the server is the shape that
+           * trips it, and `pruneCss: false` is the answer when it does.
+           *
+           * So the trade is deliberate: a loud build failure in the rare case, in exchange for
+           * the feature working at all in the common one. It is the same reasoning as the
+           * unimported-`virtual:bamboo.css` check — a class with no rule behind it must never
+           * leave the build quietly.
+           */
+          const pending = remainingEnvironments(session)
+          if (pending.length) {
+            logger.debug(
+              'vite',
+              `Pruning against the ${JSON.stringify(environment?.name ?? 'default')} environment with ` +
+                `${truncateList(pending, { unit: 'environment', separator: ', ' })} still to compile. A class ` +
+                `only those reach fails the build rather than shipping without its rule.`,
+            )
+          }
 
-        const { sheets } = optimizeStaticCssAssets(bundle, session, {
-          prune: pruneCss,
-          // Per environment rather than from the session, which one `configResolved` per
-          // environment leaves holding whichever resolved last.
-          sourcemap: environment?.config?.build?.sourcemap,
-        })
+          // This bundle now replaces the previously emitted stylesheet, so its prune result also
+          // replaces that sheet's loss history. Clear only once an actual Bamboo asset exists:
+          // doing it earlier would forget the still-live client sheet when an SSR environment
+          // loads the virtual module but Vite suppresses its assets, or when a rebuild fails before
+          // generateBundle. `optimizeStaticCssAssets` repopulates the set from this generation.
+          const { sheets } = optimizeStaticCssAssets(bundle, session, {
+            environment: environmentName,
+            prune: pruneCss,
+            requiredClasses: outputProjection.requiredClasses,
+            // Per environment rather than from the session, which one `configResolved` per
+            // environment leaves holding whichever resolved last.
+            sourcemap: environment?.config?.build?.sourcemap,
+          })
 
-        // Said out loud, both ways. Pruning is the difference between the sheet a project
-        // measures and the one it extracted, and it used to go missing in silence — a build
-        // that quietly stopped pruning looked exactly like one that had nothing to prune.
-        if (sheets && !pruneCss) {
-          logger.info('vite', 'Reachability pruning is off (`pruneCss: false`). The full extracted stylesheet ships.')
-        }
+          // Said out loud, both ways. Pruning is the difference between the sheet a project
+          // measures and the one it extracted, and it used to go missing in silence — a build
+          // that quietly stopped pruning looked exactly like one that had nothing to prune.
+          if (sheets && !pruneCss) {
+            logger.info('vite', 'Reachability pruning is off (`pruneCss: false`). The full extracted stylesheet ships.')
+          }
 
-        // A stylesheet that vanishes between here and disk is the worst shape a failure takes:
-        // the build is green, every class in the markup is real, and nothing is styled. The
-        // compiler knows it produced classes, so it can also insist something carries them —
-        // in the same spirit as the unimported-`virtual:bamboo.css` check, which catches the
-        // other way to end up with classes and no rules.
-        // Only the environment that served the stylesheet answers for it.
-        if (!servedEnvironments.has(environment?.name ?? 'default')) {
-          return
-        }
-        if (!session.transformedFiles.size) return
+          // A stylesheet that vanishes between here and disk is the worst shape a failure takes:
+          // the build is green, every class in the markup is real, and nothing is styled. The
+          // compiler knows it produced classes, so it can also insist something carries them —
+          // in the same spirit as the unimported-`virtual:bamboo.css` check, which catches the
+          // other way to end up with classes and no rules.
+          // Only the environment that served the stylesheet answers for it.
+          if (!outputProjection.cssLoaded) return
+          if (!session.transformedFiles.size) return
 
-        /**
-         * An SSR bundle emits no CSS assets, and is not supposed to.
-         *
-         * `build.ssrEmitAssets` is off by default, so Vite discards them: the client build is
-         * what carries the stylesheet, and a server bundle that imports `virtual:bamboo.css`
-         * from shared code — a root component, a layout — still asks this plugin to load it.
-         * Which means the environment *served* the sheet and then emitted nothing, and the
-         * check below read that as the failure it exists to catch.
-         *
-         * It fails a build that is entirely correct. Qwik's `vite build --ssr` is the shape
-         * that showed it: 7/7 calls compiled, the client bundle carrying the stylesheet, and
-         * the server bundle refusing to finish. React Router does not hit it only because its
-         * plugin turns `ssrEmitAssets` on.
-         *
-         * Read per environment where that exists, falling back to the run's own config, so
-         * Vite 5's single-config builds are answered by the same question.
-         */
-        const buildOptions = environment?.config?.build ?? ssrBuildOptions
-        if (buildOptions?.ssr && !buildOptions.ssrEmitAssets) return
+          /**
+           * An SSR bundle emits no CSS assets, and is not supposed to.
+           *
+           * `build.ssrEmitAssets` is off by default, so Vite discards them: the client build is
+           * what carries the stylesheet, and a server bundle that imports `virtual:bamboo.css`
+           * from shared code — a root component, a layout — still asks this plugin to load it.
+           * Which means the environment *served* the sheet and then emitted nothing, and the
+           * check below read that as the failure it exists to catch.
+           *
+           * It fails a build that is entirely correct. Qwik's `vite build --ssr` is the shape
+           * that showed it: 7/7 calls compiled, the client bundle carrying the stylesheet, and
+           * the server bundle refusing to finish. React Router does not hit it only because its
+           * plugin turns `ssrEmitAssets` on.
+           *
+           * Read per environment where that exists, falling back to the run's own config, so
+           * Vite 5's single-config builds are answered by the same question.
+           */
+          const buildOptions = environment?.config?.build ?? ssrBuildOptions
+          if (buildOptions?.ssr && !buildOptions.ssrEmitAssets) return
 
-        const emitsMarkerAsset = Object.values(bundle).some((output) => {
-          if (!carriesGeneratedCss(output)) return false
-          const source = typeof output.source === 'string' ? output.source : Buffer.from(output.source).toString()
-          return source.includes('--made-with-bamboo')
-        })
-
-        if (!emitsMarkerAsset) {
-          throw new Error(
-            `bamboocss: ${session.transformedFiles.size} module(s) were compiled to Bamboo class values, but no ` +
-              `emitted asset carries the generated stylesheet. The build would ship unstyled.\n\n` +
-              `This happens when another plugin, or the bundler itself, drops or replaces the CSS asset after it is ` +
-              `emitted. If you are on Rolldown, report this — the rename that used to cause it is already disabled ` +
-              `there. Otherwise look for a plugin running in \`generateBundle\` that rewrites CSS assets.`,
-          )
+          if (!replacesGeneratedStylesheet) {
+            throw new Error(
+              `bamboocss: ${session.transformedFiles.size} module(s) were compiled to Bamboo class values, but no ` +
+                `emitted asset carries the generated stylesheet. The build would ship unstyled.\n\n` +
+                `This happens when another plugin, or the bundler itself, drops or replaces the CSS asset after it is ` +
+                `emitted. If you are on Rolldown, report this — the rename that used to cause it is already disabled ` +
+                `there. Otherwise look for a plugin running in \`generateBundle\` that rewrites CSS assets.`,
+            )
+          }
+        } finally {
+          outputProjection.restore()
         }
       },
     },

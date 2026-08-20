@@ -4,6 +4,8 @@ import { join } from 'node:path'
 import { logger } from '@bamboocss/logger'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import { setupPostcss } from '../src/setup-config'
+import { isStaticCompilerActive as isStaticCompilerActiveFromRoot } from '../src'
+import { isStaticCompilerActive, markStaticCompilerActive } from '../src/static-compiler'
 import { findViteConfig, hasUncompilableSources } from '../src/vite-integration'
 
 /**
@@ -32,6 +34,27 @@ const project = (contents: Record<string, string>) => {
 
 afterEach(() => {
   for (const dir of projects.splice(0)) rmSync(dir, { force: true, recursive: true })
+})
+
+describe('the static compiler boundary', () => {
+  test('the lightweight subpath and established root exports share one realm flag', () => {
+    const realm = globalThis as Record<symbol, unknown>
+    const flag = Symbol.for('bamboocss.static-compiler')
+    const previous = realm[flag]
+
+    try {
+      realm[flag] = false
+      expect(isStaticCompilerActive()).toBe(false)
+      expect(isStaticCompilerActiveFromRoot()).toBe(false)
+
+      markStaticCompilerActive()
+      expect(isStaticCompilerActive()).toBe(true)
+      expect(isStaticCompilerActiveFromRoot()).toBe(true)
+    } finally {
+      if (previous === undefined) Reflect.deleteProperty(realm, flag)
+      else realm[flag] = previous
+    }
+  })
 })
 
 describe('finding a Vite config', () => {

@@ -2,6 +2,7 @@ import type { Expression, Node as TsMorphNode, SourceFile } from 'ts-morph'
 import { Node, SyntaxKind } from 'ts-morph'
 import { getExportedVarDeclarationWithName, getModuleSpecifierSourceFile } from './maybe-box-node'
 import type { BoxContext } from './types'
+import { beginDependencyCapture, replayDependencyCache, type DependencyCacheEntry } from './dependency-cache'
 
 /**
  * The values an expression borrows from other modules, resolved by reading the imports.
@@ -18,9 +19,9 @@ import type { BoxContext } from './types'
  * rather than with the number of style calls — a large project reported a 5.4x extraction
  * slowdown and an OOM in CI.
  *
- * Following an import is two cheap steps this package already had: resolve the specifier to
- * a file (`ts.resolveModuleName`, path lookup, no checker), then read that file's exported
- * declaration. Crossing the import boundary is the only thing the checker was doing here.
+ * Following an import is two cheap steps: ask the caller's source-graph resolver to place the
+ * specifier, then read that file's exported declaration. Crossing the import boundary is the
+ * only thing the checker was doing here.
  *
  * The evaluator resolves everything *within* a module by walking scopes, so a helper that
  * refers to another binding in its own file needs nothing from us.
@@ -30,7 +31,15 @@ import type { BoxContext } from './types'
 const MAX_DEPTH = 4
 
 /** Evaluated once per declaration, however many call sites reach it. */
-const evaluatedValues = new WeakMap<object, unknown>()
+let evaluatedValues = new WeakMap<object, DependencyCacheEntry<unknown>>()
+let hasEvaluatedValues = false
+
+/** @internal Drop imported declarations whose closure may include an edited module. */
+export const clearImportedValueCache = () => {
+  if (!hasEvaluatedValues) return
+  evaluatedValues = new WeakMap<object, DependencyCacheEntry<unknown>>()
+  hasEvaluatedValues = false
+}
 
 type Evaluator = (node: Expression, stack: TsMorphNode[], ctx: BoxContext, depth: number) => unknown
 
@@ -69,7 +78,7 @@ const valueForBinding = (
   depth: number,
   evaluateExpression: Evaluator,
 ) => {
-  const sourceFile = getModuleSpecifierSourceFile(binding.declaration as never)
+  const sourceFile = getModuleSpecifierSourceFile(binding.declaration as never, ctx)
   if (!sourceFile) return
 
   // The project boundary. A dependency's code is not ours to run at build time, however pure
@@ -79,15 +88,26 @@ const valueForBinding = (
   const declaration = getExportedVarDeclarationWithName(binding.exportedName, sourceFile, stack, ctx)
   if (!declaration) return
 
-  if (evaluatedValues.has(declaration)) return { value: evaluatedValues.get(declaration) }
+  const cached = evaluatedValues.get(declaration)
+  if (cached) {
+    const replayed = replayDependencyCache(cached, ctx)
+    if (replayed.hit) return { value: replayed.value }
+  }
 
   const initializer = declaration.getInitializer()
   if (!initializer) return
 
-  const value = evaluateExpression(initializer, stack, ctx, depth + 1)
+  const capture = beginDependencyCapture(ctx)
+  let value: unknown
+  try {
+    value = evaluateExpression(initializer, stack, ctx, depth + 1)
+  } finally {
+    capture.end()
+  }
   if (value === undefined) return
 
-  evaluatedValues.set(declaration, value)
+  evaluatedValues.set(declaration, capture.entry(value))
+  hasEvaluatedValues = true
   return { value }
 }
 
@@ -108,31 +128,30 @@ export const importedEnvironmentFor = (
 ): Record<string, unknown> | undefined => {
   if (depth >= MAX_DEPTH) return
 
-  // Only a call can borrow behaviour from another module. A plain identifier or object is
-  // resolved by the machinery in `maybe-box-node`, which follows imports of its own.
-  //
-  // The node itself is included explicitly: `getDescendantsOfKind` does not return it, and
-  // the expression handed here is very often the call — `css({ ...focusRing() })` reaches
-  // the evaluator as the spread's own argument.
-  const calls = node.getDescendantsOfKind(SyntaxKind.CallExpression)
-  if (Node.isCallExpression(node)) calls.unshift(node)
-  if (!calls.length) return
-
   const bindings = importBindingsFor(node.getSourceFile())
   if (!bindings.size) return
 
+  // Include every imported identifier the failed expression closes over, not only callees.
+  // A helper can return `{ ...tone }` where `tone` arrived through a renamed/star barrel;
+  // evaluating the helper's arrow directly still needs that binding in its environment.
+  // This remains on the failure-only path and the import map makes unrelated identifiers a
+  // constant-time miss.
+  const references = node.getDescendantsOfKind(SyntaxKind.Identifier)
+  if (Node.isIdentifier(node)) references.unshift(node)
+  if (!references.length) return
+
   let environment: Record<string, unknown> | undefined
 
-  for (const call of calls) {
-    const callee = call.getExpression()
-    const binding = bindings.get(callee.getText())
-    if (!binding || environment?.[callee.getText()] !== undefined) continue
+  for (const reference of references) {
+    const name = reference.getText()
+    const binding = bindings.get(name)
+    if (!binding || environment?.[name] !== undefined) continue
 
     const resolved = valueForBinding(binding, ctx, stack, depth, evaluateExpression)
     if (!resolved) continue
 
     environment ??= {}
-    environment[callee.getText()] = resolved.value
+    environment[name] = resolved.value
   }
 
   return environment

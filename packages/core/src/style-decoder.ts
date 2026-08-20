@@ -49,6 +49,10 @@ export class StyleDecoder {
 
   /** Removals seen the last time this decoder collected. @see forget */
   private collectedRemovals = 0
+  /** Inline recipe transform revision seen the last time this decoder collected. */
+  private collectedRecipeRevision = 0
+  /** Owner contribution order/value revision seen the last time this decoder collected. */
+  private collectedOrderRevision = 0
 
   /**
    * Drop what was decoded from an earlier state of `encoder`, if that state has since shrunk.
@@ -68,8 +72,17 @@ export class StyleDecoder {
    * comparison of two numbers.
    */
   private forget = (encoder: StyleEncoder) => {
-    if (encoder.removals === this.collectedRemovals) return
+    const recipeChanged = encoder.recipeRevision !== this.collectedRecipeRevision
+    const orderChanged = encoder.orderRevision !== this.collectedOrderRevision
+    if (encoder.removals === this.collectedRemovals && !recipeChanged && !orderChanged) return
     this.collectedRemovals = encoder.removals
+    this.collectedRecipeRevision = encoder.recipeRevision
+    this.collectedOrderRevision = encoder.orderRevision
+
+    // Utility hashes decode independently of encoder state, but a recipe hash names a
+    // transform stored by Recipes. A same-name inline edit keeps the hash and changes that
+    // transform, so its cached atomic result must be rebuilt.
+    if (recipeChanged) this.atomic_cache.clear()
 
     this.classNames.clear()
     this.atomic.clear()
@@ -448,6 +461,7 @@ export class StyleDecoder {
    * cannot decide it.
    */
   private splitRecipeKey = (recipeKey: string): [string, string | undefined] => {
+    if (this.context.recipes.getConfig(recipeKey)) return [recipeKey, undefined]
     const separator = this.context.recipes.slotSeparator
 
     let index = recipeKey.lastIndexOf(separator)
@@ -482,6 +496,10 @@ export class StyleDecoder {
   }
 
   collectViewTransitions = (encoder: StyleEncoder) => {
+    // Unlike atomic/recipe results, these objects have no identity cache. Re-reading the same
+    // encoder would otherwise append a fresh equivalent object to the Set on every collect.
+    // The encoder map is the complete source, so rebuild just this small result set each time.
+    this.view_transitions.clear()
     encoder.view_transitions.forEach((slots, className) => {
       const styles: StyleResultObject = {
         // What carries the bag onto an element. `view-transition-class` is shared, unlike
@@ -604,7 +622,7 @@ export class StyleDecoder {
   getConfigSlotRecipeResult = (recipeName: string) => {
     const recipeConfig = this.context.recipes.getConfigOrThrow(recipeName)
 
-    if (!Recipes.isSlotRecipeConfig(recipeConfig)) {
+    if (!Recipes.isSlotRecipeDefinition(recipeConfig)) {
       throw new BambooError('UNKNOWN_RECIPE', `Recipe "${recipeName}" is not a slot recipe`)
     }
 

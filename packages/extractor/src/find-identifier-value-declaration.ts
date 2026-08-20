@@ -48,7 +48,7 @@ export function getDeclarationFor(
   } else if (Node.isImportSpecifier(parent) && (parent.getNameNode() == node || parent.getAliasNode() == node)) {
     if (ctx.flags?.skipTraverseFiles) return
 
-    const sourceFile = getModuleSpecifierSourceFile(parent.getImportDeclaration())
+    const sourceFile = getModuleSpecifierSourceFile(parent.getImportDeclaration(), ctx)
 
     if (sourceFile) {
       const exportStack = [parent, sourceFile] as Node[]

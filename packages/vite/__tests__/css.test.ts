@@ -1,9 +1,13 @@
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { Builder } from '@bamboocss/node'
+import * as bambooConfig from '@bamboocss/config'
 import { esc } from '@bamboocss/shared'
 import { describe, expect, test, vi } from 'vitest'
-import { asError, bamboocssCss, optimizeStaticCssAssets, VIRTUAL_CSS_ID } from '../src/css'
+import { asError, bamboocssCss, VIRTUAL_CSS_ID } from '../src/css'
+import { optimizeStaticCssAssets } from '../src/css-output-module'
+import { createLazyCssOutputModule } from '../src/lazy-modules'
 import { createStaticCompilationSession } from '../src/static-session'
 
 /**
@@ -68,6 +72,169 @@ describe('the virtual stylesheet', () => {
     // stay stale for the rest of the session.
     expect(result!.watched.length).toBeGreaterThan(0)
     expect(result!.watched.some((file) => file.endsWith('.tsx'))).toBe(true)
+  }, 60_000)
+
+  test('registers resolver-read dependencies outside include as stylesheet watch files', async () => {
+    const fixtureDir = join(cwd, 'src/__css-resolution-watch')
+    const entry = join(fixtureDir, 'entry.tsx')
+    const dependency = join(fixtureDir, 'dependency.ts')
+    const unrelated = join(fixtureDir, 'unrelated.ts')
+    const configPath = join(cwd, '__css-resolution-watch.bamboo.config.ts')
+    mkdirSync(fixtureDir, { recursive: true })
+    writeFileSync(dependency, `export const shared = { color: 'red.300' }\n`)
+    writeFileSync(unrelated, `export const runtime = Math.random()\n`)
+    writeFileSync(
+      entry,
+      `import { css } from '../../styled-system/css'\nimport { shared } from './dependency'\nimport { runtime } from './unrelated'\nexport const className = css(shared)\nexport { runtime }\n`,
+    )
+    writeFileSync(
+      configPath,
+      `import base from './bamboo.config'\nexport default { ...base, include: ['./src/__css-resolution-watch/**/*.tsx'] }\n`,
+    )
+
+    const plugin = bamboocssCss({ cwd, configPath, session: createStaticCompilationSession() })
+    const watched: string[] = []
+    try {
+      await hookOf(plugin.configResolved)?.call({} as never, { command: 'build', build: { sourcemap: false } } as never)
+      const resolved = hookOf(plugin.resolveId)!.call({} as never, VIRTUAL_CSS_ID, undefined, {} as never) as string
+      const css = await hookOf(plugin.load)!.call(
+        { addWatchFile: (file: string) => watched.push(file) } as never,
+        resolved,
+        undefined as never,
+      )
+
+      expect(css).toContain('--colors-red-300')
+      expect(watched).toContain(entry)
+      expect(watched).toContain(dependency)
+      expect(watched).not.toContain(unrelated)
+
+      const listeners = new Map<string, (file: string) => void>()
+      const reloaded: string[] = []
+      hookOf(plugin.configureServer)!.call(
+        {} as never,
+        {
+          environments: { client: { moduleGraph: { getModulesByFile: () => undefined } } },
+          moduleGraph: {
+            getModuleById: (id: string) => (id === resolved ? { id } : undefined),
+            getModulesByFile: () => undefined,
+            invalidateModule() {},
+          },
+          reloadModule: (mod: { id: string }) => void reloaded.push(mod.id),
+          watcher: { on: (event: string, listener: (file: string) => void) => listeners.set(event, listener) },
+        } as never,
+      )
+      listeners.get('change')!(dependency)
+      expect(reloaded, 'a resolver-read file with no Vite module still repaints').toEqual([resolved])
+    } finally {
+      rmSync(fixtureDir, { force: true, recursive: true })
+      rmSync(configPath, { force: true })
+    }
+  }, 60_000)
+
+  test('prebuild callers share active generations and a failed generation can retry', async () => {
+    const failure = new Error('test prebuild failed')
+    const emit = vi.spyOn(Builder.prototype, 'emit').mockRejectedValueOnce(failure)
+    const plugin = bamboocssCss({ cwd, session: createStaticCompilationSession() })
+    const buildStart = hookOf(plugin.buildStart)!
+
+    try {
+      const first = buildStart.call({ environment: { name: 'client' } } as never, {} as never)
+      const concurrent = buildStart.call({ environment: { name: 'ssr' } } as never, {} as never)
+      const failures = await Promise.allSettled([first, concurrent])
+
+      expect(failures.map((result) => result.status)).toEqual(['rejected', 'rejected'])
+      expect(failures.map((result) => (result.status === 'rejected' ? result.reason : undefined))).toEqual([
+        failure,
+        failure,
+      ])
+      expect(emit).toHaveBeenCalledTimes(1)
+
+      await expect(buildStart.call({ environment: { name: 'client' } } as never, {} as never)).resolves.toBeUndefined()
+      expect(emit).toHaveBeenCalledTimes(2)
+
+      const resolved = hookOf(plugin.resolveId)!.call({} as never, VIRTUAL_CSS_ID, undefined, {} as never) as string
+      await hookOf(plugin.load)!.call({ addWatchFile() {} } as never, resolved, undefined as never)
+
+      let finishEmit!: () => void
+      emit.mockImplementationOnce(
+        () =>
+          new Promise<void>((resolveEmit) => {
+            finishEmit = resolveEmit
+          }),
+      )
+      const laterLoad = hookOf(plugin.load)!.call({ addWatchFile() {} } as never, resolved, undefined as never)
+      await vi.waitFor(() => expect(emit).toHaveBeenCalledTimes(3))
+
+      let buildStartFinished = false
+      const concurrentBuildStart = Promise.resolve(
+        buildStart.call({ environment: { name: 'ssr' } } as never, {} as never),
+      ).then(() => {
+        buildStartFinished = true
+      })
+      await new Promise((resolveImmediate) => setImmediate(resolveImmediate))
+      expect(buildStartFinished).toBe(false)
+
+      finishEmit()
+      await Promise.all([laterLoad, concurrentBuildStart])
+      expect(emit).toHaveBeenCalledTimes(3)
+    } finally {
+      emit.mockRestore()
+    }
+  }, 60_000)
+
+  test('keeps dev validation adjacent to its serialized CSS generation while the output chunk loads', async () => {
+    let finishModule!: (module: { pruneStaticCss: (css: string) => string }) => void
+    const importCssOutput = vi.fn(
+      () =>
+        new Promise<{ pruneStaticCss: (css: string) => string }>((resolve) => {
+          finishModule = resolve
+        }),
+    )
+    const loadCssOutput = createLazyCssOutputModule(importCssOutput as never)
+    const emit = vi.spyOn(Builder.prototype, 'emit')
+    const validationBuildCounts: number[] = []
+    const plugin = bamboocssCss({ cwd, loadCssOutput, session: createStaticCompilationSession() })
+
+    try {
+      await hookOf(plugin.configResolved)?.call(
+        {} as never,
+        { build: { sourcemap: false }, command: 'serve', configFileDependencies: [], root: cwd } as never,
+      )
+      await hookOf(plugin.buildStart)!.call({ environment: { name: 'client' } } as never, {} as never)
+      expect(emit).toHaveBeenCalledTimes(1)
+
+      const resolved = hookOf(plugin.resolveId)!.call({} as never, VIRTUAL_CSS_ID, undefined, {} as never) as string
+      const first = hookOf(plugin.load)!.call(
+        { addWatchFile() {}, environment: { name: 'client' } } as never,
+        resolved,
+        undefined as never,
+      )
+      const concurrent = hookOf(plugin.load)!.call(
+        { addWatchFile() {}, environment: { name: 'ssr' } } as never,
+        resolved,
+        undefined as never,
+      )
+
+      await vi.waitFor(() => expect(importCssOutput).toHaveBeenCalledTimes(1))
+      await new Promise((resolveImmediate) => setImmediate(resolveImmediate))
+      expect(emit, 'no later generation starts while the shared module is unresolved').toHaveBeenCalledTimes(1)
+
+      finishModule({
+        pruneStaticCss(css) {
+          validationBuildCounts.push(emit.mock.calls.length)
+          return css
+        },
+      })
+      await Promise.all([first, concurrent])
+
+      expect(emit).toHaveBeenCalledTimes(2)
+      expect(
+        validationBuildCounts,
+        'each result is validated before the next generation mutates its inventory',
+      ).toEqual([1, 2])
+    } finally {
+      emit.mockRestore()
+    }
   }, 60_000)
 
   /**
@@ -314,7 +481,8 @@ describe('saying why the stylesheet was not pruned', () => {
     session.prunableClasses.add(esc('h_[345.6789px]'))
     if (options.pending) {
       session.expectedEnvironments = new Set(['client', ...options.pending])
-      session.startedEnvironments.add('client')
+      session.participatingEnvironments.add('client')
+      session.completedEnvironments.add('client')
     }
 
     const plugin = bamboocssCss({ cwd, session, pruneCss: options.pruneCss })
@@ -449,23 +617,49 @@ describe('marking a class used', () => {
  * compiler naming classes from the old config against a sheet emitted from the new one.
  */
 describe('the bamboo config in dev', () => {
-  const resolvedConfig = (command: 'build' | 'serve') => {
+  const resolvedConfig = async (command: 'build' | 'serve') => {
     const plugin = bamboocssCss({ cwd, session: createStaticCompilationSession() })
     const config = { command, root: cwd, build: { sourcemap: false }, configFileDependencies: [] as string[] }
-    hookOf(plugin.configResolved)?.call({} as never, config as never)
+    await hookOf(plugin.configResolved)?.call({} as never, config as never)
     return config
   }
 
-  test('is declared to Vite as a config file, with what it imports', () => {
-    const { configFileDependencies } = resolvedConfig('serve')
+  test('is declared to Vite as a config file, with what it imports', async () => {
+    const { configFileDependencies } = await resolvedConfig('serve')
 
     expect(configFileDependencies).toContain(join(cwd, 'bamboo.config.ts'))
     // The import graph, not only the entry: a preset edit has to restart the server too.
     expect(configFileDependencies).toContain(join(cwd, 'preset.ts'))
   })
 
-  test('is not declared in a build, where nothing restarts', () => {
-    expect(resolvedConfig('build').configFileDependencies).toEqual([])
+  test('is not declared in a build, where nothing restarts', async () => {
+    expect((await resolvedConfig('build')).configFileDependencies).toEqual([])
+  })
+
+  test('shares config dependency discovery across concurrent environment resolution', async () => {
+    const discover = vi.spyOn(bambooConfig, 'getConfigDependencies')
+    const plugin = bamboocssCss({ cwd, session: createStaticCompilationSession() })
+    const config = () => ({
+      command: 'serve' as const,
+      root: cwd,
+      build: { sourcemap: false },
+      configFileDependencies: [] as string[],
+    })
+    const client = config()
+    const ssr = config()
+
+    try {
+      await Promise.all([
+        hookOf(plugin.configResolved)?.call({ environment: { name: 'client' } } as never, client as never),
+        hookOf(plugin.configResolved)?.call({ environment: { name: 'ssr' } } as never, ssr as never),
+      ])
+
+      expect(discover).toHaveBeenCalledTimes(1)
+      expect(client.configFileDependencies).toEqual(ssr.configFileDependencies)
+      expect(client.configFileDependencies).toContain(join(cwd, 'bamboo.config.ts'))
+    } finally {
+      discover.mockRestore()
+    }
   })
 })
 
@@ -504,15 +698,15 @@ describe('the emitted stylesheet', () => {
   }
 
   test('fails a build that compiled classes and emits no stylesheet', async () => {
-    expect(await finish({})).toThrow('no emitted asset carries the generated stylesheet')
+    await expect((await finish({}))()).rejects.toThrow('no emitted asset carries the generated stylesheet')
   }, 60_000)
 
   test('says nothing to an SSR bundle, which emits no assets by design', async () => {
-    expect(await finish({ ssr: 'entry.tsx' })).not.toThrow()
+    await expect((await finish({ ssr: 'entry.tsx' }))()).resolves.toBeUndefined()
   }, 60_000)
 
   test('still answers for an SSR bundle that does emit assets', async () => {
-    expect(await finish({ ssr: 'entry.tsx', ssrEmitAssets: true })).toThrow(
+    await expect((await finish({ ssr: 'entry.tsx', ssrEmitAssets: true }))()).rejects.toThrow(
       'no emitted asset carries the generated stylesheet',
     )
   }, 60_000)

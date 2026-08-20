@@ -1,24 +1,11 @@
 import { truncateList } from '@bamboocss/shared'
 import postcss from 'postcss'
 import selectorParser from 'postcss-selector-parser'
+import { bare } from './class-name'
 import type { StaticCompilationSession } from './static-session'
 
 /** The generated declaration that identifies a Bamboo stylesheet after minification. */
 const SENTINEL = '--made-with-bamboo'
-
-/**
- * A class name with its CSS escapes removed, which is the only spelling both sides agree on.
- *
- * The same class reaches the stylesheet either escaped or not — `--bottom-mask-size_16px` is a
- * valid selector as written, since a CSS ident may begin with `--`, while `esc` produces the
- * escaped `\--…` form that reachability keys are stored in. Comparing raw spellings therefore
- * missed a rule written the other way, and pruning removed an atom whose rule was in the sheet
- * all along. It could only ever affect names needing an escape, which is why it presented as
- * every custom property and vendor-prefixed declaration losing its rule at once.
- *
- * Stripping backslashes is unambiguous here: a semantic atom name never contains a literal one.
- */
-export const bare = (className: string) => className.replaceAll('\\', '')
 
 /**
  * Remove source-graph atoms no transformed module can emit.
@@ -30,7 +17,11 @@ export const bare = (className: string) => className.replaceAll('\\', '')
 export const pruneStaticCss = (
   css: string,
   session: StaticCompilationSession,
-  { prune = true }: { prune?: boolean } = {},
+  {
+    environment,
+    prune = true,
+    requiredClasses,
+  }: { environment?: string; prune?: boolean; requiredClasses?: ReadonlySet<string> } = {},
 ): string => {
   if (!css.includes(SENTINEL)) return css
 
@@ -117,89 +108,91 @@ export const pruneStaticCss = (
     })
   }
 
-  // Every atom the compiler emitted must still have a rule.
+  // Every compiler-owned atom named by the projected live outputs must still have a rule.
   //
   // Checked here rather than after the whole pass because this is the one point where both
-  // sides are spelled the same way: `usedClasses` holds escaped semantic names, and dense
-  // renaming below rewrites the sheet out of that space.
+  // sides are spelled the same way: the required set holds escaped semantic names, and dense
+  // renaming below rewrites the sheet out of that space. Isolated callers which do not provide
+  // the output-lifecycle projection retain the original current-generation ownership boundary.
   //
-  // Scoped to `prunableClasses`, so only atoms this pass could have removed are asserted —
-  // a `staticCss` safelist entry is not graph-owned and is not its business.
+  // The production projection can contain a class absent from the current `prunableClasses`.
+  // That absence is the dangerous mixed-generation case: old JavaScript can still name an atom
+  // a newer physical source generation no longer extracts. It deliberately does not include
+  // literal classes merely passed through `cx`, because Bamboo never owned rules for those.
   //
   // The failure this exists for is silent: class names reach the JS and the markup, the sheet
   // is present and carries the marker, the build exits 0, and the app renders unstyled. It
   // was found by grepping a shipped bundle. `markClassUsed` not splitting a space-joined
   // class string took every `::before` and `::after` rule out of one application's CSS.
-  if (prune) {
-    const present = new Set<string>()
-    root.walkRules((rule) => {
-      if (!isUtilityRule(rule)) return
-      try {
-        selectorParser((selectors) => {
-          selectors.walkClasses((classNode) => {
-            present.add(bare(classNode.toString().slice(1)))
-          })
-        }).processSync(rule.selector)
-      } catch {
-        // Unparseable authored selectors carry no compiler-owned atom to account for.
-      }
-    })
-
-    const orphaned: string[] = []
-    for (const className of session.usedClasses) {
-      // A class name cannot contain whitespace, so an entry that does is a malformed key
-      // rather than a class — and every atom it was meant to stand for is unmarked and about
-      // to be pruned. Checked before the `prunableClasses` filter precisely because such an
-      // entry matches nothing there, which is how the original bug slipped past this guard
-      // when it was first written.
-      if (/\s/.test(className)) {
-        orphaned.push(className)
-        continue
-      }
-      if (!prunable.has(bare(className))) continue
-      if (present.has(bare(className))) continue
-      orphaned.push(className)
+  const present = new Set<string>()
+  root.walkRules((rule) => {
+    if (!isUtilityRule(rule)) return
+    try {
+      selectorParser((selectors) => {
+        selectors.walkClasses((classNode) => {
+          present.add(bare(classNode.toString().slice(1)))
+        })
+      }).processSync(rule.selector)
+    } catch {
+      // Unparseable authored selectors carry no compiler-owned atom to account for.
     }
+  })
 
-    if (orphaned.length) {
-      // Reported with enough context to diagnose without a second build.
-      //
-      // The class name alone is not enough, and that cost a round trip: a report of twelve
-      // orphans — every one a CSS custom property or a vendor-prefixed name, so every one a
-      // class needing a leading-dash escape — could not be reproduced from the names, because
-      // the names looked identical on both sides. What distinguishes the two possible causes
-      // is *where* the entry is missing: absent from the extracted atom set means it was never
-      // emitted, while present there but not in the sheet means the rule was written and then
-      // pruned or not matched.
-      //
-      // The near misses matter as much. A class that differs only in escaping has a rule under
-      // a spelling this did not recognise, which points at the encoding rather than at
-      // emission — and is invisible if only the missing name is printed.
-      const describe = (className: string) => {
-        if (/\s/.test(className)) return `  ${className}\n      (malformed key: a class name cannot contain whitespace)`
+  const required =
+    requiredClasses ?? new Set([...session.usedClasses].filter((className) => prunable.has(bare(className))))
+  const orphaned: string[] = []
+  for (const className of required) {
+    // A class name cannot contain whitespace, so an entry that does is a malformed key rather
+    // than a class — and every atom it was meant to stand for is unmarked and about to ship
+    // without a rule.
+    if (/\s/.test(className)) {
+      orphaned.push(className)
+      continue
+    }
+    if (present.has(bare(className))) continue
+    orphaned.push(className)
+  }
 
-        const extracted = session.prunableClasses.has(className) ? 'in the extracted atoms' : 'NOT extracted'
-        const bare = className.replaceAll('\\', '')
-        const near = [...present].filter(
-          (candidate) => candidate !== className && candidate.replaceAll('\\', '') === bare,
-        )
+  if (orphaned.length) {
+    // Reported with enough context to diagnose without a second build.
+    //
+    // The class name alone is not enough, and that cost a round trip: a report of twelve
+    // orphans — every one a CSS custom property or a vendor-prefixed name, so every one a
+    // class needing a leading-dash escape — could not be reproduced from the names, because
+    // the names looked identical on both sides. What distinguishes the two possible causes
+    // is *where* the entry is missing: absent from the extracted atom set means the current
+    // source generation never emitted it, while present there but not in the sheet means the
+    // rule was written and then pruned or not matched.
+    //
+    // The near misses matter as much. A class that differs only in escaping has a rule under
+    // a spelling this did not recognise, which points at the encoding rather than at
+    // emission — and is invisible if only the missing name is printed.
+    const describe = (className: string) => {
+      if (/\s/.test(className)) return `  ${className}\n      (malformed key: a class name cannot contain whitespace)`
 
-        return (
-          `  ${className}\n      (${extracted}; no rule in the sheet` +
-          (near.length ? `; a rule exists under ${near.map((n) => JSON.stringify(n)).join(', ')}` : '') +
-          `)`
-        )
-      }
+      const normalized = bare(className)
+      const extracted = prunable.has(normalized) ? 'in the extracted atoms' : 'NOT extracted'
+      const near = [...present].filter(
+        (candidate) => candidate !== className && candidate.replaceAll('\\', '') === normalized,
+      )
 
-      throw new Error(
-        `bamboocss: ${orphaned.length} compiled class(es) have no rule in the emitted stylesheet. ` +
-          `Elements carrying them would render unstyled.\n\n` +
-          `${truncateList(orphaned.map(describe), { unit: 'class', separator: '\n' })}\n\n` +
-          `This is a compiler bug rather than anything to fix in your source. Please report it with ` +
-          `the block above — the parenthesised part is what distinguishes an atom that was never ` +
-          `emitted from one whose rule is present under a different spelling.`,
+      return (
+        `  ${className}\n      (${extracted}; no rule in the sheet` +
+        (near.length ? `; a rule exists under ${near.map((n) => JSON.stringify(n)).join(', ')}` : '') +
+        `)`
       )
     }
+    const environmentDescription = environment ? ` for the ${JSON.stringify(environment)} environment` : ''
+
+    throw new Error(
+      `bamboocss: ${orphaned.length} compiled class(es) still named by live output have no rule in the candidate ` +
+        `stylesheet${environmentDescription}. Elements carrying them would render unstyled.\n\n` +
+        `${truncateList(orphaned.map(describe), { unit: 'class', separator: '\n' })}\n\n` +
+        `The current source generation no longer provides every rule required by the JavaScript outputs still on ` +
+        `disk. Bamboo refused to replace the prior stylesheet. Finish rebuilding every output which retains an ` +
+        `older generation, then rebuild the stylesheet. If every output is already current, report this as a ` +
+        `compiler bug with the block above.`,
+    )
   }
 
   return root.toString()

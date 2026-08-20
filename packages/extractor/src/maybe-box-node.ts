@@ -20,15 +20,21 @@ import type {
 } from 'ts-morph'
 import { Node, ts } from 'ts-morph'
 import { box } from './box'
-import { safeEvaluateNode } from './evaluate-node'
+import { clearEvaluateNodeCache, safeEvaluateNode } from './evaluate-node'
 import { findIdentifierValueDeclaration } from './find-identifier-value-declaration'
 import { isBoxNode, type BoxNode } from './box-factory'
 import type { BoxContext, EvaluatedObjectResult, LiteralValue, MatchFnPropArgs, PrimitiveType } from './types'
 import { isNotNullish, isObject, trimWhitespace, unwrapExpression } from './utils'
 import { getObjectLiteralExpressionPropPairs } from './get-object-literal-expression-prop-pairs'
+import { clearImportedValueCache } from './resolve-imported-value'
+import {
+  beginDependencyCapture,
+  recordModuleDependency,
+  replayDependencyCache,
+  type DependencyCacheEntry,
+} from './dependency-cache'
 
-let cacheMap = new WeakMap<Node, MaybeBoxNodeReturn>()
-const isCached = (node: Node) => cacheMap.has(node)
+let cacheMap = new WeakMap<Node, DependencyCacheEntry<MaybeBoxNodeReturn>>()
 const getCached = (node: Node) => cacheMap.get(node)
 
 /**
@@ -40,10 +46,12 @@ const getCached = (node: Node) => cacheMap.get(node)
  * otherwise keep serving the value read before the edit.
  */
 export const clearBoxNodeCache = () => {
+  clearEvaluateNodeCache()
+  clearImportedValueCache()
   // Cheap when nothing has been memoized since the last clear, so the callers that
   // fire once per file while a project is being loaded cost nothing.
   if (!hasCachedEntries) return
-  cacheMap = new WeakMap<Node, MaybeBoxNodeReturn>()
+  cacheMap = new WeakMap<Node, DependencyCacheEntry<MaybeBoxNodeReturn>>()
   hasCachedEntries = false
 }
 
@@ -84,14 +92,31 @@ export function maybeBoxNode(
   ctx: BoxContext,
   matchProp?: (prop: MatchFnPropArgs) => boolean,
 ): MaybeBoxNodeReturn {
-  const cache = (value: MaybeBoxNodeReturn) => {
-    cacheMap.set(node, value)
-    hasCachedEntries = true
-    return value
+  const cached = getCached(node)
+  if (cached) {
+    const replayed = replayDependencyCache(cached, ctx)
+    if (replayed.hit) return replayed.value
   }
 
-  if (isCached(node)) {
-    return getCached(node)
+  const capture = beginDependencyCapture(ctx)
+  try {
+    return maybeBoxNodeUncached(node, stack, ctx, matchProp, capture.entry)
+  } finally {
+    capture.end()
+  }
+}
+
+function maybeBoxNodeUncached(
+  node: Node,
+  stack: Node[],
+  ctx: BoxContext,
+  matchProp: ((prop: MatchFnPropArgs) => boolean) | undefined,
+  dependencyEntry: <T>(value: T) => DependencyCacheEntry<T>,
+): MaybeBoxNodeReturn {
+  const cache = (value: MaybeBoxNodeReturn) => {
+    cacheMap.set(node, dependencyEntry(value))
+    hasCachedEntries = true
+    return value
   }
 
   // <Box color="xxx" /> or <Box color={`xxx`} />
@@ -902,23 +927,12 @@ const resolveExportedName = (name: string, exportDeclaration: ExportDeclaration)
  * which costs a minimum of around 90ms (and scales up with the file/project, could be hundreds of ms)
  * @see https://github.com/dsherret/ts-morph/blob/42d811ed9a5177fc678a5bfec4923a2048124fe0/packages/ts-morph/src/compiler/ast/module/ExportDeclaration.ts#L160
  */
-export const getModuleSpecifierSourceFile = (declaration: ExportDeclaration | ImportDeclaration) => {
-  const project = declaration.getProject()
+export const getModuleSpecifierSourceFile = (declaration: ExportDeclaration | ImportDeclaration, ctx: BoxContext) => {
   const moduleName = declaration.getModuleSpecifierValue()
 
   if (!moduleName) return
-
-  const containingFile = declaration.getSourceFile().getFilePath()
-  const resolved = ts.resolveModuleName(
-    moduleName,
-    containingFile,
-    project.getCompilerOptions(),
-    project.getModuleResolutionHost(),
-  )
-  if (!resolved.resolvedModule) return
-
-  const sourceFile = project.addSourceFileAtPath(resolved.resolvedModule.resolvedFileName)
-
+  const sourceFile = ctx.resolveModule?.(moduleName, declaration.getSourceFile())
+  if (sourceFile) recordModuleDependency(ctx, sourceFile.getFilePath())
   return sourceFile
 }
 
@@ -936,7 +950,7 @@ function resolveVarDeclarationFromExportWithName(
     const sourceName = resolveExportedName(symbolName, exportDeclaration)
     if (sourceName === undefined) continue
 
-    const maybeFile = getModuleSpecifierSourceFile(exportDeclaration)
+    const maybeFile = getModuleSpecifierSourceFile(exportDeclaration, ctx)
     if (!maybeFile) {
       // No module specifier: `const btn = …; export { btn as button }`. The value
       // is declared here under its pre-alias name.

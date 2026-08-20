@@ -1,5 +1,14 @@
 import { esc } from '@bamboocss/shared'
 
+export interface StaticOutputProjection {
+  /** Whether this environment's current graph imports the virtual stylesheet. */
+  cssLoaded: boolean
+  /** Compiler-owned atoms every JavaScript output represented by this projection can name. */
+  requiredClasses: ReadonlySet<string>
+  /** Restore the committed whole-build projection after the candidate CSS has been staged. */
+  restore(): void
+}
+
 /** Shared state between the build-time fold and the virtual CSS module. */
 export interface StaticCompilationSession {
   /** Resolved CSS layer name that carries generated atomic utilities. */
@@ -19,6 +28,20 @@ export interface StaticCompilationSession {
   /** Escaped selectors the transformed Rollup graph can actually emit. */
   usedClasses: Set<string>
   /**
+   * Project one prepared environment while Bamboo finalizes that environment's output.
+   *
+   * The default implementation owns the simple prune-history reset used by isolated CSS-hook
+   * callers. The compiler replaces it with the production transaction: the returned callback
+   * restores the committed projection after the CSS hook has staged the candidate bundle, and a
+   * later output-success hook publishes its reachability and prune history together.
+   */
+  beginOutputProjection: (
+    environment: string,
+    outputOptions: object,
+    bundle: object,
+    replacesGeneratedStylesheet: boolean,
+  ) => StaticOutputProjection
+  /**
    * Every environment this run intends to build, when the run says so before building any.
    *
    * `undefined` means nothing announced one, which is the single-environment shape: `vite
@@ -26,8 +49,10 @@ export interface StaticCompilationSession {
    * Reachability is complete the moment that one finishes, so pruning goes ahead.
    */
   expectedEnvironments: Set<string> | undefined
-  /** Environments whose `buildStart` has run in the build currently in progress. */
-  startedEnvironments: Set<string>
+  /** Environments that have entered this shared plugin instance at least once. */
+  participatingEnvironments: Set<string>
+  /** Environments whose latest generation reached its observable output commit point. */
+  completedEnvironments: Set<string>
   /**
    * Escape-free class names a completed prune removed from an emitted stylesheet.
    *
@@ -50,8 +75,17 @@ export const createStaticCompilationSession = (): StaticCompilationSession => {
     viewTransitionClasses: new Set(),
     usedClasses: new Set(),
     expectedEnvironments: undefined,
-    startedEnvironments: new Set(),
+    participatingEnvironments: new Set(),
+    completedEnvironments: new Set(),
     prunedClasses: new Set(),
+    beginOutputProjection(_environment, _outputOptions, _bundle, replacesGeneratedStylesheet) {
+      if (replacesGeneratedStylesheet) session.prunedClasses.clear()
+      const prunable = new Set([...session.prunableClasses].map((className) => className.replaceAll('\\', '')))
+      const requiredClasses = new Set(
+        [...session.usedClasses].filter((className) => prunable.has(className.replaceAll('\\', ''))),
+      )
+      return { cssLoaded: session.cssLoaded, requiredClasses, restore() {} }
+    },
     markClassUsed(className) {
       // Split on whitespace. A folded call reports one entry per call
       // site, and a call producing several atoms reports them space-joined — every property
@@ -87,33 +121,30 @@ export const createStaticCompilationSession = (): StaticCompilationSession => {
 }
 
 /**
- * Environments this run intends to build that have not been compiled yet.
+ * Expected or observed environments whose current generation has not completed yet.
  *
  * Empty means everything the run will contribute has been contributed, which is the condition
  * every whole-run judgement here waits for: pruning the stylesheet against reachability, and
  * the two guards that ask whether the compiled modules and the extraction graph agree. Each of
  * those is false about a build in progress and true only about a finished one.
  *
- * Empty is also the answer for a single-environment build, where nothing announced an
- * environment list because there is only ever one — so that path is unchanged.
+ * The environment currently at `buildEnd` may be supplied as the candidate completing this
+ * call. That keeps publication transactional: whole-run checks can include its finished graph
+ * without marking it complete before those checks themselves succeed.
+ *
+ * Empty is also the answer for a single-environment build, where the only participant is the
+ * completing candidate — so that path is unchanged.
  *
  * An environment a run declares and then never builds leaves this permanently non-empty, and
  * those judgements are skipped for the run. Every one of them errs towards shipping more CSS
  * or asserting less, so that is the safe direction to be wrong in.
  */
-export const remainingEnvironments = (session: StaticCompilationSession): string[] =>
-  [...(session.expectedEnvironments ?? [])].filter((name) => !session.startedEnvironments.has(name))
-
-export const resetStaticCompilationSession = (session: StaticCompilationSession) => {
-  session.cssLoaded = false
-  session.transformedFiles.clear()
-  session.extractedFiles.clear()
-  session.prunableClasses.clear()
-  session.viewTransitionClasses.clear()
-  session.usedClasses.clear()
-  session.startedEnvironments.clear()
-  session.prunedClasses.clear()
-  // `expectedEnvironments` deliberately survives. It describes how the *run* is driven rather
-  // than anything a build produced, and a `vite build --watch` rebuild is the same run: the
-  // hook that announces it fires once, before the first environment builds, and never again.
+export const remainingEnvironments = (
+  session: StaticCompilationSession,
+  /** A generation currently proving it can complete this `buildEnd`. */
+  completingEnvironment?: string,
+): string[] => {
+  const participating = new Set(session.expectedEnvironments ?? [])
+  for (const environment of session.participatingEnvironments) participating.add(environment)
+  return [...participating].filter((name) => name !== completingEnvironment && !session.completedEnvironments.has(name))
 }

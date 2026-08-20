@@ -144,6 +144,12 @@ export function createParser(context: ParserOptions) {
       parserResult.unresolved.push({ kind: 'atomic', prop: base, filePath, line, column, reason: 'unresolved-raw' })
     }
 
+    // Recipe discovery also resolves named imports, including ordinary runtime bindings which
+    // turn out not to be recipes. Extraction reports only the modules its value resolver
+    // actually crosses. Keeping the Project resolver itself stable lets a cached value replay
+    // those paths into each new ParserResult without mistaking a new callback for a new graph.
+    const recordDependency = (filePath: string) => parserResult.addDependency(filePath)
+
     const extractResultByName = extract({
       ast: sourceFile,
       tokens: context.tokens
@@ -245,6 +251,8 @@ export function createParser(context: ParserOptions) {
         }
       },
       flags: { skipTraverseFiles: false },
+      recordDependency,
+      resolveModule,
     })
 
     extractResultByName.forEach((result, alias) => {

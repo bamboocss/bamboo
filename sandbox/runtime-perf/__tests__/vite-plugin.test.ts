@@ -1,10 +1,11 @@
-import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { logger } from '@bamboocss/logger'
 import { esc } from '@bamboocss/shared'
 import bamboocss from '@bamboocss/vite'
-import { build, createServer, type Rollup } from 'vite'
-import { build as buildVite8, createBuilder } from 'vite8'
+import { build, createBuilder as createVite7Builder, createServer, type Plugin as VitePlugin, type Rollup } from 'vite'
+import { build as buildVite8, createBuilder, type Plugin } from 'vite8'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 /**
@@ -18,6 +19,22 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
  */
 const here = dirname(fileURLToPath(import.meta.url))
 const cwd = join(here, '..')
+
+/** Keep a watcher's extraction graph inside its own fixture instead of all scratch files. */
+const writeIsolatedBambooConfig = (path: string, include: string[]) =>
+  writeFileSync(
+    path,
+    `import base from './bamboo.config'\n` + `export default { ...base, include: ${JSON.stringify(include)} }\n`,
+  )
+
+const readOutputFiles = (directory: string, extension: string) =>
+  existsSync(directory)
+    ? readdirSync(directory)
+        .filter((file) => file.endsWith(extension))
+        .sort()
+        .map((file) => readFileSync(join(directory, file), 'utf8'))
+        .join('\n')
+    : ''
 
 describe('vite plugin, real build', () => {
   test('shares recipe and utility atoms through a real build', async () => {
@@ -483,17 +500,23 @@ describe('vite plugin, real build', () => {
  * `packages/vite` do — asserts the effect of the refresh while assuming the schedule.
  * This is the assumption, run.
  */
-describe('vite plugin, real rebuild', () => {
+describe.sequential('vite plugin, real rebuild', () => {
   const fixtureDir = join(cwd, 'src/__watch-tmp')
+  const configPath = join(cwd, '__watch-tmp.bamboo.config.ts')
   const dependency = join(fixtureDir, 'dep.ts')
   const entry = join(fixtureDir, 'entry.tsx')
   const outDir = join(fixtureDir, 'out')
 
   const writeDependency = (color: string) => writeFileSync(dependency, `export const shared = { color: '${color}' }\n`)
 
-  afterEach(() => rmSync(fixtureDir, { force: true, recursive: true }))
+  beforeEach(() => writeIsolatedBambooConfig(configPath, ['./src/__watch-tmp/**/*.{tsx,jsx}']))
 
-  test('an edited module is re-read before the rebuild folds against it', async () => {
+  afterEach(() => {
+    rmSync(fixtureDir, { force: true, recursive: true })
+    rmSync(configPath, { force: true })
+  })
+
+  test('an imported local dependency outside include rebuilds JavaScript and CSS', async () => {
     mkdirSync(fixtureDir, { recursive: true })
     writeDependency('blue600')
     writeFileSync(
@@ -501,11 +524,20 @@ describe('vite plugin, real rebuild', () => {
       `import 'virtual:bamboo.css'\nimport { css } from '../../styled-system/css'\nimport { shared } from './dep'\nexport const cls = css(shared)\n`,
     )
 
+    const watchedRuns: string[][] = []
     const watcher = (await build({
       root: cwd,
       logLevel: 'silent',
       css: { postcss: { plugins: [] } },
-      plugins: [bamboocss({ cwd, reportSummary: false })],
+      plugins: [
+        bamboocss({ cwd, configPath, reportSummary: false }),
+        {
+          name: 'bamboocss:test-watch-closure',
+          buildEnd() {
+            watchedRuns.push(this.getWatchFiles())
+          },
+        },
+      ],
       build: {
         watch: {},
         minify: false,
@@ -533,15 +565,17 @@ describe('vite plugin, real rebuild', () => {
 
     // Whatever the build wrote, rather than a name derived from the format and the
     // package's `type` — the assertion is about the contents, not about Vite's naming.
-    const output = () =>
+    const output = (...extensions: string[]) =>
       readdirSync(outDir)
-        .filter((file) => file.endsWith('.js') || file.endsWith('.mjs'))
+        .filter((file) => extensions.some((extension) => file.endsWith(extension)))
         .map((file) => readFileSync(join(outDir, file), 'utf8'))
         .join('\n')
 
     try {
       await nextBuild()
-      expect(output()).toContain('"c_blue600"')
+      expect(output('.js', '.mjs')).toContain('"c_blue600"')
+      expect(output('.css')).toContain('blue600')
+      expect(watchedRuns.at(-1)).toContain(dependency)
 
       const rebuilt = nextBuild()
       // Edited a beat after the first build rather than immediately. The watcher arms
@@ -554,10 +588,654 @@ describe('vite plugin, real rebuild', () => {
 
       // The assertion the whole hook exists for. Without the refresh this is still
       // `c_blue600` — and stays that way for the life of the watch session.
-      expect(output()).toContain('"c_red600"')
-      expect(output()).not.toContain('"c_blue600"')
+      expect(output('.js', '.mjs')).toContain('"c_red600"')
+      expect(output('.js', '.mjs')).not.toContain('"c_blue600"')
+      expect(output('.css')).toContain('red600')
+      expect(output('.css')).not.toContain('blue600')
+      expect(watchedRuns.at(-1)).toContain(dependency)
     } finally {
       await watcher.close()
+    }
+  }, 120_000)
+
+  test('a cached transform replays the reachability used to prune the rebuilt stylesheet', async () => {
+    const cachedDependency = join(fixtureDir, 'cached-dep.tsx')
+    const styleDependency = join(fixtureDir, 'cached-style.tsx')
+    const cachedEntry = join(fixtureDir, 'cached-entry.tsx')
+    const rebuildEntry = join(fixtureDir, 'rebuild-entry.tsx')
+    const width = '719.314px'
+    const transformCalls: string[] = []
+    const summaries: string[] = []
+    const info = vi.spyOn(logger, 'info').mockImplementation((type, message) => {
+      if (type === 'vite:transform') summaries.push(message)
+    })
+    const config = (watch: boolean) => ({
+      root: cwd,
+      logLevel: 'silent' as const,
+      css: { postcss: { plugins: [] } },
+      plugins: [
+        bamboocss({ cwd, configPath }),
+        {
+          name: 'bamboocss:test-cached-transform-probe',
+          transform(_code: string, id: string) {
+            if (id.split('?')[0] === cachedEntry) transformCalls.push(id)
+          },
+        },
+      ],
+      build: {
+        ...(watch ? { watch: {} } : { write: false }),
+        minify: false,
+        outDir,
+        emptyOutDir: false,
+        lib: {
+          entry: { cached: cachedEntry, rebuild: rebuildEntry },
+          formats: ['es'] as const,
+          fileName: (_format: string, name: string) => `${name}.js`,
+        },
+        rollupOptions: { external: [/styled-system/] },
+      },
+    })
+
+    mkdirSync(fixtureDir, { recursive: true })
+    writeFileSync(cachedDependency, `export const version = 'first'\n`)
+    writeFileSync(styleDependency, `export const shared = { width: '[${width}]' }\n`)
+    writeFileSync(
+      cachedEntry,
+      `import 'virtual:bamboo.css'\nimport { css, cx } from '../../styled-system/css'\nimport { shared } from './cached-style'\nexport const cls = (external) => cx(external, css(shared))\n`,
+    )
+    writeFileSync(rebuildEntry, `export { version } from './cached-dep'\n`)
+
+    let watcher: Rollup.RollupWatcher | undefined
+    const nextBuild = () =>
+      new Promise<void>((resolve, reject) => {
+        const active = watcher
+        if (!active) throw new Error('watcher has not started')
+        const onEvent = (event: { code: string; error?: Error }) => {
+          if (event.code === 'END') {
+            active.off('event', onEvent)
+            resolve()
+          } else if (event.code === 'ERROR') {
+            active.off('event', onEvent)
+            reject(event.error)
+          }
+        }
+        active.on('event', onEvent)
+      })
+    const writtenCss = () =>
+      readdirSync(outDir)
+        .filter((file) => file.endsWith('.css'))
+        .map((file) => readFileSync(join(outDir, file), 'utf8'))
+        .join('\n')
+
+    try {
+      watcher = (await build(config(true))) as Rollup.RollupWatcher
+      await nextBuild()
+      expect(transformCalls).toHaveLength(1)
+      const cleanCss = writtenCss()
+      expect(cleanCss).toContain(width)
+
+      // Remove the first build's hashed asset so only the rebuild's stylesheet can satisfy
+      // the assertion below. Vite excludes its own outDir from the watcher.
+      rmSync(outDir, { force: true, recursive: true })
+      const rebuilt = nextBuild()
+      await new Promise((settle) => setTimeout(settle, 800))
+      writeFileSync(cachedDependency, `export const version = 'second'\n`)
+      await rebuilt
+
+      // Rollup reused Bamboo's transform result for the unchanged entry. The probe is after
+      // Bamboo in the same transform pipeline, so it is cached or rerun with it.
+      expect(transformCalls, 'the entry took Rollup’s cached transform path').toHaveLength(1)
+      const cachedCss = writtenCss()
+      expect(summaries).toHaveLength(2)
+      expect(summaries[0]).toContain('declined: dynamic=1')
+      expect(summaries[1], 'cached coverage and diagnostics must match the clean build').toBe(summaries[0])
+
+      expect(cachedCss).toContain(width)
+      expect(cachedCss, 'a cached rebuild must match the first, cache-free build').toBe(cleanCss)
+    } finally {
+      await watcher?.close()
+      info.mockRestore()
+    }
+  }, 120_000)
+
+  test('fails closed when cached Bamboo metadata uses a stale schema', async () => {
+    const staleEntry = join(fixtureDir, 'stale-meta-entry.tsx')
+    const trigger = join(fixtureDir, 'stale-meta-trigger.tsx')
+    const staleOutDir = join(fixtureDir, 'stale-meta-out')
+    const width = '729.414px'
+    let transformCalls = 0
+
+    // Runs after Bamboo and deliberately replaces only its serialized cache boundary. The
+    // first build still uses Bamboo's in-memory contribution and emits valid JS/CSS; Rollup
+    // then retains this stale schema alongside those compiled JS bytes for the rebuild.
+    const staleMetadata: VitePlugin = {
+      name: 'bamboocss:test-stale-transform-metadata',
+      transform(_code, id) {
+        if (id.split('?')[0] !== staleEntry) return
+        transformCalls++
+        return { meta: { 'bamboocss:transform': { version: 1 } } }
+      },
+    }
+
+    mkdirSync(fixtureDir, { recursive: true })
+    writeFileSync(
+      staleEntry,
+      `import 'virtual:bamboo.css'\n` +
+        `import { css } from '../../styled-system/css'\n` +
+        `export const className = css({ width: '[${width}]' })\n`,
+    )
+    writeFileSync(trigger, `export const version = 'first'\n`)
+
+    let watcher: Rollup.RollupWatcher | undefined
+    const nextBuild = () =>
+      new Promise<Error | undefined>((resolve) => {
+        const active = watcher
+        if (!active) throw new Error('watcher has not started')
+        const onEvent = (event: { code: string; error?: Error }) => {
+          if (event.code !== 'END' && event.code !== 'ERROR') return
+          active.off('event', onEvent)
+          resolve(event.code === 'ERROR' ? event.error : undefined)
+        }
+        active.on('event', onEvent)
+      })
+    const written = (extension: string) =>
+      readdirSync(staleOutDir)
+        .filter((file) => file.endsWith(extension))
+        .map((file) => readFileSync(join(staleOutDir, file), 'utf8'))
+        .join('\n')
+
+    try {
+      watcher = (await build({
+        root: cwd,
+        logLevel: 'silent',
+        css: { postcss: { plugins: [] } },
+        plugins: [bamboocss({ cwd, configPath, reportSummary: false }), staleMetadata],
+        build: {
+          watch: {},
+          minify: false,
+          outDir: staleOutDir,
+          emptyOutDir: false,
+          lib: {
+            entry: { cached: staleEntry, rebuild: trigger },
+            formats: ['es'],
+            fileName: (_format, name) => `${name}.js`,
+          },
+          rollupOptions: { external: [/styled-system/] },
+        },
+      })) as Rollup.RollupWatcher
+
+      expect(await nextBuild()).toBeUndefined()
+      expect(transformCalls).toBe(1)
+      expect(written('.js')).toContain(width)
+      expect(written('.js')).not.toContain('css(')
+      expect(written('.css')).toContain(width)
+
+      rmSync(staleOutDir, { force: true, recursive: true })
+      const rebuilt = nextBuild()
+      await new Promise((settle) => setTimeout(settle, 800))
+      writeFileSync(trigger, `export const version = 'second'\n`)
+      const error = await rebuilt
+
+      expect(transformCalls, 'the Bamboo-compiled entry took Rollup’s cached transform path').toBe(1)
+      expect(error?.message).toContain('cached transform metadata')
+      expect(error?.message).toContain(JSON.stringify(staleEntry))
+      expect(error?.message).toContain('version 1; expected schema version 3')
+      expect(error?.message).toContain('cached JavaScript may still name CSS classes whose rules would be dropped')
+      expect(error?.message).toContain('Restart Vite to invalidate its in-memory transform cache')
+    } finally {
+      await watcher?.close()
+    }
+  }, 120_000)
+
+  test('fails closed when a current-schema cached artifact fails integrity', async () => {
+    const integrityEntry = join(fixtureDir, 'integrity-meta-entry.tsx')
+    const trigger = join(fixtureDir, 'integrity-meta-trigger.tsx')
+    const integrityOutDir = join(fixtureDir, 'integrity-meta-out')
+    const width = '739.515px'
+    let transformCalls = 0
+    let compiledCode = ''
+
+    // Read Bamboo's current artifact after its pre transform, then alter one semantic field
+    // without access to the instance-private key that sealed it. The first build uses Bamboo's
+    // already-applied private copy; Rollup caches these altered bytes and metadata for replay.
+    const alteredMetadata: VitePlugin = {
+      name: 'bamboocss:test-altered-transform-metadata',
+      transform(code, id) {
+        if (id.split('?')[0] !== integrityEntry) return
+        transformCalls++
+        compiledCode = code
+
+        const artifact = this.getModuleInfo(id)?.meta['bamboocss:transform']
+        if (!artifact || typeof artifact !== 'object' || Array.isArray(artifact)) {
+          throw new Error('test fixture could not observe Bamboo transform metadata')
+        }
+        expect(artifact).toMatchObject({
+          version: 3,
+          classNames: [`w_[${width}]`],
+          integrity: expect.any(String),
+        })
+        const integrity = artifact.integrity
+        const alteredArtifact = {
+          ...artifact,
+          // Well-typed and current-schema, but no longer describes the compiled JS above.
+          classNames: [],
+        }
+        expect(alteredArtifact.integrity).toBe(integrity)
+        return {
+          code,
+          map: null,
+          meta: {
+            'bamboocss:transform': alteredArtifact,
+          },
+        }
+      },
+    }
+
+    mkdirSync(fixtureDir, { recursive: true })
+    writeFileSync(
+      integrityEntry,
+      `import 'virtual:bamboo.css'\n` +
+        `import { css } from '../../styled-system/css'\n` +
+        `export const className = css({ width: '[${width}]' })\n`,
+    )
+    writeFileSync(trigger, `export const version = 'first'\n`)
+
+    let watcher: Rollup.RollupWatcher | undefined
+    const nextBuild = () =>
+      new Promise<Error | undefined>((resolve) => {
+        const active = watcher
+        if (!active) throw new Error('watcher has not started')
+        const onEvent = (event: { code: string; error?: Error }) => {
+          if (event.code !== 'END' && event.code !== 'ERROR') return
+          active.off('event', onEvent)
+          resolve(event.code === 'ERROR' ? event.error : undefined)
+        }
+        active.on('event', onEvent)
+      })
+    const written = (extension: string) =>
+      readdirSync(integrityOutDir)
+        .filter((file) => file.endsWith(extension))
+        .map((file) => readFileSync(join(integrityOutDir, file), 'utf8'))
+        .join('\n')
+
+    try {
+      watcher = (await build({
+        root: cwd,
+        logLevel: 'silent',
+        css: { postcss: { plugins: [] } },
+        plugins: [bamboocss({ cwd, configPath, reportSummary: false }), alteredMetadata],
+        build: {
+          watch: {},
+          minify: false,
+          outDir: integrityOutDir,
+          emptyOutDir: false,
+          lib: {
+            entry: { cached: integrityEntry, rebuild: trigger },
+            formats: ['es'],
+            fileName: (_format, name) => `${name}.js`,
+          },
+          rollupOptions: { external: [/styled-system/] },
+        },
+      })) as Rollup.RollupWatcher
+
+      expect(await nextBuild()).toBeUndefined()
+      expect(transformCalls).toBe(1)
+      expect(compiledCode).toContain(`w_[${width}]`)
+      expect(compiledCode).not.toContain('css(')
+      expect(written('.js')).toContain(width)
+      expect(written('.css')).toContain(width)
+
+      rmSync(integrityOutDir, { force: true, recursive: true })
+      const rebuilt = nextBuild()
+      await new Promise((settle) => setTimeout(settle, 800))
+      writeFileSync(trigger, `export const version = 'second'\n`)
+      const error = await rebuilt
+
+      expect(transformCalls, 'the altered Bamboo entry took Rollup’s cached transform path').toBe(1)
+      expect(error?.message).toContain('cached transform metadata')
+      expect(error?.message).toContain(JSON.stringify(integrityEntry))
+      expect(error?.message).toContain('schema version 3 integrity check')
+      expect(error?.message).toContain('cached JavaScript may still name CSS classes whose rules would be dropped')
+      expect(error?.message).toContain('Restart Vite to invalidate its in-memory transform cache')
+    } finally {
+      await watcher?.close()
+    }
+  }, 120_000)
+
+  test('snapshots accessor-backed cached metadata before validation and replay', async () => {
+    const accessorEntry = join(fixtureDir, 'accessor-meta-entry.tsx')
+    const trigger = join(fixtureDir, 'accessor-meta-trigger.tsx')
+    const accessorOutDir = join(fixtureDir, 'accessor-meta-out')
+    const width = '749.616px'
+    let transformCalls = 0
+    let buildStarts = 0
+    let integrityReads = 0
+    let alteredClassReads = 0
+    let accessorArtifact: Record<string, unknown> | undefined
+
+    // This is the exact old TOCTOU: schema validation reads `integrity` once and sees the
+    // signed classes; HMAC verification reads the signed classes and then `integrity` again;
+    // the subsequent state copy asks for classes a third time and receives an empty list.
+    // Snapshot-first replay asks the external record only once and validates that detached data.
+    const accessorMetadata: VitePlugin = {
+      name: 'bamboocss:test-accessor-transform-metadata',
+      buildStart() {
+        buildStarts++
+        if (buildStarts > 1) {
+          integrityReads = 0
+          alteredClassReads = 0
+        }
+      },
+      transform(code, id) {
+        if (id.split('?')[0] !== accessorEntry) return
+        transformCalls++
+
+        const artifact = this.getModuleInfo(id)?.meta['bamboocss:transform']
+        if (!artifact || typeof artifact !== 'object' || Array.isArray(artifact)) {
+          throw new Error('test fixture could not observe Bamboo transform metadata')
+        }
+        expect(artifact).toMatchObject({
+          version: 3,
+          classNames: [`w_[${width}]`],
+          integrity: expect.any(String),
+        })
+        const signedClassNames = artifact.classNames
+        const signedIntegrity = artifact.integrity
+        accessorArtifact = { ...artifact }
+        Object.defineProperties(accessorArtifact, {
+          classNames: {
+            enumerable: true,
+            get() {
+              if (integrityReads < 2) return signedClassNames
+              alteredClassReads++
+              return []
+            },
+          },
+          integrity: {
+            enumerable: true,
+            get() {
+              integrityReads++
+              return signedIntegrity
+            },
+          },
+        })
+        return { code, map: null, meta: { 'bamboocss:transform': accessorArtifact } }
+      },
+    }
+
+    mkdirSync(fixtureDir, { recursive: true })
+    writeFileSync(
+      accessorEntry,
+      `import 'virtual:bamboo.css'\n` +
+        `import { css } from '../../styled-system/css'\n` +
+        `export const className = css({ width: '[${width}]' })\n`,
+    )
+    writeFileSync(trigger, `export const version = 'first'\n`)
+
+    let watcher: Rollup.RollupWatcher | undefined
+    const nextBuild = () =>
+      new Promise<Error | undefined>((resolve) => {
+        const active = watcher
+        if (!active) throw new Error('watcher has not started')
+        const onEvent = (event: { code: string; error?: Error }) => {
+          if (event.code !== 'END' && event.code !== 'ERROR') return
+          active.off('event', onEvent)
+          resolve(event.code === 'ERROR' ? event.error : undefined)
+        }
+        active.on('event', onEvent)
+      })
+    const written = (extension: string) =>
+      readdirSync(accessorOutDir)
+        .filter((file) => file.endsWith(extension))
+        .map((file) => readFileSync(join(accessorOutDir, file), 'utf8'))
+        .join('\n')
+
+    try {
+      watcher = (await build({
+        root: cwd,
+        logLevel: 'silent',
+        css: { postcss: { plugins: [] } },
+        plugins: [bamboocss({ cwd, configPath, reportSummary: false }), accessorMetadata],
+        build: {
+          watch: {},
+          minify: false,
+          outDir: accessorOutDir,
+          emptyOutDir: false,
+          lib: {
+            entry: { cached: accessorEntry, rebuild: trigger },
+            formats: ['es'],
+            fileName: (_format, name) => `${name}.js`,
+          },
+          rollupOptions: { external: [/styled-system/] },
+        },
+      })) as Rollup.RollupWatcher
+
+      expect(await nextBuild()).toBeUndefined()
+      expect(transformCalls).toBe(1)
+      const cleanCss = written('.css')
+      expect(cleanCss).toContain(width)
+
+      rmSync(accessorOutDir, { force: true, recursive: true })
+      const rebuilt = nextBuild()
+      await new Promise((settle) => setTimeout(settle, 800))
+      writeFileSync(trigger, `export const version = 'second'\n`)
+
+      expect(await rebuilt).toBeUndefined()
+      expect(transformCalls, 'the accessor-backed Bamboo entry took Rollup’s cached transform path').toBe(1)
+      expect(alteredClassReads, 'replay never read altered reachability from the external object').toBe(0)
+      expect(written('.js')).toContain(width)
+      expect(written('.css')).toBe(cleanCss)
+
+      // Arm the accessor after replay to prove it really does return the altered value once the
+      // integrity read boundary has passed. The detached contribution must remain unaffected.
+      while (integrityReads < 2) void accessorArtifact!.integrity
+      expect(accessorArtifact!.classNames).toEqual([])
+      expect(alteredClassReads).toBe(1)
+      expect(written('.css')).toContain(width)
+    } finally {
+      await watcher?.close()
+    }
+  }, 120_000)
+
+  test('replays a cached query variant when a sibling module id retransforms', async () => {
+    const dual = join(fixtureDir, 'dual.tsx')
+    const trigger = join(fixtureDir, 'query-trigger.tsx')
+    const queryEntry = join(fixtureDir, 'query-entry.tsx')
+    const queryOutDir = join(fixtureDir, 'query-out')
+    const widths = { a: '829.141px', b: '829.282px' }
+    const transformCalls = { a: 0, b: 0 }
+
+    const queryVariants: VitePlugin = {
+      name: 'bamboocss:test-query-variants',
+      enforce: 'pre',
+      transform(_code, id) {
+        const [file, query] = id.split('?')
+        if (file !== dual || (query !== 'a' && query !== 'b')) return
+
+        transformCalls[query]++
+        // Only `?a` depends on this file. Its edit must rerun that live module id while
+        // Rollup keeps `?b` on the transform-cache path.
+        if (query === 'a') this.addWatchFile(trigger)
+
+        return {
+          code:
+            `import { css } from '../../styled-system/css'\n` +
+            `export const className = css({ width: '[${widths[query]}]' })\n`,
+          map: null,
+        }
+      },
+    }
+
+    mkdirSync(fixtureDir, { recursive: true })
+    // The extractor reads the physical source, so both query-specific classes have real rules
+    // before the bundler plugin selects one call for each live module id.
+    writeFileSync(
+      dual,
+      `import { css } from '../../styled-system/css'\n` +
+        `export const a = css({ width: '[${widths.a}]' })\n` +
+        `export const b = css({ width: '[${widths.b}]' })\n`,
+    )
+    writeFileSync(trigger, `export const version = 'first'\n`)
+    writeFileSync(
+      queryEntry,
+      `import 'virtual:bamboo.css'\n` +
+        `export { className as a } from './dual.tsx?a'\n` +
+        `export { className as b } from './dual.tsx?b'\n`,
+    )
+
+    let watcher: Rollup.RollupWatcher | undefined
+    const nextBuild = () =>
+      new Promise<void>((resolve, reject) => {
+        const active = watcher
+        if (!active) throw new Error('watcher has not started')
+        const onEvent = (event: { code: string; error?: Error }) => {
+          if (event.code === 'END') {
+            active.off('event', onEvent)
+            resolve()
+          } else if (event.code === 'ERROR') {
+            active.off('event', onEvent)
+            reject(event.error)
+          }
+        }
+        active.on('event', onEvent)
+      })
+    const writtenCss = () =>
+      readdirSync(queryOutDir)
+        .filter((file) => file.endsWith('.css'))
+        .map((file) => readFileSync(join(queryOutDir, file), 'utf8'))
+        .join('\n')
+
+    try {
+      watcher = (await build({
+        root: cwd,
+        logLevel: 'silent',
+        css: { postcss: { plugins: [] } },
+        plugins: [queryVariants, bamboocss({ cwd, configPath, reportSummary: false })],
+        build: {
+          watch: {},
+          minify: false,
+          outDir: queryOutDir,
+          emptyOutDir: false,
+          lib: { entry: queryEntry, formats: ['es'], fileName: 'query-entry' },
+          rollupOptions: { external: [/styled-system/] },
+        },
+      })) as Rollup.RollupWatcher
+
+      await nextBuild()
+      expect(transformCalls).toEqual({ a: 1, b: 1 })
+      const cleanCss = writtenCss()
+      expect(cleanCss).toContain(widths.a)
+      expect(cleanCss).toContain(widths.b)
+
+      rmSync(queryOutDir, { force: true, recursive: true })
+      const rebuilt = nextBuild()
+      await new Promise((settle) => setTimeout(settle, 800))
+      writeFileSync(trigger, `export const version = 'second'\n`)
+      await rebuilt
+
+      expect(transformCalls, 'only the watched query variant retransforms').toEqual({ a: 2, b: 1 })
+      const cachedCss = writtenCss()
+      expect(cachedCss).toContain(widths.a)
+      expect(cachedCss).toContain(widths.b)
+      expect(cachedCss, 'query-variant cache replay must match the cache-free build').toBe(cleanCss)
+    } finally {
+      await watcher?.close()
+    }
+  }, 120_000)
+
+  test('a cached query sibling cannot erase a fresh survivor', async () => {
+    const dual = join(fixtureDir, 'survivor-dual.tsx')
+    const trigger = join(fixtureDir, 'survivor-trigger.tsx')
+    const queryEntry = join(fixtureDir, 'survivor-entry.tsx')
+    const survivorOutDir = join(fixtureDir, 'survivor-out')
+    const transformCalls = { fresh: 0, cached: 0 }
+
+    const queryVariants: VitePlugin = {
+      name: 'bamboocss:test-query-survivor',
+      enforce: 'pre',
+      transform(_code, id) {
+        const [file, query] = id.split('?')
+        if (file !== dual || (query !== 'fresh' && query !== 'cached')) return
+        transformCalls[query]++
+
+        if (query === 'fresh') {
+          this.addWatchFile(trigger)
+          if (readFileSync(trigger, 'utf8').includes('second')) {
+            return {
+              code:
+                `import { css } from '../../styled-system/css'\n` +
+                `export const className = (width) => css({ width })\n`,
+              map: null,
+            }
+          }
+        }
+
+        const width = query === 'fresh' ? '839.141px' : '839.282px'
+        return {
+          code:
+            `import { css } from '../../styled-system/css'\n` +
+            `export const className = css({ width: '[${width}]' })\n`,
+          map: null,
+        }
+      },
+    }
+
+    mkdirSync(fixtureDir, { recursive: true })
+    writeFileSync(
+      dual,
+      `import { css } from '../../styled-system/css'\n` +
+        `export const fresh = css({ width: '[839.141px]' })\n` +
+        `export const cached = css({ width: '[839.282px]' })\n`,
+    )
+    writeFileSync(trigger, `export const version = 'first'\n`)
+    writeFileSync(
+      queryEntry,
+      `import 'virtual:bamboo.css'\n` +
+        `export { className as fresh } from './survivor-dual.tsx?fresh'\n` +
+        `export { className as cached } from './survivor-dual.tsx?cached'\n`,
+    )
+
+    let watcher: Rollup.RollupWatcher | undefined
+    const nextBuild = () =>
+      new Promise<Error | undefined>((resolve) => {
+        const active = watcher
+        if (!active) throw new Error('watcher has not started')
+        const onEvent = (event: { code: string; error?: Error }) => {
+          if (event.code !== 'END' && event.code !== 'ERROR') return
+          active.off('event', onEvent)
+          resolve(event.code === 'ERROR' ? event.error : undefined)
+        }
+        active.on('event', onEvent)
+      })
+
+    try {
+      watcher = (await build({
+        root: cwd,
+        logLevel: 'silent',
+        css: { postcss: { plugins: [] } },
+        plugins: [queryVariants, bamboocss({ cwd, configPath, reportSummary: false })],
+        build: {
+          watch: {},
+          minify: false,
+          outDir: survivorOutDir,
+          emptyOutDir: false,
+          lib: { entry: queryEntry, formats: ['es'], fileName: 'survivor-entry' },
+          rollupOptions: { external: [/styled-system/] },
+        },
+      })) as Rollup.RollupWatcher
+
+      expect(await nextBuild()).toBeUndefined()
+      expect(transformCalls).toEqual({ fresh: 1, cached: 1 })
+
+      const rebuilt = nextBuild()
+      await new Promise((settle) => setTimeout(settle, 800))
+      writeFileSync(trigger, `export const version = 'second'\n`)
+      const error = await rebuilt
+
+      expect(transformCalls, 'only the survivor-producing query variant retransforms').toEqual({ fresh: 2, cached: 1 })
+      expect(error?.message).toContain('css() — dynamic')
+    } finally {
+      await watcher?.close()
     }
   }, 120_000)
 })
@@ -663,10 +1341,6 @@ describe('conditional atoms reach the emitted stylesheet', () => {
  */
 const rolldownEntry = join(cwd, 'src/__rolldown-test.tsx')
 
-afterEach(() => {
-  rmSync(rolldownEntry, { force: true })
-})
-
 /** Each declaration is unique, so an absence names the shape that lost its rule. */
 const ROLLDOWN_PROBES: Array<[string, string]> = [
   ['flat', '21.1px'],
@@ -679,6 +1353,10 @@ const ROLLDOWN_PROBES: Array<[string, string]> = [
 ]
 
 describe('vite 8 / rolldown', () => {
+  afterEach(() => {
+    rmSync(rolldownEntry, { force: true })
+  })
+
   test('emits the stylesheet, with every conditional rule intact', async () => {
     writeFileSync(
       rolldownEntry,
@@ -724,6 +1402,75 @@ describe('vite 8 / rolldown', () => {
       ([label, width]) => `${label} (${width})`,
     )
     expect(missing, 'shapes with no rule in the emitted sheet').toEqual([])
+  }, 120_000)
+
+  test('rebuilds JavaScript and CSS when an imported local dependency outside include changes', async () => {
+    const fixtureDir = join(cwd, 'src/__rolldown-watch-tmp')
+    const configPath = join(cwd, '__rolldown-watch-tmp.bamboo.config.ts')
+    const dependency = join(fixtureDir, 'dep.ts')
+    const entry = join(fixtureDir, 'entry.tsx')
+    const outDir = join(fixtureDir, 'out')
+    mkdirSync(fixtureDir, { recursive: true })
+    writeIsolatedBambooConfig(configPath, ['./src/__rolldown-watch-tmp/**/*.tsx'])
+    writeFileSync(dependency, `export const shared = { color: 'blue600' }\n`)
+    writeFileSync(
+      entry,
+      `import 'virtual:bamboo.css'\nimport { css } from '../../styled-system/css'\nimport { shared } from './dep'\nexport const cls = css(shared)\n`,
+    )
+
+    const watcher = (await buildVite8({
+      root: cwd,
+      logLevel: 'silent',
+      css: { postcss: { plugins: [] } },
+      plugins: [bamboocss({ cwd, configPath, reportSummary: false })],
+      build: {
+        watch: {},
+        minify: false,
+        outDir,
+        emptyOutDir: false,
+        lib: { entry, formats: ['es'], fileName: 'entry' },
+        rollupOptions: { external: [/styled-system/] },
+      },
+    })) as unknown as Rollup.RollupWatcher
+
+    const nextBuild = () =>
+      new Promise<void>((resolve, reject) => {
+        const onEvent = (event: { code: string; error?: Error }) => {
+          if (event.code === 'END') {
+            watcher.off('event', onEvent)
+            resolve()
+          } else if (event.code === 'ERROR') {
+            watcher.off('event', onEvent)
+            reject(event.error)
+          }
+        }
+        watcher.on('event', onEvent)
+      })
+    const output = (...extensions: string[]) =>
+      readdirSync(outDir)
+        .filter((file) => extensions.some((extension) => file.endsWith(extension)))
+        .map((file) => readFileSync(join(outDir, file), 'utf8'))
+        .join('\n')
+
+    try {
+      await nextBuild()
+      expect(output('.js', '.mjs')).toContain('"c_blue600"')
+      expect(output('.css')).toContain('blue600')
+
+      const rebuilt = nextBuild()
+      await new Promise((settle) => setTimeout(settle, 800))
+      writeFileSync(dependency, `export const shared = { color: 'red600' }\n`)
+      await rebuilt
+
+      expect(output('.js', '.mjs')).toContain('"c_red600"')
+      expect(output('.js', '.mjs')).not.toContain('"c_blue600"')
+      expect(output('.css')).toContain('red600')
+      expect(output('.css')).not.toContain('blue600')
+    } finally {
+      await watcher.close()
+      rmSync(fixtureDir, { force: true, recursive: true })
+      rmSync(configPath, { force: true })
+    }
   }, 120_000)
 })
 
@@ -786,7 +1533,1306 @@ const buildBothEnvironments = async (
   return sources.join('\n')
 }
 
-describe('two build environments, one plugin instance', () => {
+type TestWatchEvent = { code: string; error?: Error }
+type TestBuildWatcher = {
+  close(): Promise<void>
+  off(event: 'event', listener: (event: TestWatchEvent) => void): void
+  on(event: 'event', listener: (event: TestWatchEvent) => void): void
+}
+type TestEnvironmentBuilder = {
+  build(environment: unknown): Promise<unknown>
+  environments: Record<string, unknown>
+}
+
+const nextEnvironmentWatchBuild = (watcher: TestBuildWatcher) =>
+  new Promise<Error | undefined>((resolve) => {
+    const onEvent = (event: TestWatchEvent) => {
+      if (event.code !== 'END' && event.code !== 'ERROR') return
+      watcher.off('event', onEvent)
+      resolve(event.code === 'ERROR' ? event.error : undefined)
+    }
+    watcher.on('event', onEvent)
+  })
+
+/** Wait through a failed task's ERROR and the enclosing watch run's END. */
+const nextEnvironmentWatchCycle = (watcher: TestBuildWatcher) =>
+  new Promise<Error | undefined>((resolve) => {
+    let error: Error | undefined
+    const onEvent = (event: TestWatchEvent) => {
+      if (event.code === 'ERROR') error = event.error
+      if (event.code !== 'END') return
+      watcher.off('event', onEvent)
+      resolve(error)
+    }
+    watcher.on('event', onEvent)
+  })
+
+const runPartialEnvironmentWatchRebuild = async (
+  create: (config: Record<string, unknown>) => Promise<unknown>,
+  label: string,
+  widths: { cachedSsr: string; freshClient: string; freshSsr: string },
+) => {
+  const clientTrigger = join(cwd, `src/__partial-client-${label}.txt`)
+  const ssrTrigger = join(cwd, `src/__partial-ssr-${label}.txt`)
+  const configPath = join(cwd, `__partial-environment-${label}.bamboo.config.ts`)
+  const clientOutDir = join(cwd, `__partial-client-${label}-out`)
+  const ssrOutDir = join(cwd, `__partial-ssr-${label}-out`)
+  const calls = { client: 0, ssr: 0 }
+
+  const environmentSource: VitePlugin = {
+    name: `bamboocss:test-partial-environment-source-${label}`,
+    enforce: 'pre',
+    sharedDuringBuild: true,
+    transform(_code, id) {
+      if (id.split('?')[0] !== envSharedModule) return
+
+      const environment = this.environment.name as keyof typeof calls
+      calls[environment]++
+      const trigger = environment === 'client' ? clientTrigger : ssrTrigger
+      this.addWatchFile(trigger)
+
+      const version = readFileSync(trigger, 'utf8').trim()
+      const width =
+        version === 'first' ? widths.cachedSsr : environment === 'client' ? widths.freshClient : widths.freshSsr
+      return {
+        code:
+          `import { css } from '../styled-system/css'\n` + `export const className = css({ width: '[${width}]' })\n`,
+        map: null,
+      }
+    },
+  }
+
+  writeFileSync(
+    envSharedModule,
+    `import { css } from '../styled-system/css'\n` +
+      `export const cachedSsr = css({ width: '[${widths.cachedSsr}]' })\n` +
+      `export const freshClient = css({ width: '[${widths.freshClient}]' })\n` +
+      `export const freshSsr = css({ width: '[${widths.freshSsr}]' })\n`,
+  )
+  writeFileSync(clientTrigger, 'first\n')
+  writeFileSync(ssrTrigger, 'first\n')
+  writeFileSync(envClientEntry, `import 'virtual:bamboo.css'\nexport { className } from './__env-shared'\n`)
+  writeFileSync(envSsrEntry, `export { className } from './__env-shared'\n`)
+  writeIsolatedBambooConfig(configPath, ['./src/__env-shared.tsx', './src/__env-client.tsx', './src/__env-ssr.tsx'])
+
+  const builder = (await create({
+    root: cwd,
+    logLevel: 'silent',
+    css: { postcss: { plugins: [] } },
+    plugins: [environmentSource, bamboocss({ cwd, configPath, reportSummary: false })],
+    build: {
+      watch: {},
+      minify: false,
+      emptyOutDir: false,
+      rollupOptions: { external: [/^react/] },
+    },
+    builder: {},
+    environments: {
+      client: {
+        build: {
+          outDir: clientOutDir,
+          lib: { entry: envClientEntry, formats: ['es'], fileName: `partial-client-${label}` },
+        },
+      },
+      ssr: {
+        build: {
+          ssr: true,
+          outDir: ssrOutDir,
+          lib: { entry: envSsrEntry, formats: ['es'], fileName: `partial-ssr-${label}` },
+        },
+      },
+    },
+  })) as TestEnvironmentBuilder
+
+  let clientWatcher: TestBuildWatcher | undefined
+  let ssrWatcher: TestBuildWatcher | undefined
+  try {
+    // SSR finishes first. Its contribution has to survive a later client-only generation,
+    // because these are independent watchers and its emitted JavaScript remains live.
+    ssrWatcher = (await builder.build(builder.environments.ssr)) as TestBuildWatcher
+    expect(await nextEnvironmentWatchBuild(ssrWatcher)).toBeUndefined()
+    clientWatcher = (await builder.build(builder.environments.client)) as TestBuildWatcher
+    expect(await nextEnvironmentWatchBuild(clientWatcher)).toBeUndefined()
+
+    expect(calls).toEqual({ client: 1, ssr: 1 })
+    const ssrJs = readOutputFiles(ssrOutDir, '.js')
+    expect(ssrJs).toContain(`w_[${widths.cachedSsr}]`)
+
+    rmSync(clientOutDir, { force: true, recursive: true })
+    const rebuiltClient = nextEnvironmentWatchBuild(clientWatcher)
+    await new Promise((settle) => setTimeout(settle, 800))
+    writeFileSync(clientTrigger, 'second\n')
+    expect(await rebuiltClient).toBeUndefined()
+    await new Promise((settle) => setTimeout(settle, 300))
+
+    expect(calls, 'the client-only edit did not start or transform SSR').toEqual({ client: 2, ssr: 1 })
+    const rebuiltCss = readOutputFiles(clientOutDir, '.css')
+    expect(rebuiltCss).toContain(widths.cachedSsr)
+    expect(rebuiltCss).toContain(widths.freshClient)
+    expect(rebuiltCss).not.toContain(widths.freshSsr)
+    expect(rebuiltCss).toContain(`.${esc(`w_[${widths.cachedSsr}]`)}`)
+
+    // The inverse partial rebuild must retain the client sheet's loss history. That sheet
+    // pruned the third rule, and SSR emits no replacement asset, so requiring it fails closed.
+    const rebuiltSsr = nextEnvironmentWatchBuild(ssrWatcher)
+    await new Promise((settle) => setTimeout(settle, 800))
+    writeFileSync(ssrTrigger, 'second\n')
+    const ssrError = await rebuiltSsr
+    await new Promise((settle) => setTimeout(settle, 300))
+
+    expect(calls, 'the SSR-only edit did not start or transform the client').toEqual({ client: 2, ssr: 2 })
+    expect(ssrError?.message).toContain('already pruned out of a stylesheet')
+    expect(ssrError?.message).toContain(esc(`w_[${widths.freshSsr}]`))
+  } finally {
+    await Promise.all([clientWatcher?.close(), ssrWatcher?.close()])
+    rmSync(clientTrigger, { force: true })
+    rmSync(ssrTrigger, { force: true })
+    rmSync(configPath, { force: true })
+    rmSync(clientOutDir, { force: true, recursive: true })
+    rmSync(ssrOutDir, { force: true, recursive: true })
+  }
+}
+
+/**
+ * Reject one environment after Bamboo generated its candidate bundle, then rebuild only its
+ * sibling.
+ *
+ * `buildEnd` is too early to publish reachability: Rollup and Rolldown keep the previous files
+ * when a later `generateBundle` hook throws. The sibling must therefore see the last output which
+ * actually reached disk, not the rejected graph Bamboo had prepared in memory.
+ */
+const runRejectedOutputWatchRebuild = async (
+  create: (config: Record<string, unknown>) => Promise<unknown>,
+  label: string,
+  widths: { old: string; rejected: string; written: string; sibling: string },
+) => {
+  const clientEntry = join(cwd, `src/__output-transaction-client-${label}.tsx`)
+  const siblingEntry = join(cwd, `src/__output-transaction-sibling-${label}.tsx`)
+  const clientTrigger = join(cwd, `src/__output-transaction-client-${label}.txt`)
+  const siblingTrigger = join(cwd, `src/__output-transaction-sibling-${label}.ts`)
+  const configPath = join(cwd, `__output-transaction-${label}.bamboo.config.ts`)
+  const clientOutDir = join(cwd, `__output-transaction-client-${label}-out`)
+  const siblingOutDir = join(cwd, `__output-transaction-sibling-${label}-out`)
+  const calls = { client: 0 }
+
+  const selectedClientSource: VitePlugin = {
+    name: `bamboocss:test-output-transaction-source-${label}`,
+    enforce: 'pre',
+    sharedDuringBuild: true,
+    transform(_code, id) {
+      if (id.split('?')[0] !== clientEntry) return
+      calls.client++
+      this.addWatchFile(clientTrigger)
+      const version = readFileSync(clientTrigger, 'utf8').trim()
+      const width = version === 'second' ? widths.rejected : version === 'third' ? widths.written : widths.old
+      return {
+        code:
+          `import 'virtual:bamboo.css'\n` +
+          `import { css } from '../styled-system/css'\n` +
+          `export const className = css({ width: '[${width}]' })\n`,
+        map: null,
+      }
+    },
+  }
+
+  let rejectClientOutput = false
+  let rejectAfterWrite = false
+  let rejectBeforeBambooWrite = false
+  let rejectOnClose = false
+  let mutateClientCss = false
+  let configuredOutputCloseCalls = 0
+  let rejectedJs = ''
+  let rejectedCss = ''
+  // A configured output plugin, not another Vite input plugin. Bamboo's private finalizer must
+  // be appended after this too; otherwise an in-memory success marker can still run too early.
+  const rejectAfterBamboo: VitePlugin = {
+    name: `bamboocss:test-reject-output-transaction-${label}`,
+    generateBundle: {
+      order: 'post',
+      handler(_, bundle) {
+        if (mutateClientCss) {
+          for (const output of Object.values(bundle)) {
+            if (output.type !== 'asset' || !output.fileName.endsWith('.css')) continue
+            const source = typeof output.source === 'string' ? output.source : Buffer.from(output.source).toString()
+            output.source = source.replace('--made-with-bamboo', '--removed-after-bamboo')
+          }
+        }
+        if (!rejectClientOutput) return
+        rejectedJs = Object.values(bundle)
+          .map((output) => (output.type === 'chunk' ? output.code : ''))
+          .join('\n')
+        rejectedCss = Object.values(bundle)
+          .map((output) => {
+            if (output.type !== 'asset' || !output.fileName.endsWith('.css')) return ''
+            return typeof output.source === 'string' ? output.source : Buffer.from(output.source).toString()
+          })
+          .join('\n')
+        throw new Error(`test rejected client output (${label})`)
+      },
+    },
+    writeBundle() {
+      if (rejectAfterWrite) throw new Error(`test rejected after writing client output (${label})`)
+    },
+    closeBundle() {
+      configuredOutputCloseCalls++
+    },
+  }
+  const rejectCloseAfterBamboo: VitePlugin = {
+    name: `bamboocss:test-reject-close-transaction-${label}`,
+    enforce: 'post',
+    sharedDuringBuild: true,
+    closeBundle: {
+      order: 'post',
+      sequential: true,
+      handler() {
+        if (rejectOnClose) throw new Error(`test rejected while closing client output (${label})`)
+      },
+    },
+  }
+  const rejectWriteBeforeBamboo: VitePlugin = {
+    name: `bamboocss:test-reject-write-before-transaction-${label}`,
+    enforce: 'pre',
+    sharedDuringBuild: true,
+    writeBundle: {
+      order: 'pre',
+      sequential: true,
+      handler() {
+        if (this.environment.name === 'client' && rejectBeforeBambooWrite) {
+          throw new Error(`test rejected before Bamboo's write observer (${label})`)
+        }
+      },
+    },
+  }
+
+  writeFileSync(
+    clientEntry,
+    `import 'virtual:bamboo.css'\n` +
+      `import { css } from '../styled-system/css'\n` +
+      `export const oldClass = css({ width: '[${widths.old}]' })\n` +
+      `export const rejectedClass = css({ width: '[${widths.rejected}]' })\n` +
+      `export const writtenClass = css({ width: '[${widths.written}]' })\n`,
+  )
+  writeFileSync(
+    siblingEntry,
+    `import 'virtual:bamboo.css'\n` +
+      `import { css } from '../styled-system/css'\n` +
+      `export { generation } from './__output-transaction-sibling-${label}'\n` +
+      `export const className = css({ width: '[${widths.sibling}]' })\n`,
+  )
+  writeFileSync(clientTrigger, 'first\n')
+  writeFileSync(siblingTrigger, `export const generation = 'first'\n`)
+  writeIsolatedBambooConfig(configPath, [
+    `./src/__output-transaction-client-${label}.tsx`,
+    `./src/__output-transaction-sibling-${label}.tsx`,
+  ])
+
+  const builder = (await create({
+    root: cwd,
+    logLevel: 'silent',
+    css: { postcss: { plugins: [] } },
+    plugins: [rejectWriteBeforeBamboo, selectedClientSource, ...bamboocss({ cwd, configPath, reportSummary: false })],
+    build: {
+      watch: {},
+      minify: false,
+      emptyOutDir: false,
+      rollupOptions: {
+        external: [/^react/, /styled-system/],
+        output: { plugins: [rejectAfterBamboo] },
+      },
+    },
+    builder: {},
+    environments: {
+      client: {
+        build: {
+          emitAssets: true,
+          outDir: clientOutDir,
+          lib: { entry: clientEntry, formats: ['es'], fileName: `output-transaction-client-${label}` },
+        },
+      },
+      sibling: {
+        build: {
+          emitAssets: true,
+          outDir: siblingOutDir,
+          lib: { entry: siblingEntry, formats: ['es'], fileName: `output-transaction-sibling-${label}` },
+        },
+      },
+    },
+  })) as TestEnvironmentBuilder
+
+  let clientWatcher: TestBuildWatcher | undefined
+  let siblingWatcher: TestBuildWatcher | undefined
+  try {
+    clientWatcher = (await builder.build(builder.environments.client)) as TestBuildWatcher
+    expect(await nextEnvironmentWatchCycle(clientWatcher)).toBeUndefined()
+    siblingWatcher = (await builder.build(builder.environments.sibling)) as TestBuildWatcher
+    expect(await nextEnvironmentWatchCycle(siblingWatcher)).toBeUndefined()
+
+    const clientJsFiles = readdirSync(clientOutDir).filter((file) => file.endsWith('.js'))
+    expect(clientJsFiles).toHaveLength(1)
+    const clientJsPath = join(clientOutDir, clientJsFiles[0]!)
+    const initialClientJsBytes = readFileSync(clientJsPath)
+    const initialClientJs = initialClientJsBytes.toString()
+    const initialClientCss = readOutputFiles(clientOutDir, '.css')
+    // Both graphs were transformed from scratch. This is the clean accepted output the later
+    // sibling-only rebuild must reproduce after the intervening client candidate is rejected.
+    const cleanCss = readOutputFiles(siblingOutDir, '.css')
+    expect(initialClientJs).toContain(`w_[${widths.old}]`)
+    expect(initialClientCss).toContain(widths.old)
+    expect(cleanCss).toContain(widths.old)
+    expect(cleanCss).toContain(widths.sibling)
+    expect(cleanCss).not.toContain(widths.rejected)
+
+    rejectClientOutput = true
+    const rejectedBuild = nextEnvironmentWatchCycle(clientWatcher)
+    await new Promise((settle) => setTimeout(settle, 800))
+    writeFileSync(clientTrigger, 'second\n')
+    const rejectedError = await rejectedBuild
+    rejectClientOutput = false
+
+    expect(rejectedError?.message).toContain(`test rejected client output (${label})`)
+    expect(rejectedJs).toContain(`w_[${widths.rejected}]`)
+    expect(rejectedJs).not.toContain(`w_[${widths.old}]`)
+    expect(rejectedCss).toContain(widths.rejected)
+    expect(rejectedCss).not.toContain(widths.old)
+    expect(
+      readFileSync(clientJsPath).equals(initialClientJsBytes),
+      'failed output replaced the previously emitted JavaScript bytes',
+    ).toBe(true)
+    expect(readOutputFiles(clientOutDir, '.css'), 'failed output replaced the previously emitted stylesheet').toBe(
+      initialClientCss,
+    )
+
+    const clientCallsAfterFailure = calls.client
+    rmSync(siblingOutDir, { force: true, recursive: true })
+    const siblingBuild = nextEnvironmentWatchCycle(siblingWatcher)
+    await new Promise((settle) => setTimeout(settle, 800))
+    writeFileSync(siblingTrigger, `export const generation = 'second'\n`)
+    expect(await siblingBuild).toBeUndefined()
+    expect(calls.client, 'the sibling-only edit unexpectedly rebuilt the rejected client graph').toBe(
+      clientCallsAfterFailure,
+    )
+
+    const rebuiltCss = readOutputFiles(siblingOutDir, '.css')
+    expect(rebuiltCss).toContain(widths.old)
+    expect(rebuiltCss).toContain(widths.sibling)
+    expect(rebuiltCss).not.toContain(widths.rejected)
+    expect(rebuiltCss, 'cached sibling output disagrees with the clean no-cache build').toBe(cleanCss)
+
+    // `writeBundle` is a notification after every output file has been replaced. A peer hook
+    // rejecting there makes the watch cycle red but cannot roll those bytes back, so Bamboo must
+    // publish the written candidate rather than restoring reachability for files no longer live.
+    rejectAfterWrite = true
+    const failedAfterWrite = nextEnvironmentWatchCycle(clientWatcher)
+    await new Promise((settle) => setTimeout(settle, 800))
+    writeFileSync(clientTrigger, 'third\n')
+    const writeError = await failedAfterWrite
+    rejectAfterWrite = false
+    expect(writeError?.message).toContain(`test rejected after writing client output (${label})`)
+    expect(readOutputFiles(clientOutDir, '.js')).toContain(`w_[${widths.written}]`)
+
+    const clientCallsAfterWrite = calls.client
+    rmSync(siblingOutDir, { force: true, recursive: true })
+    const siblingAfterWrite = nextEnvironmentWatchCycle(siblingWatcher)
+    await new Promise((settle) => setTimeout(settle, 800))
+    writeFileSync(siblingTrigger, `export const generation = 'third'\n`)
+    expect(await siblingAfterWrite).toBeUndefined()
+    expect(calls.client).toBe(clientCallsAfterWrite)
+    const cssAfterWrite = readOutputFiles(siblingOutDir, '.css')
+    expect(cssAfterWrite).toContain(widths.written)
+    expect(cssAfterWrite).toContain(widths.sibling)
+    expect(cssAfterWrite).not.toContain(widths.old)
+    expect(cssAfterWrite).not.toContain(widths.rejected)
+
+    // Even a pre/sequential input write hook declared before Bamboo runs after Bamboo's private
+    // filesystem observer. Files have already been replaced when writeBundle begins, so the
+    // rejected cycle must still publish the class those new bytes name.
+    rejectBeforeBambooWrite = true
+    const failedBeforeBambooWrite = nextEnvironmentWatchCycle(clientWatcher)
+    await new Promise((settle) => setTimeout(settle, 800))
+    writeFileSync(clientTrigger, 'first\n')
+    const earlyWriteError = await failedBeforeBambooWrite
+    rejectBeforeBambooWrite = false
+    expect(earlyWriteError?.message).toContain(`test rejected before Bamboo's write observer (${label})`)
+    expect(readOutputFiles(clientOutDir, '.js')).toContain(`w_[${widths.old}]`)
+
+    const callsAfterEarlyWrite = calls.client
+    rmSync(siblingOutDir, { force: true, recursive: true })
+    const siblingAfterEarlyWrite = nextEnvironmentWatchCycle(siblingWatcher)
+    await new Promise((settle) => setTimeout(settle, 800))
+    writeFileSync(siblingTrigger, `export const generation = 'fourth'\n`)
+    expect(await siblingAfterEarlyWrite).toBeUndefined()
+    expect(calls.client).toBe(callsAfterEarlyWrite)
+    const cssAfterEarlyWrite = readOutputFiles(siblingOutDir, '.css')
+    expect(cssAfterEarlyWrite).toContain(widths.old)
+    expect(cssAfterEarlyWrite).toContain(widths.sibling)
+    expect(cssAfterEarlyWrite).not.toContain(widths.written)
+
+    // `build.write: false` has no writeBundle and Vite passes the same empty closeBundle argument
+    // after success and failure. The final configured output plugin is therefore the commit
+    // boundary: a later configured generate hook must prevent the in-memory candidate from
+    // becoming the sibling's reachability answer.
+    await Promise.all([clientWatcher.close(), siblingWatcher.close()])
+    clientWatcher = undefined
+    siblingWatcher = undefined
+    writeFileSync(clientTrigger, 'first\n')
+    const inMemoryBuilder = (await create({
+      root: cwd,
+      logLevel: 'silent',
+      css: { postcss: { plugins: [] } },
+      plugins: [selectedClientSource, ...bamboocss({ cwd, configPath, reportSummary: false }), rejectCloseAfterBamboo],
+      build: {
+        write: false,
+        minify: false,
+        rollupOptions: {
+          external: [/^react/, /styled-system/],
+          output: { plugins: [rejectAfterBamboo] },
+        },
+      },
+      builder: {},
+      environments: {
+        client: {
+          build: {
+            emitAssets: true,
+            lib: { entry: clientEntry, formats: ['es'], fileName: `output-transaction-memory-client-${label}` },
+          },
+        },
+        sibling: {
+          build: {
+            emitAssets: true,
+            lib: { entry: siblingEntry, formats: ['es'], fileName: `output-transaction-memory-sibling-${label}` },
+          },
+        },
+      },
+    })) as TestEnvironmentBuilder
+
+    await inMemoryBuilder.build(inMemoryBuilder.environments.client)
+    // `closeBundle` belongs to the input plugin driver in both Rollup and Rolldown; configured
+    // output plugins never receive it. Bamboo's commit hook is therefore an ordered input hook.
+    expect(configuredOutputCloseCalls).toBe(0)
+    writeFileSync(clientTrigger, 'second\n')
+    const buildInMemorySibling = async () => {
+      const built = await inMemoryBuilder.build(inMemoryBuilder.environments.sibling)
+      return (Array.isArray(built) ? built : [built])
+        .flatMap((bundle) => (bundle as { output?: unknown[] }).output ?? [])
+        .map((output) => {
+          const asset = output as { fileName?: string; source?: unknown }
+          return asset.fileName?.endsWith('.css') && typeof asset.source === 'string' ? asset.source : ''
+        })
+        .join('\n')
+    }
+
+    mutateClientCss = true
+    await expect(inMemoryBuilder.build(inMemoryBuilder.environments.client)).rejects.toThrow(
+      'changed or removed the generated stylesheet',
+    )
+    mutateClientCss = false
+    const afterMutation = await buildInMemorySibling()
+    expect(afterMutation).toContain(widths.old)
+    expect(afterMutation).not.toContain(widths.rejected)
+
+    rejectOnClose = true
+    await expect(inMemoryBuilder.build(inMemoryBuilder.environments.client)).rejects.toThrow(
+      `test rejected while closing client output (${label})`,
+    )
+    rejectOnClose = false
+    const afterCloseFailure = await buildInMemorySibling()
+    expect(afterCloseFailure).toContain(widths.old)
+    expect(afterCloseFailure).not.toContain(widths.rejected)
+
+    rejectClientOutput = true
+    await expect(inMemoryBuilder.build(inMemoryBuilder.environments.client)).rejects.toThrow(
+      `test rejected client output (${label})`,
+    )
+    rejectClientOutput = false
+    const inMemoryCss = await buildInMemorySibling()
+    expect(inMemoryCss).toContain(widths.old)
+    expect(inMemoryCss).toContain(widths.sibling)
+    expect(inMemoryCss).not.toContain(widths.rejected)
+  } finally {
+    rejectClientOutput = false
+    rejectAfterWrite = false
+    rejectBeforeBambooWrite = false
+    rejectOnClose = false
+    mutateClientCss = false
+    await Promise.all([clientWatcher?.close(), siblingWatcher?.close()])
+    rmSync(clientEntry, { force: true })
+    rmSync(siblingEntry, { force: true })
+    rmSync(clientTrigger, { force: true })
+    rmSync(siblingTrigger, { force: true })
+    rmSync(configPath, { force: true })
+    rmSync(clientOutDir, { force: true, recursive: true })
+    rmSync(siblingOutDir, { force: true, recursive: true })
+  }
+}
+
+/**
+ * Leave two configured outputs from different generations on disk, then make a sibling emit CSS.
+ *
+ * Vite writes configured outputs independently. The first can finish before a later output's
+ * `generateBundle` hook rejects, so neither restoring the old generation nor publishing only the
+ * candidate describes the files users now have. Reachability has to retain both live epochs until
+ * a later generation replaces every output.
+ */
+const runMixedOutputEpochWatchRebuild = async (
+  create: (config: Record<string, unknown>) => Promise<unknown>,
+  label: string,
+  widths: { old: string; candidate: string; replacement: string; sibling: string },
+) => {
+  const clientEntry = join(cwd, `src/__multi-output-client-${label}.tsx`)
+  const siblingEntry = join(cwd, `src/__multi-output-sibling-${label}.tsx`)
+  const clientTrigger = join(cwd, `src/__multi-output-client-${label}.txt`)
+  const siblingTrigger = join(cwd, `src/__multi-output-sibling-trigger-${label}.ts`)
+  const configPath = join(cwd, `__multi-output-${label}.bamboo.config.ts`)
+  const firstOutDir = join(cwd, `__multi-output-client-first-${label}-out`)
+  const secondOutDir = join(cwd, `__multi-output-client-second-${label}-out`)
+  const siblingOutDir = join(cwd, `__multi-output-sibling-${label}-out`)
+  const calls = { client: 0 }
+
+  const cssFromBuild = (built: unknown) =>
+    (Array.isArray(built) ? built : [built])
+      .flatMap((bundle) => (bundle as { output?: unknown[] }).output ?? [])
+      .map((output) => {
+        const asset = output as { fileName?: string; source?: unknown }
+        return asset.fileName?.endsWith('.css') && typeof asset.source === 'string' ? asset.source : ''
+      })
+      .join('\n')
+
+  const selectedClientSource: VitePlugin = {
+    name: `bamboocss:test-multi-output-source-${label}`,
+    enforce: 'pre',
+    sharedDuringBuild: true,
+    transform(_code, id) {
+      if (id.split('?')[0] !== clientEntry) return
+      calls.client++
+      this.addWatchFile(clientTrigger)
+      const generation = readFileSync(clientTrigger, 'utf8').trim()
+      const width =
+        generation === 'first'
+          ? widths.old
+          : generation === 'replacement-mixed' || generation === 'accepted'
+            ? widths.replacement
+            : widths.candidate
+      return {
+        code:
+          `import 'virtual:bamboo.css'\n` +
+          `import { css } from '../styled-system/css'\n` +
+          `export const className = css({ width: '[${width}]' })\n`,
+        map: null,
+      }
+    },
+  }
+
+  type FailureMode = 'none' | 'before-write' | 'after-first-write' | 'first-before-second-writes' | 'memory-second'
+  let failureMode: FailureMode = 'none'
+  let firstOutputWritten = Promise.resolve()
+  let markFirstOutputWritten = () => {}
+  let secondOutputWritten = Promise.resolve()
+  let markSecondOutputWritten = () => {}
+  let rejectedSecondJs = ''
+  const armFirstOutput = () => {
+    firstOutputWritten = new Promise<void>((resolve) => {
+      markFirstOutputWritten = resolve
+    })
+  }
+  const armSecondOutput = () => {
+    secondOutputWritten = new Promise<void>((resolve) => {
+      markSecondOutputWritten = resolve
+    })
+  }
+  const outputPlugin = (output: 1 | 2): VitePlugin => ({
+    name: `bamboocss:test-multi-output-${label}-${output}`,
+    async generateBundle(_, bundle) {
+      if (failureMode === 'before-write') {
+        throw new Error(`test rejected every output before write (${label})`)
+      }
+      if (failureMode === 'first-before-second-writes' && output === 1) {
+        throw new Error(`test rejected first output before second wrote (${label})`)
+      }
+      if (output !== 2) return
+      if (failureMode === 'after-first-write' || failureMode === 'memory-second') {
+        if (failureMode === 'after-first-write') await firstOutputWritten
+        rejectedSecondJs = Object.values(bundle)
+          .map((entry) => (entry.type === 'chunk' ? entry.code : ''))
+          .join('\n')
+        throw new Error(`test rejected second configured output (${label})`)
+      }
+    },
+    writeBundle() {
+      if (output === 1) markFirstOutputWritten()
+      else markSecondOutputWritten()
+    },
+  })
+
+  const clientOutputs = () => [
+    {
+      dir: firstOutDir,
+      format: 'es',
+      entryFileNames: `multi-output-client-${label}.js`,
+      assetFileNames: `multi-output-client-${label}.[ext]`,
+      plugins: [outputPlugin(1)],
+    },
+    {
+      dir: secondOutDir,
+      format: 'cjs',
+      entryFileNames: `multi-output-client-${label}.js`,
+      assetFileNames: `multi-output-client-${label}.[ext]`,
+      plugins: [outputPlugin(2)],
+    },
+  ]
+
+  writeFileSync(
+    clientEntry,
+    `import 'virtual:bamboo.css'\n` +
+      `import { css } from '../styled-system/css'\n` +
+      `export const oldClass = css({ width: '[${widths.old}]' })\n` +
+      `export const candidateClass = css({ width: '[${widths.candidate}]' })\n` +
+      `export const replacementClass = css({ width: '[${widths.replacement}]' })\n`,
+  )
+  writeFileSync(
+    siblingEntry,
+    `import 'virtual:bamboo.css'\n` +
+      `import { css } from '../styled-system/css'\n` +
+      `export { generation } from './__multi-output-sibling-trigger-${label}'\n` +
+      `export const className = css({ width: '[${widths.sibling}]' })\n`,
+  )
+  writeFileSync(clientTrigger, 'first\n')
+  writeFileSync(siblingTrigger, `export const generation = 'first'\n`)
+  writeIsolatedBambooConfig(configPath, [
+    `./src/__multi-output-client-${label}.tsx`,
+    `./src/__multi-output-sibling-${label}.tsx`,
+  ])
+
+  const builder = (await create({
+    root: cwd,
+    logLevel: 'silent',
+    css: { postcss: { plugins: [] } },
+    plugins: [selectedClientSource, ...bamboocss({ cwd, configPath, reportSummary: false })],
+    build: {
+      watch: {},
+      minify: false,
+      emptyOutDir: false,
+      rollupOptions: { external: [/^react/, /styled-system/] },
+    },
+    builder: {},
+    environments: {
+      client: {
+        build: {
+          cssCodeSplit: true,
+          emitAssets: true,
+          lib: { entry: clientEntry, formats: ['es', 'cjs'], fileName: `multi-output-client-${label}` },
+          rollupOptions: { output: clientOutputs() },
+        },
+      },
+      sibling: {
+        build: {
+          emitAssets: true,
+          outDir: siblingOutDir,
+          lib: { entry: siblingEntry, formats: ['es'], fileName: `multi-output-sibling-${label}` },
+        },
+      },
+    },
+  })) as TestEnvironmentBuilder
+
+  let clientWatcher: TestBuildWatcher | undefined
+  let siblingWatcher: TestBuildWatcher | undefined
+  let siblingGeneration = 1
+  const rebuildSibling = async () => {
+    const callsBefore = calls.client
+    rmSync(siblingOutDir, { force: true, recursive: true })
+    const built = nextEnvironmentWatchCycle(siblingWatcher!)
+    await new Promise((settle) => setTimeout(settle, 800))
+    writeFileSync(siblingTrigger, `export const generation = '${++siblingGeneration}'\n`)
+    expect(await built).toBeUndefined()
+    expect(calls.client, `${label}: sibling-only edit rebuilt the client graph`).toBe(callsBefore)
+    return readOutputFiles(siblingOutDir, '.css')
+  }
+
+  try {
+    clientWatcher = (await builder.build(builder.environments.client)) as TestBuildWatcher
+    expect(await nextEnvironmentWatchCycle(clientWatcher)).toBeUndefined()
+    siblingWatcher = (await builder.build(builder.environments.sibling)) as TestBuildWatcher
+    expect(await nextEnvironmentWatchCycle(siblingWatcher)).toBeUndefined()
+
+    const initialFirstJs = readOutputFiles(firstOutDir, '.js')
+    const initialSecondJs = readOutputFiles(secondOutDir, '.js')
+    expect(initialFirstJs).toContain(`w_[${widths.old}]`)
+    expect(initialSecondJs).toContain(`w_[${widths.old}]`)
+    expect(initialFirstJs).not.toContain(`w_[${widths.candidate}]`)
+    expect(initialSecondJs).not.toContain(`w_[${widths.candidate}]`)
+
+    // A generation rejected before either output writes is atomic: only the old epoch remains.
+    failureMode = 'before-write'
+    const rejectedBeforeWrite = nextEnvironmentWatchCycle(clientWatcher)
+    await new Promise((settle) => setTimeout(settle, 800))
+    writeFileSync(clientTrigger, 'before-write\n')
+    expect((await rejectedBeforeWrite)?.message).toContain(`test rejected every output before write (${label})`)
+    expect(readOutputFiles(firstOutDir, '.js')).toBe(initialFirstJs)
+    expect(readOutputFiles(secondOutDir, '.js')).toBe(initialSecondJs)
+    const afterPreWriteFailure = await rebuildSibling()
+    failureMode = 'none'
+    expect(afterPreWriteFailure).toContain(widths.old)
+    expect(afterPreWriteFailure).toContain(widths.sibling)
+    expect(afterPreWriteFailure).not.toContain(widths.candidate)
+
+    // Output one reaches disk, then output two rejects. Both generations now name classes in
+    // live JavaScript and a sibling stylesheet must conservatively back both.
+    armFirstOutput()
+    failureMode = 'after-first-write'
+    const mixedBuild = nextEnvironmentWatchCycle(clientWatcher)
+    await new Promise((settle) => setTimeout(settle, 800))
+    writeFileSync(clientTrigger, 'mixed\n')
+    expect((await mixedBuild)?.message).toContain(`test rejected second configured output (${label})`)
+    expect(rejectedSecondJs).toContain(`w_[${widths.candidate}]`)
+    expect(readOutputFiles(firstOutDir, '.js')).toContain(`w_[${widths.candidate}]`)
+    expect(readOutputFiles(firstOutDir, '.js')).not.toContain(`w_[${widths.old}]`)
+    expect(readOutputFiles(secondOutDir, '.js')).toBe(initialSecondJs)
+
+    const mixedCss = await rebuildSibling()
+    failureMode = 'none'
+    expect(mixedCss).toContain(widths.old)
+    expect(mixedCss).toContain(widths.candidate)
+    expect(mixedCss).toContain(widths.sibling)
+
+    // A second partial failure replaces the already-written slot. The first candidate no
+    // longer exists in either client output and must not accumulate as an immortal epoch.
+    armFirstOutput()
+    failureMode = 'after-first-write'
+    const replacementMixedBuild = nextEnvironmentWatchCycle(clientWatcher)
+    await new Promise((settle) => setTimeout(settle, 800))
+    writeFileSync(clientTrigger, 'replacement-mixed\n')
+    expect((await replacementMixedBuild)?.message).toContain(`test rejected second configured output (${label})`)
+    expect(readOutputFiles(firstOutDir, '.js')).toContain(`w_[${widths.replacement}]`)
+    expect(readOutputFiles(firstOutDir, '.js')).not.toContain(`w_[${widths.candidate}]`)
+    expect(readOutputFiles(secondOutDir, '.js')).toBe(initialSecondJs)
+    const replacementMixedCss = await rebuildSibling()
+    failureMode = 'none'
+    expect(replacementMixedCss).toContain(widths.old)
+    expect(replacementMixedCss).toContain(widths.replacement)
+    expect(replacementMixedCss).toContain(widths.sibling)
+    expect(replacementMixedCss).not.toContain(widths.candidate)
+
+    // Alternate the failed slot: slot zero never reaches disk, while slot one does. Rolldown
+    // runs each configured output as its own build task, so a stale "slot zero succeeded" bit
+    // from the preceding generation must not combine with this slot-one success. The disk now
+    // genuinely contains two candidate epochs and the sibling must retain exactly those two.
+    failureMode = 'first-before-second-writes'
+    armSecondOutput()
+    const alternatingBuild = nextEnvironmentWatchCycle(clientWatcher)
+    await new Promise((settle) => setTimeout(settle, 800))
+    writeFileSync(clientTrigger, 'alternating\n')
+    expect((await alternatingBuild)?.message).toContain(`test rejected first output before second wrote (${label})`)
+    // Both hosts report the aggregate error before the still-running second output finishes.
+    // Wait for its filesystem boundary so the assertions compare stable live slots to disk.
+    await secondOutputWritten
+    expect(readOutputFiles(firstOutDir, '.js')).toContain(`w_[${widths.replacement}]`)
+    expect(readOutputFiles(secondOutDir, '.js')).toContain(`w_[${widths.candidate}]`)
+    const alternatingCss = await rebuildSibling()
+    failureMode = 'none'
+    expect(alternatingCss).not.toContain(widths.old)
+    expect(alternatingCss).toContain(widths.candidate)
+    expect(alternatingCss).toContain(widths.replacement)
+    expect(alternatingCss).toContain(widths.sibling)
+
+    // A later successful generation replaces both configured outputs, collapsing the live set
+    // back to one epoch and reproducing a clean no-cache stylesheet exactly.
+    armSecondOutput()
+    const acceptedBuild = nextEnvironmentWatchCycle(clientWatcher)
+    await new Promise((settle) => setTimeout(settle, 800))
+    writeFileSync(clientTrigger, 'accepted\n')
+    expect(await acceptedBuild).toBeUndefined()
+    await secondOutputWritten
+    expect(readOutputFiles(firstOutDir, '.js')).toContain(`w_[${widths.replacement}]`)
+    expect(readOutputFiles(secondOutDir, '.js')).toContain(`w_[${widths.replacement}]`)
+    const convergedCss = await rebuildSibling()
+    expect(convergedCss).not.toContain(widths.old)
+    expect(convergedCss).not.toContain(widths.candidate)
+    expect(convergedCss).toContain(widths.replacement)
+    expect(convergedCss).toContain(widths.sibling)
+
+    // The clean and in-memory controls below own separate plugin instances. Stop the two
+    // filesystem watchers before reusing their trigger paths so no queued retry can race those
+    // controls or publish after the assertions above.
+    await Promise.all([clientWatcher.close(), siblingWatcher.close()])
+    clientWatcher = undefined
+    siblingWatcher = undefined
+
+    const cleanBuilder = (await create({
+      root: cwd,
+      logLevel: 'silent',
+      css: { postcss: { plugins: [] } },
+      plugins: [selectedClientSource, ...bamboocss({ cwd, configPath, reportSummary: false })],
+      build: { write: false, minify: false, rollupOptions: { external: [/^react/, /styled-system/] } },
+      builder: {},
+      environments: {
+        client: {
+          build: {
+            emitAssets: true,
+            lib: { entry: clientEntry, formats: ['es'], fileName: `multi-output-clean-client-${label}` },
+          },
+        },
+        sibling: {
+          build: {
+            emitAssets: true,
+            lib: { entry: siblingEntry, formats: ['es'], fileName: `multi-output-clean-sibling-${label}` },
+          },
+        },
+      },
+    })) as TestEnvironmentBuilder
+    await cleanBuilder.build(cleanBuilder.environments.client)
+    const cleanCss = cssFromBuild(await cleanBuilder.build(cleanBuilder.environments.sibling))
+    expect(convergedCss.trim(), `${label}: converged watcher CSS differs from a clean build`).toBe(cleanCss.trim())
+
+    // In-memory multi-output builds expose nothing when the aggregate build rejects. A first
+    // generated result must not become a live epoch merely because its own output hooks passed.
+    writeFileSync(clientTrigger, 'first\n')
+    const memoryBuilder = (await create({
+      root: cwd,
+      logLevel: 'silent',
+      css: { postcss: { plugins: [] } },
+      plugins: [selectedClientSource, ...bamboocss({ cwd, configPath, reportSummary: false })],
+      build: { write: false, minify: false, rollupOptions: { external: [/^react/, /styled-system/] } },
+      builder: {},
+      environments: {
+        client: {
+          build: {
+            emitAssets: true,
+            lib: { entry: clientEntry, formats: ['es'], fileName: `multi-output-memory-client-${label}` },
+            rollupOptions: { output: clientOutputs().map(({ dir: _dir, ...output }) => output) },
+          },
+        },
+        sibling: {
+          build: {
+            emitAssets: true,
+            lib: { entry: siblingEntry, formats: ['es'], fileName: `multi-output-memory-sibling-${label}` },
+          },
+        },
+      },
+    })) as TestEnvironmentBuilder
+    await memoryBuilder.build(memoryBuilder.environments.client)
+    writeFileSync(clientTrigger, 'memory-candidate\n')
+    failureMode = 'memory-second'
+    await expect(memoryBuilder.build(memoryBuilder.environments.client)).rejects.toThrow(
+      `test rejected second configured output (${label})`,
+    )
+    failureMode = 'none'
+    const memoryCss = cssFromBuild(await memoryBuilder.build(memoryBuilder.environments.sibling))
+    expect(memoryCss).toContain(widths.old)
+    expect(memoryCss).toContain(widths.sibling)
+    expect(memoryCss).not.toContain(widths.candidate)
+  } finally {
+    failureMode = 'none'
+    markFirstOutputWritten()
+    markSecondOutputWritten()
+    await Promise.all([clientWatcher?.close(), siblingWatcher?.close()])
+    rmSync(clientEntry, { force: true })
+    rmSync(siblingEntry, { force: true })
+    rmSync(clientTrigger, { force: true })
+    rmSync(siblingTrigger, { force: true })
+    rmSync(configPath, { force: true })
+    rmSync(firstOutDir, { force: true, recursive: true })
+    rmSync(secondOutDir, { force: true, recursive: true })
+    rmSync(siblingOutDir, { force: true, recursive: true })
+  }
+}
+
+/**
+ * Remove an old atom from physical extraction while one configured JS output still names it.
+ *
+ * The sibling owns the stylesheet. Its replacement must fail before write while the client has
+ * mixed live output slots, then converge once both slots publish the new generation.
+ */
+const runRemovedLiveRuleWatchRebuild = async (
+  create: (config: Record<string, unknown>) => Promise<unknown>,
+  label: string,
+  widths: { old: string; replacement: string; sibling: string },
+  pruneCss = true,
+) => {
+  const clientEntry = join(cwd, `src/__removed-live-rule-client-${label}.tsx`)
+  const clientTrigger = join(cwd, `src/__removed-live-rule-client-trigger-${label}.ts`)
+  const siblingEntry = join(cwd, `src/__removed-live-rule-sibling-${label}.tsx`)
+  const siblingTrigger = join(cwd, `src/__removed-live-rule-sibling-trigger-${label}.ts`)
+  const configPath = join(cwd, `__removed-live-rule-${label}.bamboo.config.ts`)
+  const firstOutDir = join(cwd, `__removed-live-rule-first-${label}-out`)
+  const secondOutDir = join(cwd, `__removed-live-rule-second-${label}-out`)
+  const siblingOutDir = join(cwd, `__removed-live-rule-sibling-${label}-out`)
+
+  const clientSource = (width: string) =>
+    `import { css } from '../styled-system/css'\n` +
+    `export { generation } from './__removed-live-rule-client-trigger-${label}'\n` +
+    `export const className = css({ width: '[${width}]' })\n`
+  const siblingSource =
+    `import 'virtual:bamboo.css'\n` +
+    `import { css } from '../styled-system/css'\n` +
+    `export { generation } from './__removed-live-rule-sibling-trigger-${label}'\n` +
+    `export const className = css({ width: '[${widths.sibling}]' })\n`
+  const cssFromBuild = (built: unknown) =>
+    (Array.isArray(built) ? built : [built])
+      .flatMap((bundle) => (bundle as { output?: unknown[] }).output ?? [])
+      .map((output) => {
+        const asset = output as { fileName?: string; source?: unknown }
+        return asset.fileName?.endsWith('.css') && typeof asset.source === 'string' ? asset.source : ''
+      })
+      .join('\n')
+  const outputSnapshot = (directory: string) =>
+    Object.fromEntries(
+      (existsSync(directory) ? readdirSync(directory) : [])
+        .sort()
+        .map((file) => [file, readFileSync(join(directory, file), 'utf8')]),
+    )
+
+  let rejectSecondOutput = false
+  let firstOutputWritten = Promise.resolve()
+  let markFirstOutputWritten = () => {}
+  const armFirstOutput = () => {
+    firstOutputWritten = new Promise<void>((resolveFirstOutput) => {
+      markFirstOutputWritten = resolveFirstOutput
+    })
+  }
+  let siblingMayBuild = Promise.resolve()
+  let releaseSibling = () => {}
+  const holdSibling = () => {
+    siblingMayBuild = new Promise<void>((resolveSibling) => {
+      releaseSibling = resolveSibling
+    })
+  }
+
+  const outputPlugin = (output: 1 | 2): VitePlugin => ({
+    name: `bamboocss:test-removed-live-rule-output-${label}-${output}`,
+    async generateBundle() {
+      if (output !== 2 || !rejectSecondOutput) return
+      await firstOutputWritten
+      releaseSibling()
+      throw new Error(`test rejected second removed-rule output (${label})`)
+    },
+    writeBundle() {
+      if (output === 1) markFirstOutputWritten()
+    },
+  })
+  const siblingBarrier: VitePlugin = {
+    name: `bamboocss:test-removed-live-rule-sibling-barrier-${label}`,
+    enforce: 'pre',
+    sharedDuringBuild: true,
+    async buildStart() {
+      if (this.environment.name === 'sibling') await siblingMayBuild
+    },
+  }
+  const clientOutputs = () => [
+    {
+      dir: firstOutDir,
+      format: 'es',
+      entryFileNames: `removed-live-rule-client-${label}.js`,
+      plugins: [outputPlugin(1)],
+    },
+    {
+      dir: secondOutDir,
+      format: 'cjs',
+      entryFileNames: `removed-live-rule-client-${label}.js`,
+      plugins: [outputPlugin(2)],
+    },
+  ]
+
+  writeFileSync(clientEntry, clientSource(widths.old))
+  writeFileSync(clientTrigger, `export const generation = 'first'\n`)
+  writeFileSync(siblingEntry, siblingSource)
+  writeFileSync(siblingTrigger, `export const generation = 'first'\n`)
+  writeIsolatedBambooConfig(configPath, [
+    `./src/__removed-live-rule-sibling-${label}.tsx`,
+    `./src/__removed-live-rule-client-${label}.tsx`,
+  ])
+
+  const createConfig = (watch: boolean) => ({
+    root: cwd,
+    logLevel: 'silent',
+    css: { postcss: { plugins: [] } },
+    plugins: [siblingBarrier, ...bamboocss({ cwd, configPath, pruneCss, reportSummary: false })],
+    build: {
+      ...(watch ? { watch: {} } : { write: false }),
+      minify: false,
+      emptyOutDir: false,
+      rollupOptions: { external: [/^react/, /styled-system/] },
+    },
+    builder: {},
+    environments: {
+      client: {
+        build: {
+          emitAssets: false,
+          lib: { entry: clientEntry, formats: ['es', 'cjs'], fileName: `removed-live-rule-client-${label}` },
+          ...(watch ? { rollupOptions: { output: clientOutputs() } } : {}),
+        },
+      },
+      sibling: {
+        build: {
+          emitAssets: true,
+          outDir: siblingOutDir,
+          lib: { entry: siblingEntry, formats: ['es'], fileName: `removed-live-rule-sibling-${label}` },
+          rollupOptions: { output: { assetFileNames: `removed-live-rule-sibling-${label}.[ext]` } },
+        },
+      },
+    },
+  })
+
+  const builder = (await create(createConfig(true))) as TestEnvironmentBuilder
+  let clientWatcher: TestBuildWatcher | undefined
+  let siblingWatcher: TestBuildWatcher | undefined
+  let convergedCss = ''
+  try {
+    clientWatcher = (await builder.build(builder.environments.client)) as TestBuildWatcher
+    expect(await nextEnvironmentWatchCycle(clientWatcher)).toBeUndefined()
+    siblingWatcher = (await builder.build(builder.environments.sibling)) as TestBuildWatcher
+    expect(await nextEnvironmentWatchCycle(siblingWatcher)).toBeUndefined()
+
+    const initialFirstJs = readOutputFiles(firstOutDir, '.js')
+    const initialSecondJs = readOutputFiles(secondOutDir, '.js')
+    const initialSiblingOutput = outputSnapshot(siblingOutDir)
+    const initialCss = readOutputFiles(siblingOutDir, '.css')
+    expect(initialFirstJs).toContain(`w_[${widths.old}]`)
+    expect(initialSecondJs).toContain(`w_[${widths.old}]`)
+    expect(initialCss).toContain(widths.old)
+    expect(initialCss).not.toContain(widths.replacement)
+
+    // The physical source now contains only NEW. Output zero reaches disk before output one
+    // rejects, while the sibling stylesheet generation is held until that mixed state exists.
+    armFirstOutput()
+    holdSibling()
+    rejectSecondOutput = true
+    const mixedClientBuild = nextEnvironmentWatchCycle(clientWatcher)
+    const rejectedSiblingBuild = nextEnvironmentWatchCycle(siblingWatcher)
+    await new Promise((settle) => setTimeout(settle, 800))
+    writeFileSync(clientEntry, clientSource(widths.replacement))
+
+    expect((await mixedClientBuild)?.message).toContain(`test rejected second removed-rule output (${label})`)
+    const siblingError = await rejectedSiblingBuild
+    expect(readOutputFiles(firstOutDir, '.js')).toContain(`w_[${widths.replacement}]`)
+    expect(readOutputFiles(firstOutDir, '.js')).not.toContain(`w_[${widths.old}]`)
+    expect(readOutputFiles(secondOutDir, '.js')).toBe(initialSecondJs)
+    expect(siblingError?.message).toContain(esc(`w_[${widths.old}]`))
+    expect(siblingError?.message).toContain('sibling')
+    expect(siblingError?.message).toContain('source generation')
+    expect(outputSnapshot(siblingOutDir), `${label}: rejected sheet replaced the prior output`).toEqual(
+      initialSiblingOutput,
+    )
+
+    // Once both configured outputs move to NEW, no live JavaScript names OLD and the same
+    // physical extraction is safe to publish.
+    rejectSecondOutput = false
+    releaseSibling()
+    const acceptedClientBuild = nextEnvironmentWatchCycle(clientWatcher)
+    await new Promise((settle) => setTimeout(settle, 800))
+    writeFileSync(clientTrigger, `export const generation = 'second'\n`)
+    expect(await acceptedClientBuild).toBeUndefined()
+    expect(readOutputFiles(firstOutDir, '.js')).toContain(`w_[${widths.replacement}]`)
+    expect(readOutputFiles(secondOutDir, '.js')).toContain(`w_[${widths.replacement}]`)
+    expect(readOutputFiles(firstOutDir, '.js')).not.toContain(`w_[${widths.old}]`)
+    expect(readOutputFiles(secondOutDir, '.js')).not.toContain(`w_[${widths.old}]`)
+
+    const acceptedSiblingBuild = nextEnvironmentWatchCycle(siblingWatcher)
+    await new Promise((settle) => setTimeout(settle, 800))
+    writeFileSync(siblingTrigger, `export const generation = 'second'\n`)
+    expect(await acceptedSiblingBuild).toBeUndefined()
+    convergedCss = readOutputFiles(siblingOutDir, '.css')
+    expect(convergedCss).toContain(widths.replacement)
+    expect(convergedCss).toContain(widths.sibling)
+    expect(convergedCss).not.toContain(widths.old)
+
+    await Promise.all([clientWatcher.close(), siblingWatcher.close()])
+    clientWatcher = undefined
+    siblingWatcher = undefined
+
+    const cleanBuilder = (await create(createConfig(false))) as TestEnvironmentBuilder
+    await cleanBuilder.build(cleanBuilder.environments.client)
+    const cleanCss = cssFromBuild(await cleanBuilder.build(cleanBuilder.environments.sibling))
+    expect(convergedCss.trim(), `${label}: converged sheet differs from a clean accepted build`).toBe(cleanCss.trim())
+  } finally {
+    rejectSecondOutput = false
+    markFirstOutputWritten()
+    releaseSibling()
+    await Promise.all([clientWatcher?.close(), siblingWatcher?.close()])
+    rmSync(clientEntry, { force: true })
+    rmSync(clientTrigger, { force: true })
+    rmSync(siblingEntry, { force: true })
+    rmSync(siblingTrigger, { force: true })
+    rmSync(configPath, { force: true })
+    rmSync(firstOutDir, { force: true, recursive: true })
+    rmSync(secondOutDir, { force: true, recursive: true })
+    rmSync(siblingOutDir, { force: true, recursive: true })
+  }
+}
+
+/**
+ * Rebuild both environment watchers while one generation is deliberately held after
+ * `buildStart`.
+ *
+ * A completed generation leaves one contribution per environment. On the next edit both
+ * environments open replacements at once, but the fast one can reach `buildEnd` while the
+ * other has not loaded its graph — including the client's virtual stylesheet — yet. Merely
+ * starting that delayed generation must not make the fast environment treat the whole run as
+ * complete.
+ */
+const runConcurrentEnvironmentWatchRebuild = async (
+  create: (config: Record<string, unknown>) => Promise<unknown>,
+  label: string,
+  widths: { client: string; ssr: string },
+) => {
+  const clientEntry = join(cwd, `src/__concurrent-generation-client-${label}.tsx`)
+  const ssrEntry = join(cwd, `src/__concurrent-generation-ssr-${label}.tsx`)
+  const trigger = join(cwd, `src/__concurrent-generation-trigger-${label}.ts`)
+  const configPath = join(cwd, `__concurrent-generation-${label}.bamboo.config.ts`)
+  const clientOutDir = join(cwd, `__concurrent-generation-client-${label}-out`)
+  const ssrOutDir = join(cwd, `__concurrent-generation-ssr-${label}-out`)
+  const buildStarts = { client: 0, ssr: 0 }
+
+  type EnvironmentName = keyof typeof buildStarts
+  let delayedEnvironment: EnvironmentName | undefined
+  let releaseDelayed = () => {}
+  let markDelayedStarted = () => {}
+  let delayedStarted = Promise.resolve()
+
+  const armDelay = (environment: EnvironmentName) => {
+    delayedEnvironment = environment
+    delayedStarted = new Promise<void>((resolve) => {
+      markDelayedStarted = resolve
+    })
+    const wait = new Promise<void>((resolve) => {
+      releaseDelayed = resolve
+    })
+    return wait
+  }
+
+  const delayGeneration: VitePlugin = {
+    name: `bamboocss:test-delay-concurrent-generation-${label}`,
+    sharedDuringBuild: true,
+    buildStart: {
+      order: 'post',
+      async handler() {
+        const environment = this.environment.name as EnvironmentName
+        buildStarts[environment]++
+        if (buildStarts[environment] === 1 || !delayedEnvironment) return
+        if (environment !== delayedEnvironment) {
+          // Do not let the fast graph finish before the delayed watcher has actually opened its
+          // replacement generation. The production race exists only after both buildStart hooks.
+          await delayedStarted
+          return
+        }
+        markDelayedStarted()
+        await armWait
+      },
+    },
+  }
+  let armWait = Promise.resolve()
+
+  writeFileSync(trigger, `export const generation = 'first'\n`)
+  writeFileSync(
+    clientEntry,
+    `import 'virtual:bamboo.css'\n` +
+      `import { css } from '../styled-system/css'\n` +
+      `export { generation } from './__concurrent-generation-trigger-${label}'\n` +
+      `export const className = css({ width: '[${widths.client}]' })\n`,
+  )
+  writeFileSync(
+    ssrEntry,
+    `import { css } from '../styled-system/css'\n` +
+      `export { generation } from './__concurrent-generation-trigger-${label}'\n` +
+      `export const className = css({ width: '[${widths.ssr}]' })\n`,
+  )
+  writeIsolatedBambooConfig(configPath, [
+    `./src/__concurrent-generation-client-${label}.tsx`,
+    `./src/__concurrent-generation-ssr-${label}.tsx`,
+  ])
+
+  const bambooPlugins = bamboocss({ cwd, configPath, reportSummary: false })
+  const builder = (await create({
+    root: cwd,
+    logLevel: 'silent',
+    css: { postcss: { plugins: [] } },
+    plugins: [...bambooPlugins, delayGeneration],
+    build: {
+      watch: {},
+      minify: false,
+      emptyOutDir: false,
+      rollupOptions: { external: [/^react/, /styled-system/] },
+    },
+    builder: {},
+    environments: {
+      client: {
+        build: {
+          outDir: clientOutDir,
+          lib: { entry: clientEntry, formats: ['es'], fileName: `concurrent-generation-client-${label}` },
+        },
+      },
+      ssr: {
+        build: {
+          ssr: true,
+          outDir: ssrOutDir,
+          lib: { entry: ssrEntry, formats: ['es'], fileName: `concurrent-generation-ssr-${label}` },
+        },
+      },
+    },
+  })) as TestEnvironmentBuilder
+
+  let clientWatcher: TestBuildWatcher | undefined
+  let ssrWatcher: TestBuildWatcher | undefined
+  const rebuildWith = async (environment: EnvironmentName, generation: string) => {
+    armWait = armDelay(environment)
+    rmSync(clientOutDir, { force: true, recursive: true })
+    const clientBuild = nextEnvironmentWatchBuild(clientWatcher!)
+    const ssrBuild = nextEnvironmentWatchBuild(ssrWatcher!)
+    await new Promise((settle) => setTimeout(settle, 800))
+    writeFileSync(trigger, `export const generation = '${generation}'\n`)
+    await delayedStarted
+
+    const fastBuild = environment === 'client' ? ssrBuild : clientBuild
+    const delayedBuild = environment === 'client' ? clientBuild : ssrBuild
+    const fastError = await fastBuild
+    releaseDelayed()
+    const delayedError = await delayedBuild
+    delayedEnvironment = undefined
+
+    expect(fastError, `${label}: the fast environment rejected an incomplete shared generation`).toBeUndefined()
+    expect(delayedError, `${label}: the delayed environment did not finish after release`).toBeUndefined()
+    const css = existsSync(clientOutDir)
+      ? readdirSync(clientOutDir)
+          .filter((file) => file.endsWith('.css'))
+          .map((file) => readFileSync(join(clientOutDir, file), 'utf8'))
+          .join('\n')
+      : ''
+    expect(css, `${label}: the completed client generation emitted no Bamboo stylesheet`).toContain(
+      '--made-with-bamboo',
+    )
+    expect(css, `${label}: the emitted stylesheet lost the client class`).toContain(widths.client)
+    expect(css, `${label}: the emitted stylesheet lost the committed SSR class`).toContain(widths.ssr)
+  }
+
+  try {
+    ssrWatcher = (await builder.build(builder.environments.ssr)) as TestBuildWatcher
+    expect(await nextEnvironmentWatchBuild(ssrWatcher)).toBeUndefined()
+    clientWatcher = (await builder.build(builder.environments.client)) as TestBuildWatcher
+    expect(await nextEnvironmentWatchBuild(clientWatcher)).toBeUndefined()
+    expect(buildStarts).toEqual({ client: 1, ssr: 1 })
+
+    // This is the original failure order: SSR reaches the whole-run guard while the client is
+    // between buildStart and loading `virtual:bamboo.css`.
+    await rebuildWith('client', 'second')
+    // The inverse order proves completion belongs to generations rather than to a preferred
+    // environment or fixed client-first schedule.
+    await rebuildWith('ssr', 'third')
+    // Rolldown may coalesce the two filesystem writes differently and schedule an additional
+    // no-op generation. The barriers above prove both named generations participated; an exact
+    // cumulative hook count is not portable between its watcher and Rollup's.
+    expect(buildStarts.client).toBeGreaterThanOrEqual(3)
+    expect(buildStarts.ssr).toBeGreaterThanOrEqual(3)
+  } finally {
+    releaseDelayed()
+    await Promise.all([clientWatcher?.close(), ssrWatcher?.close()])
+    rmSync(clientEntry, { force: true })
+    rmSync(ssrEntry, { force: true })
+    rmSync(trigger, { force: true })
+    rmSync(configPath, { force: true })
+    rmSync(clientOutDir, { force: true, recursive: true })
+    rmSync(ssrOutDir, { force: true, recursive: true })
+  }
+}
+
+describe.sequential('two build environments, one plugin instance', () => {
   beforeEach(() => {
     // The client also declares a recipe variant nothing selects, so a build can be asked
     // whether pruning ran at all rather than only whether it took too much.
@@ -830,6 +2876,509 @@ describe('two build environments, one plugin instance', () => {
 
     expect(css).toContain('--made-with-bamboo')
     expect(css).toContain('31.1px')
+  }, 180_000)
+
+  test('concurrent environments wait for one shared artifact prebuild', async () => {
+    const configPath = join(cwd, '__concurrent-prebuild.config.ts')
+    const outdir = join(cwd, '__concurrent-styled-system')
+    const generatedCss = join(outdir, 'css/index.mjs')
+
+    type PrebuildGate = { wait: Promise<void>; done: () => void; starts: number }
+    const testGlobal = globalThis as typeof globalThis & {
+      __bambooConcurrentPrebuildGate?: PrebuildGate
+    }
+
+    let releaseGeneration!: () => void
+    const waitForRelease = new Promise<void>((resolve) => {
+      releaseGeneration = resolve
+    })
+    let markGenerated!: () => void
+    const generated = new Promise<void>((resolve) => {
+      markGenerated = resolve
+    })
+    testGlobal.__bambooConcurrentPrebuildGate = { wait: waitForRelease, done: markGenerated, starts: 0 }
+
+    writeFileSync(
+      configPath,
+      `import { defineConfig } from '@bamboocss/dev'
+
+export default defineConfig({
+  preflight: false,
+  include: ['./src/__env-{client,ssr}.tsx'],
+  outdir: '__concurrent-styled-system',
+  plugins: [{
+    name: 'concurrent-prebuild-gate',
+    hooks: {
+      'codegen:prepare': async ({ artifacts }) => {
+        globalThis.__bambooConcurrentPrebuildGate.starts++
+        await globalThis.__bambooConcurrentPrebuildGate.wait
+        return artifacts
+      },
+      'codegen:done': () => globalThis.__bambooConcurrentPrebuildGate.done(),
+    },
+  }],
+})
+`,
+    )
+    writeFileSync(
+      envClientEntry,
+      `import 'virtual:bamboo.css'\n` +
+        `import { cx } from '../__concurrent-styled-system/css'\n` +
+        `export const joined = (value) => cx(value, 'client-generated')\n`,
+    )
+    writeFileSync(
+      envSsrEntry,
+      `import { cx } from '../__concurrent-styled-system/css'\n` +
+        `export const joined = (value) => cx(value, 'ssr-generated')\n`,
+    )
+    rmSync(outdir, { recursive: true, force: true })
+
+    let releaseBuildStarts!: () => void
+    const bothBuildsStarted = new Promise<void>((resolve) => {
+      releaseBuildStarts = resolve
+    })
+    let buildStarts = 0
+    let releaseTimer: ReturnType<typeof setTimeout> | undefined
+    const synchronizeBuildStarts: Plugin = {
+      name: 'synchronize-concurrent-environments',
+      sharedDuringBuild: true,
+      async buildStart() {
+        buildStarts++
+        if (buildStarts === 2) {
+          releaseBuildStarts()
+          // The racing environment reaches the observer below before the next macrotask.
+          // A correct single-flight has both environments waiting, so release the generation
+          // ourselves once they have each had a chance to join it.
+          releaseTimer = setTimeout(releaseGeneration, 0)
+        }
+        await bothBuildsStarted
+      },
+    }
+
+    const artifactsReadyAtBuildStart: boolean[] = []
+    const observeAfterBambooPrebuild: Plugin = {
+      name: 'observe-bamboo-prebuild',
+      sharedDuringBuild: true,
+      async buildStart() {
+        const ready = existsSync(generatedCss)
+        artifactsReadyAtBuildStart.push(ready)
+        if (!ready) {
+          releaseGeneration()
+          await generated
+        }
+      },
+    }
+
+    const bambooPlugins = bamboocss({ cwd, configPath, reportSummary: false, pruneCss: false })
+
+    try {
+      const builder = await createBuilder({
+        root: cwd,
+        logLevel: 'silent',
+        css: { postcss: { plugins: [] } },
+        plugins: [synchronizeBuildStarts, bambooPlugins[0]!, observeAfterBambooPrebuild, bambooPlugins[1]!],
+        build: { write: false, minify: false, rollupOptions: { external: [/^react/] } },
+        builder: {},
+        environments: {
+          client: { build: { lib: { entry: envClientEntry, formats: ['es'], fileName: 'env-client' } } },
+          ssr: { build: { ssr: true, lib: { entry: envSsrEntry, formats: ['es'], fileName: 'env-ssr' } } },
+        },
+      })
+
+      const builds = await Promise.all([
+        builder.build(builder.environments.client!),
+        builder.build(builder.environments.ssr!),
+      ])
+
+      expect(artifactsReadyAtBuildStart).toEqual([true, true])
+      expect(existsSync(generatedCss)).toBe(true)
+      expect(testGlobal.__bambooConcurrentPrebuildGate!.starts).toBe(1)
+
+      const modules = await Promise.all(
+        builds.map(async (built) => {
+          const bundles = Array.isArray(built) ? built : [built]
+          const code = bundles
+            .flatMap((bundle) => (bundle as Rollup.RollupOutput).output)
+            .map((output) => ('code' in output ? output.code : ''))
+            .join('\n')
+          return (await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`)) as {
+            joined: (value: string) => string
+          }
+        }),
+      )
+
+      expect(modules.map((module) => module.joined('runtime'))).toEqual([
+        'runtime client-generated',
+        'runtime ssr-generated',
+      ])
+    } finally {
+      if (releaseTimer) clearTimeout(releaseTimer)
+      releaseBuildStarts()
+      releaseGeneration()
+      delete testGlobal.__bambooConcurrentPrebuildGate
+      rmSync(configPath, { force: true })
+      rmSync(outdir, { recursive: true, force: true })
+    }
+  }, 180_000)
+
+  test('cached transform facts are owned by their Vite environment', async () => {
+    const trigger = join(cwd, 'src/__env-cache-trigger.tsx')
+    const clientTrigger = join(cwd, 'src/__env-cache-client-trigger.ts')
+    const sharedModule = join(cwd, 'src/__env-cache-shared.tsx')
+    const clientEntry = join(cwd, 'src/__env-cache-client-entry.tsx')
+    const ssrEntry = join(cwd, 'src/__env-cache-ssr-entry.tsx')
+    const configPath = join(cwd, '__env-cache.bamboo.config.ts')
+    const clientOutDir = join(cwd, '__env-cache-client-out')
+    const ssrOutDir = join(cwd, '__env-cache-ssr-out')
+    const widths = { cached: '37.811px', fresh: '37.922px' }
+    type EnvironmentCalls = { client: number; ssr: number }
+
+    const environmentSource = (calls: EnvironmentCalls): VitePlugin => ({
+      name: 'bamboocss:test-environment-cache-source',
+      enforce: 'pre',
+      sharedDuringBuild: true,
+      transform(_code, id) {
+        if (id.split('?')[0] !== sharedModule) return
+
+        const environment = this.environment.name as keyof EnvironmentCalls
+        calls[environment]++
+        // The trigger is a separate build entry, so both watchers rebuild. Only the client
+        // module itself watches it: SSR must reuse this transform and its environment-local metadata.
+        if (environment === 'client') this.addWatchFile(trigger)
+
+        const fresh = environment === 'client' && readFileSync(trigger, 'utf8').includes('second')
+        const width = fresh ? widths.fresh : widths.cached
+        return {
+          code:
+            `import { css } from '../styled-system/css'\n` + `export const className = css({ width: '[${width}]' })\n`,
+          map: null,
+        }
+      },
+    })
+
+    // The SSR build is held behind the client's post-generateBundle pass. Its previous
+    // generation remains live while the replacement waits, so the client sheet must retain the
+    // cached SSR class; replay then publishes that same contribution for later partial rebuilds.
+    let clientBundles = 0
+    let ssrStarts = 0
+    const waiters = new Map<number, Set<() => void>>()
+    const waitForClient = (bundle: number) => {
+      if (clientBundles >= bundle) return Promise.resolve()
+      return new Promise<void>((resolve) => {
+        const pending = waiters.get(bundle) ?? new Set()
+        pending.add(resolve)
+        waiters.set(bundle, pending)
+      })
+    }
+    const releaseClient = () => {
+      clientBundles++
+      for (const [bundle, pending] of [...waiters]) {
+        if (bundle > clientBundles) continue
+        waiters.delete(bundle)
+        for (const resolve of pending) resolve()
+      }
+    }
+    const clientBeforeSsr: VitePlugin = {
+      name: 'bamboocss:test-client-before-ssr-cache-replay',
+      sharedDuringBuild: true,
+      async buildStart() {
+        if (this.environment.name === 'ssr') await waitForClient(++ssrStarts)
+      },
+      generateBundle: {
+        // Bamboo's CSS hook is also post and precedes this plugin in the array, so the release
+        // happens after the client has populated `prunedClasses` for this build.
+        order: 'post',
+        handler() {
+          if (this.environment.name === 'client') releaseClient()
+        },
+      },
+    }
+
+    const writtenCss = () =>
+      readdirSync(clientOutDir)
+        .filter((file) => file.endsWith('.css'))
+        .map((file) => readFileSync(join(clientOutDir, file), 'utf8'))
+        .join('\n')
+    const nextBuild = (watcher: Rollup.RollupWatcher) =>
+      new Promise<Error | undefined>((resolve) => {
+        const onEvent = (event: Rollup.RollupWatcherEvent) => {
+          if (event.code !== 'END' && event.code !== 'ERROR') return
+          watcher.off('event', onEvent)
+          resolve(event.code === 'ERROR' ? event.error : undefined)
+        }
+        watcher.on('event', onEvent)
+      })
+
+    mkdirSync(dirname(sharedModule), { recursive: true })
+    // Extraction sees the physical source rather than the environment-specific upstream
+    // transform, so both possible rules must belong to the configured CSS graph.
+    writeFileSync(
+      sharedModule,
+      `import { css } from '../styled-system/css'\n` +
+        `export const cached = css({ width: '[${widths.cached}]' })\n` +
+        `export const fresh = css({ width: '[${widths.fresh}]' })\n`,
+    )
+    writeFileSync(trigger, `export const version = 'first'\n`)
+    writeFileSync(clientTrigger, `export const clientVersion = 'first'\n`)
+    writeFileSync(
+      clientEntry,
+      `import 'virtual:bamboo.css'\n` +
+        `export { className } from './__env-cache-shared'\n` +
+        `export { clientVersion } from './__env-cache-client-trigger'\n`,
+    )
+    writeFileSync(ssrEntry, `export { className } from './__env-cache-shared'\n`)
+    writeIsolatedBambooConfig(configPath, [
+      './src/__env-cache-shared.tsx',
+      './src/__env-cache-client-entry.tsx',
+      './src/__env-cache-ssr-entry.tsx',
+    ])
+
+    const calls: EnvironmentCalls = { client: 0, ssr: 0 }
+    const bambooPlugins = bamboocss({ cwd, configPath, reportSummary: false })
+    const builder = await createVite7Builder({
+      root: cwd,
+      logLevel: 'silent',
+      css: { postcss: { plugins: [] } },
+      plugins: [environmentSource(calls), ...bambooPlugins, clientBeforeSsr],
+      build: {
+        watch: {},
+        minify: false,
+        emptyOutDir: false,
+        rollupOptions: { external: [/^react/] },
+      },
+      builder: {},
+      environments: {
+        client: {
+          build: {
+            outDir: clientOutDir,
+            lib: {
+              entry: { app: clientEntry, trigger },
+              formats: ['es'],
+              fileName: (_format, entryName) => `env-cache-client-${entryName}`,
+            },
+          },
+        },
+        ssr: {
+          build: {
+            ssr: true,
+            outDir: ssrOutDir,
+            lib: {
+              entry: { app: ssrEntry, trigger },
+              formats: ['es'],
+              fileName: (_format, entryName) => `env-cache-ssr-${entryName}`,
+            },
+          },
+        },
+      },
+    })
+
+    let clientWatcher: Rollup.RollupWatcher | undefined
+    let ssrWatcher: Rollup.RollupWatcher | undefined
+    let watchedCss = ''
+    try {
+      clientWatcher = (await builder.build(builder.environments.client!)) as Rollup.RollupWatcher
+      const firstClient = nextBuild(clientWatcher)
+      ssrWatcher = (await builder.build(builder.environments.ssr!)) as Rollup.RollupWatcher
+      const firstSsr = nextBuild(ssrWatcher)
+
+      expect(await Promise.all([firstClient, firstSsr])).toEqual([undefined, undefined])
+      expect(calls).toEqual({ client: 1, ssr: 1 })
+      expect(writtenCss()).toContain(widths.cached)
+      expect(writtenCss()).not.toContain(widths.fresh)
+
+      rmSync(clientOutDir, { force: true, recursive: true })
+      const rebuiltClient = nextBuild(clientWatcher)
+      const rebuiltSsr = nextBuild(ssrWatcher)
+      await new Promise((settle) => setTimeout(settle, 800))
+      writeFileSync(trigger, `export const version = 'second'\n`)
+      const [clientError, ssrError] = await Promise.all([rebuiltClient, rebuiltSsr])
+
+      expect(calls, 'client retransforms while SSR reuses its environment-local cache').toEqual({ client: 2, ssr: 1 })
+      expect(clientError).toBeUndefined()
+      expect(writtenCss()).toContain(widths.fresh)
+      expect(writtenCss()).toContain(widths.cached)
+      expect(ssrError).toBeUndefined()
+
+      // Rebuild only the client once SSR has published its cached generation. If replay were
+      // suppressed by the fresh client transform above, this projection would now drop the SSR
+      // class even though its cached JavaScript still names it.
+      rmSync(clientOutDir, { force: true, recursive: true })
+      const clientOnlyBuild = nextBuild(clientWatcher)
+      await new Promise((settle) => setTimeout(settle, 800))
+      writeFileSync(clientTrigger, `export const clientVersion = 'second'\n`)
+      expect(await clientOnlyBuild).toBeUndefined()
+      expect(calls).toEqual({ client: 2, ssr: 1 })
+      watchedCss = writtenCss()
+      expect(watchedCss).toContain(widths.fresh)
+      expect(watchedCss).toContain(widths.cached)
+    } finally {
+      // Unblock a waiting SSR hook before closing if an earlier assertion or build failed.
+      for (const pending of waiters.values()) for (const resolve of pending) resolve()
+      waiters.clear()
+      await Promise.all([clientWatcher?.close(), ssrWatcher?.close()])
+      rmSync(trigger, { force: true })
+      rmSync(clientTrigger, { force: true })
+      rmSync(sharedModule, { force: true })
+      rmSync(clientEntry, { force: true })
+      rmSync(ssrEntry, { force: true })
+      rmSync(configPath, { force: true })
+      rmSync(clientOutDir, { force: true, recursive: true })
+      rmSync(ssrOutDir, { force: true, recursive: true })
+    }
+
+    // A cold build with the SSR graph established first has the same complete reachability
+    // answer. Compare against it so the extra retained rule is proven necessary rather than an
+    // accidental failure to prune.
+    writeFileSync(
+      sharedModule,
+      `import { css } from '../styled-system/css'\n` +
+        `export const cached = css({ width: '[${widths.cached}]' })\n` +
+        `export const fresh = css({ width: '[${widths.fresh}]' })\n`,
+    )
+    writeFileSync(trigger, `export const version = 'second'\n`)
+    writeFileSync(clientTrigger, `export const clientVersion = 'second'\n`)
+    writeFileSync(
+      clientEntry,
+      `import 'virtual:bamboo.css'\n` +
+        `export { className } from './__env-cache-shared'\n` +
+        `export { clientVersion } from './__env-cache-client-trigger'\n`,
+    )
+    writeFileSync(ssrEntry, `export { className } from './__env-cache-shared'\n`)
+    writeIsolatedBambooConfig(configPath, [
+      './src/__env-cache-shared.tsx',
+      './src/__env-cache-client-entry.tsx',
+      './src/__env-cache-ssr-entry.tsx',
+    ])
+    const cleanCalls: EnvironmentCalls = { client: 0, ssr: 0 }
+    try {
+      const cleanBuilder = await createVite7Builder({
+        root: cwd,
+        logLevel: 'silent',
+        css: { postcss: { plugins: [] } },
+        plugins: [environmentSource(cleanCalls), bamboocss({ cwd, configPath, reportSummary: false })],
+        build: { write: false, minify: false, rollupOptions: { external: [/^react/] } },
+        builder: {},
+        environments: {
+          client: {
+            build: {
+              lib: {
+                entry: { app: clientEntry, trigger },
+                formats: ['es'],
+                fileName: (_format, entryName) => `env-cache-client-clean-${entryName}`,
+              },
+            },
+          },
+          ssr: {
+            build: {
+              ssr: true,
+              lib: {
+                entry: { app: ssrEntry, trigger },
+                formats: ['es'],
+                fileName: (_format, entryName) => `env-cache-ssr-clean-${entryName}`,
+              },
+            },
+          },
+        },
+      })
+      await cleanBuilder.build(cleanBuilder.environments.ssr!)
+      const cleanBuilt = await cleanBuilder.build(cleanBuilder.environments.client!)
+      const cleanCss = (Array.isArray(cleanBuilt) ? cleanBuilt : [cleanBuilt])
+        .flatMap((bundle) => (bundle as Rollup.RollupOutput).output)
+        .map((output) => (output.type === 'asset' ? String(output.source) : ''))
+        .join('\n')
+      expect(cleanCss).toContain(widths.fresh)
+      expect(cleanCss).toContain(widths.cached)
+      expect(watchedCss.trim()).toBe(cleanCss.trim())
+      expect(cleanCalls).toEqual({ client: 1, ssr: 1 })
+    } finally {
+      rmSync(trigger, { force: true })
+      rmSync(clientTrigger, { force: true })
+      rmSync(sharedModule, { force: true })
+      rmSync(clientEntry, { force: true })
+      rmSync(ssrEntry, { force: true })
+      rmSync(configPath, { force: true })
+    }
+  }, 180_000)
+
+  test('Vite 7 preserves an untouched SSR contribution across a client-only rebuild', async () => {
+    await runPartialEnvironmentWatchRebuild(
+      (config) => createVite7Builder(config as Parameters<typeof createVite7Builder>[0]),
+      'vite7',
+      { cachedSsr: '47.711px', freshClient: '47.722px', freshSsr: '47.733px' },
+    )
+  }, 180_000)
+
+  test('Vite 8 preserves an untouched SSR contribution across a client-only rebuild', async () => {
+    await runPartialEnvironmentWatchRebuild(
+      (config) => createBuilder(config as Parameters<typeof createBuilder>[0]),
+      'vite8',
+      { cachedSsr: '48.811px', freshClient: '48.822px', freshSsr: '48.833px' },
+    )
+  }, 180_000)
+
+  test('Vite 7 does not publish a generation rejected during output', async () => {
+    await runRejectedOutputWatchRebuild(
+      (config) => createVite7Builder(config as Parameters<typeof createVite7Builder>[0]),
+      'vite7',
+      { old: '50.711px', rejected: '50.722px', written: '50.744px', sibling: '50.733px' },
+    )
+  }, 180_000)
+
+  test('Vite 8 does not publish a generation rejected during output', async () => {
+    await runRejectedOutputWatchRebuild(
+      (config) => createBuilder(config as Parameters<typeof createBuilder>[0]),
+      'vite8',
+      { old: '50.811px', rejected: '50.822px', written: '50.844px', sibling: '50.833px' },
+    )
+  }, 180_000)
+
+  test('Vite 7 retains every live epoch across a partially written multi-output generation', async () => {
+    await runMixedOutputEpochWatchRebuild(
+      (config) => createVite7Builder(config as Parameters<typeof createVite7Builder>[0]),
+      'vite7',
+      { old: '61.101px', candidate: '61.202px', replacement: '61.303px', sibling: '61.404px' },
+    )
+  }, 180_000)
+
+  test('Vite 8 retains every live epoch across a partially written multi-output generation', async () => {
+    await runMixedOutputEpochWatchRebuild(
+      (config) => createBuilder(config as Parameters<typeof createBuilder>[0]),
+      'vite8',
+      { old: '62.101px', candidate: '62.202px', replacement: '62.303px', sibling: '62.404px' },
+    )
+  }, 180_000)
+
+  test('Vite 7 refuses to replace CSS while a live output names a physically removed rule', async () => {
+    await runRemovedLiveRuleWatchRebuild(
+      (config) => createVite7Builder(config as Parameters<typeof createVite7Builder>[0]),
+      'vite7',
+      { old: '71.101px', replacement: '71.202px', sibling: '71.303px' },
+    )
+  }, 180_000)
+
+  test('Vite 8 refuses to replace CSS while a live output names a physically removed rule', async () => {
+    await runRemovedLiveRuleWatchRebuild(
+      (config) => createBuilder(config as Parameters<typeof createBuilder>[0]),
+      'vite8',
+      { old: '81.101px', replacement: '81.202px', sibling: '81.303px' },
+      false,
+    )
+  }, 180_000)
+
+  test('Vite 7 defers whole-run guards during concurrent replacement generations', async () => {
+    await runConcurrentEnvironmentWatchRebuild(
+      (config) => createVite7Builder(config as Parameters<typeof createVite7Builder>[0]),
+      'vite7',
+      { client: '49.911px', ssr: '49.912px' },
+    )
+  }, 180_000)
+
+  test('Vite 8 defers whole-run guards during concurrent replacement generations', async () => {
+    await runConcurrentEnvironmentWatchRebuild(
+      (config) => createBuilder(config as Parameters<typeof createBuilder>[0]),
+      'vite8',
+      { client: '49.921px', ssr: '49.922px' },
+    )
   }, 180_000)
 
   /**

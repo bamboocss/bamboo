@@ -3,7 +3,7 @@ import { prunesPreflight } from '@bamboocss/core'
 import { logger } from '@bamboocss/logger'
 import { BambooError, uniq } from '@bamboocss/shared'
 import type { DiffConfigResult } from '@bamboocss/types'
-import { existsSync, statSync } from 'fs'
+import { existsSync, readFileSync, statSync } from 'fs'
 import { normalize, resolve } from 'path'
 import type { Message, Root } from 'postcss'
 import { codegen } from './codegen'
@@ -55,6 +55,66 @@ export class Builder {
   private explicitDepsMeta: FileChanges | undefined
   private affecteds: DiffConfigResult | undefined
   private configDependencies: Set<string> = new Set()
+  /** Last complete included inventory, including members which have since been deleted. */
+  private sourceInventory: string[] | undefined
+  /** Existing included owners selected by the last resolution-ledger invalidation pass. */
+  private affectedFiles: Set<string> | undefined
+  /** Dependency-before-importer parse order for the selected owners. */
+  private extractionOrder: string[] | undefined
+  /** Exact cross-file semantic reads retained per included extraction owner. */
+  private resolutionReadSets = new Map<string, readonly string[]>()
+  /** Previously semantic paths which are absent, retained only while their owner is unchanged. */
+  private pendingResolutionReadSets = new Map<string, readonly string[]>()
+  /** Missing local priority candidates which can redirect a current semantic resolution. */
+  private resolutionCandidateSets = new Map<string, readonly string[]>()
+  /** Exact resolver configuration reads retained per included semantic owner. */
+  private resolutionConfigurationSets = new Map<string, readonly string[]>()
+  /** Byte snapshots for resolver configuration files, independent of filesystem mtimes. */
+  private resolutionConfigurationBytes = new Map<string, string | undefined>()
+  /** Previous effective tsconfig read-set, needed to classify its deletion as an option reload. */
+  private tsconfigResolutionFiles: readonly string[] = []
+
+  /** @internal Current and missing resolver paths which can change the stylesheet. */
+  getResolutionReadFiles = (): readonly string[] => {
+    const files = new Set<string>()
+    for (const readSets of [this.resolutionReadSets, this.pendingResolutionReadSets, this.resolutionCandidateSets]) {
+      for (const dependencies of readSets.values()) {
+        for (const dependency of dependencies) files.add(dependency)
+      }
+    }
+    return Object.freeze([...files].sort())
+  }
+
+  /** @internal Exact local package/tsconfig files which can change semantic resolution. */
+  getResolutionConfigurationFiles = (): readonly string[] => {
+    const files = new Set<string>()
+    for (const configurations of this.resolutionConfigurationSets.values()) {
+      for (const configuration of configurations) files.add(configuration)
+    }
+    return Object.freeze([...files].sort())
+  }
+
+  private readResolutionConfiguration = (file: string): string | undefined => {
+    try {
+      return readFileSync(file).toString('base64')
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException)?.code === 'ENOENT') return undefined
+      throw error
+    }
+  }
+
+  private changedResolutionConfigurations = (): string[] =>
+    this.getResolutionConfigurationFiles().filter(
+      (file) => this.resolutionConfigurationBytes.get(file) !== this.readResolutionConfiguration(file),
+    )
+
+  private snapshotResolutionConfigurations = () => {
+    const current = new Set(this.getResolutionConfigurationFiles())
+    for (const file of current) this.resolutionConfigurationBytes.set(file, this.readResolutionConfiguration(file))
+    for (const file of this.resolutionConfigurationBytes.keys()) {
+      if (!current.has(file)) this.resolutionConfigurationBytes.delete(file)
+    }
+  }
 
   setConfigDependencies(options: SetupContextOptions) {
     const tsOptions = this.context?.conf.tsOptions ?? { baseUrl: undefined, pathMappings: [] }
@@ -87,10 +147,14 @@ export class Builder {
     }
 
     const ctx = this.getContextOrThrow()
+    const previousTsconfigFiles = this.tsconfigResolutionFiles.length
+      ? this.tsconfigResolutionFiles
+      : ctx.diff.getResolutionConfigFiles()
 
     this.affecteds = await ctx.diff.reloadConfigAndRefreshContext((conf) => {
       this.context = new BambooContext(conf)
     })
+    this.tsconfigResolutionFiles = this.getContextOrThrow().diff.getResolutionConfigFiles()
 
     logger.debug('builder', this.affecteds)
 
@@ -109,16 +173,172 @@ export class Builder {
     // config change
     if (this.affecteds.hasConfigChanged) {
       logger.debug('builder', '⚙️ Config changed, reloading')
+      this.filesMeta = undefined
+      this.affectedFiles = undefined
+      this.extractionOrder = undefined
+      this.sourceInventory = undefined
+      this.resolutionReadSets.clear()
+      this.pendingResolutionReadSets.clear()
+      this.resolutionCandidateSets.clear()
+      this.resolutionConfigurationSets.clear()
+      this.resolutionConfigurationBytes.clear()
       await ctx.hooks['config:change']?.({ config: ctx.config, changes: this.affecteds })
       return
     }
 
-    // file changes
-    this.filesMeta = this.checkFilesChanged(ctx.getFiles())
+    const changedResolutionConfigurations = this.changedResolutionConfigurations()
+    const changedResolutionSet = new Set(changedResolutionConfigurations)
+    const resolutionAffected = new Set<string>()
+    const resolutionLedger = changedResolutionConfigurations.length ? ctx.project.getResolutionLedger() : undefined
+    for (const [owner, configurations] of this.resolutionConfigurationSets) {
+      if (configurations.some((file) => changedResolutionSet.has(file))) resolutionAffected.add(owner)
+    }
+
+    if (changedResolutionConfigurations.length) {
+      const tsconfigCandidates = new Set([...previousTsconfigFiles, ...this.tsconfigResolutionFiles])
+      const replaceCompilerOptions = changedResolutionConfigurations.some((file) => tsconfigCandidates.has(file))
+      ctx.project.refreshResolutionConfiguration(
+        ctx.conf.tsconfig?.compilerOptions,
+        this.tsconfigResolutionFiles,
+        replaceCompilerOptions,
+      )
+    }
+
+    // Source edits are invalidated from the Project's exact resolution read-set. `include`
+    // alone misses a plain-object helper outside the glob; the previous inventory alone misses
+    // a newly added member; the current inventory alone misses a deletion.
+    const inventory = ctx.getFiles()
+    const previousInventory = this.sourceInventory ?? inventory
+    const tracked = uniq([...previousInventory, ...inventory, ...this.getResolutionReadFiles()])
+    this.filesMeta = this.checkFilesChanged(tracked)
     if (this.filesMeta.hasFilesChanged) {
       logger.debug('builder', 'Files changed, invalidating them')
-      ctx.project.reloadSourceFiles()
+      this.invalidateChangedSources(ctx, inventory, resolutionAffected, resolutionLedger)
+    } else if (changedResolutionConfigurations.length) {
+      ctx.encoder?.reconcileFileOwnerOrder('extract', inventory)
+      this.extractionOrder = this.orderAffectedFiles(inventory, resolutionAffected, resolutionLedger ?? [], [])
+      this.affectedFiles = new Set(this.extractionOrder.map(this.sourcePath))
+    } else {
+      this.affectedFiles = new Set()
+      this.extractionOrder = []
     }
+    this.sourceInventory = [...inventory]
+  }
+
+  /** Normalize the path identity shared by the Project ledger and file-owner keys. */
+  private sourcePath = (file: string) => file.replaceAll('\\', '/')
+
+  /**
+   * Reload only changed ledger members, then select their transitive included consumers.
+   *
+   * The dependency graph is snapshotted before mutation: reloading an importer retracts its
+   * old forward edges, while deletion removes the target. Waiting until afterwards loses the
+   * very closure the rebuild needs. New targets also select every pending importer and each
+   * pending importer's dependent closure, because no edge to the new path existed yet.
+   */
+  private invalidateChangedSources = (
+    ctx: BambooContext,
+    inventory: string[],
+    seededAffected: ReadonlySet<string> = new Set(),
+    previousLedger?: ReturnType<BambooContext['project']['getResolutionLedger']>,
+  ) => {
+    const project = ctx.project
+    const current = new Set(inventory.map(this.sourcePath))
+    const changed = [...(this.filesMeta?.changes ?? [])]
+      .filter(([, meta]) => !meta.isUnchanged)
+      .map(([file]) => this.sourcePath(file))
+    const ledger = previousLedger ?? project.getResolutionLedger()
+    const pending = project.getUnresolvedImporters().map(this.sourcePath)
+    const affected = new Set<string>(seededAffected)
+    const added: string[] = []
+
+    for (const file of changed) {
+      if (current.has(file)) affected.add(file)
+      for (const dependent of project.getDependents(file)) affected.add(this.sourcePath(dependent))
+
+      if (existsSync(file) && !project.getSourceFile(file)) added.push(file)
+    }
+
+    // Snapshot this before createSourceFile reparses resolution candidates and clears the
+    // pending bit. Every pending importer can have consumers of its own.
+    if (added.length) {
+      for (const importer of pending) {
+        affected.add(importer)
+        for (const dependent of project.getDependents(importer)) affected.add(this.sourcePath(dependent))
+      }
+    }
+
+    for (const file of changed) {
+      if (!existsSync(file)) {
+        project.removeSourceFile(file)
+        fileModifiedMap.set(file, -Infinity)
+      } else if (project.getSourceFile(file)) {
+        project.reloadSourceFile(file)
+      } else {
+        project.createSourceFile(file)
+      }
+    }
+
+    // Rank all current owners before committing any newly added contribution. This separates
+    // semantic output order from discovery/parse completion order.
+    ctx.encoder?.reconcileFileOwnerOrder('extract', inventory)
+
+    const syntheticEdges = added.flatMap((target) => pending.map((importer) => [target, importer] as const))
+    this.extractionOrder = this.orderAffectedFiles(inventory, affected, ledger, syntheticEdges)
+    this.affectedFiles = new Set(this.extractionOrder.map(this.sourcePath))
+  }
+
+  /** Deterministic topological order, with current inventory order as the stable tie-break. */
+  private orderAffectedFiles = (
+    inventory: string[],
+    affected: ReadonlySet<string>,
+    ledger: ReturnType<BambooContext['project']['getResolutionLedger']>,
+    syntheticEdges: readonly (readonly [string, string])[],
+  ) => {
+    const files = inventory.filter((file) => affected.has(this.sourcePath(file)))
+    const byPath = new Map(files.map((file) => [this.sourcePath(file), file]))
+    const inventoryRank = new Map(files.map((file, index) => [this.sourcePath(file), index]))
+    const outgoing = new Map<string, Set<string>>()
+    const indegree = new Map(files.map((file) => [this.sourcePath(file), 0]))
+
+    const addEdge = (rawTarget: string | null, rawImporter: string) => {
+      if (!rawTarget) return
+      const target = this.sourcePath(rawTarget)
+      const importer = this.sourcePath(rawImporter)
+      if (target === importer || !byPath.has(target) || !byPath.has(importer)) return
+      const importers = outgoing.get(target) ?? new Set<string>()
+      if (importers.has(importer)) return
+      importers.add(importer)
+      outgoing.set(target, importers)
+      indegree.set(importer, (indegree.get(importer) ?? 0) + 1)
+    }
+
+    for (const fact of ledger) addEdge(fact.target, fact.importer)
+    for (const [target, importer] of syntheticEdges) addEdge(target, importer)
+
+    const compare = (left: string, right: string) => (inventoryRank.get(left) ?? 0) - (inventoryRank.get(right) ?? 0)
+    const ready = [...indegree]
+      .filter(([, degree]) => degree === 0)
+      .map(([file]) => file)
+      .sort(compare)
+    const ordered: string[] = []
+    while (ready.length) {
+      const file = ready.shift()!
+      ordered.push(file)
+      for (const importer of [...(outgoing.get(file) ?? [])].sort(compare)) {
+        const next = (indegree.get(importer) ?? 0) - 1
+        indegree.set(importer, next)
+        if (next === 0) {
+          ready.push(importer)
+          ready.sort(compare)
+        }
+      }
+    }
+
+    // Cycles retain inventory order. Resolution/evaluation already handles their semantics;
+    // this is only a deterministic staging order, not a second graph architecture.
+    for (const file of [...byPath.keys()].sort(compare)) if (!ordered.includes(file)) ordered.push(file)
+    return ordered.map((file) => byPath.get(file)!)
   }
 
   /**
@@ -163,6 +383,7 @@ export class Builder {
     })
 
     this.context = ctx
+    this.tsconfigResolutionFiles = ctx.diff.getResolutionConfigFiles()
     return ctx
   }
 
@@ -199,10 +420,66 @@ export class Builder {
     const meta = this.filesMeta?.changes.get(file) ?? this.getFileMeta(file)
 
     const hasConfigChanged = this.affecteds ? this.affecteds.hasConfigChanged : true
-    if (meta.isUnchanged && !hasConfigChanged) return
+    if (meta.isUnchanged && !hasConfigChanged && !this.affectedFiles?.has(this.sourcePath(file))) return
 
+    const owner = this.sourcePath(file)
+    const previousReads = this.resolutionReadSets.get(owner) ?? []
+    const previousPending = this.pendingResolutionReadSets.get(owner) ?? []
+    const previousCandidates = this.resolutionCandidateSets.get(owner) ?? []
+    const previousConfigurations = this.resolutionConfigurationSets.get(owner) ?? []
     const parserResult = ctx.parseFile(file)
     fileModifiedMap.set(file, meta.mtime)
+
+    if (parserResult) {
+      const previousReadSet = meta.isUnchanged
+        ? {
+            dependencies: uniq([...previousReads, ...previousPending]).sort(),
+            pendingCandidates: previousCandidates,
+          }
+        : undefined
+      const readSet = ctx.project.getResolutionReadSet(file, parserResult.getDependencies(), previousReadSet)
+      const currentReads = readSet.dependencies
+      const currentConfigurations = ctx.project.getResolutionConfigurationFiles(
+        file,
+        parserResult.getDependencies(),
+        meta.isUnchanged ? previousConfigurations : [],
+      )
+      this.resolutionReadSets.set(owner, currentReads)
+      if (readSet.pendingCandidates.length) {
+        this.resolutionCandidateSets.set(owner, readSet.pendingCandidates)
+      } else {
+        this.resolutionCandidateSets.delete(owner)
+      }
+
+      // A dependency which disappeared cannot occur in the fresh ParserResult: there is no
+      // declaration node to carry its path. It is nevertheless still the exact semantic read
+      // which selected this unchanged owner on the unlink pass. Keep polling only those prior
+      // reads while they are absent. A source edit to the owner recomputes intent from scratch,
+      // so removing or making that import runtime-only releases the pending path immediately.
+      // Keeping this separate from `resolutionReadSets` preserves the meaning of the live set
+      // and never promotes arbitrary unresolved/runtime ledger branches into watch inputs.
+      const pending = meta.isUnchanged
+        ? uniq([...previousPending, ...previousReads])
+            .filter(
+              (dependency) =>
+                !existsSync(dependency) &&
+                !currentReads.includes(dependency) &&
+                (!previousCandidates.includes(dependency) || readSet.pendingCandidates.includes(dependency)),
+            )
+            .sort()
+        : []
+      if (pending.length) this.pendingResolutionReadSets.set(owner, pending)
+      else this.pendingResolutionReadSets.delete(owner)
+
+      // A config edit can make a formerly semantic alias unresolved, leaving no current
+      // dependency node from which to rediscover its tsconfig/package manifest. Retain that
+      // exact prior config read only while the owner itself is unchanged; an owner edit which
+      // removes or makes the import runtime-only releases it immediately.
+      const configurations =
+        currentConfigurations.length || !meta.isUnchanged ? currentConfigurations : previousConfigurations
+      if (configurations.length) this.resolutionConfigurationSets.set(owner, configurations)
+      else this.resolutionConfigurationSets.delete(owner)
+    }
 
     return parserResult
   }
@@ -223,6 +500,28 @@ export class Builder {
     }
 
     const files = ctx.getFiles()
+    const inventory = new Set(files.map(this.sourcePath))
+    if (hasConfigChanged) {
+      this.resolutionReadSets.clear()
+      this.pendingResolutionReadSets.clear()
+      this.resolutionCandidateSets.clear()
+      this.resolutionConfigurationSets.clear()
+    } else {
+      for (const owner of this.resolutionReadSets.keys()) {
+        if (!inventory.has(owner)) this.resolutionReadSets.delete(owner)
+      }
+      for (const owner of this.pendingResolutionReadSets.keys()) {
+        if (!inventory.has(owner)) this.pendingResolutionReadSets.delete(owner)
+      }
+      for (const owner of this.resolutionCandidateSets.keys()) {
+        if (!inventory.has(owner)) this.resolutionCandidateSets.delete(owner)
+      }
+      for (const owner of this.resolutionConfigurationSets.keys()) {
+        if (!inventory.has(owner)) this.resolutionConfigurationSets.delete(owner)
+      }
+    }
+    ctx.encoder?.reconcileFileOwnerOrder('extract', files)
+    const filesToExtract = hasConfigChanged ? files : (this.extractionOrder ?? files)
 
     const done = logger.time.info('Extracted in')
 
@@ -234,11 +533,22 @@ export class Builder {
     // median extract 1,724ms against 1,712ms, with a control repeat of the original at
     // 1,697ms — the three within 1.6%, and peak RSS flat. The retention is real and the
     // collector does not care. Kept because a `.map` for its side effects reads as a bug.
-    for (const file of files) {
+    for (const file of filesToExtract) {
       this.extractFile(ctx, file)
     }
 
     done()
+
+    this.sourceInventory = [...files]
+    // Resolver-discovered modules can sit outside `include`. Their bytes were semantically
+    // read by this pass, so remember the same mtimes as included owners and detect their next
+    // edit without globbing the checkout.
+    for (const file of uniq([...files, ...this.getResolutionReadFiles()])) {
+      fileModifiedMap.set(file, this.getFileMeta(file).mtime)
+    }
+    this.snapshotResolutionConfigurations()
+    this.affectedFiles = undefined
+    this.extractionOrder = undefined
 
     // After `done()`, so the timing line still reports the pass that just ran rather than
     // being swallowed by the throw. Handed the list this pass walked, so it does not glob

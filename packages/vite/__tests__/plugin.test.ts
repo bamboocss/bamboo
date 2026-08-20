@@ -1,4 +1,6 @@
 import { logger } from '@bamboocss/logger'
+import { isStaticCompilerActive } from '@bamboocss/node/static-compiler'
+import { rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
@@ -26,9 +28,21 @@ const callTransform = async (plugin: { transform?: unknown }, code: string, id: 
   return handler.call({} as never, code, id, {} as never)
 }
 
+const hookOf = <T>(hook: T | { handler: T } | undefined): T | undefined =>
+  typeof hook === 'function' ? hook : (hook as { handler: T } | undefined)?.handler
+
 const SOURCE = `import { css } from 'styled-system/css'\nexport const cls = css({ color: 'red.300' })\n`
 
 describe('plugin contract', () => {
+  test('announces the compiler synchronously, even when option validation rejects construction', () => {
+    const realm = globalThis as Record<symbol, unknown>
+    const flag = Symbol.for('bamboocss.static-compiler')
+    realm[flag] = false
+
+    expect(() => bamboocss({ maxRecipeStates: 0 })).toThrow('positive safe integer')
+    expect(isStaticCompilerActive()).toBe(true)
+  })
+
   test('returns the css emitter and the fold, in that order', () => {
     const { list } = plugins()
 
@@ -60,6 +74,46 @@ describe('plugin contract', () => {
   test('one instance serves every environment of a build', () => {
     expect(plugins().fold.sharedDuringBuild).toBe(true)
     expect(plugins().css.sharedDuringBuild).toBe(true)
+  })
+
+  test('output lifecycle plugins stay flat and follow a reordered output slot', () => {
+    const { fold } = plugins()
+    const firstUserPlugin = { name: 'test:first-output' }
+    const secondUserPlugin = { name: 'test:second-output' }
+    const first = { plugins: [firstUserPlugin] }
+    const second = { plugins: [secondUserPlugin] }
+    const input = { output: [first, second] }
+    const options = hookOf(fold.options)!
+    const context = { environment: { name: 'client' } }
+    const names = (output: typeof first) => (output.plugins as Array<{ name?: string }>).map((plugin) => plugin.name)
+
+    options.call(context as never, input as never)
+    expect(names(first)).toEqual([
+      'bamboocss:output-start:client:0',
+      firstUserPlugin.name,
+      'bamboocss:output-finalizer:client:0',
+    ])
+    expect(names(second)).toEqual([
+      'bamboocss:output-start:client:1',
+      secondUserPlugin.name,
+      'bamboocss:output-finalizer:client:1',
+    ])
+
+    // Repeated resolution is idempotent, while swapping reused output objects replaces their
+    // private slot identity without nesting or moving the user's plugin.
+    options.call(context as never, input as never)
+    input.output = [second, first]
+    options.call(context as never, input as never)
+    expect(names(second)).toEqual([
+      'bamboocss:output-start:client:0',
+      secondUserPlugin.name,
+      'bamboocss:output-finalizer:client:0',
+    ])
+    expect(names(first)).toEqual([
+      'bamboocss:output-start:client:1',
+      firstUserPlugin.name,
+      'bamboocss:output-finalizer:client:1',
+    ])
   })
 
   test('the css emitter answers only for its own id', () => {
@@ -216,6 +270,294 @@ describe('compiler', () => {
 
     return typeof result === 'object' && result !== null ? result.code : null
   }
+
+  test('foreign recipe caches are isolated between environment transforms', async () => {
+    const recipePath = join(cwd, 'src/__environment-recipe.tsx')
+    const consumerPath = join(cwd, 'src/__environment-recipe-consumer.tsx')
+    const consumer = `import { badge } from './__environment-recipe'\n` + `export const className = badge()\n`
+    const recipe = (width: string) =>
+      `import { cva } from 'styled-system/css'\n` + `export const badge = cva({ base: { width: '[${width}]' } })\n`
+    const plugin = plugins({ cwd, reportSummary: false }).fold
+    const buildStart = hookOf(plugin.buildStart)!
+    const transform = hookOf(plugin.transform)!
+    const compile = async (environment: string, width: string) => {
+      const context = { addWatchFile() {}, environment: { name: environment } }
+      await buildStart.call(context as never, {} as never)
+      await transform.call(context as never, recipe(width), recipePath, {} as never)
+      return transform.call(context as never, consumer, consumerPath, {} as never)
+    }
+
+    writeFileSync(recipePath, recipe('70.101px'))
+    writeFileSync(consumerPath, consumer)
+    try {
+      const client = await compile('client', '70.101px')
+      const ssr = await compile('ssr', '70.202px')
+      const clientCode = typeof client === 'string' ? client : client?.code
+      const ssrCode = typeof ssr === 'string' ? ssr : ssr?.code
+
+      expect(clientCode).toContain('w_[70.101px]')
+      expect(ssrCode).toContain('w_[70.202px]')
+      expect(ssrCode).not.toContain('w_[70.101px]')
+    } finally {
+      rmSync(recipePath, { force: true })
+      rmSync(consumerPath, { force: true })
+    }
+  })
+
+  test('watches the Project resolution closure through a re-export bridge', async () => {
+    const dependency = join(cwd, 'src/__resolution-watch-dependency.ts')
+    const bridge = join(cwd, 'src/__resolution-watch-bridge.ts')
+    const unrelated = join(cwd, 'src/__resolution-watch-unrelated.ts')
+    const entry = join(cwd, 'src/__resolution-watch-entry.tsx')
+    const source =
+      `import { css } from 'styled-system/css'\n` +
+      `import { shared } from './__resolution-watch-bridge'\n` +
+      `import { runtime } from './__resolution-watch-unrelated'\n` +
+      `export const className = css(shared)\nexport { runtime }\n`
+    writeFileSync(dependency, `export const shared = { color: 'red.300' }\n`)
+    writeFileSync(bridge, `export { shared } from './__resolution-watch-dependency'\n`)
+    writeFileSync(unrelated, `export const runtime = Math.random()\n`)
+    writeFileSync(entry, source)
+
+    const plugin = plugins({ cwd, reportSummary: false }).fold
+    const watched: string[] = []
+    const context = { addWatchFile: (file: string) => watched.push(file), environment: { name: 'client' } }
+
+    try {
+      await hookOf(plugin.buildStart)?.call(context as never, {} as never)
+      const result = await hookOf(plugin.transform)?.call(context as never, source, entry, {} as never)
+      const code = typeof result === 'string' ? result : result?.code
+
+      expect(code).toContain('c_red.300')
+      expect(watched.sort()).toEqual([bridge, dependency].sort())
+    } finally {
+      rmSync(dependency, { force: true })
+      rmSync(bridge, { force: true })
+      rmSync(unrelated, { force: true })
+      rmSync(entry, { force: true })
+    }
+  })
+
+  test('watches and invalidates every source read while evaluating an imported helper', async () => {
+    const leaf = join(cwd, 'src/__evaluated-helper-leaf.ts')
+    const helper = join(cwd, 'src/__evaluated-helper.ts')
+    const unrelated = join(cwd, 'src/__evaluated-helper-unrelated.ts')
+    const entry = join(cwd, 'src/__evaluated-helper-entry.tsx')
+    const source =
+      `import { css } from 'styled-system/css'\n` +
+      `import { decorate } from './__evaluated-helper'\n` +
+      `import { runtime } from './__evaluated-helper-unrelated'\n` +
+      `export const className = css(decorate())\nexport { runtime }\n`
+    const tone = (color: string) => `export const tone = { color: '${color}' }\n`
+    const decorate = () =>
+      `import { tone } from './__evaluated-helper-leaf'\n` +
+      `export const decorate = () => ({ ...tone, padding: '2' })\n`
+    writeFileSync(leaf, tone('red.300'))
+    writeFileSync(helper, decorate())
+    writeFileSync(unrelated, `export const runtime = Math.random()\n`)
+    writeFileSync(entry, source)
+
+    const plugin = plugins({ cwd, reportSummary: false }).fold
+    const watched: string[] = []
+    const environment = { name: 'client' }
+    const context = { addWatchFile: (file: string) => watched.push(file), environment }
+    const transform = hookOf(plugin.transform)!
+    const transformed = { id: entry }
+    const invalidated: string[] = []
+    const graph = {
+      getModuleById: (id: string) => (id === entry ? transformed : undefined),
+      getModulesByFile: () => undefined,
+      invalidateModule: (module: typeof transformed) => invalidated.push(module.id),
+    }
+
+    try {
+      await hookOf(plugin.buildStart)?.call(context as never, {} as never)
+      const first = await transform.call(context as never, source, entry, {} as never)
+      const firstCode = typeof first === 'string' ? first : first?.code
+
+      expect(firstCode).toContain('c_red.300')
+      expect(watched.sort()).toEqual([helper, leaf].sort())
+      expect(watched).not.toContain(unrelated)
+
+      writeFileSync(leaf, tone('blue.500'))
+      hookOf(plugin.watchChange)?.call({} as never, leaf, { event: 'update' } as never)
+      const update = hookOf(plugin.hotUpdate)?.call(
+        { environment: { ...environment, moduleGraph: graph } } as never,
+        { file: leaf, modules: [] } as never,
+      )
+
+      expect(invalidated, 'the dependency map reaches the compiled importer').toEqual([entry])
+      expect(update).toEqual([transformed])
+
+      watched.length = 0
+      const second = await transform.call(context as never, source, entry, {} as never)
+      const secondCode = typeof second === 'string' ? second : second?.code
+      expect(secondCode).toContain('c_blue.500')
+      expect(secondCode).not.toContain('c_red.300')
+      expect(watched.sort(), 'the authoritative transform retains the evaluated closure').toEqual([helper, leaf].sort())
+
+      invalidated.length = 0
+      writeFileSync(leaf, tone('red.300'))
+      hookOf(plugin.watchChange)?.call({} as never, leaf, { event: 'update' } as never)
+      const repeatedUpdate = hookOf(plugin.hotUpdate)?.call(
+        { environment: { ...environment, moduleGraph: graph } } as never,
+        { file: leaf, modules: [] } as never,
+      )
+
+      expect(invalidated, 'the next edit still reaches the compiled importer').toEqual([entry])
+      expect(repeatedUpdate).toEqual([transformed])
+      const third = await transform.call(context as never, source, entry, {} as never)
+      const thirdCode = typeof third === 'string' ? third : third?.code
+      expect(thirdCode).toContain('c_red.300')
+      expect(thirdCode).not.toContain('c_blue.500')
+
+      const localSource =
+        `import { css } from 'styled-system/css'\n` +
+        `import { decorate } from './__evaluated-helper'\n` +
+        `export const className = css({ color: 'green.400' })\nexport { decorate }\n`
+      watched.length = 0
+      writeFileSync(entry, localSource)
+      const local = await transform.call(context as never, localSource, entry, {} as never)
+      const localCode = typeof local === 'string' ? local : local?.code
+      expect(localCode).toContain('c_green.400')
+      expect(watched, 'a changed importer does not retain its old semantic targets').toEqual([])
+    } finally {
+      rmSync(leaf, { force: true })
+      rmSync(helper, { force: true })
+      rmSync(unrelated, { force: true })
+      rmSync(entry, { force: true })
+    }
+  })
+
+  test('replays evaluated-helper reads into independent query and environment states', async () => {
+    const leaf = join(cwd, 'src/__cached-helper-leaf.ts')
+    const helper = join(cwd, 'src/__cached-helper.ts')
+    const entry = join(cwd, 'src/__cached-helper-entry.tsx')
+    const clientId = `${entry}?client`
+    const ssrId = `${entry}?ssr`
+    const source =
+      `import { css } from 'styled-system/css'\n` +
+      `import { decorate } from './__cached-helper'\n` +
+      `export const className = css(decorate())\n`
+    const tone = (color: string) => `export const tone = { color: '${color}' }\n`
+    writeFileSync(leaf, tone('red.300'))
+    writeFileSync(
+      helper,
+      `import { tone } from './__cached-helper-leaf'\n` + `export const decorate = () => ({ ...tone, padding: '2' })\n`,
+    )
+    writeFileSync(entry, source)
+
+    const plugin = plugins({ cwd, reportSummary: false }).fold
+    const buildStart = hookOf(plugin.buildStart)!
+    const transform = hookOf(plugin.transform)!
+    const watchChange = hookOf(plugin.watchChange)!
+    const hotUpdate = hookOf(plugin.hotUpdate)!
+    const watched = { client: [] as string[], ssr: [] as string[] }
+    const context = (name: keyof typeof watched) => ({
+      addWatchFile: (file: string) => watched[name].push(file),
+      environment: { name },
+    })
+    const clientModule = { id: clientId }
+    const ssrModule = { id: ssrId }
+    const invalidated = { client: [] as string[], ssr: [] as string[] }
+    const graph = (name: keyof typeof invalidated, module: typeof clientModule) => ({
+      getModuleById: (id: string) => (id === module.id ? module : undefined),
+      getModulesByFile: () => undefined,
+      invalidateModule: (candidate: typeof module) => invalidated[name].push(candidate.id),
+    })
+
+    try {
+      await buildStart.call(context('client') as never, {} as never)
+      const client = await transform.call(context('client') as never, source, clientId, {} as never)
+      await buildStart.call(context('ssr') as never, {} as never)
+      const ssr = await transform.call(context('ssr') as never, source, ssrId, {} as never)
+      const codeOf = (result: typeof client) => (typeof result === 'string' ? result : result?.code)
+
+      expect(codeOf(client)).toContain('c_red.300')
+      expect(codeOf(ssr)).toContain('c_red.300')
+      expect(watched.client.sort()).toEqual([helper, leaf].sort())
+      expect(watched.ssr.sort(), 'the global cache hit replays reads into SSR').toEqual([helper, leaf].sort())
+
+      writeFileSync(leaf, tone('blue.500'))
+      watchChange.call({} as never, leaf, { event: 'update' } as never)
+      const clientUpdate = hotUpdate.call(
+        { environment: { name: 'client', moduleGraph: graph('client', clientModule) } } as never,
+        { file: leaf, modules: [] } as never,
+      )
+      const ssrUpdate = hotUpdate.call(
+        { environment: { name: 'ssr', moduleGraph: graph('ssr', ssrModule) } } as never,
+        { file: leaf, modules: [] } as never,
+      )
+
+      expect(invalidated.client).toEqual([clientId])
+      expect(invalidated.ssr).toEqual([ssrId])
+      expect(clientUpdate).toEqual([clientModule])
+      expect(ssrUpdate).toEqual([ssrModule])
+
+      watched.client.length = 0
+      watched.ssr.length = 0
+      const nextClient = await transform.call(context('client') as never, source, clientId, {} as never)
+      const nextSsr = await transform.call(context('ssr') as never, source, ssrId, {} as never)
+      expect(codeOf(nextClient)).toContain('c_blue.500')
+      expect(codeOf(nextSsr)).toContain('c_blue.500')
+      expect(watched.client.sort()).toEqual([helper, leaf].sort())
+      expect(watched.ssr.sort()).toEqual([helper, leaf].sort())
+    } finally {
+      rmSync(leaf, { force: true })
+      rmSync(helper, { force: true })
+      rmSync(entry, { force: true })
+    }
+  })
+
+  test('stylesheet ownership is taken from the current environment generation', async () => {
+    const entry = join(cwd, 'src/__environment-css-owner.tsx')
+    const source =
+      `import { css } from 'styled-system/css'\n` + `export const className = css({ width: '[70.303px]' })\n`
+    const { css, fold: compiler } = plugins({ cwd, reportSummary: false })
+    const config = { command: 'build', root: cwd, build: { sourcemap: false } }
+    await hookOf(css.configResolved)?.call({} as never, config as never)
+    await hookOf(compiler.configResolved)?.call({} as never, config as never)
+    const resolvedCss = hookOf(css.resolveId)!.call({} as never, VIRTUAL_CSS_ID, undefined, {} as never) as string
+    const environment = (name: string) => ({ name, config: { build: { emitAssets: true } } })
+    const compile = async (name: string, importsCss: boolean) => {
+      const currentEnvironment = environment(name)
+      const ids = [entry, ...(importsCss ? [resolvedCss] : [])]
+      const context = {
+        addWatchFile() {},
+        environment: currentEnvironment,
+        getModuleIds: () => ids.values(),
+        getModuleInfo: () => null,
+      }
+      await hookOf(compiler.buildStart)?.call(context as never, {} as never)
+      await hookOf(compiler.transform)?.call(context as never, source, entry, {} as never)
+      hookOf(compiler.buildEnd)?.call(context as never, undefined as never)
+    }
+
+    writeFileSync(entry, source)
+    try {
+      // `server` served the virtual module in an older generation. The completed sibling owns
+      // the live stylesheet now, while the server's current graph deliberately does not.
+      await hookOf(css.load)?.call(
+        { addWatchFile() {}, environment: environment('server') } as never,
+        resolvedCss,
+        undefined as never,
+      )
+      await hookOf(css.load)?.call(
+        { addWatchFile() {}, environment: environment('client') } as never,
+        resolvedCss,
+        undefined as never,
+      )
+      await compile('client', true)
+      await compile('server', false)
+
+      const generateBundle = hookOf(css.generateBundle)!
+      await expect(
+        generateBundle.call({ environment: environment('server') } as never, {} as never, {} as never, false),
+      ).resolves.toBeUndefined()
+    } finally {
+      rmSync(entry, { force: true })
+    }
+  }, 60_000)
 
   test('merges recipe and css styles before class allocation', async () => {
     const source = `

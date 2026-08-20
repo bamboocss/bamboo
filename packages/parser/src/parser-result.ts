@@ -1,5 +1,5 @@
 import type { DeadImport, ParserOptions } from '@bamboocss/core'
-import { box } from '@bamboocss/extractor'
+import { type BoxNode, box } from '@bamboocss/extractor'
 import { BambooError, getOrCreateSet } from '@bamboocss/shared'
 import type { ParserResultInterface, ResultItem } from '@bamboocss/types'
 import { findUnresolvedRecipeStyles, findUnresolvedStyles, type UnresolvedStyle } from './unresolved-styles'
@@ -19,6 +19,8 @@ export class ParserResult implements ParserResultInterface {
 
   filePath: string | undefined
   encoder: ParserOptions['encoder']
+  /** Resolver targets crossed while extracting values which contributed CSS. */
+  private dependencies = new Set<string>()
 
   /**
    * `css()` calls whose styles the build could not fully see.
@@ -256,6 +258,46 @@ export class ParserResult implements ParserResultInterface {
     return this
   }
 
+  /** @internal Called only by the extractor-facing resolver, not by import classification. */
+  addDependency(filePath: string) {
+    this.dependencies.add(filePath.replaceAll('\\', '/'))
+  }
+
+  /**
+   * Local source paths crossed while resolving values this extraction actually encoded.
+   *
+   * The Project ledger deliberately records every local import, including ordinary runtime
+   * bindings. Box nodes retain the declaration node followed while resolving a style value,
+   * so this is the narrow semantic target set consumers can feed back to that ledger to recover
+   * re-export/barrel paths without watching unrelated imports.
+   */
+  getDependencies() {
+    const own = this.filePath?.replaceAll('\\', '/')
+    const paths = new Set(this.dependencies)
+    const seen = new Set<BoxNode>()
+    const visit = (node: BoxNode | undefined) => {
+      if (!node || seen.has(node)) return
+      seen.add(node)
+
+      const path = node.getNode?.()?.getSourceFile().getFilePath().replaceAll('\\', '/')
+      if (path && path !== own) paths.add(path)
+
+      if (box.isMap(node)) {
+        for (const child of node.value.values()) visit(child)
+      } else if (box.isArray(node)) {
+        for (const child of node.value) visit(child)
+      }
+    }
+
+    for (const item of this.all) {
+      // A call of an imported inline recipe records compiler visibility but encodes no CSS;
+      // the declaring file owns those rules and is watched by its own extraction result.
+      if (item.type !== 'cva-call') visit(item.box)
+    }
+
+    return [...paths].sort()
+  }
+
   merge(result: ParserResult) {
     result.css.forEach((item) => this.css.add(this.append(item)))
     result.cva.forEach((item) => this.cva.add(this.append(item)))
@@ -278,6 +320,7 @@ export class ParserResult implements ParserResultInterface {
     // as it parses — but this is public API on an exported class, and a consumer that does
     // merge should not silently lose the diagnostics.
     if (result.unresolved.length) this.unresolved.push(...result.unresolved)
+    for (const dependency of result.dependencies) this.dependencies.add(dependency)
 
     return this
   }

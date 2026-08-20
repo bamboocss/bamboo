@@ -284,6 +284,7 @@ export async function main() {
         ctx.watchFiles(async (event, file) => {
           if (event === 'unlink') {
             ctx.project.removeSourceFile(ctx.runtime.path.abs(cwd, file))
+            await cssgen(ctx, options)
           } else if (event === 'change') {
             ctx.project.reloadSourceFile(ctx.runtime.path.abs(cwd, file))
             await cssgen(ctx, options)

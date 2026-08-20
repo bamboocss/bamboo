@@ -3,9 +3,14 @@ import type { Config, BambooPlugin } from '@bamboocss/types'
 import { pluginSvelte } from '@bamboocss/plugin-svelte'
 import { pluginVue } from '@bamboocss/plugin-vue'
 import { BambooContext } from './create-context'
-import { loadTsConfig } from './load-tsconfig'
+import { loadTsConfig, rememberTsConfigResolutionFiles } from './load-tsconfig'
 
 const RESOLVED_HOOKS_NAME = '__resolved__'
+const AUTO_PARSER_HOOKS = Object.freeze(['vue', 'svelte'] as const)
+const autoPluginFactories: Record<(typeof AUTO_PARSER_HOOKS)[number], () => BambooPlugin> = {
+  svelte: pluginSvelte,
+  vue: pluginVue,
+}
 
 /**
  * Built-in plugins that are auto-injected when using the CLI or PostCSS plugin.
@@ -19,16 +24,22 @@ const RESOLVED_HOOKS_NAME = '__resolved__'
  * ever set. List the plugin yourself to use it.
  */
 function getAutoPlugins(): BambooPlugin[] {
-  return [pluginVue(), pluginSvelte()]
+  return AUTO_PARSER_HOOKS.map((identity) => autoPluginFactories[identity]())
 }
 
-/**
- * Load config and create context with auto-injected plugins.
- * Used by the CLI and PostCSS plugin.
- */
-export async function loadConfigAndCreateContext(
-  options: { cwd?: string; config?: Config; configPath?: string; dev?: boolean } = {},
-) {
+interface NodeConfigOptions {
+  cwd?: string
+  config?: Config
+  configPath?: string
+  dev?: boolean
+}
+
+interface PreparedNodeConfig {
+  conf: Awaited<ReturnType<typeof loadConfig>>
+}
+
+/** Resolve all config state without constructing the parser Project owned by BambooContext. */
+async function prepareNodeConfig(options: NodeConfigOptions = {}): Promise<PreparedNodeConfig> {
   const { config, configPath } = options
 
   const cwd = options.cwd ?? options?.config?.cwd ?? process.cwd()
@@ -57,11 +68,22 @@ export async function loadConfigAndCreateContext(
   conf.hooks = mergeHooks([...autoPlugins, { name: RESOLVED_HOOKS_NAME, hooks: conf.hooks }])
   conf.config.plugins = [...autoPlugins, ...(conf.config.plugins ?? [])]
 
-  const tsConfResult = await loadTsConfig(conf, cwd)
+  const tsconfigResolutionFiles: { value?: readonly string[] } = {}
+  const tsConfResult = await loadTsConfig(conf, cwd, undefined, tsconfigResolutionFiles)
 
   if (tsConfResult) {
     Object.assign(conf, tsConfResult)
   }
+  rememberTsConfigResolutionFiles(conf, tsconfigResolutionFiles.value ?? [])
 
+  return { conf }
+}
+
+/**
+ * Load config and create context with auto-injected plugins.
+ * Used by the CLI and PostCSS plugin.
+ */
+export async function loadConfigAndCreateContext(options: NodeConfigOptions = {}) {
+  const { conf } = await prepareNodeConfig(options)
   return new BambooContext(conf)
 }
