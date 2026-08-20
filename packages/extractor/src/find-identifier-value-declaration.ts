@@ -6,6 +6,7 @@ import {
   Node,
   ParameterDeclaration,
   VariableDeclaration,
+  ts,
 } from 'ts-morph'
 import { getExportedVarDeclarationWithName, getModuleSpecifierSourceFile } from './maybe-box-node'
 import type { BoxContext } from './types'
@@ -79,6 +80,68 @@ const getInnermostScope = (from: Node) => {
   return scope
 }
 
+/**
+ * The identifiers in a scope that could name a declaration, grouped by the name they bind.
+ *
+ * Only the structural half of `getDeclarationFor` is decided here — is this identifier the name
+ * node of a declaration, or an import specifier's name or alias — because that is the whole of
+ * what it tests before it does anything observable. Everything expensive and context-dependent
+ * (crossing a module boundary, `ctx.recordDependency`) stays in `getDeclarationFor`, called
+ * below on the candidates in document order, exactly as the walk used to call it.
+ */
+type DeclarationIndex = Map<string, Identifier[]>
+
+/**
+ * Keyed on the compiler node, never the ts-morph wrapper.
+ *
+ * `Project.replaceWithText` — which is how a re-parse installs a source transform — keeps the
+ * wrapper identity and swaps the compiler node underneath it. A wrapper-keyed cache would
+ * therefore answer a rebuild from the previous revision of the file, which is a wrong
+ * stylesheet rather than a slow one. Keying on the compiler node makes the cache
+ * self-invalidating: ts-morph reuses a compiler node exactly when its subtree did not change.
+ */
+const declarationIndexes = new WeakMap<ts.Node, DeclarationIndex>()
+
+const isDeclarationName = (node: Identifier, parent: Node): boolean => {
+  if (
+    Node.isVariableDeclaration(parent) ||
+    Node.isParameterDeclaration(parent) ||
+    Node.isFunctionDeclaration(parent) ||
+    Node.isEnumDeclaration(parent) ||
+    Node.isBindingElement(parent)
+  ) {
+    return parent.getNameNode() == node
+  }
+  return Node.isImportSpecifier(parent) && (parent.getNameNode() == node || parent.getAliasNode() == node)
+}
+
+/**
+ * Walk a scope once, so that every later lookup inside it is a map read.
+ *
+ * This used to be a `forEachDescendant` per identifier, widening to each enclosing scope and
+ * re-walking from scratch, calling `getText()` on every identifier it passed. A module whose
+ * declarations are referenced n times paid n full traversals of itself, and traversal is where
+ * ts-morph charges for wrapping each node — it measured ~10% of extraction on its own.
+ */
+const declarationIndexFor = (scope: Node): DeclarationIndex => {
+  const cached = declarationIndexes.get(scope.compilerNode)
+  if (cached) return cached
+
+  const index: DeclarationIndex = new Map()
+  scope.forEachDescendant((node) => {
+    if (!Node.isIdentifier(node)) return
+    const parent = node.getParent()
+    if (!parent || !isDeclarationName(node, parent)) return
+    const name = node.getText()
+    const declared = index.get(name)
+    if (declared) declared.push(node)
+    else index.set(name, [node])
+  })
+
+  declarationIndexes.set(scope.compilerNode, index)
+  return index
+}
+
 export function findIdentifierValueDeclaration(
   identifier: Identifier,
   stack: Node[],
@@ -86,62 +149,47 @@ export function findIdentifierValueDeclaration(
   visitedsWithStack: WeakMap<Node, Node[]> = new Map(),
 ): ReturnType<typeof getDeclarationFor> | undefined {
   let scope = identifier as Node | undefined
-  let foundNode: ReturnType<typeof getDeclarationFor> | undefined
-  let isUnresolvable = false
   let count = 0
   const innerStack = [] as Node[]
+  const refName = identifier.getText()
 
   do {
     scope = getInnermostScope(scope!)
     count++
     if (!scope) return
 
-    const refName = identifier.getText()
+    // Document order within the scope, which is the order the traversal reached them in, so
+    // the first candidate that resolves is the same one it used to stop on.
+    for (const candidate of declarationIndexFor(scope).get(refName) ?? []) {
+      if (candidate == identifier) continue
+      // Widening to an enclosing scope re-reaches every candidate the inner scope already
+      // rejected. Skipping them is what the visited map did for whole subtrees.
+      if (visitedsWithStack.has(candidate)) continue
+      visitedsWithStack.set(candidate, innerStack)
 
-    scope.forEachDescendant((node, traversal) => {
-      if (visitedsWithStack.has(node)) {
-        traversal.skip()
-        innerStack.push(...visitedsWithStack.get(node)!)
-        return
-      }
+      const declarationStack = [candidate] as Node[]
+      const maybeDeclaration = getDeclarationFor(candidate, declarationStack, ctx)
+      if (!maybeDeclaration) continue
 
-      if (node == identifier) return
-      visitedsWithStack.set(node, innerStack)
-
-      if (Node.isIdentifier(node) && node.getText() == refName) {
-        const declarationStack = [node] as Node[]
-        const maybeDeclaration = getDeclarationFor(node, declarationStack, ctx)
-        if (maybeDeclaration) {
-          if (Node.isParameterDeclaration(maybeDeclaration)) {
-            const initializer = maybeDeclaration.getInitializer()
-            const typeNode = maybeDeclaration.getTypeNode()
-            if (initializer) {
-              innerStack.push(...declarationStack.concat(initializer))
-              foundNode = maybeDeclaration
-            } else if (typeNode && Node.isTypeLiteral(typeNode)) {
-              innerStack.push(...declarationStack.concat(typeNode))
-              foundNode = maybeDeclaration
-            } else {
-              isUnresolvable = true
-            }
-
-            traversal.stop()
-            return
-          }
-
-          innerStack.push(...declarationStack)
-          foundNode = maybeDeclaration
-          traversal.stop()
+      if (Node.isParameterDeclaration(maybeDeclaration)) {
+        const initializer = maybeDeclaration.getInitializer()
+        const typeNode = maybeDeclaration.getTypeNode()
+        if (initializer) {
+          innerStack.push(...declarationStack.concat(initializer))
+        } else if (typeNode && Node.isTypeLiteral(typeNode)) {
+          innerStack.push(...declarationStack.concat(typeNode))
+        } else {
+          // A parameter with neither an initializer nor a type literal is unresolvable, and
+          // deliberately ends the search rather than widening past it.
+          return
         }
-      }
-    })
-
-    if (foundNode || isUnresolvable) {
-      if (foundNode) {
         stack.push(...innerStack)
+        return maybeDeclaration
       }
 
-      return foundNode
+      innerStack.push(...declarationStack)
+      stack.push(...innerStack)
+      return maybeDeclaration
     }
-  } while (scope && !Node.isSourceFile(scope) && !foundNode && !isUnresolvable && count < 100)
+  } while (scope && !Node.isSourceFile(scope) && count < 100)
 }

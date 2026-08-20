@@ -57,6 +57,31 @@ describe('watch invalidation', () => {
     expect(stylesOf(ctx, 'app/src/app.tsx')).toEqual([{ color: 'blue.700', padding: '8' }, { margin: '2' }])
   })
 
+  test('an edited declaration in the same file is not answered from the previous revision', () => {
+    // The extractor indexes each scope's declaration names so it does not re-walk the scope
+    // per identifier. That index is keyed on the compiler node rather than the ts-morph
+    // wrapper, because a re-parse keeps the wrapper and swaps the compiler node underneath
+    // it — a wrapper-keyed index would answer this rebuild with the previous revision's
+    // declaration, which is a wrong stylesheet rather than a slow one.
+    const ctx = createProject({
+      'app/src/local.tsx': `${CSS_IMPORT}
+       const shade = 'red.500'
+       export const App = () => <div className={css({ color: shade, borderColor: shade })} />`,
+    })
+
+    expect(stylesOf(ctx, 'app/src/local.tsx')).toEqual([{ color: 'red.500', borderColor: 'red.500' }])
+
+    onChange(
+      ctx,
+      'app/src/local.tsx',
+      `${CSS_IMPORT}
+       const shade = 'blue.700'
+       export const App = () => <div className={css({ color: shade, borderColor: shade })} />`,
+    )
+
+    expect(stylesOf(ctx, 'app/src/local.tsx')).toEqual([{ color: 'blue.700', borderColor: 'blue.700' }])
+  })
+
   test('regenerates through a re-export barrel', () => {
     const ctx = createProject({
       'app/src/tokens.ts': `export const base = { color: 'red.500' }`,
