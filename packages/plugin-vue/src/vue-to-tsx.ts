@@ -1,6 +1,19 @@
-import { parse } from '@vue/compiler-sfc'
 import MagicString from 'magic-string'
+import { createRequire } from 'node:module'
 import type { BaseElementNode } from '@vue/compiler-core'
+
+/**
+ * Vue's SFC compiler, loaded the first time a `.vue` file is actually parsed.
+ *
+ * This plugin is auto-injected into every project, so a static import made every build of every
+ * project — Vue or not — pay 55ms to load a compiler most of them never call. The `parser:before`
+ * hook is synchronous, so this is a lazy `require` rather than a dynamic import.
+ */
+let parseSfc: typeof import('@vue/compiler-sfc').parse | undefined
+const parse: typeof import('@vue/compiler-sfc').parse = (...args) => {
+  const load = (parseSfc ??= createRequire(import.meta.url)('@vue/compiler-sfc').parse)
+  return load(...args)
+}
 
 /**
  * @see https://github.com/vuejs/core/blob/d2c3d8b70b2df6e16f053a7ac58e6b04e7b2078f/packages/compiler-core/src/ast.ts#L28-L60

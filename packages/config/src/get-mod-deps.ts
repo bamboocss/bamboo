@@ -1,10 +1,21 @@
 import type { ConfigTsOptions } from '@bamboocss/types'
 import fs from 'fs'
+import { createRequire } from 'node:module'
 import path from 'path'
 import type { TSConfig } from 'pkg-types'
-import ts from 'typescript'
 import { resolveTsPathPattern } from './resolve-ts-path-pattern'
 import { type PathMapping } from './ts-config-paths'
+
+/**
+ * The compiler, loaded the first time a bare specifier in a config file needs resolving.
+ *
+ * This module is re-exported from the package entrypoint, so a static import made every
+ * consumer of `@bamboocss/config` load a second full TypeScript — 155ms, on top of the copy
+ * ts-morph already bundles — for one `resolveModuleName` call that a config with only relative
+ * imports never reaches. `getConfigDependencies` is synchronous, so this is a lazy `require`.
+ */
+let compiler: typeof import('typescript') | undefined
+const ts = () => (compiler ??= createRequire(import.meta.url)('typescript'))
 
 const jsExtensions = ['.js', '.cjs', '.mjs']
 
@@ -96,7 +107,8 @@ function getDeps(opts: GetDepsOptions, fromAlias?: string) {
     try {
       // this is for internal monorepo packages that don't have a `dist`
       // and instead use a package.json `main` field that points to a src/xxx.ts file
-      const found = ts.resolveModuleName(mod, absoluteFile, compilerOptions, ts.sys).resolvedModule
+      const compiler = ts()
+      const found = compiler.resolveModuleName(mod, absoluteFile, compilerOptions, compiler.sys).resolvedModule
       if (found && found.extension.endsWith('ts')) {
         getDeps(Object.assign({}, nextOpts, { filename: found.resolvedFileName }))
         return

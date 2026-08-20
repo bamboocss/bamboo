@@ -55,6 +55,7 @@ export class Builder {
   private explicitDepsMeta: FileChanges | undefined
   private affecteds: DiffConfigResult | undefined
   private configDependencies: Set<string> = new Set()
+  private pendingConfigCrawl: SetupContextOptions | undefined
   /** Last complete included inventory, including members which have since been deleted. */
   private sourceInventory: string[] | undefined
   /** Existing included owners selected by the last resolution-ledger invalidation pass. */
@@ -116,24 +117,34 @@ export class Builder {
     }
   }
 
+  /**
+   * Remember what to crawl; do not crawl yet.
+   *
+   * The crawl walks the config's own import graph, and resolving a bare specifier there loads a
+   * whole TypeScript compiler. Only `registerDependency` reads the result, and only the PostCSS
+   * plugin calls that — the CLI and the Vite plugin (which crawls separately, when it watches)
+   * paid ~155ms of compiler load per build for a set neither of them ever read.
+   */
   setConfigDependencies(options: SetupContextOptions) {
+    this.pendingConfigCrawl = options
+
+    const cwd = options?.cwd ?? this.context?.config.cwd ?? process.cwd()
+    for (const file of this.context?.conf.dependencies ?? []) this.configDependencies.add(resolve(cwd, file))
+  }
+
+  /** Crawl on first read, once per `setConfigDependencies`. */
+  private crawlConfigDependencies() {
+    const options = this.pendingConfigCrawl
+    if (!options) return
+    this.pendingConfigCrawl = undefined
+
     const tsOptions = this.context?.conf.tsOptions ?? { baseUrl: undefined, pathMappings: [] }
     const compilerOptions = this.context?.conf.tsconfig?.compilerOptions ?? {}
-
-    const { deps: foundDeps } = getConfigDependencies(options.configPath, tsOptions, compilerOptions)
-    const cwd = options?.cwd ?? this.context?.config.cwd ?? process.cwd()
-
-    const configDeps = new Set([
-      ...foundDeps,
-      ...(this.context?.conf.dependencies ?? []).map((file) => resolve(cwd, file)),
-    ])
-
-    configDeps.forEach((file) => {
-      this.configDependencies.add(file)
-    })
+    const { deps } = getConfigDependencies(options.configPath, tsOptions, compilerOptions)
+    deps.forEach((file) => this.configDependencies.add(file))
 
     logger.debug('builder', 'Config dependencies')
-    logger.debug('builder', configDeps)
+    logger.debug('builder', deps)
   }
 
   setup = async (options: { configPath?: string; cwd?: string; dev?: boolean } = {}) => {
@@ -662,6 +673,7 @@ export class Builder {
 
   registerDependency = (fn: (dep: Message) => void) => {
     const ctx = this.getContextOrThrow()
+    this.crawlConfigDependencies()
 
     for (const fileOrGlob of ctx.config.include) {
       const dependency = parseDependency(fileOrGlob)
