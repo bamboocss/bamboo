@@ -1,5 +1,72 @@
 # @bamboocss/vite
 
+## 1.46.0
+
+### Minor Changes
+
+- 0135182: Prune the stylesheet in SSR builds, where it never ran before.
+
+  `pruneCss` removes rules for atoms no compiled module can emit. It held pruning back until every environment of the
+  run had contributed, because the stylesheet is emitted and finalized by the environment that _imports_ it — the client
+  — which finishes before the server environment has transformed a single module.
+
+  That condition is never met under react-router, Remix, Nuxt, SvelteKit or Qwik: every one builds the client first. So
+  the feature was inert in most production apps, and silently, because a build with nothing to prune looks exactly like
+  one that skipped it. Measured on a react-router app, a component file imported by nothing still contributed its full
+  7.2 kB of rules to the shipped sheet.
+
+  It now prunes against what the emitting environment compiled. The case that made waiting look necessary — a class only
+  the server graph reaches — is caught rather than shipped: `buildEnd` intersects every later environment's compiled
+  classes against what was pruned and fails the build naming them, instead of leaving markup that references a class
+  with no rule behind it.
+
+  ```
+  bamboocss: 2 class(es) compiled in the "ssr" environment were already pruned out of a
+  stylesheet emitted by an earlier one. Elements carrying them would render unstyled.
+  ```
+
+  A styled component rendering only on the server is what trips this; anything the client also renders is compiled in
+  both environments and never reaches it. `pruneCss: false` remains the escape hatch and still ships the whole extracted
+  stylesheet.
+
+  How the run is driven no longer changes the outcome — `vite build`, `builder.buildApp()` and a script calling
+  `builder.build(environment)` itself all behave the same way, so the advice to configure `builder` for pruning's sake
+  is withdrawn. The environment list is still read, now only to explain a later failure in debug output.
+
+### Patch Changes
+
+- 37ca1e8: Defer a context's initial parser source loading and AST creation until its Project first performs a
+  source-graph operation. Source-read, ts-morph Project construction, and AST construction errors now surface on that
+  first source operation rather than during context construction. Standalone parser Projects stay eager with their
+  native mutable raw-project property; the context-only deferred wrapper exposes its raw ts-morph Project through a
+  materializing non-configurable accessor whose setter remains the supported replacement boundary. During its atomic
+  preload, every public wrapper entry rejects reentrant access before exposing live state or invoking callbacks.
+
+  Route every Bamboo cross-file value, helper, re-export, and imported-recipe lookup through a Project-owned resolution
+  ledger. Local sources outside `include` are loaded on demand, external packages remain outside the source graph, and
+  every semantically traversed local source runs `parser:before` once per source revision before extraction or ledger
+  publication, so consumer-first and dependency-first parsing agree. Reverse dependencies reflect that exact effective
+  AST. Missing local `paths`, `baseUrl`, package-import, and package-self targets remain pending across add/remove
+  cycles, and successful local fallbacks retain missing higher-priority candidates so an add event redirects their
+  importers, while external packages stay outside the graph. The parser exposes internal, read-only resolution facts and
+  resolved-source paths for transactional Node consumers; extractor callers that need cross-file traversal can supply
+  the same resolver through `BoxContext`.
+
+  Keep incremental extraction and CSS output aligned with that ledger. Builder, CLI watch, and Vite now invalidate the
+  complete semantic dependent closure—including excluded local helpers and resolution-config changes—without treating
+  runtime-only imports as style dependencies. Recreated files and higher-priority alias targets are detected, removed
+  files regenerate CLI output, client/SSR query variants retain their own cached dependency facts, and file-owner order
+  is reconciled against the current inventory so incremental CSS remains byte-identical to a clean build.
+
+- Updated dependencies [37ca1e8]
+  - @bamboocss/node@1.46.0
+  - @bamboocss/extractor@1.46.0
+  - @bamboocss/core@1.46.0
+  - @bamboocss/types@1.46.0
+  - @bamboocss/config@1.46.0
+  - @bamboocss/logger@1.46.0
+  - @bamboocss/shared@1.46.0
+
 ## 1.45.5
 
 ### Patch Changes
