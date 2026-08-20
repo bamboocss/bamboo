@@ -225,13 +225,74 @@ describe('the virtual stylesheet', () => {
           return css
         },
       })
-      await Promise.all([first, concurrent])
+      const [firstCss, concurrentCss] = await Promise.all([first, concurrent])
 
-      expect(emit).toHaveBeenCalledTimes(2)
+      // One generation serves every environment. The sheet is a function of the sources, so
+      // the concurrent SSR load joins the client's pass rather than chaining an identical
+      // extraction and optimization behind it — and both validate against the inventory of
+      // the one pass that ran.
+      expect(emit).toHaveBeenCalledTimes(1)
+      expect(concurrentCss).toBe(firstCss)
       expect(
         validationBuildCounts,
-        'each result is validated before the next generation mutates its inventory',
-      ).toEqual([1, 2])
+        'each result is validated before any later generation mutates its inventory',
+      ).toEqual([1, 1])
+    } finally {
+      emit.mockRestore()
+    }
+  }, 60_000)
+
+  test('one generation serves every load until a watched file changes', async () => {
+    const emit = vi.spyOn(Builder.prototype, 'emit')
+    const plugin = bamboocssCss({ cwd, session: createStaticCompilationSession() })
+
+    try {
+      await hookOf(plugin.configResolved)?.call(
+        {} as never,
+        { build: { sourcemap: false }, command: 'serve', configFileDependencies: [], root: cwd } as never,
+      )
+      const resolved = hookOf(plugin.resolveId)!.call({} as never, VIRTUAL_CSS_ID, undefined, {} as never) as string
+
+      const watched: string[] = []
+      const first = await hookOf(plugin.load)!.call(
+        { addWatchFile: (file: string) => watched.push(file) } as never,
+        resolved,
+        undefined as never,
+      )
+      const builds = emit.mock.calls.length
+
+      // Nothing changed, so the SSR environment's load is answered from the pass above — and
+      // still registers its own watch files, or that graph would never invalidate the sheet.
+      const laterWatched: string[] = []
+      const second = await hookOf(plugin.load)!.call(
+        { addWatchFile: (file: string) => laterWatched.push(file) } as never,
+        resolved,
+        undefined as never,
+      )
+      expect(second).toBe(first)
+      expect(emit).toHaveBeenCalledTimes(builds)
+      expect(laterWatched).toEqual(watched)
+
+      // A change to an extracted file starts a new generation; the next load regenerates.
+      const listeners = new Map<string, (file: string) => void>()
+      hookOf(plugin.configureServer)!.call(
+        {} as never,
+        {
+          environments: { client: { moduleGraph: { getModulesByFile: () => undefined } } },
+          moduleGraph: {
+            getModuleById: () => undefined,
+            getModulesByFile: () => undefined,
+            invalidateModule: () => {},
+          },
+          reloadModule: () => {},
+          watcher: { on: (event: string, listener: (file: string) => void) => listeners.set(event, listener) },
+        } as never,
+      )
+      listeners.get('change')!(watched.find((file) => file.endsWith('.tsx'))!)
+
+      const third = await hookOf(plugin.load)!.call({ addWatchFile() {} } as never, resolved, undefined as never)
+      expect(emit).toHaveBeenCalledTimes(builds + 1)
+      expect(third, 'the sources are byte-identical, so the regenerated sheet is too').toBe(first)
     } finally {
       emit.mockRestore()
     }

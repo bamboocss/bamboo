@@ -388,6 +388,50 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
   // The configured name is Vite's stable identity across hook contexts. Vite 5 has no
   // environment object and runs one graph, which deliberately shares the `default` state.
   const transformStateByEnvironment = new Map<string, EnvironmentTransformState>()
+
+  interface FoldMemoEntry {
+    result: FoldResult
+    parserDependencies: readonly string[]
+    /** Whether the fold ran the survivor scan, which `transform`'s artifact requires. */
+    reportedSurvivors: boolean
+  }
+  /**
+   * One fold per file content per change event, shared across environments and hooks.
+   *
+   * A single edit folds the same bytes repeatedly: `hotUpdate` provisionally re-folds every
+   * dependent once per environment to decide what to invalidate, then `transform` folds the
+   * edited module for the client graph, again for SSR, and once more for each update a
+   * framework re-drives — react-router's server-change trigger calls `reloadModule` per pass.
+   * All of them read the same shared ts-morph project under the same config, so the result is
+   * a function of the bytes alone and the repeats were pure cost: on the app this was measured
+   * on, four transforms of a 46 kB route module per edit, ~10 ms each.
+   *
+   * `watchChange` clears it, which is the exact validity window: entries are correct until a
+   * file event changes what a fold could resolve, and `watchChange` is the one hook Vite calls
+   * for every such event before any update work begins. The per-environment resolution closure
+   * is deliberately not memoized — `withResolutionClosure` is recomputed per consumer against
+   * that environment's own recorded dependencies.
+   *
+   * Keyed by path *and* content digest, not path alone, because one physical file is served
+   * as more than one module shape in the same event — react-router clips a route module down
+   * to its route exports for the client graph while SSR gets the full file — and a last-write
+   * key would make the two shapes evict each other on every pass.
+   *
+   * Dev only, like the verdict memo it sits beside: a build transforms each module once per
+   * environment with no bracketing events, and holding every module's fold for the length of a
+   * build is memory a one-shot pass has no reason to spend.
+   */
+  const foldMemoByContent = new Map<string, FoldMemoEntry>()
+  const foldMemoKey = (filePath: string, inputDigest: string) => `${filePath}\0${inputDigest}`
+  /**
+   * The Project resolution walk `withResolutionClosure` runs, memoized per change event.
+   *
+   * The walk is the dominant per-dependent cost once the fold itself is memoized — it runs
+   * once per dependent per environment with identical inputs, since both environments record
+   * the same fold dependencies for byte-identical source. Same bracketing as the fold memo:
+   * `watchChange` clears it, so no entry outlives the project state it was computed against.
+   */
+  const resolutionClosureMemo = new Map<string, readonly string[]>()
   interface TransformEpoch {
     id: number
     state: EnvironmentTransformState
@@ -1168,17 +1212,26 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
 
     try {
       const code = readFileSync(signature.path, 'utf8')
-      if (digest(code) !== signature.input) return false
+      const inputDigest = digest(code)
+      if (inputDigest !== signature.input) return false
 
-      // `addSourceFile` returns the tree it already holds when the text matches, which it does
-      // here by the line above — so this is a parse and a fold, not a re-parse of the module.
-      const sourceFile = ctx.project.addSourceFile(signature.path, code)
-      const parserResult = ctx.project.parseSourceFile(signature.path)
-      if (!parserResult) return false
+      let raw: FoldResult
+      let parserDependencies: readonly string[]
+      const memoKey = foldMemoKey(signature.path, inputDigest)
+      const memoized = foldMemoByContent.get(memoKey)
+      if (memoized) {
+        // Another environment's pass over this same event already folded these bytes. The
+        // digest comparison below stays per-environment; the fold itself never was.
+        raw = memoized.result
+        parserDependencies = memoized.parserDependencies
+      } else {
+        // `addSourceFile` returns the tree it already holds when the text matches, which it does
+        // here by the line above — so this is a parse and a fold, not a re-parse of the module.
+        const sourceFile = ctx.project.addSourceFile(signature.path, code)
+        const parserResult = ctx.project.parseSourceFile(signature.path)
+        if (!parserResult) return false
 
-      const result = withResolutionClosure(
-        signature.path,
-        foldSourceImpl({
+        raw = foldSourceImpl({
           ctx,
           code,
           parserResult,
@@ -1193,8 +1246,18 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
           // reads.
           reportSurvivors: false,
           sourceFile,
-        }),
-        parserResult.getDependencies(),
+        })
+        parserDependencies = parserResult.getDependencies()
+        // `reportedSurvivors: false` keeps `transform` from consuming this entry — its
+        // artifact needs the survivor scan this provisional fold skips. A later transform of
+        // the same bytes overwrites it with the reporting variant; `code` is identical in both.
+        foldMemoByContent.set(memoKey, { result: raw, parserDependencies, reportedSurvivors: false })
+      }
+
+      const result = withResolutionClosure(
+        signature.path,
+        raw,
+        parserDependencies,
         state.dependenciesByModule.get(dependent),
       )
 
@@ -1387,7 +1450,14 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
     for (const dependency of previousDependencies ?? []) targets.add(dependency)
     if (!targets.size) return result
 
-    for (const dependency of ctx.project.getDependencies(filePath, [...targets])) {
+    const targetList = [...targets]
+    const closureKey = command === 'serve' ? `${filePath}\0${targetList.slice().sort().join('|')}` : undefined
+    let reachable = closureKey ? resolutionClosureMemo.get(closureKey) : undefined
+    if (!reachable) {
+      reachable = ctx.project.getDependencies(filePath, targetList)
+      if (closureKey) resolutionClosureMemo.set(closureKey, reachable)
+    }
+    for (const dependency of reachable) {
       if (!isGeneratedOutput(dependency, ctx)) dependencies.add(dependency)
     }
     const expanded = [...dependencies]
@@ -1644,6 +1714,8 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
       // folds to must not outlive one, whatever the changed file happened to be.
       // Vite dev calls this once by default, then `hotUpdate` once per environment. Bracket the
       // physical edit for every environment so none reuses a verdict from the previous event.
+      foldMemoByContent.clear()
+      resolutionClosureMemo.clear()
       for (const state of transformStateByEnvironment.values()) {
         state.unchangedFolds.clear()
         state.changedRun = 0
@@ -1750,20 +1822,26 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
 
       let result: FoldResult
       try {
-        const sourceFile = ctx.project.addSourceFile(filePath, code)
-        const parserResult = ctx.project.parseSourceFile(filePath)
-        // An empty extraction result is not proof that the module has no Bamboo runtime
-        // binding. The strict compiler also scans the source AST after planning rewrites.
-        if (!parserResult) {
-          state.transformArtifactsByModule.delete(id)
-          recordFoldDependencies(state, id, filePath, [])
-          state.foldSignatures.delete(id)
-          return null
-        }
+        const memoKey = command === 'serve' ? foldMemoKey(filePath, (inputDigest ??= digest(code))) : undefined
+        const memoized = memoKey ? foldMemoByContent.get(memoKey) : undefined
+        if (memoized?.reportedSurvivors) {
+          // These exact bytes were already folded this change event — for the other
+          // environment, or by a framework re-driving the same update. Only the resolution
+          // closure is per-environment, so only it is recomputed.
+          result = withResolutionClosure(filePath, memoized.result, memoized.parserDependencies, previousDependencies)
+        } else {
+          const sourceFile = ctx.project.addSourceFile(filePath, code)
+          const parserResult = ctx.project.parseSourceFile(filePath)
+          // An empty extraction result is not proof that the module has no Bamboo runtime
+          // binding. The strict compiler also scans the source AST after planning rewrites.
+          if (!parserResult) {
+            state.transformArtifactsByModule.delete(id)
+            recordFoldDependencies(state, id, filePath, [])
+            state.foldSignatures.delete(id)
+            return null
+          }
 
-        result = withResolutionClosure(
-          filePath,
-          foldSourceImpl({
+          const folded = foldSourceImpl({
             ctx,
             code,
             parserResult,
@@ -1778,10 +1856,13 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
             recipeConfigCache: state.recipeConfigCache,
             reportSurvivors: true,
             sourceFile,
-          }),
-          parserResult.getDependencies(),
-          previousDependencies,
-        )
+          })
+          const parserDependencies = parserResult.getDependencies()
+          if (memoKey) {
+            foldMemoByContent.set(memoKey, { result: folded, parserDependencies, reportedSurvivors: true })
+          }
+          result = withResolutionClosure(filePath, folded, parserDependencies, previousDependencies)
+        }
       } catch (error) {
         logger.caughtError('vite:transform', `Failed to compile ${filePath}`, error)
 

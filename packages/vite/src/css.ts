@@ -116,6 +116,24 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
    */
   let pending: Promise<string> | undefined
 
+  /**
+   * Which change the current `pending` was generated for, and the validated sheet it produced.
+   *
+   * Every environment loads the virtual stylesheet — a react-router dev server loads it once
+   * for the client graph and once for SSR — and each load used to run a complete extraction
+   * and optimization pass to produce byte-identical CSS. The sheet is a function of the source
+   * files alone, and the watcher below is the single point every event that can reach it
+   * passes through — Vite's own propagation only arrives via the watch edges `load` registers,
+   * over the same extracted files the watcher checks. A monotonic counter bumped there is
+   * therefore enough to know whether a build already reflects the world a load is asking about.
+   *
+   * Dev only. A production build has no dev watcher to advance the counter, so serving the
+   * memo there would hand `vite build --watch` a stale sheet; builds regenerate per load.
+   */
+  let changeGeneration = 0
+  let pendingGeneration = -1
+  let servedCss: { generation: number; css: string } | undefined
+
   const build = async () => {
     const builder = await ensureBuilder()
     // `hash: 'auto'` reads this, and nothing else does — a class name may differ between dev
@@ -171,6 +189,10 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
   }
 
   const generate = () => {
+    // Two loads racing for the same generation — the client and SSR environments after one
+    // edit — join one pass instead of chaining a second identical one behind it.
+    if (command === 'serve' && pending && pendingGeneration === changeGeneration) return pending
+    pendingGeneration = changeGeneration
     pending = Promise.resolve(pending)
       .catch(() => undefined)
       .then(build)
@@ -367,6 +389,16 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
       // module was asked for, and `buildEnd` fails a build that compiled classes without it.
       session.cssLoaded = true
 
+      const generationAtStart = changeGeneration
+      if (command === 'serve' && servedCss?.generation === generationAtStart) {
+        // Still a load of this module: the watch edges have to be re-registered for the graph
+        // Vite is asking in, or the environment that hit the memo would never be invalidated.
+        if (this.addWatchFile) {
+          for (const file of extractedSourceFiles()) this.addWatchFile(file)
+        }
+        return servedCss.css
+      }
+
       let css: string
       try {
         // Resolve the dev validator before taking a generation. Once the generation promise
@@ -391,6 +423,13 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
         if (validateDevCss) css = validateDevCss(css, session, { prune: false })
       } catch (error) {
         throw asError(error, `failed to generate ${VIRTUAL_CSS_ID}`)
+      }
+
+      // Recorded only when no file event raced the pass: a build that started before an edit
+      // landed is still the answer to this request — exactly as before — but must not be
+      // remembered as current.
+      if (command === 'serve' && generationAtStart === changeGeneration) {
+        servedCss = { generation: generationAtStart, css }
       }
 
       // Every file the extractor reads is a source for this module, so editing one has to
@@ -429,6 +468,10 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
         if (!ctx) return
         const absoluteFile = ctx.runtime.path.abs(ctx.config.cwd, file)
         if (!session.extractedFiles.has(absoluteFile)) return
+
+        // Whatever was built no longer reflects the world. Every path that can invalidate the
+        // stylesheet module starts at this watcher and this guard, so the bump is complete.
+        changeGeneration++
 
         // The `buildStart` pass predates this edit, so it can no longer stand in for a first
         // load. Before the early return below, which is taken when the stylesheet has never been

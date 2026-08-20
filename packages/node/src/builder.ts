@@ -74,6 +74,8 @@ export class Builder {
   private resolutionConfigurationBytes = new Map<string, string | undefined>()
   /** Previous effective tsconfig read-set, needed to classify its deletion as an option reload. */
   private tsconfigResolutionFiles: readonly string[] = []
+  /** Config-graph mtimes as of the last completed setup, consulted by the dev fast path. */
+  private configGraphMtimes: Map<string, number> | undefined
 
   /** @internal Current and missing resolver paths which can change the stylesheet. */
   getResolutionReadFiles = (): readonly string[] => {
@@ -162,6 +164,30 @@ export class Builder {
       ? this.tsconfigResolutionFiles
       : ctx.diff.getResolutionConfigFiles()
 
+    /**
+     * Dev fast path: skip the config reload when nothing that can change the resolved config
+     * has moved on disk.
+     *
+     * `reloadConfigAndRefreshContext` re-bundles and re-evaluates the config file and the
+     * tsconfig chain on every call, and a dev server reaches `setup` on every stylesheet
+     * rebuild — that is 10–18ms paid per source edit for a config that cannot have changed,
+     * since editing the config restarts the dev server outside this method's control anyway.
+     * The guard set is exactly what the reload would re-read: the config file, its bundled
+     * import graph, the explicit `dependencies`, and the tsconfig files behind resolution. Any
+     * of them moving — including appearing or disappearing, which `getFileMeta` reports as a
+     * changed mtime — takes the full reload below, as does a file the last snapshot never saw.
+     *
+     * Dev-only because the reload is also the recovery for edits this guard cannot see — a
+     * preset external to the config bundle — and a one-shot build keeps paying the reload
+     * rather than trading that recovery for a latency only watch mode feels.
+     */
+    if (options.dev && this.configGraphUnchanged(configPath)) {
+      this.affecteds = { artifacts: new Set(), hasConfigChanged: false, diffs: [] }
+      this.explicitDepsMeta = this.checkFilesChanged(this.context.explicitDeps)
+      this.refreshSourceState(ctx, previousTsconfigFiles)
+      return
+    }
+
     this.affecteds = await ctx.diff.reloadConfigAndRefreshContext((conf) => {
       this.context = new BambooContext(conf)
     })
@@ -194,9 +220,43 @@ export class Builder {
       this.resolutionConfigurationSets.clear()
       this.resolutionConfigurationBytes.clear()
       await ctx.hooks['config:change']?.({ config: ctx.config, changes: this.affecteds })
+      this.snapshotConfigGraphMtimes(configPath)
       return
     }
 
+    this.refreshSourceState(ctx, previousTsconfigFiles)
+    this.snapshotConfigGraphMtimes(configPath)
+  }
+
+  /** Every file whose content participates in the resolved config, for the dev fast path. */
+  private configGraphFiles = (configPath: string | undefined): string[] =>
+    uniq(
+      [
+        ...(configPath ? [configPath] : []),
+        ...this.configDependencies,
+        ...this.tsconfigResolutionFiles,
+        ...(this.context?.explicitDeps ?? []),
+      ].map(normalize),
+    )
+
+  private configGraphUnchanged = (configPath: string | undefined): boolean => {
+    const snapshot = this.configGraphMtimes
+    if (!snapshot) return false
+    for (const file of this.configGraphFiles(configPath)) {
+      const recorded = snapshot.get(file)
+      if (recorded === undefined || recorded !== this.getFileMeta(file).mtime) return false
+    }
+    return true
+  }
+
+  private snapshotConfigGraphMtimes = (configPath: string | undefined) => {
+    const snapshot = new Map<string, number>()
+    for (const file of this.configGraphFiles(configPath)) snapshot.set(file, this.getFileMeta(file).mtime)
+    this.configGraphMtimes = snapshot
+  }
+
+  /** The per-pass source bookkeeping every setup ends with, config reload or not. */
+  private refreshSourceState = (ctx: BambooContext, previousTsconfigFiles: readonly string[]) => {
     const changedResolutionConfigurations = this.changedResolutionConfigurations()
     const changedResolutionSet = new Set(changedResolutionConfigurations)
     const resolutionAffected = new Set<string>()
@@ -510,7 +570,11 @@ export class Builder {
       return ctx.assertNoDeadCalls()
     }
 
-    const files = ctx.getFiles()
+    // The list `refreshSourceState` globbed moments ago in this same pass. Re-globbing here
+    // costs a directory walk per rebuild and can only disagree with `filesMeta` — which was
+    // computed from that inventory — about files that appeared in between, and those are the
+    // next watcher event's to handle either way.
+    const files = !hasConfigChanged && this.sourceInventory ? [...this.sourceInventory] : ctx.getFiles()
     const inventory = new Set(files.map(this.sourcePath))
     if (hasConfigChanged) {
       this.resolutionReadSets.clear()
