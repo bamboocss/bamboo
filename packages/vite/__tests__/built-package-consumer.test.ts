@@ -98,7 +98,12 @@ beforeAll(() => {
       .join('\n')}\n`,
   )
 
-  execFileSync('pnpm', ['install', '--offline', '--ignore-scripts', '--no-frozen-lockfile'], {
+  // `--prefer-offline`, not `--offline`. The consumer has no lockfile, so pnpm resolves this
+  // graph fresh, and a transitive range can pick a version the repo's own install never put in
+  // the store — `browserslist` reaching for a newer `electron-to-chromium` is what failed here.
+  // Preferring the store keeps this fast and network-independent in the normal case, without
+  // failing the build over a version the store was never going to have.
+  execFileSync('pnpm', ['install', '--prefer-offline', '--ignore-scripts', '--no-frozen-lockfile'], {
     cwd: consumerRoot,
     encoding: 'utf8',
     env: { ...process.env, CI: 'true' },
