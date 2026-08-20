@@ -99,6 +99,6 @@
   },
   "ignoreWorkspaces": ["sandbox/*", "sandbox/component-lib/**", "playground"],
   "ignoreExportsUsedInFile": true,
-  "ignore": ["**/__tests__/**"],
+  "ignore": ["**/__tests__/**", "bench/vite-cold-import-child.mjs"],
   "exclude": ["duplicates"]
 }
