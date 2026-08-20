@@ -8,7 +8,7 @@ import { markStaticCompilerActive } from '@bamboocss/node/static-compiler'
 import type { Plugin } from 'vite'
 import { asError, bamboocssCss, VIRTUAL_CSS_ID } from './css'
 import { bare } from './class-name'
-import type { FoldResult, ForeignRecipes, SkipReason, SkippedCall } from './fold'
+import type { ExportReadRecord, FoldResult, ForeignRecipes, SkipReason, SkippedCall, verifyExportReads } from './fold'
 import { createLazyCompilerState, createRetryableLazy, loadFoldModule, loadNodeModule } from './lazy-modules'
 import type { RuntimeCss } from './runtime-css'
 import type { StaticStyleSetCompiler } from './style-set'
@@ -380,6 +380,8 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
     unchangedFolds: Map<string, boolean>
     changedRun: number
     cssLoaded: boolean
+    /** Cross-file reads each module's fold performed, for verification without re-folding. */
+    exportReadsByModule: Map<string, readonly ExportReadRecord[]>
   }
 
   type EnvironmentContext = {
@@ -392,6 +394,8 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
   interface FoldMemoEntry {
     result: FoldResult
     parserDependencies: readonly string[]
+    /** The extractor's cross-file value reads, from the parse that fed this fold. */
+    valueReads: ReadonlyArray<{ file: string; name: string; digest: string | undefined }>
     /** Whether the fold ran the survivor scan, which `transform`'s artifact requires. */
     reportedSurvivors: boolean
   }
@@ -422,6 +426,8 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
    * build is memory a one-shot pass has no reason to spend.
    */
   const foldMemoByContent = new Map<string, FoldMemoEntry>()
+  /** Per-event digests of the edited file's read values, shared across every dependent. */
+  const verifyDigestMemo = new Map<string, { digest: string | undefined; crossings: readonly string[] }>()
   const foldMemoKey = (filePath: string, inputDigest: string) => `${filePath}\0${inputDigest}`
   /**
    * The Project resolution walk `withResolutionClosure` runs, memoized per change event.
@@ -501,6 +507,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
     unchangedFolds: new Map(),
     changedRun: 0,
     cssLoaded: false,
+    exportReadsByModule: new Map(),
   })
   const cloneEnvironmentState = (state: EnvironmentTransformState): EnvironmentTransformState => ({
     transformArtifactsByModule: new Map(state.transformArtifactsByModule),
@@ -517,6 +524,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
     unchangedFolds: new Map(state.unchangedFolds),
     changedRun: state.changedRun,
     cssLoaded: state.cssLoaded,
+    exportReadsByModule: new Map(state.exportReadsByModule),
   })
   const environmentState = (context: unknown) => {
     const identity = environmentName(context)
@@ -1194,19 +1202,19 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
    * that returns nothing, a fold that throws — because "changed" is what this path did before,
    * and a wrong "unchanged" is a stale class string in the browser.
    */
-  const foldOutputUnchanged = (state: EnvironmentTransformState, dependent: string) => {
+  const foldOutputUnchanged = (state: EnvironmentTransformState, dependent: string, changedFile: string) => {
     const memoized = state.unchangedFolds.get(dependent)
     if (memoized !== undefined) return memoized
 
     // Memoized like any other verdict, not merely returned. Each environment owns its own
     // signature and counter because an upstream plugin may have handed them different source.
-    const unchanged = state.changedRun < CHANGED_RUN_LIMIT && refoldMatchesSignature(state, dependent)
+    const unchanged = state.changedRun < CHANGED_RUN_LIMIT && refoldMatchesSignature(state, dependent, changedFile)
     state.changedRun = unchanged ? 0 : state.changedRun + 1
     state.unchangedFolds.set(dependent, unchanged)
     return unchanged
   }
 
-  const refoldMatchesSignature = (state: EnvironmentTransformState, dependent: string) => {
+  const refoldMatchesSignature = (state: EnvironmentTransformState, dependent: string, changedFile: string) => {
     const signature = state.foldSignatures.get(dependent)
     if (!signature || !ctx || !foldSourceImpl || !runtimeCss || !styleCompiler) return false
 
@@ -1214,6 +1222,41 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
       const code = readFileSync(signature.path, 'utf8')
       const inputDigest = digest(code)
       if (inputDigest !== signature.input) return false
+
+      /**
+       * Try to answer from what the fold *read* before re-running it.
+       *
+       * The recorded reads carry the digest of every cross-file value and recipe config this
+       * dependent's fold consumed. When each read of the edited file re-digests identically,
+       * the fold's inputs did not move and its output cannot have — the whole re-fold below
+       * is skipped, which is most of what an edit to a shared module used to cost. Any gap —
+       * no read naming the edited file, an unverifiable digest, the verifier chunk not loaded
+       * — falls through to the full re-fold, which is exactly the previous behavior. A
+       * definite mismatch is equally final in the other direction: the re-fold would only
+       * rediscover the change.
+       */
+      const reads = state.exportReadsByModule.get(dependent)
+      if (reads?.length && verifyExportReadsImpl) {
+        const { verdict, crossings } = verifyExportReadsImpl(
+          ctx,
+          (path) => ctx?.project.parseSourceFile(path),
+          reads,
+          normalizeFsPath(changedFile),
+          verifyDigestMemo,
+        )
+        if (verdict === 'unchanged') {
+          // Additively, exactly as the suppressed re-fold recorded its provisional edges: the
+          // verification's re-resolution is the current route, and a value that moved files
+          // without moving bytes must leave its new file among this consumer's edges or the
+          // next edit there reaches nobody.
+          recordFoldDependencies(state, dependent, signature.path, [
+            ...(state.dependenciesByModule.get(dependent) ?? []),
+            ...crossings,
+          ])
+          return true
+        }
+        if (verdict === 'changed') return false
+      }
 
       let raw: FoldResult
       let parserDependencies: readonly string[]
@@ -1251,7 +1294,12 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
         // `reportedSurvivors: false` keeps `transform` from consuming this entry — its
         // artifact needs the survivor scan this provisional fold skips. A later transform of
         // the same bytes overwrites it with the reporting variant; `code` is identical in both.
-        foldMemoByContent.set(memoKey, { result: raw, parserDependencies, reportedSurvivors: false })
+        foldMemoByContent.set(memoKey, {
+          result: raw,
+          parserDependencies,
+          valueReads: (parserResult as { getExportReads?: () => FoldMemoEntry['valueReads'] }).getExportReads?.() ?? [],
+          reportedSurvivors: false,
+        })
       }
 
       const result = withResolutionClosure(
@@ -1334,6 +1382,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
       getModulesByFile: (file: string) => Set<Module> | undefined
       invalidateModule: (module: Module) => void
     },
+    verify = true,
   ) => {
     const dependents = state.dependentsByDependency.get(normalizeFsPath(file))
     if (!dependents?.size) return
@@ -1377,7 +1426,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
        * the edited module for a runtime value is still reached by `propagateUpdate` exactly as
        * it would be with no plugin here at all — that direction was never this list's to decide.
        */
-      if (foldOutputUnchanged(state, dependent)) continue
+      if (verify && foldOutputUnchanged(state, dependent, file)) continue
       const exact = graph.getModuleById?.(dependent)
       const dependentFile = state.filesByModule.get(dependent) ?? dependent
       const candidates = exact ? [exact] : (graph.getModulesByFile(normalizeFsPath(dependentFile)) ?? [])
@@ -1412,6 +1461,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
 
   let ctx: Awaited<ReturnType<(typeof import('@bamboocss/node'))['loadConfigAndCreateContext']>> | undefined
   let foldSourceImpl: (typeof import('./fold'))['foldSource'] | undefined
+  let verifyExportReadsImpl: typeof verifyExportReads | undefined
   let runtimeCss: RuntimeCss | undefined
   let styleCompiler: StaticStyleSetCompiler | undefined
   let command: 'build' | 'serve' = 'build'
@@ -1484,6 +1534,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
     // have succeeded. A rejected attempt leaves no half-compiler visible to HMR.
     ctx = loaded.context
     foldSourceImpl = loaded.foldSource
+    verifyExportReadsImpl = loaded.verifyExportReads
     runtimeCss = loaded.runtimeCss
     styleCompiler = loaded.styleCompiler
   }
@@ -1716,6 +1767,7 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
       // physical edit for every environment so none reuses a verdict from the previous event.
       foldMemoByContent.clear()
       resolutionClosureMemo.clear()
+      verifyDigestMemo.clear()
       for (const state of transformStateByEnvironment.values()) {
         state.unchangedFolds.clear()
         state.changedRun = 0
@@ -1753,6 +1805,58 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
       }
 
       ctx.project.reloadSourceFile(filePath)
+
+      /**
+       * Fold the edited file before the browser asks for it.
+       *
+       * The first transform after an edit is the one fold the memo cannot already hold — the
+       * bytes are new — and it sits on the repaint path: the websocket round trip plus the
+       * module refetch land ~15-30ms after this hook, and the fold costs ~5-13ms of that
+       * budget on a route-sized module. Folding one macrotask later, after the update hooks
+       * have run and the broadcast is out, has the memo hot before the request arrives.
+       *
+       * `setImmediate` is the load-bearing part: this hook is awaited before Vite announces
+       * anything, so the work must not run inline. Content-keyed like every memo entry, so a
+       * racing save cannot poison anything — the entry states what these exact bytes fold to,
+       * and a later event's `watchChange` clears the memo before that event's transforms run.
+       * Failures are swallowed here; the real transform runs the same fold and owns the
+       * diagnostics.
+       */
+      if (command === 'serve') {
+        setImmediate(() => {
+          if (!ctx || !foldSourceImpl || !runtimeCss || !styleCompiler) return
+          try {
+            const code = readFileSync(filePath, 'utf8')
+            const memoKey = foldMemoKey(filePath, digest(code))
+            if (foldMemoByContent.has(memoKey)) return
+            const sourceFile = ctx.project.addSourceFile(filePath, code)
+            const parserResult = ctx.project.parseSourceFile(filePath)
+            if (!parserResult) return
+            const folded = foldSourceImpl({
+              ctx,
+              code,
+              parserResult,
+              filePath,
+              runtimeCss,
+              styleCompiler,
+              maxRecipeStates,
+              parseModule: (path) => ctx?.project.parseSourceFile(path),
+              recipeConfigCache: transformStateByEnvironment.get('client')?.recipeConfigCache ?? new Map(),
+              reportSurvivors: true,
+              sourceFile,
+            })
+            foldMemoByContent.set(memoKey, {
+              result: folded,
+              parserDependencies: parserResult.getDependencies(),
+              valueReads:
+                (parserResult as { getExportReads?: () => FoldMemoEntry['valueReads'] }).getExportReads?.() ?? [],
+              reportedSurvivors: true,
+            })
+          } catch {
+            // The transform that follows runs the same fold and reports with full context.
+          }
+        })
+      }
     },
 
     /**
@@ -1777,7 +1881,22 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
     hotUpdate({ file, modules }) {
       const graph = this.environment?.moduleGraph
       if (!graph) return
-      return foldDependentModules(environmentState(this), file, modules, graph)
+      /**
+       * The provisional re-folds exist to spare the *browser*: an announced client module is a
+       * refetch round trip, and behind a framework that re-drives HMR per entry, a router
+       * revalidation — that is what deciding "unchanged" before Vite is told anything buys.
+       *
+       * A server graph has none of that economy. Its modules are re-transformed by this same
+       * process the next time something renders, nothing is announced by invalidating quietly,
+       * and the verification runs on the awaited path *before* the client's update can be
+       * broadcast — on a react-router app, re-folding every SSR consumer of a shared style
+       * module added ~15ms to each edit's repaint for work whose only reader was the next
+       * `.data` revalidation. Invalidate outright there and let the next render pay lazily,
+       * off the repaint path. `verify` stays on when the consumer kind is unknown — a harness
+       * without environment config keeps the conservative shape.
+       */
+      const consumer = (this.environment as { config?: { consumer?: string } } | undefined)?.config?.consumer
+      return foldDependentModules(environmentState(this), file, modules, graph, consumer !== 'server')
     },
 
     handleHotUpdate({ file, modules, server }) {
@@ -1824,10 +1943,12 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
       try {
         const memoKey = command === 'serve' ? foldMemoKey(filePath, (inputDigest ??= digest(code))) : undefined
         const memoized = memoKey ? foldMemoByContent.get(memoKey) : undefined
+        let valueReads: FoldMemoEntry['valueReads'] = []
         if (memoized?.reportedSurvivors) {
           // These exact bytes were already folded this change event — for the other
           // environment, or by a framework re-driving the same update. Only the resolution
           // closure is per-environment, so only it is recomputed.
+          valueReads = memoized.valueReads
           result = withResolutionClosure(filePath, memoized.result, memoized.parserDependencies, previousDependencies)
         } else {
           const sourceFile = ctx.project.addSourceFile(filePath, code)
@@ -1858,11 +1979,16 @@ export const bamboocss = (options: BambooVitePluginOptions = {}): Plugin[] => {
             sourceFile,
           })
           const parserDependencies = parserResult.getDependencies()
+          valueReads = (parserResult as { getExportReads?: () => FoldMemoEntry['valueReads'] }).getExportReads?.() ?? []
           if (memoKey) {
-            foldMemoByContent.set(memoKey, { result: folded, parserDependencies, reportedSurvivors: true })
+            foldMemoByContent.set(memoKey, { result: folded, parserDependencies, valueReads, reportedSurvivors: true })
           }
           result = withResolutionClosure(filePath, folded, parserDependencies, previousDependencies)
         }
+        state.exportReadsByModule.set(id, [
+          ...valueReads.map((read) => ({ kind: 'value' as const, ...read })),
+          ...result.exportReads,
+        ])
       } catch (error) {
         logger.caughtError('vite:transform', `Failed to compile ${filePath}`, error)
 

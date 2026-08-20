@@ -4,12 +4,7 @@ import type { ArtifactId, Config } from '@bamboocss/types'
 import { codegen } from './codegen'
 import { loadConfigAndCreateContext } from './config'
 import { BambooContext } from './create-context'
-import {
-  collectKeyframeReferences,
-  collectRenderedElements,
-  keyframeNames,
-  pruneTokensForBuild,
-} from './token-references'
+import { collectSourceScans, keyframeNames, pruneTokensForBuild } from './token-references'
 
 async function build(ctx: BambooContext, artifactIds?: ArtifactId[]) {
   await codegen(ctx, artifactIds)
@@ -26,15 +21,20 @@ async function build(ctx: BambooContext, artifactIds?: ArtifactId[]) {
   const parsed = ctx.parseFiles()
   ctx.appendParserCss(sheet)
 
-  // Gathering the references reads every source file, so each stays behind its own flag.
-  const reachableVars = pruneTokensForBuild(ctx, sheet, parsed.results)
+  // Gathering the references reads every source file, so the passes share one walk.
+  const collectElements = prunesPreflight(ctx.config.preflight)
+  const scans = collectSourceScans(ctx, {
+    keyframeNames: ctx.config.prune?.keyframes ? keyframeNames(ctx) : [],
+    elements: collectElements,
+  })
+  const reachableVars = pruneTokensForBuild(ctx, sheet, parsed.results, scans)
 
-  if (prunesPreflight(ctx.config.preflight)) {
-    ctx.prunePreflight(sheet, collectRenderedElements(ctx))
+  if (collectElements) {
+    ctx.prunePreflight(sheet, scans.elements)
   }
 
   if (ctx.config.prune?.keyframes) {
-    ctx.pruneKeyframes(sheet, collectKeyframeReferences(ctx, keyframeNames(ctx)), reachableVars)
+    ctx.pruneKeyframes(sheet, scans.keyframeHits, reachableVars)
   }
 
   await ctx.writeCss(sheet)
@@ -93,14 +93,19 @@ export async function generate(config: Config, configPath?: string) {
       // once its last reference is gone. Parser results are deliberately not gathered
       // here: `parseFiles` would encode every style into the running encoder a second
       // time on each change.
-      const reachableVars = pruneTokensForBuild(ctx, sheet, [])
+      const collectWatchElements = prunesPreflight(ctx.config.preflight)
+      const watchScans = collectSourceScans(ctx, {
+        keyframeNames: ctx.config.prune?.keyframes ? keyframeNames(ctx) : [],
+        elements: collectWatchElements,
+      })
+      const reachableVars = pruneTokensForBuild(ctx, sheet, [], watchScans)
 
-      if (prunesPreflight(ctx.config.preflight)) {
-        ctx.prunePreflight(sheet, collectRenderedElements(ctx))
+      if (collectWatchElements) {
+        ctx.prunePreflight(sheet, watchScans.elements)
       }
 
       if (ctx.config.prune?.keyframes) {
-        ctx.pruneKeyframes(sheet, collectKeyframeReferences(ctx, keyframeNames(ctx)), reachableVars)
+        ctx.pruneKeyframes(sheet, watchScans.keyframeHits, reachableVars)
       }
 
       const css = ctx.getCss(sheet)

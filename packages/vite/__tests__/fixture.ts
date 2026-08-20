@@ -15,7 +15,7 @@ export const createFoldFixture = (userConfig?: Parameters<typeof createContext>[
   const fold = (code: string, filePath = FILE_PATH, reportSurvivors = false): FoldResult => {
     const sourceFile = ctx.project.addSourceFile(filePath, code)
     const parserResult = ctx.project.parseSourceFile(filePath)
-    if (!parserResult) return { code, map: null, folded: [], skipped: [], dependencies: [] }
+    if (!parserResult) return { code, map: null, folded: [], skipped: [], dependencies: [], exportReads: [] }
     return foldSource({
       ctx,
       code,
@@ -36,7 +36,7 @@ export const createFoldFixture = (userConfig?: Parameters<typeof createContext>[
   const foldStyleSets = (code: string, filePath = FILE_PATH, maxRecipeStates?: number): FoldResult => {
     const sourceFile = ctx.project.addSourceFile(filePath, code)
     const parserResult = ctx.project.parseSourceFile(filePath)
-    if (!parserResult) return { code, map: null, folded: [], skipped: [], dependencies: [] }
+    if (!parserResult) return { code, map: null, folded: [], skipped: [], dependencies: [], exportReads: [] }
     return foldSource({
       ctx,
       code,
@@ -83,7 +83,7 @@ export const createFoldFixture = (userConfig?: Parameters<typeof createContext>[
   const foldWithCache = (code: string, filePath = FILE_PATH): FoldResult => {
     ctx.project.addSourceFile(filePath, code)
     const parserResult = ctx.project.parseSourceFile(filePath)
-    if (!parserResult) return { code, map: null, folded: [], skipped: [], dependencies: [] }
+    if (!parserResult) return { code, map: null, folded: [], skipped: [], dependencies: [], exportReads: [] }
     return foldSource({
       ctx,
       code,

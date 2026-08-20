@@ -33,21 +33,24 @@ export interface SourceSnapshot {
  */
 export function* sourceSnapshots(ctx: BambooContext): Generator<SourceSnapshot> {
   for (const file of ctx.getFiles()) {
-    const filePath = ctx.runtime.path.abs(ctx.config.cwd, file)
-
-    let onDisk: string | undefined
-    try {
-      onDisk = ctx.runtime.fs.readFileSync(filePath)
-    } catch {
-      // Removed between the glob and this read, or never on disk at all. Not worth failing
-      // a build over -- whatever the project holds still gets scanned.
-      onDisk = undefined
-    }
-
-    const sourceFile = ctx.project.getSourceFile(filePath)
-
-    yield { filePath, onDisk, parsed: sourceFile?.getFullText(), sourceFile }
+    yield readSnapshot(ctx, ctx.runtime.path.abs(ctx.config.cwd, file))
   }
+}
+
+/** One file's snapshot, for a walk that decides per file whether it needs to read at all. */
+export function readSnapshot(ctx: BambooContext, filePath: string): SourceSnapshot {
+  let onDisk: string | undefined
+  try {
+    onDisk = ctx.runtime.fs.readFileSync(filePath)
+  } catch {
+    // Removed between the glob and this read, or never on disk at all. Not worth failing
+    // a build over -- whatever the project holds still gets scanned.
+    onDisk = undefined
+  }
+
+  const sourceFile = ctx.project.getSourceFile(filePath)
+
+  return { filePath, onDisk, parsed: sourceFile?.getFullText(), sourceFile }
 }
 
 /**

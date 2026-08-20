@@ -9,6 +9,7 @@ import { match } from 'ts-pattern'
 import { getImportDeclarations } from './get-import-declarations'
 import { importedRecipeBindings, type RecipeOrigin, type ResolveModule } from './imported-recipes'
 import { ParserResult } from './parser-result'
+import { digestExportValue } from './export-read-digest'
 
 const combineResult = (unboxed: Unboxed) => {
   return [...unboxed.conditions, unboxed.raw, ...unboxed.spreadConditions]
@@ -150,6 +151,14 @@ export function createParser(context: ParserOptions) {
     // those paths into each new ParserResult without mistaking a new callback for a new graph.
     const recordDependency = (filePath: string) => parserResult.addDependency(filePath)
 
+    // Every `(module, exportedName)` hop a cross-file value resolution visits, deduplicated.
+    // Digested after extraction, when the value caches this parse just warmed make each
+    // evaluation nearly free — and through the same digest function verification uses, or
+    // the two sides could not compare.
+    const exportReadPairs = new Set<string>()
+    const recordExportRead = (filePath: string, exportedName: string) =>
+      exportReadPairs.add(`${filePath.replaceAll('\\', '/')}\u0000${exportedName}`)
+
     const extractResultByName = extract({
       ast: sourceFile,
       tokens: context.tokens
@@ -252,6 +261,7 @@ export function createParser(context: ParserOptions) {
       },
       flags: { skipTraverseFiles: false },
       recordDependency,
+      recordExportRead,
       resolveModule,
     })
 
@@ -421,6 +431,18 @@ export function createParser(context: ParserOptions) {
     // After extraction, which is what fills it: `matchFn` only sees a name once a call
     // expression names it, so asking before the walk would always come back empty.
     parserResult.deadCalls = file.getDeadCalls()
+
+    if (exportReadPairs.size) {
+      const project = sourceFile.getProject()
+      parserResult.setExportReads(
+        [...exportReadPairs].map((pair) => {
+          const at = pair.indexOf('\u0000')
+          const file = pair.slice(0, at)
+          const name = pair.slice(at + 1)
+          return { file, name, digest: digestExportValue(project.getSourceFile(file), name, resolveModule) }
+        }),
+      )
+    }
 
     return parserResult
   }

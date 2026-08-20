@@ -14,9 +14,10 @@ import {
   ts,
   type ProjectOptions as TsProjectOptions,
 } from 'ts-morph'
-import { clearBoxNodeCache } from '@bamboocss/extractor'
+import { clearBoxNodeCache, invalidateDependencyPath } from '@bamboocss/extractor'
 import { classifyProject } from './classify'
 import { clearImportedRecipeCache } from './imported-recipes'
+import { digestExportValue } from './export-read-digest'
 import { createParser } from './parser'
 import { ParserResult } from './parser-result'
 
@@ -574,8 +575,28 @@ export class Project {
    * dependency edge; now it would also leave a recipe permanently invisible to the module
    * importing it, since resolution is what finds one.
    */
-  private invalidate = (fileTreeChanged = true) => {
+  private invalidate = (fileTreeChanged = true, changedPath?: string) => {
     this.#assertNotLoading()
+    /**
+     * A content edit to a file the project already holds invalidates *by path* rather than
+     * dropping every memoized value. Each cache entry records the module paths its
+     * computation read — the same record the watch system replays into fold dependencies —
+     * so marking the edited path stale rejects exactly the entries whose value could have
+     * moved, while a value resolved without reading this file keeps its cache. The edited
+     * file's own entries need no marking: its re-parse retires their key nodes.
+     *
+     * That narrowing holds only for content: a file appearing or disappearing can change
+     * what a specifier resolves to without any recorded path's bytes moving — extension
+     * precedence, a new local shadowing a package — so tree changes keep the full clear.
+     * The recipe-origin memo records no read-set, so it is cleared on every event either
+     * way; per edit that is one walk rebuilt lazily, not the per-transform storm the
+     * identical-text no-op in `addSourceFile` exists to prevent.
+     */
+    if (!fileTreeChanged && changedPath) {
+      invalidateDependencyPath(this.normalizePath(changedPath))
+      clearImportedRecipeCache()
+      return
+    }
     invalidateResolutions()
     // Only when the set of files could have changed. Overwriting a file the project already
     // holds cannot satisfy a resolution that previously failed, and `addSourceFile` runs once
@@ -1323,10 +1344,11 @@ export class Project {
      */
     if (existing && existing.getFullText() === content) return existing
 
-    // Resolutions memoized against other files' nodes can now be out of date.
+    // Resolutions memoized against other files' nodes can now be out of date. The canonical
+    // `getFilePath()` spelling is what dependency records carry — see `invalidate`.
     this.invalidateSourcePreparation(filePath, existing)
     this.removedSourcePaths.delete(this.normalizePath(filePath))
-    this.invalidate(!existing)
+    this.invalidate(!existing, existing?.getFilePath())
     return this.project.createSourceFile(filePath, content, {
       overwrite: true,
       scriptKind: scriptKindFor(filePath),
@@ -1351,14 +1373,33 @@ export class Project {
     return false
   }
 
+  /**
+   * The current digest of one exported value, for read verification.
+   *
+   * Same function and same resolver identity as the parse-time recording, which is what makes
+   * the comparison meaningful; see `digestExportValue`.
+   */
+  digestExportRead = (
+    filePath: string,
+    exportedName: string,
+    onCrossing?: (crossedPath: string) => void,
+  ): string | undefined => {
+    this.#assertNotLoading()
+    this.#ensureSourceFiles()
+    return digestExportValue(this.getSourceFile(filePath), exportedName, this.resolveModule, onCrossing)
+  }
+
   reloadSourceFile = (filePath: string): FileSystemRefreshResult | undefined => {
     this.#assertNotLoading()
     this.#ensureSourceFiles()
     // Same reason as `addSourceFile`: this is the watch-mode entry point for an
     // edit, and importers' memoized resolutions must not survive it. The file tree is
-    // unchanged — this path re-reads a file the project already holds.
-    this.invalidate(false)
+    // unchanged — this path re-reads a file the project already holds. The canonical
+    // `getFilePath()` spelling is the one dependency records carry, so it is the one the
+    // selective invalidation must be keyed by; a file the project does not hold keeps the
+    // unconditional clear this path always performed.
     const sourceFile = this.getSourceFile(filePath)
+    this.invalidate(false, sourceFile?.getFilePath())
     if (!sourceFile) return
     this.invalidateSourcePreparation(filePath, sourceFile)
     return sourceFile.refreshFromFileSystemSync()

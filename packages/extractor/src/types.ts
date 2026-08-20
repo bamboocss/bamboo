@@ -99,6 +99,8 @@ export interface BoxContext {
   resolveModule?: ResolveModule
   /** @internal Receives local source paths crossed by this exact extraction context. */
   recordDependency?: (filePath: string) => void
+  /** @internal Receives every `(module, exportedName)` a cross-file value resolution visited. */
+  recordExportRead?: (filePath: string, exportedName: string) => void
   getEvaluateOptions?: (node: Expression, stack: Node[]) => Omit<EvaluateOptions, 'node' | 'policy'> | void
   canEval?: (node: Expression, stack: Node[]) => boolean
   tokens?: {

@@ -2,8 +2,9 @@ import { logger } from '@bamboocss/logger'
 import type { ParserResult } from '@bamboocss/parser'
 import { BambooError, cssVarRefs } from '@bamboocss/shared'
 import { isMatch } from 'matcher'
+import { existsSync, statSync } from 'fs'
 import type { BambooContext } from './create-context'
-import { snapshotTexts, sourceSnapshots } from './source-snapshots'
+import { readSnapshot, snapshotTexts, sourceSnapshots } from './source-snapshots'
 import { accountSnapshot, type DeclinedReference, failsStrict, type TokenAccounting } from './token-accounting'
 
 /**
@@ -157,6 +158,189 @@ export function collectTokenReferences(ctx: BambooContext, results: ParserResult
  * exists for does not apply to them, and opting out of token pruning should not mean shipping
  * a preset's whole filter and gradient set for nothing.
  */
+/** One file's contribution to every source-derived scan, computed in a single visit. */
+interface SourceFileScan {
+  tokenPaths: readonly string[]
+  cssVars: readonly string[]
+  reachableFromJs: boolean
+  /** Lowercased element names; collected only when the walk was asked for them. */
+  elements: readonly string[]
+  /** Which of the declared keyframe names this file's text mentions. */
+  keyframeHits: readonly string[]
+  accountingPaths: readonly string[]
+  accountingPrefixes: readonly string[]
+  accountingDeclined: readonly DeclinedReference[]
+}
+
+export interface SourceScanOptions {
+  /** Declared keyframe names to test for — `keyframeNames(ctx)` where keyframes are pruned. */
+  keyframeNames: readonly string[]
+  /** Whether to collect rendered element names. Only `preflight.prune` reads them. */
+  elements: boolean
+}
+
+/** Everything the pruning passes derive from the sources, merged from one walk. */
+export interface SourceScanResult {
+  tokenPaths: Set<string>
+  cssVars: Set<string>
+  reachableFromJs: boolean
+  elements: Set<string>
+  keyframeHits: Set<string>
+  accounting: TokenAccounting
+}
+
+/**
+ * Per-file scan results, valid while the file's mtime stands still.
+ *
+ * The key is the same evidence `Builder` already trusts to skip re-extracting a file, so this
+ * adds no new class of staleness: anything that fools an mtime fooled the extract skip first.
+ * The parsed copy a snapshot carries only changes alongside a re-parse of that file, which the
+ * owning Builder performs exactly when the mtime moved or the config reloaded — and a config
+ * reload clears this cache outright.
+ *
+ * `signature` folds in the scan options: a different keyframe list or element toggle is a
+ * different question, and entries answering the old one are dropped rather than reinterpreted.
+ */
+export interface SourceScanCache {
+  signature: string
+  entries: Map<string, { mtime: number; scan: SourceFileScan }>
+}
+
+export const createSourceScanCache = (): SourceScanCache => ({ signature: '', entries: new Map() })
+
+const OPEN_TAG = /<\s*([a-z][\w-]*)(?=[\s/>]|$)/g
+
+const scanSnapshot = (
+  ctx: BambooContext,
+  snapshot: ReturnType<typeof readSnapshot>,
+  options: SourceScanOptions,
+  patterns: readonly (readonly [string, RegExp])[],
+): SourceFileScan => {
+  const tokenPaths = new Set<string>()
+  const cssVars = new Set<string>()
+  const elements = new Set<string>()
+  const keyframeHits = new Set<string>()
+  let reachable = false
+
+  for (const text of snapshotTexts(snapshot)) {
+    for (const match of text.matchAll(TOKEN_CALL)) tokenPaths.add(match[1]!)
+    for (const name of cssVarRefs(text)) cssVars.add(name)
+    if (!reachable && reachableFromJs(text)) reachable = true
+    if (options.elements) {
+      // `(?=…|$)` rather than consuming the delimiter, so an element written at the very end
+      // of a file still counts. Lowercased to meet `elementOf`, which lowercases too.
+      for (const match of text.matchAll(OPEN_TAG)) elements.add(match[1]!.toLowerCase())
+    }
+    for (const [name, pattern] of patterns) {
+      if (!keyframeHits.has(name) && pattern.test(text)) keyframeHits.add(name)
+    }
+  }
+
+  const accounting: TokenAccounting = { paths: new Set<string>(), prefixes: new Set<string>(), declined: [] }
+  accountSnapshot(ctx, snapshot, accounting)
+
+  return {
+    tokenPaths: [...tokenPaths],
+    cssVars: [...cssVars],
+    reachableFromJs: reachable,
+    elements: [...elements],
+    keyframeHits: [...keyframeHits],
+    accountingPaths: [...accounting.paths],
+    accountingPrefixes: [...accounting.prefixes],
+    accountingDeclined: accounting.declined,
+  }
+}
+
+/**
+ * Every source-derived answer the pruning passes need, from one walk over the sources.
+ *
+ * The token scan, the reachability gate, the strict accounting, the keyframe references and
+ * the rendered-element set all read the same two copies of the same files, and each caller
+ * used to run its own sweep — `Builder.toCss` paid the walk up to three times per stylesheet.
+ * This is the same de-duplication `pruneTokensForBuild` already performed for its own three
+ * answers, extended to all five.
+ *
+ * With a `cache`, a file whose mtime has not moved is not even read: its previous contribution
+ * merges as-is, which is what turns the walk from O(project) to O(changed) on a rebuild.
+ * Without one — the one-shot CLI paths — the keyframe scan keeps its historical early exit:
+ * once every declared name is found, later files skip those tests.
+ */
+export function collectSourceScans(
+  ctx: BambooContext,
+  options: SourceScanOptions,
+  cache?: SourceScanCache,
+  mtimeOf?: (filePath: string) => number | undefined,
+  files?: readonly string[],
+): SourceScanResult {
+  const result: SourceScanResult = {
+    tokenPaths: new Set<string>(),
+    cssVars: new Set<string>(),
+    reachableFromJs: false,
+    elements: new Set<string>(),
+    keyframeHits: new Set<string>(),
+    accounting: { paths: new Set<string>(), prefixes: new Set<string>(), declined: [] },
+  }
+
+  const signature = `${options.elements ? 1 : 0}\n${options.keyframeNames.join('\n')}`
+  if (cache && cache.signature !== signature) {
+    cache.entries.clear()
+    cache.signature = signature
+  }
+
+  // Word-boundary match per name, built once. A keyframe called `spin` must not be kept
+  // alive by the word `spinner`.
+  const allPatterns = options.keyframeNames.map((name) => [name, new RegExp(`\\b${escapeRegExp(name)}\\b`)] as const)
+  // Uncached walks stop testing a name once some file already answered for it; a cached entry
+  // must carry the file's complete answer, so the cache path always scans the full list.
+  const remaining = cache ? undefined : new Set(options.keyframeNames)
+
+  const merge = (scan: SourceFileScan) => {
+    for (const path of scan.tokenPaths) result.tokenPaths.add(path)
+    for (const name of scan.cssVars) result.cssVars.add(name)
+    if (scan.reachableFromJs) result.reachableFromJs = true
+    for (const element of scan.elements) result.elements.add(element)
+    for (const name of scan.keyframeHits) {
+      result.keyframeHits.add(name)
+      remaining?.delete(name)
+    }
+    for (const path of scan.accountingPaths) result.accounting.paths.add(path)
+    for (const prefix of scan.accountingPrefixes) result.accounting.prefixes.add(prefix)
+    result.accounting.declined.push(...scan.accountingDeclined)
+  }
+
+  const seen = cache ? new Set<string>() : undefined
+  for (const file of files ?? ctx.getFiles()) {
+    const filePath = ctx.runtime.path.abs(ctx.config.cwd, file)
+    seen?.add(filePath)
+
+    if (cache) {
+      const mtime = mtimeOf?.(filePath) ?? (existsSync(filePath) ? statSync(filePath).mtimeMs : -Infinity)
+      const entry = cache.entries.get(filePath)
+      if (entry && entry.mtime === mtime) {
+        merge(entry.scan)
+        continue
+      }
+      const scan = scanSnapshot(ctx, readSnapshot(ctx, filePath), options, allPatterns)
+      cache.entries.set(filePath, { mtime, scan })
+      merge(scan)
+      continue
+    }
+
+    const patterns = remaining!.size ? allPatterns.filter(([name]) => remaining!.has(name)) : []
+    merge(scanSnapshot(ctx, readSnapshot(ctx, filePath), options, patterns))
+  }
+
+  // Entries for files the inventory no longer names are dead weight, never wrong answers —
+  // lookups are inventory-driven — so this is memory hygiene rather than invalidation.
+  if (cache && seen) {
+    for (const filePath of cache.entries.keys()) {
+      if (!seen.has(filePath)) cache.entries.delete(filePath)
+    }
+  }
+
+  return result
+}
+
 /**
  * Returns the custom properties left standing, for `pruneKeyframes` to root its own walk
  * at — see `Generator.pruneKeyframes`. `'all'` when this pass had nothing to remove and so
@@ -167,6 +351,7 @@ export function pruneTokensForBuild(
   ctx: BambooContext,
   sheet: Parameters<BambooContext['pruneTokens']>[0],
   results: ParserResult[],
+  sourceScans?: SourceScanResult,
 ): Set<string> | 'all' {
   if (ctx.config.prune?.tokens === false) {
     return ctx.pruneTokens(sheet)?.reachable ?? 'all'
@@ -191,11 +376,14 @@ export function pruneTokensForBuild(
 
   // One walk. These three answers all come from the same files, and reading them apart meant
   // a strict build opened every file three times: once for the reference set, once to account,
-  // and once more for the gate whenever the accounting declined.
-  const paths = new Set<string>()
-  const vars = new Set<string>()
-  const accounting: TokenAccounting = { paths: new Set<string>(), prefixes: new Set<string>(), declined: [] }
-  let reachable = false
+  // and once more for the gate whenever the accounting declined. A caller that already walked
+  // — `Builder.toCss` collects the keyframe and element answers from the same sweep — hands
+  // its result in rather than paying the walk again.
+  const scans = sourceScans ?? collectSourceScans(ctx, { keyframeNames: [], elements: false })
+  const paths = new Set<string>(scans.tokenPaths)
+  const vars = new Set<string>(scans.cssVars)
+  const accounting = scans.accounting
+  const reachable = scans.reachableFromJs
 
   // What the extractor understood, including values it resolved through a constant.
   for (const result of results) {
@@ -204,16 +392,6 @@ export function pruneTokensForBuild(
         if (typeof value === 'string') paths.add(value)
       }
     }
-  }
-
-  for (const snapshot of sourceSnapshots(ctx)) {
-    for (const text of snapshotTexts(snapshot)) {
-      for (const match of text.matchAll(TOKEN_CALL)) paths.add(match[1])
-      for (const name of cssVarRefs(text)) vars.add(name)
-      if (!reachable && reachableFromJs(text)) reachable = true
-    }
-
-    accountSnapshot(ctx, snapshot, accounting)
   }
 
   for (const name of tokenVarsFor(ctx, paths)) vars.add(name)

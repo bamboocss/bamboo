@@ -147,6 +147,12 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
 
     builder.extract()
 
+    // A full macrotask yield, not just a microtask: extraction and stylesheet emission are the
+    // two largest synchronous blocks this plugin runs, and a dev server is answering module
+    // requests on the same loop. Splitting them caps how long any queued response waits at the
+    // longer single block instead of their sum. In a build the extra tick is noise.
+    await new Promise<void>((settle) => setImmediate(settle))
+
     if (builder.context?.config.polyfill) {
       throw new Error(
         'bamboocss: the cascade-layer polyfill is incompatible with compiled atomic styles. ' +
@@ -393,8 +399,11 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
       if (command === 'serve' && servedCss?.generation === generationAtStart) {
         // Still a load of this module: the watch edges have to be re-registered for the graph
         // Vite is asking in, or the environment that hit the memo would never be invalidated.
+        // From the session's set rather than `extractedSourceFiles()`, which re-globs the
+        // include patterns per call — the build that produced this memo assigned the set from
+        // that same expression, so the lists are identical by construction.
         if (this.addWatchFile) {
-          for (const file of extractedSourceFiles()) this.addWatchFile(file)
+          for (const file of session.extractedFiles) this.addWatchFile(file)
         }
         return servedCss.css
       }
@@ -434,9 +443,11 @@ export const bamboocssCss = (options: BambooCssPluginOptions): Plugin => {
 
       // Every file the extractor reads is a source for this module, so editing one has to
       // invalidate it. In build this is what makes `vite build --watch` correct; in dev the
-      // watcher below does the same job earlier.
+      // watcher below does the same job earlier. The session set was assigned from
+      // `extractedSourceFiles()` by the generation just awaited, so reading it back avoids
+      // re-globbing the include patterns once per environment per rebuild.
       if (this.addWatchFile) {
-        for (const file of extractedSourceFiles()) this.addWatchFile(file)
+        for (const file of session.extractedFiles) this.addWatchFile(file)
       }
 
       return css

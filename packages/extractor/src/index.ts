@@ -18,7 +18,13 @@ export { extractJsxAttribute } from './jsx-attribute'
 export { extractJsxElementProps } from './jsx-element-props'
 export { extractJsxSpreadAttributeValues } from './jsx-spread-attribute'
 export { unwrapExpression } from './utils'
-export { clearBoxNodeCache, maybeBoxNode, maybeIdentifierValue } from './maybe-box-node'
+export {
+  clearBoxNodeCache,
+  getExportedVarDeclarationWithName,
+  maybeBoxNode,
+  maybeIdentifierValue,
+} from './maybe-box-node'
+export { invalidateDependencyPath } from './dependency-cache'
 export type {
   BoxContext,
   EvaluateOptions,

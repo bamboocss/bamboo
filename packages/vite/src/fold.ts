@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { resolveTsPathPattern } from '@bamboocss/config/ts-path'
 import type { Context } from '@bamboocss/core'
 import { type BoxNode, box } from '@bamboocss/extractor'
@@ -74,6 +75,111 @@ export interface SkippedCall {
   end: number
 }
 
+/** One cross-file read a fold performed, with the digest of what it read at the time. */
+export type ExportReadRecord = { kind: 'recipe' | 'value'; file: string; name: string; digest: string | undefined }
+
+/**
+ * Decide whether an edit to `changedFile` moved anything a dependent's fold actually read.
+ *
+ * `'unchanged'` means every recorded read of the edited file re-digests to the same value —
+ * the dependent's fold inputs did not move, so its output cannot have, and the re-fold can be
+ * skipped outright. `'changed'` means a read definitely differs, which is the same verdict
+ * the re-fold would reach after doing all the work. `'unknown'` is every other situation —
+ * no read names the edited file (the relationship runs through a channel these records do
+ * not witness, a barrel hop in a recipe binding walk, say), a digest could not be pinned
+ * down on either side — and sends the caller to the full re-fold this replaced.
+ *
+ * `digestMemo` is the per-event cache: many dependents verify against the same edited file,
+ * and each distinct `(kind, file, name)` needs digesting once, not once per dependent.
+ */
+export const verifyExportReads = (
+  ctx: Context,
+  parseModule: (filePath: string) => ParserResultInterface | undefined,
+  reads: readonly ExportReadRecord[],
+  changedFile: string,
+  digestMemo: Map<string, { digest: string | undefined; crossings: readonly string[] }>,
+): { verdict: 'changed' | 'unchanged' | 'unknown'; crossings: readonly string[] } => {
+  const relevant = reads.filter((read) => read.file === changedFile)
+  if (!relevant.length) return { verdict: 'unknown', crossings: [] }
+
+  const crossings = new Set<string>()
+  for (const read of relevant) {
+    if (read.digest === undefined) return { verdict: 'unknown', crossings: [] }
+    const key = `${read.kind}\u0000${read.file}\u0000${read.name}`
+    if (!digestMemo.has(key)) {
+      if (read.kind === 'value') {
+        const crossed: string[] = []
+        const digest = (
+          ctx as unknown as {
+            project?: {
+              digestExportRead?: (file: string, name: string, onCrossing?: (path: string) => void) => string | undefined
+            }
+          }
+        ).project?.digestExportRead?.(read.file, read.name, (path) => crossed.push(path))
+        digestMemo.set(key, { digest, crossings: crossed })
+      } else {
+        // One parse answers every recipe name in the file — several dependents each reading
+        // several recipes would otherwise re-extract the same edited module once per name.
+        const batched = `recipe-file\u0000${read.file}`
+        if (!digestMemo.has(batched)) {
+          try {
+            const result = parseModule(read.file)
+            if (result) {
+              for (const [name, entry] of collectRecipeConfigs(result)) {
+                digestMemo.set(`recipe\u0000${read.file}\u0000${name}`, {
+                  digest: entry === AMBIGUOUS ? 'bamboo:export-missing' : digestRecipeConfig(entry),
+                  crossings: [],
+                })
+              }
+            }
+          } catch {
+            // Individual lookups below answer `bamboo:module-missing` or stay unknown.
+          }
+          digestMemo.set(batched, { digest: 'bamboo:batched', crossings: [] })
+        }
+        if (!digestMemo.has(key)) {
+          digestMemo.set(key, { digest: digestRecipeReadNow(parseModule, read.file, read.name), crossings: [] })
+        }
+      }
+    }
+    const entry = digestMemo.get(key)!
+    if (entry.digest === undefined) return { verdict: 'unknown', crossings: [] }
+    if (entry.digest !== read.digest) return { verdict: 'changed', crossings: [] }
+    for (const path of entry.crossings) crossings.add(path)
+  }
+  // The re-resolution just performed is the current route to every verified value. A value
+  // can keep its bytes while moving files — a declaration becoming a re-export — and the
+  // pass that declines to re-fold is the only one positioned to hand the new edges back.
+  return { verdict: 'unchanged', crossings: [...crossings] }
+}
+
+const digestRecipeReadNow = (
+  parseModule: (filePath: string) => ParserResultInterface | undefined,
+  file: string,
+  name: string,
+): string | undefined => {
+  try {
+    const result = parseModule(file)
+    if (!result) return 'bamboo:module-missing'
+    const entry = collectRecipeConfigs(result).get(name)
+    if (!entry || entry === AMBIGUOUS) return 'bamboo:export-missing'
+    return digestRecipeConfig(entry)
+  } catch {
+    return undefined
+  }
+}
+
+/** The verification witness for a foreign recipe read: the config bytes, order preserved. */
+export const digestRecipeConfig = (entry: { config: unknown }): string | undefined => {
+  try {
+    const json = JSON.stringify(entry.config, (_key, value) => (value === undefined ? 'bamboo:undefined' : value))
+    if (json === undefined) return undefined
+    return createHash('sha256').update(json).digest('base64')
+  } catch {
+    return undefined
+  }
+}
+
 export interface FoldResult {
   code: string
   /** Null when nothing was folded, so callers can return the original module untouched. */
@@ -89,6 +195,15 @@ export interface FoldResult {
    * consumer. Bundlers need these as watch files.
    */
   dependencies: string[]
+  /**
+   * Foreign recipe configs this fold consumed, with the config digest read at fold time.
+   *
+   * A consumer whose only relationship to an edited module is through these reads can be
+   * verified by recomputing the digests instead of being re-folded; see the plugin's
+   * dependent verification. Value-level reads travel on the ParserResult instead — both
+   * channels must be checked together.
+   */
+  exportReads: Array<{ kind: 'recipe'; file: string; name: string; digest: string | undefined }>
 }
 
 export interface FoldOptions {
@@ -870,6 +985,8 @@ export const foldSource = (options: FoldOptions): FoldResult => {
   const helperModules = new Map<string, string | undefined>()
   /** Declaring modules a fold read, recorded as paths because their nodes do not persist. */
   const foreignDependencies = new Set<string>()
+  /** Foreign recipe configs consumed, digested at read time for later verification. */
+  const exportReads: FoldResult['exportReads'] = []
   /** Resolutions for this module's own call sites, keyed by the name the call site writes. */
   const importedRecipes = new Map<string, RecipeEntry | undefined>()
 
@@ -930,6 +1047,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
       // Editing the declaration can change the selected StyleSet and therefore the atoms this
       // literal needs, so every compiled consumer must be invalidated with it.
       foreignDependencies.add(origin.filePath)
+      exportReads.push({ kind: 'recipe', file: origin.filePath, name: origin.name, digest: digestRecipeConfig(entry) })
 
       helperModules.set(
         name,
@@ -1677,14 +1795,14 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     // Nothing was rewritten, so every reference survives — and a module with no candidate at
     // all is exactly the shape this exists to catch.
     if (reportSurvivors) reportRuntimeBindings()
-    return { code, map: null, folded, skipped, dependencies: [] }
+    return { code, map: null, folded, skipped, dependencies: [], exportReads: [] }
   }
 
   // Compare by `SourceFile` identity rather than by path, since `options.filePath`
   // may be spelled differently by the caller than ts-morph spells it.
   const rewriteSourceFile =
     ownSourceFile ?? candidates[0]?.node.getSourceFile() ?? recipeDefinitions[0]?.call.getSourceFile()
-  if (!rewriteSourceFile) return { code, map: null, folded, skipped, dependencies: [] }
+  if (!rewriteSourceFile) return { code, map: null, folded, skipped, dependencies: [], exportReads: [] }
   const dependencyScan = createDependencyScan(rewriteSourceFile)
 
   // Outermost-first, so a nested candidate can be detected and dropped rather than
@@ -2160,7 +2278,7 @@ export const foldSource = (options: FoldOptions): FoldResult => {
   if (reportSurvivors) reportRuntimeBindings()
 
   if (folded.length === 0) {
-    return { code, map: null, folded, skipped, dependencies: [] }
+    return { code, map: null, folded, skipped, dependencies: [], exportReads: [] }
   }
 
   return {
@@ -2169,5 +2287,6 @@ export const foldSource = (options: FoldOptions): FoldResult => {
     folded,
     skipped,
     dependencies: [...dependencyScan.results, ...foreignDependencies],
+    exportReads,
   }
 }

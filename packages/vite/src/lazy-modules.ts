@@ -60,10 +60,11 @@ export const createLazyBuilder = (loadNode: () => Promise<Pick<NodeModule, 'Buil
   })
 
 /** Build and publish one complete fold state; no caller can observe partial initialization. */
-export const createLazyCompilerState = <Context, RuntimeCss, StyleCompiler, FoldSource>(
+export const createLazyCompilerState = <Context, RuntimeCss, StyleCompiler, FoldSource, VerifyReads>(
   loadContext: () => Promise<Context>,
   loadFold: () => PromiseLike<{
     foldSource: FoldSource
+    verifyExportReads?: VerifyReads
     createRuntimeCss: (context: NoInfer<Context>) => RuntimeCss
     createStaticStyleSetCompiler: (context: NoInfer<Context>, runtimeCss: RuntimeCss) => StyleCompiler
   }>,
@@ -74,5 +75,11 @@ export const createLazyCompilerState = <Context, RuntimeCss, StyleCompiler, Fold
     const [context, fold] = await Promise.all([loadContext(), loadFold()])
     const runtimeCss = fold.createRuntimeCss(context)
     const styleCompiler = fold.createStaticStyleSetCompiler(context, runtimeCss)
-    return { context, foldSource: fold.foldSource, runtimeCss, styleCompiler }
+    return {
+      context,
+      foldSource: fold.foldSource,
+      verifyExportReads: fold.verifyExportReads,
+      runtimeCss,
+      styleCompiler,
+    }
   })

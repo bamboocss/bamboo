@@ -263,6 +263,19 @@ export class ParserResult implements ParserResultInterface {
     this.dependencies.add(filePath.replaceAll('\\', '/'))
   }
 
+  /** Cross-file value reads this extraction performed, with the digests read at parse time. */
+  private exportReads: Array<{ file: string; name: string; digest: string | undefined }> = []
+
+  /** @internal Set once by the parser after extraction, digests computed on warm caches. */
+  setExportReads(reads: Array<{ file: string; name: string; digest: string | undefined }>) {
+    this.exportReads = reads
+  }
+
+  /** @internal The reads a consumer can verify instead of re-folding; see the Vite plugin. */
+  getExportReads(): ReadonlyArray<{ file: string; name: string; digest: string | undefined }> {
+    return this.exportReads
+  }
+
   /**
    * Local source paths crossed while resolving values this extraction actually encoded.
    *

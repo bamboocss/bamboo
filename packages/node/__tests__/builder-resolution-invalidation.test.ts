@@ -437,7 +437,11 @@ describe('Builder resolution-ledger invalidation', () => {
     builder.extract()
 
     expect(builder.getContextOrThrow()).toBe(context)
-    expect(parse.mock.calls.map(([file]) => basename(file))).toEqual(['dependency.ts', 'bridge.ts', 'app.ts'])
+    // `bridge.ts` is selected as a dependent but verified instead of re-parsed: it makes no
+    // bamboo calls, so its recorded read set is empty and its extraction output cannot move.
+    // `app.ts` re-parses because its recorded read of `bridged` re-digests differently, which
+    // is the read-verification contract doing the selecting at value granularity.
+    expect(parse.mock.calls.map(([file]) => basename(file))).toEqual(['dependency.ts', 'app.ts'])
 
     const incremental = builder.toCss({ layerParams: true })
     expect(incremental).toContain('red')

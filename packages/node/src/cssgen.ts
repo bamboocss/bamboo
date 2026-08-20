@@ -2,12 +2,7 @@ import { prunesPreflight } from '@bamboocss/core'
 import { logger } from '@bamboocss/logger'
 import type { CssArtifactType } from '@bamboocss/types'
 import type { BambooContext } from './create-context'
-import {
-  collectKeyframeReferences,
-  collectRenderedElements,
-  keyframeNames,
-  pruneTokensForBuild,
-} from './token-references'
+import { collectRenderedElements, collectSourceScans, keyframeNames, pruneTokensForBuild } from './token-references'
 
 export interface CssGenOptions {
   cwd: string
@@ -57,15 +52,21 @@ export const cssgen = async (ctx: BambooContext, options: CssGenOptions) => {
     ctx.appendParserCss(sheet)
 
     // Only now does the sheet hold everything that could reference a token. Gathering the
-    // references reads every source file, so each pass stays behind its own flag.
-    const reachableVars = pruneTokensForBuild(ctx, sheet, results)
+    // references reads every source file, so the passes share one walk rather than each
+    // paying its own.
+    const collectElements = prunesPreflight(ctx.config.preflight)
+    const scans = collectSourceScans(ctx, {
+      keyframeNames: ctx.config.prune?.keyframes ? keyframeNames(ctx) : [],
+      elements: collectElements,
+    })
+    const reachableVars = pruneTokensForBuild(ctx, sheet, results, scans)
 
-    if (prunesPreflight(ctx.config.preflight)) {
-      ctx.prunePreflight(sheet, collectRenderedElements(ctx))
+    if (collectElements) {
+      ctx.prunePreflight(sheet, scans.elements)
     }
 
     if (ctx.config.prune?.keyframes) {
-      ctx.pruneKeyframes(sheet, collectKeyframeReferences(ctx, keyframeNames(ctx)), reachableVars)
+      ctx.pruneKeyframes(sheet, scans.keyframeHits, reachableVars)
     }
 
     if (splitting) {
