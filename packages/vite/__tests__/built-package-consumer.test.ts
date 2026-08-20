@@ -26,6 +26,8 @@ interface PackResult {
 let consumerRoot: string
 let consumerFixture: string
 const packs = new Map<string, PackResult>()
+const packageDirectories = new Map<string, string>()
+const declarationEntries = new Map<string, string | undefined>()
 
 const pack = (name: string) => {
   const result = JSON.parse(
@@ -49,13 +51,17 @@ beforeAll(() => {
     if (!existsSync(manifestPath)) continue
     const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as {
       dependencies?: Record<string, string>
+      exports?: { '.'?: { import?: { types?: string } } }
       name?: string
+      types?: string
     }
     if (!manifest.name?.startsWith('@bamboocss/')) continue
     internalDependencies.set(
       manifest.name,
       Object.keys(manifest.dependencies ?? {}).filter((name) => name.startsWith('@bamboocss/')),
     )
+    packageDirectories.set(manifest.name, directory)
+    declarationEntries.set(manifest.name, manifest.exports?.['.']?.import?.types ?? manifest.types)
   }
 
   // Pack the complete internal runtime closure. A link to one unchanged workspace package is
@@ -68,6 +74,25 @@ beforeAll(() => {
     runtimeClosure.add(name)
     pending.push(...(internalDependencies.get(name) ?? []))
   }
+  // This packs `dist`, so it needs a build that emitted declarations. `pnpm check` provides one,
+  // but CI shards unit tests into their own jobs where the only build is the `prepare` hook's
+  // `build-fast`, which is `--dts=false`: the pack then carries runtime chunks and no `.d.mts`,
+  // and every resolution assertion below fails on a package that is fine. Build what is missing
+  // rather than assume, so this is a no-op after `pnpm check` and self-sufficient anywhere else.
+  const unbuilt = [...runtimeClosure].filter((name) => {
+    const types = declarationEntries.get(name)
+    const directory = packageDirectories.get(name)
+    return typeof types === 'string' && directory !== undefined && !existsSync(join(directory, types))
+  })
+  if (unbuilt.length > 0) {
+    execFileSync('pnpm', [...unbuilt.flatMap((name) => ['--filter', name]), 'build'], {
+      cwd: repositoryRoot,
+      encoding: 'utf8',
+      maxBuffer: 20 * 1024 * 1024,
+      timeout: 600_000,
+    })
+  }
+
   const packedClosure = new Map([...runtimeClosure].sort().map((name) => [name, pack(name)]))
   const vitePack = packedClosure.get('@bamboocss/vite')!
   const nodePack = packedClosure.get('@bamboocss/node')!
