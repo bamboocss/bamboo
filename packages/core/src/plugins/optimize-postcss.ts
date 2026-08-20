@@ -1,7 +1,8 @@
+import { createRequire } from 'node:module'
 import postcss, { type Document, type Root } from 'postcss'
-import minifySelectors from 'postcss-minify-selectors'
+import type minifySelectorsPlugin from 'postcss-minify-selectors'
 import nested from 'postcss-nested'
-import normalizeWhiteSpace from 'postcss-normalize-whitespace'
+import type normalizeWhiteSpacePlugin from 'postcss-normalize-whitespace'
 import { dedupeNodes } from './dedupe-nodes'
 import { discardEmpty } from './discard-empty'
 import { mergeRules } from './merge-rules'
@@ -26,6 +27,38 @@ interface OptimizeOptions {
  */
 const BASELINE = ['chrome 123', 'edge 123', 'firefox 146', 'ios_saf 17.5', 'safari 17.5', 'opera 109']
 
+/**
+ * The minifier, loaded the first time something is actually minified.
+ *
+ * `postcss-minify-selectors` reaches `browserslist` for the `convertToIs` gate, and importing
+ * browserslist loads `caniuse-lite` — 598 separate CommonJS files. Statically imported, every
+ * consumer of this package paid all of it at module load, including dev servers and any build
+ * that never minifies, which is roughly two thirds of the 949 modules `@bamboocss/node` used to
+ * compile on import. `optimizePostCss` is synchronous, so this is a lazy `require`; the pinned
+ * `overrideBrowserslist` below means none of that data can reach the output either way.
+ */
+interface Minifiers {
+  minifySelectors: typeof minifySelectorsPlugin
+  normalizeWhiteSpace: typeof normalizeWhiteSpacePlugin
+}
+
+let minifiers: Minifiers | undefined
+const loadMinifiers = (): Minifiers => {
+  if (minifiers) return minifiers
+  const load = createRequire(import.meta.url)
+  // Both are CommonJS with a single default export; `require` of one under an ESM build hands
+  // back the namespace instead, so accept either shape rather than assuming the interop.
+  const interop = <Plugin>(id: string): Plugin => {
+    const module = load(id)
+    return (module.default ?? module) as Plugin
+  }
+  minifiers = {
+    minifySelectors: interop<typeof minifySelectorsPlugin>('postcss-minify-selectors'),
+    normalizeWhiteSpace: interop<typeof normalizeWhiteSpacePlugin>('postcss-normalize-whitespace'),
+  }
+  return minifiers
+}
+
 export function optimizePostCss(code: string | Root | Document, options: OptimizeOptions = {}) {
   const { minify = false } = options
 
@@ -43,6 +76,7 @@ export function optimizePostCss(code: string | Root | Document, options: Optimiz
     // left alone it resolves that target from `process.cwd()` -- the consuming project, not
     // `config.browserslist`. That would make the same input emit different CSS depending on
     // where the build ran. Passing BASELINE pins the answer to what we document instead.
+    const { minifySelectors, normalizeWhiteSpace } = loadMinifiers()
     plugins.push(normalizeWhiteSpace(), minifySelectors({ convertToIs: true, overrideBrowserslist: BASELINE }))
   } else {
     plugins.push(prettify() as any)

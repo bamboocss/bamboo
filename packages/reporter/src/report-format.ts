@@ -1,10 +1,28 @@
-import { markdownTable } from 'markdown-table'
-import { table } from 'table'
+import type { markdownTable as markdownTableFn } from 'markdown-table'
+import { createRequire } from 'node:module'
+import type { table as tableFn } from 'table'
 import Wordwrap from 'wordwrapjs'
 import type { RecipeReportEntry } from './reporter-recipe'
 import type { TokenReportEntry } from './reporter-token'
 
 export type ReportFormat = 'json' | 'markdown' | 'csv' | 'text' | 'table'
+
+/**
+ * The table renderers, loaded only when a report is actually rendered as one.
+ *
+ * `@bamboocss/node` re-exports this module, so a static import put `table`'s 34 files and
+ * `markdown-table` on the module graph of every build, for two formats of a command most
+ * builds never run. These call sites are synchronous, so this is a lazy `require`.
+ */
+const load = createRequire(import.meta.url)
+const renderTable = (rows: string[][]): string => {
+  const module = load('table')
+  return ((module.table ?? module.default?.table ?? module.default) as typeof tableFn)(rows)
+}
+const renderMarkdownTable = (rows: string[][]): string => {
+  const module = load('markdown-table')
+  return ((module.markdownTable ?? module.default?.markdownTable ?? module.default) as typeof markdownTableFn)(rows)
+}
 
 const plural = (count: number, singular: string) => {
   const pr = new Intl.PluralRules('en-US').select(count)
@@ -33,7 +51,7 @@ export function formatTokenReport(result: TokenReportEntry[], format: ReportForm
       return JSON.stringify(result, null, 2)
 
     case 'markdown': {
-      return markdownTable([headers, ...result.map((entry) => getFormatted(entry, true))])
+      return renderMarkdownTable([headers, ...result.map((entry) => getFormatted(entry, true))])
     }
 
     case 'csv': {
@@ -41,7 +59,7 @@ export function formatTokenReport(result: TokenReportEntry[], format: ReportForm
     }
 
     case 'table': {
-      return table([headers, ...result.map((entry) => getFormatted(entry, true))])
+      return renderTable([headers, ...result.map((entry) => getFormatted(entry, true))])
     }
 
     case 'text':
@@ -73,7 +91,7 @@ export function formatRecipeReport(result: RecipeReportEntry[], format: ReportFo
     }
 
     case 'markdown': {
-      return table([headers, ...result.map((entry) => getFormatted(entry, true))])
+      return renderTable([headers, ...result.map((entry) => getFormatted(entry, true))])
     }
 
     case 'csv': {
@@ -81,7 +99,7 @@ export function formatRecipeReport(result: RecipeReportEntry[], format: ReportFo
     }
 
     case 'table': {
-      return table([headers, ...result.map((entry) => getFormatted(entry, true))])
+      return renderTable([headers, ...result.map((entry) => getFormatted(entry, true))])
     }
 
     case 'text':
