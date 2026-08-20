@@ -47,6 +47,17 @@ import { withCssUnit } from './stringify'
  */
 const IDENTIFIER = /^[a-zA-Z][\w-]*(?:\.[a-zA-Z0-9][\w-]*)*$/
 
+/**
+ * The same shape with `/` admitted between segments — how composition values are spelled.
+ *
+ * `mixin: 'text-ol/regular'` is a membership question against a closed vocabulary, exactly
+ * like a token path, but the identifier gate above rejects the slash before the enumeration
+ * is ever consulted — so a misspelled member of a slashed vocabulary was the one unresolved
+ * shape that never warned, and surfaced only as a stylesheet with no rule for a class the
+ * compiled output still names.
+ */
+const SLASHED_IDENTIFIER = /^[a-zA-Z][\w-]*(?:[/.][a-zA-Z0-9][\w-]*)*$/
+
 /** @see `Utility.matchesCssGrammar` — lowercased, because a CSS keyword is case-insensitive. */
 const DEPRECATED_SYSTEM_COLORS = new Set(
   (
@@ -769,7 +780,19 @@ export class Utility {
 
     const key = this.resolveShorthand(prop)
     const bare = this.bareTokenPath(key, value)
-    if (!IDENTIFIER.test(bare)) return false
+    if (!IDENTIFIER.test(bare)) {
+      // A slashed name is only a candidate where the utility's own vocabulary uses slashes —
+      // compositions do — and there the question is pure membership. Everything else spelled
+      // with a slash is CSS (`font: 16px/1.5`, `grid-area` spans) and none of this pass's
+      // business; those shapes also fail `SLASHED_IDENTIFIER` on their digits and spaces.
+      if (!SLASHED_IDENTIFIER.test(bare)) return false
+      const enumerated = this.getKnownValues(key)
+      if (!enumerated?.size || enumerated.has(bare)) return false
+      for (const known of enumerated) {
+        if (known.includes('/')) return true
+      }
+      return false
+    }
 
     // Whatever the utility itself enumerates — token names, an array of compositions, the map a
     // `values` function returns. A hit here is the ordinary case and settles it.

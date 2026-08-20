@@ -184,14 +184,35 @@ export const pruneStaticCss = (
     }
     const environmentDescription = environment ? ` for the ${JSON.stringify(environment)} environment` : ''
 
+    /**
+     * Two very different situations end here, and the guidance must not swap them.
+     *
+     * A class *in the extracted atoms* with no rule means extraction saw the call and rule
+     * generation produced nothing for it — which is what an unresolved value looks like one
+     * step later: a composition naming a mixin that does not exist, a utility whose transform
+     * returned no declarations. The fix is in the source the class name spells out, and the
+     * build almost certainly printed a `🎋 warn [utility]` naming the same value.
+     *
+     * A class *not extracted* is the mixed-generation case: JavaScript on disk from an older
+     * build names an atom the current source no longer produces. That one is about rebuilding
+     * outputs, and only that one can be a compiler bug worth reporting.
+     */
+    const everyOrphanExtracted = orphaned.every((className) => prunable.has(bare(className)))
+    const guidance = everyOrphanExtracted
+      ? `Extraction saw every one of these calls, but rule generation produced no declarations for them — the ` +
+        `shape of a value nothing resolves, such as a \`mixin\` naming a composition the theme does not define. ` +
+        `Check the class name's property and value against the theme, and look for a \`🎋 warn [utility]\` line ` +
+        `above naming the same value. Set \`unresolvedToken: 'error'\` to fail fast at the exact call next time.`
+      : `The current source generation no longer provides every rule required by the JavaScript outputs still on ` +
+        `disk. Bamboo refused to replace the prior stylesheet. Finish rebuilding every output which retains an ` +
+        `older generation, then rebuild the stylesheet. If every output is already current, report this as a ` +
+        `compiler bug with the block above.`
+
     throw new Error(
       `bamboocss: ${orphaned.length} compiled class(es) still named by live output have no rule in the candidate ` +
         `stylesheet${environmentDescription}. Elements carrying them would render unstyled.\n\n` +
         `${truncateList(orphaned.map(describe), { unit: 'class', separator: '\n' })}\n\n` +
-        `The current source generation no longer provides every rule required by the JavaScript outputs still on ` +
-        `disk. Bamboo refused to replace the prior stylesheet. Finish rebuilding every output which retains an ` +
-        `older generation, then rebuild the stylesheet. If every output is already current, report this as a ` +
-        `compiler bug with the block above.`,
+        guidance,
     )
   }
 

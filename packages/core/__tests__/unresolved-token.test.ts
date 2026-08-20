@@ -101,6 +101,56 @@ describe('unresolved token paths', () => {
   })
 
   /**
+   * Composition vocabularies are also spelled with slashes — `text-ol/regular` — which the
+   * identifier gate used to reject before the enumeration was consulted. A misspelled member
+   * then warned nowhere and surfaced only at the end of a production build, as a class in the
+   * compiled output with no rule behind it, reported as a stylesheet-generation problem.
+   */
+  const slashedSetup = () => {
+    const ctx = createGeneratorContext({
+      theme: {
+        extend: {
+          mixins: {
+            'label/medium': { value: { fontSize: '10px', fontWeight: '500' } },
+            'label/semibold': { value: { fontSize: '10px', fontWeight: '600' } },
+          },
+        },
+      },
+      unresolvedToken: 'warn',
+    } as never) as any
+    ctx.utility.unresolvedTokens.clear()
+    const spy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+    return { utility: ctx.utility, spy }
+  }
+
+  test('fires on a missing member of a slashed vocabulary', () => {
+    const { utility, spy } = slashedSetup()
+
+    utility.transform('mixin', 'label/regular')
+
+    expect(spy).toHaveBeenCalledTimes(1)
+    expect(messages(spy as never)[0]).toContain('label/regular')
+  })
+
+  test('says nothing for a slashed member that exists', () => {
+    const { utility, spy } = slashedSetup()
+
+    utility.transform('mixin', 'label/medium')
+
+    expect(spy).not.toHaveBeenCalled()
+  })
+
+  test('leaves slashed values alone where the vocabulary has no slashes', () => {
+    const { utility, spy } = slashedSetup()
+
+    // `fontFamily` enumerates font tokens, none spelled with a slash, so a slashed value is
+    // not a membership question this pass can answer — and CSS spells real values this way.
+    utility.transform('fontFamily', 'Foo/Bar')
+
+    expect(spy).not.toHaveBeenCalled()
+  })
+
+  /**
    * The whole string has parentheses so it is not path-shaped; without checking candidates
    * the broken one is hidden by the working one for good.
    */
