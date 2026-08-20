@@ -49,6 +49,7 @@
   "devDependencies": {
     "@bamboocss/generator": "workspace:*",
     "@bamboocss/plugin-svelte": "workspace:*",
-    "@bamboocss/plugin-vue": "workspace:*"
+    "@bamboocss/plugin-vue": "workspace:*",
+    "@typescript/api": "npm:typescript@7.1.0-dev.20260819.1"
   }
 }
